@@ -6,11 +6,22 @@
 
     position:absolute;
 
-    left:0;
+    right:0;
 
     top:0;
 
     z-index:10;
+
+}
+
+
+/*=========================================================
+  LIST ITEM POSITIONING
+=========================================================*/
+
+.dairy-item-with-menu{
+
+    position:relative;
 
 }
 
@@ -21,7 +32,7 @@
 
 .medical-menu-toggle{
 
-    width:34px;
+    width:40px;
 
     height:44px;
 
@@ -49,10 +60,6 @@
 
 }
 
-.dairy-item-with-menu{
-    position:relative;
-}
-
 
 /*=========================================================
   MEDICAL ACTION MENU
@@ -64,7 +71,7 @@
 
     position:absolute;
 
-    left:34px;
+    right:40px;
 
     top:4px;
 
