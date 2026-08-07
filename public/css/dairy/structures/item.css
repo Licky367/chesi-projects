@@ -4,11 +4,21 @@
 
 .dairy-item{
 
+    position:relative;
+
     border-bottom:1px solid #e5e7eb;
 
     transition:background .25s ease;
 
 }
+
+
+.dairy-item-with-menu{
+
+    position:relative;
+
+}
+
 
 .dairy-item:last-child{
 
@@ -16,11 +26,13 @@
 
 }
 
+
 .dairy-item:hover{
 
     background:#fcfffd;
 
 }
+
 
 
 /*=========================================================
@@ -37,6 +49,8 @@
 
     padding:18px;
 
+    padding-right:60px;
+
     color:#111827;
 
     text-decoration:none;
@@ -45,11 +59,13 @@
 
 }
 
+
 .dairy-link:hover{
 
     color:#166534;
 
 }
+
 
 
 /*=========================================================
@@ -75,6 +91,7 @@
 }
 
 
+
 /*=========================================================
   DETAILS
 =========================================================*/
@@ -86,6 +103,7 @@
     min-width:0;
 
 }
+
 
 .dairy-name{
 
@@ -99,6 +117,7 @@
 
 }
 
+
 .dairy-code{
 
     margin-bottom:7px;
@@ -108,6 +127,7 @@
     font-size:13px;
 
 }
+
 
 
 /*=========================================================
@@ -132,6 +152,7 @@
 
 }
 
+
 .status-ok{
 
     background:#dcfce7;
@@ -140,6 +161,7 @@
 
 }
 
+
 .status-maintenance{
 
     background:#fee2e2;
@@ -147,6 +169,7 @@
     color:#b91c1c;
 
 }
+
 
 
 /*=========================================================
@@ -162,6 +185,7 @@
     transition:all .25s ease;
 
 }
+
 
 .dairy-link:hover .dairy-arrow{
 
