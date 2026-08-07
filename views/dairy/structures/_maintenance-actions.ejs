@@ -1,75 +1,22 @@
-<div class="action-buttons"><!-- =====================================================
-     THREE-DOT MENU
-====================================================== -->
+<div class="action-buttons maintenance-actions-wrapper">
 
-<button
-    type="button"
-    class="maintenance-menu-toggle"
-    aria-label="Maintenance actions"
-    aria-expanded="false"
-    onclick="toggleMaintenanceMenu('<%= dairy._id %>')"
->
-    ⋮
-</button>
+    <button
+        type="button"
+        class="maintenance-menu-toggle"
+        aria-label="Maintenance actions"
+        aria-expanded="false"
+        onclick="toggleMaintenanceMenu('<%= dairy._id %>')"
+    >
+        ⋮
+    </button>
 
+    <div
+        id="maintenanceMenu-<%= dairy._id %>"
+        class="maintenance-action-menu"
+    >
 
-<!-- =====================================================
-     MAINTENANCE ACTION MENU
-====================================================== -->
+        ...
 
-<div
-    id="maintenanceMenu-<%= dairy._id %>"
-    class="maintenance-action-menu"
->
-
-    <!-- =================================================
-         MARK MAINTENANCE
-    ================================================== -->
-
-    <% if (
-        dairy.needsMaintenance === false &&
-        user &&
-        (
-            user.role === "admin" ||
-            user.role === "dairyWorker"
-        )
-    ) { %>
-
-        <button
-            type="button"
-            class="maintenance-action-btn"
-            onclick="toggleMarkForm('<%= dairy._id %>')"
-        >
-            🔧 Mark Maintenance
-        </button>
-
-        <%- include("./_mark-form", { dairy }) %>
-
-    <% } %>
-
-
-    <!-- =================================================
-         CLEAR MAINTENANCE
-    ================================================== -->
-
-    <% if (
-        dairy.needsMaintenance === true &&
-        user &&
-        user.role === "admin"
-    ) { %>
-
-        <button
-            type="button"
-            class="maintenance-action-btn"
-            onclick="toggleUnmarkForm('<%= dairy._id %>')"
-        >
-            ✓ Clear Maintenance
-        </button>
-
-        <%- include("./_clear-form", { dairy }) %>
-
-    <% } %>
-
-</div>
+    </div>
 
 </div>
