@@ -1,0 +1,13 @@
+<ul class="dairy-list">
+
+<% dairies.forEach(dairy => { %>
+
+    <% if (dairy.code < 0) { %>
+
+        <%- include("./_item", { dairy, user }) %>
+
+    <% } %>
+
+<% }) %>
+
+</ul>

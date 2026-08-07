@@ -1,0 +1,256 @@
+<style>
+
+  body{
+    background:#f7faf7;
+  }
+
+  /* =========================
+     HERO
+  ========================= */
+
+  .dashboard-hero{
+    min-height:75vh;
+
+    display:flex;
+    align-items:center;
+
+    padding:40px 0;
+  }
+
+  .hero-content{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    gap:60px;
+  }
+
+  .hero-text{
+    flex:1;
+  }
+
+  .hero-tag{
+    display:inline-block;
+
+    margin-bottom:18px;
+    padding:8px 18px;
+
+    border-radius:50px;
+
+    background:#dcfce7;
+
+    color:#166534;
+
+    font-size:14px;
+    font-weight:600;
+  }
+
+  .hero-title{
+    margin-bottom:20px;
+
+    color:#14532d;
+
+    font-size:48px;
+    font-weight:800;
+
+    line-height:1.2;
+  }
+
+  .hero-title span{
+    color:#16a34a;
+  }
+
+  .hero-description{
+    max-width:620px;
+
+    color:#6b7280;
+
+    font-size:17px;
+
+    line-height:1.9;
+  }
+
+  .hero-image{
+    flex:1;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+
+  .hero-image img{
+    width:100%;
+    max-width:600px;
+
+    object-fit:contain;
+
+    animation:float 4s ease-in-out infinite;
+  }
+
+  @keyframes float{
+
+    0%{
+      transform:translateY(0);
+    }
+
+    50%{
+      transform:translateY(-12px);
+    }
+
+    100%{
+      transform:translateY(0);
+    }
+
+  }
+
+  .hero-info{
+    display:flex;
+    flex-wrap:wrap;
+
+    gap:30px;
+
+    margin-top:40px;
+  }
+
+  .hero-info-item h5{
+    margin-bottom:6px;
+
+    color:#166534;
+
+    font-size:16px;
+    font-weight:700;
+  }
+
+  .hero-info-item p{
+    margin:0;
+
+    color:#6b7280;
+
+    font-size:15px;
+  }
+
+  @media(max-width:991px){
+
+    .dashboard-hero{
+      min-height:auto;
+    }
+
+    .hero-content{
+      flex-direction:column-reverse;
+
+      text-align:center;
+
+      gap:30px;
+    }
+
+    .hero-title{
+      font-size:34px;
+    }
+
+    .hero-description{
+      margin:auto;
+    }
+
+    .hero-info{
+      justify-content:center;
+    }
+
+    .hero-image img{
+      max-width:420px;
+    }
+
+  }
+
+</style>
+
+<%
+
+let heroImage = "admin.png";
+
+if (user && user.role === "dairyWorker") {
+
+  heroImage = "dairy.png";
+
+} else if (user && user.role === "poultryWorker") {
+
+  heroImage = "poultry.png";
+
+} else if (user && user.role === "agricultureWorker") {
+
+  heroImage = "agriculture.png";
+
+} else if (user && user.role === "admin") {
+
+  heroImage = "admin.png";
+
+}
+
+%>
+
+<div class="container">
+
+  <div class="dashboard-hero">
+
+    <div class="hero-content">
+
+      <div class="hero-text">
+
+        <div class="hero-tag">
+          Welcome Back 👋
+        </div>
+
+        <h1 class="hero-title">
+
+          Hello,
+          <span>
+            <%= user && user.name ? user.name : "Guest" %>
+          </span>
+
+        </h1>
+
+        <p class="hero-description">
+
+          Welcome to <strong>Chessy Family Projects</strong>.
+
+          This dashboard is your central workspace for managing daily
+          operations, monitoring progress, and completing assigned
+          responsibilities efficiently. Everything you need is available
+          from the navigation menu to help you work faster and stay
+          organized.
+
+        </p>
+
+        <div class="hero-info">
+
+          <div class="hero-info-item">
+            <h5>✔ Organized</h5>
+            <p>Manage your daily activities.</p>
+          </div>
+
+          <div class="hero-info-item">
+            <h5>📊 Productive</h5>
+            <p>Track work and monitor progress.</p>
+          </div>
+
+          <div class="hero-info-item">
+            <h5>🌱 Reliable</h5>
+            <p>Built for modern farm management.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="hero-image">
+
+        <img
+          src="/images/<%= heroImage %>"
+          alt="Dashboard">
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

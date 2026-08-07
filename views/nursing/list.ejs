@@ -1,0 +1,775 @@
+<style>
+
+  /* =========================
+     PAGE HEADER
+  ========================= */
+
+  .nursing-header {
+    margin-bottom: 25px;
+  }
+
+  .nursing-header h2 {
+    margin-bottom: 6px;
+
+    color: #166534;
+
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .nursing-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 15px;
+  }
+
+
+  /* =========================
+     PURCHASE CARD
+  ========================= */
+
+  .nursing-form-card {
+    padding: 28px;
+
+    margin-bottom: 30px;
+
+    border-radius: 20px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 8px 25px rgba(0, 0, 0, 0.06);
+  }
+
+  .form-card-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    margin-bottom: 22px;
+  }
+
+  .form-icon {
+    width: 50px;
+    height: 50px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: #dcfce7;
+
+    font-size: 24px;
+  }
+
+  .form-card-header h3 {
+    margin: 0;
+
+    color: #166534;
+
+    font-size: 20px;
+  }
+
+  .form-card-header p {
+    margin: 4px 0 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+  }
+
+
+  /* =========================
+     FORM
+  ========================= */
+
+  .nursing-form {
+    display: grid;
+
+    grid-template-columns:
+      1.5fr
+      1fr
+      1fr
+      1fr
+      auto;
+
+    gap: 15px;
+
+    align-items: end;
+  }
+
+  .form-group {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+  }
+
+  .form-group label {
+    color: #374151;
+
+    font-size: 13px;
+
+    font-weight: 600;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+
+    padding: 13px 14px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    background: #f9fafb;
+
+    color: #111827;
+
+    font-size: 14px;
+
+    transition: all 0.25s ease;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: #16a34a;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 0 0 4px rgba(22, 163, 74, 0.12);
+  }
+
+  .add-purchase-btn {
+    padding: 13px 22px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background:
+      linear-gradient(135deg, #16a34a, #15803d);
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+  }
+
+  .add-purchase-btn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+      0 8px 18px rgba(22, 163, 74, 0.25);
+  }
+
+
+  /* =========================
+     SECTION HEADER
+  ========================= */
+
+  .section-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 18px;
+  }
+
+  .section-header h3 {
+    margin: 0;
+
+    color: #374151;
+
+    font-size: 21px;
+  }
+
+  .count-badge {
+    padding: 6px 12px;
+
+    border-radius: 20px;
+
+    background: #dcfce7;
+
+    color: #166534;
+
+    font-size: 13px;
+
+    font-weight: 700;
+  }
+
+
+  /* =========================
+     BATCH GRID
+  ========================= */
+
+  .batch-grid {
+    display: grid;
+
+    grid-template-columns:
+      repeat(auto-fill, minmax(280px, 1fr));
+
+    gap: 20px;
+  }
+
+
+  /* =========================
+     BATCH CARD
+  ========================= */
+
+  .batch-card {
+    position: relative;
+
+    overflow: hidden;
+
+    padding: 24px;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 5px 18px rgba(0, 0, 0, 0.05);
+
+    transition: all 0.25s ease;
+  }
+
+  .batch-card::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 5px;
+
+    background: #16a34a;
+  }
+
+  .batch-card:hover {
+    transform: translateY(-5px);
+
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.1);
+  }
+
+
+  /* =========================
+     BATCH CARD HEADER
+  ========================= */
+
+  .batch-card-header {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    margin-bottom: 20px;
+  }
+
+  .batch-icon {
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: #dcfce7;
+
+    font-size: 23px;
+  }
+
+  .batch-status {
+    padding: 6px 10px;
+
+    border-radius: 20px;
+
+    background: #dcfce7;
+
+    color: #166534;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+  }
+
+
+  /* =========================
+     BATCH CONTENT
+  ========================= */
+
+  .batch-name {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #166534;
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+    text-decoration: none;
+  }
+
+  .batch-name:hover {
+    color: #15803d;
+  }
+
+  .batch-type {
+    display: block;
+
+    margin-bottom: 18px;
+
+    color: #6b7280;
+
+    font-size: 13px;
+
+    text-transform: capitalize;
+  }
+
+
+  /* =========================
+     AVAILABLE COUNT
+  ========================= */
+
+  .available-info {
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 15px;
+
+    margin-bottom: 18px;
+
+    border-radius: 12px;
+
+    background: #f9fafb;
+  }
+
+  .available-icon {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #dbeafe;
+
+    font-size: 20px;
+  }
+
+  .available-info strong {
+    display: block;
+
+    color: #111827;
+
+    font-size: 22px;
+  }
+
+  .available-info span {
+    color: #6b7280;
+
+    font-size: 12px;
+  }
+
+
+  /* =========================
+     VIEW BUTTON
+  ========================= */
+
+  .view-batch-btn {
+    display: block;
+
+    width: 100%;
+
+    padding: 11px;
+
+    border-radius: 9px;
+
+    background: #166534;
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    text-align: center;
+
+    text-decoration: none;
+
+    transition: 0.25s ease;
+  }
+
+  .view-batch-btn:hover {
+    background: #14532d;
+
+    color: #ffffff;
+  }
+
+
+  /* =========================
+     EMPTY STATE
+  ========================= */
+
+  .empty-state {
+    padding: 45px 20px;
+
+    border-radius: 18px;
+
+    background: #f9fafb;
+
+    color: #6b7280;
+
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    margin-bottom: 10px;
+
+    font-size: 38px;
+  }
+
+
+  /* =========================
+     RESPONSIVE
+  ========================= */
+
+  @media (max-width: 1100px) {
+
+    .nursing-form {
+      grid-template-columns:
+        repeat(2, 1fr);
+    }
+
+    .add-purchase-btn {
+      width: 100%;
+    }
+
+  }
+
+  @media (max-width: 600px) {
+
+    .nursing-form {
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: stretch;
+    }
+
+    .nursing-form-card {
+      padding: 22px;
+    }
+
+    .nursing-header h2 {
+      font-size: 24px;
+    }
+
+  }
+
+</style>
+
+
+<div class="container mt-4 mb-5">
+
+
+  <!-- PAGE HEADER -->
+
+  <div class="nursing-header">
+
+    <h2>
+      🐥 Nursing Management
+    </h2>
+
+    <p>
+      Manage your poultry batches and monitor available birds.
+    </p>
+
+  </div>
+
+
+  <!-- ADD PURCHASE -->
+
+  <div class="nursing-form-card">
+
+    <div class="form-card-header">
+
+      <div class="form-icon">
+        🐣
+      </div>
+
+      <div>
+
+        <h3>
+          Add New Purchase
+        </h3>
+
+        <p>
+          Register a new group of poultry for nursing.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <form
+      action="/nursing/purchase"
+      method="POST"
+      class="nursing-form"
+    >
+
+
+      <div class="form-group">
+
+        <label for="groupName">
+          Group Name
+        </label>
+
+        <input
+          type="text"
+          id="groupName"
+          name="groupName"
+          placeholder="e.g. Batch A"
+          required
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="total">
+          Number of Birds
+        </label>
+
+        <input
+          type="number"
+          id="total"
+          name="total"
+          placeholder="e.g. 100"
+          min="1"
+          required
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="poultryType">
+          Poultry Type
+        </label>
+
+        <select
+          id="poultryType"
+          name="poultryType"
+          required
+        >
+
+          <option value="chicken">
+            Chicken
+          </option>
+
+          <option value="duck">
+            Duck
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="dob">
+          Date of Birth
+        </label>
+
+        <input
+          type="date"
+          id="dob"
+          name="dob"
+          required
+        >
+
+      </div>
+
+
+      <button
+        type="submit"
+        class="add-purchase-btn"
+      >
+
+        + Add Purchase
+
+      </button>
+
+
+    </form>
+
+  </div>
+
+
+  <!-- BATCHES SECTION -->
+
+  <div class="section-header">
+
+    <h3>
+      Nursing Batches
+    </h3>
+
+    <span class="count-badge">
+
+      <%= batches.length %>
+      Batches
+
+    </span>
+
+  </div>
+
+
+  <% if (batches.length > 0) { %>
+
+
+    <div class="batch-grid">
+
+
+      <% batches.forEach(b => { %>
+
+
+        <div class="batch-card">
+
+
+          <div class="batch-card-header">
+
+            <div class="batch-icon">
+              🐥
+            </div>
+
+            <span class="batch-status">
+              Active
+            </span>
+
+          </div>
+
+
+          <a
+            href="/nursing/<%= b._id %>"
+            class="batch-name"
+          >
+
+            <%= b.groupName %>
+
+          </a>
+
+
+          <span class="batch-type">
+
+            Poultry nursing batch
+
+          </span>
+
+
+          <div class="available-info">
+
+            <div class="available-icon">
+              🐣
+            </div>
+
+            <div>
+
+              <strong>
+                <%= b.available %>
+              </strong>
+
+              <span>
+                Birds currently available
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <a
+            href="/nursing/<%= b._id %>"
+            class="view-batch-btn"
+          >
+
+            View Batch Details →
+
+          </a>
+
+
+        </div>
+
+
+      <% }) %>
+
+
+    </div>
+
+
+  <% } else { %>
+
+
+    <div class="empty-state">
+
+      <div class="empty-state-icon">
+        🐥
+      </div>
+
+      <h4>
+        No Nursing Batches
+      </h4>
+
+      <p>
+        Add your first poultry purchase to start managing a nursing batch.
+      </p>
+
+    </div>
+
+
+  <% } %>
+
+
+</div>

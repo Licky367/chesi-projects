@@ -1,0 +1,174 @@
+<!-- ============================.=========================
+     WEEKLY MILK REPORT
+====================================================== -->
+
+<article
+    class="feed-card milk-card"
+    data-id="<%= item._id %>"
+    data-type="milk"
+>
+
+    <!-- Header -->
+
+    <div class="feed-header">
+
+        <div class="feed-user">
+
+            <img
+                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName)) %>"
+                class="avatar-sm"
+                alt="<%= item.userName %>"
+            >
+
+            <div class="feed-user-info">
+
+                <strong>
+
+                    <%= item.userName %>
+
+                </strong>
+
+                <small>
+
+                    <%= item.dateText %>
+
+                </small>
+
+            </div>
+
+        </div>
+
+        <% if (
+            user &&
+            (
+                user.role === "admin" ||
+                (
+                    user._id &&
+                    item.userId &&
+                    user._id.toString() === item.userId.toString()
+                )
+            )
+        ) { %>
+
+            <button
+                class="delete-post"
+                data-id="<%= item._id %>"
+                data-type="milk"
+                title="Delete Report"
+                type="button"
+            >
+
+                <i class="bi bi-trash3-fill"></i>
+
+            </button>
+
+        <% } %>
+
+    </div>
+
+    <!-- Body -->
+
+    <div class="feed-body">
+
+        <h3>
+
+            🥛 Weekly Milk Report
+
+        </h3>
+
+        <% if (item.weekStart && item.weekEnd) { %>
+
+            <p>
+
+                <strong>Week:</strong>
+
+                <%= item.weekStart %> - <%= item.weekEnd %>
+
+            </p>
+
+        <% } %>
+
+        <% if (item.title) { %>
+
+            <p>
+
+                <%= item.title %>
+
+            </p>
+
+        <% } %>
+
+        <div class="table-wrapper">
+
+            <table class="weekly-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Day</th>
+
+                        <th>Total</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <% item.days.forEach(day => { %>
+
+                        <tr>
+
+                            <td>
+
+                                <%= day.day %>
+
+                            </td>
+
+                            <td>
+
+                                <%= day.total %> L
+
+                            </td>
+
+                        </tr>
+
+                    <% }) %>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div class="weekly-average">
+
+            Average
+
+            <strong>
+
+                <%= item.average %> L/day
+
+            </strong>
+
+        </div>
+
+    </div>
+
+    <!-- Actions -->
+
+    <%- include("partials/feed-actions", {
+        item,
+        type: "milk"
+    }) %>
+
+    <!-- Comments -->
+
+    <%- include("comment-section", {
+        item,
+        user,
+        type: "milk"
+    }) %>
+
+</article>

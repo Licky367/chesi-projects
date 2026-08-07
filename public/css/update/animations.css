@@ -1,0 +1,75 @@
+/*=========================================================
+  UPDATE PAGE
+  ANIMATIONS
+=========================================================*/
+
+/*=========================================================
+  FADE IN
+=========================================================*/
+
+.profile-card,
+.create-post-card,
+.feed-card{
+
+    animation:fadeIn .35s ease;
+
+}
+
+@keyframes fadeIn{
+
+    from{
+
+        opacity:0;
+
+    }
+
+    to{
+
+        opacity:1;
+
+    }
+
+}
+
+/*=========================================================
+  BUTTON ACTIVE EFFECT
+=========================================================*/
+
+.post-button:active,
+.save-profile-button:active,
+.history-button:active,
+.delete-profile-button:active,
+.like-btn:active,
+.toggle-comments:active,
+.comment-form button:active,
+.remove-image-button:active,
+.image-upload-button:active{
+
+    transform:scale(.97);
+
+}
+
+/*=========================================================
+  TRANSITION HELPERS
+=========================================================*/
+
+.profile-avatar,
+.profile-item,
+.profile-card,
+.create-post-card,
+.feed-card,
+.post-button,
+.history-button,
+.save-profile-button,
+.delete-profile-button,
+.like-btn,
+.toggle-comments,
+.comment-form button,
+.remove-image-button,
+.image-upload-button,
+.delete-post,
+.delete-comment{
+
+    transition:var(--transition);
+
+}

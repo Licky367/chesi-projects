@@ -1,0 +1,153 @@
+<!-- ===========================.==========================
+     MAINTENANCE RECORD - COMPLETED
+====================================================== -->
+
+<article
+    class="feed-card maintenance-card maintenance-cleared-card"
+    data-id="<%= item._id %>"
+    data-type="maintenance"
+>
+
+    <!-- Header -->
+
+    <div class="feed-header">
+
+        <div class="feed-user">
+
+            <img
+                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName)) %>"
+                class="avatar-sm"
+                alt="<%= item.userName %>"
+            >
+
+            <div class="feed-user-info">
+
+                <strong>
+
+                    ✅ <%= item.userName %>
+
+                </strong>
+
+                <small>
+
+                    <%= item.dateText %>
+
+                </small>
+
+            </div>
+
+        </div>
+
+        <% if (
+            user &&
+            (
+                user.role === "admin" ||
+                (
+                    user._id &&
+                    item.userId &&
+                    user._id.toString() === item.userId.toString()
+                )
+            )
+        ) { %>
+
+            <button
+                class="delete-post"
+                data-id="<%= item._id %>"
+                data-type="maintenance"
+                title="Delete Maintenance Record"
+                type="button"
+            >
+
+                <i class="bi bi-trash3-fill"></i>
+
+            </button>
+
+        <% } %>
+
+    </div>
+
+    <!-- Body -->
+
+    <div class="feed-body">
+
+        <h3>
+
+            ✅ Maintenance Completed
+
+        </h3>
+
+        <div class="maintenance-status cleared">
+
+            Status:
+            <strong>
+
+                Completed
+
+            </strong>
+
+        </div>
+
+        <% if (item.maintenanceType) { %>
+
+            <p>
+
+                <strong>Type:</strong>
+
+                <%= item.maintenanceType %>
+
+            </p>
+
+        <% } %>
+
+        <% if (item.title) { %>
+
+            <p>
+
+                <strong>Title:</strong>
+
+                <%= item.title %>
+
+            </p>
+
+        <% } %>
+
+        <% if (item.description) { %>
+
+            <p>
+
+                <%= item.description %>
+
+            </p>
+
+        <% } %>
+
+        <% if (item.charges) { %>
+
+            <p>
+
+                <strong>Charges:</strong>
+
+                KES <%= item.charges %>
+
+            </p>
+
+        <% } %>
+
+    </div>
+
+    <!-- Actions -->
+
+    <%- include("partials/feed-actions", {
+        item,
+        type: "maintenance"
+    }) %>
+
+    <!-- Comments -->
+
+    <%- include("comment-section", {
+        item,
+        user,
+        type: "maintenance"
+    }) %>
+
+</article>

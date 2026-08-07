@@ -1,0 +1,1401 @@
+<style>
+
+/* =====================================================
+   PAGE
+===================================================== */
+
+.milk-stats-page {
+
+  width: 100%;
+
+  max-width: 1100px;
+
+  margin: 0 auto;
+
+  padding: 20px 0 40px;
+
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.page-header {
+
+  margin-bottom: 20px;
+
+}
+
+
+.page-header h2 {
+
+  margin: 0 0 6px;
+
+  color: #166534;
+
+  font-size: 26px;
+
+}
+
+
+.page-header p {
+
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 14px;
+
+}
+
+
+/* =====================================================
+   CARD
+===================================================== */
+
+.stats-card {
+
+  margin-bottom: 20px;
+
+  padding: 22px;
+
+  border-radius: 15px;
+
+  background: #ffffff;
+
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+
+}
+
+
+/* =====================================================
+   FILTER
+===================================================== */
+
+.stats-filter {
+
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 12px;
+
+  flex-wrap: wrap;
+
+}
+
+
+.filter-group {
+
+  flex: 1;
+
+  min-width: 180px;
+
+}
+
+
+.filter-group label {
+
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #374151;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+}
+
+
+.filter-group input,
+.filter-group select {
+
+  width: 100%;
+
+  padding: 11px 12px;
+
+  border-radius: 9px;
+
+  border: 1px solid #d1d5db;
+
+  background: #f9fafb;
+
+  font-family: inherit;
+
+  outline: none;
+
+}
+
+
+.filter-group input:focus,
+.filter-group select:focus {
+
+  border-color: #16a34a;
+
+  box-shadow: 0 0 0 3px rgba(22,163,74,0.1);
+
+}
+
+
+.filter-button {
+
+  padding: 11px 20px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background: #166534;
+
+  color: white;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+}
+
+
+.filter-button:hover {
+
+  background: #14532d;
+
+}
+
+
+/* =====================================================
+   REPORT HEADER
+===================================================== */
+
+.report-header {
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  gap:15px;
+
+  margin-bottom:18px;
+
+}
+
+
+.report-header h3 {
+
+  margin:0;
+
+  color:#374151;
+
+  font-size:20px;
+
+}
+
+
+.report-date {
+
+  color:#6b7280;
+
+  font-size:13px;
+
+}
+
+
+/* =====================================================
+   TABLE
+===================================================== */
+
+.table-wrapper {
+
+  overflow-x:auto;
+
+}
+
+
+table {
+
+  width:100%;
+
+  border-collapse:collapse;
+
+}
+
+
+th,
+td {
+
+  padding:13px 15px;
+
+  border-bottom:1px solid #e5e7eb;
+
+  text-align:left;
+
+}
+
+
+th {
+
+  background:#f9fafb;
+
+  color:#6b7280;
+
+  font-size:12px;
+
+  text-transform:uppercase;
+
+}
+
+
+td {
+
+  color:#4b5563;
+
+  font-size:14px;
+
+}
+
+
+tbody tr:hover {
+
+  background:#f9fafb;
+
+}
+
+
+.animal-code {
+
+  font-weight:700;
+
+  color:#166534;
+
+}
+
+
+.liters-value {
+
+  font-weight:700;
+
+  color:#166534;
+
+}
+
+
+/* =====================================================
+   SUMMARY
+===================================================== */
+
+.summary-grid {
+
+  display:grid;
+
+  grid-template-columns:
+    repeat(auto-fit,minmax(170px,1fr));
+
+  gap:15px;
+
+  margin-top:22px;
+
+}
+
+
+.summary-box {
+
+  padding:17px;
+
+  border-radius:12px;
+
+  background:#f9fafb;
+
+}
+
+
+.summary-box span {
+
+  display:block;
+
+  margin-bottom:7px;
+
+  color:#6b7280;
+
+  font-size:12px;
+
+}
+
+
+.summary-box strong {
+
+  color:#166534;
+
+  font-size:20px;
+
+}
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+.status-open {
+
+  color:#166534 !important;
+
+}
+
+
+.status-locked {
+
+  color:#b91c1c !important;
+
+}
+
+
+/* =====================================================
+   SALES
+===================================================== */
+
+.sales-section {
+
+  margin-top:30px;
+
+}
+
+
+.sales-section h3 {
+
+  margin-bottom:15px;
+
+  color:#374151;
+
+}
+
+
+.revenue-total {
+
+  margin-top:18px;
+
+  padding:17px;
+
+  border-radius:12px;
+
+  background:#f0fdf4;
+
+}
+
+
+.revenue-total span {
+
+  display:block;
+
+  margin-bottom:5px;
+
+  color:#6b7280;
+
+}
+
+
+.revenue-total strong {
+
+  color:#166534;
+
+  font-size:22px;
+
+}
+
+
+/* =====================================================
+   EMPTY STATE
+===================================================== */
+
+.empty-state {
+
+  padding:45px 20px;
+
+  text-align:center;
+
+}
+
+
+.empty-icon {
+
+  font-size:42px;
+
+  margin-bottom:10px;
+
+}
+
+
+.empty-state h3 {
+
+  margin-bottom:8px;
+
+  color:#374151;
+
+}
+
+
+.empty-state p {
+
+  color:#9ca3af;
+
+  font-size:14px;
+
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media(max-width:650px){
+
+  .milk-stats-page{
+
+    padding:10px 0 30px;
+
+  }
+
+
+  .stats-card{
+
+    padding:16px;
+
+  }
+
+
+  .stats-filter{
+
+    flex-direction:column;
+
+    align-items:stretch;
+
+  }
+
+
+  .filter-button{
+
+    width:100%;
+
+  }
+
+
+  .report-header{
+
+    flex-direction:column;
+
+    align-items:flex-start;
+
+  }
+
+
+  th,
+  td{
+
+    white-space:nowrap;
+
+    padding:10px;
+
+  }
+
+}
+
+</style>
+
+
+<div class="milk-stats-page">
+
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<div class="page-header">
+
+  <h2>
+    🥛 Milk Statistics
+  </h2>
+
+
+  <p>
+    Review milk production, consumption, sales and revenue.
+  </p>
+
+</div>
+
+
+<!-- =====================================================
+     FILTER
+===================================================== -->
+
+<div class="stats-card">
+
+
+<form
+  method="GET"
+  action="/stats"
+  class="stats-filter"
+>
+
+
+<div class="filter-group">
+
+<label>
+Report Type
+</label>
+
+
+<select name="type">
+
+<option
+value="day"
+<%= type === "day" ? "selected" : "" %>
+>
+Daily
+</option>
+
+
+<option
+value="month"
+<%= type === "month" ? "selected" : "" %>
+>
+Monthly
+</option>
+
+</select>
+
+</div>
+
+
+<div class="filter-group">
+
+<label>
+Select Date
+</label>
+
+
+<input
+type="date"
+name="date"
+value="<%= date || '' %>"
+>
+
+</div>
+
+
+<div class="filter-group">
+
+<label>
+Select Month
+</label>
+
+
+<input
+type="month"
+name="month"
+value="<%= month || '' %>"
+>
+
+</div>
+
+
+<button
+type="submit"
+class="filter-button"
+>
+🔍 View Report
+</button>
+
+
+</form>
+
+
+</div>
+<!-- =====================================================
+     DAILY REPORT
+===================================================== -->
+
+<% if (type === "day") { %>
+
+
+<div class="stats-card">
+
+
+<div class="report-header">
+
+<h3>
+Daily Milk Production
+</h3>
+
+
+<span class="report-date">
+
+<%= date || "Today" %>
+
+</span>
+
+
+</div>
+
+
+
+<div class="table-wrapper">
+
+
+<table>
+
+
+<thead>
+
+<tr>
+
+<th>
+Code
+</th>
+
+<th>
+Animal
+</th>
+
+<th>
+Liters
+</th>
+
+</tr>
+
+
+</thead>
+
+
+
+<tbody>
+
+
+<% if (records && records.length > 0) { %>
+
+
+<% records.forEach(record => { %>
+
+
+<tr>
+
+
+<td>
+
+<span class="animal-code">
+
+<%= record.dairy
+? record.dairy.code
+: "Unknown" %>
+
+</span>
+
+</td>
+
+
+
+<td>
+
+<%= record.dairy
+? record.dairy.name
+: "Unknown Animal" %>
+
+</td>
+
+
+
+<td>
+
+<span class="liters-value">
+
+<%= Number(record.liters || 0) %> L
+
+</span>
+
+</td>
+
+
+</tr>
+
+
+<% }) %>
+
+
+
+<% } else { %>
+
+
+<tr>
+
+<td colspan="3">
+
+
+<div class="empty-state">
+
+
+<div class="empty-icon">
+🥛
+</div>
+
+
+<h3>
+No Milk Records
+</h3>
+
+
+<p>
+No milk production records were found for this date.
+</p>
+
+
+</div>
+
+
+</td>
+
+</tr>
+
+
+
+<% } %>
+
+
+
+</tbody>
+
+
+</table>
+
+
+</div>
+
+
+
+
+<!-- DAILY SUMMARY -->
+
+<div class="summary-grid">
+
+
+
+<div class="summary-box">
+
+<span>
+Total Milk
+</span>
+
+
+<strong>
+
+<%= Number(stats?.total || 0) %> L
+
+</strong>
+
+
+</div>
+
+
+
+
+<div class="summary-box">
+
+<span>
+Consumed
+</span>
+
+
+<strong>
+
+<%= Number(stats?.consumed || 0) %> L
+
+</strong>
+
+
+</div>
+
+
+
+
+
+<div class="summary-box">
+
+<span>
+Available
+</span>
+
+
+<strong>
+
+<%= Number(stats?.available || 0) %> L
+
+</strong>
+
+
+</div>
+
+
+
+
+
+<div class="summary-box">
+
+<span>
+Price Per Liter
+</span>
+
+
+<strong>
+
+KES <%= Number(stats?.price || 0) %>
+
+</strong>
+
+
+</div>
+
+
+
+
+
+<div class="summary-box">
+
+<span>
+Total Revenue
+</span>
+
+
+<strong>
+
+KES <%= Number(stats?.cash || 0) %>
+
+</strong>
+
+
+</div>
+
+
+
+
+
+<div class="summary-box">
+
+<span>
+Status
+</span>
+
+
+<% if (stats?.locked) { %>
+
+
+<strong class="status-locked">
+
+🔒 Locked
+
+</strong>
+
+
+<% } else { %>
+
+
+<strong class="status-open">
+
+🟢 Open
+
+</strong>
+
+
+<% } %>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<!-- =====================================================
+     CUSTOMER SALES
+===================================================== -->
+
+
+<% if (sales && sales.length > 0) { %>
+
+
+<div class="sales-section">
+
+
+<h3>
+Customer Sales Breakdown
+</h3>
+
+
+
+
+<div class="table-wrapper">
+
+
+<table>
+
+
+<thead>
+
+<tr>
+
+<th>
+Customer
+</th>
+
+
+<th>
+Liters
+</th>
+
+
+<th>
+Cash
+</th>
+
+
+</tr>
+
+</thead>
+
+
+
+
+<tbody>
+
+
+<% sales.forEach(sale => { %>
+
+
+<tr>
+
+
+<td>
+
+<%= sale.customerName || "Unknown Customer" %>
+
+</td>
+
+
+
+
+<td>
+
+<%= Number(sale.liters || 0) %> L
+
+</td>
+
+
+
+
+<td>
+
+KES <%= Number(sale.cash || 0) %>
+
+</td>
+
+
+
+</tr>
+
+
+<% }) %>
+
+
+
+</tbody>
+
+
+</table>
+
+
+</div>
+
+
+
+
+
+<%
+
+const totalCustomerRevenue = sales.reduce(
+
+(total, sale) =>
+
+total + Number(sale.cash || 0),
+
+0
+
+);
+
+%>
+
+
+
+
+
+<div class="revenue-total">
+
+
+<span>
+Total Customer Revenue
+</span>
+
+
+<strong>
+
+KES <%= totalCustomerRevenue %>
+
+</strong>
+
+
+</div>
+
+
+
+</div>
+
+
+<% } %>
+
+
+
+
+</div>
+
+
+<% } %>
+<!-- =====================================================
+     MONTHLY REPORT
+===================================================== -->
+
+<% if (type === "month") { %>
+
+
+<div class="stats-card">
+
+
+<div class="report-header">
+
+
+<h3>
+Monthly Milk Report
+</h3>
+
+
+<span class="report-date">
+
+<%= month || "Current Month" %>
+
+</span>
+
+
+</div>
+
+
+
+
+<div class="table-wrapper">
+
+
+<table>
+
+
+<thead>
+
+
+<tr>
+
+
+<th>
+Code
+</th>
+
+
+<th>
+Animal
+</th>
+
+
+<th>
+Total Milk
+</th>
+
+
+<th>
+Average
+</th>
+
+
+</tr>
+
+
+</thead>
+
+
+
+
+<tbody>
+
+
+
+<% if (records && records.length > 0) { %>
+
+
+
+<% records.forEach(record => { %>
+
+
+
+<tr>
+
+
+
+<td>
+
+
+<span class="animal-code">
+
+
+<%= record.dairy
+? record.dairy.code
+: "Unknown" %>
+
+
+</span>
+
+
+</td>
+
+
+
+
+<td>
+
+
+<%= record.dairy
+? record.dairy.name
+: "Unknown Animal" %>
+
+
+</td>
+
+
+
+
+<td>
+
+
+<span class="liters-value">
+
+
+<%= Number(record.total || 0).toFixed(2) %> L
+
+
+</span>
+
+
+</td>
+
+
+
+
+<td>
+
+
+<%= Number(record.avg || 0).toFixed(2) %> L
+
+
+</td>
+
+
+
+
+</tr>
+
+
+
+<% }) %>
+
+
+
+
+<% } else { %>
+
+
+
+
+<tr>
+
+
+<td colspan="4">
+
+
+<div class="empty-state">
+
+
+<div class="empty-icon">
+
+📊
+
+</div>
+
+
+
+<h3>
+
+No Monthly Records
+
+</h3>
+
+
+
+<p>
+
+No milk production records were found for this month.
+
+</p>
+
+
+</div>
+
+
+</td>
+
+
+</tr>
+
+
+
+
+<% } %>
+
+
+
+
+</tbody>
+
+
+</table>
+
+
+</div>
+
+
+
+<div class="summary-grid">
+
+<div class="summary-box">
+
+<span>
+Total Milk
+</span>
+
+<strong>
+<%= Number(stats?.total || 0).toFixed(2) %> L
+</strong>
+
+</div>
+
+
+<div class="summary-box">
+
+<span>
+Total Sold
+</span>
+
+<strong>
+<%= Number(stats?.consumed || 0).toFixed(2) %> L
+</strong>
+
+</div>
+
+
+<div class="summary-box">
+
+<span>
+Available Milk
+</span>
+
+<strong>
+<%= Number(stats?.available || 0).toFixed(2) %> L
+</strong>
+
+</div>
+
+
+<div class="summary-box">
+
+<span>
+Average Per Animal
+</span>
+
+<strong>
+<%= Number(stats?.avg || 0).toFixed(2) %> L
+</strong>
+
+</div>
+
+
+<div class="summary-box">
+
+<span>
+Global Revenue
+</span>
+
+<strong>
+KES <%= Number(stats?.cash || 0) %>
+</strong>
+
+</div>
+
+</div>
+</div>
+
+<% } %>
+<!-- =====================================================
+     FINAL PAGE CLOSURE
+===================================================== -->
+
+
+<% if (!type) { %>
+
+<div class="stats-card">
+
+
+<div class="empty-state">
+
+
+<div class="empty-icon">
+📊
+</div>
+
+
+<h3>
+No Report Selected
+</h3>
+
+
+<p>
+Select Daily or Monthly report type to view milk statistics.
+</p>
+
+
+</div>
+
+
+</div>
+
+
+<% } %>
+
+
+
+</div>

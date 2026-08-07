@@ -1,0 +1,97 @@
+/*=========================================================
+  UPDATE PAGE
+  STATUS CARDS
+  Medical • Maintenance
+=========================================================*/
+
+/*=========================================================
+  MEDICAL CARD
+=========================================================*/
+
+.medical-card{
+
+    border-left:5px solid var(--red);
+
+}
+
+.medical-status{
+
+    display:inline-block;
+
+    margin-bottom:16px;
+
+    padding:7px 14px;
+
+    border-radius:20px;
+
+    font-weight:bold;
+
+}
+
+.medical-status.marked{
+
+    background:#fdeaea;
+
+    color:var(--red);
+
+}
+
+.medical-status.cleared{
+
+    background:#e8f5e9;
+
+    color:var(--primary);
+
+}
+
+.medical-cleared-card{
+
+    border-left-color:var(--primary);
+
+}
+
+/*=========================================================
+  MAINTENANCE CARD
+=========================================================*/
+
+.maintenance-card{
+
+    border-left:5px solid var(--orange);
+
+}
+
+.maintenance-status{
+
+    display:inline-block;
+
+    margin-bottom:16px;
+
+    padding:7px 14px;
+
+    border-radius:20px;
+
+    font-weight:bold;
+
+}
+
+.maintenance-status.marked{
+
+    background:#fff3e0;
+
+    color:var(--orange);
+
+}
+
+.maintenance-status.cleared{
+
+    background:#e8f5e9;
+
+    color:var(--primary);
+
+}
+
+.maintenance-cleared-card{
+
+    border-left-color:var(--primary);
+
+}

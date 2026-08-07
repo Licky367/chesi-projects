@@ -1,0 +1,703 @@
+<style>
+
+  /* =========================
+     PAGE HEADER
+  ========================= */
+
+  .eggs-header {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 25px;
+  }
+
+  .eggs-header h2 {
+    margin: 0 0 6px;
+
+    color: #166534;
+
+    font-size: 28px;
+
+    font-weight: 700;
+  }
+
+  .eggs-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+  }
+
+
+  /* =========================
+     FILTER CARD
+  ========================= */
+
+  .filter-card {
+    padding: 22px;
+
+    margin-bottom: 25px;
+
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .filter-form {
+    display: grid;
+
+    grid-template-columns:
+      1fr
+      auto;
+
+    align-items: end;
+
+    gap: 15px;
+  }
+
+  .form-group {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+  }
+
+  .form-group label {
+    color: #374151;
+
+    font-size: 13px;
+
+    font-weight: 600;
+  }
+
+  .form-group select {
+    width: 100%;
+
+    padding: 13px 14px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    background: #f9fafb;
+
+    color: #111827;
+
+    font-size: 14px;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+  }
+
+  .form-group select:focus {
+    border-color: #16a34a;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 0 0 4px rgba(22, 163, 74, 0.12);
+  }
+
+  .filter-btn {
+    padding: 13px 24px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background:
+      linear-gradient(135deg, #16a34a, #15803d);
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+  }
+
+  .filter-btn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+      0 8px 18px rgba(22, 163, 74, 0.25);
+  }
+
+
+  /* =========================
+     INVENTORY SUMMARY
+  ========================= */
+
+  .inventory-summary {
+    display: grid;
+
+    grid-template-columns:
+      1fr
+      1fr;
+
+    gap: 20px;
+
+    margin-bottom: 30px;
+  }
+
+  .inventory-card {
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+    padding: 24px;
+
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .inventory-icon {
+    width: 58px;
+    height: 58px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 16px;
+
+    font-size: 28px;
+  }
+
+  .stock-card {
+    border-left: 5px solid #f59e0b;
+  }
+
+  .stock-card .inventory-icon {
+    background: #fef3c7;
+  }
+
+  .type-card {
+    border-left: 5px solid #0d6efd;
+  }
+
+  .type-card .inventory-icon {
+    background: #dbeafe;
+  }
+
+  .inventory-label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #6b7280;
+
+    font-size: 13px;
+  }
+
+  .inventory-value {
+    display: block;
+
+    color: #111827;
+
+    font-size: 25px;
+
+    font-weight: 700;
+
+    text-transform: capitalize;
+  }
+
+
+  /* =========================
+     SELL EGGS CARD
+  ========================= */
+
+  .sell-card {
+    max-width: 700px;
+
+    padding: 26px;
+
+    margin-bottom: 30px;
+
+    border-top: 5px solid #198754;
+
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .sell-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    margin-bottom: 22px;
+  }
+
+  .sell-icon {
+    width: 50px;
+    height: 50px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: #dcfce7;
+
+    font-size: 24px;
+  }
+
+  .sell-header h3 {
+    margin: 0;
+
+    color: #166534;
+
+    font-size: 20px;
+  }
+
+  .sell-header p {
+    margin: 4px 0 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+  }
+
+  .sell-form {
+    display: grid;
+
+    grid-template-columns:
+      1fr
+      1fr
+      auto;
+
+    align-items: end;
+
+    gap: 15px;
+  }
+
+  .sell-form input {
+    width: 100%;
+
+    padding: 13px 14px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    background: #f9fafb;
+
+    color: #111827;
+
+    font-size: 14px;
+
+    transition: all 0.25s ease;
+  }
+
+  .sell-form input:focus {
+    border-color: #16a34a;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 0 0 4px rgba(22, 163, 74, 0.12);
+  }
+
+  .sell-btn {
+    padding: 13px 24px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background:
+      linear-gradient(135deg, #198754, #146c43);
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+  }
+
+  .sell-btn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+      0 8px 18px rgba(25, 135, 84, 0.25);
+  }
+
+
+  /* =========================
+     NO TYPE SELECTED
+  ========================= */
+
+  .not-selected {
+    color: #9ca3af;
+
+    font-size: 20px;
+
+    font-weight: 600;
+  }
+
+
+  /* =========================
+     RESPONSIVE
+  ========================= */
+
+  @media (max-width: 800px) {
+
+    .inventory-summary {
+      grid-template-columns:
+        1fr;
+    }
+
+    .sell-form {
+      grid-template-columns:
+        1fr
+        1fr;
+    }
+
+    .sell-btn {
+      width: 100%;
+    }
+
+  }
+
+  @media (max-width: 600px) {
+
+    .eggs-header {
+      flex-direction: column;
+    }
+
+    .eggs-header h2 {
+      font-size: 24px;
+    }
+
+    .filter-form {
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: stretch;
+    }
+
+    .filter-btn {
+      width: 100%;
+    }
+
+    .sell-form {
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: stretch;
+    }
+
+    .sell-card {
+      padding: 21px;
+    }
+
+  }
+
+</style>
+
+
+<div class="container mt-4 mb-5">
+
+
+  <!-- PAGE HEADER -->
+
+  <div class="eggs-header">
+
+    <div>
+
+      <h2>
+        🥚 Eggs Inventory
+      </h2>
+
+      <p>
+        Monitor egg stock and record sales by poultry type.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- FILTER -->
+
+  <div class="filter-card">
+
+    <form
+      method="GET"
+      action="/eggs"
+      class="filter-form"
+    >
+
+      <div class="form-group">
+
+        <label for="poultryType">
+          Select Poultry Type
+        </label>
+
+        <select
+          id="poultryType"
+          name="poultryType"
+          required
+        >
+
+          <option value="">
+            Select Poultry Type
+          </option>
+
+          <option
+            value="chicken"
+            <%= selectedType === "chicken" ? "selected" : "" %>
+          >
+            🐔 Chicken
+          </option>
+
+          <option
+            value="duck"
+            <%= selectedType === "duck" ? "selected" : "" %>
+          >
+            🦆 Duck
+          </option>
+
+          <option
+            value="turkey"
+            <%= selectedType === "turkey" ? "selected" : "" %>
+          >
+            🦃 Turkey
+          </option>
+
+          <option
+            value="goose"
+            <%= selectedType === "goose" ? "selected" : "" %>
+          >
+            🪿 Goose
+          </option>
+
+          <option
+            value="quail"
+            <%= selectedType === "quail" ? "selected" : "" %>
+          >
+            🐦 Quail
+          </option>
+
+          <option
+            value="other"
+            <%= selectedType === "other" ? "selected" : "" %>
+          >
+            🐣 Other
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <button
+        type="submit"
+        class="filter-btn"
+      >
+
+        🔍 View Inventory
+
+      </button>
+
+
+    </form>
+
+  </div>
+
+
+  <!-- INVENTORY SUMMARY -->
+
+  <div class="inventory-summary">
+
+
+    <div class="inventory-card stock-card">
+
+      <div class="inventory-icon">
+        🥚
+      </div>
+
+      <div>
+
+        <span class="inventory-label">
+          Total Available Eggs
+        </span>
+
+        <strong class="inventory-value">
+
+          <%= stock ? stock.totalAvailable : 0 %>
+
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <div class="inventory-card type-card">
+
+      <div class="inventory-icon">
+        🐔
+      </div>
+
+      <div>
+
+        <span class="inventory-label">
+          Poultry Type
+        </span>
+
+        <% if (selectedType) { %>
+
+          <strong class="inventory-value">
+            <%= selectedType %>
+          </strong>
+
+        <% } else { %>
+
+          <strong class="not-selected">
+            Not Selected
+          </strong>
+
+        <% } %>
+
+      </div>
+
+    </div>
+
+
+  </div>
+
+
+  <!-- SELL EGGS -->
+
+  <div class="sell-card">
+
+
+    <div class="sell-header">
+
+      <div class="sell-icon">
+        💰
+      </div>
+
+      <div>
+
+        <h3>
+          Sell Eggs
+        </h3>
+
+        <p>
+          Record an egg sale for the selected poultry type.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <form
+      method="POST"
+      action="/eggs/sell"
+      class="sell-form"
+    >
+
+      <!-- Selected poultry type passed to backend -->
+
+      <input
+        type="hidden"
+        name="poultryType"
+        value="<%= selectedType %>"
+      >
+
+
+      <div class="form-group">
+
+        <label for="quantity">
+          Number of Eggs
+        </label>
+
+        <input
+          id="quantity"
+          name="quantity"
+          type="number"
+          min="1"
+          placeholder="Egg quantity"
+          required
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="amount">
+          Sale Amount
+        </label>
+
+        <input
+          id="amount"
+          name="amount"
+          type="number"
+          min="0"
+          placeholder="Amount"
+          required
+        >
+
+      </div>
+
+
+      <button
+        type="submit"
+        class="sell-btn"
+      >
+
+        💵 Record Sale
+
+      </button>
+
+
+    </form>
+
+
+  </div>
+
+
+</div>

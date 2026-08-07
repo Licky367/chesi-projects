@@ -1,0 +1,546 @@
+<!-- =========================================================
+     views/dairyProjects.ejs
+========================================================= -->
+
+<div class="container">
+
+  <h2 class="page-title">Dairy Profiles</h2>
+
+  <% if (dairies && dairies.length > 0) { %>
+
+    <ul class="wa-list">
+
+      <% dairies.forEach(dairy => { %>
+
+        <% if (dairy.code > 0) { %>
+
+          <li class="wa-item">
+
+            <!-- =========================
+                 PROFILE LINK
+            ========================== -->
+
+            <a
+              href="/dairy/<%= dairy._id %>"
+              class="wa-link"
+            >
+
+              <div class="wa-avatar-box">
+
+                <% if (dairy.profileImage && dairy.profileImage.trim()) { %>
+
+                  <img
+                    src="/uploads/<%= dairy.profileImage %>"
+                    alt="<%= dairy.name %>"
+                    class="wa-avatar"
+                  >
+
+                <% } else { %>
+
+                  <img
+                    src="https://ui-avatars.com/api/?name=<%= encodeURIComponent(dairy.name) %>&background=0b5d1e&color=ffffff"
+                    alt="<%= dairy.name %>"
+                    class="wa-avatar"
+                  >
+
+                <% } %>
+
+              </div>
+
+              <div class="wa-details">
+
+                <div class="wa-name">
+
+                  <%= dairy.name %>
+
+                  <% if (
+                    dairy.medicalAttention &&
+                    dairy.medicalAttention.isMarked
+                  ) { %>
+
+                    <span class="badge-medical">
+                      Medical Attention
+                    </span>
+
+                  <% } %>
+
+                </div>
+
+                <div class="wa-subtext">
+                  Code:
+                  <strong><%= dairy.code %></strong>
+                </div>
+
+                <% if (
+                  dairy.medicalAttention &&
+                  dairy.medicalAttention.isMarked
+                ) { %>
+
+                  <div class="wa-subtext">
+
+                    <strong>Type:</strong>
+                    <%= dairy.medicalAttention.type %>
+
+                    <br>
+
+                    <strong>Details:</strong>
+                    <%= dairy.medicalAttention.details %>
+
+                  </div>
+
+                <% } %>
+
+              </div>
+
+            </a>
+
+            <!-- =========================
+                 ACTIONS
+            ========================== -->
+
+            <div class="action-buttons">
+              <!-- =========================
+                   MARK MEDICAL
+              ========================== -->
+
+              <% if (
+                   user &&
+                   (
+                     user.role === "admin" ||
+                     user.role === "dairyWorker"
+                   ) &&
+                   (
+                     !dairy.medicalAttention ||
+                     !dairy.medicalAttention.isMarked
+                   )
+              ) { %>
+
+                <button
+                  type="button"
+                  class="btn btn-success"
+                  onclick="toggleMarkForm('<%= dairy._id %>')"
+                >
+                  Mark Medical
+                </button>
+
+                <form
+                  id="markForm-<%= dairy._id %>"
+                  action="/dairy/<%= dairy._id %>/medical-mark"
+                  method="POST"
+                  class="inline-form"
+                >
+
+                  <input
+                    type="text"
+                    name="type"
+                    maxlength="200"
+                    placeholder="Medical type (e.g. Mastitis)"
+                    required
+                  >
+
+                  <textarea
+                    name="details"
+                    rows="3"
+                    maxlength="1000"
+                    placeholder="Describe the medical condition..."
+                    required
+                  ></textarea>
+
+                  <button
+                    type="submit"
+                    class="btn btn-danger"
+                  >
+                    Mark Medical
+                  </button>
+
+                </form>
+
+              <% } %>
+
+
+              <!-- =========================
+                   UNMARK MEDICAL
+              ========================== -->
+
+              <% if (
+                   user &&
+                   user.role === "admin" &&
+                   dairy.medicalAttention &&
+                   dairy.medicalAttention.isMarked
+              ) { %>
+
+                <button
+                  type="button"
+                  class="btn btn-success"
+                  onclick="toggleUnmarkForm('<%= dairy._id %>')"
+                >
+                  Unmark Medical
+                </button>
+
+                <form
+                  id="unmarkForm-<%= dairy._id %>"
+                  action="/dairy/<%= dairy._id %>/medical-unmark"
+                  method="POST"
+                  class="inline-form"
+                >
+
+                  <input
+                    type="number"
+                    name="charges"
+                    min="0"
+                    step="0.01"
+                    placeholder="Charges (KES)"
+                    required
+                  >
+
+                  <textarea
+                    name="description"
+                    rows="3"
+                    maxlength="1000"
+                    placeholder="Treatment summary..."
+                    required
+                  ></textarea>
+
+                  <button
+                    type="submit"
+                    class="btn btn-danger"
+                  >
+                    Confirm Clearance
+                  </button>
+
+                </form>
+
+              <% } %>
+              <% if (
+                user &&
+                (
+                  user.role === "admin" ||
+                  user.role === "dairyWorker"
+                )
+              ) { %>
+
+                <div class="action-buttons">
+
+                  <% if (dairy.needsMaintenance === false) { %>
+
+                    <button
+                      type="button"
+                      class="btn btn-success"
+                      onclick="toggleMaintenanceMarkForm('<%= dairy._id %>')"
+                    >
+                      Mark Maintenance
+                    </button>
+
+                    <form
+                      id="maintenanceMarkForm-<%= dairy._id %>"
+                      action="/dairy/<%= dairy._id %>/maintenance/mark"
+                      method="POST"
+                      class="inline-form"
+                    >
+
+                      <select name="type" required>
+                        <option value="">Select Maintenance Type</option>
+                        <option value="repair">Repair</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="construction">Construction</option>
+                      </select>
+
+                      <textarea
+                        name="description"
+                        rows="3"
+                        maxlength="1000"
+                        placeholder="Describe the issue or required work..."
+                        required
+                      ></textarea>
+
+                      <button type="submit" class="btn btn-danger">
+                        Submit Maintenance Request
+                      </button>
+
+                    </form>
+
+                  <% } %>
+
+                  <% if (
+                    dairy.needsMaintenance === true &&
+                    user.role === "admin"
+                  ) { %>
+
+                    <button
+                      type="button"
+                      class="btn btn-success"
+                      onclick="toggleMaintenanceClearForm('<%= dairy._id %>')"
+                    >
+                      Clear Maintenance
+                    </button>
+
+                    <form
+                      id="maintenanceClearForm-<%= dairy._id %>"
+                      action="/dairy/<%= dairy._id %>/maintenance/clear"
+                      method="POST"
+                      class="inline-form"
+                    >
+
+                      <input
+                        type="number"
+                        name="charges"
+                        min="0"
+                        step="0.01"
+                        placeholder="Charges (KES)"
+                        required
+                      >
+
+                      <textarea
+                        name="description"
+                        rows="3"
+                        maxlength="1000"
+                        placeholder="Describe the work completed..."
+                        required
+                      ></textarea>
+
+                      <button type="submit" class="btn btn-danger">
+                        Confirm Maintenance Completed
+                      </button>
+
+                    </form>
+
+                  <% } %>
+
+                </div>
+
+              <% } %>
+            </div>
+
+          </li>
+
+        <% } %>
+
+      <% }) %>
+
+    </ul>
+
+  <% } else { %>
+
+    <div class="empty-state">
+      No dairy profiles found.
+    </div>
+
+  <% } %>
+
+</div>
+<script>
+function toggleMarkForm(id) {
+  const form = document.getElementById("markForm-" + id);
+
+  if (!form) return;
+
+  form.classList.toggle("inline-visible");
+}
+
+function toggleUnmarkForm(id) {
+  const form = document.getElementById("unmarkForm-" + id);
+
+  if (!form) return;
+
+  form.classList.toggle("inline-visible");
+}
+
+function toggleMaintenanceMarkForm(id) {
+  const form = document.getElementById("maintenanceMarkForm-" + id);
+
+  if (!form) return;
+
+  form.classList.toggle("inline-visible");
+}
+
+function toggleMaintenanceClearForm(id) {
+  const form = document.getElementById("maintenanceClearForm-" + id);
+
+  if (!form) return;
+
+  form.classList.toggle("inline-visible");
+}
+</script>
+
+<style>
+
+.container{
+  max-width:900px;
+  margin:auto;
+}
+
+.page-title{
+  margin-bottom:18px;
+  color:#0b5d1e;
+  font-size:28px;
+  font-weight:700;
+}
+
+.wa-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  background:#fff;
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+.wa-item{
+  border-bottom:1px solid #ececec;
+}
+
+.wa-item:last-child{
+  border-bottom:none;
+}
+
+.wa-link{
+  display:flex;
+  gap:14px;
+  align-items:flex-start;
+  padding:14px;
+  text-decoration:none;
+  color:#222;
+  transition:background .2s ease;
+}
+
+.wa-link:hover{
+  background:#f7f9fb;
+}
+
+.wa-avatar-box{
+  flex-shrink:0;
+}
+
+.wa-avatar{
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid #0b5d1e;
+}
+
+.wa-details{
+  flex:1;
+  min-width:0;
+}
+
+.wa-name{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px;
+  font-size:17px;
+  font-weight:700;
+  color:#111;
+}
+
+.wa-subtext{
+  margin-top:4px;
+  color:#666;
+  font-size:13px;
+  line-height:1.5;
+}
+
+.badge-medical{
+  background:#c62828;
+  color:#fff;
+  border-radius:999px;
+  padding:3px 8px;
+  font-size:11px;
+  font-weight:600;
+}
+
+.action-buttons{
+  padding:0 14px 14px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.inline-form{
+  display:none;
+  flex-direction:column;
+  gap:10px;
+}
+
+.inline-visible{
+  display:flex;
+}
+
+.inline-form input,
+.inline-form textarea{
+  width:100%;
+  padding:10px;
+  border:1px solid #d5d5d5;
+  border-radius:8px;
+  font-size:14px;
+  outline:none;
+  box-sizing:border-box;
+}
+
+.inline-form input:focus,
+.inline-form textarea:focus{
+  border-color:#0b5d1e;
+}
+
+.inline-form textarea{
+  resize:vertical;
+  min-height:80px;
+}
+
+.btn{
+  border:none;
+  border-radius:8px;
+  padding:10px 14px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:600;
+}
+
+.btn-danger{
+  background:#c62828;
+  color:#fff;
+}
+
+.btn-success{
+  background:#0b5d1e;
+  color:#fff;
+}
+
+.empty-state{
+  padding:30px;
+  text-align:center;
+  color:#777;
+}
+
+@media (max-width:600px){
+
+  .container{
+    padding:0 10px;
+  }
+
+  .wa-link{
+    padding:12px;
+  }
+
+  .wa-avatar{
+    width:50px;
+    height:50px;
+  }
+
+  .wa-name{
+    font-size:15px;
+  }
+
+  .action-buttons{
+    padding:0 12px 12px;
+  }
+
+  .btn{
+    width:100%;
+  }
+
+}
+
+</style>

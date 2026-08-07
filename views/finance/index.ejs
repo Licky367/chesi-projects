@@ -1,0 +1,374 @@
+<style>
+.page{
+    max-width:1100px;
+    margin:0 auto;
+}
+
+.card{
+    background:#fff;
+    border-radius:14px;
+    padding:24px;
+    margin-bottom:20px;
+    box-shadow:0 8px 20px rgba(0,0,0,.06);
+}
+
+.section-title{
+    font-size:20px;
+    font-weight:700;
+    color:#0b5d1e;
+    border-left:5px solid #0b5d1e;
+    padding-left:12px;
+    margin-bottom:20px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:20px;
+}
+
+.form-group{
+    margin-bottom:15px;
+}
+
+label{
+    display:block;
+    margin-bottom:6px;
+    font-weight:600;
+    color:#444;
+}
+
+input,
+select{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    font-size:15px;
+    outline:none;
+    transition:.2s;
+    box-sizing:border-box;
+}
+
+input:focus,
+select:focus{
+    border-color:#0b5d1e;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    background:#0b5d1e;
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+    transition:.2s;
+}
+
+button:hover{
+    background:#087019;
+}
+
+.summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:15px;
+}
+
+.summary-card{
+    background:#f8f9fa;
+    border-left:5px solid #0b5d1e;
+    border-radius:10px;
+    padding:18px;
+}
+
+.summary-card h4{
+    margin:0 0 8px;
+    color:#0b5d1e;
+    font-size:16px;
+}
+
+.summary-card p{
+    margin:0;
+    font-size:22px;
+    font-weight:bold;
+    color:#222;
+}
+</style>
+
+<div class="page">
+
+    <div class="card">
+        <div class="section-title">
+            Poultry Finance
+        </div>
+
+        <div class="grid">
+
+            <!-- ========================= -->
+            <!-- ADD INVESTMENT -->
+            <!-- ========================= -->
+            <div class="card">
+
+                <h3>Add Investment</h3>
+
+                <form action="/finance/add" method="POST">
+
+                    <input type="hidden" name="mode" value="investment">
+
+                    <div class="form-group">
+                        <label>Amount (KES)</label>
+                        <input
+                            type="number"
+                            name="amount"
+                            min="0"
+                            placeholder="Enter amount"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Poultry Type</label>
+
+                        <select name="poultryType" required>
+                            <option value="">Select Poultry Type</option>
+
+                            <% Object.keys(profitByType).forEach(type=>{ %>
+                                <% if(profitByType[type] > 0){ %>
+                                    <option value="<%= type %>">
+                                        <%= type %>
+                                    </option>
+                                <% } %>
+                            <% }) %>
+
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input
+                            type="text"
+                            name="description"
+                            placeholder="Description">
+                    </div>
+
+                    <button type="submit">
+                        Add Investment
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- REINVEST -->
+            <!-- ========================= -->
+            <div class="card">
+
+                <h3>Reinvest Profit</h3>
+
+                <form action="/finance/reinvest" method="POST">
+
+                    <input type="hidden" name="mode" value="reinvest">
+
+                    <div class="form-group">
+                        <label>Amount (KES)</label>
+                        <input
+                            type="number"
+                            name="amount"
+                            min="0"
+                            placeholder="Enter amount"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Poultry Type</label>
+
+                        <select name="poultryType" required>
+                            <option value="">Select Poultry Type</option>
+
+                            <% Object.keys(profitByType).forEach(type=>{ %>
+                                <% if(profitByType[type] > 0){ %>
+                                    <option value="<%= type %>">
+                                        <%= type %>
+                                    </option>
+                                <% } %>
+                            <% }) %>
+
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input
+                            type="text"
+                            name="description"
+                            placeholder="Description">
+                    </div>
+
+                    <button type="submit">
+                        Reinvest Profit
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- PAY WORKERS -->
+            <!-- ========================= -->
+            <div class="card">
+
+                <h3>Pay Workers</h3>
+
+                <form action="/finance/pay-workers" method="POST">
+
+                    <input type="hidden" name="mode" value="pay_workers">
+
+                    <div class="form-group">
+                        <label>Amount (KES)</label>
+                        <input
+                            type="number"
+                            name="amount"
+                            min="0"
+                            placeholder="Enter amount"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Poultry Type</label>
+
+                        <select name="poultryType" required>
+                            <option value="">Select Poultry Type</option>
+
+                            <% Object.keys(profitByType).forEach(type=>{ %>
+                                <% if(profitByType[type] > 0){ %>
+                                    <option value="<%= type %>">
+                                        <%= type %>
+                                    </option>
+                                <% } %>
+                            <% }) %>
+
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input
+                            type="text"
+                            name="description"
+                            placeholder="Description">
+                    </div>
+
+                    <button type="submit">
+                        Pay Workers
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- ========================= -->
+            <!-- CONSUMPTION -->
+            <!-- ========================= -->
+            <div class="card">
+
+                <h3>Consumption</h3>
+
+                <form action="/finance/consumption" method="POST">
+
+                    <input type="hidden" name="mode" value="consumption">
+
+                    <div class="form-group">
+                        <label>Amount (KES)</label>
+                        <input
+                            type="number"
+                            name="amount"
+                            min="0"
+                            placeholder="Enter amount"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Poultry Type</label>
+
+                        <select name="poultryType" required>
+                            <option value="">Select Poultry Type</option>
+
+                            <% Object.keys(profitByType).forEach(type=>{ %>
+                                <% if(profitByType[type] > 0){ %>
+                                    <option value="<%= type %>">
+                                        <%= type %>
+                                    </option>
+                                <% } %>
+                            <% }) %>
+
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input
+                            type="text"
+                            name="description"
+                            placeholder="Description">
+                    </div>
+
+                    <button type="submit">
+                        Record Consumption
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================= -->
+    <!-- STATISTICS -->
+    <!-- ========================= -->
+    <div class="card">
+
+        <div class="section-title">
+            Financial Statistics
+        </div>
+
+        <div class="summary">
+
+            <div class="summary-card">
+                <h4>Total Investment</h4>
+                <p>KES <%= stats.investment %></p>
+            </div>
+
+            <div class="summary-card">
+                <h4>Poultry Sales</h4>
+                <p>KES <%= stats.poultry %></p>
+            </div>
+
+            <div class="summary-card">
+                <h4>Egg Sales</h4>
+                <p>KES <%= stats.eggs %></p>
+            </div>
+
+            <div class="summary-card">
+                <h4>Total Revenue</h4>
+                <p>KES <%= stats.revenue %></p>
+            </div>
+
+            <div class="summary-card">
+                <h4>Net Profit</h4>
+                <p>KES <%= stats.profit %></p>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

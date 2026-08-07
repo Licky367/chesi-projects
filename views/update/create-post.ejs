@@ -1,0 +1,240 @@
+<!-- =====================================================
+     CREATE POST
+====================================================== -->
+
+<section class="create-post-card">
+
+    <!-- ==========================================
+         USER + HEADING
+    =========================================== -->
+
+    <div class="create-post-header">
+
+        <!-- User Avatar -->
+
+        <div class="create-post-avatar">
+
+            <img
+                src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)) %>"
+                alt="<%= user.name %>"
+                class="avatar-sm"
+            >
+
+        </div>
+
+        <!-- Heading -->
+
+        <div class="create-post-heading">
+
+            <div class="heading-line">
+
+                <strong><%= user.name.split(" ")[0] %></strong>,
+                update us about
+
+            </div>
+
+            <div class="heading-line">
+
+                <strong><%= dairy.name %></strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ==========================================
+         CLICKABLE COMPOSER
+    =========================================== -->
+
+    <div
+        id="openPostComposer"
+        class="composer-trigger"
+        role="button"
+        tabindex="0"
+        aria-label="Create Post"
+    >
+
+        <span class="composer-placeholder">
+
+            Share an update...
+
+        </span>
+
+        <button
+            type="button"
+            id="openImagePicker"
+            class="image-icon-button"
+            aria-label="Add Photo"
+        >
+
+            <i class="bi bi-image-fill"></i>
+
+        </button>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     POST MODAL
+====================================================== -->
+
+<div
+    id="postModal"
+    class="post-modal"
+>
+
+    <div class="post-modal-content">
+
+        <form
+            id="postForm"
+            action="/dairy/<%= dairy._id %>/post"
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
+            <!-- ==========================================
+                 HEADER
+            =========================================== -->
+
+            <div class="post-modal-header">
+
+                <button
+                    type="button"
+                    id="closePostModal"
+                    class="close-modal-button"
+                    aria-label="Back"
+                >
+
+                    <i class="bi bi-arrow-left-circle-fill"></i>
+
+                </button>
+
+                <h3>
+
+                    New Update
+
+                </h3>
+
+                <span></span>
+
+            </div>
+
+
+
+            <!-- ==========================================
+                 IMAGE PREVIEW
+            =========================================== -->
+
+            <div
+                id="imagePreviewContainer"
+                class="image-preview-container"
+                style="display:none;"
+            >
+
+                <img
+                    id="imagePreview"
+                    class="image-preview"
+                    alt="Preview"
+                >
+
+                <button
+                    id="removeImage"
+                    type="button"
+                    class="remove-image-button"
+                >
+
+                    <i class="bi bi-x-lg"></i>
+
+                </button>
+
+            </div>
+
+
+
+            <!-- ==========================================
+                 POST TEXT
+            =========================================== -->
+
+            <div class="post-editor">
+
+                <textarea
+                    id="postText"
+                    name="text"
+                    maxlength="1000"
+                    required
+                    placeholder="<%= `${user.name.split(' ')[0]}, type your update here...` %>"
+                ></textarea>
+
+            </div>
+
+
+
+            <!-- ==========================================
+                 COMPOSER BAR
+            =========================================== -->
+
+            <div class="composer-bar">
+
+                <!-- Attachment -->
+
+                <label
+                    for="postImage"
+                    class="attachment-button"
+                >
+
+                    <i class="bi bi-paperclip-fill"></i>
+
+                </label>
+
+                <input
+                    id="postImage"
+                    name="image"
+                    type="file"
+                    accept="image/*"
+                    hidden
+                >
+
+                <!-- Selected Image -->
+
+                <span
+                    id="selectedImageName"
+                    class="selected-image-name"
+                ></span>
+
+                <!-- Character Counter -->
+
+                <span
+                    id="characterCounter"
+                    class="character-counter"
+                >
+
+                    0 / 1000
+
+                </span>
+
+                <!-- Send -->
+
+                <button
+                    id="submitPostButton"
+                    type="submit"
+                    class="send-button"
+                    aria-label="Post"
+                >
+
+                    <i class="bi bi-send-fill"></i>
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>

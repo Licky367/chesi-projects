@@ -1,0 +1,35 @@
+<div class="feed-actions">
+
+    <button
+        class="like-btn"
+        data-id="<%= item._id %>"
+        data-type="<%= type || 'post' %>"
+        type="button"
+    >
+
+        <i class="bi bi-hand-thumbs-up-fill"></i>
+
+        <span class="like-count">
+
+            <%= item.likes || 0 %>
+
+        </span>
+
+    </button>
+
+    <button
+        class="toggle-comments"
+        type="button"
+    >
+
+        <i class="bi bi-chat-dots-fill"></i>
+
+        <span class="comment-count">
+
+            <%= item.comments ? item.comments.length : 0 %>
+
+        </span>
+
+    </button>
+
+</div>

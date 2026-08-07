@@ -1,0 +1,19 @@
+<link rel="stylesheet" href="/public/css/dairy/dairyProjects/index.css">
+
+<div class="container">
+
+    <%- include("./_header") %>
+
+    <% if (dairies && dairies.length > 0) { %>
+
+        <%- include("./_list", { dairies, user }) %>
+
+    <% } else { %>
+
+        <%- include("./_empty-state") %>
+
+    <% } %>
+
+</div>
+
+<script src="/public/js/dairy/dairyProjects.js"></script>

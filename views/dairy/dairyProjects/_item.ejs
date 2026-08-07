@@ -1,0 +1,84 @@
+<li class="wa-item">
+
+    <a
+        href="/dairy/<%= dairy._id %>"
+        class="wa-link"
+    >
+
+        <div class="wa-avatar-box">
+
+            <% if (
+                dairy.profileImage &&
+                dairy.profileImage.trim()
+            ) { %>
+
+                <img
+                    src="/uploads/<%= dairy.profileImage %>"
+                    alt="<%= dairy.name %>"
+                    class="wa-avatar"
+                >
+
+            <% } else { %>
+
+                <img
+                    src="https://ui-avatars.com/api/?name=<%= encodeURIComponent(dairy.name) %>&background=0b5d1e&color=ffffff"
+                    alt="<%= dairy.name %>"
+                    class="wa-avatar"
+                >
+
+            <% } %>
+
+        </div>
+
+        <div class="wa-details">
+
+            <div class="wa-name">
+
+                <%= dairy.name %>
+
+                <% if (
+                    dairy.medicalAttention &&
+                    dairy.medicalAttention.isMarked
+                ) { %>
+
+                    <span class="badge-medical">
+                        Medical Attention
+                    </span>
+
+                <% } %>
+
+            </div>
+
+            <div class="wa-subtext">
+
+                Code:
+                <strong><%= dairy.code %></strong>
+
+            </div>
+
+            <% if (
+                dairy.medicalAttention &&
+                dairy.medicalAttention.isMarked
+            ) { %>
+
+                <div class="wa-subtext">
+
+                    <strong>Type:</strong>
+                    <%= dairy.medicalAttention.type %>
+
+                    <br>
+
+                    <strong>Details:</strong>
+                    <%= dairy.medicalAttention.details %>
+
+                </div>
+
+            <% } %>
+
+        </div>
+
+    </a>
+
+    <%- include("./_actions", { dairy, user }) %>
+
+</li>

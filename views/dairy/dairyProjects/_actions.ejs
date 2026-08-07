@@ -1,0 +1,55 @@
+<div class="action-buttons">
+
+    <!-- =========================
+         MARK MEDICAL
+    ========================= -->
+
+    <% if (
+        user &&
+        (
+            user.role === "admin" ||
+            user.role === "dairyWorker"
+        ) &&
+        (
+            !dairy.medicalAttention ||
+            !dairy.medicalAttention.isMarked
+        )
+    ) { %>
+
+        <button
+            type="button"
+            class="btn btn-success"
+            onclick="toggleMarkForm('<%= dairy._id %>')"
+        >
+            Mark Medical
+        </button>
+
+        <%- include("./_medical-mark-form", { dairy }) %>
+
+    <% } %>
+
+
+    <!-- =========================
+         UNMARK MEDICAL
+    ========================= -->
+
+    <% if (
+        user &&
+        user.role === "admin" &&
+        dairy.medicalAttention &&
+        dairy.medicalAttention.isMarked
+    ) { %>
+
+        <button
+            type="button"
+            class="btn btn-success"
+            onclick="toggleUnmarkForm('<%= dairy._id %>')"
+        >
+            Unmark Medical
+        </button>
+
+        <%- include("./_medical-unmark-form", { dairy }) %>
+
+    <% } %>
+
+</div>

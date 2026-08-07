@@ -1,0 +1,774 @@
+<style>
+
+  /* =========================
+     PAGE
+  ========================= */
+
+  .dairy-page {
+    max-width: 1050px;
+
+    margin: 0 auto;
+
+    padding: 20px 0 40px;
+  }
+
+
+  /* =========================
+     HEADER
+  ========================= */
+
+  .dairy-header {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    margin-bottom: 25px;
+  }
+
+  .dairy-header h2 {
+    margin: 0 0 7px;
+
+    color: #166534;
+
+    font-size: 28px;
+
+    font-weight: 700;
+  }
+
+  .dairy-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+  }
+
+
+  /* =========================
+     LIST
+  ========================= */
+
+  .dairy-list {
+    list-style: none;
+
+    padding: 0;
+
+    margin: 0;
+
+    overflow: hidden;
+
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+
+
+  /* =========================
+     ITEM
+  ========================= */
+
+  .dairy-item {
+    border-bottom: 1px solid #e5e7eb;
+
+    transition: background 0.25s ease;
+  }
+
+  .dairy-item:last-child {
+    border-bottom: none;
+  }
+
+  .dairy-item:hover {
+    background: #fcfffd;
+  }
+
+
+  /* =========================
+     MAIN LINK
+  ========================= */
+
+  .dairy-link {
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 18px;
+
+    color: #111827;
+
+    text-decoration: none;
+
+    transition: all 0.25s ease;
+  }
+
+  .dairy-link:hover {
+    color: #166534;
+  }
+
+
+  /* =========================
+     AVATAR
+  ========================= */
+
+  .dairy-avatar {
+    width: 64px;
+    height: 64px;
+
+    flex-shrink: 0;
+
+    object-fit: cover;
+
+    border: 3px solid #dcfce7;
+
+    border-radius: 50%;
+
+    background: #f0fdf4;
+  }
+
+
+  /* =========================
+     DETAILS
+  ========================= */
+
+  .dairy-details {
+    flex: 1;
+
+    min-width: 0;
+  }
+
+  .dairy-name {
+    margin-bottom: 6px;
+
+    color: #111827;
+
+    font-size: 17px;
+
+    font-weight: 700;
+  }
+
+  .dairy-code {
+    margin-bottom: 7px;
+
+    color: #6b7280;
+
+    font-size: 13px;
+  }
+
+
+  /* =========================
+     STATUS BADGES
+  ========================= */
+
+  .status-badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    padding: 5px 10px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+
+    font-weight: 700;
+  }
+
+  .status-ok {
+    background: #dcfce7;
+
+    color: #166534;
+  }
+
+  .status-maintenance {
+    background: #fee2e2;
+
+    color: #b91c1c;
+  }
+
+
+  /* =========================
+     ARROW
+  ========================= */
+
+  .dairy-arrow {
+    color: #9ca3af;
+
+    font-size: 24px;
+
+    transition: all 0.25s ease;
+  }
+
+  .dairy-link:hover .dairy-arrow {
+    color: #16a34a;
+
+    transform: translateX(5px);
+  }
+
+
+  /* =========================
+     ACTIONS
+  ========================= */
+
+  .dairy-actions {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    padding: 0 18px 18px 98px;
+  }
+
+  .action-btn {
+    padding: 9px 14px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+  }
+
+  .action-btn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+      0 5px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .mark-btn {
+    background: #166534;
+  }
+
+  .mark-btn:hover {
+    background: #14532d;
+  }
+
+  .unmark-btn {
+    background: #374151;
+  }
+
+  .unmark-btn:hover {
+    background: #1f2937;
+  }
+
+
+  /* =========================
+     ACTION FORMS
+  ========================= */
+
+  .maintenance-form {
+    display: none;
+
+    width: 100%;
+
+    padding: 18px;
+
+    margin-top: 5px;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 14px;
+
+    background: #f9fafb;
+  }
+
+  .maintenance-form.active {
+    display: block;
+  }
+
+  .maintenance-form select,
+  .maintenance-form input,
+  .maintenance-form textarea {
+    width: 100%;
+
+    padding: 11px 12px;
+
+    margin-bottom: 10px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 9px;
+
+    outline: none;
+
+    background: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    transition: all 0.25s ease;
+  }
+
+  .maintenance-form select:focus,
+  .maintenance-form input:focus,
+  .maintenance-form textarea:focus {
+    border-color: #16a34a;
+
+    box-shadow:
+      0 0 0 4px rgba(22, 163, 74, 0.1);
+  }
+
+  .maintenance-form textarea {
+    min-height: 90px;
+
+    resize: vertical;
+  }
+
+  .form-submit-btn {
+    padding: 10px 16px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+  }
+
+  .submit-maintenance {
+    background: #b91c1c;
+  }
+
+  .submit-clear {
+    background: #166534;
+  }
+
+
+  /* =========================
+     EMPTY STATE
+  ========================= */
+
+  .empty-state {
+    padding: 50px 20px;
+
+    border-radius: 18px;
+
+    background: #f9fafb;
+
+    color: #6b7280;
+
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    margin-bottom: 10px;
+
+    font-size: 42px;
+  }
+
+  .empty-state h3 {
+    margin-bottom: 7px;
+
+    color: #374151;
+  }
+
+
+  /* =========================
+     RESPONSIVE
+  ========================= */
+
+  @media (max-width: 650px) {
+
+    .dairy-header h2 {
+      font-size: 24px;
+    }
+
+    .dairy-link {
+      padding: 15px;
+    }
+
+    .dairy-avatar {
+      width: 55px;
+      height: 55px;
+    }
+
+    .dairy-name {
+      font-size: 15px;
+    }
+
+    .dairy-actions {
+      padding: 0 15px 15px 15px;
+    }
+
+    .dairy-arrow {
+      font-size: 20px;
+    }
+
+  }
+
+</style>
+
+
+<div class="dairy-page">
+
+
+  <!-- =========================
+       HEADER
+  ========================= -->
+
+  <div class="dairy-header">
+
+    <div>
+
+      <h2>
+        🏢 Dairy Structures
+      </h2>
+
+      <p>
+        View facilities and manage maintenance status.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <% if (dairies && dairies.length > 0) { %>
+
+
+    <ul class="dairy-list">
+
+
+      <% dairies.forEach(dairy => { %>
+
+
+        <% if (dairy.code < 0) { %>
+
+
+          <li class="dairy-item">
+
+
+            <!-- =========================
+                 DAIRY INFORMATION
+            ========================= -->
+
+            <a
+              href="/dairy/<%= dairy._id %>"
+              class="dairy-link"
+            >
+
+
+              <div>
+
+                <% if (
+                  dairy.profileImage &&
+                  dairy.profileImage.trim() !== ""
+                ) { %>
+
+                  <img
+                    src="/uploads/<%= dairy.profileImage %>"
+                    class="dairy-avatar"
+                    alt="<%= dairy.name %>"
+                  >
+
+                <% } else { %>
+
+                  <img
+                    src="https://ui-avatars.com/api/?name=<%= dairy.name %>&background=0b5d1e&color=fff"
+                    class="dairy-avatar"
+                    alt="<%= dairy.name %>"
+                  >
+
+                <% } %>
+
+              </div>
+
+
+              <div class="dairy-details">
+
+
+                <div class="dairy-name">
+
+                  <%= dairy.name %>
+
+                </div>
+
+
+                <div class="dairy-code">
+
+                  Facility Code:
+                  <strong><%= dairy.code %></strong>
+
+                </div>
+
+
+                <% if (dairy.needsMaintenance === true) { %>
+
+
+                  <span class="status-badge status-maintenance">
+
+                    ⚠️ Needs Repair / Maintenance
+
+                  </span>
+
+
+                <% } else { %>
+
+
+                  <span class="status-badge status-ok">
+
+                    ✓ Facility OK
+
+                  </span>
+
+
+                <% } %>
+
+
+              </div>
+
+
+              <span class="dairy-arrow">
+
+                →
+
+              </span>
+
+
+            </a>
+
+
+            <!-- =========================
+                 ACTIONS
+            ========================= -->
+
+            <div class="dairy-actions">
+
+
+              <!-- =========================
+                   MARK MAINTENANCE
+              ========================= -->
+
+              <% if (
+                dairy.needsMaintenance === false &&
+                user &&
+                (
+                  user.role === 'admin' ||
+                  user.role === 'dairyWorker'
+                )
+              ) { %>
+
+
+                <button
+                  type="button"
+                  class="action-btn mark-btn"
+                  onclick="toggleMarkForm('<%= dairy._id %>')"
+                >
+
+                  🔧 Mark Maintenance
+
+                </button>
+
+
+                <form
+                  id="mark-form-<%= dairy._id %>"
+                  action="/dairy/<%= dairy._id %>/maintenance/mark"
+                  method="POST"
+                  class="maintenance-form"
+                >
+
+
+                  <select
+                    name="type"
+                    required
+                  >
+
+                    <option value="">
+                      Select Maintenance Type
+                    </option>
+
+                    <option value="repair">
+                      🔧 Repair
+                    </option>
+
+                    <option value="maintenance">
+                      🛠️ Maintenance
+                    </option>
+
+                    <option value="construction">
+                      🏗️ Construction
+                    </option>
+
+                  </select>
+
+
+                  <textarea
+                    name="description"
+                    placeholder="Describe the issue or required work..."
+                    required
+                  ></textarea>
+
+
+                  <button
+                    type="submit"
+                    class="form-submit-btn submit-maintenance"
+                  >
+
+                    Submit Maintenance Request
+
+                  </button>
+
+
+                </form>
+
+
+              <% } %>
+
+
+              <!-- =========================
+                   CLEAR MAINTENANCE
+              ========================= -->
+
+              <% if (
+                dairy.needsMaintenance === true &&
+                user &&
+                user.role === 'admin'
+              ) { %>
+
+
+                <button
+                  type="button"
+                  class="action-btn unmark-btn"
+                  onclick="toggleUnmarkForm('<%= dairy._id %>')"
+                >
+
+                  ✓ Clear Maintenance
+
+                </button>
+
+
+                <form
+                  id="unmark-form-<%= dairy._id %>"
+                  action="/dairy/<%= dairy._id %>/maintenance/clear"
+                  method="POST"
+                  class="maintenance-form"
+                >
+
+
+                  <input
+                    type="number"
+                    name="charges"
+                    placeholder="Charges incurred (KES)"
+                    min="0"
+                    required
+                  >
+
+
+                  <textarea
+                    name="description"
+                    placeholder="Describe the work completed..."
+                    required
+                  ></textarea>
+
+
+                  <button
+                    type="submit"
+                    class="form-submit-btn submit-clear"
+                  >
+
+                    ✓ Confirm Maintenance Completed
+
+                  </button>
+
+
+                </form>
+
+
+              <% } %>
+
+
+            </div>
+
+
+          </li>
+
+
+        <% } %>
+
+
+      <% }) %>
+
+
+    </ul>
+
+
+  <% } else { %>
+
+
+    <!-- =========================
+         EMPTY STATE
+    ========================= -->
+
+    <div class="empty-state">
+
+      <div class="empty-state-icon">
+        🏢
+      </div>
+
+      <h3>
+        No Dairy Structures Found
+      </h3>
+
+      <p>
+        There are currently no dairy structures available to display.
+      </p>
+
+    </div>
+
+
+  <% } %>
+
+
+</div>
+
+
+<script>
+
+  function toggleForm(formId) {
+
+    const form = document.getElementById(formId);
+
+    if (!form) return;
+
+    form.classList.toggle("active");
+
+  }
+
+
+  function toggleMarkForm(id) {
+
+    toggleForm("mark-form-" + id);
+
+  }
+
+
+  function toggleUnmarkForm(id) {
+
+    toggleForm("unmark-form-" + id);
+
+  }
+
+</script>

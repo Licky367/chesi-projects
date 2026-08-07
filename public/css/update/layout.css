@@ -1,0 +1,171 @@
+/*=========================================================
+  UPDATE PAGE
+  LAYOUT
+=========================================================*/
+
+/*=========================================================
+  PAGE CONTAINER
+=========================================================*/
+
+.dairy-page{
+
+    width:100%;
+    max-width:1200px;
+
+    margin:0 auto;
+
+    padding:20px;
+
+}
+
+/*=========================================================
+  SECTIONS
+=========================================================*/
+
+section{
+
+    margin-bottom:22px;
+
+}
+
+/*=========================================================
+  COMMON CARD
+=========================================================*/
+
+.profile-card,
+.create-post-card{
+
+    background:var(--card);
+
+    border-radius:var(--radius);
+
+    box-shadow:var(--shadow-md);
+
+    padding:20px;
+
+    transition:var(--transition);
+
+}
+
+.profile-card:hover,
+.create-post-card:hover{
+
+    box-shadow:var(--shadow-lg);
+
+}
+
+/*=========================================================
+  GENERIC FLEX UTILITIES
+=========================================================*/
+
+.flex{
+
+    display:flex;
+
+}
+
+.flex-column{
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+.flex-center{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+.flex-between{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+.flex-wrap{
+
+    flex-wrap:wrap;
+
+}
+
+/*=========================================================
+  COMMON SPACING UTILITIES
+=========================================================*/
+
+.mt-10{
+
+    margin-top:10px;
+
+}
+
+.mt-15{
+
+    margin-top:15px;
+
+}
+
+.mt-20{
+
+    margin-top:20px;
+
+}
+
+.mb-10{
+
+    margin-bottom:10px;
+
+}
+
+.mb-15{
+
+    margin-bottom:15px;
+
+}
+
+.mb-20{
+
+    margin-bottom:20px;
+
+}
+
+/*=========================================================
+  TEXT UTILITIES
+=========================================================*/
+
+.text-center{
+
+    text-align:center;
+
+}
+
+.text-left{
+
+    text-align:left;
+
+}
+
+.text-right{
+
+    text-align:right;
+
+}
+
+/*=========================================================
+  VISIBILITY
+=========================================================*/
+
+.hidden{
+
+    display:none !important;
+
+}

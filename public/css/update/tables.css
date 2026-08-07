@@ -1,0 +1,96 @@
+/*=========================================================
+  UPDATE PAGE
+  TABLES
+=========================================================*/
+
+/*=========================================================
+  TABLE WRAPPER
+=========================================================*/
+
+.table-wrapper{
+
+    overflow-x:auto;
+
+    margin-top:18px;
+
+}
+
+/*=========================================================
+  WEEKLY TABLE
+=========================================================*/
+
+.weekly-table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    background:#fff;
+
+    border-radius:var(--radius);
+
+    overflow:hidden;
+
+    box-shadow:var(--shadow-sm);
+
+}
+
+.weekly-table th{
+
+    padding:12px;
+
+    background:var(--primary);
+
+    color:#fff;
+
+    text-align:left;
+
+    font-weight:bold;
+
+    white-space:nowrap;
+
+}
+
+.weekly-table td{
+
+    padding:12px;
+
+    border-bottom:1px solid var(--border);
+
+    vertical-align:middle;
+
+}
+
+.weekly-table tbody tr:nth-child(even){
+
+    background:#f8f9fa;
+
+}
+
+.weekly-table tbody tr:hover{
+
+    background:#edf6ef;
+
+}
+
+.weekly-table tbody tr:last-child td{
+
+    border-bottom:none;
+
+}
+
+/*=========================================================
+  WEEKLY SUMMARY
+=========================================================*/
+
+.weekly-average{
+
+    margin-top:15px;
+
+    text-align:right;
+
+    font-weight:bold;
+
+    color:var(--primary);
+
+}

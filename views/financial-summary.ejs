@@ -1,0 +1,726 @@
+<div class="financial-page">
+
+
+  <!-- =====================================================
+       PAGE HEADER
+  ====================================================== -->
+
+  <div class="page-header">
+
+    <div>
+
+      <h2>
+        💰 Financial Summary
+      </h2>
+
+      <p>
+        Review income, expenses, and profitability for a selected period.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       FILTER CARD
+  ====================================================== -->
+
+  <div class="card filter-card">
+
+    <div class="section-title">
+      📊 Select Reporting Period
+    </div>
+
+
+    <form
+      class="filters"
+      method="GET"
+      action="/financials/summary"
+    >
+
+      <div class="filter-group">
+
+        <label for="month">
+          Month
+        </label>
+
+        <input
+          id="month"
+          type="month"
+          name="month"
+          value="<%= month || '' %>"
+        >
+
+      </div>
+
+
+      <div class="filter-group">
+
+        <label for="year">
+          Year
+        </label>
+
+        <input
+          id="year"
+          type="number"
+          name="year"
+          placeholder="e.g. 2026"
+          value="<%= year || '' %>"
+        >
+
+      </div>
+
+
+      <button
+        type="submit"
+        class="generate-btn"
+      >
+
+        🔍 Generate Report
+
+      </button>
+
+    </form>
+
+
+    <!-- SELECTED PERIOD -->
+
+    <div class="period-display">
+
+      <span>
+        Showing results for:
+      </span>
+
+      <strong>
+        <%= month || 'All Months' %>
+        /
+        <%= year || 'All Years' %>
+      </strong>
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       FINANCIAL CARDS
+  ====================================================== -->
+
+  <div class="summary-grid">
+
+
+    <!-- MILK INCOME -->
+
+    <div class="finance-card income">
+
+      <div class="finance-icon">
+        🥛
+      </div>
+
+      <div class="finance-content">
+
+        <span>
+          Milk Income
+        </span>
+
+        <strong>
+          KES <%= financial?.milkCash || 0 %>
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- MAINTENANCE -->
+
+    <div class="finance-card maintenance">
+
+      <div class="finance-icon">
+        🔧
+      </div>
+
+      <div class="finance-content">
+
+        <span>
+          Maintenance
+        </span>
+
+        <strong>
+          KES <%= financial?.maintenanceCost || 0 %>
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- MEDICAL -->
+
+    <div class="finance-card medical">
+
+      <div class="finance-icon">
+        🩺
+      </div>
+
+      <div class="finance-content">
+
+        <span>
+          Medical
+        </span>
+
+        <strong>
+          KES <%= financial?.medicalCost || 0 %>
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- TOTAL EXPENSES -->
+
+    <div class="finance-card expenses">
+
+      <div class="finance-icon">
+        📉
+      </div>
+
+      <div class="finance-content">
+
+        <span>
+          Total Expenses
+        </span>
+
+        <strong>
+          KES <%= financial?.totalExpenses || 0 %>
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- PROFIT -->
+
+    <div class="finance-card profit">
+
+      <div class="finance-icon">
+        📈
+      </div>
+
+      <div class="finance-content">
+
+        <span>
+          Net Profit
+        </span>
+
+        <strong>
+          KES <%= financial?.profit || 0 %>
+        </strong>
+
+      </div>
+
+    </div>
+
+
+  </div>
+
+
+  <!-- =====================================================
+       PROFIT HIGHLIGHT
+  ====================================================== -->
+
+  <div class="profit-highlight">
+
+    <div>
+
+      <span>
+        Net Financial Result
+      </span>
+
+      <strong>
+        KES <%= financial?.profit || 0 %>
+      </strong>
+
+    </div>
+
+    <div class="profit-icon">
+      💵
+    </div>
+
+  </div>
+
+
+</div>
+
+
+<style>
+
+
+/* =====================================================
+   PAGE
+===================================================== */
+
+.financial-page {
+
+  max-width: 1100px;
+
+  margin: 0 auto;
+
+  padding: 20px 0 40px;
+
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.page-header {
+
+  margin-bottom: 20px;
+
+}
+
+
+.page-header h2 {
+
+  margin: 0 0 6px;
+
+  color: #166534;
+
+  font-size: 27px;
+
+}
+
+
+.page-header p {
+
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 14px;
+
+}
+
+
+/* =====================================================
+   CARD
+===================================================== */
+
+.card {
+
+  padding: 22px;
+
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.06);
+
+}
+
+
+.filter-card {
+
+  margin-bottom: 25px;
+
+}
+
+
+.section-title {
+
+  margin-bottom: 18px;
+
+  color: #374151;
+
+  font-size: 18px;
+
+  font-weight: 700;
+
+}
+
+
+/* =====================================================
+   FILTERS
+===================================================== */
+
+.filters {
+
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 14px;
+
+}
+
+
+.filter-group {
+
+  flex: 1;
+
+}
+
+
+.filter-group label {
+
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #4b5563;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+}
+
+
+.filter-group input {
+
+  width: 100%;
+
+  padding: 11px 12px;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 9px;
+
+  background: #f9fafb;
+
+  outline: none;
+
+  font-family: inherit;
+
+}
+
+
+.filter-group input:focus {
+
+  border-color: #16a34a;
+
+  box-shadow:
+    0 0 0 3px rgba(22, 163, 74, 0.1);
+
+}
+
+
+.generate-btn {
+
+  padding: 11px 18px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background: #166534;
+
+  color: #ffffff;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+
+}
+
+
+.generate-btn:hover {
+
+  background: #14532d;
+
+  transform: translateY(-1px);
+
+}
+
+
+/* =====================================================
+   PERIOD DISPLAY
+===================================================== */
+
+.period-display {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  margin-top: 18px;
+
+  padding: 12px 14px;
+
+  border-radius: 9px;
+
+  background: #f0fdf4;
+
+  color: #6b7280;
+
+  font-size: 14px;
+
+}
+
+
+.period-display strong {
+
+  color: #166534;
+
+}
+
+
+/* =====================================================
+   SUMMARY GRID
+===================================================== */
+
+.summary-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(200px, 1fr)
+    );
+
+  gap: 16px;
+
+}
+
+
+/* =====================================================
+   FINANCE CARD
+===================================================== */
+
+.finance-card {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+
+  min-height: 105px;
+
+  padding: 18px;
+
+  border-radius: 15px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.06);
+
+  transition: 0.2s ease;
+
+}
+
+
+.finance-card:hover {
+
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.09);
+
+}
+
+
+.finance-icon {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 48px;
+
+  height: 48px;
+
+  border-radius: 12px;
+
+  background: #f3f4f6;
+
+  font-size: 23px;
+
+}
+
+
+.finance-content span {
+
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #6b7280;
+
+  font-size: 13px;
+
+}
+
+
+.finance-content strong {
+
+  color: #111827;
+
+  font-size: 19px;
+
+}
+
+
+/* =====================================================
+   CARD ACCENTS
+===================================================== */
+
+.income {
+
+  border-left: 5px solid #16a34a;
+
+}
+
+
+.maintenance {
+
+  border-left: 5px solid #f59e0b;
+
+}
+
+
+.medical {
+
+  border-left: 5px solid #dc2626;
+
+}
+
+
+.expenses {
+
+  border-left: 5px solid #7c3aed;
+
+}
+
+
+.profit {
+
+  border-left: 5px solid #059669;
+
+}
+
+
+/* =====================================================
+   PROFIT HIGHLIGHT
+===================================================== */
+
+.profit-highlight {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-top: 25px;
+
+  padding: 22px;
+
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #166534,
+      #15803d
+    );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 8px 22px rgba(22, 101, 52, 0.2);
+
+}
+
+
+.profit-highlight span {
+
+  display: block;
+
+  margin-bottom: 6px;
+
+  opacity: 0.85;
+
+  font-size: 13px;
+
+}
+
+
+.profit-highlight strong {
+
+  font-size: 27px;
+
+}
+
+
+.profit-icon {
+
+  font-size: 35px;
+
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 650px) {
+
+
+  .financial-page {
+
+    padding: 10px 0 30px;
+
+  }
+
+
+  .filters {
+
+    align-items: stretch;
+
+    flex-direction: column;
+
+  }
+
+
+  .generate-btn {
+
+    width: 100%;
+
+  }
+
+
+  .period-display {
+
+    align-items: flex-start;
+
+    flex-direction: column;
+
+  }
+
+
+  .profit-highlight {
+
+    align-items: flex-start;
+
+  }
+
+
+}
+
+
+</style>

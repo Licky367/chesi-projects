@@ -1,0 +1,90 @@
+<style>
+.container{
+  max-width:500px;
+  margin:auto;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
+}
+
+h2{
+  margin-bottom:15px;
+  color:#0b5d1e;
+}
+
+form{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+input, select{
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+button{
+  background:#0b5d1e;
+  color:#fff;
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.message{
+  margin-bottom:10px;
+  padding:10px;
+  border-radius:8px;
+}
+
+.error{
+  background:#ffe5e5;
+  color:#c00;
+}
+
+.success{
+  background:#e5ffe5;
+  color:#0a7a0a;
+}
+</style>
+
+<div class="container">
+  <div class="card">
+    <h2>Create User Invitation</h2>
+
+    <% if (error) { %>
+      <div class="message error"><%= error %></div>
+    <% } %>
+
+    <% if (success) { %>
+      <div class="message success"><%= success %></div>
+    <% } %>
+
+    <form method="POST" action="/create-invite">
+      
+      <input 
+        type="email" 
+        name="email" 
+        placeholder="Enter email" 
+        required 
+      />
+
+      <select name="role" required>
+        <option value="">Select Role</option>
+        <option value="dairyWorker">Dairy Worker</option>
+        <option value="poultryWorker">Poultry Worker</option>
+        <option value="admin">Admin</option>
+      </select>
+
+      <button type="submit">Create Invitation</button>
+
+    </form>
+  </div>
+</div>

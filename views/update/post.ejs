@@ -1,0 +1,119 @@
+<!-- ======================.===============================
+     POST
+====================================================== -->
+
+<article
+    class="feed-card post-card"
+    data-id="<%= item._id %>"
+    data-type="post"
+>
+
+    <!-- Header -->
+
+    <div class="feed-header">
+
+        <div class="feed-user">
+
+            <img
+                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName)) %>"
+                alt="<%= item.userName %>"
+                class="avatar-sm"
+            >
+
+            <div class="feed-user-info">
+
+                <strong>
+
+                    <%= item.userName %>
+
+                </strong>
+
+                <small>
+
+                    <%= item.dateText %>
+
+                </small>
+
+            </div>
+
+        </div>
+
+        <% if (
+            user &&
+            (
+                user.role === "admin" ||
+                (
+                    user._id &&
+                    item.userId &&
+                    user._id.toString() === item.userId.toString()
+                )
+            )
+        ) { %>
+
+            <button
+                class="delete-post"
+                data-id="<%= item._id %>"
+                title="Delete Post"
+                type="button"
+            >
+
+                <i class="bi bi-trash3-fill"></i>
+
+            </button>
+
+        <% } %>
+
+    </div>
+
+    <!-- Body -->
+
+    <div class="feed-body">
+
+        <% if (item.title) { %>
+
+            <h3>
+
+                <%= item.title %>
+
+            </h3>
+
+        <% } %>
+
+        <% if (item.text) { %>
+
+            <p class="post-text">
+
+                <%= item.text %>
+
+            </p>
+
+        <% } %>
+
+        <% if (item.image) { %>
+
+            <img
+                src="/uploads/<%= item.image %>"
+                alt="Post Image"
+                class="feed-img"
+            >
+
+        <% } %>
+
+    </div>
+
+    <!-- Actions -->
+
+    <%- include("partials/feed-actions", {
+        item,
+        type: "post"
+    }) %>
+
+    <!-- Comments -->
+
+    <%- include("comment-section", {
+        item,
+        user,
+        type: "post"
+    }) %>
+
+</article>

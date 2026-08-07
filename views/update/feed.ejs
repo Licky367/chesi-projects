@@ -1,0 +1,96 @@
+<!-- ===================.==================================
+     FEED
+====================================================== -->
+
+<section
+    id="feed"
+    class="feed-container"
+>
+
+    <% feed.forEach(item => { %>
+
+        <!-- =========================
+             NORMAL POSTS
+        ========================== -->
+
+        <% if (item.type === "post") { %>
+
+            <%- include("post", {
+                item,
+                user
+            }) %>
+
+        <% } %>
+
+        <!-- =========================
+             WEEKLY MILK REPORTS
+        ========================== -->
+
+        <% if (item.type === "milk") { %>
+
+            <%- include("milk", {
+                item,
+                user
+            }) %>
+
+        <% } %>
+
+        <!-- =========================
+             MEDICAL RECORDS
+        ========================== -->
+
+        <% if (
+            item.type === "medical" &&
+            item.status === "marked"
+        ) { %>
+
+            <%- include("medical-marked", {
+                item,
+                user
+            }) %>
+
+        <% } %>
+
+        <% if (
+            item.type === "medical" &&
+            item.status === "cleared"
+        ) { %>
+
+            <%- include("medical-cleared", {
+                item,
+                user
+            }) %>
+
+        <% } %>
+
+        <!-- =========================
+             MAINTENANCE RECORDS
+        ========================== -->
+
+        <% if (
+            item.type === "maintenance" &&
+            item.status === "marked"
+        ) { %>
+
+            <%- include("maintenance-marked", {
+                item,
+                user
+            }) %>
+
+        <% } %>
+
+        <% if (
+            item.type === "maintenance" &&
+            item.status === "cleared"
+        ) { %>
+
+            <%- include("maintenance-cleared", {
+                item,
+                user
+            }) %>
+
+        <% } %>
+
+    <% }) %>
+
+</section>

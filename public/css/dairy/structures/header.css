@@ -1,0 +1,37 @@
+/*=========================================================
+  HEADER
+=========================================================*/
+
+.dairy-header{
+
+    display:flex;
+
+    align-items:flex-start;
+
+    justify-content:space-between;
+
+    margin-bottom:25px;
+
+}
+
+.dairy-header h2{
+
+    margin:0 0 7px;
+
+    color:#166534;
+
+    font-size:28px;
+
+    font-weight:700;
+
+}
+
+.dairy-header p{
+
+    margin:0;
+
+    color:#6b7280;
+
+    font-size:14px;
+
+}

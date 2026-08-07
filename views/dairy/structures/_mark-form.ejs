@@ -1,0 +1,43 @@
+<form
+    id="mark-form-<%= dairy._id %>"
+    action="/dairy/<%= dairy._id %>/maintenance/mark"
+    method="POST"
+    class="maintenance-form"
+>
+
+    <select
+        name="type"
+        required
+    >
+        <option value="">
+            Select Maintenance Type
+        </option>
+
+        <option value="repair">
+            🔧 Repair
+        </option>
+
+        <option value="maintenance">
+            🛠️ Maintenance
+        </option>
+
+        <option value="construction">
+            🏗️ Construction
+        </option>
+
+    </select>
+
+    <textarea
+        name="description"
+        placeholder="Describe the issue or required work..."
+        required
+    ></textarea>
+
+    <button
+        type="submit"
+        class="form-submit-btn submit-maintenance"
+    >
+        Submit Maintenance Request
+    </button>
+
+</form>

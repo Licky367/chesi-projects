@@ -1,0 +1,45 @@
+/*=========================================================
+  RESPONSIVE
+=========================================================*/
+
+@media (max-width:600px){
+
+    .container{
+
+        padding:0 10px;
+
+    }
+
+    .wa-link{
+
+        padding:12px;
+
+    }
+
+    .wa-avatar{
+
+        width:50px;
+
+        height:50px;
+
+    }
+
+    .wa-name{
+
+        font-size:15px;
+
+    }
+
+    .action-buttons{
+
+        padding:0 12px 12px;
+
+    }
+
+    .btn{
+
+        width:100%;
+
+    }
+
+}

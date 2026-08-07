@@ -1,0 +1,1036 @@
+<style>
+
+  /* =========================
+     PAGE
+  ========================= */
+
+  .project-details-page {
+    max-width: 1100px;
+
+    margin: 0 auto;
+
+    padding: 20px 0 45px;
+  }
+
+
+  /* =========================
+     HEADER
+  ========================= */
+
+  .project-details-header {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 25px;
+  }
+
+  .project-details-header h2 {
+    margin: 0 0 8px;
+
+    color: #166534;
+
+    font-size: 30px;
+
+    font-weight: 700;
+  }
+
+  .project-details-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+  }
+
+
+  /* =========================
+     STATUS BADGES
+  ========================= */
+
+  .status-badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    padding: 8px 14px;
+
+    border-radius: 20px;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+  }
+
+  .status-not-begun {
+    background: #fef3c7;
+
+    color: #92400e;
+  }
+
+  .status-begun {
+    background: #dbeafe;
+
+    color: #1d4ed8;
+  }
+
+  .status-completed {
+    background: #dcfce7;
+
+    color: #166534;
+  }
+
+
+  /* =========================
+     PROJECT OVERVIEW
+  ========================= */
+
+  .overview-card {
+    padding: 25px;
+
+    margin-bottom: 25px;
+
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .overview-title {
+    margin: 0 0 20px;
+
+    color: #374151;
+
+    font-size: 19px;
+  }
+
+  .overview-grid {
+    display: grid;
+
+    grid-template-columns:
+      repeat(2, 1fr);
+
+    gap: 18px;
+  }
+
+  .info-item {
+    padding: 16px;
+
+    border-radius: 12px;
+
+    background: #f9fafb;
+  }
+
+  .info-label {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+    text-transform: uppercase;
+  }
+
+  .info-value {
+    color: #374151;
+
+    font-size: 14px;
+
+    line-height: 1.6;
+  }
+
+  .description-box,
+  .goals-box {
+    grid-column: span 2;
+  }
+
+
+  /* =========================
+     ACTIONS
+  ========================= */
+
+  .project-actions {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+    margin-bottom: 30px;
+  }
+
+  .action-btn {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 12px 18px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+  }
+
+  .action-btn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+      0 8px 18px rgba(0, 0, 0, 0.15);
+  }
+
+  .begin-btn {
+    background: #2563eb;
+  }
+
+  .complete-btn {
+    background: #198754;
+  }
+
+
+  /* =========================
+     CASH FLOW SECTION
+  ========================= */
+
+  .cash-flow-card {
+    padding: 25px;
+
+    margin-bottom: 30px;
+
+    border-top: 5px solid #16a34a;
+
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .section-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+    margin-bottom: 22px;
+  }
+
+  .section-icon {
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+
+    background: #dcfce7;
+
+    font-size: 23px;
+  }
+
+  .section-header h3 {
+    margin: 0;
+
+    color: #374151;
+
+    font-size: 20px;
+  }
+
+  .section-header p {
+    margin: 4px 0 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+  }
+
+  .cash-flow-form {
+    display: grid;
+
+    grid-template-columns:
+      1.5fr
+      1fr
+      1fr
+      auto;
+
+    align-items: end;
+
+    gap: 15px;
+  }
+
+  .form-group {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+  }
+
+  .form-group label {
+    color: #374151;
+
+    font-size: 13px;
+
+    font-weight: 600;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+
+    padding: 13px 14px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    background: #f9fafb;
+
+    color: #111827;
+
+    font-size: 14px;
+
+    transition: all 0.25s ease;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: #16a34a;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 0 0 4px rgba(22, 163, 74, 0.12);
+  }
+
+  .add-cash-btn {
+    padding: 13px 22px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: #166534;
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+  }
+
+  .add-cash-btn:hover {
+    background: #14532d;
+
+    transform: translateY(-2px);
+  }
+
+
+  /* =========================
+     FINANCE TABLE
+  ========================= */
+
+  .finance-card {
+    overflow: hidden;
+
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .finance-card-header {
+    padding: 22px 25px;
+
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .finance-card-header h3 {
+    margin: 0;
+
+    color: #374151;
+
+    font-size: 20px;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  .finance-table {
+    width: 100%;
+
+    min-width: 600px;
+
+    border-collapse: collapse;
+  }
+
+  .finance-table th {
+    padding: 16px 20px;
+
+    background: #f9fafb;
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    text-align: left;
+
+    text-transform: uppercase;
+  }
+
+  .finance-table td {
+    padding: 16px 20px;
+
+    border-top: 1px solid #f0f0f0;
+
+    color: #374151;
+
+    font-size: 14px;
+  }
+
+  .finance-table tbody tr:hover {
+    background: #f9fafb;
+  }
+
+
+  /* =========================
+     FINANCE TYPE
+  ========================= */
+
+  .finance-type {
+    display: inline-flex;
+
+    padding: 6px 10px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+
+    font-weight: 700;
+  }
+
+  .type-inflow {
+    background: #dcfce7;
+
+    color: #166534;
+  }
+
+  .type-outflow {
+    background: #fee2e2;
+
+    color: #b91c1c;
+  }
+
+
+  /* =========================
+     AMOUNTS
+  ========================= */
+
+  .amount-inflow {
+    color: #166534 !important;
+
+    font-weight: 700;
+  }
+
+  .amount-outflow {
+    color: #b91c1c !important;
+
+    font-weight: 700;
+  }
+
+
+  /* =========================
+     TOTAL ROW
+  ========================= */
+
+  .total-row {
+    background: #f0fdf4;
+  }
+
+  .total-row td {
+    padding: 18px 20px;
+
+    color: #166534;
+
+    font-size: 15px;
+
+    font-weight: 700;
+  }
+
+
+  /* =========================
+     RESPONSIVE
+  ========================= */
+
+  @media (max-width: 900px) {
+
+    .cash-flow-form {
+      grid-template-columns:
+        1fr
+        1fr;
+    }
+
+    .add-cash-btn {
+      width: 100%;
+    }
+
+  }
+
+  @media (max-width: 650px) {
+
+    .project-details-header {
+      flex-direction: column;
+    }
+
+    .project-details-header h2 {
+      font-size: 25px;
+    }
+
+    .overview-grid {
+      grid-template-columns:
+        1fr;
+    }
+
+    .description-box,
+    .goals-box {
+      grid-column: span 1;
+    }
+
+    .cash-flow-form {
+      grid-template-columns:
+        1fr;
+    }
+
+    .project-actions {
+      flex-direction: column;
+    }
+
+    .action-btn {
+      justify-content: center;
+
+      width: 100%;
+    }
+
+  }
+
+</style>
+
+
+<div class="project-details-page">
+
+
+  <!-- =========================
+       PROJECT HEADER
+  ========================= -->
+
+  <div class="project-details-header">
+
+    <div>
+
+      <h2>
+        🌱 <%= project.name %>
+      </h2>
+
+      <p>
+        View project information, progress, and financial activity.
+      </p>
+
+    </div>
+
+
+    <% if (project.status === 'Not Begun') { %>
+
+      <span class="status-badge status-not-begun">
+        ⏳ Not Begun
+      </span>
+
+    <% } else if (project.status === 'Begun') { %>
+
+      <span class="status-badge status-begun">
+        🚀 Begun
+      </span>
+
+    <% } else if (project.status === 'Completed') { %>
+
+      <span class="status-badge status-completed">
+        ✅ Completed
+      </span>
+
+    <% } %>
+
+
+  </div>
+
+
+  <!-- =========================
+       PROJECT OVERVIEW
+  ========================= -->
+
+  <div class="overview-card">
+
+
+    <h3 class="overview-title">
+      📋 Project Overview
+    </h3>
+
+
+    <div class="overview-grid">
+
+
+      <div class="info-item">
+
+        <span class="info-label">
+          Status
+        </span>
+
+        <span class="info-value">
+          <%= project.status %>
+        </span>
+
+      </div>
+
+
+      <div class="info-item">
+
+        <span class="info-label">
+          Start Date
+        </span>
+
+        <span class="info-value">
+          <%= project.startDate.toDateString() %>
+        </span>
+
+      </div>
+
+
+      <div class="info-item">
+
+        <span class="info-label">
+          Expected Completion
+        </span>
+
+        <span class="info-value">
+          <%= project.expectedCompletionDate.toDateString() %>
+        </span>
+
+      </div>
+
+
+      <div class="info-item">
+
+        <span class="info-label">
+          Project ID
+        </span>
+
+        <span class="info-value">
+          <%= project._id %>
+        </span>
+
+      </div>
+
+
+      <div class="info-item description-box">
+
+        <span class="info-label">
+          Description
+        </span>
+
+        <span class="info-value">
+
+          <%= project.description || 'No description provided.' %>
+
+        </span>
+
+      </div>
+
+
+      <div class="info-item goals-box">
+
+        <span class="info-label">
+          Goals & Objectives
+        </span>
+
+        <span class="info-value">
+
+          <%= project.goalsObjectives || 'No goals or objectives provided.' %>
+
+        </span>
+
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+  <!-- =========================
+       PROJECT ACTIONS
+  ========================= -->
+
+  <div class="project-actions">
+
+
+    <% if (project.status === 'Not Begun') { %>
+
+
+      <form
+        action="/farm/begin"
+        method="POST"
+      >
+
+        <input
+          type="hidden"
+          name="id"
+          value="<%= project._id %>"
+        >
+
+        <button
+          type="submit"
+          class="action-btn begin-btn"
+        >
+
+          🚀 Mark as Begun
+
+        </button>
+
+      </form>
+
+
+    <% } else if (project.status === 'Begun') { %>
+
+
+      <form
+        action="/farm/complete"
+        method="POST"
+      >
+
+        <input
+          type="hidden"
+          name="id"
+          value="<%= project._id %>"
+        >
+
+        <button
+          type="submit"
+          class="action-btn complete-btn"
+        >
+
+          ✅ Mark as Completed
+
+        </button>
+
+      </form>
+
+
+    <% } %>
+
+
+  </div>
+
+
+  <!-- =========================
+       ADD CASH FLOW
+  ========================= -->
+
+  <% if (project.status !== 'Completed') { %>
+
+
+    <div class="cash-flow-card">
+
+
+      <div class="section-header">
+
+        <div class="section-icon">
+          💰
+        </div>
+
+        <div>
+
+          <h3>
+            Add Cash Flow
+          </h3>
+
+          <p>
+            Record money entering or leaving this project.
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <form
+        action="/farm/add-cost"
+        method="POST"
+        class="cash-flow-form"
+      >
+
+
+        <input
+          type="hidden"
+          name="projectId"
+          value="<%= project._id %>"
+        >
+
+
+        <div class="form-group">
+
+          <label for="costDescription">
+            Description
+          </label>
+
+          <input
+            type="text"
+            id="costDescription"
+            name="costDescription"
+            placeholder="e.g. Purchase of seeds"
+            required
+          >
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label for="amount">
+            Amount
+          </label>
+
+          <input
+            type="number"
+            id="amount"
+            name="amount"
+            min="0"
+            placeholder="Enter amount"
+            required
+          >
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label for="type">
+            Type
+          </label>
+
+          <select
+            id="type"
+            name="type"
+            required
+          >
+
+            <option value="outflow">
+              💸 Cash Outflow
+            </option>
+
+            <option value="inflow">
+              💰 Cash Inflow
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <button
+          type="submit"
+          class="add-cash-btn"
+        >
+
+          ➕ Add Record
+
+        </button>
+
+
+      </form>
+
+
+    </div>
+
+
+  <% } %>
+
+
+  <!-- =========================
+       FINANCE RECORDS
+  ========================= -->
+
+  <div class="finance-card">
+
+
+    <div class="finance-card-header">
+
+      <h3>
+        💳 Finance Records
+      </h3>
+
+    </div>
+
+
+    <div class="table-wrapper">
+
+
+      <table class="finance-table">
+
+
+        <thead>
+
+          <tr>
+
+            <th>
+              Description
+            </th>
+
+            <th>
+              Type
+            </th>
+
+            <th>
+              Amount
+            </th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+
+          <% let total = 0; %>
+
+
+          <% finances.forEach(f => { %>
+
+
+            <%
+
+              let displayAmount =
+                f.type === 'outflow'
+                  ? -f.amount
+                  : f.amount;
+
+              total += displayAmount;
+
+            %>
+
+
+            <tr>
+
+
+              <td>
+
+                <%= f.costDescription %>
+
+              </td>
+
+
+              <td>
+
+
+                <% if (f.type === 'outflow') { %>
+
+                  <span class="finance-type type-outflow">
+                    💸 Outflow
+                  </span>
+
+                <% } else { %>
+
+                  <span class="finance-type type-inflow">
+                    💰 Inflow
+                  </span>
+
+                <% } %>
+
+
+              </td>
+
+
+              <td class="<%= f.type === 'outflow'
+                ? 'amount-outflow'
+                : 'amount-inflow' %>"
+              >
+
+                <%= displayAmount.toFixed(2) %>
+
+              </td>
+
+
+            </tr>
+
+
+          <% }) %>
+
+
+          <tr class="total-row">
+
+            <td colspan="2">
+
+              💎 Profit / Total
+
+            </td>
+
+            <td>
+
+              <%= total.toFixed(2) %>
+
+            </td>
+
+          </tr>
+
+
+        </tbody>
+
+
+      </table>
+
+
+    </div>
+
+
+  </div>
+
+
+</div>

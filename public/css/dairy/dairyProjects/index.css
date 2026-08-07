@@ -1,0 +1,24 @@
+/*=========================================================
+  DAIRY PROFILES
+=========================================================*/
+
+@import url("./header.css");
+@import url("./list.css");
+@import url("./item.css");
+@import url("./actions.css");
+@import url("./forms.css");
+@import url("./empty-state.css");
+@import url("./responsive.css");
+
+
+/*=========================================================
+  PAGE
+=========================================================*/
+
+.container{
+
+    max-width:900px;
+
+    margin:auto;
+
+}

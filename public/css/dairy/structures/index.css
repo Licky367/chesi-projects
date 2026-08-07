@@ -1,0 +1,26 @@
+/*=========================================================
+  DAIRY STRUCTURES
+=========================================================*/
+
+@import url("./header.css");
+@import url("./list.css");
+@import url("./item.css");
+@import url("./actions.css");
+@import url("./forms.css");
+@import url("./empty-state.css");
+@import url("./responsive.css");
+
+
+/*=========================================================
+  PAGE
+=========================================================*/
+
+.dairy-page{
+
+    max-width:1050px;
+
+    margin:0 auto;
+
+    padding:20px 0 40px;
+
+}

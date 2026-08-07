@@ -1,0 +1,65 @@
+<li class="dairy-item">
+
+<a
+    href="/dairy/<%= dairy._id %>"
+    class="dairy-link"
+>
+
+    <div>
+
+        <% if (dairy.profileImage && dairy.profileImage.trim() !== "") { %>
+
+            <img
+                src="/uploads/<%= dairy.profileImage %>"
+                class="dairy-avatar"
+                alt="<%= dairy.name %>"
+            >
+
+        <% } else { %>
+
+            <img
+                src="https://ui-avatars.com/api/?name=<%= dairy.name %>&background=0b5d1e&color=fff"
+                class="dairy-avatar"
+                alt="<%= dairy.name %>"
+            >
+
+        <% } %>
+
+    </div>
+
+    <div class="dairy-details">
+
+        <div class="dairy-name">
+            <%= dairy.name %>
+        </div>
+
+        <div class="dairy-code">
+            Facility Code:
+            <strong><%= dairy.code %></strong>
+        </div>
+
+        <% if (dairy.needsMaintenance === true) { %>
+
+            <span class="status-badge status-maintenance">
+                ⚠️ Needs Repair / Maintenance
+            </span>
+
+        <% } else { %>
+
+            <span class="status-badge status-ok">
+                ✓ Facility OK
+            </span>
+
+        <% } %>
+
+    </div>
+
+    <span class="dairy-arrow">
+        →
+    </span>
+
+</a>
+
+<%- include("./_maintenance-actions", { dairy, user }) %>
+
+</li>

@@ -1,0 +1,283 @@
+/*=========================================================
+  UPDATE PAGE
+  RESPONSIVE
+=========================================================*/
+
+/*=========================================================
+  TABLETS
+=========================================================*/
+
+@media (max-width:992px){
+
+    .profile-header{
+
+        flex-direction:column;
+
+        align-items:center;
+
+        text-align:center;
+
+    }
+
+    .profile-avatar-wrapper{
+
+        flex:unset;
+
+    }
+
+    .profile-title-row{
+
+        justify-content:center;
+
+    }
+
+    .profile-buttons{
+
+        justify-content:center;
+
+    }
+
+    .composer-footer{
+
+        flex-direction:column;
+
+        align-items:stretch;
+
+    }
+
+    .composer-actions{
+
+        justify-content:space-between;
+
+    }
+
+}
+
+/*=========================================================
+  SMALL TABLETS
+=========================================================*/
+
+@media (max-width:768px){
+
+    .dairy-page{
+
+        padding:16px;
+
+    }
+
+    .profile-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .feed-header{
+
+        padding:15px;
+
+    }
+
+    .feed-body{
+
+        padding:16px;
+
+    }
+
+    .feed-actions{
+
+        justify-content:center;
+
+        gap:20px;
+
+        flex-wrap:wrap;
+
+    }
+
+    .comment-item{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+    }
+
+    .comment-user{
+
+        width:100%;
+
+    }
+
+    .comment-form button{
+
+        align-self:stretch;
+
+    }
+
+}
+
+/*=========================================================
+  MOBILE PHONES
+=========================================================*/
+
+@media (max-width:480px){
+
+    .dairy-page{
+
+        padding:12px;
+
+    }
+
+    .profile-avatar{
+
+        width:170px;
+
+        height:170px;
+
+    }
+
+    .profile-title-row{
+
+        flex-direction:column;
+
+        gap:8px;
+
+    }
+
+    .profile-title-row h2{
+
+        font-size:1.5rem;
+
+        text-align:center;
+
+    }
+
+    .profile-grid{
+
+        gap:12px;
+
+    }
+
+    .profile-item{
+
+        padding:12px;
+
+    }
+
+    .history-button,
+    .save-profile-button,
+    .delete-profile-button,
+    .post-button,
+    .like-btn,
+    .toggle-comments,
+    .comment-form button{
+
+        width:100%;
+
+        justify-content:center;
+
+    }
+
+    .composer-header{
+
+        flex-direction:column;
+
+        align-items:center;
+
+        text-align:center;
+
+    }
+
+    .composer-footer{
+
+        gap:12px;
+
+    }
+
+    .composer-tools{
+
+        width:100%;
+
+        justify-content:center;
+
+    }
+
+    .composer-actions{
+
+        width:100%;
+
+        flex-direction:column;
+
+        align-items:stretch;
+
+        gap:12px;
+
+    }
+
+    .image-upload-button{
+
+        width:100%;
+
+    }
+
+    .selected-image-name{
+
+        text-align:center;
+
+    }
+
+    .feed-header{
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+        gap:12px;
+
+    }
+
+    .feed-user{
+
+        width:100%;
+
+    }
+
+    .feed-actions{
+
+        flex-direction:column;
+
+        align-items:stretch;
+
+        gap:10px;
+
+    }
+
+    .like-btn,
+    .toggle-comments{
+
+        justify-content:center;
+
+    }
+
+    .comment-item{
+
+        gap:10px;
+
+    }
+
+    .avatar-sm{
+
+        width:46px;
+
+        height:46px;
+
+    }
+
+    .avatar-xs{
+
+        width:34px;
+
+        height:34px;
+
+    }
+
+}

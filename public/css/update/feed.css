@@ -1,0 +1,258 @@
+/*=========================================================
+  UPDATE PAGE
+  FEED
+=========================================================*/
+
+/*=========================================================
+  FEED CONTAINER
+=========================================================*/
+
+.feed-container{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:22px;
+
+}
+
+/*=========================================================
+  FEED CARD
+=========================================================*/
+
+.feed-card{
+
+    background:var(--card);
+
+    border-radius:var(--radius);
+
+    box-shadow:var(--shadow-md);
+
+    overflow:hidden;
+
+    transition:var(--transition);
+
+}
+
+.feed-card:hover{
+
+    box-shadow:var(--shadow-lg);
+
+}
+
+/*=========================================================
+  FEED HEADER
+=========================================================*/
+
+.feed-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:18px;
+
+    border-bottom:1px solid var(--border);
+
+}
+
+.feed-user{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+}
+
+.feed-user-info{
+
+    display:flex;
+
+    flex-direction:column;
+
+}
+
+.feed-user-info strong{
+
+    font-size:1rem;
+
+    color:var(--text);
+
+}
+
+.feed-user-info small{
+
+    margin-top:2px;
+
+    color:var(--muted);
+
+}
+
+.delete-post{
+
+    border:none;
+
+    background:none;
+
+    font-size:1.2rem;
+
+    color:var(--muted);
+
+    transition:var(--transition);
+
+}
+
+.delete-post:hover{
+
+    color:var(--red);
+
+}
+
+/*=========================================================
+  FEED BODY
+=========================================================*/
+
+.feed-body{
+
+    padding:16px 18px;
+
+    text-align:left;
+
+    height:auto;
+
+    min-height:0;
+
+}
+
+.feed-body h3{
+
+    margin-bottom:12px;
+
+    color:var(--primary);
+
+}
+
+.feed-body p{
+
+    margin-bottom:14px;
+
+    line-height:1.7;
+
+}
+
+.post-text{
+
+    margin:0;
+
+    padding:0;
+
+    font-size:15px;
+
+    line-height:1.7;
+
+    text-align:left;
+
+    white-space:pre-wrap;
+
+    word-break:break-word;
+
+    overflow-wrap:anywhere;
+
+}
+
+/*=========================================================
+  FEED IMAGE
+=========================================================*/
+
+.feed-img{
+
+    display:block;
+
+    width:100%;
+
+    margin-top:12px;
+
+    object-fit:cover;
+
+}
+
+/*=========================================================
+  FEED ACTIONS
+=========================================================*/
+
+.feed-actions{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    padding:12px 18px;
+
+    border-top:1px solid var(--border);
+
+}
+
+.like-btn,
+.toggle-comments{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:6px;
+
+    padding:6px 10px;
+
+    border:none;
+
+    background:none;
+
+    color:#555;
+
+    font-weight:bold;
+
+    transition:var(--transition);
+
+}
+
+.like-btn:hover,
+.toggle-comments:hover{
+
+    color:var(--primary);
+
+}
+
+.toggle-comments{
+
+    margin-left:auto;
+
+}
+
+.toggle-comments:hover{
+
+    background:#e3e8ec;
+
+    border-radius:8px;
+
+}
+
+.like-count,
+.comment-count{
+
+    font-weight:bold;
+
+}
+
+.like-btn i,
+.toggle-comments i{
+
+    font-size:1rem;
+
+}

@@ -1,0 +1,31 @@
+<form
+    id="markForm-<%= dairy._id %>"
+    action="/dairy/<%= dairy._id %>/medical-mark"
+    method="POST"
+    class="inline-form"
+>
+
+    <input
+        type="text"
+        name="type"
+        maxlength="200"
+        placeholder="Medical type (e.g. Mastitis)"
+        required
+    >
+
+    <textarea
+        name="details"
+        rows="3"
+        maxlength="1000"
+        placeholder="Describe the medical condition..."
+        required
+    ></textarea>
+
+    <button
+        type="submit"
+        class="btn btn-danger"
+    >
+        Mark Medical
+    </button>
+
+</form>

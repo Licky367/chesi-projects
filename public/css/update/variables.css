@@ -1,0 +1,44 @@
+/*=========================================================
+  UPDATE PAGE
+  VARIABLES
+=========================================================*/
+
+/*=========================================================
+  ROOT VARIABLES
+=========================================================*/
+
+:root{
+
+    /* Primary Theme */
+    --primary:#0b5d1e;
+    --primary-dark:#084816;
+    --primary-light:#1b7a33;
+
+    /* Accent Colors */
+    --blue:#1565c0;
+    --red:#c62828;
+    --orange:#ef6c00;
+
+    /* Backgrounds */
+    --background:#f4f6f8;
+    --card:#ffffff;
+
+    /* Borders */
+    --border:#d9dee3;
+
+    /* Text */
+    --text:#222;
+    --muted:#666;
+
+    /* Border Radius */
+    --radius:10px;
+
+    /* Shadows */
+    --shadow-sm:0 2px 6px rgba(0,0,0,.08);
+    --shadow-md:0 4px 12px rgba(0,0,0,.12);
+    --shadow-lg:0 8px 20px rgba(0,0,0,.15);
+
+    /* Animation */
+    --transition:.25s ease;
+
+}

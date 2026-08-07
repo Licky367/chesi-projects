@@ -1,0 +1,333 @@
+<style>
+/* =========================
+   PAGE
+========================= */
+.accounts-page{
+  max-width:1200px;
+  margin:0 auto;
+  padding:20px 0 40px;
+}
+
+/* =========================
+   HEADER
+========================= */
+.page-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  flex-wrap:wrap;
+  margin-bottom:25px;
+}
+
+.page-title{
+  margin:0;
+  color:#0b5d1e;
+  font-size:28px;
+  font-weight:700;
+}
+
+.page-subtitle{
+  color:#666;
+  font-size:15px;
+  margin-top:5px;
+}
+
+.user-count{
+  background:#e9f7ef;
+  color:#0b5d1e;
+  padding:10px 16px;
+  border-radius:30px;
+  font-weight:600;
+}
+
+/* =========================
+   SEARCH
+========================= */
+.search-box{
+  margin-bottom:25px;
+}
+
+.search-box input{
+  width:100%;
+  padding:14px 16px;
+  border:1px solid #ddd;
+  border-radius:12px;
+  font-size:15px;
+  transition:.25s;
+  box-sizing:border-box;
+}
+
+.search-box input:focus{
+  outline:none;
+  border-color:#0b5d1e;
+  box-shadow:0 0 0 3px rgba(11,93,30,.12);
+}
+
+/* =========================
+   GRID
+========================= */
+.users-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+  gap:20px;
+}
+
+/* =========================
+   USER CARD
+========================= */
+.user-card{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  background:#fff;
+  border-radius:18px;
+  padding:18px;
+  text-decoration:none;
+  color:#222;
+  border:1px solid #ececec;
+  box-shadow:0 8px 22px rgba(0,0,0,.05);
+  transition:.25s ease;
+}
+
+.user-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 14px 30px rgba(0,0,0,.10);
+  border-color:#0b5d1e;
+}
+
+.avatar{
+  flex-shrink:0;
+}
+
+.avatar img{
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  object-fit:cover;
+  border:3px solid #0b5d1e;
+}
+
+.avatar-placeholder{
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  background:#0b5d1e;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  font-weight:700;
+  border:3px solid #0b5d1e;
+  text-transform:uppercase;
+}
+
+.info{
+  flex:1;
+  min-width:0;
+}
+
+.info h3{
+  margin:0 0 6px;
+  color:#222;
+  font-size:19px;
+}
+
+.info p{
+  margin:0;
+  color:#666;
+  font-size:14px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.role{
+  display:inline-block;
+  margin-top:12px;
+  padding:6px 12px;
+  border-radius:30px;
+  background:#e9f7ef;
+  color:#0b5d1e;
+  font-size:12px;
+  font-weight:700;
+  text-transform:capitalize;
+}
+
+.arrow{
+  font-size:22px;
+  color:#bbb;
+  transition:.25s;
+}
+
+.user-card:hover .arrow{
+  color:#0b5d1e;
+  transform:translateX(4px);
+}
+
+/* =========================
+   EMPTY
+========================= */
+.empty{
+  text-align:center;
+  padding:60px 20px;
+  background:#fff;
+  border-radius:18px;
+  color:#888;
+  box-shadow:0 8px 20px rgba(0,0,0,.05);
+}
+
+/* =========================
+   MOBILE
+========================= */
+@media(max-width:600px){
+
+  .page-title{
+    font-size:24px;
+  }
+
+  .user-card{
+    padding:15px;
+  }
+
+  .avatar img,
+  .avatar-placeholder{
+    width:60px;
+    height:60px;
+  }
+
+  .avatar-placeholder{
+    font-size:24px;
+  }
+
+  .info h3{
+    font-size:17px;
+  }
+
+}
+</style>
+
+
+<div class="accounts-page">
+
+  <div class="page-header">
+
+    <div>
+
+      <h2 class="page-title">
+        User Accounts
+      </h2>
+
+      <div class="page-subtitle">
+        Manage and view all registered users.
+      </div>
+
+    </div>
+
+    <div class="user-count">
+      <%= users.length %> Users
+    </div>
+
+  </div>
+
+
+  <div class="search-box">
+
+    <input
+      type="text"
+      id="searchUsers"
+      placeholder="Search users by name, email or role..."
+    >
+
+  </div>
+
+
+  <% if(users && users.length > 0){ %>
+
+    <div class="users-grid" id="usersGrid">
+
+      <% users.forEach(user => { %>
+
+        <a
+          href="/accounts/<%= user._id %>"
+          class="user-card"
+        >
+
+          <div class="avatar">
+
+            <% if(user.profileImage){ %>
+
+              <img
+                src="<%= user.profileImage %>"
+                alt="<%= user.name %>"
+              >
+
+            <% } else { %>
+
+              <div class="avatar-placeholder">
+                <%= (user.name || "U").charAt(0).toUpperCase() %>
+              </div>
+
+            <% } %>
+
+          </div>
+
+          <div class="info">
+
+            <h3><%= user.name %></h3>
+
+            <p><%= user.email %></p>
+
+            <span class="role">
+              <%= user.role %>
+            </span>
+
+          </div>
+
+          <div class="arrow">
+            →
+          </div>
+
+        </a>
+
+      <% }) %>
+
+    </div>
+
+  <% } else { %>
+
+    <div class="empty">
+
+      <div style="font-size:55px;">👥</div>
+
+      <h3>No Users Found</h3>
+
+      <p>There are currently no registered user accounts.</p>
+
+    </div>
+
+  <% } %>
+
+</div>
+
+
+<script>
+const searchInput = document.getElementById("searchUsers");
+
+searchInput.addEventListener("input", function(){
+
+  const value = this.value.toLowerCase();
+
+  document.querySelectorAll(".user-card").forEach(card => {
+
+    const text = card.textContent.toLowerCase();
+
+    card.style.display = text.includes(value)
+      ? "flex"
+      : "none";
+
+  });
+
+});
+</script>

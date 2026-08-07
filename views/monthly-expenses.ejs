@@ -1,0 +1,370 @@
+<style>
+/* =========================
+   PAGE
+========================= */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 0 40px;
+}
+
+/* =========================
+   CARD
+========================= */
+.card {
+  background: #fff;
+  padding: 25px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .06);
+  border: 1px solid #eef0f2;
+}
+
+/* =========================
+   SECTION TITLE
+========================= */
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0b5d1e;
+  margin-bottom: 22px;
+}
+
+.section-title::before {
+  content: "";
+  width: 6px;
+  height: 28px;
+  border-radius: 10px;
+  background: #0b5d1e;
+}
+
+/* =========================
+   FILTERS
+========================= */
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 25px;
+  padding: 15px;
+  background: #f8faf9;
+  border-radius: 12px;
+  border: 1px solid #e8eee9;
+}
+
+.filters input {
+  flex: 1;
+  min-width: 180px;
+  padding: 12px 14px;
+  border: 1px solid #d9e0dc;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  transition: .2s ease;
+}
+
+.filters input:focus {
+  border-color: #0b5d1e;
+  box-shadow: 0 0 0 3px rgba(11, 93, 30, .10);
+}
+
+.filters button {
+  padding: 12px 22px;
+  border: none;
+  border-radius: 10px;
+  background: #0b5d1e;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.filters button:hover {
+  background: #084816;
+  transform: translateY(-1px);
+}
+
+/* =========================
+   TABLE WRAPPER
+========================= */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* =========================
+   TABLE
+========================= */
+table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #f4f7f5;
+}
+
+th {
+  padding: 15px;
+  text-align: left;
+  color: #34443a;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  border-bottom: 2px solid #e1e8e3;
+}
+
+td {
+  padding: 15px;
+  border-bottom: 1px solid #edf0ee;
+  color: #555;
+  font-size: 14px;
+}
+
+tbody tr {
+  transition: .2s ease;
+}
+
+tbody tr:hover {
+  background: #f8fbf9;
+}
+
+/* =========================
+   TYPE BADGES
+========================= */
+.type-badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.type-badge.maintenance {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.type-badge.medical {
+  background: #f8d7da;
+  color: #842029;
+}
+
+/* =========================
+   CHARGES
+========================= */
+.charges {
+  font-weight: 700;
+  color: #b00020;
+  white-space: nowrap;
+}
+
+/* =========================
+   TOTAL
+========================= */
+.total {
+  margin-top: 20px;
+  padding: 16px 18px;
+  background: #e9f7ef;
+  border-left: 5px solid #0b5d1e;
+  border-radius: 10px;
+  color: #0b5d1e;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* =========================
+   EMPTY STATE
+========================= */
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #888;
+  background: #fafafa;
+  border-radius: 12px;
+  border: 1px dashed #d8ded9;
+}
+
+/* =========================
+   MOBILE
+========================= */
+@media (max-width: 600px) {
+
+  .page {
+    padding: 12px 0 30px;
+  }
+
+  .card {
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .section-title {
+    font-size: 19px;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+
+  .filters input,
+  .filters button {
+    width: 100%;
+  }
+
+  th,
+  td {
+    padding: 12px 10px;
+  }
+}
+</style>
+
+
+<div class="page">
+
+  <div class="card">
+
+    <div class="section-title">
+      Monthly Expenses
+    </div>
+
+
+    <!-- =========================
+         FILTERS
+    ========================= -->
+
+    <form
+      class="filters"
+      method="GET"
+      action="/financials/expenses"
+    >
+
+      <input
+        type="month"
+        name="month"
+        value="<%= month || '' %>"
+      >
+
+      <input
+        type="number"
+        name="year"
+        placeholder="Enter year"
+        value="<%= year || '' %>"
+      >
+
+      <button type="submit">
+        Filter Expenses
+      </button>
+
+    </form>
+
+
+    <!-- =========================
+         EXPENSE RECORDS
+    ========================= -->
+
+    <% if (expenses && expenses.length > 0) { %>
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Charges</th>
+            </tr>
+
+          </thead>
+
+
+          <tbody>
+
+            <% expenses.forEach(e => { %>
+
+              <tr>
+
+                <td>
+
+                  <span
+                    class="type-badge <%= e.type %>"
+                  >
+                    <%= e.type %>
+                  </span>
+
+                </td>
+
+
+                <td>
+
+                  <%= e.type === 'maintenance'
+                    ? (e.maintenance?.description || 'No description')
+                    : (e.medical?.details || 'No details')
+                  %>
+
+                </td>
+
+
+                <td class="charges">
+
+                  KES <%= e.charges || 0 %>
+
+                </td>
+
+              </tr>
+
+            <% }) %>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      <!-- =========================
+           TOTAL
+      ========================= -->
+
+      <div class="total">
+
+        Total Expenses:
+        KES <%= totalExpenses || 0 %>
+
+      </div>
+
+
+    <% } else { %>
+
+
+      <!-- =========================
+           EMPTY STATE
+      ========================= -->
+
+      <div class="empty">
+
+        <div style="font-size:36px; margin-bottom:10px;">
+          💰
+        </div>
+
+        <strong>No expenses found</strong>
+
+        <p style="margin:8px 0 0;">
+          Try selecting a different month or year.
+        </p>
+
+      </div>
+
+
+    <% } %>
+
+  </div>
+
+</div>

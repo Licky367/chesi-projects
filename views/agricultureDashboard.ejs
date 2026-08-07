@@ -1,0 +1,240 @@
+<style>
+
+  /* =========================
+     FARM NAVIGATION GRID
+  ========================= */
+
+  .farm-nav-grid {
+    display: grid;
+
+    grid-template-columns:
+      repeat(2, minmax(240px, 1fr));
+
+    gap: 22px;
+
+    margin-top: 25px;
+  }
+
+
+  /* =========================
+     LINK CARD
+  ========================= */
+
+  .farm-link-card {
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+    padding: 25px;
+
+    overflow: hidden;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 18px;
+
+    background: #ffffff;
+
+    color: #374151;
+
+    text-decoration: none;
+
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.06);
+
+    transition: all 0.25s ease;
+  }
+
+  .farm-link-card::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 5px;
+    height: 100%;
+
+    background: #16a34a;
+  }
+
+  .farm-link-card:hover {
+    transform: translateY(-5px);
+
+    color: #166534;
+
+    box-shadow:
+      0 14px 30px rgba(0, 0, 0, 0.1);
+  }
+
+
+  /* =========================
+     ICON
+  ========================= */
+
+  .farm-link-icon {
+    width: 58px;
+    height: 58px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 16px;
+
+    background: #dcfce7;
+
+    font-size: 28px;
+
+    transition: all 0.25s ease;
+  }
+
+  .farm-link-card:hover .farm-link-icon {
+    transform: scale(1.08);
+
+    background: #bbf7d0;
+  }
+
+
+  /* =========================
+     TEXT
+  ========================= */
+
+  .farm-link-content {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+  }
+
+  .farm-link-title {
+    color: #166534;
+
+    font-size: 18px;
+
+    font-weight: 700;
+  }
+
+  .farm-link-description {
+    color: #6b7280;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+  }
+
+
+  /* =========================
+     ARROW
+  ========================= */
+
+  .farm-link-arrow {
+    margin-left: auto;
+
+    color: #9ca3af;
+
+    font-size: 22px;
+
+    transition: all 0.25s ease;
+  }
+
+  .farm-link-card:hover .farm-link-arrow {
+    color: #16a34a;
+
+    transform: translateX(5px);
+  }
+
+
+  /* =========================
+     RESPONSIVE
+  ========================= */
+
+  @media (max-width: 650px) {
+
+    .farm-nav-grid {
+      grid-template-columns:
+        1fr;
+    }
+
+  }
+
+</style>
+
+
+<div class="farm-nav-grid">
+
+
+  <!-- START PROJECT -->
+
+  <a
+    class="farm-link-card"
+    href="/farm"
+  >
+
+    <span class="farm-link-icon">
+      🌱
+    </span>
+
+
+    <span class="farm-link-content">
+
+      <span class="farm-link-title">
+        Start Project
+      </span>
+
+      <span class="farm-link-description">
+        Create and begin managing a new farm project.
+      </span>
+
+    </span>
+
+
+    <span class="farm-link-arrow">
+      →
+    </span>
+
+  </a>
+
+
+  <!-- VIEW PROJECTS -->
+
+  <a
+    class="farm-link-card"
+    href="/farm/projects"
+  >
+
+    <span class="farm-link-icon">
+      📂
+    </span>
+
+
+    <span class="farm-link-content">
+
+      <span class="farm-link-title">
+        View Projects
+      </span>
+
+      <span class="farm-link-description">
+        Browse and manage all your existing farm projects.
+      </span>
+
+    </span>
+
+
+    <span class="farm-link-arrow">
+      →
+    </span>
+
+  </a>
+
+
+</div>

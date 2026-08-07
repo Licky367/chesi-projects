@@ -1,0 +1,747 @@
+<style>
+
+  /* =========================
+     PAGE HEADER
+  ========================= */
+
+  .incubation-header {
+    margin-bottom: 25px;
+  }
+
+  .incubation-header h2 {
+    margin-bottom: 6px;
+
+    color: #166534;
+
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .incubation-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 15px;
+  }
+
+
+  /* =========================
+     CREATE INCUBATION CARD
+  ========================= */
+
+  .incubation-form-card {
+    padding: 28px;
+
+    border-radius: 20px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 8px 25px rgba(0, 0, 0, 0.06);
+
+    margin-bottom: 30px;
+  }
+
+  .form-card-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    margin-bottom: 22px;
+  }
+
+  .form-icon {
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: #dcfce7;
+
+    font-size: 23px;
+  }
+
+  .form-card-header h3 {
+    margin: 0;
+
+    color: #166534;
+
+    font-size: 20px;
+  }
+
+  .form-card-header p {
+    margin: 3px 0 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+  }
+
+
+  /* =========================
+     FORM
+  ========================= */
+
+  .incubation-form {
+    display: grid;
+
+    grid-template-columns:
+      1.5fr
+      1fr
+      1fr
+      auto;
+
+    gap: 15px;
+
+    align-items: end;
+  }
+
+  .form-group {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+  }
+
+  .form-group label {
+    color: #374151;
+
+    font-size: 13px;
+
+    font-weight: 600;
+  }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+
+    padding: 13px 14px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    background: #f9fafb;
+
+    color: #111827;
+
+    font-size: 14px;
+
+    transition: all 0.25s ease;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: #16a34a;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 0 0 4px rgba(22, 163, 74, 0.12);
+  }
+
+  .create-btn {
+    padding: 13px 22px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background:
+      linear-gradient(135deg, #16a34a, #15803d);
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+  }
+
+  .create-btn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+      0 8px 18px rgba(22, 163, 74, 0.25);
+  }
+
+
+  /* =========================
+     SECTION HEADER
+  ========================= */
+
+  .section-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 18px;
+  }
+
+  .section-header h3 {
+    margin: 0;
+
+    color: #374151;
+
+    font-size: 21px;
+  }
+
+  .count-badge {
+    padding: 6px 12px;
+
+    border-radius: 20px;
+
+    background: #dcfce7;
+
+    color: #166534;
+
+    font-size: 13px;
+
+    font-weight: 700;
+  }
+
+
+  /* =========================
+     INCUBATION GRID
+  ========================= */
+
+  .incubation-grid {
+    display: grid;
+
+    grid-template-columns:
+      repeat(auto-fill, minmax(300px, 1fr));
+
+    gap: 20px;
+  }
+
+  .incubation-card {
+    padding: 22px;
+
+    border-radius: 18px;
+
+    border: 1px solid #e5e7eb;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 5px 18px rgba(0, 0, 0, 0.05);
+
+    transition: all 0.25s ease;
+  }
+
+  .incubation-card:hover {
+    transform: translateY(-4px);
+
+    box-shadow:
+      0 12px 28px rgba(0, 0, 0, 0.09);
+  }
+
+
+  /* =========================
+     CARD HEADER
+  ========================= */
+
+  .incubation-card-header {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    margin-bottom: 18px;
+  }
+
+  .group-name {
+    margin: 0;
+
+    color: #166534;
+
+    font-size: 19px;
+
+    font-weight: 700;
+  }
+
+  .poultry-type {
+    display: inline-block;
+
+    margin-top: 5px;
+
+    color: #6b7280;
+
+    font-size: 13px;
+
+    text-transform: capitalize;
+  }
+
+  .status-badge {
+    padding: 6px 10px;
+
+    border-radius: 20px;
+
+    background: #fef3c7;
+
+    color: #92400e;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    text-transform: uppercase;
+  }
+
+
+  /* =========================
+     EGG COUNT
+  ========================= */
+
+  .egg-info {
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    margin-bottom: 20px;
+
+    padding: 15px;
+
+    border-radius: 12px;
+
+    background: #f9fafb;
+  }
+
+  .egg-icon {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #fef3c7;
+
+    font-size: 21px;
+  }
+
+  .egg-info strong {
+    display: block;
+
+    color: #111827;
+
+    font-size: 20px;
+  }
+
+  .egg-info span {
+    color: #6b7280;
+
+    font-size: 12px;
+  }
+
+
+  /* =========================
+     END FORM
+  ========================= */
+
+  .end-form {
+    display: flex;
+
+    gap: 10px;
+  }
+
+  .end-form input {
+    flex: 1;
+
+    min-width: 0;
+
+    padding: 11px 12px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 9px;
+
+    outline: none;
+
+    font-size: 13px;
+  }
+
+  .end-form input:focus {
+    border-color: #16a34a;
+
+    box-shadow:
+      0 0 0 3px rgba(22, 163, 74, 0.1);
+  }
+
+  .end-btn {
+    padding: 11px 15px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    background: #166534;
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.25s ease;
+  }
+
+  .end-btn:hover {
+    background: #14532d;
+  }
+
+
+  /* =========================
+     EMPTY STATE
+  ========================= */
+
+  .empty-state {
+    padding: 45px 20px;
+
+    border-radius: 18px;
+
+    background: #f9fafb;
+
+    color: #6b7280;
+
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    margin-bottom: 10px;
+
+    font-size: 38px;
+  }
+
+
+  /* =========================
+     RESPONSIVE
+  ========================= */
+
+  @media (max-width: 900px) {
+
+    .incubation-form {
+      grid-template-columns:
+        repeat(2, 1fr);
+    }
+
+    .create-btn {
+      width: 100%;
+    }
+
+  }
+
+  @media (max-width: 600px) {
+
+    .incubation-form {
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: stretch;
+    }
+
+    .incubation-header h2 {
+      font-size: 24px;
+    }
+
+    .incubation-form-card {
+      padding: 22px;
+    }
+
+    .end-form {
+      flex-direction: column;
+    }
+
+    .end-btn {
+      width: 100%;
+    }
+
+  }
+
+</style>
+
+
+<div class="container mt-4 mb-5">
+
+
+  <!-- PAGE HEADER -->
+
+  <div class="incubation-header">
+
+    <h2>
+      🐣 Incubation Management
+    </h2>
+
+    <p>
+      Create and monitor your active poultry incubation groups.
+    </p>
+
+  </div>
+
+
+  <!-- CREATE INCUBATION -->
+
+  <div class="incubation-form-card">
+
+    <div class="form-card-header">
+
+      <div class="form-icon">
+        🥚
+      </div>
+
+      <div>
+
+        <h3>
+          Start New Incubation
+        </h3>
+
+        <p>
+          Register a new group of eggs for incubation.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <form
+      action="/incubation/create"
+      method="POST"
+      class="incubation-form"
+    >
+
+
+      <div class="form-group">
+
+        <label for="groupName">
+          Group Name
+        </label>
+
+        <input
+          type="text"
+          id="groupName"
+          name="groupName"
+          placeholder="e.g. Batch A"
+          required
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="poultryType">
+          Poultry Type
+        </label>
+
+        <select
+          id="poultryType"
+          name="poultryType"
+          required
+        >
+
+          <option value="chicken">
+            Chicken
+          </option>
+
+          <option value="duck">
+            Duck
+          </option>
+
+          <option value="goose">
+            Goose
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="eggCount">
+          Number of Eggs
+        </label>
+
+        <input
+          type="number"
+          id="eggCount"
+          name="eggCount"
+          placeholder="e.g. 50"
+          min="1"
+          required
+        >
+
+      </div>
+
+
+      <button
+        type="submit"
+        class="create-btn"
+      >
+
+        + Create
+
+      </button>
+
+
+    </form>
+
+  </div>
+
+
+  <!-- ACTIVE INCUBATIONS -->
+
+  <div class="section-header">
+
+    <h3>
+      Active Incubations
+    </h3>
+
+    <span class="count-badge">
+
+      <%= incubations.length %>
+      Active
+
+    </span>
+
+  </div>
+
+
+  <% if (incubations.length > 0) { %>
+
+
+    <div class="incubation-grid">
+
+
+      <% incubations.forEach(i => { %>
+
+
+        <div class="incubation-card">
+
+
+          <div class="incubation-card-header">
+
+            <div>
+
+              <h4 class="group-name">
+                <%= i.groupName %>
+              </h4>
+
+              <span class="poultry-type">
+                <%= i.poultryType %>
+              </span>
+
+            </div>
+
+
+            <span class="status-badge">
+              Active
+            </span>
+
+          </div>
+
+
+          <div class="egg-info">
+
+            <div class="egg-icon">
+              🥚
+            </div>
+
+            <div>
+
+              <strong>
+                <%= i.eggCount %>
+              </strong>
+
+              <span>
+                Eggs in incubation
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <form
+            action="/incubation/end/<%= i._id %>"
+            method="POST"
+            class="end-form"
+          >
+
+            <input
+              type="number"
+              name="successfulHatches"
+              placeholder="Successful hatches"
+              min="0"
+              max="<%= i.eggCount %>"
+              required
+            >
+
+            <button
+              type="submit"
+              class="end-btn"
+            >
+
+              End Incubation
+
+            </button>
+
+          </form>
+
+
+        </div>
+
+
+      <% }) %>
+
+
+    </div>
+
+
+  <% } else { %>
+
+
+    <div class="empty-state">
+
+      <div class="empty-state-icon">
+        🐣
+      </div>
+
+      <h4>
+        No Active Incubations
+      </h4>
+
+      <p>
+        Create your first incubation group to start tracking your eggs.
+      </p>
+
+    </div>
+
+
+  <% } %>
+
+
+</div>

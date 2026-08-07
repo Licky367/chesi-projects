@@ -1,0 +1,31 @@
+<link rel="stylesheet" href="/css/update/update.css">
+
+<script src="/socket.io/socket.io.js"></script>
+
+<div class="dairy-page">
+
+    <!-- ========================.=============================
+         PROFILE CARD
+    ====================================================== -->
+
+    <%- include("update/profile-card") %>
+
+    <!-- =====================================================
+         CREATE POST
+    ====================================================== -->
+
+    <% if (user) { %>
+
+        <%- include("update/create-post") %>
+
+    <% } %>
+
+    <!-- =====================================================
+         FEED
+    =======================.=============================== -->
+
+    <%- include("update/feed") %>
+
+</div>
+
+<script src="/js/update/index.js"></script>

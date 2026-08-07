@@ -1,0 +1,147 @@
+<!-- =======================.==============================
+     COMMENT MODAL
+====================================================== -->
+
+<div
+    class="comment-modal"
+    data-comment-modal="<%= item._id %>"
+>
+
+    <div class="comment-modal-content">
+
+        <div class="comment-modal-header">
+
+            <button
+                type="button"
+                class="close-comment-modal"
+                aria-label="Close comments"
+            >
+
+                <i class="bi bi-arrow-left-circle-fill"></i>
+
+            </button>
+
+            <h3>
+
+                Comments
+
+            </h3>
+
+            <span></span>
+
+        </div>
+
+        <div class="comment-modal-body">
+
+            <div class="comment-section">
+
+                <% if (item.comments && item.comments.length) { %>
+
+                    <% item.comments.forEach(comment => { %>
+
+                        <div
+                            class="comment-item"
+                            data-id="<%= comment._id %>"
+                        >
+
+                            <div class="comment-user">
+
+                                <img
+                                    src="<%= comment.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.userName)) %>"
+                                    class="avatar-xs"
+                                    alt="<%= comment.userName %>"
+                                >
+
+                                <div class="comment-content">
+
+                                    <strong>
+
+                                        <%= comment.userName %>
+
+                                    </strong>
+
+                                    <p>
+
+                                        <%= comment.text %>
+
+                                    </p>
+
+                                    <small>
+
+                                        <%= comment.dateText || "" %>
+
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+                            <% if (
+                                user &&
+                                (
+                                    user.role === "admin" ||
+                                    (
+                                        user._id &&
+                                        item.userId &&
+                                        user._id.toString() === item.userId.toString()
+                                    )
+                                )
+                            ) { %>
+
+                                <button
+                                    class="delete-comment"
+                                    data-id="<%= comment._id %>"
+                                    title="Delete Comment"
+                                    type="button"
+                                >
+
+                                    <i class="bi bi-trash3-fill"></i>
+
+                                </button>
+
+                            <% } %>
+
+                        </div>
+
+                    <% }) %>
+
+                <% } else { %>
+
+                    <div class="comment-empty-state">
+
+                        No comments yet. Start the conversation.
+
+                    </div>
+
+                <% } %>
+
+                <% if (user) { %>
+
+                    <form
+                        class="comment-form"
+                        data-id="<%= item._id %>"
+                        data-type="<%= type %>"
+                    >
+
+                        <textarea
+                            placeholder="Write a comment..."
+                            required
+                        ></textarea>
+
+                        <button type="submit" aria-label="Send comment">
+
+                            <i class="bi bi-send-fill"></i>
+
+                        </button>
+
+                    </form>
+
+                <% } %>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

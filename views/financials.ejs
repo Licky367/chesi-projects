@@ -1,0 +1,1146 @@
+<div class="financial-page">
+
+
+  <!-- =====================================================
+       FILTER SECTION
+  ====================================================== -->
+
+  <div class="financial-card">
+
+    <div class="section-heading">
+
+      <div class="section-icon">
+        🔍
+      </div>
+
+      <div>
+
+        <h2>
+          Financial Filters
+        </h2>
+
+        <p>
+          Select a period to analyze your financial performance.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <form
+      class="filters"
+      method="GET"
+      action="/financials"
+    >
+
+      <div class="filter-group">
+
+        <label for="day">
+          Day
+        </label>
+
+        <input
+          id="day"
+          type="date"
+          name="day"
+          value="<%= day || '' %>"
+        >
+
+      </div>
+
+
+      <div class="filter-group">
+
+        <label for="month">
+          Month
+        </label>
+
+        <input
+          id="month"
+          type="month"
+          name="month"
+          value="<%= month || '' %>"
+        >
+
+      </div>
+
+
+      <div class="filter-group">
+
+        <label for="year">
+          Year
+        </label>
+
+        <input
+          id="year"
+          type="number"
+          name="year"
+          placeholder="e.g. 2026"
+          value="<%= year || '' %>"
+        >
+
+      </div>
+
+
+      <div class="filter-group">
+
+        <label for="type">
+          Report Type
+        </label>
+
+        <select
+          id="type"
+          name="type"
+        >
+
+          <option
+            value="daily"
+            <%= type === 'daily' ? 'selected' : '' %>
+          >
+            Daily
+          </option>
+
+          <option
+            value="monthly"
+            <%= type === 'monthly' ? 'selected' : '' %>
+          >
+            Monthly
+          </option>
+
+          <option
+            value="yearly"
+            <%= type === 'yearly' ? 'selected' : '' %>
+          >
+            Yearly
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <button
+        type="submit"
+        class="generate-btn"
+      >
+
+        📊 Generate Report
+
+      </button>
+
+    </form>
+
+  </div>
+
+
+  <!-- =====================================================
+       FINANCIAL SUMMARY
+  ====================================================== -->
+
+  <div class="financial-card">
+
+    <div class="section-heading">
+
+      <div class="section-icon">
+        💰
+      </div>
+
+      <div>
+
+        <h2>
+          Financial Summary
+        </h2>
+
+        <p>
+          Overview of income, expenses, and profitability.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <div class="summary-grid">
+
+
+      <!-- MILK INCOME -->
+
+      <div class="summary-box income">
+
+        <div class="summary-icon">
+          🥛
+        </div>
+
+        <div>
+
+          <span>
+            Milk Income
+          </span>
+
+          <strong>
+            KES <%= financial?.milkCash || 0 %>
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- MAINTENANCE -->
+
+      <div class="summary-box maintenance">
+
+        <div class="summary-icon">
+          🔧
+        </div>
+
+        <div>
+
+          <span>
+            Maintenance
+          </span>
+
+          <strong>
+            KES <%= financial?.maintenanceCost || 0 %>
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- MEDICAL -->
+
+      <div class="summary-box medical">
+
+        <div class="summary-icon">
+          🩺
+        </div>
+
+        <div>
+
+          <span>
+            Medical
+          </span>
+
+          <strong>
+            KES <%= financial?.medicalCost || 0 %>
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- EXPENSES -->
+
+      <div class="summary-box expenses">
+
+        <div class="summary-icon">
+          📉
+        </div>
+
+        <div>
+
+          <span>
+            Total Expenses
+          </span>
+
+          <strong>
+            KES <%= financial?.totalExpenses || 0 %>
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- PROFIT -->
+
+      <div class="summary-box profit">
+
+        <div class="summary-icon">
+          📈
+        </div>
+
+        <div>
+
+          <span>
+            Profit
+          </span>
+
+          <strong>
+            KES <%= financial?.profit || 0 %>
+          </strong>
+
+        </div>
+
+      </div>
+
+
+    </div>
+
+  </div>
+
+
+  <!-- =====================================================
+       DAILY CUSTOMER SALES
+  ====================================================== -->
+
+  <div class="financial-card">
+
+    <div class="section-heading">
+
+      <div class="section-icon">
+        🧾
+      </div>
+
+      <div>
+
+        <h2>
+          Daily Customer Sales
+        </h2>
+
+        <p>
+          Review customer milk sales and collected cash.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <% if (sales && sales.length > 0) { %>
+
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+
+            <tr>
+
+              <th>
+                Customer
+              </th>
+
+              <th>
+                Liters
+              </th>
+
+              <th>
+                Cash
+              </th>
+
+            </tr>
+
+          </thead>
+
+
+          <tbody>
+
+
+            <% sales.forEach(s => { %>
+
+              <tr>
+
+                <td>
+                  <strong>
+                    <%= s.customerName %>
+                  </strong>
+                </td>
+
+                <td>
+                  <%= s.liters %> L
+                </td>
+
+                <td class="money">
+
+                  KES <%= s.cash %>
+
+                </td>
+
+              </tr>
+
+            <% }) %>
+
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      <div class="total-bar">
+
+        <span>
+          Total Sales Cash
+        </span>
+
+        <strong>
+          KES <%= totalSalesCash || 0 %>
+        </strong>
+
+      </div>
+
+
+    <% } else { %>
+
+
+      <div class="empty-state">
+
+        🧾
+
+        <p>
+          No sales records found.
+        </p>
+
+      </div>
+
+
+    <% } %>
+
+  </div>
+
+
+  <!-- =====================================================
+       EXPENSES
+  ====================================================== -->
+
+  <div class="financial-card">
+
+    <div class="section-heading">
+
+      <div class="section-icon">
+        💸
+      </div>
+
+      <div>
+
+        <h2>
+          Monthly Expenses
+        </h2>
+
+        <p>
+          Track maintenance and medical-related expenses.
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <% if (expenses && expenses.length > 0) { %>
+
+
+      <div class="table-wrapper">
+
+        <table>
+
+          <thead>
+
+            <tr>
+
+              <th>
+                Type
+              </th>
+
+              <th>
+                Description
+              </th>
+
+              <th>
+                Charges
+              </th>
+
+            </tr>
+
+          </thead>
+
+
+          <tbody>
+
+
+            <% expenses.forEach(e => { %>
+
+              <tr>
+
+                <td>
+
+                  <span
+                    class="expense-badge
+                    <%= e.type === 'maintenance'
+                      ? 'maintenance-badge'
+                      : 'medical-badge' %>"
+                  >
+
+                    <%= e.type %>
+
+                  </span>
+
+                </td>
+
+
+                <td>
+
+                  <%= e.type === 'maintenance'
+                    ? e.maintenance?.description
+                    : e.medical?.details %>
+
+                </td>
+
+
+                <td class="money">
+
+                  KES <%= e.charges || 0 %>
+
+                </td>
+
+              </tr>
+
+            <% }) %>
+
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      <div class="total-bar expense-total">
+
+        <span>
+          Total Expenses
+        </span>
+
+        <strong>
+          KES <%= totalExpenses || 0 %>
+        </strong>
+
+      </div>
+
+
+    <% } else { %>
+
+
+      <div class="empty-state">
+
+        💸
+
+        <p>
+          No expenses found.
+        </p>
+
+      </div>
+
+
+    <% } %>
+
+  </div>
+
+
+</div>
+
+
+<style>
+
+
+/* =====================================================
+   PAGE
+===================================================== */
+
+.financial-page {
+
+  max-width: 1200px;
+
+  margin: 0 auto;
+
+  padding: 20px 0 40px;
+
+}
+
+
+/* =====================================================
+   MAIN CARD
+===================================================== */
+
+.financial-card {
+
+  margin-bottom: 22px;
+
+  padding: 24px;
+
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 7px 22px rgba(0, 0, 0, 0.06);
+
+}
+
+
+/* =====================================================
+   SECTION HEADING
+===================================================== */
+
+.section-heading {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  margin-bottom: 22px;
+
+}
+
+
+.section-icon {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 46px;
+
+  height: 46px;
+
+  border-radius: 12px;
+
+  background: #dcfce7;
+
+  font-size: 22px;
+
+}
+
+
+.section-heading h2 {
+
+  margin: 0 0 4px;
+
+  color: #166534;
+
+  font-size: 20px;
+
+}
+
+
+.section-heading p {
+
+  margin: 0;
+
+  color: #6b7280;
+
+  font-size: 13px;
+
+}
+
+
+/* =====================================================
+   FILTERS
+===================================================== */
+
+.filters {
+
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 13px;
+
+  flex-wrap: wrap;
+
+}
+
+
+.filter-group {
+
+  flex: 1;
+
+  min-width: 150px;
+
+}
+
+
+.filter-group label {
+
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: #374151;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+}
+
+
+.filter-group input,
+
+.filter-group select {
+
+  width: 100%;
+
+  padding: 11px 12px;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 9px;
+
+  background: #f9fafb;
+
+  outline: none;
+
+  font-family: inherit;
+
+}
+
+
+.filter-group input:focus,
+
+.filter-group select:focus {
+
+  border-color: #16a34a;
+
+  box-shadow:
+    0 0 0 3px rgba(22, 163, 74, 0.1);
+
+}
+
+
+.generate-btn {
+
+  padding: 11px 18px;
+
+  border: none;
+
+  border-radius: 9px;
+
+  background: #166534;
+
+  color: #ffffff;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+
+}
+
+
+.generate-btn:hover {
+
+  background: #14532d;
+
+  transform: translateY(-1px);
+
+}
+
+
+/* =====================================================
+   SUMMARY GRID
+===================================================== */
+
+.summary-grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(190px, 1fr)
+    );
+
+  gap: 15px;
+
+}
+
+
+.summary-box {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  min-height: 95px;
+
+  padding: 17px;
+
+  border-radius: 13px;
+
+  background: #f9fafb;
+
+  border-left: 5px solid #166534;
+
+  transition: 0.2s ease;
+
+}
+
+
+.summary-box:hover {
+
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 7px 18px rgba(0, 0, 0, 0.07);
+
+}
+
+
+.summary-icon {
+
+  font-size: 25px;
+
+}
+
+
+.summary-box span {
+
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #6b7280;
+
+  font-size: 13px;
+
+}
+
+
+.summary-box strong {
+
+  color: #111827;
+
+  font-size: 18px;
+
+}
+
+
+/* SUMMARY ACCENTS */
+
+.income {
+
+  border-left-color: #16a34a;
+
+}
+
+
+.maintenance {
+
+  border-left-color: #f59e0b;
+
+}
+
+
+.medical {
+
+  border-left-color: #dc2626;
+
+}
+
+
+.expenses {
+
+  border-left-color: #7c3aed;
+
+}
+
+
+.profit {
+
+  border-left-color: #059669;
+
+}
+
+
+/* =====================================================
+   TABLE
+===================================================== */
+
+.table-wrapper {
+
+  overflow-x: auto;
+
+}
+
+
+table {
+
+  width: 100%;
+
+  border-collapse: collapse;
+
+}
+
+
+th,
+
+td {
+
+  padding: 13px 12px;
+
+  border-bottom: 1px solid #eeeeee;
+
+  text-align: left;
+
+}
+
+
+th {
+
+  background: #f8fafc;
+
+  color: #6b7280;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+}
+
+
+td {
+
+  color: #4b5563;
+
+  font-size: 14px;
+
+}
+
+
+tbody tr:hover {
+
+  background: #f9fafb;
+
+}
+
+
+.money {
+
+  color: #166534;
+
+  font-weight: 700;
+
+}
+
+
+/* =====================================================
+   TOTAL BAR
+===================================================== */
+
+.total-bar {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-top: 16px;
+
+  padding: 14px 16px;
+
+  border-left: 5px solid #166534;
+
+  border-radius: 9px;
+
+  background: #f0fdf4;
+
+}
+
+
+.total-bar span {
+
+  color: #374151;
+
+  font-weight: 600;
+
+}
+
+
+.total-bar strong {
+
+  color: #166534;
+
+  font-size: 17px;
+
+}
+
+
+.expense-total {
+
+  border-left-color: #7c3aed;
+
+  background: #faf5ff;
+
+}
+
+
+.expense-total strong {
+
+  color: #7c3aed;
+
+}
+
+
+/* =====================================================
+   EXPENSE BADGES
+===================================================== */
+
+.expense-badge {
+
+  display: inline-block;
+
+  padding: 5px 9px;
+
+  border-radius: 20px;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  text-transform: capitalize;
+
+}
+
+
+.maintenance-badge {
+
+  background: #fef3c7;
+
+  color: #92400e;
+
+}
+
+
+.medical-badge {
+
+  background: #fee2e2;
+
+  color: #991b1b;
+
+}
+
+
+/* =====================================================
+   EMPTY STATE
+===================================================== */
+
+.empty-state {
+
+  padding: 30px;
+
+  border-radius: 10px;
+
+  background: #f9fafb;
+
+  color: #9ca3af;
+
+  text-align: center;
+
+  font-size: 25px;
+
+}
+
+
+.empty-state p {
+
+  margin: 8px 0 0;
+
+  font-size: 14px;
+
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 650px) {
+
+
+  .financial-page {
+
+    padding: 10px 0 30px;
+
+  }
+
+
+  .financial-card {
+
+    padding: 17px;
+
+  }
+
+
+  .filters {
+
+    align-items: stretch;
+
+    flex-direction: column;
+
+  }
+
+
+  .filter-group {
+
+    width: 100%;
+
+  }
+
+
+  .generate-btn {
+
+    width: 100%;
+
+  }
+
+
+  .section-heading {
+
+    align-items: flex-start;
+
+  }
+
+
+  .total-bar {
+
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+  }
+
+
+  th,
+
+  td {
+
+    padding: 10px;
+
+    white-space: nowrap;
+
+  }
+
+
+}
+
+
+</style>

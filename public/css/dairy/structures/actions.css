@@ -1,0 +1,67 @@
+/*=========================================================
+  ACTIONS
+=========================================================*/
+
+.dairy-actions{
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:10px;
+
+    padding:0 18px 18px 98px;
+
+}
+
+.action-btn{
+
+    padding:9px 14px;
+
+    border:none;
+
+    border-radius:8px;
+
+    color:#ffffff;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:all .25s ease;
+
+}
+
+.action-btn:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:0 5px 12px rgba(0,0,0,.15);
+
+}
+
+.mark-btn{
+
+    background:#166534;
+
+}
+
+.mark-btn:hover{
+
+    background:#14532d;
+
+}
+
+.unmark-btn{
+
+    background:#374151;
+
+}
+
+.unmark-btn:hover{
+
+    background:#1f2937;
+
+}

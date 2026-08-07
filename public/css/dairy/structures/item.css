@@ -1,0 +1,172 @@
+/*=========================================================
+  ITEM
+=========================================================*/
+
+.dairy-item{
+
+    border-bottom:1px solid #e5e7eb;
+
+    transition:background .25s ease;
+
+}
+
+.dairy-item:last-child{
+
+    border-bottom:none;
+
+}
+
+.dairy-item:hover{
+
+    background:#fcfffd;
+
+}
+
+
+/*=========================================================
+  MAIN LINK
+=========================================================*/
+
+.dairy-link{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+    padding:18px;
+
+    color:#111827;
+
+    text-decoration:none;
+
+    transition:all .25s ease;
+
+}
+
+.dairy-link:hover{
+
+    color:#166534;
+
+}
+
+
+/*=========================================================
+  AVATAR
+=========================================================*/
+
+.dairy-avatar{
+
+    width:64px;
+
+    height:64px;
+
+    flex-shrink:0;
+
+    object-fit:cover;
+
+    border:3px solid #dcfce7;
+
+    border-radius:50%;
+
+    background:#f0fdf4;
+
+}
+
+
+/*=========================================================
+  DETAILS
+=========================================================*/
+
+.dairy-details{
+
+    flex:1;
+
+    min-width:0;
+
+}
+
+.dairy-name{
+
+    margin-bottom:6px;
+
+    color:#111827;
+
+    font-size:17px;
+
+    font-weight:700;
+
+}
+
+.dairy-code{
+
+    margin-bottom:7px;
+
+    color:#6b7280;
+
+    font-size:13px;
+
+}
+
+
+/*=========================================================
+  STATUS
+=========================================================*/
+
+.status-badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:5px;
+
+    padding:5px 10px;
+
+    border-radius:20px;
+
+    font-size:11px;
+
+    font-weight:700;
+
+}
+
+.status-ok{
+
+    background:#dcfce7;
+
+    color:#166534;
+
+}
+
+.status-maintenance{
+
+    background:#fee2e2;
+
+    color:#b91c1c;
+
+}
+
+
+/*=========================================================
+  ARROW
+=========================================================*/
+
+.dairy-arrow{
+
+    color:#9ca3af;
+
+    font-size:24px;
+
+    transition:all .25s ease;
+
+}
+
+.dairy-link:hover .dairy-arrow{
+
+    color:#16a34a;
+
+    transform:translateX(5px);
+
+}

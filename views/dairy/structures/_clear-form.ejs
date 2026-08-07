@@ -1,0 +1,29 @@
+<form
+    id="unmark-form-<%= dairy._id %>"
+    action="/dairy/<%= dairy._id %>/maintenance/clear"
+    method="POST"
+    class="maintenance-form"
+>
+
+    <input
+        type="number"
+        name="charges"
+        placeholder="Charges incurred (KES)"
+        min="0"
+        required
+    >
+
+    <textarea
+        name="description"
+        placeholder="Describe the work completed..."
+        required
+    ></textarea>
+
+    <button
+        type="submit"
+        class="form-submit-btn submit-clear"
+    >
+        ✓ Confirm Maintenance Completed
+    </button>
+
+</form>

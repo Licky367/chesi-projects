@@ -1,0 +1,23 @@
+<!-- =========================================================
+     DAIRY STRUCTURES
+========================================================= -->
+
+<link rel="stylesheet" href="/public/css/dairy/structures/index.css">
+
+<div class="dairy-page">
+
+    <%- include("./_header") %>
+
+    <% if (dairies && dairies.length > 0) { %>
+
+        <%- include("./_list", { dairies, user }) %>
+
+    <% } else { %>
+
+        <%- include("./_empty-state") %>
+
+    <% } %>
+
+</div>
+
+<script src="/public/js/dairy/structures/index.js"></script>

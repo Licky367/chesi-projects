@@ -1,0 +1,492 @@
+<style>
+/* =========================
+   PAGE
+========================= */
+.page {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 20px 0 40px;
+}
+
+/* =========================
+   CARD
+========================= */
+.card {
+  background: #fff;
+  padding: 30px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.06);
+  border: 1px solid #edf0f2;
+}
+
+/* =========================
+   PROFILE HEADER
+========================= */
+.profile-top {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  flex-wrap: wrap;
+}
+
+.avatar-wrapper {
+  position: relative;
+}
+
+.avatar-img {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #0b5d1e;
+  cursor: pointer;
+  transition: .25s ease;
+}
+
+.avatar-img:hover {
+  transform: scale(1.04);
+  opacity: .9;
+}
+
+.camera-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  background: #0b5d1e;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  border: 2px solid #fff;
+  pointer-events: none;
+}
+
+.info {
+  flex: 1;
+}
+
+.info h2 {
+  margin: 0 0 10px;
+  color: #0b5d1e;
+  font-size: 28px;
+}
+
+.info p {
+  margin: 6px 0;
+  color: #666;
+  font-size: 15px;
+}
+
+/* =========================
+   DIVIDER
+========================= */
+.divider {
+  margin: 30px 0;
+  border: none;
+  border-top: 1px solid #eee;
+}
+
+/* =========================
+   SECTION TITLE
+========================= */
+.section-title {
+  color: #0b5d1e;
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+.sub-title {
+  color: #333;
+  margin: 10px 0 18px;
+}
+
+/* =========================
+   FORM
+========================= */
+.form-group {
+  margin-bottom: 18px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #444;
+}
+
+input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid #dcdcdc;
+  border-radius: 10px;
+  font-size: 15px;
+  transition: .2s ease;
+  box-sizing: border-box;
+}
+
+input:focus {
+  outline: none;
+  border-color: #0b5d1e;
+  box-shadow: 0 0 0 3px rgba(11,93,30,.1);
+}
+
+/* =========================
+   PHONE
+========================= */
+.phone-group {
+  display: flex;
+  align-items: center;
+}
+
+.country-code {
+  background: #f4f5f6;
+  border: 1px solid #ddd;
+  border-right: none;
+  padding: 13px 15px;
+  border-radius: 10px 0 0 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.phone-group input {
+  border-radius: 0 10px 10px 0;
+}
+
+/* =========================
+   PASSWORD
+========================= */
+.password-wrapper {
+  position: relative;
+}
+
+.password-wrapper input {
+  padding-right: 80px;
+}
+
+.toggle-pass {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  color: #0b5d1e;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+}
+
+/* =========================
+   BUTTON
+========================= */
+button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 15px;
+  border: none;
+  border-radius: 12px;
+  background: #0b5d1e;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .25s ease;
+}
+
+button:hover {
+  background: #084816;
+  transform: translateY(-2px);
+}
+
+/* =========================
+   MOBILE
+========================= */
+@media (max-width:600px){
+
+.card{
+  padding:20px;
+}
+
+.profile-top{
+  flex-direction:column;
+  text-align:center;
+}
+
+.avatar-img{
+  width:110px;
+  height:110px;
+}
+
+.info h2{
+  font-size:24px;
+}
+
+.phone-group{
+  flex-direction:column;
+}
+
+.country-code{
+  width:100%;
+  border-right:1px solid #ddd;
+  border-radius:10px 10px 0 0;
+  text-align:center;
+}
+
+.phone-group input{
+  border-radius:0 0 10px 10px;
+}
+
+}
+</style>
+
+
+<div class="page">
+
+<div class="card">
+
+    <!-- =========================
+         PROFILE HEADER
+    ========================= -->
+
+    <div class="profile-top">
+
+        <div class="avatar-wrapper">
+
+            <img
+                id="avatarPreview"
+                class="avatar-img"
+                src="<%= user && user.profileImage ? ('/uploads/' + user.profileImage) : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user ? user.name : 'User') + '&background=0b5d1e&color=fff' %>"
+                alt="Profile"
+                onclick="document.getElementById('fileInput').click()"
+            >
+
+            <div class="camera-badge">📷</div>
+
+        </div>
+
+        <input
+            type="file"
+            id="fileInput"
+            name="profileImage"
+            accept="image/*"
+            hidden
+        >
+
+        <div class="info">
+            <h2><%= user ? user.name : '' %></h2>
+            <p>📧 <%= user ? user.email : '' %></p>
+            <p>📱 <%= user ? user.phone : '' %></p>
+        </div>
+
+    </div>
+
+    <hr class="divider">
+
+    <!-- =========================
+         PROFILE FORM
+    ========================= -->
+
+    <h2 class="section-title">Edit Profile</h2>
+
+    <form
+        action="/profile/update"
+        method="POST"
+        enctype="multipart/form-data"
+    >
+
+        <div class="form-group">
+            <label>Full Name</label>
+            <input
+                type="text"
+                name="name"
+                value="<%= user ? user.name : '' %>"
+            >
+        </div>
+
+        <div class="form-group">
+            <label>Email Address</label>
+            <input
+                type="email"
+                name="email"
+                value="<%= user ? user.email : '' %>"
+            >
+        </div>
+
+        <div class="form-group">
+            <label>Phone Number</label>
+
+            <div class="phone-group">
+
+                <div class="country-code">
+                    🇰🇪 +254
+                </div>
+
+                <input
+                    type="text"
+                    id="phone"
+                    name="phone"
+                    value="<%= user ? user.phone : '' %>"
+                >
+
+            </div>
+
+        </div>
+
+        <hr class="divider">
+
+        <h3 class="sub-title">
+            🔒 Change Password
+        </h3>
+
+        <div class="form-group">
+
+            <label>Current Password</label>
+
+            <div class="password-wrapper">
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Enter current password"
+                >
+
+                <span class="toggle-pass">
+                    Show
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="form-group">
+
+            <label>New Password</label>
+
+            <div class="password-wrapper">
+
+                <input
+                    type="password"
+                    name="newPassword"
+                    placeholder="Enter new password"
+                >
+
+                <span class="toggle-pass">
+                    Show
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="form-group">
+
+            <label>Confirm New Password</label>
+
+            <div class="password-wrapper">
+
+                <input
+                    type="password"
+                    name="confirmNewPassword"
+                    placeholder="Confirm new password"
+                >
+
+                <span class="toggle-pass">
+                    Show
+                </span>
+
+            </div>
+
+        </div>
+
+        <button type="submit">
+            Save Changes
+        </button>
+
+    </form>
+
+</div>
+
+</div>
+
+
+<script>
+/* =========================
+   IMAGE PREVIEW
+========================= */
+
+const fileInput = document.getElementById("fileInput");
+const avatarPreview = document.getElementById("avatarPreview");
+
+fileInput.addEventListener("change", (e) => {
+
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(event){
+        avatarPreview.src = event.target.result;
+    };
+
+    reader.readAsDataURL(file);
+
+});
+
+
+/* =========================
+   KENYAN PHONE FORMAT
+========================= */
+
+const phone = document.getElementById("phone");
+
+phone.addEventListener("input", () => {
+
+    let value = phone.value.replace(/\D/g, "");
+
+    if(value.startsWith("254")) value = value.slice(3);
+    if(value.startsWith("0")) value = value.slice(1);
+
+    value = value.substring(0,9);
+
+    let formatted = "";
+
+    if(value.length > 0)
+        formatted += value.substring(0,3);
+
+    if(value.length > 3)
+        formatted += " " + value.substring(3,6);
+
+    if(value.length > 6)
+        formatted += " " + value.substring(6,9);
+
+    phone.value = formatted;
+
+});
+
+
+/* =========================
+   SHOW / HIDE PASSWORDS
+========================= */
+
+document.querySelectorAll(".toggle-pass").forEach(btn => {
+
+    btn.addEventListener("click", () => {
+
+        const input = btn.previousElementSibling;
+
+        if(input.type === "password"){
+            input.type = "text";
+            btn.textContent = "Hide";
+        }else{
+            input.type = "password";
+            btn.textContent = "Show";
+        }
+
+    });
+
+});
+</script>

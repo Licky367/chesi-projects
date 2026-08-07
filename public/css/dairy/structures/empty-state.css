@@ -1,0 +1,47 @@
+/*=========================================================
+  EMPTY STATE
+=========================================================*/
+
+.empty-state{
+
+    padding:50px 20px;
+
+    border-radius:18px;
+
+    background:#f9fafb;
+
+    color:#6b7280;
+
+    text-align:center;
+
+}
+
+.empty-state-icon{
+
+    margin-bottom:10px;
+
+    font-size:42px;
+
+}
+
+.empty-state h3{
+
+    margin:0 0 7px;
+
+    color:#374151;
+
+    font-size:22px;
+
+    font-weight:700;
+
+}
+
+.empty-state p{
+
+    margin:0;
+
+    font-size:14px;
+
+    line-height:1.6;
+
+}

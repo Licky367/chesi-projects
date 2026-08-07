@@ -1,0 +1,25 @@
+/*=========================================================
+  UPDATE PAGE STYLESHEET
+  Main entry file
+
+  Import order matters:
+  1. Variables
+  2. Reset
+  3. Layout
+  4. Components
+  5. Utilities
+  6. Responsive
+=========================================================*/
+
+@import url("./variables.css");
+@import url("./reset.css");
+@import url("./layout.css");
+@import url("./profile.css");
+@import url("./composer.css");
+@import url("./feed.css");
+@import url("./comments.css");
+@import url("./tables.css");
+@import url("./status.css");
+@import url("./animations.css");
+@import url("./scrollbar.css");
+@import url("./responsive.css");

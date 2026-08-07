@@ -1,0 +1,421 @@
+<!-- ======================================================
+     PROFILE CARD
+====================================================== -->
+
+<section
+    class="profile-card"
+    data-dairy-id="<%= dairy._id %>"
+>
+
+
+    <!-- ================= MENU ================= -->
+
+    <div class="profile-menu">
+
+        <button
+            id="profileMenuBtn"
+            class="profile-menu-btn"
+            type="button"
+            aria-label="Profile options"
+        >
+
+            &#8942;
+
+        </button>
+
+
+        <div
+            id="profileDropdown"
+            class="profile-dropdown"
+        >
+
+
+            <% if (user?.role === "admin") { %>
+
+                <button
+                    id="editProfileBtn"
+                    type="button"
+                    class="dropdown-item"
+                >
+
+                    ✏️ Edit
+
+                </button>
+
+            <% } %>
+
+
+
+            <% if (dairy.isFemale) { %>
+
+                <a
+                    href="/milk/history/<%= dairy._id %>"
+                    class="dropdown-item"
+                >
+
+                    🍼 Milk History
+
+                </a>
+
+            <% } %>
+
+
+
+            <% if (user?.role === "admin") { %>
+
+                <form
+                    action="/dairy/<%= dairy._id %>?_method=DELETE"
+                    method="POST"
+                    onsubmit="return confirm('Delete this animal?');"
+                >
+
+                    <button
+                        type="submit"
+                        class="dropdown-item danger"
+                    >
+
+                        🗑 Delete Animal
+
+                    </button>
+
+                </form>
+
+            <% } %>
+
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ================= IMAGE ================= -->
+
+    <div class="profile-avatar-area">
+
+        <img
+            src="<%= dairy.displayImage %>"
+            alt="<%= dairy.name %>"
+            class="profile-avatar"
+        >
+
+    </div>
+
+
+
+
+    <!-- ================= NAME ================= -->
+
+    <div class="profile-name-area">
+
+
+        <!-- DISPLAY NAME -->
+
+        <h2
+            id="nameText"
+            class="view-mode"
+        >
+
+            <%= dairy.name %>
+
+        </h2>
+
+
+
+        <!-- EDIT NAME -->
+
+        <input
+            id="name"
+            class="profile-input edit-mode"
+            type="text"
+            value="<%= dairy.name %>"
+            hidden
+        >
+
+
+
+        <% if (dairy.hasIdentity) { %>
+
+            <span class="gender-badge">
+
+                <%= dairy.gender %>
+
+            </span>
+
+        <% } %>
+
+
+    </div>
+
+
+
+
+
+    <!-- ================= DETAILS ================= -->
+
+    <div class="profile-details">
+
+
+
+        <!-- CODE -->
+
+        <div class="profile-row">
+
+
+            <span class="profile-label">
+
+                Code
+
+            </span>
+
+
+
+            <div>
+
+
+                <span
+                    id="codeText"
+                    class="view-mode"
+                >
+
+                    <%= dairy.code %>
+
+                </span>
+
+
+
+                <input
+                    id="code"
+                    class="profile-input edit-mode"
+                    type="number"
+                    value="<%= dairy.code %>"
+                    hidden
+                >
+
+
+            </div>
+
+
+        </div>
+
+
+
+
+
+        <!-- AGE -->
+
+        <% if (dairy.hasIdentity) { %>
+
+
+            <div class="profile-row">
+
+
+                <span class="profile-label">
+
+                    Age
+
+                </span>
+
+
+
+                <span>
+
+                    <%= dairy.ageText %>
+
+                </span>
+
+
+            </div>
+
+
+
+        <% } %>
+
+
+
+
+
+        <!-- DATE OF BIRTH -->
+
+        <% if (dairy.hasIdentity) { %>
+
+
+            <div class="profile-row">
+
+
+                <span class="profile-label">
+
+                    DOB
+
+                </span>
+
+
+
+                <div>
+
+
+                    <span
+                        id="dobText"
+                        class="view-mode"
+                    >
+
+                        <%= dairy.dateOfBirth
+                            ? new Date(dairy.dateOfBirth).toLocaleDateString()
+                            : "-"
+                        %>
+
+
+                    </span>
+
+
+
+                    <input
+                        id="dateOfBirth"
+                        class="profile-input edit-mode"
+                        type="date"
+                        value="<%= dairy.dateOfBirth
+                            ? new Date(dairy.dateOfBirth)
+                                .toISOString()
+                                .split('T')[0]
+                            : ''
+                        %>"
+                        hidden
+                    >
+
+
+                </div>
+
+
+            </div>
+
+
+        <% } %>
+
+
+
+
+
+
+
+        <!-- MASS -->
+
+        <div class="profile-row">
+
+
+            <span class="profile-label">
+
+                Mass
+
+            </span>
+
+
+
+            <div>
+
+
+                <span
+                    id="massText"
+                    class="view-mode"
+                >
+
+                    <%= dairy.mass %> kg
+
+                </span>
+
+
+
+                <input
+                    id="mass"
+                    class="profile-input edit-mode"
+                    type="number"
+                    value="<%= dairy.mass %>"
+                    hidden
+                >
+
+
+            </div>
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- MILKING STATUS -->
+
+        <% if (dairy.isFemale) { %>
+
+
+            <div class="profile-row">
+
+
+                <span class="profile-label">
+
+                    Milking
+
+                </span>
+
+
+
+                <span
+                    id="milkingText"
+                    class="status-badge <%= dairy.isMilking ? 'status-active' : 'status-inactive' %>"
+                >
+
+                    <%= dairy.isMilkingText %>
+
+                </span>
+
+
+            </div>
+
+
+        <% } %>
+
+
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <!-- ================= SAVE ================= -->
+
+
+    <% if (user?.role === "admin") { %>
+
+
+        <div
+            id="saveArea"
+            hidden
+        >
+
+
+            <button
+                id="saveProfile"
+                type="button"
+                class="save-profile-button"
+            >
+
+                💾 Save Changes
+
+            </button>
+
+
+        </div>
+
+
+    <% } %>
+
+
+
+
+</section>

@@ -1,0 +1,50 @@
+/*=========================================================
+  UPDATE PAGE
+  SCROLLBAR
+=========================================================*/
+
+/*=========================================================
+  WEBKIT SCROLLBAR
+=========================================================*/
+
+::-webkit-scrollbar{
+
+    width:10px;
+
+    height:10px;
+
+}
+
+::-webkit-scrollbar-track{
+
+    background:#eef1f3;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#b9c3ca;
+
+    border-radius:20px;
+
+    transition:var(--transition);
+
+}
+
+::-webkit-scrollbar-thumb:hover{
+
+    background:#98a5af;
+
+}
+
+/*=========================================================
+  FIREFOX SCROLLBAR
+=========================================================*/
+
+html{
+
+    scrollbar-width:thin;
+
+    scrollbar-color:#b9c3ca #eef1f3;
+
+}

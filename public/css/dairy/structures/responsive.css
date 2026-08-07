@@ -1,0 +1,45 @@
+/*=========================================================
+  RESPONSIVE
+=========================================================*/
+
+@media (max-width:650px){
+
+    .dairy-header h2{
+
+        font-size:24px;
+
+    }
+
+    .dairy-link{
+
+        padding:15px;
+
+    }
+
+    .dairy-avatar{
+
+        width:55px;
+
+        height:55px;
+
+    }
+
+    .dairy-name{
+
+        font-size:15px;
+
+    }
+
+    .dairy-actions{
+
+        padding:0 15px 15px;
+
+    }
+
+    .dairy-arrow{
+
+        font-size:20px;
+
+    }
+
+}

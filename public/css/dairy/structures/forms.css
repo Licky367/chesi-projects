@@ -1,0 +1,120 @@
+/*=========================================================
+  MAINTENANCE FORM
+=========================================================*/
+
+.maintenance-form{
+
+    display:none;
+
+    width:100%;
+
+    padding:18px;
+
+    margin-top:5px;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:14px;
+
+    background:#f9fafb;
+
+}
+
+.maintenance-form.active{
+
+    display:block;
+
+}
+
+.maintenance-form select,
+.maintenance-form input,
+.maintenance-form textarea{
+
+    width:100%;
+
+    padding:11px 12px;
+
+    margin-bottom:10px;
+
+    border:1px solid #d1d5db;
+
+    border-radius:9px;
+
+    outline:none;
+
+    background:#ffffff;
+
+    font-family:inherit;
+
+    font-size:14px;
+
+    transition:all .25s ease;
+
+}
+
+.maintenance-form select:focus,
+.maintenance-form input:focus,
+.maintenance-form textarea:focus{
+
+    border-color:#16a34a;
+
+    box-shadow:0 0 0 4px rgba(22,163,74,.1);
+
+}
+
+.maintenance-form textarea{
+
+    min-height:90px;
+
+    resize:vertical;
+
+}
+
+
+/*=========================================================
+  SUBMIT BUTTONS
+=========================================================*/
+
+.form-submit-btn{
+
+    padding:10px 16px;
+
+    border:none;
+
+    border-radius:8px;
+
+    color:#ffffff;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:all .25s ease;
+
+}
+
+.submit-maintenance{
+
+    background:#b91c1c;
+
+}
+
+.submit-maintenance:hover{
+
+    background:#991b1b;
+
+}
+
+.submit-clear{
+
+    background:#166534;
+
+}
+
+.submit-clear:hover{
+
+    background:#14532d;
+
+}

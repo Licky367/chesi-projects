@@ -1,0 +1,133 @@
+/* ==========================================================
+   ERROR PAGES
+========================================================== */
+
+.page-error {
+  max-width: 700px;
+  margin: 60px auto;
+  padding: 20px;
+}
+
+.error-card {
+  background: #fff;
+  padding: 50px 35px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, .08);
+  border: 1px solid #eef0f2;
+}
+
+.error-icon {
+  font-size: 55px;
+  margin-bottom: 15px;
+}
+
+.error-code {
+  font-size: 90px;
+  font-weight: 800;
+  color: #dc3545;
+  line-height: 1;
+  margin-bottom: 10px;
+}
+
+.error-title {
+  font-size: 30px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 12px;
+}
+
+.error-text {
+  color: #666;
+  line-height: 1.7;
+  max-width: 500px;
+  margin: 0 auto 30px;
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: .25s ease;
+  cursor: pointer;
+}
+
+.btn-home {
+  background: #0b5d1e;
+  color: #fff;
+}
+
+.btn-home:hover {
+  background: #084816;
+  transform: translateY(-2px);
+}
+
+.btn-back {
+  background: #f4f5f7;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.btn-back:hover {
+  background: #e9ecef;
+  transform: translateY(-2px);
+}
+
+.help-box {
+  margin-top: 35px;
+  padding-top: 25px;
+  border-top: 1px solid #eee;
+  color: #777;
+  font-size: 14px;
+}
+
+.help-box a {
+  color: #0b5d1e;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.help-box a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+
+  .page-error {
+    margin: 30px auto;
+    padding: 15px;
+  }
+
+  .error-card {
+    padding: 35px 20px;
+  }
+
+  .error-code {
+    font-size: 72px;
+  }
+
+  .error-title {
+    font-size: 24px;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .btn-action {
+    width: 100%;
+  }
+
+}

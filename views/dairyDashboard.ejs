@@ -1,0 +1,111 @@
+<style>
+.page {
+  max-width: 1100px;
+  margin: auto;
+}
+
+.card {
+  background: #fff;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-size: 22px;
+  margin-bottom: 15px;
+  color: #0b5d1e;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+}
+
+.link-card {
+  background: #f9fafb;
+  border: 1px solid #eee;
+  padding: 18px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: #333;
+  transition: 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.link-card:hover {
+  background: #eaf7ee;
+  border-color: #0b5d1e;
+  transform: translateY(-2px);
+}
+
+.icon {
+  font-size: 20px;
+}
+</style>
+
+
+<div class="page">
+
+  <div class="card">
+
+    <h2>🐄 Dairy Project Dashboard</h2>
+
+    <% if (user && user.role === "admin") { %>
+
+      <div class="grid">
+
+        <a class="link-card" href="/new">
+          <span class="icon">➕</span>
+          <span>Create New Project</span>
+        </a>
+
+
+        <a class="link-card" href="/dairyProjects">
+          <span class="icon">🐄</span>
+          <span>View Dairy Cattle</span>
+        </a>
+
+
+        <a class="link-card" href="/structures">
+          <span class="icon">🏠</span>
+          <span>Facilities</span>
+        </a>
+
+
+        <a class="link-card" href="/milk">
+          <span class="icon">🥛</span>
+          <span>Production Feed</span>
+        </a>
+
+
+        <a class="link-card" href="/sales">
+          <span class="icon">💰</span>
+          <span>Sales</span>
+        </a>
+
+
+        <a class="link-card" href="/stats">
+          <span class="icon">📊</span>
+          <span>Statistics</span>
+        </a>
+
+      </div>
+
+    <% } else { %>
+
+      <p style="color: red;">
+        Access denied. Admins only.
+      </p>
+
+    <% } %>
+
+  </div>
+
+</div>

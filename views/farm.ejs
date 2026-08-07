@@ -1,0 +1,422 @@
+<style>
+
+  /* =========================
+     PAGE HEADER
+  ========================= */
+
+  .project-header {
+    margin-bottom: 25px;
+  }
+
+  .project-header h2 {
+    margin: 0 0 8px;
+
+    color: #166534;
+
+    font-size: 28px;
+
+    font-weight: 700;
+  }
+
+  .project-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+  }
+
+
+  /* =========================
+     FORM CARD
+  ========================= */
+
+  .project-form-card {
+    max-width: 850px;
+
+    padding: 30px;
+
+    border-radius: 20px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 8px 25px rgba(0, 0, 0, 0.07);
+  }
+
+
+  /* =========================
+     FORM
+  ========================= */
+
+  .project-form {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 20px;
+  }
+
+  .form-group {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+  }
+
+  .form-group label {
+    color: #374151;
+
+    font-size: 14px;
+
+    font-weight: 600;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+
+    padding: 13px 14px;
+
+    border: 1px solid #d1d5db;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    background: #f9fafb;
+
+    color: #111827;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    transition: all 0.25s ease;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: #16a34a;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 0 0 4px rgba(22, 163, 74, 0.12);
+  }
+
+  .form-group textarea {
+    min-height: 120px;
+
+    resize: vertical;
+  }
+
+
+  /* =========================
+     TWO COLUMN ROW
+  ========================= */
+
+  .form-row {
+    display: grid;
+
+    grid-template-columns:
+      1fr
+      1fr;
+
+    gap: 18px;
+  }
+
+
+  /* =========================
+     SECTION TITLE
+  ========================= */
+
+  .form-section-title {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding-bottom: 10px;
+
+    margin-top: 5px;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    color: #166534;
+
+    font-size: 17px;
+
+    font-weight: 700;
+  }
+
+
+  /* =========================
+     BUTTON
+  ========================= */
+
+  .create-project-btn {
+    width: 100%;
+
+    padding: 14px;
+
+    margin-top: 5px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background:
+      linear-gradient(135deg, #16a34a, #15803d);
+
+    color: #ffffff;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+  }
+
+  .create-project-btn:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+      0 8px 18px rgba(22, 163, 74, 0.25);
+  }
+
+
+  /* =========================
+     BACK LINK
+  ========================= */
+
+  .back-link {
+    display: inline-block;
+
+    margin-top: 18px;
+
+    color: #166534;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    text-decoration: none;
+  }
+
+  .back-link:hover {
+    text-decoration: underline;
+  }
+
+
+  /* =========================
+     RESPONSIVE
+  ========================= */
+
+  @media (max-width: 650px) {
+
+    .project-form-card {
+      padding: 22px;
+    }
+
+    .form-row {
+      grid-template-columns:
+        1fr;
+    }
+
+    .project-header h2 {
+      font-size: 24px;
+    }
+
+  }
+
+</style>
+
+
+<div class="container mt-4 mb-5">
+
+
+  <!-- PAGE HEADER -->
+
+  <div class="project-header">
+
+    <h2>
+      🌱 Create Farm Project
+    </h2>
+
+    <p>
+      Set up a new project and define its goals, budget, and timeline.
+    </p>
+
+  </div>
+
+
+  <!-- FORM CARD -->
+
+  <div class="project-form-card">
+
+
+    <form
+      action="/farm/create"
+      method="POST"
+      class="project-form"
+    >
+
+
+      <!-- BASIC INFORMATION -->
+
+      <div class="form-section-title">
+        📋 Project Information
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="name">
+          Project Name
+        </label>
+
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="Enter project name"
+          required
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="initialCost">
+          Initial Cost
+        </label>
+
+        <input
+          type="number"
+          id="initialCost"
+          name="initialCost"
+          min="0"
+          placeholder="Enter initial project cost"
+          required
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="description">
+          Project Description
+        </label>
+
+        <textarea
+          id="description"
+          name="description"
+          placeholder="Describe the project..."
+        ></textarea>
+
+      </div>
+
+
+      <!-- PROJECT TIMELINE -->
+
+      <div class="form-section-title">
+        📅 Project Timeline
+      </div>
+
+
+      <div class="form-row">
+
+
+        <div class="form-group">
+
+          <label for="startDate">
+            Start Date
+          </label>
+
+          <input
+            type="date"
+            id="startDate"
+            name="startDate"
+            required
+          >
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label for="expectedCompletionDate">
+            Expected Completion Date
+          </label>
+
+          <input
+            type="date"
+            id="expectedCompletionDate"
+            name="expectedCompletionDate"
+            required
+          >
+
+        </div>
+
+
+      </div>
+
+
+      <!-- GOALS -->
+
+      <div class="form-section-title">
+        🎯 Goals & Objectives
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="goalsObjectives">
+          Goals and Objectives
+        </label>
+
+        <textarea
+          id="goalsObjectives"
+          name="goalsObjectives"
+          placeholder="Describe the goals and expected outcomes of this project..."
+        ></textarea>
+
+      </div>
+
+
+      <!-- SUBMIT -->
+
+      <button
+        type="submit"
+        class="create-project-btn"
+      >
+
+        🚀 Create Project
+
+      </button>
+
+
+    </form>
+
+
+    <a
+      href="/farm"
+      class="back-link"
+    >
+
+      ← Back to Farm Projects
+
+    </a>
+
+
+  </div>
+
+
+</div>

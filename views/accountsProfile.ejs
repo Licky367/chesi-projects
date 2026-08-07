@@ -1,0 +1,389 @@
+<style>
+/* =========================
+   PAGE
+========================= */
+.profile-page{
+  max-width:700px;
+  margin:0 auto;
+  padding:20px 0 40px;
+}
+
+/* =========================
+   CARD
+========================= */
+.profile-card{
+  background:#fff;
+  border-radius:20px;
+  padding:35px;
+  box-shadow:0 12px 30px rgba(0,0,0,.08);
+  border:1px solid #edf0f2;
+  text-align:center;
+}
+
+/* =========================
+   PROFILE IMAGE / AVATAR
+========================= */
+.profile-img{
+  width:120px;
+  height:120px;
+  object-fit:cover;
+  border-radius:50%;
+  border:4px solid #0b5d1e;
+  margin:0 auto 18px;
+  display:block;
+}
+
+.profile-avatar{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  border:4px solid #0b5d1e;
+  background:#0b5d1e;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:48px;
+  font-weight:700;
+  text-transform:uppercase;
+  margin:0 auto 18px;
+}
+
+.profile-name{
+  margin:0;
+  font-size:28px;
+  color:#222;
+  font-weight:700;
+}
+
+.profile-email{
+  margin:10px 0 5px;
+  color:#666;
+  font-size:15px;
+}
+
+.profile-phone{
+  color:#777;
+  font-size:15px;
+  margin-bottom:25px;
+}
+
+/* =========================
+   INFO BOXES
+========================= */
+.info-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:15px;
+  margin-bottom:25px;
+}
+
+.info-box{
+  background:#f8faf9;
+  border:1px solid #e7ece9;
+  border-radius:14px;
+  padding:18px;
+  text-align:left;
+}
+
+.info-title{
+  font-size:13px;
+  color:#888;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  margin-bottom:8px;
+}
+
+.role-badge{
+  display:inline-block;
+  padding:8px 14px;
+  background:#e9f7ef;
+  color:#0b5d1e;
+  border-radius:30px;
+  font-weight:700;
+  text-transform:capitalize;
+}
+
+/* =========================
+   FORM
+========================= */
+.form-section{
+  margin-top:15px;
+  text-align:left;
+}
+
+.form-title{
+  color:#0b5d1e;
+  font-size:22px;
+  margin-bottom:18px;
+}
+
+label{
+  display:block;
+  margin-bottom:8px;
+  font-weight:600;
+  color:#444;
+}
+
+select{
+  width:100%;
+  padding:14px;
+  border:1px solid #d8d8d8;
+  border-radius:12px;
+  font-size:15px;
+  background:#fff;
+  transition:.2s;
+}
+
+select:focus{
+  outline:none;
+  border-color:#0b5d1e;
+  box-shadow:0 0 0 3px rgba(11,93,30,.1);
+}
+
+.btn-save{
+  width:100%;
+  margin-top:20px;
+  padding:15px;
+  border:none;
+  border-radius:12px;
+  background:#0b5d1e;
+  color:#fff;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+  transition:.25s;
+}
+
+.btn-save:hover{
+  background:#084816;
+  transform:translateY(-2px);
+}
+
+.btn-delete{
+  width:100%;
+  margin-top:20px;
+  padding:15px;
+  border:none;
+  border-radius:12px;
+  background:#c62828;
+  color:#fff;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+  transition:.25s;
+}
+
+.btn-delete:hover{
+  background:#991b1b;
+}
+
+.notice{
+  padding:15px;
+  border-radius:12px;
+  background:#fff8e5;
+  color:#9a6700;
+  border:1px solid #f0d58c;
+}
+
+/* =========================
+   MOBILE
+========================= */
+@media(max-width:600px){
+
+  .profile-card{
+    padding:22px;
+  }
+
+  .profile-img,
+  .profile-avatar{
+    width:100px;
+    height:100px;
+  }
+
+  .profile-avatar{
+    font-size:40px;
+  }
+
+  .profile-name{
+    font-size:24px;
+  }
+
+  .info-grid{
+    grid-template-columns:1fr;
+  }
+
+}
+</style>
+
+<div class="profile-page">
+
+<div class="profile-card">
+
+<% if(user.profileImage){ %>
+
+<img
+src="<%= user.profileImage %>"
+class="profile-img"
+alt="<%= user.name %>"
+>
+
+<% } else { %>
+
+<div class="profile-avatar">
+<%= (user.name || "U").charAt(0).toUpperCase() %>
+</div>
+
+<% } %>
+
+<h2 class="profile-name">
+<%= user.name %>
+</h2>
+
+<div class="profile-email">
+📧 <%= user.email %>
+</div>
+
+<div class="profile-phone">
+📱 <%= user.phone || "No phone number available" %>
+</div>
+
+<div class="info-grid">
+
+<div class="info-box">
+
+<div class="info-title">
+Current Role
+</div>
+
+<span class="role-badge">
+<%= user.role %>
+</span>
+
+</div>
+
+<div class="info-box">
+
+<div class="info-title">
+User ID
+</div>
+
+<strong>
+<%= user._id %>
+</strong>
+
+</div>
+
+<div class="info-box">
+
+<div class="info-title">
+Last Login
+</div>
+
+<strong>
+<%= user.lastLogin
+? new Date(user.lastLogin).toLocaleString()
+: "Never logged in" %>
+</strong>
+
+</div>
+</div>
+
+<div class="form-section">
+
+  <h3 class="form-title">
+    Change User Role
+  </h3>
+
+  <% if(currentUser._id.toString() === user._id.toString()) { %>
+
+    <div class="notice">
+      You cannot change your own role.
+    </div>
+
+  <% } else { %>
+
+    <form
+      method="POST"
+      action="/accounts/<%= user._id %>/role"
+    >
+
+      <label for="role">
+        Select New Role
+      </label>
+
+      <select
+        id="role"
+        name="role"
+      >
+
+        <option
+          value="dairyWorker"
+          <%= user.role === "dairyWorker" ? "selected" : "" %>>
+          🐄 Dairy Worker
+        </option>
+
+        <option
+          value="poultryWorker"
+          <%= user.role === "poultryWorker" ? "selected" : "" %>>
+          🐔 Poultry Worker
+        </option>
+
+        <option
+          value="admin"
+          <%= user.role === "admin" ? "selected" : "" %>>
+          👑 Administrator
+        </option>
+
+      </select>
+
+      <button
+        type="submit"
+        class="btn-save"
+      >
+        Save Role Changes
+      </button>
+
+    </form>
+
+  <% } %>
+
+</div>
+<div class="form-section">
+
+  <h3
+    class="form-title"
+    style="color:#c62828;"
+  >
+    Delete Account
+  </h3>
+
+  <% if(currentUser._id.toString() === user._id.toString()) { %>
+
+    <div class="notice">
+      You cannot permanently delete your own account.
+    </div>
+
+  <% } else { %>
+
+    <form
+      method="POST"
+      action="/accounts/<%= user._id %>/delete"
+      onsubmit="return confirm('This account will be permanently deleted. This action cannot be undone. Continue?');"
+    >
+
+      <button
+        type="submit"
+        class="btn-delete"
+      >
+        🚫 Permanently Delete Account
+      </button>
+
+    </form>
+
+  <% } %>
+
+</div>
+  </div>
+
+</div>
