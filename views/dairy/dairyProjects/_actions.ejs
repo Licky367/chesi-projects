@@ -1,55 +1,81 @@
 <div class="action-buttons">
 
     <!-- =========================
-         MARK MEDICAL
+         THREE-DOT MENU BUTTON
     ========================= -->
 
-    <% if (
-        user &&
-        (
-            user.role === "admin" ||
-            user.role === "dairyWorker"
-        ) &&
-        (
-            !dairy.medicalAttention ||
-            !dairy.medicalAttention.isMarked
-        )
-    ) { %>
-
-        <button
-            type="button"
-            class="btn btn-success"
-            onclick="toggleMarkForm('<%= dairy._id %>')"
-        >
-            Mark Medical
-        </button>
-
-        <%- include("./_medical-mark-form", { dairy }) %>
-
-    <% } %>
+    <button
+        type="button"
+        class="medical-menu-toggle"
+        onclick="toggleMedicalMenu('<%= dairy._id %>')"
+        aria-label="Medical actions"
+        aria-expanded="false"
+    >
+        ⋮
+    </button>
 
 
     <!-- =========================
-         UNMARK MEDICAL
+         MEDICAL ACTION MENU
     ========================= -->
 
-    <% if (
-        user &&
-        user.role === "admin" &&
-        dairy.medicalAttention &&
-        dairy.medicalAttention.isMarked
-    ) { %>
+    <div
+        id="medicalMenu-<%= dairy._id %>"
+        class="medical-action-menu"
+    >
 
-        <button
-            type="button"
-            class="btn btn-success"
-            onclick="toggleUnmarkForm('<%= dairy._id %>')"
-        >
-            Unmark Medical
-        </button>
+        <!-- =========================
+             MARK MEDICAL
+        ========================= -->
 
-        <%- include("./_medical-unmark-form", { dairy }) %>
+        <% if (
+            user &&
+            (
+                user.role === "admin" ||
+                user.role === "dairyWorker"
+            ) &&
+            (
+                !dairy.medicalAttention ||
+                !dairy.medicalAttention.isMarked
+            )
+        ) { %>
 
-    <% } %>
+            <button
+                type="button"
+                class="medical-action-btn"
+                onclick="toggleMarkForm('<%= dairy._id %>')"
+            >
+                Mark Medical
+            </button>
+
+            <%- include("./_medical-mark-form", { dairy }) %>
+
+        <% } %>
+
+
+        <!-- =========================
+             UNMARK MEDICAL
+        ========================= -->
+
+        <% if (
+            user &&
+            user.role === "admin" &&
+            dairy.medicalAttention &&
+            dairy.medicalAttention.isMarked
+        ) { %>
+
+            <button
+                type="button"
+                class="medical-action-btn"
+                onclick="toggleUnmarkForm('<%= dairy._id %>')"
+            >
+                Unmark Medical
+            </button>
+
+            <%- include("./_medical-unmark-form", { dairy }) %>
+
+        <% } %>
+
+    </div>
 
 </div>
