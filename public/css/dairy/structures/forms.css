@@ -91,8 +91,6 @@
 
     cursor:pointer;
 
-    transition:all .25s ease;
-
 }
 
 .submit-maintenance{
@@ -101,20 +99,8 @@
 
 }
 
-.submit-maintenance:hover{
-
-    background:#991b1b;
-
-}
-
 .submit-clear{
 
     background:#166534;
-
-}
-
-.submit-clear:hover{
-
-    background:#14532d;
 
 }
