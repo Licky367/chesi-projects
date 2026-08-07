@@ -10,36 +10,48 @@ function initializePostModal() {
     =====================================================*/
 
     const modal =
-        $("#postModal");
+        document.getElementById("postModal");
 
     const openComposer =
-        $("#openPostComposer");
+        document.getElementById("openPostComposer");
 
     const openImage =
-        $("#openImagePicker");
+        document.getElementById("openImagePicker");
 
     const closeButton =
-        $("#closePostModal");
+        document.getElementById("closePostModal");
 
     const textarea =
-        $("#postText");
+        document.getElementById("postText");
 
     const imageInput =
-        $("#postImage");
+        document.getElementById("postImage");
 
     const sendButton =
-        $("#submitPostButton");
+        document.getElementById("submitPostButton");
 
     const form =
-        $("#postForm");
+        document.getElementById("postForm");
+
+
+    /*=====================================================
+      REQUIRED ELEMENT CHECK
+    =====================================================*/
 
     if (
         !modal ||
         !openComposer ||
+        !openImage ||
+        !closeButton ||
+        !textarea ||
+        !imageInput ||
+        !sendButton ||
         !form
     ) {
 
-        console.warn("Post modal not initialized.");
+        console.warn(
+            "Post modal not initialized. Required element missing."
+        );
 
         return;
 
@@ -101,7 +113,7 @@ function initializePostModal() {
 
 
     /*=====================================================
-      CLICK "ANY UPDATES?"
+      CLICK COMPOSER
     =====================================================*/
 
     openComposer.addEventListener(
