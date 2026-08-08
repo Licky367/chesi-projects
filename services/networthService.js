@@ -117,7 +117,7 @@ function parseDate(
    CONSTANTS
 ========================================================== */
 
-const ASSET_STATUSES = [
+const ALLOWED_STATUSES = [
 
     "active",
 
@@ -146,61 +146,20 @@ async function getNetWorth() {
             .find({})
             .lean(),
 
-
         Dairy
             .find({
 
-                $and: [
+                code: null,
 
-                    {
-                        $or: [
+                assetCode: null,
 
-                            {
-                                code: {
-                                    $gt: 0
-                                }
-                            },
-
-                            {
-                                code: null
-                            },
-
-                            {
-                                code: {
-                                    $exists: false
-                                }
-                            }
-
-                        ]
-                    },
-
-                    {
-                        $or: [
-
-                            {
-                                assetCode: null
-                            },
-
-                            {
-                                assetCode: {
-                                    $exists: false
-                                }
-                            }
-
-                        ]
-                    }
-
-                ]
+                status: "active"
 
             })
             .sort({
-
-                name: 1,
-                item: 1
-
+                name: 1
             })
             .lean(),
-
 
         Dairy
             .find({
@@ -211,10 +170,7 @@ async function getNetWorth() {
 
             })
             .sort({
-
-                name: 1,
-                item: 1
-
+                name: 1
             })
             .lean()
 
@@ -223,25 +179,10 @@ async function getNetWorth() {
 
     const totalNetWorth =
         allDairy.reduce(
-
             function(total, dairy) {
 
-                const code =
-                    Number(dairy.code);
-
-
                 if (
-                    Number.isFinite(code) &&
-                    code < 0
-                ) {
-
-                    return total;
-
-                }
-
-
-                if (
-                    dairy.assetStatus !== "active"
+                    dairy.status !== "active"
                 ) {
 
                     return total;
@@ -257,9 +198,7 @@ async function getNetWorth() {
                 );
 
             },
-
             0
-
         );
 
 
@@ -334,21 +273,17 @@ async function getDairyFarm(id) {
 
             })
             .sort({
-
-                name: 1,
-                item: 1
-
+                name: 1
             })
             .lean();
 
 
     const dairyTotal =
         assets.reduce(
-
             function(total, asset) {
 
                 if (
-                    asset.assetStatus !== "active"
+                    asset.status !== "active"
                 ) {
 
                     return total;
@@ -364,9 +299,7 @@ async function getDairyFarm(id) {
                 );
 
             },
-
             0
-
         );
 
 
@@ -490,6 +423,10 @@ async function addAsset(
         Number(dairy.code);
 
 
+    /* ======================================================
+       NAME
+    ====================================================== */
+
     const name =
         String(
             body.name ||
@@ -498,12 +435,20 @@ async function addAsset(
         ).trim();
 
 
+    /* ======================================================
+       TYPE
+    ====================================================== */
+
     const type =
         String(
             body.type ||
             ""
         ).trim();
 
+
+    /* ======================================================
+       DESCRIPTION
+    ====================================================== */
 
     const description =
         String(
@@ -512,12 +457,9 @@ async function addAsset(
         ).trim();
 
 
-    const status =
-        String(
-            body.status ||
-            "active"
-        ).trim();
-
+    /* ======================================================
+       CONDITION
+    ====================================================== */
 
     const condition =
         String(
@@ -525,6 +467,10 @@ async function addAsset(
             ""
         ).trim();
 
+
+    /* ======================================================
+       LOCATION
+    ====================================================== */
 
     const location =
         String(
@@ -563,10 +509,20 @@ async function addAsset(
     }
 
 
-    if (!ASSET_STATUSES.includes(status)) {
+    if (!condition) {
 
         throw createError(
-            "Invalid asset status.",
+            "Condition is required.",
+            400
+        );
+
+    }
+
+
+    if (!location) {
+
+        throw createError(
+            "Location is required.",
             400
         );
 
@@ -587,20 +543,39 @@ async function addAsset(
         );
 
 
+    /* ======================================================
+       STATUS
+    ====================================================== */
+
+    const status =
+        String(
+            body.status ||
+            "active"
+        ).trim();
+
+
+    if (
+        !ALLOWED_STATUSES.includes(status)
+    ) {
+
+        throw createError(
+            "Invalid asset status.",
+            400
+        );
+
+    }
+
+
+    /* ======================================================
+       CREATE
+    ====================================================== */
+
     const asset =
         new Dairy({
 
             name,
 
-            item: name,
-
-            assetType: type,
-
-            buyingPrice,
-
-            currentWorth,
-
-            assetDescription: description,
+            type,
 
             description,
 
@@ -608,16 +583,17 @@ async function addAsset(
 
             location,
 
+            buyingPrice,
+
+            currentWorth,
+
             code: null,
 
             assetCode: farmCode,
 
-            assetStatus: status,
+            status,
 
-            assetSource: "asset",
-
-            acquisitionDate:
-                new Date()
+            acquisitionDate: new Date()
 
         });
 
@@ -686,10 +662,7 @@ async function getAsset(id) {
 
             })
             .sort({
-
-                name: 1,
-                item: 1
-
+                name: 1
             })
             .lean();
 
@@ -778,9 +751,6 @@ async function updateAsset(
     dairy.name =
         name;
 
-    dairy.item =
-        name;
-
 
     /* ======================================================
        TYPE
@@ -803,7 +773,7 @@ async function updateAsset(
     }
 
 
-    dairy.assetType =
+    dairy.type =
         type;
 
 
@@ -833,32 +803,11 @@ async function updateAsset(
        DESCRIPTION
     ====================================================== */
 
-    const description =
+    dairy.description =
         String(
             body.description ||
             ""
         ).trim();
-
-
-    dairy.assetDescription =
-        description;
-
-
-    /*
-     * Keep the legacy/general description field
-     * synchronized if it exists in the document.
-     */
-    if (
-        Object.prototype.hasOwnProperty.call(
-            dairy,
-            "description"
-        )
-    ) {
-
-        dairy.description =
-            description;
-
-    }
 
 
     /* ======================================================
@@ -894,7 +843,9 @@ async function updateAsset(
         ).trim();
 
 
-    if (!ASSET_STATUSES.includes(status)) {
+    if (
+        !ALLOWED_STATUSES.includes(status)
+    ) {
 
         throw createError(
             "Invalid asset status.",
@@ -904,7 +855,7 @@ async function updateAsset(
     }
 
 
-    dairy.assetStatus =
+    dairy.status =
         status;
 
 
@@ -942,20 +893,12 @@ async function updateAsset(
             Number(assetCode);
 
 
-        if (!Number.isFinite(assetCode)) {
+        if (
+            !Number.isFinite(assetCode)
+        ) {
 
             throw createError(
                 "Invalid Dairy Farm code.",
-                400
-            );
-
-        }
-
-
-        if (assetCode >= 0) {
-
-            throw createError(
-                "Selected Dairy Farm code must be negative.",
                 400
             );
 
@@ -1000,30 +943,6 @@ async function updateAsset(
             Number(
                 structure.code
             );
-
-    }
-
-
-    /*
-     * Preserve the source classification for
-     * positive-code and manual assets.
-     *
-     * A positive code is a dairy/animal.
-     * A null code is a manual asset.
-     */
-    if (
-        dairy.code !== null &&
-        dairy.code !== undefined &&
-        Number(dairy.code) > 0
-    ) {
-
-        dairy.assetSource =
-            "dairy";
-
-    } else {
-
-        dairy.assetSource =
-            "asset";
 
     }
 
