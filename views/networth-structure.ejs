@@ -29,6 +29,8 @@
     line-height: 1.2;
 
     letter-spacing: -0.6px;
+
+    overflow-wrap: anywhere;
 }
 
 .networth-page .financial-header p {
@@ -81,6 +83,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+
     gap: 25px;
 
     min-height: 155px;
@@ -105,7 +108,9 @@
 }
 
 
-/* Decorative circle */
+/* ==========================================================
+   DECORATIVE CIRCLE
+========================================================== */
 
 .networth-total-card::after {
     content: "";
@@ -136,6 +141,7 @@
 
     display: flex;
     align-items: center;
+
     gap: 10px;
 
     color: #52705f;
@@ -182,6 +188,8 @@
     letter-spacing: -0.7px;
 
     white-space: nowrap;
+
+    font-variant-numeric: tabular-nums;
 }
 
 
@@ -205,6 +213,7 @@
 .networth-section-header h2 {
     display: flex;
     align-items: center;
+
     gap: 10px;
 
     margin: 0 0 5px;
@@ -247,6 +256,7 @@
 .networth-list {
     display: flex;
     flex-direction: column;
+
     gap: 9px;
 }
 
@@ -287,7 +297,9 @@
 }
 
 
-/* Asset icon */
+/* ==========================================================
+   ASSET ICON
+========================================================== */
 
 .networth-list-item::before {
     content: "◆";
@@ -317,7 +329,9 @@
 }
 
 
-/* Asset name */
+/* ==========================================================
+   ASSET NAME
+========================================================== */
 
 .networth-list-name {
     flex: 1;
@@ -338,7 +352,29 @@
 }
 
 
-/* Arrow */
+/* ==========================================================
+   ASSET WORTH
+========================================================== */
+
+.networth-list-worth {
+    flex-shrink: 0;
+
+    margin-left: 15px;
+
+    color: #2b6f43;
+
+    font-size: 13px;
+    font-weight: 750;
+
+    font-variant-numeric: tabular-nums;
+
+    white-space: nowrap;
+}
+
+
+/* ==========================================================
+   ARROW
+========================================================== */
 
 .networth-list-item::after {
     content: "›";
@@ -396,6 +432,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
     flex-direction: column;
 
     min-height: 145px;
@@ -459,6 +496,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+
     gap: 8px;
 
     min-height: 46px;
@@ -500,6 +538,7 @@
 
 .networth-actions .button-primary:hover {
     background: #267747;
+
     border-color: #267747;
 
     box-shadow:
@@ -541,7 +580,9 @@
 
     .networth-total-card {
         align-items: flex-start;
+
         flex-direction: column;
+
         gap: 14px;
 
         min-height: auto;
@@ -596,6 +637,12 @@
         font-size: 14px;
     }
 
+    .networth-list-worth {
+        font-size: 12px;
+
+        margin-left: 8px;
+    }
+
 
     /* Button */
 
@@ -639,71 +686,38 @@
     .networth-list-item {
         min-height: 56px;
     }
+
+    .networth-list-worth {
+        display: none;
+    }
 }
-</style><div class="financial-page networth-page"><!-- =====================================================
-     STRUCTURE HEADER
-====================================================== -->
-
-<div class="financial-header">
-
-    <div>
-
-        <a
-            href="/networth"
-            class="financial-back-link"
-        >
-            ← Net Worth
-        </a>
-
-        <h1>
-            <%= structure.item %>
-        </h1>
-
-        <p>
-            Assets within this structure.
-        </p>
-
-    </div>
-
-</div>
+</style>
 
 
-<!-- =====================================================
-     STRUCTURE TOTAL
-====================================================== -->
-
-<div class="financial-card networth-total-card">
-
-    <span class="networth-total-label">
-        Structure Asset Worth
-    </span>
-
-    <strong class="networth-total-value">
-
-        KSh
-        <%= Number(structureTotal || 0).toLocaleString() %>
-
-    </strong>
-
-</div>
+<div class="financial-page networth-page">
 
 
-<!-- =====================================================
-     ASSETS
-====================================================== -->
+    <!-- =====================================================
+         STRUCTURE HEADER
+    ====================================================== -->
 
-<section class="networth-section">
-
-    <div class="networth-section-header">
+    <div class="financial-header">
 
         <div>
 
-            <h2>
-                Assets
-            </h2>
+            <a
+                href="/networth"
+                class="financial-back-link"
+            >
+                ← Net Worth
+            </a>
+
+            <h1>
+                <%= structure.item %>
+            </h1>
 
             <p>
-                Assets belonging to this structure.
+                Assets within this structure.
             </p>
 
         </div>
@@ -711,58 +725,147 @@
     </div>
 
 
-    <div class="networth-list">
+    <!-- =====================================================
+         STRUCTURE TOTAL
 
-        <% if (
-            assets &&
-            assets.length
-        ) { %>
+         structureTotal is calculated by the service from:
 
-            <% assets.forEach(function(asset) { %>
+             assets.parentStructure === structure._id
+             assets.status === "active"
 
-                <a
-                    href="/networth/asset/<%= asset._id %>"
-                    class="networth-list-item"
-                >
+         and summing:
 
-                    <span class="networth-list-name">
+             assets.currentWorth
+    ====================================================== -->
 
-                        <%= asset.item %>
+    <div class="financial-card networth-total-card">
 
-                    </span>
+        <span class="networth-total-label">
+            Structure Asset Worth
+        </span>
 
-                </a>
+        <strong class="networth-total-value">
 
-            <% }); %>
+            KSh
+            <%= Number(
+                structureTotal || 0
+            ).toLocaleString("en-KE") %>
 
-        <% } else { %>
-
-            <div class="networth-empty">
-
-                No assets have been assigned to this structure.
-
-            </div>
-
-        <% } %>
+        </strong>
 
     </div>
 
-</section>
+
+    <!-- =====================================================
+         STRUCTURE ASSETS
+    ====================================================== -->
+
+    <section class="networth-section">
+
+        <div class="networth-section-header">
+
+            <div>
+
+                <h2>
+                    Assets
+                </h2>
+
+                <p>
+                    Active assets belonging to this structure.
+                </p>
+
+            </div>
+
+        </div>
 
 
-<!-- =====================================================
-     ADD ASSET
-====================================================== -->
+        <div class="networth-list">
 
-<div class="networth-actions">
 
-    <a
-        href="/networth/structure/<%= structure._id %>/add"
-        class="button button-primary"
-    >
-        Add Asset
-    </a>
+            <% if (
+                Array.isArray(assets) &&
+                assets.length > 0
+            ) { %>
 
-</div>
+
+                <% assets.forEach(function(asset) { %>
+
+
+                    <!-- =====================================
+                         NETWORTH ASSET
+
+                         IMPORTANT:
+
+                         asset._id is the NetWorth ID.
+
+                         This is the ID expected by:
+
+                         GET
+                         /networth/asset/:id
+
+                         The asset does NOT use a Dairy ID here.
+                    ====================================== -->
+
+                    <a
+                        href="/networth/asset/<%= asset._id %>"
+                        class="networth-list-item"
+                    >
+
+                        <span class="networth-list-name">
+
+                            <%= asset.item || "Unnamed Asset" %>
+
+                        </span>
+
+
+                        <span class="networth-list-worth">
+
+                            KSh
+                            <%= Number(
+                                asset.currentWorth || 0
+                            ).toLocaleString("en-KE") %>
+
+                        </span>
+
+                    </a>
+
+
+                <% }); %>
+
+
+            <% } else { %>
+
+
+                <div class="networth-empty">
+
+                    No active assets have been assigned
+                    to this structure.
+
+                </div>
+
+
+            <% } %>
+
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         ADD MANUAL ASSET
+    ====================================================== -->
+
+    <div class="networth-actions">
+
+        <a
+            href="/networth/structure/<%= structure._id %>/add"
+            class="button button-primary"
+        >
+            Add Asset
+        </a>
+
+    </div>
+
 
 </div>
