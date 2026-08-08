@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const Dairy = require("../models/Dairy");
+const Dairy = require("../models/dairy");
 
 
 /* ==========================================================
