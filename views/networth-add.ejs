@@ -1,0 +1,233 @@
+<div class="financial-page networth-page">
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="financial-header">
+
+        <div>
+
+            <a
+                href="/networth/structure/<%= structure._id %>"
+                class="financial-back-link"
+            >
+                ← <%= structure.item %>
+            </a>
+
+            <h1>
+                Add Asset
+            </h1>
+
+            <p>
+                Add an asset belonging to this structure.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FORM
+    ====================================================== -->
+
+    <div class="financial-card">
+
+        <form
+            action="/networth/structure/<%= structure._id %>/add"
+            method="POST"
+            class="networth-form"
+        >
+
+
+            <!-- =================================================
+                 ITEM
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="item">
+                    Item
+                </label>
+
+                <input
+                    type="text"
+                    id="item"
+                    name="item"
+                    required
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 TYPE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="type">
+                    Type
+                </label>
+
+                <input
+                    type="text"
+                    id="type"
+                    name="type"
+                    required
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 BUYING PRICE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="buyingPrice">
+                    Buying Price
+                </label>
+
+                <input
+                    type="number"
+                    id="buyingPrice"
+                    name="buyingPrice"
+                    min="0"
+                    step="0.01"
+                    required
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 CURRENT WORTH
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="currentWorth">
+                    Current Worth
+                </label>
+
+                <input
+                    type="number"
+                    id="currentWorth"
+                    name="currentWorth"
+                    min="0"
+                    step="0.01"
+                    required
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 DESCRIPTION
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="description">
+                    Description
+                </label>
+
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="4"
+                    required
+                ></textarea>
+
+            </div>
+
+
+            <!-- =================================================
+                 CONDITION
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="condition">
+                    Condition
+                </label>
+
+                <input
+                    type="text"
+                    id="condition"
+                    name="condition"
+                    required
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 LOCATION
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="location">
+                    Location
+                </label>
+
+                <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    required
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 PARENT STRUCTURE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label>
+                    Structure
+                </label>
+
+                <input
+                    type="text"
+                    value="<%= structure.item %>"
+                    readonly
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 ACTIONS
+            ================================================== -->
+
+            <div class="form-actions">
+
+                <a
+                    href="/networth/structure/<%= structure._id %>"
+                    class="button button-secondary"
+                >
+                    Cancel
+                </a>
+
+                <button
+                    type="submit"
+                    class="button button-primary"
+                >
+                    Save Asset
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
