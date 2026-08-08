@@ -1,3 +1,422 @@
+<style>
+/* ==========================================================
+   RECORD LIABILITY PAGE
+========================================================== */
+
+.financial-page {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 25px 18px 50px;
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.financial-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+
+    margin-bottom: 25px;
+}
+
+.financial-header > div {
+    min-width: 0;
+}
+
+.financial-header h1 {
+    margin: 0 0 7px;
+    font-size: 30px;
+    font-weight: 750;
+    line-height: 1.2;
+    color: #172033;
+    letter-spacing: -0.5px;
+}
+
+.financial-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+
+/* ==========================================================
+   HEADER LINK
+========================================================== */
+
+.financial-header-link {
+    flex-shrink: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 11px 17px;
+
+    border-radius: 10px;
+
+    background: #f3f4f6;
+    color: #374151;
+
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 650;
+
+    border: 1px solid #e5e7eb;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.financial-header-link::before {
+    content: "↗";
+    font-size: 15px;
+}
+
+.financial-header-link:hover {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+    color: #111827;
+    transform: translateY(-1px);
+}
+
+
+/* ==========================================================
+   MAIN CARD
+========================================================== */
+
+.financial-card {
+    background: #ffffff;
+
+    border: 1px solid #e8ebf0;
+    border-radius: 18px;
+
+    padding: 30px;
+
+    box-shadow:
+        0 8px 25px rgba(15, 23, 42, 0.06),
+        0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+
+/* ==========================================================
+   FORM
+========================================================== */
+
+.liability-form {
+    width: 100%;
+}
+
+
+/* ==========================================================
+   FORM GROUP
+========================================================== */
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group:last-of-type {
+    margin-bottom: 28px;
+}
+
+
+/* ==========================================================
+   LABEL
+========================================================== */
+
+.form-group label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #263142;
+
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+}
+
+
+/* ==========================================================
+   INPUTS / TEXTAREA
+========================================================== */
+
+.form-group input,
+.form-group textarea {
+    display: block;
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    border: 1px solid #d9dee7;
+    border-radius: 11px;
+
+    background: #fbfcfe;
+    color: #172033;
+
+    font-family: inherit;
+    font-size: 15px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.form-group input {
+    height: 50px;
+    padding: 0 15px;
+}
+
+.form-group textarea {
+    min-height: 135px;
+    padding: 13px 15px;
+
+    resize: vertical;
+
+    line-height: 1.55;
+}
+
+
+/* ==========================================================
+   PLACEHOLDERS
+========================================================== */
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #9aa3b2;
+}
+
+
+/* ==========================================================
+   FOCUS
+========================================================== */
+
+.form-group input:focus,
+.form-group textarea:focus {
+    background: #ffffff;
+
+    border-color: #4f46e5;
+
+    box-shadow:
+        0 0 0 3px rgba(79, 70, 229, 0.10);
+}
+
+
+/* ==========================================================
+   NUMBER INPUT
+========================================================== */
+
+.form-group input[type="number"] {
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* ==========================================================
+   ACTIONS
+========================================================== */
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+
+    padding-top: 4px;
+
+    border-top: 1px solid #eef0f4;
+}
+
+
+/* ==========================================================
+   BUTTON BASE
+========================================================== */
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 45px;
+
+    padding: 0 18px;
+
+    box-sizing: border-box;
+
+    border-radius: 10px;
+
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+
+/* ==========================================================
+   SECONDARY BUTTON
+========================================================== */
+
+.button-secondary {
+    background: #ffffff;
+
+    color: #4b5563;
+
+    border: 1px solid #d9dee7;
+}
+
+.button-secondary:hover {
+    background: #f8f9fb;
+    border-color: #cbd1db;
+    color: #1f2937;
+
+    transform: translateY(-1px);
+}
+
+
+/* ==========================================================
+   PRIMARY BUTTON
+========================================================== */
+
+.button-primary {
+    border: 1px solid #4f46e5;
+
+    background: #4f46e5;
+    color: #ffffff;
+
+    box-shadow:
+        0 4px 10px rgba(79, 70, 229, 0.18);
+}
+
+.button-primary::before {
+    content: "✓";
+    font-size: 14px;
+}
+
+.button-primary:hover {
+    background: #4338ca;
+    border-color: #4338ca;
+
+    box-shadow:
+        0 6px 15px rgba(79, 70, 229, 0.24);
+
+    transform: translateY(-1px);
+}
+
+.button-primary:active,
+.button-secondary:active {
+    transform: translateY(0);
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 650px) {
+
+    .financial-page {
+        padding: 18px 14px 40px;
+    }
+
+    .financial-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .financial-header h1 {
+        font-size: 25px;
+    }
+
+    .financial-header p {
+        font-size: 14px;
+    }
+
+    .financial-header-link {
+        width: 100%;
+    }
+
+    .financial-card {
+        padding: 22px 18px;
+        border-radius: 15px;
+    }
+
+    .form-group {
+        margin-bottom: 21px;
+    }
+
+    .form-group input {
+        height: 48px;
+    }
+
+    .form-group textarea {
+        min-height: 120px;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .button {
+        width: 100%;
+        min-height: 48px;
+    }
+}
+
+
+/* ==========================================================
+   SMALL PHONES
+========================================================== */
+
+@media (max-width: 380px) {
+
+    .financial-page {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .financial-card {
+        padding: 18px 14px;
+    }
+
+    .financial-header h1 {
+        font-size: 23px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        font-size: 14px;
+    }
+}
+</style>
+
+
 <div class="financial-page">
 
     <!-- =====================================================
