@@ -58,7 +58,8 @@ function parseMoney(
     }
 
 
-    const number = Number(value);
+    const number =
+        Number(value);
 
 
     if (
@@ -136,82 +137,255 @@ const ALLOWED_STATUSES = [
 
 
 /* ==========================================================
+   RECORD TYPE HELPERS
+========================================================== */
+
+/*
+ * Dairy Farm
+ *
+ * Negative code.
+ */
+
+function isDairyFarm(record) {
+
+    return (
+        record &&
+        record.code !== null &&
+        record.code !== undefined &&
+        Number(record.code) < 0
+    );
+
+}
+
+
+/*
+ * Coded asset
+ *
+ * Positive code.
+ */
+
+function isCodedAsset(record) {
+
+    return (
+        record &&
+        record.code !== null &&
+        record.code !== undefined &&
+        Number(record.code) > 0
+    );
+
+}
+
+
+/*
+ * Manual asset
+ *
+ * No own code, but assigned to a parent.
+ */
+
+function isManualAsset(record) {
+
+    return (
+        record &&
+        (
+            record.code === null ||
+            record.code === undefined
+        ) &&
+        record.assetCode !== null &&
+        record.assetCode !== undefined
+    );
+
+}
+
+
+/*
+ * Standalone coded asset
+ *
+ * Positive code + no parent.
+ */
+
+function isStandaloneAsset(record) {
+
+    return (
+        isCodedAsset(record) &&
+        (
+            record.assetCode === null ||
+            record.assetCode === undefined
+        )
+    );
+
+}
+
+
+/* ==========================================================
+   VALIDATE DAIRY FARM
+========================================================== */
+
+async function findDairyFarmById(id) {
+
+    if (!isValidObjectId(id)) {
+
+        throw createError(
+            "Invalid Dairy Farm id.",
+            400
+        );
+
+    }
+
+
+    const dairy =
+        await Dairy
+            .findById(id)
+            .lean();
+
+
+    if (!dairy) {
+
+        throw createError(
+            "Dairy Farm not found.",
+            404
+        );
+
+    }
+
+
+    if (!isDairyFarm(dairy)) {
+
+        throw createError(
+            "The selected record is not a Dairy Farm.",
+            404
+        );
+
+    }
+
+
+    return dairy;
+
+}
+
+
+/* ==========================================================
+   FIND DAIRY FARM BY CODE
+========================================================== */
+
+async function findDairyFarmByCode(code) {
+
+    const numericCode =
+        Number(code);
+
+
+    if (
+        !Number.isFinite(numericCode) ||
+        numericCode >= 0
+    ) {
+
+        throw createError(
+            "Invalid Dairy Farm code.",
+            400
+        );
+
+    }
+
+
+    const farm =
+        await Dairy
+            .findOne({
+
+                code: numericCode,
+
+                assetCode: null
+
+            })
+            .lean();
+
+
+    if (!farm) {
+
+        throw createError(
+            "Selected Dairy Farm was not found.",
+            400
+        );
+
+    }
+
+
+    if (!isDairyFarm(farm)) {
+
+        throw createError(
+            "The selected record is not a Dairy Farm.",
+            400
+        );
+
+    }
+
+
+    return farm;
+
+}
+
+
+/* ==========================================================
    GET NET WORTH
 ========================================================== */
 
 async function getNetWorth() {
 
-    const [
+    /*
+     * Fetch all records once.
+     *
+     * Classification is then performed from
+     * the actual record structure.
+     *
+     * This prevents the standalone list and
+     * structure list from drifting apart.
+     */
 
-        allDairy,
-
-        standaloneAssets,
-
-        structures
-
-    ] = await Promise.all([
-
-        Dairy
+    const allDairy =
+        await Dairy
             .find({})
-            .lean(),
-
-
-        /*
-         * Standalone assets are identified records
-         * with a positive code and no parent farm.
-         *
-         * Manual assets are NOT standalone assets.
-         */
-
-        Dairy
-            .find({
-
-                code: {
-                    $gt: 0
-                },
-
-                assetCode: null,
-
-                status: "active"
-
-            })
             .sort({
-
                 name: 1
-
             })
-            .lean(),
+            .lean();
 
 
-        /*
-         * Negative code = Dairy Farm.
-         *
-         * A Dairy Farm must never have assetCode.
-         */
+    /* ======================================================
+       STANDALONE ASSETS
+    ====================================================== */
 
-        Dairy
-            .find({
+    const standaloneAssets =
+        allDairy.filter(
+            function(dairy) {
 
-                code: {
-                    $lt: 0
-                },
+                return isStandaloneAsset(
+                    dairy
+                );
 
-                assetCode: null
+            }
+        );
 
-            })
-            .sort({
 
-                name: 1
+    /* ======================================================
+       DAIRY FARMS
+    ====================================================== */
 
-            })
-            .lean()
+    const structures =
+        allDairy.filter(
+            function(dairy) {
 
-    ]);
+                return isDairyFarm(
+                    dairy
+                );
 
+            }
+        );
+
+
+    /* ======================================================
+       TOTAL NET WORTH
+    ====================================================== */
 
     const totalNetWorth =
         allDairy.reduce(
-
             function(
                 total,
                 dairy
@@ -227,19 +401,14 @@ async function getNetWorth() {
 
 
                 return (
-
                     total +
-
                     toNumber(
                         dairy.currentWorth
                     )
-
                 );
 
             },
-
             0
-
         );
 
 
@@ -262,50 +431,10 @@ async function getNetWorth() {
 
 async function getDairyFarm(id) {
 
-    if (
-        !isValidObjectId(id)
-    ) {
-
-        throw createError(
-            "Invalid Dairy Farm id.",
-            400
-        );
-
-    }
-
-
     const dairy =
-        await Dairy
-            .findById(id)
-            .lean();
-
-
-    if (!dairy) {
-
-        throw createError(
-            "Dairy Farm not found.",
-            404
+        await findDairyFarmById(
+            id
         );
-
-    }
-
-
-    /*
-     * Dairy Farms have negative codes.
-     */
-
-    if (
-        dairy.code === null ||
-        dairy.code === undefined ||
-        Number(dairy.code) >= 0
-    ) {
-
-        throw createError(
-            "The selected record is not a Dairy Farm.",
-            404
-        );
-
-    }
 
 
     const farmCode =
@@ -313,14 +442,13 @@ async function getDairyFarm(id) {
 
 
     /*
-     * A Dairy Farm owns all records whose
-     * assetCode equals the farm's negative code.
+     * Includes:
      *
-     * This includes manual assets where:
+     * 1. Positive-code assets assigned to
+     *    this farm.
      *
-     *     code = null
-     *
-     * and assetCode = farmCode.
+     * 2. Manual assets with code:null
+     *    assigned to this farm.
      */
 
     const assets =
@@ -340,7 +468,6 @@ async function getDairyFarm(id) {
 
     const dairyTotal =
         assets.reduce(
-
             function(
                 total,
                 asset
@@ -356,19 +483,14 @@ async function getDairyFarm(id) {
 
 
                 return (
-
                     total +
-
                     toNumber(
                         asset.currentWorth
                     )
-
                 );
 
             },
-
             0
-
         );
 
 
@@ -391,51 +513,10 @@ async function getDairyFarm(id) {
 
 async function getAddAsset(id) {
 
-    if (
-        !isValidObjectId(id)
-    ) {
-
-        throw createError(
-            "Invalid Dairy Farm id.",
-            400
-        );
-
-    }
-
-
     const dairy =
-        await Dairy
-            .findById(id)
-            .lean();
-
-
-    if (!dairy) {
-
-        throw createError(
-            "Dairy Farm not found.",
-            404
+        await findDairyFarmById(
+            id
         );
-
-    }
-
-
-    /*
-     * Only a negative-code record can be
-     * the parent of a manual asset.
-     */
-
-    if (
-        dairy.code === null ||
-        dairy.code === undefined ||
-        Number(dairy.code) >= 0
-    ) {
-
-        throw createError(
-            "The selected record is not a Dairy Farm.",
-            404
-        );
-
-    }
 
 
     return {
@@ -456,49 +537,10 @@ async function addAsset(
     body
 ) {
 
-    if (
-        !isValidObjectId(id)
-    ) {
-
-        throw createError(
-            "Invalid Dairy Farm id.",
-            400
-        );
-
-    }
-
-
     const dairy =
-        await Dairy
-            .findById(id);
-
-
-    if (!dairy) {
-
-        throw createError(
-            "Dairy Farm not found.",
-            404
+        await findDairyFarmById(
+            id
         );
-
-    }
-
-
-    /*
-     * The parent must be a Dairy Farm.
-     */
-
-    if (
-        dairy.code === null ||
-        dairy.code === undefined ||
-        Number(dairy.code) >= 0
-    ) {
-
-        throw createError(
-            "The selected record is not a Dairy Farm.",
-            400
-        );
-
-    }
 
 
     const farmCode =
@@ -517,6 +559,16 @@ async function addAsset(
         ).trim();
 
 
+    if (!name) {
+
+        throw createError(
+            "Name is required.",
+            400
+        );
+
+    }
+
+
     /* ======================================================
        TYPE
     ====================================================== */
@@ -526,6 +578,16 @@ async function addAsset(
             body.type ||
             ""
         ).trim();
+
+
+    if (!type) {
+
+        throw createError(
+            "Type is required.",
+            400
+        );
+
+    }
 
 
     /* ======================================================
@@ -539,6 +601,16 @@ async function addAsset(
         ).trim();
 
 
+    if (!description) {
+
+        throw createError(
+            "Description is required.",
+            400
+        );
+
+    }
+
+
     /* ======================================================
        CONDITION
     ====================================================== */
@@ -550,6 +622,16 @@ async function addAsset(
         ).trim();
 
 
+    if (!condition) {
+
+        throw createError(
+            "Condition is required.",
+            400
+        );
+
+    }
+
+
     /* ======================================================
        LOCATION
     ====================================================== */
@@ -559,46 +641,6 @@ async function addAsset(
             body.location ||
             ""
         ).trim();
-
-
-    if (!name) {
-
-        throw createError(
-            "Name is required.",
-            400
-        );
-
-    }
-
-
-    if (!type) {
-
-        throw createError(
-            "Type is required.",
-            400
-        );
-
-    }
-
-
-    if (!description) {
-
-        throw createError(
-            "Description is required.",
-            400
-        );
-
-    }
-
-
-    if (!condition) {
-
-        throw createError(
-            "Condition is required.",
-            400
-        );
-
-    }
 
 
     if (!location) {
@@ -641,7 +683,9 @@ async function addAsset(
 
 
     if (
-        !ALLOWED_STATUSES.includes(status)
+        !ALLOWED_STATUSES.includes(
+            status
+        )
     ) {
 
         throw createError(
@@ -655,14 +699,11 @@ async function addAsset(
     /* ======================================================
        CREATE MANUAL ASSET
        
-       Manual asset:
+       code:
+           null
        
-           code      = null
-           assetCode = parent's negative code
-       
-       The manual asset therefore belongs to
-       the Dairy Farm without receiving its own
-       dairy code.
+       assetCode:
+           negative Dairy Farm code
     ====================================================== */
 
     const asset =
@@ -688,7 +729,8 @@ async function addAsset(
 
             status,
 
-            acquisitionDate: new Date()
+            acquisitionDate:
+                new Date()
 
         });
 
@@ -736,13 +778,12 @@ async function getAsset(id) {
 
 
     /*
-     * Negative code means Dairy Farm.
+     * A Dairy Farm cannot be opened
+     * through the asset editor.
      */
 
     if (
-        dairy.code !== null &&
-        dairy.code !== undefined &&
-        Number(dairy.code) < 0
+        isDairyFarm(dairy)
     ) {
 
         throw createError(
@@ -754,21 +795,18 @@ async function getAsset(id) {
 
 
     /*
-     * Manual assets have:
+     * Every valid asset must either:
      *
-     *     code = null
-     *
-     * and are valid assets when they have
-     * an assetCode pointing to their parent.
+     * 1. Have a positive code, OR
+     * 2. Be a manual asset with assetCode.
      */
 
-    if (
-        dairy.code === null &&
-        (
-            dairy.assetCode === null ||
-            dairy.assetCode === undefined
-        )
-    ) {
+    const validAsset =
+        isCodedAsset(dairy) ||
+        isManualAsset(dairy);
+
+
+    if (!validAsset) {
 
         throw createError(
             "The selected record is not a valid asset.",
@@ -779,8 +817,8 @@ async function getAsset(id) {
 
 
     /*
-     * Only negative-code records are valid
-     * Dairy Farm parents.
+     * All available Dairy Farms are supplied
+     * to the edit form.
      */
 
     const structures =
@@ -849,18 +887,15 @@ async function updateAsset(
     }
 
 
-    /*
-     * Negative code = Dairy Farm.
-     *
-     * A Dairy Farm cannot be edited through
-     * the asset editor.
-     */
+    /* ======================================================
+       IDENTIFY RECORD TYPE
+    ====================================================== */
 
-    if (
-        dairy.code !== null &&
-        dairy.code !== undefined &&
-        Number(dairy.code) < 0
-    ) {
+    const originalIsFarm =
+        isDairyFarm(dairy);
+
+
+    if (originalIsFarm) {
 
         throw createError(
             "A Dairy Farm cannot be edited as an asset.",
@@ -870,23 +905,21 @@ async function updateAsset(
     }
 
 
-    /*
-     * A manual asset must have a parent.
-     *
-     * Therefore code:null + assetCode:null
-     * is invalid for an asset.
-     */
+    const originalIsCodedAsset =
+        isCodedAsset(dairy);
+
+
+    const originalIsManualAsset =
+        isManualAsset(dairy);
+
 
     if (
-        dairy.code === null &&
-        (
-            dairy.assetCode === null ||
-            dairy.assetCode === undefined
-        )
+        !originalIsCodedAsset &&
+        !originalIsManualAsset
     ) {
 
         throw createError(
-            "A manual asset must belong to a parent asset or Dairy Farm.",
+            "The selected record is not a valid asset.",
             400
         );
 
@@ -1011,7 +1044,9 @@ async function updateAsset(
 
 
     if (
-        !ALLOWED_STATUSES.includes(status)
+        !ALLOWED_STATUSES.includes(
+            status
+        )
     ) {
 
         throw createError(
@@ -1039,206 +1074,103 @@ async function updateAsset(
 
     /* ======================================================
        PARENT ASSIGNMENT
-       
-       Positive-code asset:
-       
-           assetCode = null
-               OR
-           assetCode = negative Dairy Farm code
-       
-       Manual asset:
-       
-           code = null
-           assetCode = parent code
-       
-       A manual asset may therefore be moved
-       between valid parents.
     ====================================================== */
 
-    let assetCode =
+    const requestedAssetCode =
         body.assetCode;
 
 
     /*
-     * Manual asset cannot become standalone.
+     * ------------------------------------------------------
+     * MANUAL ASSET
+     * ------------------------------------------------------
+     *
+     * Manual assets have no own code.
+     *
+     * They MUST always belong to a Dairy Farm.
      */
 
     if (
-        dairy.code === null
+        originalIsManualAsset
     ) {
 
         if (
-            assetCode === undefined ||
-            assetCode === null ||
-            assetCode === ""
+            requestedAssetCode === undefined ||
+            requestedAssetCode === null ||
+            requestedAssetCode === ""
         ) {
 
             throw createError(
-                "A manual asset must belong to a parent.",
+                "A manual asset must belong to a Dairy Farm.",
                 400
             );
 
         }
 
+
+        const farm =
+            await findDairyFarmByCode(
+                requestedAssetCode
+            );
+
+
+        dairy.assetCode =
+            Number(
+                farm.code
+            );
+
     }
 
 
     /*
-     * Positive-code asset can be standalone.
+     * ------------------------------------------------------
+     * POSITIVE-CODE ASSET
+     * ------------------------------------------------------
+     *
+     * A coded asset may either:
+     *
+     * 1. Remain standalone:
+     *       assetCode = null
+     *
+     * 2. Be assigned to a Dairy Farm:
+     *       assetCode = negative farm code
      */
 
     if (
-        dairy.code !== null &&
-        Number(dairy.code) > 0
+        originalIsCodedAsset
     ) {
 
         if (
-            assetCode === undefined ||
-            assetCode === null ||
-            assetCode === ""
+            requestedAssetCode === undefined ||
+            requestedAssetCode === null ||
+            requestedAssetCode === ""
         ) {
+
+            /*
+             * Standalone asset.
+             */
 
             dairy.assetCode =
                 null;
 
         } else {
 
-            assetCode =
-                Number(assetCode);
-
-
-            if (
-                !Number.isFinite(assetCode)
-            ) {
-
-                throw createError(
-                    "Invalid Dairy Farm code.",
-                    400
-                );
-
-            }
-
-
             /*
-             * Parent must be a negative-code
-             * Dairy Farm.
+             * Assigned to Dairy Farm.
              */
 
-            const structure =
-                await Dairy
-                    .findOne({
-
-                        code: assetCode,
-
-                        assetCode: null
-
-                    })
-                    .lean();
-
-
-            if (!structure) {
-
-                throw createError(
-                    "Selected Dairy Farm was not found.",
-                    400
+            const farm =
+                await findDairyFarmByCode(
+                    requestedAssetCode
                 );
-
-            }
-
-
-            if (
-                Number(structure.code) >= 0
-            ) {
-
-                throw createError(
-                    "The selected record is not a Dairy Farm.",
-                    400
-                );
-
-            }
 
 
             dairy.assetCode =
                 Number(
-                    structure.code
+                    farm.code
                 );
 
         }
-
-    }
-
-
-    /*
-     * Manual asset.
-     *
-     * Parent is required and must be a
-     * valid Dairy Farm.
-     */
-
-    if (
-        dairy.code === null
-    ) {
-
-        assetCode =
-            Number(assetCode);
-
-
-        if (
-            !Number.isFinite(assetCode)
-        ) {
-
-            throw createError(
-                "Invalid parent code.",
-                400
-            );
-
-        }
-
-
-        const structure =
-            await Dairy
-                .findOne({
-
-                    code: assetCode,
-
-                    assetCode: null
-
-                })
-                .lean();
-
-
-        if (!structure) {
-
-            throw createError(
-                "Selected parent was not found.",
-                400
-            );
-
-        }
-
-
-        /*
-         * At present, manual assets created
-         * through this Net Worth flow belong
-         * to Dairy Farms only.
-         */
-
-        if (
-            Number(structure.code) >= 0
-        ) {
-
-            throw createError(
-                "The selected parent is not a Dairy Farm.",
-                400
-            );
-
-        }
-
-
-        dairy.assetCode =
-            Number(
-                structure.code
-            );
 
     }
 
