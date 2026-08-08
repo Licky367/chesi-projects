@@ -1,8 +1,10 @@
 const express = require("express");
 
-const router = express.Router();
+const router =
+    express.Router();
 
-const controller = require("../controllers/networthController");
+const controller =
+    require("../controllers/networthController");
 
 
 /* =========================================================
@@ -12,23 +14,54 @@ const controller = require("../controllers/networthController");
 
 function adminOnly(req, res, next) {
 
-    if (!req.session || !req.session.user) {
+    /* -----------------------------------------------------
+       USER SESSION CHECK
+    ----------------------------------------------------- */
 
-        return res.status(401).render("401", {
-            title: "401 - Unauthorized",
-            user: req.user || null
-        });
+    if (
+        !req.session ||
+        !req.session.user
+    ) {
+
+        return res.status(401).render(
+            "401",
+            {
+
+                title:
+                    "401 - Unauthorized",
+
+                user:
+                    req.user || null
+
+            }
+        );
 
     }
 
-    if (req.session.user.role !== "admin") {
 
-        return res.status(403).render("403", {
-            title: "403 - Forbidden",
-            user: req.user || null
-        });
+    /* -----------------------------------------------------
+       ADMIN ROLE CHECK
+    ----------------------------------------------------- */
+
+    if (
+        req.session.user.role !== "admin"
+    ) {
+
+        return res.status(403).render(
+            "403",
+            {
+
+                title:
+                    "403 - Forbidden",
+
+                user:
+                    req.user || null
+
+            }
+        );
 
     }
+
 
     next();
 
@@ -36,7 +69,7 @@ function adminOnly(req, res, next) {
 
 
 /* =========================================================
-   NET WORTH ENTRY PAGE
+   NET WORTH OVERVIEW
 ========================================================= */
 
 router.get(
@@ -47,7 +80,7 @@ router.get(
 
 
 /* =========================================================
-   STRUCTURE ASSETS PAGE
+   STRUCTURE DETAILS
 ========================================================= */
 
 router.get(
@@ -58,7 +91,29 @@ router.get(
 
 
 /* =========================================================
-   ASSET DETAILS / UPDATE PAGE
+   ADD ASSET TO STRUCTURE — PAGE
+========================================================= */
+
+router.get(
+    "/structure/:id/add",
+    adminOnly,
+    controller.addAssetPage
+);
+
+
+/* =========================================================
+   ADD ASSET TO STRUCTURE — SUBMIT
+========================================================= */
+
+router.post(
+    "/structure/:id/add",
+    adminOnly,
+    controller.addAsset
+);
+
+
+/* =========================================================
+   ASSET DETAILS / EDIT PAGE
 ========================================================= */
 
 router.get(
@@ -80,24 +135,8 @@ router.put(
 
 
 /* =========================================================
-   ADD MANUAL ASSET TO STRUCTURE
-========================================================= */
-
-router.get(
-    "/structure/:id/add",
-    adminOnly,
-    controller.addAssetPage
-);
-
-router.post(
-    "/structure/:id/add",
-    adminOnly,
-    controller.addAsset
-);
-
-
-/* =========================================================
    EXPORT
 ========================================================= */
 
-module.exports = router;
+module.exports =
+    router;
