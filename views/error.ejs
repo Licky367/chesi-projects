@@ -1,0 +1,227 @@
+<div class="error-page"><div class="error-card">
+
+    <div class="error-icon">
+        !
+    </div>
+
+    <h1>
+        <%= statusCode || 500 %>
+    </h1>
+
+    <h2>
+        Something went wrong
+    </h2>
+
+    <p>
+        <%= message || "An unexpected error occurred." %>
+    </p>
+
+    <div class="error-actions">
+
+        <button
+            type="button"
+            onclick="history.back()"
+        >
+            ← Go Back
+        </button>
+
+        <a href="/">
+            🏠 Home
+        </a>
+
+    </div>
+
+</div>
+
+</div><style>
+
+.error-page {
+
+    max-width: 600px;
+
+    margin: 60px auto;
+
+    padding: 20px;
+
+}
+
+
+.error-card {
+
+    padding: 35px 25px;
+
+    text-align: center;
+
+    background: #ffffff;
+
+    border: 1px solid #e1e9e4;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 6px 20px rgba(25, 70, 43, 0.07);
+
+}
+
+
+.error-icon {
+
+    width: 55px;
+
+    height: 55px;
+
+    margin: 0 auto 15px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #fff1f1;
+
+    color: #c43d3d;
+
+    font-size: 26px;
+
+    font-weight: 800;
+
+}
+
+
+.error-card h1 {
+
+    margin: 0;
+
+    color: #173b2a;
+
+    font-size: 38px;
+
+}
+
+
+.error-card h2 {
+
+    margin: 8px 0 12px;
+
+    color: #304139;
+
+    font-size: 20px;
+
+}
+
+
+.error-card p {
+
+    margin: 0 auto;
+
+    max-width: 480px;
+
+    color: #69776f;
+
+    font-size: 14px;
+
+    line-height: 1.6;
+
+    overflow-wrap: anywhere;
+
+}
+
+
+.error-actions {
+
+    display: flex;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    margin-top: 25px;
+
+}
+
+
+.error-actions button,
+.error-actions a {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 44px;
+
+    padding: 0 17px;
+
+    border-radius: 9px;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+}
+
+
+.error-actions button {
+
+    background: #ffffff;
+
+    color: #536159;
+
+    border: 1px solid #d5dfd9;
+
+}
+
+
+.error-actions a {
+
+    background: #2f8f55;
+
+    color: #ffffff;
+
+    border: 1px solid #2f8f55;
+
+}
+
+
+@media (max-width: 600px) {
+
+    .error-page {
+
+        margin: 35px auto;
+
+        padding: 14px;
+
+    }
+
+    .error-card {
+
+        padding: 28px 18px;
+
+    }
+
+    .error-actions {
+
+        flex-direction: column;
+
+    }
+
+    .error-actions button,
+    .error-actions a {
+
+        width: 100%;
+
+    }
+
+}
+
+</style>
