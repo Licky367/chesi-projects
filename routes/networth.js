@@ -1,115 +1,110 @@
 const express = require("express");
 
-const router =
-    express.Router();
+const router = express.Router();
+
+const networkController = require("../controllers/networkController");
 
 
-const networthController =
-    require(
-        "../controllers/networthController"
-    );
+/* ==========================================================
+   NET WORTH
+========================================================== */
 
-
-/* =========================================================
-   NET WORTH DASHBOARD
-
-   GET /networth
-
-   Displays the complete Net Worth overview.
-========================================================= */
-
+/*
+ * GET /networth
+ *
+ * Main Net Worth page.
+ *
+ * Displays:
+ *   - Total Net Worth
+ *   - Standalone Assets
+ *   - Dairy Farms
+ */
 router.get(
     "/",
-    networthController.getNetWorth
+    networkController.getNetWorth
 );
 
 
-/* =========================================================
-   STRUCTURE DETAILS
+/* ==========================================================
+   DAIRY FARM
+========================================================== */
 
-   GET /networth/structure/:id
-
-   :id is the MongoDB _id of the Dairy structure.
-
-   The structure itself must have:
-
-       code < 0
-========================================================= */
-
+/*
+ * GET /networth/structure/:id
+ *
+ * Displays a specific Dairy Farm and all assets
+ * assigned to that farm.
+ */
 router.get(
     "/structure/:id",
-    networthController.getStructure
+    networkController.getDairyFarm
 );
 
 
-/* =========================================================
-   ADD MANUAL ASSET TO STRUCTURE
+/* ==========================================================
+   ADD ASSET
+========================================================== */
 
-   GET /networth/structure/:id/add
-
-   Displays the Add Asset form.
-
-   :id is the MongoDB _id of the parent structure.
-========================================================= */
-
+/*
+ * GET /networth/structure/:id/add
+ *
+ * Displays the Add Asset form for a specific
+ * Dairy Farm.
+ */
 router.get(
     "/structure/:id/add",
-    networthController.getAddAsset
+    networkController.getAddAsset
 );
 
 
-/* =========================================================
-   CREATE MANUAL ASSET
-
-   POST /networth/structure/:id/add
-
-   Creates a new Dairy record with:
-
-       code = null
-       assetSource = "asset"
-       assetCode = parent structure's negative code
-
-   The backend determines assetCode from the structure.
-========================================================= */
-
+/*
+ * POST /networth/structure/:id/add
+ *
+ * Creates a new asset directly under the specified
+ * Dairy Farm.
+ */
 router.post(
     "/structure/:id/add",
-    networthController.addAsset
+    networkController.addAsset
 );
 
 
-/* =========================================================
-   ASSET DETAILS / EDIT
+/* ==========================================================
+   ASSET
+========================================================== */
 
-   GET /networth/asset/:id
-
-   Displays an existing Dairy Net Worth record.
-========================================================= */
-
+/*
+ * GET /networth/asset/:id
+ *
+ * Displays the details/edit page for a Dairy asset.
+ */
 router.get(
     "/asset/:id",
-    networthController.getAsset
+    networkController.getAsset
 );
 
 
-/* =========================================================
-   UPDATE ASSET
-
-   POST /networth/asset/:id
-
-   The frontend submits:
-
-       _method = PUT
-
-   Therefore this route is intended to work with
-   method-override middleware.
-========================================================= */
-
-router.put(
+/*
+ * POST /networth/asset/:id
+ *
+ * Updates an existing Dairy asset.
+ *
+ * The supplied EJS form uses:
+ *
+ *     _method=PUT
+ *
+ * Therefore this route is compatible with either:
+ *
+ *   - method-override
+ *   - a controller that handles the POST directly
+ *
+ * We keep the route POST-based to match the actual
+ * HTML form submission.
+ */
+router.post(
     "/asset/:id",
-    networthController.updateAsset
+    networkController.updateAsset
 );
 
 
-module.exports =
-    router;
+module.exports = router;
