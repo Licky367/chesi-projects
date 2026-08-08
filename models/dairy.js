@@ -39,38 +39,33 @@ const dairySchema = new mongoose.Schema(
 
         code: {
 
-            type: Number,
+    type: Number,
 
-            default: null,
+    default: null,
 
-            unique: true,
+    validate: {
 
-            sparse: true,
+        validator: function(value) {
 
-            validate: {
+            if (
+                value === null ||
+                value === undefined
+            ) {
 
-                validator: function(value) {
-
-                    if (
-                        value === null ||
-                        value === undefined
-                    ) {
-
-                        return true;
-
-                    }
-
-
-                    return Number.isInteger(value);
-
-                },
-
-                message:
-                    "Code must be a whole number or null."
+                return true;
 
             }
 
+            return Number.isInteger(value);
+
         },
+
+        message:
+            "Code must be a whole number or null."
+
+    }
+
+},
 
 
         /* ==================================================
