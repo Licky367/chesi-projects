@@ -28,18 +28,6 @@ function createError(
 }
 
 
-function getName(dairy) {
-
-    return (
-        dairy.name ||
-        dairy.item ||
-        dairy.code ||
-        "Dairy"
-    );
-
-}
-
-
 function toNumber(value) {
 
     const number = Number(value);
@@ -125,6 +113,18 @@ function parseDate(
 }
 
 
+function getName(dairy) {
+
+    return (
+        dairy.name ||
+        dairy.item ||
+        String(dairy.code || "") ||
+        "Dairy"
+    );
+
+}
+
+
 /* ==========================================================
    GET NET WORTH
 ========================================================== */
@@ -132,11 +132,23 @@ function parseDate(
 /**
  * Main Net Worth page.
  *
- * Returns:
+ * DATA MODEL
  *
- *     totalNetWorth
- *     standaloneAssets
- *     structures
+ * Dairy Farm:
+ *     code < 0
+ *
+ * Coded asset:
+ *     code > 0
+ *
+ * Manual asset:
+ *     code === null
+ *
+ * Asset assignment:
+ *     assetCode === negative Dairy Farm code
+ *
+ * A Dairy Farm's own currentWorth is NOT included in
+ * totalNetWorth because the assets belonging to the farm
+ * are counted separately.
  */
 async function getNetWorth() {
 
@@ -150,20 +162,60 @@ async function getNetWorth() {
             .find({})
             .lean(),
 
+
+        /*
+         * Standalone assets are assets that do not belong
+         * to a Dairy Farm.
+         *
+         * They may be:
+         *
+         *     code > 0
+         *     code === null
+         *
+         * but their assetCode must be null/missing.
+         */
         Dairy
             .find({
-                code: {
-                    $gt: 0
-                },
-                $or: [
+                $and: [
+
                     {
-                        assetCode: null
+                        $or: [
+
+                            {
+                                code: {
+                                    $gt: 0
+                                }
+                            },
+
+                            {
+                                code: null
+                            },
+
+                            {
+                                code: {
+                                    $exists: false
+                                }
+                            }
+
+                        ]
                     },
+
                     {
-                        assetCode: {
-                            $exists: false
-                        }
+                        $or: [
+
+                            {
+                                assetCode: null
+                            },
+
+                            {
+                                assetCode: {
+                                    $exists: false
+                                }
+                            }
+
+                        ]
                     }
+
                 ]
             })
             .sort({
@@ -172,6 +224,11 @@ async function getNetWorth() {
             })
             .lean(),
 
+
+        /*
+         * Dairy Farms are identified ONLY by negative
+         * dairy.code.
+         */
         Dairy
             .find({
                 code: {
@@ -188,17 +245,16 @@ async function getNetWorth() {
 
 
     /*
-     * Dairy Farms themselves are structures.
+     * Net Worth includes:
      *
-     * Their currentWorth must therefore NOT be added to
-     * Net Worth. Otherwise the farm and the assets inside
-     * the farm would be counted twice.
+     *     - coded assets
+     *     - manual assets
      *
-     * Assets include:
+     * Net Worth excludes:
      *
-     *     code > 0
+     *     - Dairy Farms themselves
      *
-     * and Dairy records whose code is null/undefined.
+     * A Dairy Farm has code < 0.
      */
     const totalNetWorth =
         allDairy.reduce(
@@ -248,24 +304,29 @@ async function getNetWorth() {
 ========================================================== */
 
 /**
- * Loads one Dairy Farm.
+ * GET /networth/structure/:id
  *
- * Farm:
+ * Loads a Dairy Farm and all assets belonging to it.
  *
- *     code < 0
+ * Parent Dairy Farm:
  *
- * Assets assigned to it:
+ *     dairy.code < 0
  *
- *     assetCode === farm.code
+ * Child asset:
  *
- * for positive-code assets.
+ *     dairy.assetCode === parent dairy.code
  *
- * NOTE:
- * A record with code === null and no farm-reference field
- * cannot be uniquely associated with a particular farm.
- * The Add Asset EJS explicitly says that such a record must
- * not receive assetCode. Therefore this service does not
- * incorrectly assign every null-code record to every farm.
+ * IMPORTANT:
+ *
+ * The child asset may have:
+ *
+ *     code > 0
+ *
+ * OR
+ *
+ *     code === null
+ *
+ * Manual assets are therefore included.
  */
 async function getDairyFarm(id) {
 
@@ -314,15 +375,20 @@ async function getDairyFarm(id) {
 
 
     /*
-     * Existing positive-code assets assigned through
-     * assetCode.
+     * IMPORTANT:
+     *
+     * Do NOT filter by asset.code.
+     *
+     * Manual assets have:
+     *
+     *     code === null
+     *
+     * Their relationship to this farm is determined
+     * exclusively by assetCode.
      */
     const assets =
         await Dairy
             .find({
-                code: {
-                    $gt: 0
-                },
                 assetCode: farmCode
             })
             .sort({
@@ -366,7 +432,11 @@ async function getDairyFarm(id) {
 ========================================================== */
 
 /**
- * Loads the Add Asset page.
+ * GET /networth/structure/:id/add
+ *
+ * Loads the Add Asset form.
+ *
+ * The supplied id identifies the parent Dairy Farm.
  */
 async function getAddAsset(id) {
 
@@ -424,15 +494,30 @@ async function getAddAsset(id) {
 ========================================================== */
 
 /**
- * Creates a new asset directly from a Dairy Farm.
+ * POST /networth/structure/:id/add
  *
- * According to networth-add.ejs:
+ * Creates a manual asset belonging to the selected
+ * Dairy Farm.
+ *
+ * REQUIRED DATA MODEL:
  *
  *     code      = null
- *     assetCode = null / undefined
+ *     assetCode = parent dairy.code
  *
- * The new record therefore remains an ordinary unclassified
- * Dairy record rather than becoming a Dairy Farm.
+ * Example:
+ *
+ * Parent:
+ *
+ *     {
+ *         code: -1001
+ *     }
+ *
+ * New manual asset:
+ *
+ *     {
+ *         code: null,
+ *         assetCode: -1001
+ *     }
  */
 async function addAsset(
     id,
@@ -449,6 +534,13 @@ async function addAsset(
     }
 
 
+    /*
+     * Find the actual Dairy Farm.
+     *
+     * There is no dairyFarm.code field.
+     *
+     * The parent's own dairy.code is used.
+     */
     const dairy =
         await Dairy
             .findById(id);
@@ -476,6 +568,13 @@ async function addAsset(
         );
 
     }
+
+
+    /*
+     * This is the parent farm's actual code.
+     */
+    const farmCode =
+        Number(dairy.code);
 
 
     const item =
@@ -573,14 +672,17 @@ async function addAsset(
 
 
     /*
+     * CREATE MANUAL ASSET
+     *
      * IMPORTANT:
      *
-     * Do not copy the farm's negative code.
+     * code is explicitly null.
      *
-     * Do not set assetCode.
+     * assetCode is the negative code of the
+     * parent Dairy Farm.
      *
-     * This follows the exact rules documented in
-     * networth-add.ejs.
+     * We do NOT copy the parent's code into
+     * the new asset's code field.
      */
     const asset =
         new Dairy({
@@ -605,6 +707,8 @@ async function addAsset(
 
             code: null,
 
+            assetCode: farmCode,
+
             status: "active",
 
             acquisitionDate: new Date()
@@ -625,10 +729,9 @@ async function addAsset(
 ========================================================== */
 
 /**
- * Loads an individual asset.
+ * GET /networth/asset/:id
  *
- * Also supplies the available Dairy Farms for the
- * assetCode selector.
+ * Loads an individual asset and all available Dairy Farms.
  */
 async function getAsset(id) {
 
@@ -658,6 +761,27 @@ async function getAsset(id) {
     }
 
 
+    /*
+     * The asset page is not intended for editing
+     * Dairy Farms.
+     */
+    if (
+        dairy.code !== null &&
+        dairy.code !== undefined &&
+        Number(dairy.code) < 0
+    ) {
+
+        throw createError(
+            "The selected record is a Dairy Farm, not an asset.",
+            400
+        );
+
+    }
+
+
+    /*
+     * Only negative-code records are valid Dairy Farms.
+     */
     const structures =
         await Dairy
             .find({
@@ -688,11 +812,24 @@ async function getAsset(id) {
 ========================================================== */
 
 /**
+ * POST /networth/asset/:id
+ *
  * Updates an existing asset.
  *
- * Positive-code assets may have assetCode changed.
+ * Both kinds of assets may be assigned to a Dairy Farm:
  *
- * Dairy Farms cannot be assigned to another farm.
+ *     code > 0
+ *     code === null
+ *
+ * The selected Dairy Farm is always represented by:
+ *
+ *     assetCode = negative dairy.code
+ *
+ * A Dairy Farm itself:
+ *
+ *     code < 0
+ *
+ * cannot be edited through this asset assignment route.
  */
 async function updateAsset(
     id,
@@ -725,10 +862,9 @@ async function updateAsset(
 
 
     /*
-     * A negative code identifies a Dairy Farm.
+     * Negative code means this is a Dairy Farm.
      *
-     * The asset editor must not turn a Dairy Farm into an
-     * assigned asset.
+     * A Dairy Farm cannot be treated as an asset.
      */
     if (
         dairy.code !== null &&
@@ -737,7 +873,7 @@ async function updateAsset(
     ) {
 
         throw createError(
-            "A Dairy Farm cannot be assigned as an asset.",
+            "A Dairy Farm cannot be edited as an asset.",
             400
         );
 
@@ -760,9 +896,11 @@ async function updateAsset(
     }
 
 
-    dairy.name = item;
+    dairy.name =
+        item;
 
-    dairy.item = item;
+    dairy.item =
+        item;
 
 
     dairy.buyingPrice =
@@ -779,10 +917,6 @@ async function updateAsset(
         );
 
 
-    /*
-     * Keep both service field names compatible with the
-     * EJS comments/model naming supplied by the user.
-     */
     const description =
         String(
             body.description || ""
@@ -793,6 +927,10 @@ async function updateAsset(
         description;
 
 
+    /*
+     * Keep assetDescription synchronized when the
+     * schema contains that field.
+     */
     if (
         Object.prototype.hasOwnProperty.call(
             dairy,
@@ -869,97 +1007,108 @@ async function updateAsset(
 
 
     /* ======================================================
-       ASSET FARM ASSIGNMENT
+       DAIRY FARM ASSIGNMENT
     ====================================================== */
 
     /*
-     * ONLY positive-code assets may receive assetCode.
+     * IMPORTANT:
+     *
+     * This applies to BOTH:
+     *
+     *     code > 0
+     *
+     * and:
+     *
+     *     code === null
+     *
+     * because manual assets also use assetCode.
+     */
+    let assetCode =
+        body.assetCode;
+
+
+    /*
+     * Empty selection means standalone asset.
      */
     if (
-        dairy.code !== null &&
-        dairy.code !== undefined &&
-        Number(dairy.code) > 0
+        assetCode === undefined ||
+        assetCode === null ||
+        assetCode === ""
     ) {
 
-        let assetCode =
-            body.assetCode;
+        dairy.assetCode =
+            null;
+
+    } else {
+
+        assetCode =
+            Number(assetCode);
 
 
         if (
-            assetCode === undefined ||
-            assetCode === null ||
-            assetCode === ""
+            !Number.isFinite(assetCode)
         ) {
 
-            dairy.assetCode = null;
-
-        } else {
-
-            assetCode =
-                Number(assetCode);
-
-
-            if (!Number.isFinite(assetCode)) {
-
-                throw createError(
-                    "Invalid Dairy Farm code.",
-                    400
-                );
-
-            }
-
-
-            const structure =
-                await Dairy
-                    .findOne({
-                        code: assetCode
-                    })
-                    .lean();
-
-
-            if (!structure) {
-
-                throw createError(
-                    "Selected Dairy Farm was not found.",
-                    400
-                );
-
-            }
-
-
-            if (
-                Number(structure.code) >= 0
-            ) {
-
-                throw createError(
-                    "The selected record is not a Dairy Farm.",
-                    400
-                );
-
-            }
-
-
-            dairy.assetCode =
-                assetCode;
+            throw createError(
+                "Invalid Dairy Farm code.",
+                400
+            );
 
         }
+
+
+        /*
+         * The selected code must belong to an
+         * actual Dairy Farm.
+         *
+         * Dairy Farm identification is based ONLY
+         * on negative dairy.code.
+         */
+        const structure =
+            await Dairy
+                .findOne({
+                    code: assetCode
+                })
+                .lean();
+
+
+        if (!structure) {
+
+            throw createError(
+                "Selected Dairy Farm was not found.",
+                400
+            );
+
+        }
+
+
+        if (
+            structure.code === null ||
+            structure.code === undefined ||
+            Number(structure.code) >= 0
+        ) {
+
+            throw createError(
+                "The selected record is not a Dairy Farm.",
+                400
+            );
+
+        }
+
+
+        dairy.assetCode =
+            Number(structure.code);
 
     }
 
 
     /*
-     * A null-code direct asset must not receive assetCode
-     * from this editor.
+     * A manual asset remains a manual asset.
      *
-     * This follows the rule in networth-add.ejs.
+     * We never assign a positive code to it here.
+     *
+     * Existing coded assets retain their existing code.
      */
-    else {
-
-        dairy.assetCode = null;
-
-    }
-
-
     await dairy.save();
 
 
