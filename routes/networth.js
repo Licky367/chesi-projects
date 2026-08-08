@@ -2,7 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 
-const networkController = require("../controllers/networkController");
+const networkController = require("../controllers/networthController");
 
 
 /* ==========================================================
