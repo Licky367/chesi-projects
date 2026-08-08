@@ -1,95 +1,109 @@
-<!-- ==================.========================================
+<!-- ==========================================================
      standalone-assets.ejs
-     
-     Displays ALL standalone dairy assets.
 
-     A standalone asset is an identified dairy/animal where:
+     Displays identified dairy / animal assets that are
+     currently not assigned to a Dairy Farm.
+
+     STANDALONE ASSET:
+
          code > 0
-         assetCode is null / undefined
+         assetCode === null
 
-     The backend should already provide `standaloneAssets`
-     containing only records satisfying those rules.
-========================================================== --><section class="networth-section"><div class="networth-section-header">
+     NOT INCLUDED:
 
-    <div>
+         code < 0
+             = Dairy Farm
 
-        <h2>
-            Standalone Assets
-        </h2>
+         code === null
+             = Manual asset
 
-        <p>
-            Dairy assets that have not yet been assigned
-            to a Dairy Farm.
-        </p>
+         assetCode !== null
+             = Assigned asset
+========================================================== -->
+
+
+<section class="networth-section">
+
+
+    <!-- ======================================================
+         SECTION HEADER
+    ======================================================= -->
+
+    <div class="networth-section-header">
+
+        <div>
+
+            <h2>
+                Standalone Assets
+            </h2>
+
+            <p>
+                Identified dairy assets that are not assigned
+                to a Dairy Farm.
+            </p>
+
+        </div>
 
     </div>
 
-</div>
+
+    <!-- ======================================================
+         ASSET LIST
+    ======================================================= -->
+
+    <div class="networth-list">
 
 
-<div class="networth-list">
-
-    <% if (
-        Array.isArray(standaloneAssets) &&
-        standaloneAssets.length > 0
-    ) { %>
+        <% if (
+            Array.isArray(standaloneAssets) &&
+            standaloneAssets.length > 0
+        ) { %>
 
 
-        <% standaloneAssets.forEach(function (dairy) { %>
+            <% standaloneAssets.forEach(function(dairy) { %>
 
-            <%
-                /*
-                 * A standalone asset must:
-                 *
-                 * 1. Have a positive dairy code.
-                 * 2. Have no assetCode assigned.
-                 *
-                 * The backend should already enforce this,
-                 * but these checks prevent an incorrectly
-                 * supplied record from being displayed here.
-                 */
-
-                const isStandalone =
-                    Number.isInteger(dairy.code) &&
-                    dairy.code > 0 &&
-                    (
-                        dairy.assetCode === null ||
-                        dairy.assetCode === undefined
-                    );
-            %>
-
-
-            <% if (isStandalone) { %>
 
                 <a
                     href="/networth/asset/<%= dairy._id %>"
                     class="networth-list-item"
                 >
 
+
+                    <!-- ======================================
+                         ASSET NAME
+                    ======================================= -->
+
                     <span class="networth-list-name">
 
-                        <%= dairy.name || dairy.item || dairy.code %>
+                        <%= dairy.name || dairy.code %>
 
                     </span>
 
+
                 </a>
 
-            <% } %>
+
+            <% }); %>
 
 
-        <% }); %>
+        <% } else { %>
 
 
-    <% } else { %>
+            <!-- ==============================================
+                 EMPTY STATE
+            =============================================== -->
 
-        <div class="networth-empty">
+            <div class="networth-empty">
 
-            No standalone assets found.
+                No standalone assets found.
 
-        </div>
+            </div>
 
-    <% } %>
 
-</div>
+        <% } %>
+
+
+    </div>
+
 
 </section>
