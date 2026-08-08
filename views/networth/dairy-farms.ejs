@@ -1,16 +1,14 @@
 <!-- ==========================================================
-     DAIRY FARMS
-     
-     Rules:
-     - A Dairy Farm is a Dairy record with a negative code.
-     - The Dairy Farm code identifies the facility.
-     - Each item opens the Dairy Farm page.
-     - The farm page displays assets assigned to this farm
-       through assetCode === farm.code.
-     
-     IMPORTANT:
-     - Use dairy._id as the Dairy record identifier.
-     - Do not use asset._id here.
+     views/networth/dairy-farms.ejs
+
+     Displays ALL Dairy Farms / structures.
+
+     A Dairy Farm is defined by:
+         dairy.code < 0
+
+     Every negative-code Dairy record is displayed.
+
+     The Dairy _id is used to open the farm detail page.
 ========================================================== --><section class="networth-section"><!-- ======================================================
      SECTION HEADER
 ======================================================= -->
@@ -38,24 +36,42 @@
 
 <div class="networth-list">
 
+    <%
+        /*
+         * `structures` is expected to contain the Dairy
+         * records supplied to this partial.
+         *
+         * We explicitly filter here so that this view
+         * only displays records whose code is negative.
+         *
+         * Number() also allows the check to work if the
+         * value happens to arrive as a numeric string.
+         */
 
-    <% if (
-        Array.isArray(structures) &&
-        structures.length > 0
-    ) { %>
+        const dairyFarms =
+            Array.isArray(structures)
+                ? structures.filter(function (dairy) {
+
+                    return (
+                        dairy &&
+                        dairy.code !== null &&
+                        dairy.code !== undefined &&
+                        Number(dairy.code) < 0
+                    );
+
+                })
+                : [];
+    %>
 
 
-        <% structures.forEach(function(dairy) { %>
+    <% if (dairyFarms.length > 0) { %>
+
+
+        <% dairyFarms.forEach(function (dairy) { %>
 
 
             <!-- ==========================================
-                 DAIRY FARM
-
-                 A valid Dairy Farm has:
-                     dairy.code < 0
-
-                 The Dairy _id is used to open
-                 the farm page.
+                 DAIRY FARM / STRUCTURE
             =========================================== -->
 
             <a
@@ -78,7 +94,7 @@
     <% } else { %>
 
 
-        <!-- =================.=========================
+        <!-- ==========================================
              EMPTY STATE
         =========================================== -->
 
