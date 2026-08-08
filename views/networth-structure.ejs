@@ -1,4 +1,5 @@
 <style>
+
 /* ==========================================================
    DAIRY FARM NET WORTH PAGE
 ========================================================== */
@@ -16,7 +17,7 @@
 }
 
 
-/* ======================.====================================
+/* ==========================================================
    HEADER
 ========================================================== */
 
@@ -689,6 +690,7 @@
 
     }
 
+
     .networth-page .financial-header p {
 
         font-size: 14px;
@@ -712,11 +714,13 @@
 
     }
 
+
     .networth-total-label {
 
         font-size: 13px;
 
     }
+
 
     .networth-total-value {
 
@@ -733,11 +737,13 @@
 
     }
 
+
     .networth-section-header h2 {
 
         font-size: 18px;
 
     }
+
 
     .networth-section-header p {
 
@@ -754,6 +760,7 @@
 
     }
 
+
     .networth-list-item::before {
 
         width: 34px;
@@ -764,11 +771,13 @@
 
     }
 
+
     .networth-list-name {
 
         font-size: 14px;
 
     }
+
 
     .networth-list-worth {
 
@@ -784,6 +793,7 @@
         justify-content: stretch;
 
     }
+
 
     .networth-actions .button-primary {
 
@@ -808,11 +818,13 @@
 
     }
 
+
     .networth-page .financial-header h1 {
 
         font-size: 24px;
 
     }
+
 
     .networth-total-card {
 
@@ -820,11 +832,13 @@
 
     }
 
+
     .networth-total-value {
 
         font-size: 25px;
 
     }
+
 
     .networth-section-header h2 {
 
@@ -832,11 +846,13 @@
 
     }
 
+
     .networth-list-item {
 
         min-height: 56px;
 
     }
+
 
     .networth-list-worth {
 
@@ -845,11 +861,15 @@
     }
 
 }
+
 </style><div class="financial-page networth-page"><!-- =====================================================
      DAIRY FARM HEADER
-     
-     dairy = the negative-code Dairy record
-     dairy._id = the Dairy record identifier
+
+     dairy = the Dairy Farm record
+
+     dairy._id = the Dairy Farm record identifier
+
+     The farm's code is NOT used as its page identifier.
 ====================================================== -->
 
 <div class="financial-header">
@@ -865,7 +885,7 @@
 
 
         <h1>
-            <%= dairy.item || "Dairy Farm" %>
+            <%= dairy.item || dairy.name || "Dairy Farm" %>
         </h1>
 
 
@@ -880,9 +900,21 @@
 
 <!-- =====================================================
      DAIRY FARM TOTAL
-     
-     Calculated from the positive-code Dairy records
-     assigned to this Dairy Farm.
+
+     dairyTotal represents the combined current worth
+     of ALL assets assigned to this Dairy Farm.
+
+     IMPORTANT:
+     The calculation must NOT require the asset to have
+     a positive dairy.code.
+
+     A farm asset may have:
+         - a positive dairy.code
+         - no dairy.code
+         - a null dairy.code
+
+     As long as it is assigned to this Dairy Farm,
+     its currentWorth belongs in dairyTotal.
 ====================================================== -->
 
 <div class="financial-card networth-total-card">
@@ -906,20 +938,21 @@
 
 <!-- =====================================================
      DAIRY FARM ASSETS
-     
-     assets = positive-code Dairy records whose
-     assetCode matches dairy.code.
-     
-     Every item is therefore a Dairy record.
-     
-     The item's Dairy identifier is:
-     
-         asset._id
-     
-     There is no separate NetWorth ID.
+
+     assets contains ALL Dairy records assigned to this
+     Dairy Farm.
+
+     Asset inclusion is NOT determined by:
+         asset.code > 0
+
+     An asset can therefore lack dairy.code and still
+     appear here.
+
+     Each asset is identified by its own Dairy _id.
 ====================================================== -->
 
 <section class="networth-section">
+
 
     <div class="networth-section-header">
 
@@ -951,14 +984,28 @@
             <% assets.forEach(function(asset) { %>
 
 
+                <!-- ======================================
+                     ASSET
+
+                     The asset itself is a Dairy record.
+
+                     asset._id identifies the asset.
+
+                     No assumption is made about
+                     asset.code.
+                ======================================= -->
+
                 <a
                     href="/networth/asset/<%= asset._id %>"
                     class="networth-list-item"
                 >
 
+
                     <span class="networth-list-name">
 
-                        <%= asset.item || "Unnamed Asset" %>
+                        <%= asset.item ||
+                            asset.name ||
+                            "Unnamed Asset" %>
 
                     </span>
 
@@ -971,6 +1018,7 @@
                         ).toLocaleString("en-KE") %>
 
                     </span>
+
 
                 </a>
 
@@ -999,11 +1047,14 @@
 
 <!-- =====================================================
      ADD ASSET
-     
-     Asset creation does NOT assign an asset code here.
-     The asset must already have a positive Dairy code.
-     
-     The structure/farm Dairy ID is used in the URL.
+
+     The Dairy Farm is identified by dairy._id.
+
+     The route therefore uses:
+
+         /networth/structure/<dairy._id>/add
+
+     The asset's dairy.code is NOT supplied by this page.
 ====================================================== -->
 
 <div class="networth-actions">
