@@ -1,175 +1,115 @@
 const express = require("express");
 
-const router = express.Router();
-
-const controller =
-    require("../controllers/networthController");
+const router =
+    express.Router();
 
 
-/* =========================================================
-   AUTHORIZATION
-   ONLY ADMIN CAN ACCESS NET WORTH
-========================================================= */
-
-function adminOnly(req, res, next) {
-
-    /* -----------------------------------------------------
-       USER SESSION CHECK
-    ----------------------------------------------------- */
-
-    if (
-        !req.session ||
-        !req.session.user
-    ) {
-
-        return res.status(401).render(
-            "401",
-            {
-                title: "401 - Unauthorized",
-
-                user:
-                    req.user || null
-            }
-        );
-
-    }
-
-
-    /* -----------------------------------------------------
-       ADMIN ROLE CHECK
-    ----------------------------------------------------- */
-
-    if (
-        req.session.user.role !== "admin"
-    ) {
-
-        return res.status(403).render(
-            "403",
-            {
-                title: "403 - Forbidden",
-
-                user:
-                    req.user || null
-            }
-        );
-
-    }
-
-
-    next();
-
-}
+const networthController =
+    require(
+        "../controllers/networthController"
+    );
 
 
 /* =========================================================
-   NET WORTH OVERVIEW
+   NET WORTH DASHBOARD
 
-   Displays:
-   - Standalone Assets
-   - Dairy Farms
+   GET /networth
+
+   Displays the complete Net Worth overview.
 ========================================================= */
 
 router.get(
     "/",
-    adminOnly,
-    controller.index
+    networthController.getNetWorth
 );
 
 
 /* =========================================================
-   DAIRY FARM DETAILS
+   STRUCTURE DETAILS
 
-   Uses:
-       Dairy._id
+   GET /networth/structure/:id
 
-   The selected Dairy Farm is identified by its negative
-   Dairy code.
+   :id is the MongoDB _id of the Dairy structure.
 
-   The page displays assets assigned to that farm.
+   The structure itself must have:
+
+       code < 0
 ========================================================= */
 
 router.get(
     "/structure/:id",
-    adminOnly,
-    controller.viewStructure
+    networthController.getStructure
 );
 
 
 /* =========================================================
-   ADD ASSET TO DAIRY FARM — PAGE
+   ADD MANUAL ASSET TO STRUCTURE
 
-   The Dairy Farm is identified by:
-       Dairy._id
+   GET /networth/structure/:id/add
 
-   When an asset is created, its assetCode will be
-   automatically assigned from the Dairy Farm's code.
+   Displays the Add Asset form.
 
-   The new asset does NOT require its own Dairy code.
+   :id is the MongoDB _id of the parent structure.
 ========================================================= */
 
 router.get(
     "/structure/:id/add",
-    adminOnly,
-    controller.addAssetPage
+    networthController.getAddAsset
 );
 
 
 /* =========================================================
-   ADD ASSET TO DAIRY FARM — SUBMIT
+   CREATE MANUAL ASSET
 
-   The controller is responsible for automatically setting:
+   POST /networth/structure/:id/add
 
-       assetCode = dairyFarm.code
+   Creates a new Dairy record with:
 
-   No asset code is submitted by the form.
+       code = null
+       assetSource = "asset"
+       assetCode = parent structure's negative code
+
+   The backend determines assetCode from the structure.
 ========================================================= */
 
 router.post(
     "/structure/:id/add",
-    adminOnly,
-    controller.addAsset
+    networthController.addAsset
 );
 
 
 /* =========================================================
-   ASSET / DAIRY DETAILS
+   ASSET DETAILS / EDIT
 
-   Uses:
-       Dairy._id
+   GET /networth/asset/:id
 
-   This is the same details page whether the Dairy record
-   is:
-
-   - a standalone positive-code Dairy, or
-   - an asset belonging to a Dairy Farm.
+   Displays an existing Dairy Net Worth record.
 ========================================================= */
 
 router.get(
     "/asset/:id",
-    adminOnly,
-    controller.viewAsset
+    networthController.getAsset
 );
 
 
 /* =========================================================
-   UPDATE ASSET / DAIRY
+   UPDATE ASSET
 
-   Uses:
-       Dairy._id
+   POST /networth/asset/:id
 
-   Asset code may only be edited when the Dairy record
-   contains a positive Dairy code.
+   The frontend submits:
+
+       _method = PUT
+
+   Therefore this route is intended to work with
+   method-override middleware.
 ========================================================= */
 
 router.put(
     "/asset/:id",
-    adminOnly,
-    controller.updateAsset
+    networthController.updateAsset
 );
 
 
-/* =========================================================
-   EXPORT
-========================================================= */
-
-module.exports = router;
+module.exports =
+    router;
