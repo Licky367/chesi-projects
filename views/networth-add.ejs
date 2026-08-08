@@ -587,267 +587,270 @@
 
 }
 
-</style>
+</style><div class="financial-page networth-page"><!-- =====================================================
+     HEADER
+====================================================== -->
+
+<div class="financial-header">
+
+    <div>
+
+        <a
+            href="/networth/structure/<%= structure._id %>"
+            class="financial-back-link"
+        >
+            ← <%= structure.name || structure.item %>
+        </a>
 
 
-<div class="financial-page networth-page">
+        <h1>
+            Add Asset
+        </h1>
 
 
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
+        <p>
+            Add an asset belonging to this dairy farm.
+        </p>
 
-    <div class="financial-header">
+    </div>
 
-        <div>
+</div>
 
-            <a
-                href="/networth/structure/<%= structure._id %>"
-                class="financial-back-link"
+
+<!-- =====================================================
+     FORM
+     
+     The parent dairy farm is determined by:
+     
+     /networth/structure/:structureId/add
+     
+     No assetCode is submitted here.
+====================================================== -->
+
+<div class="financial-card">
+
+    <form
+        action="/networth/structure/<%= structure._id %>/add"
+        method="POST"
+        class="networth-form"
+    >
+
+
+        <!-- =================================================
+             ITEM / ASSET NAME
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="item">
+                Item
+            </label>
+
+
+            <input
+                type="text"
+                id="item"
+                name="item"
+                placeholder="Enter asset name"
+                autocomplete="off"
+                required
             >
-                ← <%= structure.name %>
-            </a>
-
-
-            <h1>
-                Add Asset
-            </h1>
-
-
-            <p>
-                Add an asset belonging to this structure.
-            </p>
 
         </div>
 
-    </div>
 
+        <!-- =================================================
+             TYPE
+        ================================================== -->
 
-    <!-- =====================================================
-         FORM
-    ====================================================== -->
+        <div class="form-group">
 
-    <div class="financial-card">
+            <label for="type">
+                Type
+            </label>
 
-        <form
-            action="/networth/structure/<%= structure._id %>/add"
-            method="POST"
-            class="networth-form"
-        >
 
+            <input
+                type="text"
+                id="type"
+                name="type"
+                placeholder="e.g. Equipment, Building, Vehicle"
+                autocomplete="off"
+                required
+            >
 
-            <!-- =================================================
-                 ITEM / ASSET NAME
-            ================================================== -->
+        </div>
 
-            <div class="form-group">
 
-                <label for="item">
-                    Item
-                </label>
+        <!-- =================================================
+             BUYING PRICE
+        ================================================== -->
 
+        <div class="form-group">
 
-                <input
-                    type="text"
-                    id="item"
-                    name="item"
-                    placeholder="Enter asset name"
-                    autocomplete="off"
-                    required
-                >
+            <label for="buyingPrice">
+                Buying Price
+            </label>
 
-            </div>
 
+            <input
+                type="number"
+                id="buyingPrice"
+                name="buyingPrice"
+                placeholder="Enter purchase price"
+                min="0"
+                step="0.01"
+                required
+            >
 
-            <!-- =================================================
-                 TYPE
-            ================================================== -->
+        </div>
 
-            <div class="form-group">
 
-                <label for="type">
-                    Type
-                </label>
+        <!-- =================================================
+             CURRENT WORTH
+        ================================================== -->
 
+        <div class="form-group">
 
-                <input
-                    type="text"
-                    id="type"
-                    name="type"
-                    placeholder="e.g. Equipment, Building, Vehicle"
-                    autocomplete="off"
-                    required
-                >
+            <label for="currentWorth">
+                Current Worth
+            </label>
 
-            </div>
 
+            <input
+                type="number"
+                id="currentWorth"
+                name="currentWorth"
+                placeholder="Enter current estimated worth"
+                min="0"
+                step="0.01"
+                required
+            >
 
-            <!-- =================================================
-                 BUYING PRICE
-            ================================================== -->
+        </div>
 
-            <div class="form-group">
 
-                <label for="buyingPrice">
-                    Buying Price
-                </label>
+        <!-- =================================================
+             DESCRIPTION
+        ================================================== -->
 
+        <div class="form-group">
 
-                <input
-                    type="number"
-                    id="buyingPrice"
-                    name="buyingPrice"
-                    placeholder="Enter purchase price"
-                    min="0"
-                    step="0.01"
-                    required
-                >
+            <label for="description">
+                Description
+            </label>
 
-            </div>
 
+            <textarea
+                id="description"
+                name="description"
+                rows="4"
+                placeholder="Describe the asset..."
+                required
+            ></textarea>
 
-            <!-- =================================================
-                 CURRENT WORTH
-            ================================================== -->
+        </div>
 
-            <div class="form-group">
 
-                <label for="currentWorth">
-                    Current Worth
-                </label>
+        <!-- =================================================
+             CONDITION
+        ================================================== -->
 
+        <div class="form-group">
 
-                <input
-                    type="number"
-                    id="currentWorth"
-                    name="currentWorth"
-                    placeholder="Enter current estimated worth"
-                    min="0"
-                    step="0.01"
-                    required
-                >
+            <label for="condition">
+                Condition
+            </label>
 
-            </div>
 
+            <input
+                type="text"
+                id="condition"
+                name="condition"
+                placeholder="e.g. Good, New, Needs Repair"
+                autocomplete="off"
+                required
+            >
 
-            <!-- =================================================
-                 DESCRIPTION
-            ================================================== -->
+        </div>
 
-            <div class="form-group">
 
-                <label for="description">
-                    Description
-                </label>
+        <!-- =================================================
+             LOCATION
+        ================================================== -->
 
+        <div class="form-group">
 
-                <textarea
-                    id="description"
-                    name="description"
-                    rows="4"
-                    placeholder="Describe the asset..."
-                    required
-                ></textarea>
+            <label for="location">
+                Location
+            </label>
 
-            </div>
 
+            <input
+                type="text"
+                id="location"
+                name="location"
+                placeholder="Where is the asset located?"
+                autocomplete="off"
+                required
+            >
 
-            <!-- =================================================
-                 CONDITION
-            ================================================== -->
+        </div>
 
-            <div class="form-group">
 
-                <label for="condition">
-                    Condition
-                </label>
+        <!-- =================================================
+             DAIRY FARM / STRUCTURE
+             
+             Display only.
+             
+             The actual parent structure is identified by
+             structure._id in the form action.
+             
+             No assetCode is submitted.
+        ================================================== -->
 
+        <div class="form-group">
 
-                <input
-                    type="text"
-                    id="condition"
-                    name="condition"
-                    placeholder="e.g. Good, New, Needs Repair"
-                    autocomplete="off"
-                    required
-                >
+            <label for="structureName">
+                Dairy Farm
+            </label>
 
-            </div>
 
+            <input
+                type="text"
+                id="structureName"
+                value="<%= structure.name || structure.item %>"
+                readonly
+            >
 
-            <!-- =================================================
-                 LOCATION
-            ================================================== -->
+        </div>
 
-            <div class="form-group">
 
-                <label for="location">
-                    Location
-                </label>
+        <!-- =================================================
+             ACTIONS
+        ================================================== -->
 
+        <div class="form-actions">
 
-                <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    placeholder="Where is the asset located?"
-                    autocomplete="off"
-                    required
-                >
+            <a
+                href="/networth/structure/<%= structure._id %>"
+                class="button button-secondary"
+            >
+                Cancel
+            </a>
 
-            </div>
 
+            <button
+                type="submit"
+                class="button button-primary"
+            >
+                Save Asset
+            </button>
 
-            <!-- =================================================
-                 STRUCTURE
-                 
-                 The structure ID is already part of the URL.
-                 We deliberately do not submit a second hidden
-                 parentStructure ID.
-            ================================================== -->
+        </div>
 
-            <div class="form-group">
+    </form>
 
-                <label for="structureName">
-                    Structure
-                </label>
-
-
-                <input
-                    type="text"
-                    id="structureName"
-                    value="<%= structure.name %>"
-                    readonly
-                >
-
-            </div>
-
-
-            <!-- =================================================
-                 ACTIONS
-            ================================================== -->
-
-            <div class="form-actions">
-
-                <a
-                    href="/networth/structure/<%= structure._id %>"
-                    class="button button-secondary"
-                >
-                    Cancel
-                </a>
-
-
-                <button
-                    type="submit"
-                    class="button button-primary"
-                >
-                    Save Asset
-                </button>
-
-            </div>
-
-        </form>
-
-    </div>
+</div>
 
 </div>
