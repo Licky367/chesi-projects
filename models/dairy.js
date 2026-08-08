@@ -1229,6 +1229,42 @@ dairySchema.index({
 
 });
 
+/* ==========================================================
+   CODE INDEX
+
+   Only actual numeric codes participate in the
+   unique index.
+
+   Therefore:
+
+       code: 1       -> indexed and unique
+       code: -1      -> indexed and unique
+       code: null    -> NOT indexed
+
+   This allows unlimited manual assets with:
+
+       code: null
+========================================================== */
+
+dairySchema.index(
+
+    { code: 1 },
+
+    {
+        unique: true,
+
+        partialFilterExpression: {
+
+            code: {
+                $type: "number"
+            }
+
+        }
+
+    }
+
+);
+
 
 /* ==========================================================
    CALCULATE TOTAL NET WORTH
