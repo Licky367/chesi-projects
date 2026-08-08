@@ -5,8 +5,11 @@
     </div>
 
     <h1>
-        <%= statusCode || 500 %>
-    </h1>
+    <%= typeof statusCode !== "undefined"
+        ? statusCode
+        : 500
+    %>
+</h1>
 
     <h2>
         Something went wrong
