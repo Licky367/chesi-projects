@@ -1,7 +1,6 @@
 const express = require("express");
 
-const router =
-    express.Router();
+const router = express.Router();
 
 const controller =
     require("../controllers/networthController");
@@ -26,13 +25,10 @@ function adminOnly(req, res, next) {
         return res.status(401).render(
             "401",
             {
-
-                title:
-                    "401 - Unauthorized",
+                title: "401 - Unauthorized",
 
                 user:
                     req.user || null
-
             }
         );
 
@@ -50,13 +46,10 @@ function adminOnly(req, res, next) {
         return res.status(403).render(
             "403",
             {
-
-                title:
-                    "403 - Forbidden",
+                title: "403 - Forbidden",
 
                 user:
                     req.user || null
-
             }
         );
 
@@ -70,6 +63,10 @@ function adminOnly(req, res, next) {
 
 /* =========================================================
    NET WORTH OVERVIEW
+
+   Displays:
+   - Standalone Assets
+   - Dairy Farms
 ========================================================= */
 
 router.get(
@@ -80,7 +77,15 @@ router.get(
 
 
 /* =========================================================
-   STRUCTURE DETAILS
+   DAIRY FARM DETAILS
+
+   Uses:
+       Dairy._id
+
+   The selected Dairy Farm is identified by its negative
+   Dairy code.
+
+   The page displays assets assigned to that farm.
 ========================================================= */
 
 router.get(
@@ -91,7 +96,15 @@ router.get(
 
 
 /* =========================================================
-   ADD ASSET TO STRUCTURE — PAGE
+   ADD ASSET TO DAIRY FARM — PAGE
+
+   The Dairy Farm is identified by:
+       Dairy._id
+
+   When an asset is created, its assetCode will be
+   automatically assigned from the Dairy Farm's code.
+
+   The new asset does NOT require its own Dairy code.
 ========================================================= */
 
 router.get(
@@ -102,7 +115,13 @@ router.get(
 
 
 /* =========================================================
-   ADD ASSET TO STRUCTURE — SUBMIT
+   ADD ASSET TO DAIRY FARM — SUBMIT
+
+   The controller is responsible for automatically setting:
+
+       assetCode = dairyFarm.code
+
+   No asset code is submitted by the form.
 ========================================================= */
 
 router.post(
@@ -113,7 +132,16 @@ router.post(
 
 
 /* =========================================================
-   ASSET DETAILS / EDIT PAGE
+   ASSET / DAIRY DETAILS
+
+   Uses:
+       Dairy._id
+
+   This is the same details page whether the Dairy record
+   is:
+
+   - a standalone positive-code Dairy, or
+   - an asset belonging to a Dairy Farm.
 ========================================================= */
 
 router.get(
@@ -124,7 +152,13 @@ router.get(
 
 
 /* =========================================================
-   UPDATE ASSET
+   UPDATE ASSET / DAIRY
+
+   Uses:
+       Dairy._id
+
+   Asset code may only be edited when the Dairy record
+   contains a positive Dairy code.
 ========================================================= */
 
 router.put(
@@ -138,5 +172,4 @@ router.put(
    EXPORT
 ========================================================= */
 
-module.exports =
-    router;
+module.exports = router;
