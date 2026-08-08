@@ -256,6 +256,8 @@ if (accountsRoutes) app.use("/accounts", accountsRoutes);
 
 if (financialsRoutes) app.use("/financials", financialsRoutes);
 
+if (liabilityRoutes) app.use("/financials", liabilityRoutes);
+
 if (newRoutes) app.use("/", newRoutes);
 
 /*______POULTRY_____*/
