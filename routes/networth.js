@@ -72,7 +72,7 @@ router.get(
    UPDATE ASSET
 ========================================================= */
 
-router.post(
+router.put(
     "/asset/:id",
     adminOnly,
     controller.updateAsset
