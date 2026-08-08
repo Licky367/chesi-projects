@@ -31,11 +31,10 @@ const dairySchema = new mongoose.Schema(
            < 0  = Dairy Farm / structure
            null = manual asset
 
-           MANUAL ASSETS:
-               code = null
-               assetCode = parent code
+           Manual Net Worth assets are created with:
 
-           There are NO standalone manual assets.
+               code      = null
+               assetCode = parent Dairy Farm code
         ================================================== */
 
         code: {
@@ -92,7 +91,22 @@ const dairySchema = new mongoose.Schema(
         /* ==================================================
            DATE OF BIRTH
 
-           Required only for identified animals.
+           REQUIRED ONLY WHEN:
+
+               code exists
+               AND
+               code > 0
+
+           Therefore:
+
+               code > 0
+                   → required
+
+               code < 0
+                   → not required
+
+               code === null
+                   → not required
         ================================================== */
 
         dateOfBirth: {
@@ -103,7 +117,8 @@ const dairySchema = new mongoose.Schema(
 
                 return (
                     this.code !== null &&
-                    this.code > 0
+                    this.code !== undefined &&
+                    Number(this.code) > 0
                 );
 
             },
@@ -149,9 +164,15 @@ const dairySchema = new mongoose.Schema(
                     }
 
 
+                    /*
+                     * Only identified dairy with
+                     * a positive code can be female.
+                     */
+
                     if (
                         this.code === null ||
-                        this.code <= 0
+                        this.code === undefined ||
+                        Number(this.code) <= 0
                     ) {
 
                         return false;
@@ -159,8 +180,13 @@ const dairySchema = new mongoose.Schema(
                     }
 
 
+                    /*
+                     * Even positive codes represent
+                     * female animals.
+                     */
+
                     return (
-                        this.code % 2 === 0
+                        Number(this.code) % 2 === 0
                     );
 
                 },
@@ -177,19 +203,23 @@ const dairySchema = new mongoose.Schema(
            PARENT / STRUCTURE ASSIGNMENT
 
            code > 0:
+
                assetCode = null
-                   → standalone identified asset
+                   → standalone identified dairy
 
                assetCode < 0
-                   → belongs to Dairy Farm
+                   → identified dairy assigned to
+                     a Dairy Farm
 
            code < 0:
+
                assetCode = null
                    → Dairy Farm / structure
 
            code === null:
-               assetCode MUST contain parent code
-                   → manual asset belonging to parent
+
+               assetCode = parent code
+                   → manual Net Worth asset
 
            Manual assets cannot be standalone.
         ================================================== */
@@ -586,7 +616,8 @@ dairySchema.virtual("gender").get(function() {
 
     if (
         this.code === null ||
-        this.code <= 0
+        this.code === undefined ||
+        Number(this.code) <= 0
     ) {
 
         return null;
@@ -594,8 +625,10 @@ dairySchema.virtual("gender").get(function() {
     }
 
 
-    return this.code % 2 === 0
+    return Number(this.code) % 2 === 0
+
         ? "Female"
+
         : "Male";
 
 });
@@ -611,9 +644,11 @@ dairySchema.virtual("isFemale").get(function() {
 
         this.code !== null &&
 
-        this.code > 0 &&
+        this.code !== undefined &&
 
-        this.code % 2 === 0
+        Number(this.code) > 0 &&
+
+        Number(this.code) % 2 === 0
 
     );
 
@@ -630,7 +665,9 @@ dairySchema.virtual("hasIdentity").get(function() {
 
         this.code !== null &&
 
-        this.code > 0
+        this.code !== undefined &&
+
+        Number(this.code) > 0
 
     );
 
@@ -647,7 +684,9 @@ dairySchema.virtual("isStructure").get(function() {
 
         this.code !== null &&
 
-        this.code < 0
+        this.code !== undefined &&
+
+        Number(this.code) < 0
 
     );
 
@@ -660,7 +699,13 @@ dairySchema.virtual("isStructure").get(function() {
 
 dairySchema.virtual("isManualAsset").get(function() {
 
-    return this.code === null;
+    return (
+
+        this.code === null ||
+
+        this.code === undefined
+
+    );
 
 });
 
@@ -668,12 +713,10 @@ dairySchema.virtual("isManualAsset").get(function() {
 /* ==========================================================
    IS STANDALONE ASSET
 
-   Only identified assets can be standalone.
-
-   Therefore:
+   A standalone identified dairy/animal has:
 
        code > 0
-       assetCode === null
+       assetCode = null
 ========================================================== */
 
 dairySchema.virtual("isStandaloneAsset").get(function() {
@@ -682,7 +725,9 @@ dairySchema.virtual("isStandaloneAsset").get(function() {
 
         this.code !== null &&
 
-        this.code > 0 &&
+        this.code !== undefined &&
+
+        Number(this.code) > 0 &&
 
         (
             this.assetCode === null ||
@@ -696,11 +741,6 @@ dairySchema.virtual("isStandaloneAsset").get(function() {
 
 /* ==========================================================
    IS ASSIGNED ASSET
-
-   An identified animal or manual asset belongs to
-   another record when assetCode is present.
-
-   Structures themselves are never assigned.
 ========================================================== */
 
 dairySchema.virtual("isAssignedAsset").get(function() {
@@ -795,7 +835,9 @@ dairySchema.virtual("ageText").get(function() {
 dairySchema.virtual("isMilkingText").get(function() {
 
     return this.isMilking
+
         ? "Yes"
+
         : "No";
 
 });
@@ -899,17 +941,18 @@ dairySchema.pre(
 
            code < 0
 
-           A Dairy Farm / structure:
+           Structures:
 
-               - has no DOB
+               - do not need DOB
                - cannot milk
-               - cannot have a parent
-               - assetCode must be null
+               - cannot have parent
+               - assetCode = null
         ================================================== */
 
         if (
             this.code !== null &&
-            this.code < 0
+            this.code !== undefined &&
+            Number(this.code) < 0
         ) {
 
             this.dateOfBirth = null;
@@ -926,24 +969,28 @@ dairySchema.pre(
 
            code > 0
 
-           Two possibilities:
+           DOB is required by the schema.
 
-               assetCode = null
-                   → standalone identified asset
+           assetCode may be:
 
-               assetCode = parent code
-                   → belongs to another asset / farm
+               null
+                   → standalone
+
+               negative code
+                   → assigned to a Dairy Farm
         ================================================== */
 
         if (
             this.code !== null &&
-            this.code > 0
+            this.code !== undefined &&
+            Number(this.code) > 0
         ) {
 
             /*
-             * No additional changes are required.
+             * No parent manipulation here.
              *
-             * assetCode may legitimately be null.
+             * An identified dairy may legitimately
+             * be standalone or assigned.
              */
 
         }
@@ -956,15 +1003,14 @@ dairySchema.pre(
 
            Manual assets:
 
-               - have no identity
                - have no DOB
                - cannot milk
                - MUST have a parent
-               - therefore assetCode cannot be null
         ================================================== */
 
         if (
-            this.code === null
+            this.code === null ||
+            this.code === undefined
         ) {
 
             this.dateOfBirth = null;
@@ -989,19 +1035,15 @@ dairySchema.pre(
 
 
         /* ==================================================
-           ASSET CODE VALIDATION
-
-           A structure cannot have a parent.
-
-           Manual assets must have a parent.
-
-           Identified assets may be standalone or assigned.
+           STRUCTURES CANNOT HAVE A PARENT
         ================================================== */
 
         if (
             this.code !== null &&
-            this.code < 0 &&
-            this.assetCode !== null
+            this.code !== undefined &&
+            Number(this.code) < 0 &&
+            this.assetCode !== null &&
+            this.assetCode !== undefined
         ) {
 
             return next(
@@ -1144,7 +1186,8 @@ dairySchema.pre(
 
         if (
             this.code !== null &&
-            this.code < 0
+            this.code !== undefined &&
+            Number(this.code) < 0
         ) {
 
             this.assetCode = null;
