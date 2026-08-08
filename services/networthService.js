@@ -1,1289 +1,1085 @@
 const mongoose = require("mongoose");
 
-const NetWorth = require("../models/netWorth");
-
 const Dairy = require("../models/dairy");
 
+
 /* =========================================================
-HELPERS
+   HELPERS
 ========================================================= */
 
 function toNumber(value, defaultValue = 0) {
 
-const number = Number(value);
+    const number = Number(value);
 
-return Number.isFinite(number)
-    ? number
-    : defaultValue;
+    return Number.isFinite(number)
+        ? number
+        : defaultValue;
 
 }
+
 
 function isValidObjectId(id) {
 
-return mongoose.Types.ObjectId.isValid(id);
+    return mongoose.Types.ObjectId.isValid(id);
 
 }
+
 
 /* =========================================================
-DAIRY ASSET TYPE
-========================================================= */
-
-function getDairyAssetType(code) {
-
-const numericCode =
-    Number(code);
-
-if (numericCode > 0) {
-
-    return "cow";
-
-}
-
-if (numericCode < 0) {
-
-    return "dairy Facility";
-
-}
-
-return "dairy";
-
-}
-
-/* =========================================================
-VALID NET WORTH STATUS
+   CONSTANTS
 ========================================================= */
 
 const ALLOWED_STATUSES = [
 
-"active",
+    "active",
 
-"sold",
+    "sold",
 
-"disposed",
+    "disposed",
 
-"inactive"
+    "inactive"
 
 ];
 
+
 /* =========================================================
-SYNCHRONIZE DAIRY ASSETS
-
-SOURCE OF TRUTH:
-
-Dairy owns:
-- name
-- code
-- assetCode
-- Dairy identity
-
-NetWorth owns:
-- buyingPrice
-- currentWorth
-- description
-- condition
-- location
-- valuationDate
-- status
-- financial information
-
-This function creates missing NetWorth representations
-and synchronizes Dairy identity/relationship fields.
-
-It NEVER copies NetWorth financial fields from Dairy.
+   DETERMINE ASSET TYPE
 ========================================================= */
 
-async function syncDairyAssets() {
+function getDairyAssetType(code) {
 
-const dairyRecords =
-    await Dairy.find({}).lean();
-
-
-const structures =
-    dairyRecords.filter(
-
-        dairy =>
-            Number(dairy.code) < 0
-
-    );
+    const numericCode =
+        Number(code);
 
 
-const cows =
-    dairyRecords.filter(
+    if (numericCode > 0) {
 
-        dairy =>
-            Number(dairy.code) > 0
-
-    );
-
-
-/* =====================================================
-   STRUCTURE MAP
-===================================================== */
-
-const structureMap =
-    new Map();
-
-
-/* =====================================================
-   SYNCHRONIZE STRUCTURES
-===================================================== */
-
-for (const dairy of structures) {
-
-    const type =
-        getDairyAssetType(
-            dairy.code
-        );
-
-
-    let asset =
-        await NetWorth.findOne({
-
-            source: "dairy",
-
-            sourceId: dairy._id
-
-        });
-
-
-    /* -------------------------------------------------
-       CREATE MISSING STRUCTURE ASSET
-    ------------------------------------------------- */
-
-    if (!asset) {
-
-        asset =
-            await NetWorth.create({
-
-                item:
-                    dairy.name,
-
-                type,
-
-                buyingPrice: 0,
-
-                currentWorth: 0,
-
-                description: "",
-
-                condition: "",
-
-                location: "",
-
-                acquisitionDate:
-                    dairy.createdAt ||
-                    new Date(),
-
-                valuationDate: null,
-
-                status: "active",
-
-                source: "dairy",
-
-                sourceId:
-                    dairy._id,
-
-                parentStructure: null,
-
-                structureCode: null
-
-            });
+        return "cow";
 
     }
 
 
-    /* -------------------------------------------------
-       SYNCHRONIZE IDENTITY
-    ------------------------------------------------- */
+    if (numericCode < 0) {
 
-    else {
-
-        let changed = false;
-
-
-        if (
-            asset.item !== dairy.name
-        ) {
-
-            asset.item =
-                dairy.name;
-
-            changed = true;
-
-        }
-
-
-        if (
-            asset.type !== type
-        ) {
-
-            asset.type =
-                type;
-
-            changed = true;
-
-        }
-
-
-        /*
-         * Structures cannot have a parent structure.
-         */
-
-        if (
-            asset.parentStructure !== null
-        ) {
-
-            asset.parentStructure =
-                null;
-
-            changed = true;
-
-        }
-
-
-        if (
-            asset.structureCode !== null
-        ) {
-
-            asset.structureCode =
-                null;
-
-            changed = true;
-
-        }
-
-
-        if (changed) {
-
-            await asset.save();
-
-        }
+        return "dairy Facility";
 
     }
 
 
-    structureMap.set(
-
-        Number(dairy.code),
-
-        {
-
-            dairy,
-
-            netWorth:
-                asset
-
-        }
-
-    );
+    return "asset";
 
 }
 
-
-/* =====================================================
-   SYNCHRONIZE POSITIVE-CODE DAIRY ASSETS
-===================================================== */
-
-for (const dairy of cows) {
-
-    const assignedCode =
-
-        dairy.assetCode !== null &&
-
-        dairy.assetCode !== undefined &&
-
-        dairy.assetCode !== ""
-
-            ? Number(dairy.assetCode)
-
-            : null;
-
-
-    let parentStructure =
-        null;
-
-
-    let structureCode =
-        null;
-
-
-    /* -------------------------------------------------
-       FIND ASSIGNED STRUCTURE
-    ------------------------------------------------- */
-
-    if (
-
-        assignedCode !== null &&
-
-        Number.isFinite(assignedCode) &&
-
-        assignedCode < 0 &&
-
-        structureMap.has(assignedCode)
-
-    ) {
-
-        const structure =
-            structureMap.get(
-                assignedCode
-            );
-
-
-        parentStructure =
-            structure.netWorth._id;
-
-
-        structureCode =
-            assignedCode;
-
-    }
-
-
-    const type =
-        getDairyAssetType(
-            dairy.code
-        );
-
-
-    let asset =
-        await NetWorth.findOne({
-
-            source: "dairy",
-
-            sourceId:
-                dairy._id
-
-        });
-
-
-    /* -------------------------------------------------
-       CREATE MISSING COW ASSET
-    ------------------------------------------------- */
-
-    if (!asset) {
-
-        asset =
-            await NetWorth.create({
-
-                item:
-                    dairy.name,
-
-                type,
-
-                buyingPrice: 0,
-
-                currentWorth: 0,
-
-                description: "",
-
-                condition: "",
-
-                location: "",
-
-                acquisitionDate:
-                    dairy.createdAt ||
-                    new Date(),
-
-                valuationDate: null,
-
-                status: "active",
-
-                source: "dairy",
-
-                sourceId:
-                    dairy._id,
-
-                parentStructure,
-
-                structureCode
-
-            });
-
-    }
-
-
-    /* -------------------------------------------------
-       SYNCHRONIZE COW IDENTITY
-    ------------------------------------------------- */
-
-    else {
-
-        let changed = false;
-
-
-        if (
-            asset.item !== dairy.name
-        ) {
-
-            asset.item =
-                dairy.name;
-
-            changed = true;
-
-        }
-
-
-        if (
-            asset.type !== type
-        ) {
-
-            asset.type =
-                type;
-
-            changed = true;
-
-        }
-
-
-        if (
-
-            String(
-                asset.parentStructure || ""
-            ) !==
-
-            String(
-                parentStructure || ""
-            )
-
-        ) {
-
-            asset.parentStructure =
-                parentStructure;
-
-            changed = true;
-
-        }
-
-
-        if (
-            asset.structureCode !==
-            structureCode
-        ) {
-
-            asset.structureCode =
-                structureCode;
-
-            changed = true;
-
-        }
-
-
-        if (changed) {
-
-            await asset.save();
-
-        }
-
-    }
-
-}
-
-
-return {
-
-    structures,
-
-    cows
-
-};
-
-}
 
 /* =========================================================
-GET NET WORTH OVERVIEW
+   NORMALIZE ASSET
+========================================================= */
+
+function normalizeAsset(asset) {
+
+    if (!asset) {
+
+        return null;
+
+    }
+
+
+    return asset;
+
+}
+
+
+/* =========================================================
+   GET STRUCTURE BY CODE
+========================================================= */
+
+async function getStructureByCode(code) {
+
+    const numericCode =
+        Number(code);
+
+
+    if (
+        !Number.isInteger(numericCode) ||
+        numericCode >= 0
+    ) {
+
+        return null;
+
+    }
+
+
+    return Dairy.findOne({
+
+        code: numericCode
+
+    });
+
+}
+
+
+/* =========================================================
+   GET NET WORTH OVERVIEW
+
+   ALL DATA COMES DIRECTLY FROM DAIRY.
+
+   No synchronization is required because Dairy is now
+   the only source of truth.
 ========================================================= */
 
 exports.getNetWorthOverview =
 async function () {
 
-await syncDairyAssets();
+    /*
+     * Active records contribute to net worth.
+     */
 
+    const activeAssets =
+        await Dairy.find({
 
-const totalNetWorth =
-    await NetWorth.calculateNetWorth();
+            status: "active"
 
+        })
+        .sort({
 
-const standaloneAssets =
-    await NetWorth.find({
+            name: 1
 
-        status: "active",
+        });
 
-        parentStructure: null
 
-    })
-    .sort({
+    /*
+     * Total current worth.
+     */
 
-        type: 1,
+    const totalResult =
+        await Dairy.aggregate([
 
-        item: 1
+            {
 
-    });
+                $match: {
 
+                    status: "active"
 
-const structures =
-    await NetWorth.find({
+                }
 
-        status: "active",
+            },
 
-        source: "dairy",
+            {
 
-        type: "dairy Facility",
+                $group: {
 
-        parentStructure: null
+                    _id: null,
 
-    })
-    .sort({
+                    total: {
 
-        item: 1
+                        $sum:
+                            "$currentWorth"
 
-    });
-
-
-return {
-
-    totalNetWorth,
-
-    standaloneAssets,
-
-    structures
-
-};
-
-};
-
-/* =========================================================
-GET STRUCTURE BY ID
-========================================================= */
-
-exports.getStructureById =
-async function (id) {
-
-if (!isValidObjectId(id)) {
-
-    return null;
-
-}
-
-
-await syncDairyAssets();
-
-
-const structure =
-    await NetWorth.findOne({
-
-        _id: id,
-
-        source: "dairy",
-
-        type: "dairy Facility",
-
-        status: "active",
-
-        parentStructure: null
-
-    });
-
-
-return structure;
-
-};
-
-/* =========================================================
-GET STRUCTURE DETAILS
-========================================================= */
-
-exports.getStructureDetails =
-async function (id) {
-
-if (!isValidObjectId(id)) {
-
-    return null;
-
-}
-
-
-await syncDairyAssets();
-
-
-const structure =
-    await NetWorth.findOne({
-
-        _id: id,
-
-        source: "dairy",
-
-        type: "dairy Facility",
-
-        status: "active"
-
-    });
-
-
-if (!structure) {
-
-    return null;
-
-}
-
-
-const assets =
-    await NetWorth.find({
-
-        parentStructure:
-            structure._id,
-
-        status: "active"
-
-    })
-    .sort({
-
-        type: 1,
-
-        item: 1
-
-    });
-
-
-const result =
-    await NetWorth.aggregate([
-
-        {
-
-            $match: {
-
-                parentStructure:
-                    structure._id,
-
-                status: "active"
-
-            }
-
-        },
-
-        {
-
-            $group: {
-
-                _id: null,
-
-                total: {
-
-                    $sum:
-                        "$currentWorth"
+                    }
 
                 }
 
             }
 
-        }
-
-    ]);
+        ]);
 
 
-const structureTotal =
-    result.length
+    const totalNetWorth =
+        totalResult.length > 0
 
-        ? result[0].total
+            ? Number(
+                totalResult[0].total || 0
+            )
 
-        : 0;
+            : 0;
 
 
-return {
+    /*
+     * Negative-code records are structures.
+     */
 
-    structure,
+    const structures =
+        activeAssets.filter(
 
-    assets,
+            asset =>
+                Number(asset.code) < 0
 
-    structureTotal
+        );
+
+
+    /*
+     * Assets which do not belong to a structure.
+     *
+     * A positive-code Dairy record is standalone when
+     * assetCode is empty/null.
+     *
+     * Code 0 is also treated as a standalone asset.
+     */
+
+    const standaloneAssets =
+        activeAssets.filter(asset => {
+
+            const code =
+                Number(asset.code);
+
+
+            const hasStructure =
+                asset.assetCode !== null &&
+
+                asset.assetCode !== undefined &&
+
+                String(
+                    asset.assetCode
+                ).trim() !== "";
+
+
+            return (
+                code >= 0 &&
+                !hasStructure
+            );
+
+        });
+
+
+    return {
+
+        totalNetWorth,
+
+        standaloneAssets,
+
+        structures
+
+    };
 
 };
 
-};
 
 /* =========================================================
-GET ASSET DETAILS
+   GET STRUCTURE BY ID
+
+   STRUCTURE ID IS NOW Dairy._id.
+========================================================= */
+
+exports.getStructureById =
+async function (id) {
+
+    if (!isValidObjectId(id)) {
+
+        return null;
+
+    }
+
+
+    const structure =
+        await Dairy.findOne({
+
+            _id: id,
+
+            code: {
+                $lt: 0
+            },
+
+            status: "active"
+
+        });
+
+
+    return normalizeAsset(
+        structure
+    );
+
+};
+
+
+/* =========================================================
+   GET STRUCTURE DETAILS
+
+   Structure:
+       Dairy._id
+
+   Child assets:
+       Dairy.assetCode === structure.code
+========================================================= */
+
+exports.getStructureDetails =
+async function (id) {
+
+    if (!isValidObjectId(id)) {
+
+        return null;
+
+    }
+
+
+    const structure =
+        await Dairy.findOne({
+
+            _id: id,
+
+            code: {
+                $lt: 0
+            },
+
+            status: "active"
+
+        });
+
+
+    if (!structure) {
+
+        return null;
+
+    }
+
+
+    const structureCode =
+        Number(
+            structure.code
+        );
+
+
+    /*
+     * All assets assigned to this structure are
+     * identified by the structure's negative code.
+     */
+
+    const assets =
+        await Dairy.find({
+
+            assetCode:
+                structureCode,
+
+            status: "active"
+
+        })
+        .sort({
+
+            name: 1
+
+        });
+
+
+    /*
+     * Calculate the value of assets inside the structure.
+     */
+
+    const totalResult =
+        await Dairy.aggregate([
+
+            {
+
+                $match: {
+
+                    assetCode:
+                        structureCode,
+
+                    status:
+                        "active"
+
+                }
+
+            },
+
+            {
+
+                $group: {
+
+                    _id: null,
+
+                    total: {
+
+                        $sum:
+                            "$currentWorth"
+
+                    }
+
+                }
+
+            }
+
+        ]);
+
+
+    const structureTotal =
+        totalResult.length > 0
+
+            ? Number(
+                totalResult[0].total || 0
+            )
+
+            : 0;
+
+
+    return {
+
+        structure,
+
+        assets,
+
+        structureTotal
+
+    };
+
+};
+
+
+/* =========================================================
+   GET ASSET DETAILS
+
+   IMPORTANT:
+
+   The ID is now ALWAYS Dairy._id.
+
+   There is no NetWorth ID anymore.
 ========================================================= */
 
 exports.getAssetDetails =
 async function (id) {
 
-if (!isValidObjectId(id)) {
+    if (!isValidObjectId(id)) {
 
-    return null;
+        return null;
 
-}
-
-
-await syncDairyAssets();
+    }
 
 
-/*
- * IMPORTANT:
- *
- * This ID is always a NetWorth _id.
- */
-
-const asset =
-    await NetWorth.findById(id);
+    const asset =
+        await Dairy.findById(id);
 
 
-if (!asset) {
+    if (!asset) {
 
-    return null;
+        return null;
 
-}
-
-
-let dairy = null;
+    }
 
 
-/* -----------------------------------------------------
-   Resolve the underlying Dairy record.
------------------------------------------------------ */
+    /*
+     * Resolve the structure assignment.
 
-if (
+     * Only positive-code assets can belong to a
+     * negative-code structure.
+     */
 
-    asset.source === "dairy" &&
-
-    asset.sourceId
-
-) {
-
-    dairy =
-        await Dairy.findById(
-            asset.sourceId
-        );
-
-}
+    let structure = null;
 
 
-/* -----------------------------------------------------
-   Structures available for assignment.
------------------------------------------------------ */
+    if (
+        Number(asset.code) > 0 &&
+        asset.assetCode !== null &&
+        asset.assetCode !== undefined &&
+        String(asset.assetCode).trim() !== ""
+    ) {
 
-const structures =
-    await Dairy.find({
+        structure =
+            await getStructureByCode(
+                asset.assetCode
+            );
 
-        code: {
-            $lt: 0
-        }
-
-    })
-    .select(
-
-        "code name"
-
-    )
-    .sort({
-
-        code: 1
-
-    })
-    .lean();
+    }
 
 
-return {
+    /*
+     * Get all available structures.
+     *
+     * These are Dairy records with negative codes.
+     */
 
-    asset,
+    const structures =
+        await Dairy.find({
 
-    dairy,
+            code: {
+                $lt: 0
+            }
 
-    structures
+        })
+        .select(
 
-};
+            "code name"
+
+        )
+        .sort({
+
+            code: 1
+
+        })
+        .lean();
+
+
+    return {
+
+        asset,
+
+        dairy: asset,
+
+        structure,
+
+        structures
+
+    };
 
 };
+
 
 /* =========================================================
-UPDATE DAIRY-GENERATED ASSET
+   UPDATE ASSET
+
+   EVERYTHING IS SAVED DIRECTLY TO DAIRY.
+
+   There is no second model.
+
+   The ID is Dairy._id.
 ========================================================= */
 
-async function updateDairyAsset(
-asset,
-data
+exports.updateAsset =
+async function (
+    id,
+    data
 ) {
 
-const dairy =
-    await Dairy.findById(
-        asset.sourceId
-    );
-
-
-if (!dairy) {
-
-    throw new Error(
-        "The Dairy record linked to this asset was not found."
-    );
-
-}
-
-
-const dairyCode =
-    Number(dairy.code);
-
-
-/* =====================================================
-   UPDATE DAIRY IDENTITY
-===================================================== */
-
-if (data.item !== undefined) {
-
-    const name =
-        String(
-            data.item
-        ).trim();
-
-
-    if (!name) {
+    if (!isValidObjectId(id)) {
 
         throw new Error(
-            "Asset name is required."
+            "Invalid asset ID."
         );
 
     }
 
 
-    dairy.name =
-        name;
-
-}
+    const asset =
+        await Dairy.findById(id);
 
 
-/* =====================================================
-   STRUCTURE ASSIGNMENT
-   
-   Only positive-code Dairy records can have
-   assetCode.
-===================================================== */
+    if (!asset) {
 
-if (dairyCode < 0) {
+        throw new Error(
+            "Asset not found."
+        );
 
-    /*
-     * A structure cannot belong to another structure.
-     */
-
-    dairy.assetCode =
-        null;
-
-    asset.parentStructure =
-        null;
-
-    asset.structureCode =
-        null;
-
-}
+    }
 
 
-else if (dairyCode > 0) {
+    const dairyCode =
+        Number(asset.code);
 
-    /*
-     * If assetCode was submitted, update the
-     * authoritative Dairy relationship.
-     */
 
-    if (
-        data.assetCode !== undefined
-    ) {
+    /* =====================================================
+       NAME
+    ===================================================== */
 
-        const rawCode =
+    if (data.item !== undefined) {
+
+        const name =
             String(
-                data.assetCode
+                data.item
             ).trim();
 
 
-        if (!rawCode) {
-
-            dairy.assetCode =
-                null;
-
-            asset.parentStructure =
-                null;
-
-            asset.structureCode =
-                null;
-
-        }
-
-
-        else {
-
-            const selectedCode =
-                Number(rawCode);
-
-
-            if (
-                !Number.isInteger(
-                    selectedCode
-                ) ||
-                selectedCode >= 0
-            ) {
-
-                throw new Error(
-                    "Selected structure is invalid."
-                );
-
-            }
-
-
-            const structureDairy =
-                await Dairy.findOne({
-
-                    code:
-                        selectedCode
-
-                });
-
-
-            if (!structureDairy) {
-
-                throw new Error(
-                    "Selected structure does not exist."
-                );
-
-            }
-
-
-            if (
-                Number(
-                    structureDairy.code
-                ) >= 0
-            ) {
-
-                throw new Error(
-                    "Selected structure must have a negative code."
-                );
-
-            }
-
-
-            /*
-             * Find the corresponding NetWorth
-             * representation.
-             *
-             * This is the NetWorth ID that the
-             * parentStructure field must contain.
-             */
-
-            let structureAsset =
-                await NetWorth.findOne({
-
-                    source: "dairy",
-
-                    sourceId:
-                        structureDairy._id,
-
-                    type:
-                        "dairy Facility"
-
-                });
-
-
-            /*
-             * If the structure representation does
-             * not yet exist, create it.
-             */
-
-            if (!structureAsset) {
-
-                structureAsset =
-                    await NetWorth.create({
-
-                        item:
-                            structureDairy.name,
-
-                        type:
-                            "dairy Facility",
-
-                        buyingPrice: 0,
-
-                        currentWorth: 0,
-
-                        description: "",
-
-                        condition: "",
-
-                        location: "",
-
-                        acquisitionDate:
-                            structureDairy.createdAt ||
-                            new Date(),
-
-                        valuationDate: null,
-
-                        status:
-                            "active",
-
-                        source:
-                            "dairy",
-
-                        sourceId:
-                            structureDairy._id,
-
-                        parentStructure:
-                            null,
-
-                        structureCode:
-                            null
-
-                    });
-
-            }
-
-
-            /*
-             * Dairy is the authoritative source
-             * for the assignment.
-             */
-
-            dairy.assetCode =
-                selectedCode;
-
-
-            /*
-             * NetWorth stores the resolved
-             * relationship for querying.
-             */
-
-            asset.parentStructure =
-                structureAsset._id;
-
-            asset.structureCode =
-                selectedCode;
-
-        }
-
-    }
-
-}
-
-
-/* =====================================================
-   SAVE DAIRY FIRST
-===================================================== */
-
-await dairy.save();
-
-
-/* =====================================================
-   NETWORTH IDENTITY SYNCHRONIZATION
-===================================================== */
-
-asset.item =
-    dairy.name;
-
-asset.type =
-    getDairyAssetType(
-        dairy.code
-    );
-
-
-/* =====================================================
-   NETWORTH FINANCIAL FIELDS
-   
-   These belong to NetWorth.
-===================================================== */
-
-if (
-    data.buyingPrice !== undefined
-) {
-
-    const buyingPrice =
-        toNumber(
-            data.buyingPrice,
-            NaN
-        );
-
-
-    if (
-        !Number.isFinite(
-            buyingPrice
-        ) ||
-        buyingPrice < 0
-    ) {
-
-        throw new Error(
-            "Buying price must be a valid non-negative number."
-        );
-
-    }
-
-
-    asset.buyingPrice =
-        buyingPrice;
-
-}
-
-
-if (
-    data.currentWorth !== undefined
-) {
-
-    const currentWorth =
-        toNumber(
-            data.currentWorth,
-            NaN
-        );
-
-
-    if (
-        !Number.isFinite(
-            currentWorth
-        ) ||
-        currentWorth < 0
-    ) {
-
-        throw new Error(
-            "Current worth must be a valid non-negative number."
-        );
-
-    }
-
-
-    asset.currentWorth =
-        currentWorth;
-
-}
-
-
-if (
-    data.description !== undefined
-) {
-
-    asset.description =
-        String(
-            data.description
-        ).trim();
-
-}
-
-
-if (
-    data.condition !== undefined
-) {
-
-    asset.condition =
-        String(
-            data.condition
-        ).trim();
-
-}
-
-
-if (
-    data.location !== undefined
-) {
-
-    asset.location =
-        String(
-            data.location
-        ).trim();
-
-}
-
-
-if (
-    data.status !== undefined
-) {
-
-    if (
-        !ALLOWED_STATUSES.includes(
-            data.status
-        )
-    ) {
-
-        throw new Error(
-            "Invalid asset status."
-        );
-
-    }
-
-
-    asset.status =
-        data.status;
-
-}
-
-
-if (
-    data.valuationDate !== undefined
-) {
-
-    const rawDate =
-        String(
-            data.valuationDate
-        ).trim();
-
-
-    if (!rawDate) {
-
-        asset.valuationDate =
-            null;
-
-    }
-
-
-    else {
-
-        const valuationDate =
-            new Date(rawDate);
-
-
-        if (
-            Number.isNaN(
-                valuationDate.getTime()
-            )
-        ) {
+        if (!name) {
 
             throw new Error(
-                "Invalid valuation date."
+                "Asset name is required."
             );
 
         }
 
 
-        asset.valuationDate =
-            valuationDate;
+        asset.name =
+            name;
 
     }
 
-}
+
+    /* =====================================================
+       BUYING PRICE
+    ===================================================== */
+
+    if (
+        data.buyingPrice !== undefined
+    ) {
+
+        const buyingPrice =
+            toNumber(
+                data.buyingPrice,
+                NaN
+            );
 
 
-/* =====================================================
-   SAVE NETWORTH
-===================================================== */
+        if (
+            !Number.isFinite(
+                buyingPrice
+            ) ||
+            buyingPrice < 0
+        ) {
 
-await asset.save();
+            throw new Error(
+                "Buying price must be a valid non-negative number."
+            );
+
+        }
 
 
-/*
- * Return the same NetWorth document.
- *
- * Its _id has NOT changed.
- */
+        asset.buyingPrice =
+            buyingPrice;
 
-return asset;
+    }
 
-}
+
+    /* =====================================================
+       CURRENT WORTH
+    ===================================================== */
+
+    if (
+        data.currentWorth !== undefined
+    ) {
+
+        const currentWorth =
+            toNumber(
+                data.currentWorth,
+                NaN
+            );
+
+
+        if (
+            !Number.isFinite(
+                currentWorth
+            ) ||
+            currentWorth < 0
+        ) {
+
+            throw new Error(
+                "Current worth must be a valid non-negative number."
+            );
+
+        }
+
+
+        asset.currentWorth =
+            currentWorth;
+
+    }
+
+
+    /* =====================================================
+       DESCRIPTION
+    ===================================================== */
+
+    if (
+        data.description !== undefined
+    ) {
+
+        asset.description =
+            String(
+                data.description
+            ).trim();
+
+    }
+
+
+    /* =====================================================
+       CONDITION
+    ===================================================== */
+
+    if (
+        data.condition !== undefined
+    ) {
+
+        asset.condition =
+            String(
+                data.condition
+            ).trim();
+
+    }
+
+
+    /* =====================================================
+       LOCATION
+    ===================================================== */
+
+    if (
+        data.location !== undefined
+    ) {
+
+        asset.location =
+            String(
+                data.location
+            ).trim();
+
+    }
+
+
+    /* =====================================================
+       STATUS
+    ===================================================== */
+
+    if (
+        data.status !== undefined
+    ) {
+
+        const status =
+            String(
+                data.status
+            ).trim();
+
+
+        if (
+            !ALLOWED_STATUSES.includes(
+                status
+            )
+        ) {
+
+            throw new Error(
+                "Invalid asset status."
+            );
+
+        }
+
+
+        asset.status =
+            status;
+
+    }
+
+
+    /* =====================================================
+       VALUATION DATE
+    ===================================================== */
+
+    if (
+        data.valuationDate !== undefined
+    ) {
+
+        const rawDate =
+            String(
+                data.valuationDate
+            ).trim();
+
+
+        if (!rawDate) {
+
+            asset.valuationDate =
+                null;
+
+        }
+
+        else {
+
+            const valuationDate =
+                new Date(rawDate);
+
+
+            if (
+                Number.isNaN(
+                    valuationDate.getTime()
+                )
+            ) {
+
+                throw new Error(
+                    "Invalid valuation date."
+                );
+
+            }
+
+
+            asset.valuationDate =
+                valuationDate;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       STRUCTURE ASSIGNMENT
+       
+       Structures themselves cannot belong to another
+       structure.
+    ===================================================== */
+
+    if (dairyCode < 0) {
+
+        asset.assetCode =
+            null;
+
+    }
+
+
+    /* =====================================================
+       POSITIVE-CODE ASSET
+    ===================================================== */
+
+    else if (dairyCode > 0) {
+
+        if (
+            data.assetCode !== undefined
+        ) {
+
+            const rawCode =
+                String(
+                    data.assetCode
+                ).trim();
+
+
+            /*
+             * Empty selection means standalone.
+             */
+
+            if (!rawCode) {
+
+                asset.assetCode =
+                    null;
+
+            }
+
+            else {
+
+                const selectedCode =
+                    Number(rawCode);
+
+
+                if (
+                    !Number.isInteger(
+                        selectedCode
+                    ) ||
+                    selectedCode >= 0
+                ) {
+
+                    throw new Error(
+                        "Selected structure is invalid."
+                    );
+
+                }
+
+
+                const structure =
+                    await Dairy.findOne({
+
+                        code:
+                            selectedCode,
+
+                        status:
+                            "active"
+
+                    });
+
+
+                if (!structure) {
+
+                    throw new Error(
+                        "Selected structure does not exist."
+                    );
+
+                }
+
+
+                if (
+                    Number(
+                        structure.code
+                    ) >= 0
+                ) {
+
+                    throw new Error(
+                        "Selected structure must have a negative code."
+                    );
+
+                }
+
+
+                /*
+                 * The negative structure code is the
+                 * authoritative relationship.
+                 */
+
+                asset.assetCode =
+                    selectedCode;
+
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       CODE ZERO / MANUAL ASSET
+    ===================================================== */
+
+    else {
+
+        /*
+         * A code-zero standalone asset does not belong
+         * to a structure unless the model later explicitly
+         * permits such a relationship.
+         */
+
+        if (
+            data.assetCode !== undefined
+        ) {
+
+            const rawCode =
+                String(
+                    data.assetCode
+                ).trim();
+
+
+            if (!rawCode) {
+
+                asset.assetCode =
+                    null;
+
+            }
+
+            else {
+
+                const selectedCode =
+                    Number(rawCode);
+
+
+                if (
+                    !Number.isInteger(
+                        selectedCode
+                    ) ||
+                    selectedCode >= 0
+                ) {
+
+                    throw new Error(
+                        "Selected structure is invalid."
+                    );
+
+                }
+
+
+                const structure =
+                    await Dairy.findOne({
+
+                        code:
+                            selectedCode,
+
+                        status:
+                            "active"
+
+                    });
+
+
+                if (!structure) {
+
+                    throw new Error(
+                        "Selected structure does not exist."
+                    );
+
+                }
+
+
+                asset.assetCode =
+                    selectedCode;
+
+            }
+
+        }
+
+    }
+
+
+    /* =====================================================
+       SAVE
+
+       THIS IS THE IMPORTANT PART:
+
+       The exact Dairy document found using the URL ID
+       is saved.
+
+       Its _id does not change.
+    ===================================================== */
+
+    await asset.save();
+
+
+    return asset;
+
+};
+
 
 /* =========================================================
-UPDATE MANUAL NETWORTH ASSET
+   ADD MANUAL ASSET TO STRUCTURE
+
+   Everything is stored in Dairy.
+
+   The new asset gets:
+       code = 0
+       assetCode = structure.code
 ========================================================= */
 
-async function updateManualAsset(
-asset,
-data
+exports.addManualAsset =
+async function (
+    structureId,
+    data
 ) {
 
-/* -----------------------------------------------------
-   Manual assets are owned directly by NetWorth.
------------------------------------------------------ */
+    if (
+        !isValidObjectId(
+            structureId
+        )
+    ) {
 
-if (data.item !== undefined) {
+        throw new Error(
+            "Invalid structure ID."
+        );
+
+    }
+
+
+    const structure =
+        await Dairy.findOne({
+
+            _id:
+                structureId,
+
+            code: {
+                $lt: 0
+            },
+
+            status:
+                "active"
+
+        });
+
+
+    if (!structure) {
+
+        throw new Error(
+            "Structure not found."
+        );
+
+    }
+
 
     const item =
         String(
-            data.item
+            data.item || ""
+        ).trim();
+
+
+    const type =
+        String(
+            data.type || ""
+        ).trim();
+
+
+    const description =
+        String(
+            data.description || ""
+        ).trim();
+
+
+    const condition =
+        String(
+            data.condition || ""
+        ).trim();
+
+
+    const location =
+        String(
+            data.location || ""
         ).trim();
 
 
@@ -1296,20 +1092,6 @@ if (data.item !== undefined) {
     }
 
 
-    asset.item =
-        item;
-
-}
-
-
-if (data.type !== undefined) {
-
-    const type =
-        String(
-            data.type
-        ).trim();
-
-
     if (!type) {
 
         throw new Error(
@@ -1319,15 +1101,32 @@ if (data.type !== undefined) {
     }
 
 
-    asset.type =
-        type;
+    if (!description) {
 
-}
+        throw new Error(
+            "Asset description is required."
+        );
+
+    }
 
 
-if (
-    data.buyingPrice !== undefined
-) {
+    if (!condition) {
+
+        throw new Error(
+            "Asset condition is required."
+        );
+
+    }
+
+
+    if (!location) {
+
+        throw new Error(
+            "Asset location is required."
+        );
+
+    }
+
 
     const buyingPrice =
         toNumber(
@@ -1335,30 +1134,6 @@ if (
             NaN
         );
 
-
-    if (
-        !Number.isFinite(
-            buyingPrice
-        ) ||
-        buyingPrice < 0
-    ) {
-
-        throw new Error(
-            "Buying price must be a valid non-negative number."
-        );
-
-    }
-
-
-    asset.buyingPrice =
-        buyingPrice;
-
-}
-
-
-if (
-    data.currentWorth !== undefined
-) {
 
     const currentWorth =
         toNumber(
@@ -1369,436 +1144,102 @@ if (
 
     if (
         !Number.isFinite(
-            currentWorth
-        ) ||
-        currentWorth < 0
-    ) {
-
-        throw new Error(
-            "Current worth must be a valid non-negative number."
-        );
-
-    }
-
-
-    asset.currentWorth =
-        currentWorth;
-
-}
-
-
-if (
-    data.description !== undefined
-) {
-
-    asset.description =
-        String(
-            data.description
-        ).trim();
-
-}
-
-
-if (
-    data.condition !== undefined
-) {
-
-    asset.condition =
-        String(
-            data.condition
-        ).trim();
-
-}
-
-
-if (
-    data.location !== undefined
-) {
-
-    asset.location =
-        String(
-            data.location
-        ).trim();
-
-}
-
-
-if (
-    data.status !== undefined
-) {
-
-    if (
-        !ALLOWED_STATUSES.includes(
-            data.status
+            buyingPrice
         )
     ) {
 
         throw new Error(
-            "Invalid asset status."
+            "Buying price is required."
         );
 
     }
 
 
-    asset.status =
-        data.status;
+    if (
+        !Number.isFinite(
+            currentWorth
+        )
+    ) {
 
-}
-
-
-if (
-    data.valuationDate !== undefined
-) {
-
-    const rawDate =
-        String(
-            data.valuationDate
-        ).trim();
-
-
-    if (!rawDate) {
-
-        asset.valuationDate =
-            null;
+        throw new Error(
+            "Current worth is required."
+        );
 
     }
 
 
-    else {
+    if (
+        buyingPrice < 0 ||
+        currentWorth < 0
+    ) {
 
-        const valuationDate =
-            new Date(rawDate);
-
-
-        if (
-            Number.isNaN(
-                valuationDate.getTime()
-            )
-        ) {
-
-            throw new Error(
-                "Invalid valuation date."
-            );
-
-        }
-
-
-        asset.valuationDate =
-            valuationDate;
+        throw new Error(
+            "Asset prices cannot be negative."
+        );
 
     }
 
-}
+
+    const asset =
+        await Dairy.create({
+
+            name:
+                item,
+
+            /*
+             * Code 0 identifies a manually-created
+             * standalone/structure asset rather than
+             * a cow or facility.
+             */
+
+            code:
+                0,
+
+            assetCode:
+                Number(
+                    structure.code
+                ),
+
+            type,
+
+            buyingPrice,
+
+            currentWorth,
+
+            description,
+
+            condition,
+
+            location,
+
+            acquisitionDate:
+                new Date(),
+
+            valuationDate:
+                new Date(),
+
+            status:
+                "active"
+
+        });
 
 
-await asset.save();
-
-
-return asset;
-
-}
-
-/* =========================================================
-UPDATE ASSET
-
-IMPORTANT:
-
-The ID passed here is ALWAYS NetWorth._id.
-
-For Dairy assets:
-
-   NetWorth._id
-        ↓
-   NetWorth.sourceId
-        ↓
-      Dairy
-
-Dairy identity is updated first.
-
-NetWorth financial data is then updated.
-
-For manual assets:
-
-   NetWorth is updated directly.
-
-========================================================= */
-
-exports.updateAsset =
-async function (
-id,
-data
-) {
-
-if (!isValidObjectId(id)) {
-
-    throw new Error(
-        "Invalid asset ID."
-    );
-
-}
-
-
-const asset =
-    await NetWorth.findById(id);
-
-
-if (!asset) {
-
-    throw new Error(
-        "Asset not found."
-    );
-
-}
-
-
-if (
-
-    asset.source === "dairy" &&
-
-    asset.sourceId
-
-) {
-
-    return updateDairyAsset(
-        asset,
-        data
-    );
-
-}
-
-
-return updateManualAsset(
-    asset,
-    data
-);
+    return asset;
 
 };
 
-/* =========================================================
-ADD MANUAL STRUCTURE ASSET
-========================================================= */
-
-exports.addManualAsset =
-async function (
-structureId,
-data
-) {
-
-if (
-    !isValidObjectId(
-        structureId
-    )
-) {
-
-    throw new Error(
-        "Invalid structure ID."
-    );
-
-}
-
-
-const structure =
-    await NetWorth.findOne({
-
-        _id:
-            structureId,
-
-        source:
-            "dairy",
-
-        type:
-            "dairy Facility",
-
-        status:
-            "active"
-
-    });
-
-
-if (!structure) {
-
-    throw new Error(
-        "Structure not found."
-    );
-
-}
-
-
-const item =
-    String(
-        data.item || ""
-    ).trim();
-
-
-const type =
-    String(
-        data.type || ""
-    ).trim();
-
-
-const description =
-    String(
-        data.description || ""
-    ).trim();
-
-
-const condition =
-    String(
-        data.condition || ""
-    ).trim();
-
-
-const location =
-    String(
-        data.location || ""
-    ).trim();
-
-
-if (!item) {
-
-    throw new Error(
-        "Asset item is required."
-    );
-
-}
-
-
-if (!type) {
-
-    throw new Error(
-        "Asset type is required."
-    );
-
-}
-
-
-if (!description) {
-
-    throw new Error(
-        "Asset description is required."
-    );
-
-}
-
-
-if (!condition) {
-
-    throw new Error(
-        "Asset condition is required."
-    );
-
-}
-
-
-if (!location) {
-
-    throw new Error(
-        "Asset location is required."
-    );
-
-}
-
-
-const buyingPrice =
-    toNumber(
-        data.buyingPrice,
-        NaN
-    );
-
-
-const currentWorth =
-    toNumber(
-        data.currentWorth,
-        NaN
-    );
-
-
-if (
-    !Number.isFinite(
-        buyingPrice
-    )
-) {
-
-    throw new Error(
-        "Buying price is required."
-    );
-
-}
-
-
-if (
-    !Number.isFinite(
-        currentWorth
-    )
-) {
-
-    throw new Error(
-        "Current worth is required."
-    );
-
-}
-
-
-if (
-    buyingPrice < 0 ||
-    currentWorth < 0
-) {
-
-    throw new Error(
-        "Asset prices cannot be negative."
-    );
-
-}
-
-
-const asset =
-    await NetWorth.create({
-
-        item,
-
-        type,
-
-        buyingPrice,
-
-        currentWorth,
-
-        description,
-
-        condition,
-
-        location,
-
-        acquisitionDate:
-            new Date(),
-
-        valuationDate:
-            new Date(),
-
-        status:
-            "active",
-
-        source:
-            "structure",
-
-        sourceId:
-            null,
-
-        parentStructure:
-            structure._id,
-
-        structureCode:
-            structure.structureCode
-
-    });
-
-
-return asset;
-
-};
 
 /* =========================================================
-EXPORT SYNCHRONIZATION
+   OPTIONAL HELPER
 ========================================================= */
 
-exports.syncDairyAssets =
-syncDairyAssets;
+exports.getDairyAssetType =
+getDairyAssetType;
+
+
+/* =========================================================
+   OPTIONAL HELPER
+========================================================= */
+
+exports.getStructureByCode =
+getStructureByCode;
