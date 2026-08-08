@@ -3,77 +3,14 @@ const mongoose = require("mongoose");
 
 /* =========================================================
    DAIRY MODEL
-   SINGLE SOURCE OF TRUTH
-
-   This model contains:
-
-   1. Identified dairy / animal records
-   2. Dairy structure / facility records
-   3. Manual asset records
-   4. Maintenance information
-   5. Medical information
-   6. Net Worth information
-
-
-   =========================================================
-   CODE SYSTEM
-   =========================================================
-
-   code > 0
-       Identified dairy / animal.
-
-   code < 0
-       Dairy structure / facility.
-
-   code === null
-       Manual asset.
-
-   IMPORTANT:
-
-       Manual assets DO NOT use code = 0.
-
-       Manual assets have:
-
-           code = null
-
-       because they have no dairy identity.
-
-
-   =========================================================
-   STRUCTURE RELATIONSHIP
-   =========================================================
-
-   assetCode contains the NEGATIVE code of the structure.
-
-   Example:
-
-       Dairy Farm:
-           code = -10
-
-       Cow:
-           code = 25
-           assetCode = -10
-
-       Manual Asset:
-           code = null
-           assetCode = -10
-
-
-   Therefore:
-
-       assetCode is the authoritative structure
-       relationship.
-
-   There is no separate NetWorth model.
 ========================================================= */
-
 
 const dairySchema = new mongoose.Schema(
 
     {
 
         /* =====================================================
-           PROFILE IMAGE
+           PROFILE
         ===================================================== */
 
         profileImage: {
@@ -88,23 +25,11 @@ const dairySchema = new mongoose.Schema(
 
 
         /* =====================================================
-           DAIRY CODE
+           IDENTITY CODE
 
-           Positive:
-               Identified dairy / animal.
-
-           Negative:
-               Dairy structure / facility.
-
-           Null:
-               Manual asset without dairy identity.
-
-           IMPORTANT:
-
-               Manual assets MUST NOT use 0.
-
-               Sparse unique index allows multiple
-               manual assets with code = null.
+           > 0  = identified dairy / animal
+           < 0  = Dairy Farm / structure
+           null = manual asset
         ===================================================== */
 
         code: {
@@ -159,12 +84,24 @@ const dairySchema = new mongoose.Schema(
 
 
         /* =====================================================
+           ITEM
+
+           Used by the Net Worth service for assets.
+        ===================================================== */
+
+        item: {
+
+            type: String,
+
+            trim: true,
+
+            default: ""
+
+        },
+
+
+        /* =====================================================
            DATE OF BIRTH
-
-           Only identified dairy / animal records require
-           a date of birth.
-
-           Structures and manual assets do not.
         ===================================================== */
 
         dateOfBirth: {
@@ -173,8 +110,13 @@ const dairySchema = new mongoose.Schema(
 
             required: function () {
 
-                return this.code !== null &&
-                       this.code > 0;
+                return (
+
+                    this.code !== null &&
+
+                    this.code > 0
+
+                );
 
             },
 
@@ -185,10 +127,6 @@ const dairySchema = new mongoose.Schema(
 
         /* =====================================================
            MASS
-
-           Mainly applicable to animals.
-
-           Structures and manual assets may remain at 0.
         ===================================================== */
 
         mass: {
@@ -203,17 +141,7 @@ const dairySchema = new mongoose.Schema(
 
 
         /* =====================================================
-           MILKING STATUS
-
-           Only positive-code female animals can be milking.
-
-           Female rule:
-
-               even positive code = female
-
-           Male rule:
-
-               odd positive code = male
+           MILKING
         ===================================================== */
 
         isMilking: {
@@ -226,16 +154,16 @@ const dairySchema = new mongoose.Schema(
 
                 validator: function (value) {
 
-                    /*
-                     * Non-animal records cannot be milking.
-                     */
+                    if (!value) {
+
+                        return true;
+
+                    }
+
 
                     if (
-                        value &&
-                        (
-                            this.code === null ||
-                            this.code <= 0
-                        )
+                        this.code === null ||
+                        this.code <= 0
                     ) {
 
                         return false;
@@ -243,16 +171,7 @@ const dairySchema = new mongoose.Schema(
                     }
 
 
-                    /*
-                     * Odd positive codes are male.
-                     *
-                     * Only even positive codes can
-                     * be marked as milking.
-                     */
-
                     if (
-                        value &&
-                        this.code > 0 &&
                         this.code % 2 !== 0
                     ) {
 
@@ -276,29 +195,15 @@ const dairySchema = new mongoose.Schema(
         /* =====================================================
            STRUCTURE ASSIGNMENT
 
-           Authoritative relationship between this record
-           and a Dairy Farm / structure.
+           Contains the negative code of the Dairy Farm.
 
-           Examples:
+           Example:
 
-               Structure:
+               Farm:
                    code = -10
 
-               Identified dairy:
-                   code = 25
+               Asset:
                    assetCode = -10
-
-               Manual asset:
-                   code = null
-                   assetCode = -10
-
-
-           Valid relationship:
-
-               assetCode must reference a negative
-               structure code.
-
-           Structures themselves cannot have assetCode.
         ===================================================== */
 
         assetCode: {
@@ -407,7 +312,7 @@ const dairySchema = new mongoose.Schema(
 
 
         /* =====================================================
-           MEDICAL ATTENTION
+           MEDICAL
         ===================================================== */
 
         medicalAttention: {
@@ -510,16 +415,7 @@ const dairySchema = new mongoose.Schema(
 
 
         /* =====================================================
-           NET WORTH / ASSET INFORMATION
-
-           These fields belong directly to Dairy.
-
-           There is NO separate NetWorth model.
-        ===================================================== */
-
-
-        /* =====================================================
-           ASSET TYPE
+           NET WORTH
         ===================================================== */
 
         assetType: {
@@ -533,10 +429,6 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* =====================================================
-           BUYING PRICE
-        ===================================================== */
-
         buyingPrice: {
 
             type: Number,
@@ -547,10 +439,6 @@ const dairySchema = new mongoose.Schema(
 
         },
 
-
-        /* =====================================================
-           CURRENT WORTH
-        ===================================================== */
 
         currentWorth: {
 
@@ -563,11 +451,10 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* =====================================================
-           ASSET DESCRIPTION
-        ===================================================== */
-
-        assetDescription: {
+        /*
+         * Primary description field used by the service.
+         */
+        description: {
 
             type: String,
 
@@ -578,9 +465,19 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* =====================================================
-           CONDITION
-        ===================================================== */
+        /*
+         * Kept for compatibility with existing documents/code.
+         */
+        assetDescription: {
+
+            type: String,
+
+            trim: true,
+
+            default: ""
+
+        },
+
 
         condition: {
 
@@ -593,10 +490,6 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* =====================================================
-           LOCATION
-        ===================================================== */
-
         location: {
 
             type: String,
@@ -608,10 +501,6 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* =====================================================
-           ACQUISITION DATE
-        ===================================================== */
-
         acquisitionDate: {
 
             type: Date,
@@ -620,10 +509,6 @@ const dairySchema = new mongoose.Schema(
 
         },
 
-
-        /* =====================================================
-           VALUATION DATE
-        ===================================================== */
 
         valuationDate: {
 
@@ -635,21 +520,52 @@ const dairySchema = new mongoose.Schema(
 
 
         /* =====================================================
-           ASSET STATUS
+           STATUS
 
-           active:
-               Included in Net Worth.
+           This is intentionally named "status".
 
-           sold:
-               Excluded.
+           The Net Worth service reads and writes:
 
-           disposed:
-               Excluded.
+               dairy.status
+               body.status
 
-           inactive:
-               Excluded.
+           Allowed values:
+
+               active
+               sold
+               disposed
+               inactive
         ===================================================== */
 
+        status: {
+
+            type: String,
+
+            enum: [
+
+                "active",
+
+                "sold",
+
+                "disposed",
+
+                "inactive"
+
+            ],
+
+            default: "active",
+
+            index: true
+
+        },
+
+
+        /*
+         * Compatibility field for existing code/documents
+         * that may still use assetStatus.
+         *
+         * The Net Worth service does NOT use this field.
+         */
         assetStatus: {
 
             type: String,
@@ -675,15 +591,6 @@ const dairySchema = new mongoose.Schema(
 
         /* =====================================================
            ASSET SOURCE
-
-           dairy:
-               code > 0
-
-           structure:
-               code < 0
-
-           asset:
-               code === null
         ===================================================== */
 
         assetSource: {
@@ -710,7 +617,7 @@ const dairySchema = new mongoose.Schema(
 
 
     /* =========================================================
-       SCHEMA OPTIONS
+       OPTIONS
     ========================================================= */
 
     {
@@ -743,10 +650,6 @@ const dairySchema = new mongoose.Schema(
 
 dairySchema.virtual("gender").get(function () {
 
-    /*
-     * Structures and manual assets have no gender.
-     */
-
     if (
         this.code === null ||
         this.code <= 0
@@ -768,7 +671,7 @@ dairySchema.virtual("gender").get(function () {
 
 /* =========================================================
    VIRTUAL
-   FEMALE CHECK
+   FEMALE
 ========================================================= */
 
 dairySchema.virtual("isFemale").get(function () {
@@ -788,7 +691,7 @@ dairySchema.virtual("isFemale").get(function () {
 
 /* =========================================================
    VIRTUAL
-   REAL ANIMAL / IDENTIFIED DAIRY CHECK
+   IDENTITY
 ========================================================= */
 
 dairySchema.virtual("hasIdentity").get(function () {
@@ -806,7 +709,7 @@ dairySchema.virtual("hasIdentity").get(function () {
 
 /* =========================================================
    VIRTUAL
-   IS STRUCTURE
+   STRUCTURE
 ========================================================= */
 
 dairySchema.virtual("isStructure").get(function () {
@@ -824,7 +727,7 @@ dairySchema.virtual("isStructure").get(function () {
 
 /* =========================================================
    VIRTUAL
-   IS MANUAL ASSET
+   MANUAL ASSET
 ========================================================= */
 
 dairySchema.virtual("isManualAsset").get(function () {
@@ -951,7 +854,7 @@ dairySchema.virtual("displayImage").get(function () {
 
 /* =========================================================
    VIRTUAL
-   MAINTENANCE SHORTCUT
+   MAINTENANCE
 ========================================================= */
 
 dairySchema.virtual("requiresMaintenance").get(function () {
@@ -963,7 +866,7 @@ dairySchema.virtual("requiresMaintenance").get(function () {
 
 /* =========================================================
    VIRTUAL
-   MEDICAL SHORTCUT
+   MEDICAL
 ========================================================= */
 
 dairySchema.virtual("needsMedicalAttention").get(function () {
@@ -981,7 +884,7 @@ dairySchema.virtual("needsMedicalAttention").get(function () {
 
 /* =========================================================
    VIRTUAL
-   NET WORTH ASSET VALUE
+   ASSET VALUE
 ========================================================= */
 
 dairySchema.virtual("assetValue").get(function () {
@@ -995,12 +898,12 @@ dairySchema.virtual("assetValue").get(function () {
 
 /* =========================================================
    VIRTUAL
-   NET WORTH ACTIVE CHECK
+   ACTIVE ASSET
 ========================================================= */
 
 dairySchema.virtual("isActiveAsset").get(function () {
 
-    return this.assetStatus === "active";
+    return this.status === "active";
 
 });
 
@@ -1016,7 +919,7 @@ dairySchema.pre(
     function (next) {
 
         /* -----------------------------------------------------
-           ONLY FEMALES CAN BE MILKING
+           MILKING
         ----------------------------------------------------- */
 
         if (!this.isFemale) {
@@ -1028,15 +931,6 @@ dairySchema.pre(
 
         /* -----------------------------------------------------
            STRUCTURE
-
-           code < 0
-
-           A structure:
-
-               - has no DOB
-               - cannot milk
-               - cannot belong to another structure
-               - is always assetSource = structure
         ----------------------------------------------------- */
 
         if (
@@ -1050,6 +944,10 @@ dairySchema.pre(
             this.isMilking =
                 false;
 
+            /*
+             * A Dairy Farm cannot belong to another
+             * Dairy Farm.
+             */
             this.assetCode =
                 null;
 
@@ -1061,10 +959,6 @@ dairySchema.pre(
 
         /* -----------------------------------------------------
            IDENTIFIED DAIRY
-
-           code > 0
-
-           Positive-code records are dairy / animal records.
         ----------------------------------------------------- */
 
         else if (
@@ -1080,16 +974,6 @@ dairySchema.pre(
 
         /* -----------------------------------------------------
            MANUAL ASSET
-
-           code === null
-
-           Manual assets:
-
-               - have no dairy identity
-               - have no DOB
-               - cannot milk
-               - may have assetCode
-               - are assetSource = asset
         ----------------------------------------------------- */
 
         else {
@@ -1103,11 +987,22 @@ dairySchema.pre(
             this.assetSource =
                 "asset";
 
+            /*
+             * IMPORTANT:
+             *
+             * Do NOT clear assetCode.
+             *
+             * Manual assets may have:
+             *
+             *     code = null
+             *     assetCode = -10
+             */
+
         }
 
 
         /* -----------------------------------------------------
-           ENSURE MEDICAL OBJECT
+           MEDICAL OBJECT
         ----------------------------------------------------- */
 
         if (!this.medicalAttention) {
@@ -1226,6 +1121,36 @@ dairySchema.pre(
         }
 
 
+        /* -----------------------------------------------------
+           STATUS SYNCHRONIZATION
+        ----------------------------------------------------- */
+
+        /*
+         * The service uses "status" as the authoritative
+         * field.
+         *
+         * Keep assetStatus synchronized for compatibility.
+         */
+
+        if (
+            this.isModified("status")
+        ) {
+
+            this.assetStatus =
+                this.status;
+
+        }
+
+        else if (
+            this.isModified("assetStatus")
+        ) {
+
+            this.status =
+                this.assetStatus;
+
+        }
+
+
         next();
 
     }
@@ -1261,8 +1186,6 @@ dairySchema.pre(
 
         /* -----------------------------------------------------
            ACQUISITION DATE
-
-           Set once when the record is first saved.
         ----------------------------------------------------- */
 
         if (
@@ -1277,9 +1200,7 @@ dairySchema.pre(
 
 
         /* -----------------------------------------------------
-           STRUCTURE RECORDS
-
-           A structure cannot belong to another structure.
+           STRUCTURE
         ----------------------------------------------------- */
 
         if (
@@ -1295,22 +1216,6 @@ dairySchema.pre(
 
         /* -----------------------------------------------------
            MANUAL ASSET
-
-           code === null
-
-           Manual assets MAY have assetCode.
-
-           Example:
-
-               code = null
-               assetCode = -10
-
-           This means:
-
-               manual asset
-               contained in structure -10.
-
-           Do NOT clear assetCode.
         ----------------------------------------------------- */
 
         if (
@@ -1318,7 +1223,7 @@ dairySchema.pre(
         ) {
 
             /*
-             * Intentionally leave assetCode unchanged.
+             * Intentionally preserve assetCode.
              */
 
         }
@@ -1326,10 +1231,6 @@ dairySchema.pre(
 
         /* -----------------------------------------------------
            IDENTIFIED DAIRY
-
-           Positive-code records may belong to a structure.
-
-           If none is assigned, keep assetCode null.
         ----------------------------------------------------- */
 
         if (
@@ -1382,38 +1283,39 @@ dairySchema.index({
 });
 
 
-/* =========================================================
-   STRUCTURE LOOKUP
-
-   This is the authoritative Net Worth relationship.
-
-   Example:
-
-       assetCode = -10
-
-   finds:
-
-       Dairy document where code = -10
-========================================================= */
-
+/*
+ * Primary structure relationship lookup.
+ *
+ * The service performs:
+ *
+ *     Dairy.find({
+ *         assetCode: farmCode
+ *     })
+ */
 dairySchema.index({
 
-    assetCode: 1,
-
-    assetStatus: 1
+    assetCode: 1
 
 });
 
 
-/* =========================================================
-   ASSET SOURCE + STATUS
-========================================================= */
+/*
+ * Useful for Net Worth filtering.
+ */
+dairySchema.index({
+
+    status: 1,
+
+    currentWorth: 1
+
+});
+
 
 dairySchema.index({
 
     assetSource: 1,
 
-    assetStatus: 1
+    status: 1
 
 });
 
@@ -1421,6 +1323,15 @@ dairySchema.index({
 /* =========================================================
    STATIC
    CALCULATE TOTAL NET WORTH
+
+   Structures themselves are excluded because their
+   code is negative.
+
+   Assets with positive codes and manual assets with
+   null codes are included.
+
+   This follows the same fundamental rule as the
+   Net Worth service.
 ========================================================= */
 
 dairySchema.statics.calculateNetWorth =
@@ -1433,8 +1344,25 @@ async function () {
 
                 $match: {
 
-                    assetStatus:
-                        "active"
+                    $or: [
+
+                        {
+                            code: {
+                                $gt: 0
+                            }
+                        },
+
+                        {
+                            code: null
+                        },
+
+                        {
+                            code: {
+                                $exists: false
+                            }
+                        }
+
+                    ]
 
                 }
 
@@ -1448,8 +1376,17 @@ async function () {
 
                     totalNetWorth: {
 
-                        $sum:
-                            "$currentWorth"
+                        $sum: {
+
+                            $ifNull: [
+
+                                "$currentWorth",
+
+                                0
+
+                            ]
+
+                        }
 
                     }
 
