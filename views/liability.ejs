@@ -1,0 +1,131 @@
+<div class="financial-page">
+
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
+
+    <div class="financial-header">
+
+        <div>
+            <h1>Record Liability</h1>
+
+            <p>
+                Enter a new liability record.
+            </p>
+        </div>
+
+        <a
+            href="/financials/liabilitysummary"
+            class="financial-header-link"
+        >
+            View Liabilities
+        </a>
+
+    </div>
+
+
+    <!-- =====================================================
+         LIABILITY FORM
+    ====================================================== -->
+
+    <div class="financial-card">
+
+        <form
+            action="/financials/liability"
+            method="POST"
+            class="liability-form"
+        >
+
+            <!-- =================================================
+                 TYPE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="type">
+                    Liability Type
+                </label>
+
+                <input
+                    type="text"
+                    id="type"
+                    name="type"
+                    placeholder="e.g. Food Purchase"
+                    required
+                    autocomplete="off"
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 AMOUNT
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="amount">
+                    Amount
+                </label>
+
+                <input
+                    type="number"
+                    id="amount"
+                    name="amount"
+                    placeholder="Enter amount"
+                    min="0"
+                    step="0.01"
+                    required
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 DESCRIPTION
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="description">
+                    Description
+                </label>
+
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="5"
+                    placeholder="Describe the liability..."
+                    required
+                ></textarea>
+
+            </div>
+
+
+            <!-- =================================================
+                 ACTIONS
+            ================================================== -->
+
+            <div class="form-actions">
+
+                <a
+                    href="/financials/liabilitysummary"
+                    class="button button-secondary"
+                >
+                    Cancel
+                </a>
+
+                <button
+                    type="submit"
+                    class="button button-primary"
+                >
+                    Save Liability
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
