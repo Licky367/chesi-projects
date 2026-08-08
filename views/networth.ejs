@@ -1,0 +1,169 @@
+<div class="financial-page networth-page">
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="financial-header">
+
+        <div>
+
+            <h1>Net Worth</h1>
+
+            <p>
+                Assets and their current estimated worth.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         TOTAL NET WORTH
+    ====================================================== -->
+
+    <div class="financial-card networth-total-card">
+
+        <span class="networth-total-label">
+            Total Net Worth
+        </span>
+
+        <strong class="networth-total-value">
+
+            KSh
+            <%= Number(totalNetWorth || 0).toLocaleString() %>
+
+        </strong>
+
+    </div>
+
+
+    <!-- =====================================================
+         STANDALONE ASSETS
+         
+         Includes:
+         - Cows with no assetCode
+         - Any other standalone Dairy assets
+    ====================================================== -->
+
+    <section class="networth-section">
+
+        <div class="networth-section-header">
+
+            <div>
+
+                <h2>
+                    Standalone Assets
+                </h2>
+
+                <p>
+                    Assets that are not assigned to a structure.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="networth-list">
+
+            <% if (
+                standaloneAssets &&
+                standaloneAssets.length
+            ) { %>
+
+                <% standaloneAssets.forEach(function(asset) { %>
+
+                    <a
+                        href="/networth/asset/<%= asset._id %>"
+                        class="networth-list-item"
+                    >
+
+                        <span class="networth-list-name">
+
+                            <%= asset.item %>
+
+                        </span>
+
+                    </a>
+
+                <% }); %>
+
+            <% } else { %>
+
+                <div class="networth-empty">
+
+                    No standalone assets found.
+
+                </div>
+
+            <% } %>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         STRUCTURES
+    ====================================================== -->
+
+    <section class="networth-section">
+
+        <div class="networth-section-header">
+
+            <div>
+
+                <h2>
+                    Structures
+                </h2>
+
+                <p>
+                    Dairy structures and the assets assigned to them.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="networth-list">
+
+            <% if (
+                structures &&
+                structures.length
+            ) { %>
+
+                <% structures.forEach(function(structure) { %>
+
+                    <a
+                        href="/networth/structure/<%= structure._id %>"
+                        class="networth-list-item"
+                    >
+
+                        <span class="networth-list-name">
+
+                            <%= structure.item %>
+
+                        </span>
+
+                    </a>
+
+                <% }); %>
+
+            <% } else { %>
+
+                <div class="networth-empty">
+
+                    No structures found.
+
+                </div>
+
+            <% } %>
+
+        </div>
+
+    </section>
+
+</div>
