@@ -77,7 +77,9 @@
 }
 
 
-/* Decorative green area */
+/* ==========================================================
+   DECORATIVE AREA
+========================================================== */
 
 .networth-total-card::after {
     content: "";
@@ -144,10 +146,6 @@
     position: relative;
     z-index: 1;
 
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-
     color: #176337;
 
     font-size: 34px;
@@ -158,10 +156,8 @@
     letter-spacing: -0.7px;
 
     white-space: nowrap;
-}
 
-.networth-total-value::first-line {
-    color: #176337;
+    font-variant-numeric: tabular-nums;
 }
 
 
@@ -229,7 +225,7 @@
 
 
 /* ==========================================================
-   ASSET LIST
+   LIST
 ========================================================== */
 
 .networth-list {
@@ -240,7 +236,7 @@
 
 
 /* ==========================================================
-   ASSET ROW
+   LIST ITEM
 ========================================================== */
 
 .networth-list-item {
@@ -276,7 +272,7 @@
 
 
 /* ==========================================================
-   ASSET ICON
+   DEFAULT ASSET ICON
 ========================================================== */
 
 .networth-list-item::before {
@@ -308,7 +304,18 @@
 
 
 /* ==========================================================
-   ASSET NAME
+   STRUCTURE ICON
+========================================================== */
+
+.networth-structure-item::before {
+    content: "▦";
+
+    font-size: 18px;
+}
+
+
+/* ==========================================================
+   ITEM NAME
 ========================================================== */
 
 .networth-list-name {
@@ -355,7 +362,7 @@
 
 
 /* ==========================================================
-   ROW HOVER
+   HOVER
 ========================================================== */
 
 .networth-list-item:hover {
@@ -371,6 +378,7 @@
 
 .networth-list-item:hover::before {
     background: #dff1e5;
+
     color: #216b3e;
 }
 
@@ -405,6 +413,9 @@
     color: #829087;
 
     font-size: 14px;
+
+    line-height: 1.5;
+
     text-align: center;
 }
 
@@ -427,23 +438,6 @@
     color: #59936e;
 
     font-size: 22px;
-}
-
-
-/* ==========================================================
-   STRUCTURE SECTION VISUAL DIFFERENCE
-========================================================== */
-
-.networth-section:nth-of-type(2)
-.networth-list-item::before {
-    content: "▦";
-
-    font-size: 18px;
-}
-
-.networth-section:nth-of-type(2)
-.networth-list-item:hover::before {
-    background: #dff1e5;
 }
 
 
@@ -473,7 +467,9 @@
 
     .networth-total-card {
         align-items: flex-start;
+
         flex-direction: column;
+
         gap: 14px;
 
         min-height: auto;
@@ -509,7 +505,7 @@
     }
 
 
-    /* Asset rows */
+    /* List */
 
     .networth-list-item {
         min-height: 58px;
@@ -556,62 +552,31 @@
     .networth-section-header h2 {
         font-size: 17px;
     }
+
+    .networth-list-item {
+        min-height: 56px;
+    }
 }
-</style><div class="financial-page networth-page"><!-- =====================================================
-     HEADER
-====================================================== -->
-
-<div class="financial-header">
-
-    <div>
-
-        <h1>Net Worth</h1>
-
-        <p>
-            Assets and their current estimated worth.
-        </p>
-
-    </div>
-
-</div>
+</style>
 
 
-<!-- =====================================================
-     TOTAL NET WORTH
-====================================================== -->
-
-<div class="financial-card networth-total-card">
-
-    <span class="networth-total-label">
-        Total Net Worth
-    </span>
-
-    <strong class="networth-total-value">
-
-        KSh
-        <%= Number(totalNetWorth || 0).toLocaleString() %>
-
-    </strong>
-
-</div>
+<div class="financial-page networth-page">
 
 
-<!-- =====================================================
-     STANDALONE ASSETS
-====================================================== -->
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
 
-<section class="networth-section">
-
-    <div class="networth-section-header">
+    <div class="financial-header">
 
         <div>
 
-            <h2>
-                Standalone Assets
-            </h2>
+            <h1>
+                Net Worth
+            </h1>
 
             <p>
-                Assets that are not assigned to a structure.
+                Assets and their current estimated worth.
             </p>
 
         </div>
@@ -619,96 +584,169 @@
     </div>
 
 
-    <div class="networth-list">
+    <!-- =====================================================
+         TOTAL NET WORTH
+         
+         Provided by:
+         networthController.index
+         
+         data.totalNetWorth
+    ====================================================== -->
 
-        <% if (
-            standaloneAssets &&
-            standaloneAssets.length
-        ) { %>
+    <div class="financial-card networth-total-card">
 
-            <% standaloneAssets.forEach(function(asset) { %>
+        <span class="networth-total-label">
+            Total Net Worth
+        </span>
 
-                <a
-                    href="/networth/asset/<%= asset._id %>"
-                    class="networth-list-item"
-                >
+        <strong class="networth-total-value">
 
-                    <span class="networth-list-name">
-                        <%= asset.item %>
-                    </span>
+            KSh
+            <%= Number(totalNetWorth || 0).toLocaleString("en-KE") %>
 
-                </a>
-
-            <% }); %>
-
-        <% } else { %>
-
-            <div class="networth-empty">
-                No standalone assets found.
-            </div>
-
-        <% } %>
+        </strong>
 
     </div>
 
-</section>
 
+    <!-- =====================================================
+         STANDALONE ASSETS
+         
+         Provided by:
+         data.standaloneAssets
+         
+         Each asset links to:
+         GET /networth/asset/:id
+    ====================================================== -->
 
-<!-- =====================================================
-     STRUCTURES
-====================================================== -->
+    <section class="networth-section">
 
-<section class="networth-section">
+        <div class="networth-section-header">
 
-    <div class="networth-section-header">
+            <div>
 
-        <div>
+                <h2>
+                    Standalone Assets
+                </h2>
 
-            <h2>
-                Structures
-            </h2>
+                <p>
+                    Assets that are not assigned to a structure.
+                </p>
 
-            <p>
-                Dairy structures and the assets assigned to them.
-            </p>
+            </div>
 
         </div>
 
-    </div>
+
+        <div class="networth-list">
+
+            <% if (
+                Array.isArray(standaloneAssets) &&
+                standaloneAssets.length > 0
+            ) { %>
 
 
-    <div class="networth-list">
+                <% standaloneAssets.forEach(function(asset) { %>
 
-        <% if (
-            structures &&
-            structures.length
-        ) { %>
+                    <a
+                        href="/networth/asset/<%= asset._id %>"
+                        class="networth-list-item"
+                    >
 
-            <% structures.forEach(function(structure) { %>
+                        <span class="networth-list-name">
 
-                <a
-                    href="/networth/structure/<%= structure._id %>"
-                    class="networth-list-item"
-                >
+                            <%= asset.item %>
 
-                    <span class="networth-list-name">
-                        <%= structure.item %>
-                    </span>
+                        </span>
 
-                </a>
+                    </a>
 
-            <% }); %>
+                <% }); %>
 
-        <% } else { %>
 
-            <div class="networth-empty">
-                No structures found.
+            <% } else { %>
+
+                <div class="networth-empty">
+
+                    No standalone assets found.
+
+                </div>
+
+            <% } %>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         STRUCTURES
+         
+         Provided by:
+         data.structures
+         
+         Each structure links to:
+         GET /networth/structure/:id
+    ====================================================== -->
+
+    <section class="networth-section">
+
+        <div class="networth-section-header">
+
+            <div>
+
+                <h2>
+                    Structures
+                </h2>
+
+                <p>
+                    Structures containing assigned assets.
+                </p>
+
             </div>
 
-        <% } %>
+        </div>
 
-    </div>
 
-</section>
+        <div class="networth-list">
+
+            <% if (
+                Array.isArray(structures) &&
+                structures.length > 0
+            ) { %>
+
+
+                <% structures.forEach(function(structure) { %>
+
+                    <a
+                        href="/networth/structure/<%= structure._id %>"
+                        class="networth-list-item networth-structure-item"
+                    >
+
+                        <span class="networth-list-name">
+
+                            <%= structure.item %>
+
+                        </span>
+
+                    </a>
+
+                <% }); %>
+
+
+            <% } else { %>
+
+                <div class="networth-empty">
+
+                    No structures found.
+
+                </div>
+
+            <% } %>
+
+        </div>
+
+    </section>
+
 
 </div>
