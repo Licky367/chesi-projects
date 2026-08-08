@@ -628,6 +628,20 @@
 
     <!-- =====================================================
          ASSET FORM
+
+         IMPORTANT:
+
+         The form does NOT submit:
+
+             code
+             assetCode
+
+         The service determines both automatically.
+
+         New manual asset:
+
+             code      = null
+             assetCode = parent Dairy Farm code
     ====================================================== -->
 
     <div class="financial-card">
@@ -641,6 +655,10 @@
 
             <!-- =================================================
                  NAME
+
+                 Maps to:
+
+                     Dairy.name
             ================================================== -->
 
             <div class="form-group">
@@ -664,6 +682,10 @@
 
             <!-- =================================================
                  TYPE
+
+                 Maps to:
+
+                     Dairy.type
             ================================================== -->
 
             <div class="form-group">
@@ -687,6 +709,10 @@
 
             <!-- =================================================
                  BUYING PRICE
+
+                 Maps to:
+
+                     Dairy.buyingPrice
             ================================================== -->
 
             <div class="form-group">
@@ -711,6 +737,10 @@
 
             <!-- =================================================
                  CURRENT WORTH
+
+                 Maps to:
+
+                     Dairy.currentWorth
             ================================================== -->
 
             <div class="form-group">
@@ -735,6 +765,10 @@
 
             <!-- =================================================
                  DESCRIPTION
+
+                 Maps to:
+
+                     Dairy.description
             ================================================== -->
 
             <div class="form-group">
@@ -757,6 +791,10 @@
 
             <!-- =================================================
                  CONDITION
+
+                 Maps to:
+
+                     Dairy.condition
             ================================================== -->
 
             <div class="form-group">
@@ -780,6 +818,10 @@
 
             <!-- =================================================
                  LOCATION
+
+                 Maps to:
+
+                     Dairy.location
             ================================================== -->
 
             <div class="form-group">
@@ -803,6 +845,10 @@
 
             <!-- =================================================
                  STATUS
+
+                 Maps to:
+
+                     Dairy.status
             ================================================== -->
 
             <div class="form-group">
@@ -844,11 +890,27 @@
 
             <!-- =================================================
                  DAIRY FARM
-                 
+
                  Display only.
-                 
-                 The relationship is created by the service
-                 using the current Dairy Farm's negative code.
+
+                 The parent is NOT submitted by the browser.
+
+                 The route identifies the parent:
+
+                     /networth/structure/:id/add
+
+                 The service will:
+
+                     1. Find the Dairy Farm by :id.
+                     2. Verify its code is negative.
+                     3. Take dairy.code.
+                     4. Create:
+
+                            code: null
+                            assetCode: dairy.code
+
+                 Therefore the user cannot manually alter
+                 the parent relationship.
             ================================================== -->
 
             <div class="form-group">
