@@ -2,69 +2,96 @@
      DAIRY FARMS
      
      Rules:
-     - Dairy record must have a negative code.
+     - A Dairy Farm is a Dairy record with a negative code.
+     - The Dairy Farm code identifies the facility.
+     - Each item opens the Dairy Farm page.
+     - The farm page displays assets assigned to this farm
+       through assetCode === farm.code.
      
-     Each item opens the farm/structure page.
-     
-     The farm page will then display all positive-code Dairy
-     records whose assetCode equals the farm's code.
-========================================================== -->
+     IMPORTANT:
+     - Use dairy._id as the Dairy record identifier.
+     - Do not use asset._id here.
+========================================================== --><section class="networth-section"><!-- ======================================================
+     SECTION HEADER
+======================================================= -->
 
-<section class="networth-section">
+<div class="networth-section-header">
 
-    <div class="networth-section-header">
+    <div>
 
-        <div>
+        <h2>
+            Dairy Farms
+        </h2>
 
-            <h2>
-                Dairy Farms
-            </h2>
+        <p>
+            Dairy farms and facilities containing assigned assets.
+        </p>
 
-            <p>
-                Dairy farms and facilities containing assigned assets.
-            </p>
+    </div>
+
+</div>
+
+
+<!-- ======================================================
+     DAIRY FARM LIST
+======================================================= -->
+
+<div class="networth-list">
+
+
+    <% if (
+        Array.isArray(structures) &&
+        structures.length > 0
+    ) { %>
+
+
+        <% structures.forEach(function(dairy) { %>
+
+
+            <!-- ==========================================
+                 DAIRY FARM
+
+                 A valid Dairy Farm has:
+                     dairy.code < 0
+
+                 The Dairy _id is used to open
+                 the farm page.
+            =========================================== -->
+
+            <a
+                href="/networth/structure/<%= dairy._id %>"
+                class="networth-list-item networth-structure-item"
+            >
+
+                <span class="networth-list-name">
+
+                    <%= dairy.name || dairy.item || dairy.code %>
+
+                </span>
+
+            </a>
+
+
+        <% }); %>
+
+
+    <% } else { %>
+
+
+        <!-- ==========================================
+             EMPTY STATE
+        =========================================== -->
+
+        <div class="networth-empty">
+
+            No Dairy Farms found.
 
         </div>
 
-    </div>
+
+    <% } %>
 
 
-    <div class="networth-list">
-
-        <% if (
-            Array.isArray(structures) &&
-            structures.length > 0
-        ) { %>
-
-
-            <% structures.forEach(function(farm) { %>
-
-                <a
-                    href="/networth/structure/<%= farm._id %>"
-                    class="networth-list-item networth-structure-item"
-                >
-
-                    <span class="networth-list-name">
-
-                        <%= farm.name || farm.item || farm.code %>
-
-                    </span>
-
-                </a>
-
-            <% }); %>
-
-
-        <% } else { %>
-
-            <div class="networth-empty">
-
-                No Dairy Farms found.
-
-            </div>
-
-        <% } %>
-
-    </div>
+</div>
 
 </section>
