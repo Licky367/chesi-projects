@@ -1,1432 +1,1479 @@
 const mongoose = require("mongoose");
 
-
 /* =========================================================
-   DAIRY MODEL
+DAIRY MODEL
+SINGLE SOURCE OF TRUTH
+
+This model contains:
+
+1. Identified dairy / animal records
+
+
+2. Dairy structure / facility records
+
+
+3. Manual asset records
+
+
+4. Maintenance information
+
+
+5. Medical information
+
+
+6. Net Worth information
+
+
+
+=========================================================
+CODE SYSTEM
+
+code > 0
+Identified dairy / animal.
+
+code < 0
+Dairy structure / facility.
+
+code === null
+Manual asset.
+
+IMPORTANT:
+
+Manual assets DO NOT use code = 0.  
+
+   Manual assets have:  
+
+       code = null  
+
+   because they have no dairy identity.
+
+=========================================================
+STRUCTURE RELATIONSHIP
+
+assetCode contains the NEGATIVE code of the structure.
+
+Example:
+
+Dairy Farm:  
+       code = -10  
+
+   Cow:  
+       code = 25  
+       assetCode = -10  
+
+   Manual Asset:  
+       code = null  
+       assetCode = -10
+
+Therefore:
+
+assetCode is the authoritative structure  
+   relationship.
+
+There is no separate NetWorth model.
 ========================================================= */
 
 const dairySchema = new mongoose.Schema(
 
-    {
+{  
 
-        /* =====================================================
-           PROFILE
-        ===================================================== */
+    /* =====================================================  
+       PROFILE IMAGE  
+    ===================================================== */  
 
-        profileImage: {
+    profileImage: {  
 
-            type: String,
+        type: String,  
 
-            trim: true,
+        trim: true,  
 
-            default: ""
+        default: ""  
 
-        },
+    },  
 
 
-        /* =====================================================
-           IDENTITY CODE
+    /* =====================================================  
+       DAIRY CODE  
 
-           > 0  = identified dairy / animal
-           < 0  = Dairy Farm / structure
-           null = manual asset
-        ===================================================== */
+       Positive:  
+           Identified dairy / animal.  
 
-        code: {
+       Negative:  
+           Dairy structure / facility.  
 
-            type: Number,
+       Null:  
+           Manual asset without dairy identity.  
 
-            default: null,
+       IMPORTANT:  
 
-            unique: true,
+           Manual assets MUST NOT use 0.  
 
-            sparse: true,
+           Sparse unique index allows multiple  
+           manual assets with code = null.  
+    ===================================================== */  
 
-            validate: {
+    code: {  
 
-                validator: function (value) {
+        type: Number,  
 
-                    if (
-                        value === null ||
-                        value === undefined
-                    ) {
+        default: null,  
 
-                        return true;
+        unique: true,  
 
-                    }
+        sparse: true,  
 
+        validate: {  
 
-                    return Number.isInteger(value);
+            validator: function (value) {  
 
-                },
+                if (  
+                    value === null ||  
+                    value === undefined  
+                ) {  
 
-                message:
-                    "Code must be a whole number or null."
+                    return true;  
 
-            }
+                }  
 
-        },
 
+                return Number.isInteger(value);  
 
-        /* =====================================================
-           NAME
-        ===================================================== */
+            },  
 
-        name: {
+            message:  
+                "Code must be a whole number or null."  
 
-            type: String,
+        }  
 
-            required: true,
+    },  
 
-            trim: true
 
-        },
+    /* =====================================================  
+       NAME  
+    ===================================================== */  
 
+    name: {  
 
-        /* =====================================================
-           ITEM
+        type: String,  
 
-           Used by the Net Worth service for assets.
-        ===================================================== */
+        required: true,  
 
-        item: {
+        trim: true  
 
-            type: String,
+    },  
 
-            trim: true,
 
-            default: ""
+    /* =====================================================  
+       DATE OF BIRTH  
 
-        },
+       Only identified dairy / animal records require  
+       a date of birth.  
 
+       Structures and manual assets do not.  
+    ===================================================== */  
 
-        /* =====================================================
-           DATE OF BIRTH
-        ===================================================== */
+    dateOfBirth: {  
 
-        dateOfBirth: {
+        type: Date,  
 
-            type: Date,
+        required: function () {  
 
-            required: function () {
+            return this.code !== null &&  
+                   this.code > 0;  
 
-                return (
+        },  
 
-                    this.code !== null &&
+        default: null  
 
-                    this.code > 0
+    },  
 
-                );
 
-            },
+    /* =====================================================  
+       MASS  
 
-            default: null
+       Mainly applicable to animals.  
 
-        },
+       Structures and manual assets may remain at 0.  
+    ===================================================== */  
 
+    mass: {  
 
-        /* =====================================================
-           MASS
-        ===================================================== */
+        type: Number,  
 
-        mass: {
+        min: 0,  
 
-            type: Number,
+        default: 0  
 
-            min: 0,
+    },  
 
-            default: 0
 
-        },
+    /* =====================================================  
+       MILKING STATUS  
 
+       Only positive-code female animals can be milking.  
 
-        /* =====================================================
-           MILKING
-        ===================================================== */
+       Female rule:  
 
-        isMilking: {
+           even positive code = female  
 
-            type: Boolean,
+       Male rule:  
 
-            default: false,
+           odd positive code = male  
+    ===================================================== */  
 
-            validate: {
+    isMilking: {  
 
-                validator: function (value) {
+        type: Boolean,  
 
-                    if (!value) {
+        default: false,  
 
-                        return true;
+        validate: {  
 
-                    }
+            validator: function (value) {  
 
+                /*  
+                 * Non-animal records cannot be milking.  
+                 */  
 
-                    if (
-                        this.code === null ||
-                        this.code <= 0
-                    ) {
+                if (  
+                    value &&  
+                    (  
+                        this.code === null ||  
+                        this.code <= 0  
+                    )  
+                ) {  
 
-                        return false;
+                    return false;  
 
-                    }
+                }  
 
 
-                    if (
-                        this.code % 2 !== 0
-                    ) {
+                /*  
+                 * Odd positive codes are male.  
+                 *  
+                 * Only even positive codes can  
+                 * be marked as milking.  
+                 */  
 
-                        return false;
+                if (  
+                    value &&  
+                    this.code > 0 &&  
+                    this.code % 2 !== 0  
+                ) {  
 
-                    }
+                    return false;  
 
+                }  
 
-                    return true;
 
-                },
+                return true;  
 
-                message:
-                    "Only female animals can be marked as milking."
+            },  
 
-            }
+            message:  
+                "Only female animals can be marked as milking."  
 
-        },
+        }  
 
+    },  
 
-        /* =====================================================
-           STRUCTURE ASSIGNMENT
 
-           Contains the negative code of the Dairy Farm.
+    /* =====================================================  
+       STRUCTURE ASSIGNMENT  
 
-           Example:
+       Authoritative relationship between this record  
+       and a Dairy Farm / structure.  
 
-               Farm:
-                   code = -10
+       Examples:  
 
-               Asset:
-                   assetCode = -10
-        ===================================================== */
+           Structure:  
+               code = -10  
 
-        assetCode: {
+           Identified dairy:  
+               code = 25  
+               assetCode = -10  
 
-            type: Number,
+           Manual asset:  
+               code = null  
+               assetCode = -10  
 
-            default: null
 
-        },
+       Valid relationship:  
 
+           assetCode must reference a negative  
+           structure code.  
 
-        /* =====================================================
-           MAINTENANCE
-        ===================================================== */
+       Structures themselves cannot have assetCode.  
+    ===================================================== */  
 
-        needsMaintenance: {
+    assetCode: {  
 
-            type: Boolean,
+        type: Number,  
 
-            default: false
+        default: null  
 
-        },
+    },  
 
 
-        maintenance: {
+    /* =====================================================  
+       MAINTENANCE  
+    ===================================================== */  
 
-            type: {
+    needsMaintenance: {  
 
-                type: String,
+        type: Boolean,  
 
-                trim: true,
+        default: false  
 
-                default: ""
+    },  
 
-            },
 
-            description: {
+    maintenance: {  
 
-                type: String,
+        type: {  
 
-                trim: true,
+            type: String,  
 
-                default: ""
+            trim: true,  
 
-            },
+            default: ""  
 
-            charges: {
+        },  
 
-                type: Number,
+        description: {  
 
-                min: 0,
+            type: String,  
 
-                default: 0
+            trim: true,  
 
-            },
+            default: ""  
 
-            completionDescription: {
+        },  
 
-                type: String,
+        charges: {  
 
-                trim: true,
+            type: Number,  
 
-                default: ""
+            min: 0,  
 
-            },
+            default: 0  
 
-            markedBy: {
+        },  
 
-                type:
-                    mongoose.Schema.Types.ObjectId,
+        completionDescription: {  
 
-                ref: "User",
+            type: String,  
 
-                default: null
+            trim: true,  
 
-            },
+            default: ""  
 
-            markedAt: {
+        },  
 
-                type: Date,
+        markedBy: {  
 
-                default: null
+            type:  
+                mongoose.Schema.Types.ObjectId,  
 
-            },
+            ref: "User",  
 
-            clearedBy: {
+            default: null  
 
-                type:
-                    mongoose.Schema.Types.ObjectId,
+        },  
 
-                ref: "User",
+        markedAt: {  
 
-                default: null
+            type: Date,  
 
-            },
+            default: null  
 
-            clearedAt: {
+        },  
 
-                type: Date,
+        clearedBy: {  
 
-                default: null
+            type:  
+                mongoose.Schema.Types.ObjectId,  
 
-            }
+            ref: "User",  
 
-        },
+            default: null  
 
+        },  
 
-        /* =====================================================
-           MEDICAL
-        ===================================================== */
+        clearedAt: {  
 
-        medicalAttention: {
+            type: Date,  
 
-            isMarked: {
+            default: null  
 
-                type: Boolean,
+        }  
 
-                default: false
+    },  
 
-            },
 
-            type: {
+    /* =====================================================  
+       MEDICAL ATTENTION  
+    ===================================================== */  
 
-                type: String,
+    medicalAttention: {  
 
-                trim: true,
+        isMarked: {  
 
-                default: ""
+            type: Boolean,  
 
-            },
+            default: false  
 
-            details: {
+        },  
 
-                type: String,
+        type: {  
 
-                trim: true,
+            type: String,  
 
-                default: ""
+            trim: true,  
 
-            },
+            default: ""  
 
-            charges: {
+        },  
 
-                type: Number,
+        details: {  
 
-                min: 0,
+            type: String,  
 
-                default: 0
+            trim: true,  
 
-            },
+            default: ""  
 
-            description: {
+        },  
 
-                type: String,
+        charges: {  
 
-                trim: true,
+            type: Number,  
 
-                default: ""
+            min: 0,  
 
-            },
+            default: 0  
 
-            markedBy: {
+        },  
 
-                type:
-                    mongoose.Schema.Types.ObjectId,
+        description: {  
 
-                ref: "User",
+            type: String,  
 
-                default: null
+            trim: true,  
 
-            },
+            default: ""  
 
-            markedAt: {
+        },  
 
-                type: Date,
+        markedBy: {  
 
-                default: null
+            type:  
+                mongoose.Schema.Types.ObjectId,  
 
-            },
+            ref: "User",  
 
-            clearedBy: {
+            default: null  
 
-                type:
-                    mongoose.Schema.Types.ObjectId,
+        },  
 
-                ref: "User",
+        markedAt: {  
 
-                default: null
+            type: Date,  
 
-            },
+            default: null  
 
-            clearedAt: {
+        },  
 
-                type: Date,
+        clearedBy: {  
 
-                default: null
+            type:  
+                mongoose.Schema.Types.ObjectId,  
 
-            },
+            ref: "User",  
 
-            updatedAt: {
+            default: null  
 
-                type: Date,
+        },  
 
-                default: null
+        clearedAt: {  
 
-            }
+            type: Date,  
 
-        },
+            default: null  
 
+        },  
 
-        /* =====================================================
-           NET WORTH
-        ===================================================== */
+        updatedAt: {  
 
-        assetType: {
+            type: Date,  
 
-            type: String,
+            default: null  
 
-            trim: true,
+        }  
 
-            default: ""
+    },  
 
-        },
 
+    /* =====================================================  
+       NET WORTH / ASSET INFORMATION  
 
-        buyingPrice: {
+       These fields belong directly to Dairy.  
 
-            type: Number,
+       There is NO separate NetWorth model.  
+    ===================================================== */  
 
-            min: 0,
 
-            default: 0
+    /* =====================================================  
+       ASSET TYPE  
+    ===================================================== */  
 
-        },
+    assetType: {  
 
+        type: String,  
 
-        currentWorth: {
+        trim: true,  
 
-            type: Number,
+        default: ""  
 
-            min: 0,
+    },  
 
-            default: 0
 
-        },
+    /* =====================================================  
+       BUYING PRICE  
+    ===================================================== */  
 
+    buyingPrice: {  
 
-        /*
-         * Primary description field used by the service.
-         */
-        description: {
+        type: Number,  
 
-            type: String,
+        min: 0,  
 
-            trim: true,
+        default: 0  
 
-            default: ""
+    },  
 
-        },
 
+    /* =====================================================  
+       CURRENT WORTH  
+    ===================================================== */  
 
-        /*
-         * Kept for compatibility with existing documents/code.
-         */
-        assetDescription: {
+    currentWorth: {  
 
-            type: String,
+        type: Number,  
 
-            trim: true,
+        min: 0,  
 
-            default: ""
+        default: 0  
 
-        },
+    },  
 
 
-        condition: {
+    /* =====================================================  
+       ASSET DESCRIPTION  
+    ===================================================== */  
 
-            type: String,
+    assetDescription: {  
 
-            trim: true,
+        type: String,  
 
-            default: ""
+        trim: true,  
 
-        },
+        default: ""  
 
+    },  
 
-        location: {
 
-            type: String,
+    /* =====================================================  
+       CONDITION  
+    ===================================================== */  
 
-            trim: true,
+    condition: {  
 
-            default: ""
+        type: String,  
 
-        },
+        trim: true,  
 
+        default: ""  
 
-        acquisitionDate: {
+    },  
 
-            type: Date,
 
-            default: null
+    /* =====================================================  
+       LOCATION  
+    ===================================================== */  
 
-        },
+    location: {  
 
+        type: String,  
 
-        valuationDate: {
+        trim: true,  
 
-            type: Date,
+        default: ""  
 
-            default: null
+    },  
 
-        },
 
+    /* =====================================================  
+       ACQUISITION DATE  
+    ===================================================== */  
 
-        /* =====================================================
-           STATUS
+    acquisitionDate: {  
 
-           This is intentionally named "status".
+        type: Date,  
 
-           The Net Worth service reads and writes:
+        default: null  
 
-               dairy.status
-               body.status
+    },  
 
-           Allowed values:
 
-               active
-               sold
-               disposed
-               inactive
-        ===================================================== */
+    /* =====================================================  
+       VALUATION DATE  
+    ===================================================== */  
 
-        status: {
+    valuationDate: {  
 
-            type: String,
+        type: Date,  
 
-            enum: [
+        default: null  
 
-                "active",
+    },  
 
-                "sold",
 
-                "disposed",
+    /* =====================================================  
+       ASSET STATUS  
 
-                "inactive"
+       active:  
+           Included in Net Worth.  
 
-            ],
+       sold:  
+           Excluded.  
 
-            default: "active",
+       disposed:  
+           Excluded.  
 
-            index: true
+       inactive:  
+           Excluded.  
+    ===================================================== */  
 
-        },
+    assetStatus: {  
 
+        type: String,  
 
-        /*
-         * Compatibility field for existing code/documents
-         * that may still use assetStatus.
-         *
-         * The Net Worth service does NOT use this field.
-         */
-        assetStatus: {
+        enum: [  
 
-            type: String,
+            "active",  
 
-            enum: [
+            "sold",  
 
-                "active",
+            "disposed",  
 
-                "sold",
+            "inactive"  
 
-                "disposed",
+        ],  
 
-                "inactive"
+        default: "active",  
 
-            ],
+        index: true  
 
-            default: "active",
+    },  
 
-            index: true
 
-        },
+    /* =====================================================  
+       ASSET SOURCE  
 
+       dairy:  
+           code > 0  
 
-        /* =====================================================
-           ASSET SOURCE
-        ===================================================== */
+       structure:  
+           code < 0  
 
-        assetSource: {
+       asset:  
+           code === null  
+    ===================================================== */  
 
-            type: String,
+    assetSource: {  
 
-            enum: [
+        type: String,  
 
-                "dairy",
+        enum: [  
 
-                "structure",
+            "dairy",  
 
-                "asset"
+            "structure",  
 
-            ],
+            "asset"  
 
-            default: "dairy",
+        ],  
 
-            index: true
+        default: "dairy",  
 
-        }
+        index: true  
 
-    },
+    }  
 
+},  
 
-    /* =========================================================
-       OPTIONS
-    ========================================================= */
 
-    {
+/* =========================================================  
+   SCHEMA OPTIONS  
+========================================================= */  
 
-        timestamps: true,
+{  
 
-        minimize: false,
+    timestamps: true,  
 
-        toJSON: {
+    minimize: false,  
 
-            virtuals: true
+    toJSON: {  
 
-        },
+        virtuals: true  
 
-        toObject: {
+    },  
 
-            virtuals: true
+    toObject: {  
 
-        }
+        virtuals: true  
 
-    }
+    }  
+
+}
 
 );
 
-
 /* =========================================================
-   VIRTUAL
-   GENDER
+VIRTUAL
+GENDER
 ========================================================= */
 
 dairySchema.virtual("gender").get(function () {
 
-    if (
-        this.code === null ||
-        this.code <= 0
-    ) {
+/*  
+ * Structures and manual assets have no gender.  
+ */  
 
-        return null;
+if (  
+    this.code === null ||  
+    this.code <= 0  
+) {  
 
-    }
+    return null;  
+
+}  
 
 
-    return this.code % 2 === 0
+return this.code % 2 === 0  
 
-        ? "Female"
+    ? "Female"  
 
-        : "Male";
+    : "Male";
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   FEMALE
+VIRTUAL
+FEMALE CHECK
 ========================================================= */
 
 dairySchema.virtual("isFemale").get(function () {
 
-    return (
+return (  
 
-        this.code !== null &&
+    this.code !== null &&  
 
-        this.code > 0 &&
+    this.code > 0 &&  
 
-        this.code % 2 === 0
+    this.code % 2 === 0  
 
-    );
+);
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   IDENTITY
+VIRTUAL
+REAL ANIMAL / IDENTIFIED DAIRY CHECK
 ========================================================= */
 
 dairySchema.virtual("hasIdentity").get(function () {
 
-    return (
+return (  
 
-        this.code !== null &&
+    this.code !== null &&  
 
-        this.code > 0
+    this.code > 0  
 
-    );
+);
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   STRUCTURE
+VIRTUAL
+IS STRUCTURE
 ========================================================= */
 
 dairySchema.virtual("isStructure").get(function () {
 
-    return (
+return (  
 
-        this.code !== null &&
+    this.code !== null &&  
 
-        this.code < 0
+    this.code < 0  
 
-    );
+);
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   MANUAL ASSET
+VIRTUAL
+IS MANUAL ASSET
 ========================================================= */
 
 dairySchema.virtual("isManualAsset").get(function () {
 
-    return this.code === null;
+return this.code === null;
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   AGE
+VIRTUAL
+AGE
 ========================================================= */
 
 dairySchema.virtual("ageText").get(function () {
 
-    if (!this.dateOfBirth) {
+if (!this.dateOfBirth) {  
 
-        return "";
+    return "";  
 
-    }
-
-
-    const now =
-        new Date();
+}  
 
 
-    const dob =
-        new Date(
-            this.dateOfBirth
-        );
+const now =  
+    new Date();  
 
 
-    let years =
-        now.getFullYear() -
-        dob.getFullYear();
+const dob =  
+    new Date(  
+        this.dateOfBirth  
+    );  
 
 
-    let months =
-        now.getMonth() -
-        dob.getMonth();
+let years =  
+    now.getFullYear() -  
+    dob.getFullYear();  
 
 
-    let days =
-        now.getDate() -
-        dob.getDate();
+let months =  
+    now.getMonth() -  
+    dob.getMonth();  
 
 
-    if (days < 0) {
-
-        months--;
-
-
-        const previousMonth =
-            new Date(
-
-                now.getFullYear(),
-
-                now.getMonth(),
-
-                0
-
-            );
+let days =  
+    now.getDate() -  
+    dob.getDate();  
 
 
-        days +=
-            previousMonth.getDate();
+if (days < 0) {  
 
-    }
-
-
-    if (months < 0) {
-
-        years--;
-
-        months += 12;
-
-    }
+    months--;  
 
 
-    return `${years} years, ${months} months, ${days} days`;
+    const previousMonth =  
+        new Date(  
+
+            now.getFullYear(),  
+
+            now.getMonth(),  
+
+            0  
+
+        );  
+
+
+    days +=  
+        previousMonth.getDate();  
+
+}  
+
+
+if (months < 0) {  
+
+    years--;  
+
+    months += 12;  
+
+}  
+
+
+return `${years} years, ${months} months, ${days} days`;
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   MILKING TEXT
+VIRTUAL
+MILKING TEXT
 ========================================================= */
 
 dairySchema.virtual("isMilkingText").get(function () {
 
-    return this.isMilking
+return this.isMilking  
 
-        ? "Yes"
+    ? "Yes"  
 
-        : "No";
+    : "No";
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   PROFILE IMAGE
+VIRTUAL
+PROFILE IMAGE
 ========================================================= */
 
 dairySchema.virtual("displayImage").get(function () {
 
-    if (this.profileImage) {
+if (this.profileImage) {  
 
-        return `/uploads/${this.profileImage}`;
+    return `/uploads/${this.profileImage}`;  
 
-    }
+}  
 
 
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+return `https://ui-avatars.com/api/?name=${encodeURIComponent(  
 
-        this.name
+    this.name  
 
-    )}`;
+)}`;
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   MAINTENANCE
+VIRTUAL
+MAINTENANCE SHORTCUT
 ========================================================= */
 
 dairySchema.virtual("requiresMaintenance").get(function () {
 
-    return !!this.needsMaintenance;
+return !!this.needsMaintenance;
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   MEDICAL
+VIRTUAL
+MEDICAL SHORTCUT
 ========================================================= */
 
 dairySchema.virtual("needsMedicalAttention").get(function () {
 
-    return !!(
+return !!(  
 
-        this.medicalAttention &&
+    this.medicalAttention &&  
 
-        this.medicalAttention.isMarked
+    this.medicalAttention.isMarked  
 
-    );
+);
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   ASSET VALUE
+VIRTUAL
+NET WORTH ASSET VALUE
 ========================================================= */
 
 dairySchema.virtual("assetValue").get(function () {
 
-    return Number(
-        this.currentWorth
-    ) || 0;
+return Number(  
+    this.currentWorth  
+) || 0;
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   ACTIVE ASSET
+VIRTUAL
+NET WORTH ACTIVE CHECK
 ========================================================= */
 
 dairySchema.virtual("isActiveAsset").get(function () {
 
-    return this.status === "active";
+return this.assetStatus === "active";
 
 });
 
-
 /* =========================================================
-   PRE VALIDATE
+PRE VALIDATE
 ========================================================= */
 
 dairySchema.pre(
 
-    "validate",
+"validate",  
 
-    function (next) {
+function (next) {  
 
-        /* -----------------------------------------------------
-           MILKING
-        ----------------------------------------------------- */
+    /* -----------------------------------------------------  
+       ONLY FEMALES CAN BE MILKING  
+    ----------------------------------------------------- */  
 
-        if (!this.isFemale) {
+    if (!this.isFemale) {  
 
-            this.isMilking = false;
+        this.isMilking = false;  
 
-        }
+    }  
 
 
-        /* -----------------------------------------------------
-           STRUCTURE
-        ----------------------------------------------------- */
+    /* -----------------------------------------------------  
+       STRUCTURE  
 
-        if (
-            this.code !== null &&
-            this.code < 0
-        ) {
+       code < 0  
 
-            this.dateOfBirth =
-                null;
+       A structure:  
 
-            this.isMilking =
-                false;
+           - has no DOB  
+           - cannot milk  
+           - cannot belong to another structure  
+           - is always assetSource = structure  
+    ----------------------------------------------------- */  
 
-            /*
-             * A Dairy Farm cannot belong to another
-             * Dairy Farm.
-             */
-            this.assetCode =
-                null;
+    if (  
+        this.code !== null &&  
+        this.code < 0  
+    ) {  
 
-            this.assetSource =
-                "structure";
+        this.dateOfBirth =  
+            null;  
 
-        }
+        this.isMilking =  
+            false;  
 
+        this.assetCode =  
+            null;  
 
-        /* -----------------------------------------------------
-           IDENTIFIED DAIRY
-        ----------------------------------------------------- */
+        this.assetSource =  
+            "structure";  
 
-        else if (
-            this.code !== null &&
-            this.code > 0
-        ) {
+    }  
 
-            this.assetSource =
-                "dairy";
 
-        }
+    /* -----------------------------------------------------  
+       IDENTIFIED DAIRY  
 
+       code > 0  
 
-        /* -----------------------------------------------------
-           MANUAL ASSET
-        ----------------------------------------------------- */
+       Positive-code records are dairy / animal records.  
+    ----------------------------------------------------- */  
 
-        else {
+    else if (  
+        this.code !== null &&  
+        this.code > 0  
+    ) {  
 
-            this.dateOfBirth =
-                null;
+        this.assetSource =  
+            "dairy";  
 
-            this.isMilking =
-                false;
+    }  
 
-            this.assetSource =
-                "asset";
 
-            /*
-             * IMPORTANT:
-             *
-             * Do NOT clear assetCode.
-             *
-             * Manual assets may have:
-             *
-             *     code = null
-             *     assetCode = -10
-             */
+    /* -----------------------------------------------------  
+       MANUAL ASSET  
 
-        }
+       code === null  
 
+       Manual assets:  
 
-        /* -----------------------------------------------------
-           MEDICAL OBJECT
-        ----------------------------------------------------- */
+           - have no dairy identity  
+           - have no DOB  
+           - cannot milk  
+           - may have assetCode  
+           - are assetSource = asset  
+    ----------------------------------------------------- */  
 
-        if (!this.medicalAttention) {
+    else {  
 
-            this.medicalAttention = {};
+        this.dateOfBirth =  
+            null;  
 
-        }
+        this.isMilking =  
+            false;  
 
+        this.assetSource =  
+            "asset";  
 
-        this.medicalAttention.isMarked =
-            !!this.medicalAttention.isMarked;
+    }  
 
 
-        this.medicalAttention.type =
-            this.medicalAttention.type || "";
+    /* -----------------------------------------------------  
+       ENSURE MEDICAL OBJECT  
+    ----------------------------------------------------- */  
 
+    if (!this.medicalAttention) {  
 
-        this.medicalAttention.details =
-            this.medicalAttention.details || "";
+        this.medicalAttention = {};  
 
+    }  
 
-        this.medicalAttention.charges =
-            Number(
-                this.medicalAttention.charges
-            ) || 0;
 
+    this.medicalAttention.isMarked =  
+        !!this.medicalAttention.isMarked;  
 
-        this.medicalAttention.description =
-            this.medicalAttention.description || "";
 
+    this.medicalAttention.type =  
+        this.medicalAttention.type || "";  
 
-        this.medicalAttention.markedBy =
-            this.medicalAttention.markedBy || null;
 
+    this.medicalAttention.details =  
+        this.medicalAttention.details || "";  
 
-        this.medicalAttention.markedAt =
-            this.medicalAttention.markedAt || null;
 
+    this.medicalAttention.charges =  
+        Number(  
+            this.medicalAttention.charges  
+        ) || 0;  
 
-        this.medicalAttention.updatedAt =
-            this.medicalAttention.updatedAt || null;
 
+    this.medicalAttention.description =  
+        this.medicalAttention.description || "";  
 
-        this.medicalAttention.clearedBy =
-            this.medicalAttention.clearedBy || null;
 
+    this.medicalAttention.markedBy =  
+        this.medicalAttention.markedBy || null;  
 
-        this.medicalAttention.clearedAt =
-            this.medicalAttention.clearedAt || null;
 
+    this.medicalAttention.markedAt =  
+        this.medicalAttention.markedAt || null;  
 
-        /* -----------------------------------------------------
-           CLEAR STALE MEDICAL DATA
-        ----------------------------------------------------- */
 
-        if (
-            !this.medicalAttention.isMarked
-        ) {
+    this.medicalAttention.updatedAt =  
+        this.medicalAttention.updatedAt || null;  
 
-            this.medicalAttention.type =
-                "";
 
-            this.medicalAttention.details =
-                "";
+    this.medicalAttention.clearedBy =  
+        this.medicalAttention.clearedBy || null;  
 
-            this.medicalAttention.charges =
-                0;
 
-            this.medicalAttention.description =
-                "";
+    this.medicalAttention.clearedAt =  
+        this.medicalAttention.clearedAt || null;  
 
-            this.medicalAttention.markedBy =
-                null;
 
-            this.medicalAttention.markedAt =
-                null;
+    /* -----------------------------------------------------  
+       CLEAR STALE MEDICAL DATA  
+    ----------------------------------------------------- */  
 
-            this.medicalAttention.clearedBy =
-                null;
+    if (  
+        !this.medicalAttention.isMarked  
+    ) {  
 
-            this.medicalAttention.clearedAt =
-                null;
+        this.medicalAttention.type =  
+            "";  
 
-        }
+        this.medicalAttention.details =  
+            "";  
 
+        this.medicalAttention.charges =  
+            0;  
 
-        /* -----------------------------------------------------
-           ASSET TYPE DEFAULT
-        ----------------------------------------------------- */
+        this.medicalAttention.description =  
+            "";  
 
-        if (
-            !this.assetType ||
-            !this.assetType.trim()
-        ) {
+        this.medicalAttention.markedBy =  
+            null;  
 
-            if (
-                this.code !== null &&
-                this.code < 0
-            ) {
+        this.medicalAttention.markedAt =  
+            null;  
 
-                this.assetType =
-                    "dairy Facility";
+        this.medicalAttention.clearedBy =  
+            null;  
 
-            }
+        this.medicalAttention.clearedAt =  
+            null;  
 
-            else if (
-                this.code !== null &&
-                this.code > 0
-            ) {
+    }  
 
-                this.assetType =
-                    "cow";
 
-            }
+    /* -----------------------------------------------------  
+       ASSET TYPE DEFAULT  
+    ----------------------------------------------------- */  
 
-        }
+    if (  
+        !this.assetType ||  
+        !this.assetType.trim()  
+    ) {  
 
+        if (  
+            this.code !== null &&  
+            this.code < 0  
+        ) {  
 
-        /* -----------------------------------------------------
-           STATUS SYNCHRONIZATION
-        ----------------------------------------------------- */
+            this.assetType =  
+                "dairy Facility";  
 
-        /*
-         * The service uses "status" as the authoritative
-         * field.
-         *
-         * Keep assetStatus synchronized for compatibility.
-         */
+        }  
 
-        if (
-            this.isModified("status")
-        ) {
+        else if (  
+            this.code !== null &&  
+            this.code > 0  
+        ) {  
 
-            this.assetStatus =
-                this.status;
+            this.assetType =  
+                "cow";  
 
-        }
+        }  
 
-        else if (
-            this.isModified("assetStatus")
-        ) {
+    }  
 
-            this.status =
-                this.assetStatus;
 
-        }
+    next();  
 
-
-        next();
-
-    }
+}
 
 );
 
-
 /* =========================================================
-   PRE SAVE
+PRE SAVE
 ========================================================= */
 
 dairySchema.pre(
 
-    "save",
+"save",  
 
-    function (next) {
+function (next) {  
 
-        /* -----------------------------------------------------
-           MEDICAL UPDATED DATE
-        ----------------------------------------------------- */
+    /* -----------------------------------------------------  
+       MEDICAL UPDATED DATE  
+    ----------------------------------------------------- */  
 
-        if (
-            this.isModified(
-                "medicalAttention"
-            )
-        ) {
+    if (  
+        this.isModified(  
+            "medicalAttention"  
+        )  
+    ) {  
 
-            this.medicalAttention.updatedAt =
-                new Date();
+        this.medicalAttention.updatedAt =  
+            new Date();  
 
-        }
-
-
-        /* -----------------------------------------------------
-           ACQUISITION DATE
-        ----------------------------------------------------- */
-
-        if (
-            !this.acquisitionDate
-        ) {
-
-            this.acquisitionDate =
-                this.createdAt ||
-                new Date();
-
-        }
+    }  
 
 
-        /* -----------------------------------------------------
-           STRUCTURE
-        ----------------------------------------------------- */
+    /* -----------------------------------------------------  
+       ACQUISITION DATE  
 
-        if (
-            this.code !== null &&
-            this.code < 0
-        ) {
+       Set once when the record is first saved.  
+    ----------------------------------------------------- */  
 
-            this.assetCode =
-                null;
+    if (  
+        !this.acquisitionDate  
+    ) {  
 
-        }
+        this.acquisitionDate =  
+            this.createdAt ||  
+            new Date();  
 
-
-        /* -----------------------------------------------------
-           MANUAL ASSET
-        ----------------------------------------------------- */
-
-        if (
-            this.code === null
-        ) {
-
-            /*
-             * Intentionally preserve assetCode.
-             */
-
-        }
+    }  
 
 
-        /* -----------------------------------------------------
-           IDENTIFIED DAIRY
-        ----------------------------------------------------- */
+    /* -----------------------------------------------------  
+       STRUCTURE RECORDS  
 
-        if (
-            this.code !== null &&
-            this.code > 0
-        ) {
+       A structure cannot belong to another structure.  
+    ----------------------------------------------------- */  
 
-            if (
-                this.assetCode === null ||
-                this.assetCode === undefined
-            ) {
+    if (  
+        this.code !== null &&  
+        this.code < 0  
+    ) {  
 
-                this.assetCode =
-                    null;
+        this.assetCode =  
+            null;  
 
-            }
-
-        }
+    }  
 
 
-        next();
+    /* -----------------------------------------------------  
+       MANUAL ASSET  
 
-    }
+       code === null  
+
+       Manual assets MAY have assetCode.  
+
+       Example:  
+
+           code = null  
+           assetCode = -10  
+
+       This means:  
+
+           manual asset  
+           contained in structure -10.  
+
+       Do NOT clear assetCode.  
+    ----------------------------------------------------- */  
+
+    if (  
+        this.code === null  
+    ) {  
+
+        /*  
+         * Intentionally leave assetCode unchanged.  
+         */  
+
+    }  
+
+
+    /* -----------------------------------------------------  
+       IDENTIFIED DAIRY  
+
+       Positive-code records may belong to a structure.  
+
+       If none is assigned, keep assetCode null.  
+    ----------------------------------------------------- */  
+
+    if (  
+        this.code !== null &&  
+        this.code > 0  
+    ) {  
+
+        if (  
+            this.assetCode === null ||  
+            this.assetCode === undefined  
+        ) {  
+
+            this.assetCode =  
+                null;  
+
+        }  
+
+    }  
+
+
+    next();  
+
+}
 
 );
 
-
 /* =========================================================
-   INDEXES
+INDEXES
 ========================================================= */
 
 dairySchema.index({
 
-    isMilking: 1
+isMilking: 1
 
 });
-
 
 dairySchema.index({
 
-    needsMaintenance: 1
+needsMaintenance: 1
 
 });
-
 
 dairySchema.index({
 
-    "medicalAttention.isMarked": 1
+"medicalAttention.isMarked": 1
 
 });
-
-
-/*
- * Primary structure relationship lookup.
- *
- * The service performs:
- *
- *     Dairy.find({
- *         assetCode: farmCode
- *     })
- */
-dairySchema.index({
-
-    assetCode: 1
-
-});
-
-
-/*
- * Useful for Net Worth filtering.
- */
-dairySchema.index({
-
-    status: 1,
-
-    currentWorth: 1
-
-});
-
-
-dairySchema.index({
-
-    assetSource: 1,
-
-    status: 1
-
-});
-
 
 /* =========================================================
-   STATIC
-   CALCULATE TOTAL NET WORTH
+STRUCTURE LOOKUP
 
-   Structures themselves are excluded because their
-   code is negative.
+This is the authoritative Net Worth relationship.
 
-   Assets with positive codes and manual assets with
-   null codes are included.
+Example:
 
-   This follows the same fundamental rule as the
-   Net Worth service.
+assetCode = -10
+
+finds:
+
+Dairy document where code = -10
+
+========================================================= */
+
+dairySchema.index({
+
+assetCode: 1,  
+
+assetStatus: 1
+
+});
+
+/* =========================================================
+ASSET SOURCE + STATUS
+========================================================= */
+
+dairySchema.index({
+
+assetSource: 1,  
+
+assetStatus: 1
+
+});
+
+/* =========================================================
+STATIC
+CALCULATE TOTAL NET WORTH
 ========================================================= */
 
 dairySchema.statics.calculateNetWorth =
 async function () {
 
-    const result =
-        await this.aggregate([
+const result =  
+    await this.aggregate([  
 
-            {
+        {  
 
-                $match: {
+            $match: {  
 
-                    $or: [
+                assetStatus:  
+                    "active"  
 
-                        {
-                            code: {
-                                $gt: 0
-                            }
-                        },
+            }  
 
-                        {
-                            code: null
-                        },
+        },  
 
-                        {
-                            code: {
-                                $exists: false
-                            }
-                        }
+        {  
 
-                    ]
+            $group: {  
 
-                }
+                _id: null,  
 
-            },
+                totalNetWorth: {  
 
-            {
+                    $sum:  
+                        "$currentWorth"  
 
-                $group: {
+                }  
 
-                    _id: null,
+            }  
 
-                    totalNetWorth: {
+        }  
 
-                        $sum: {
-
-                            $ifNull: [
-
-                                "$currentWorth",
-
-                                0
-
-                            ]
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        ]);
+    ]);  
 
 
-    return result.length
+return result.length  
 
-        ? Number(
-            result[0].totalNetWorth || 0
-        )
+    ? Number(  
+        result[0].totalNetWorth || 0  
+    )  
 
-        : 0;
+    : 0;
 
 };
 
-
 /* =========================================================
-   STATIC
-   TOTAL CURRENT WORTH
+STATIC
+TOTAL CURRENT WORTH
 ========================================================= */
 
 dairySchema.statics.getTotalCurrentWorth =
 async function () {
 
-    return this.calculateNetWorth();
+return this.calculateNetWorth();
 
 };
 
-
 /* =========================================================
-   EXPORT
+EXPORT
 ========================================================= */
 
 module.exports =
-    mongoose.model(
-        "Dairy",
-        dairySchema
-    );
+mongoose.model(
+"Dairy",
+dairySchema
+);
