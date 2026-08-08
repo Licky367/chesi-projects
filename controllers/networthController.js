@@ -1,4 +1,5 @@
-const networthService = require("../services/networthService");
+const networthService =
+    require("../services/networthService");
 
 
 /* ==========================================================
@@ -13,6 +14,15 @@ const networthService = require("../services/networthService");
  *     totalNetWorth
  *     standaloneAssets
  *     structures
+ *
+ * Standalone assets:
+ *
+ *     code > 0
+ *     assetCode === null
+ *
+ * Dairy Farms:
+ *
+ *     code < 0
  */
 async function getNetWorth(req, res) {
 
@@ -39,14 +49,16 @@ async function getNetWorth(req, res) {
             error.statusCode || 500;
 
 
-        return res.status(statusCode).render(
-            "error",
-            {
-                message:
-                    error.message ||
-                    "Unable to load Net Worth."
-            }
-        );
+        return res
+            .status(statusCode)
+            .render(
+                "error",
+                {
+                    message:
+                        error.message ||
+                        "Unable to load Net Worth."
+                }
+            );
 
     }
 
@@ -58,7 +70,12 @@ async function getNetWorth(req, res) {
 ========================================================== */
 
 /**
- * Displays a Dairy Farm and all assets assigned to it.
+ * Displays a Dairy Farm and all assets
+ * belonging to that farm.
+ *
+ * The service determines the farm using
+ * its negative dairy.code and retrieves
+ * assets whose assetCode matches that code.
  */
 async function getDairyFarm(req, res) {
 
@@ -92,14 +109,16 @@ async function getDairyFarm(req, res) {
             error.statusCode || 500;
 
 
-        return res.status(statusCode).render(
-            "error",
-            {
-                message:
-                    error.message ||
-                    "Unable to load Dairy Farm."
-            }
-        );
+        return res
+            .status(statusCode)
+            .render(
+                "error",
+                {
+                    message:
+                        error.message ||
+                        "Unable to load Dairy Farm."
+                }
+            );
 
     }
 
@@ -112,6 +131,13 @@ async function getDairyFarm(req, res) {
 
 /**
  * Displays the Add Asset form for a Dairy Farm.
+ *
+ * The selected Dairy Farm must have:
+ *
+ *     code < 0
+ *
+ * The service provides the farm record to
+ * the EJS template.
  */
 async function getAddAsset(req, res) {
 
@@ -145,14 +171,16 @@ async function getAddAsset(req, res) {
             error.statusCode || 500;
 
 
-        return res.status(statusCode).render(
-            "error",
-            {
-                message:
-                    error.message ||
-                    "Unable to load Add Asset page."
-            }
-        );
+        return res
+            .status(statusCode)
+            .render(
+                "error",
+                {
+                    message:
+                        error.message ||
+                        "Unable to load Add Asset page."
+                }
+            );
 
     }
 
@@ -164,8 +192,18 @@ async function getAddAsset(req, res) {
 ========================================================== */
 
 /**
- * Creates a new asset belonging to the selected
+ * Creates a manual asset belonging to a
  * Dairy Farm.
+ *
+ * The service creates the asset with:
+ *
+ *     code: null
+ *
+ *     assetCode:
+ *         parent Dairy Farm's negative code
+ *
+ * The controller does not generate or modify
+ * either code.
  */
 async function addAsset(req, res) {
 
@@ -198,14 +236,16 @@ async function addAsset(req, res) {
             error.statusCode || 500;
 
 
-        return res.status(statusCode).render(
-            "error",
-            {
-                message:
-                    error.message ||
-                    "Unable to add asset."
-            }
-        );
+        return res
+            .status(statusCode)
+            .render(
+                "error",
+                {
+                    message:
+                        error.message ||
+                        "Unable to add asset."
+                }
+            );
 
     }
 
@@ -218,6 +258,10 @@ async function addAsset(req, res) {
 
 /**
  * Displays an asset's details/edit page.
+ *
+ * The service determines whether the selected
+ * record is a valid asset and also provides
+ * the available Dairy Farms for assignment.
  */
 async function getAsset(req, res) {
 
@@ -251,14 +295,16 @@ async function getAsset(req, res) {
             error.statusCode || 500;
 
 
-        return res.status(statusCode).render(
-            "error",
-            {
-                message:
-                    error.message ||
-                    "Unable to load asset."
-            }
-        );
+        return res
+            .status(statusCode)
+            .render(
+                "error",
+                {
+                    message:
+                        error.message ||
+                        "Unable to load asset."
+                }
+            );
 
     }
 
@@ -270,14 +316,25 @@ async function getAsset(req, res) {
 ========================================================== */
 
 /**
- * Updates an existing Dairy asset.
+ * Updates an existing asset.
  *
- * The EJS form submits POST and includes:
+ * The service is responsible for enforcing
+ * the asset ownership rules:
  *
- *     _method=PUT
+ *     code > 0
+ *         assetCode may be null
+ *         or a valid negative Dairy Farm code
  *
- * This controller intentionally accepts the POST route
- * defined in routes/networth.js.
+ *     code === null
+ *         manual asset
+ *         assetCode may identify its parent farm
+ *
+ *     code < 0
+ *         Dairy Farm
+ *         assetCode must remain null
+ *
+ * The controller only passes the submitted
+ * form data to the service.
  */
 async function updateAsset(req, res) {
 
@@ -310,21 +367,23 @@ async function updateAsset(req, res) {
             error.statusCode || 500;
 
 
-        return res.status(statusCode).render(
-            "error",
-            {
-                message:
-                    error.message ||
-                    "Unable to update asset."
-            }
-        );
+        return res
+            .status(statusCode)
+            .render(
+                "error",
+                {
+                    message:
+                        error.message ||
+                        "Unable to update asset."
+                }
+            );
 
     }
 
 }
 
 
-/* ========================.==================================
+/* ==========================================================
    EXPORTS
 ========================================================== */
 
