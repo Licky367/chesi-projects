@@ -136,20 +136,10 @@
         background 0.2s ease;
 }
 
-
-/* ==========================================================
-   INPUT
-========================================================== */
-
 .networth-form .form-group input {
     height: 49px;
     padding: 0 14px;
 }
-
-
-/* ==========================================================
-   SELECT
-========================================================== */
 
 .networth-form .form-group select {
     height: 49px;
@@ -157,11 +147,6 @@
     cursor: pointer;
     appearance: auto;
 }
-
-
-/* ==========================================================
-   TEXTAREA
-========================================================== */
 
 .networth-form .form-group textarea {
     min-height: 115px;
@@ -196,6 +181,19 @@
 
 
 /* ==========================================================
+   READ-ONLY / DERIVED FIELDS
+========================================================== */
+
+.networth-form input[readonly],
+.networth-form select[disabled] {
+    background: #f3f6f4;
+    border-color: #e0e7e2;
+    color: #69766e;
+    cursor: not-allowed;
+}
+
+
+/* ==========================================================
    NUMBER / MONEY FIELDS
 ========================================================== */
 
@@ -220,18 +218,6 @@
     border-color: #328650;
     box-shadow:
         0 0 0 3px rgba(50, 134, 80, 0.12);
-}
-
-
-/* ==========================================================
-   READ-ONLY ACQUISITION DATE
-========================================================== */
-
-.networth-form input[readonly] {
-    background: #f3f6f4;
-    border-color: #e0e7e2;
-    color: #69766e;
-    cursor: not-allowed;
 }
 
 
@@ -440,7 +426,6 @@
         class="networth-form"
     >
 
-        <!-- Express method-override -->
         <input
             type="hidden"
             name="_method"
@@ -449,7 +434,7 @@
 
 
         <!-- =================================================
-             ITEM
+             ITEM / NAME
         ================================================== -->
 
         <div class="form-group">
@@ -462,7 +447,7 @@
                 type="text"
                 id="item"
                 name="item"
-                value="<%= asset.item || '' %>"
+                value="<%= dairy ? (dairy.name || '') : (asset.item || '') %>"
                 required
             >
 
@@ -471,6 +456,9 @@
 
         <!-- =================================================
              TYPE
+             
+             Dairy type is derived from Dairy.code.
+             Manual assets keep their NetWorth type.
         ================================================== -->
 
         <div class="form-group">
@@ -479,13 +467,32 @@
                 Type
             </label>
 
-            <input
-                type="text"
-                id="type"
-                name="type"
-                value="<%= asset.type || '' %>"
-                required
-            >
+            <% if (dairy) { %>
+
+                <input
+                    type="text"
+                    id="type"
+                    value="<%= Number(dairy.code) < 0 ? 'dairy Facility' : 'cow' %>"
+                    readonly
+                >
+
+                <input
+                    type="hidden"
+                    name="type"
+                    value="<%= Number(dairy.code) < 0 ? 'dairy Facility' : 'cow' %>"
+                >
+
+            <% } else { %>
+
+                <input
+                    type="text"
+                    id="type"
+                    name="type"
+                    value="<%= asset.type || '' %>"
+                    required
+                >
+
+            <% } %>
 
         </div>
 
@@ -635,7 +642,7 @@
                 <option
                     value="inactive"
                     <%= asset.status === "inactive" ? "selected" : "" %>
-                    >
+                >
                     Inactive
                 </option>
 
@@ -667,13 +674,10 @@
 
 
         <!-- =================================================
-             ASSET CODE
+             ASSET CODE / STRUCTURE ASSIGNMENT
              
-             IMPORTANT:
-             Only Dairy records with a POSITIVE code
-             receive this field.
-
-             Dairy structures with negative codes do not.
+             Only positive-code Dairy records can be
+             assigned to a negative-code structure.
         ================================================== -->
 
         <% if (
