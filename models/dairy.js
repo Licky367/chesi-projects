@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 
 /* =========================================================
-   DAIRY ANIMAL SCHEMA
+   DAIRY SCHEMA
 ========================================================= */
 
 const dairySchema = new mongoose.Schema(
@@ -26,6 +26,12 @@ const dairySchema = new mongoose.Schema(
 
     /* =====================================================
        UNIQUE CODE
+
+       Positive:
+           Real dairy animal
+
+       Negative:
+           Dairy structure / facility
     ===================================================== */
 
     code: {
@@ -64,6 +70,8 @@ const dairySchema = new mongoose.Schema(
 
     /* =====================================================
        DATE OF BIRTH
+
+       Only positive-code Dairy records are animals.
     ===================================================== */
 
     dateOfBirth: {
@@ -82,7 +90,9 @@ const dairySchema = new mongoose.Schema(
 
 
     /* =====================================================
-       MASS (KG)
+       MASS
+       
+       Applies to Dairy records.
     ===================================================== */
 
     mass: {
@@ -94,6 +104,123 @@ const dairySchema = new mongoose.Schema(
       min: 0,
 
       default: 0
+
+    },
+
+
+    /* =====================================================
+       ASSET CODE
+
+       ONLY positive-code Dairy records may have an
+       assetCode.
+
+       Example:
+
+           cow.code = 25
+           cow.assetCode = -10
+
+       means cow 25 belongs to structure -10.
+
+       Negative-code structures must always have null.
+    ===================================================== */
+
+    assetCode: {
+
+      type: Number,
+
+      default: null
+
+    },
+
+
+    /* =====================================================
+       NET WORTH / ASSET INFORMATION
+
+       These fields are stored in Dairy as the source
+       of truth for Dairy-generated NetWorth assets.
+    ===================================================== */
+
+    buyingPrice: {
+
+      type: Number,
+
+      default: 0,
+
+      min: 0
+
+    },
+
+
+    currentWorth: {
+
+      type: Number,
+
+      default: 0,
+
+      min: 0
+
+    },
+
+
+    description: {
+
+      type: String,
+
+      trim: true,
+
+      default: ""
+
+    },
+
+
+    condition: {
+
+      type: String,
+
+      trim: true,
+
+      default: ""
+
+    },
+
+
+    location: {
+
+      type: String,
+
+      trim: true,
+
+      default: ""
+
+    },
+
+
+    valuationDate: {
+
+      type: Date,
+
+      default: null
+
+    },
+
+
+    status: {
+
+      type: String,
+
+      enum: [
+
+        "active",
+
+        "sold",
+
+        "disposed",
+
+        "inactive"
+
+      ],
+
+      default: "active"
 
     },
 
@@ -137,7 +264,6 @@ const dairySchema = new mongoose.Schema(
         },
 
         message:
-
           "Only female animals can be marked as milking."
 
       }
@@ -156,51 +282,79 @@ const dairySchema = new mongoose.Schema(
       default: false
 
     },
-maintenance: {
 
-  type: {
-    type: String,
-    default: ""
-  },
 
-  description: {
-    type: String,
-    default: ""
-  },
+    maintenance: {
 
-  charges: {
-    type: Number,
-    default: 0
-  },
+      type: {
 
-  completionDescription: {
-    type: String,
-    default: ""
-  },
+        type: String,
 
-  markedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    default: null
-  },
+        default: ""
 
-  markedAt: {
-    type: Date,
-    default: null
-  },
+      },
 
-  clearedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    default: null
-  },
+      description: {
 
-  clearedAt: {
-    type: Date,
-    default: null
-  }
+        type: String,
 
-},
+        default: ""
+
+      },
+
+      charges: {
+
+        type: Number,
+
+        default: 0
+
+      },
+
+      completionDescription: {
+
+        type: String,
+
+        default: ""
+
+      },
+
+      markedBy: {
+
+        type: mongoose.Schema.Types.ObjectId,
+
+        ref: "User",
+
+        default: null
+
+      },
+
+      markedAt: {
+
+        type: Date,
+
+        default: null
+
+      },
+
+      clearedBy: {
+
+        type: mongoose.Schema.Types.ObjectId,
+
+        ref: "User",
+
+        default: null
+
+      },
+
+      clearedAt: {
+
+        type: Date,
+
+        default: null
+
+      }
+
+    },
 
 
     /* =====================================================
@@ -209,65 +363,101 @@ maintenance: {
 
     medicalAttention: {
 
-  isMarked: {
-    type: Boolean,
-    default: false
+      isMarked: {
+
+        type: Boolean,
+
+        default: false
+
+      },
+
+      type: {
+
+        type: String,
+
+        trim: true,
+
+        default: ""
+
+      },
+
+      details: {
+
+        type: String,
+
+        trim: true,
+
+        default: ""
+
+      },
+
+      charges: {
+
+        type: Number,
+
+        default: 0
+
+      },
+
+      description: {
+
+        type: String,
+
+        default: ""
+
+      },
+
+      markedBy: {
+
+        type: mongoose.Schema.Types.ObjectId,
+
+        ref: "User",
+
+        default: null
+
+      },
+
+      markedAt: {
+
+        type: Date,
+
+        default: null
+
+      },
+
+      clearedBy: {
+
+        type: mongoose.Schema.Types.ObjectId,
+
+        ref: "User",
+
+        default: null
+
+      },
+
+      clearedAt: {
+
+        type: Date,
+
+        default: null
+
+      },
+
+      updatedAt: {
+
+        type: Date,
+
+        default: null
+
+      }
+
+    }
+
   },
 
-  type: {
-    type: String,
-    trim: true,
-    default: ""
-  },
+  {
 
-  details: {
-    type: String,
-    trim: true,
-    default: ""
-  },
-
-  charges: {
-    type: Number,
-    default: 0
-  },
-
-  description: {
-    type: String,
-    default: ""
-  },
-
-  markedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    default: null
-  },
-
-  markedAt: {
-    type: Date,
-    default: null
-  },
-
-  clearedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    default: null
-  },
-
-  clearedAt: {
-    type: Date,
-    default: null
-  },
-
- updatedAt: {
-  type: Date,
-  default: null
-}
-
-}
-
-}, {
-
-  timestamps: true,
+    timestamps: true,
 
     minimize: false,
 
@@ -286,12 +476,10 @@ maintenance: {
   }
 
 );
-/* =========================================================
-   VIRTUALS
-========================================================= */
 
 
 /* =========================================================
+   VIRTUAL
    GENDER
 ========================================================= */
 
@@ -304,13 +492,16 @@ dairySchema.virtual("gender").get(function () {
   }
 
   return this.code % 2 === 0
+
     ? "Female"
+
     : "Male";
 
 });
 
 
 /* =========================================================
+   VIRTUAL
    FEMALE CHECK
 ========================================================= */
 
@@ -328,6 +519,7 @@ dairySchema.virtual("isFemale").get(function () {
 
 
 /* =========================================================
+   VIRTUAL
    REAL ANIMAL CHECK
 ========================================================= */
 
@@ -339,6 +531,7 @@ dairySchema.virtual("hasIdentity").get(function () {
 
 
 /* =========================================================
+   VIRTUAL
    AGE
 ========================================================= */
 
@@ -352,34 +545,38 @@ dairySchema.virtual("ageText").get(function () {
 
   const now = new Date();
 
-  const dob = new Date(this.dateOfBirth);
+  const dob =
+    new Date(this.dateOfBirth);
 
   let years =
-    now.getFullYear() - dob.getFullYear();
+    now.getFullYear() -
+    dob.getFullYear();
 
   let months =
-    now.getMonth() - dob.getMonth();
+    now.getMonth() -
+    dob.getMonth();
 
   let days =
-    now.getDate() - dob.getDate();
+    now.getDate() -
+    dob.getDate();
+
 
   if (days < 0) {
 
     months--;
 
-    const previousMonth = new Date(
+    const previousMonth =
+      new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        0
+      );
 
-      now.getFullYear(),
-
-      now.getMonth(),
-
-      0
-
-    );
-
-    days += previousMonth.getDate();
+    days +=
+      previousMonth.getDate();
 
   }
+
 
   if (months < 0) {
 
@@ -389,12 +586,14 @@ dairySchema.virtual("ageText").get(function () {
 
   }
 
+
   return `${years} years, ${months} months, ${days} days`;
 
 });
 
 
 /* =========================================================
+   VIRTUAL
    MILKING TEXT
 ========================================================= */
 
@@ -410,6 +609,7 @@ dairySchema.virtual("isMilkingText").get(function () {
 
 
 /* =========================================================
+   VIRTUAL
    PROFILE IMAGE
 ========================================================= */
 
@@ -431,6 +631,7 @@ dairySchema.virtual("displayImage").get(function () {
 
 
 /* =========================================================
+   VIRTUAL
    MAINTENANCE SHORTCUT
 ========================================================= */
 
@@ -442,6 +643,7 @@ dairySchema.virtual("requiresMaintenance").get(function () {
 
 
 /* =========================================================
+   VIRTUAL
    MEDICAL SHORTCUT
 ========================================================= */
 
@@ -456,6 +658,8 @@ dairySchema.virtual("needsMedicalAttention").get(function () {
   );
 
 });
+
+
 /* =========================================================
    PRE VALIDATE
 ========================================================= */
@@ -476,6 +680,7 @@ dairySchema.pre(
 
     }
 
+
     /* ---------------------------------------------
        NON-ANIMALS DON'T HAVE DOB
     --------------------------------------------- */
@@ -485,6 +690,19 @@ dairySchema.pre(
       this.dateOfBirth = null;
 
     }
+
+
+    /* ---------------------------------------------
+       ONLY POSITIVE-CODE DAIRY RECORDS CAN HAVE
+       AN ASSET CODE
+    --------------------------------------------- */
+
+    if (this.code < 0) {
+
+      this.assetCode = null;
+
+    }
+
 
     /* ---------------------------------------------
        ALWAYS HAVE MEDICAL OBJECT
@@ -496,6 +714,7 @@ dairySchema.pre(
 
     }
 
+
     this.medicalAttention.isMarked =
       !!this.medicalAttention.isMarked;
 
@@ -505,14 +724,27 @@ dairySchema.pre(
     this.medicalAttention.details =
       this.medicalAttention.details || "";
 
+    this.medicalAttention.charges =
+      Number(this.medicalAttention.charges) || 0;
+
+    this.medicalAttention.description =
+      this.medicalAttention.description || "";
+
     this.medicalAttention.markedBy =
       this.medicalAttention.markedBy || null;
 
     this.medicalAttention.markedAt =
       this.medicalAttention.markedAt || null;
 
+    this.medicalAttention.clearedBy =
+      this.medicalAttention.clearedBy || null;
+
+    this.medicalAttention.clearedAt =
+      this.medicalAttention.clearedAt || null;
+
     this.medicalAttention.updatedAt =
       this.medicalAttention.updatedAt || null;
+
 
     /* ---------------------------------------------
        CLEAR STALE MEDICAL DATA
@@ -524,15 +756,20 @@ dairySchema.pre(
 
       this.medicalAttention.details = "";
 
+      this.medicalAttention.charges = 0;
+
+      this.medicalAttention.description = "";
+
       this.medicalAttention.markedBy = null;
 
       this.medicalAttention.markedAt = null;
-this.medicalAttention.charges = 0;
-this.medicalAttention.description = "";
-this.medicalAttention.clearedBy = null;
-this.medicalAttention.clearedAt = null;
+
+      this.medicalAttention.clearedBy = null;
+
+      this.medicalAttention.clearedAt = null;
 
     }
+
 
     next();
 
@@ -574,16 +811,25 @@ dairySchema.pre(
 ========================================================= */
 
 dairySchema.index({
+
   isMilking: 1
+
 });
 
+
 dairySchema.index({
+
   needsMaintenance: 1
+
 });
 
+
 dairySchema.index({
+
   "medicalAttention.isMarked": 1
+
 });
+
 
 /* =========================================================
    EXPORT
