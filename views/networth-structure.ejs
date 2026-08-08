@@ -1,0 +1,130 @@
+<div class="financial-page networth-page">
+
+    <!-- =====================================================
+         STRUCTURE HEADER
+    ====================================================== -->
+
+    <div class="financial-header">
+
+        <div>
+
+            <a
+                href="/networth"
+                class="financial-back-link"
+            >
+                ← Net Worth
+            </a>
+
+            <h1>
+                <%= structure.item %>
+            </h1>
+
+            <p>
+                Assets within this structure.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         STRUCTURE TOTAL
+    ====================================================== -->
+
+    <div class="financial-card networth-total-card">
+
+        <span class="networth-total-label">
+            Structure Asset Worth
+        </span>
+
+        <strong class="networth-total-value">
+
+            KSh
+            <%= Number(structureTotal || 0).toLocaleString() %>
+
+        </strong>
+
+    </div>
+
+
+    <!-- =====================================================
+         ASSETS
+    ====================================================== -->
+
+    <section class="networth-section">
+
+        <div class="networth-section-header">
+
+            <div>
+
+                <h2>
+                    Assets
+                </h2>
+
+                <p>
+                    Assets belonging to this structure.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="networth-list">
+
+            <% if (
+                assets &&
+                assets.length
+            ) { %>
+
+                <% assets.forEach(function(asset) { %>
+
+                    <a
+                        href="/networth/asset/<%= asset._id %>"
+                        class="networth-list-item"
+                    >
+
+                        <span class="networth-list-name">
+
+                            <%= asset.item %>
+
+                        </span>
+
+                    </a>
+
+                <% }); %>
+
+            <% } else { %>
+
+                <div class="networth-empty">
+
+                    No assets have been assigned to this structure.
+
+                </div>
+
+            <% } %>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         MANUAL ASSET ACTION
+         
+         The actual backend functionality can be added later.
+    ====================================================== -->
+
+    <div class="networth-actions">
+
+        <a
+            href="/networth/structure/<%= structure._id %>/add"
+            class="button button-primary"
+        >
+            Add Asset
+        </a>
+
+    </div>
+
+</div>
