@@ -1,527 +1,447 @@
 const mongoose = require("mongoose");
 
-
 /* =========================================================
-   NET WORTH ASSET SCHEMA
+NET WORTH ASSET SCHEMA
 ========================================================= */
 
 const netWorthSchema = new mongoose.Schema(
 
-  {
+{
 
-    /* =====================================================
-       ITEM
+/* =====================================================  
+   ITEM  
+     
+   For Dairy assets:  
+   Automatically populated from Dairy.name.  
 
-       Dairy asset:
-       Automatically populated from Dairy.name.
+   For manual structure assets:  
+   Entered by the user.  
+===================================================== */  
 
-       Manual structure asset:
-       Entered by the user.
-    ===================================================== */
+item: {  
 
-    item: {
+  type: String,  
 
-      type: String,
+  required: true,  
 
-      required: true,
+  trim: true  
 
-      trim: true
+},  
 
-    },
 
+/* =====================================================  
+   TYPE  
+     
+   Examples:  
+   - cow  
+   - dairy Facility  
+   - Equipment  
+   - Vehicle  
+   - Water Tank  
+   - etc.  
+===================================================== */  
 
-    /* =====================================================
-       TYPE
+type: {  
 
-       Dairy positive-code asset:
-           cow
+  type: String,  
 
-       Dairy negative-code asset:
-           dairy Facility
+  required: true,  
 
-       Manual structure asset:
-           User-defined type.
-    ===================================================== */
+  trim: true  
 
-    type: {
+},  
 
-      type: String,
 
-      required: true,
+/* =====================================================  
+   BUYING PRICE  
+     
+   Original purchase/acquisition price.  
 
-      trim: true
+   For Dairy-generated assets this initially defaults  
+   to zero and can later be updated from the frontend.  
 
-    },
+   For manually created assets, the user supplies it.  
+===================================================== */  
 
+buyingPrice: {  
 
-    /* =====================================================
-       ASSET CODE
+  type: Number,  
 
-       THIS FIELD IS ONLY FOR DAIRY POSITIVE-CODE ASSETS.
+  default: 0,  
 
-       Example:
+  min: 0  
 
-           Dairy.code = 25
-           Dairy.name = "Bella"
+},  
 
-       NetWorth:
 
-           source = "dairy"
-           assetCode = 25
+/* =====================================================  
+   CURRENT WORTH  
+     
+   Current estimated value of the asset.  
 
-       Structures and manually-created assets MUST NOT
-       have an assetCode.
+   This is the value used in the net-worth calculation.  
+===================================================== */  
 
-       The value is the original Dairy.code of the
-       positive-code Dairy record.
-    ===================================================== */
+currentWorth: {  
 
-    assetCode: {
+  type: Number,  
 
-      type: Number,
+  default: 0,  
 
-      default: null,
+  min: 0  
 
-      index: true
+},  
 
-    },
 
+/* =====================================================  
+   DESCRIPTION  
+===================================================== */  
 
-    /* =====================================================
-       BUYING PRICE
+description: {  
 
-       Dairy-generated assets:
-           Default = 0.
+  type: String,  
 
-       User may update from frontend.
+  trim: true,  
 
-       Manual assets:
-           Supplied by user.
-    ===================================================== */
+  default: ""  
 
-    buyingPrice: {
+},  
 
-      type: Number,
 
-      default: 0,
+/* =====================================================  
+   CONDITION  
+     
+   Examples:  
+   - New  
+   - Good  
+   - Fair  
+   - Poor  
+===================================================== */  
 
-      min: 0
+condition: {  
 
-    },
+  type: String,  
 
+  trim: true,  
 
-    /* =====================================================
-       CURRENT WORTH
+  default: ""  
 
-       Current value of the asset.
+},  
 
-       This is the value used for net-worth calculation.
 
-       Dairy-generated assets:
-           Initially 0.
+/* =====================================================  
+   LOCATION  
+===================================================== */  
 
-       User may update from frontend.
-    ===================================================== */
+location: {  
 
-    currentWorth: {
+  type: String,  
 
-      type: Number,
+  trim: true,  
 
-      default: 0,
+  default: ""  
 
-      min: 0
+},  
 
-    },
 
+/* =====================================================  
+   ACQUISITION DATE  
+     
+   Dairy asset:  
+   Comes from Dairy.createdAt.  
 
-    /* =====================================================
-       DESCRIPTION
-    ===================================================== */
+   Manual asset:  
+   Set when the user saves the asset.  
+===================================================== */  
 
-    description: {
+acquisitionDate: {  
 
-      type: String,
+  type: Date,  
 
-      trim: true,
+  required: true  
 
-      default: ""
+},  
 
-    },
 
+/* =====================================================  
+   VALUATION DATE  
+     
+   Date on which currentWorth was last evaluated.  
+===================================================== */  
 
-    /* =====================================================
-       CONDITION
-    ===================================================== */
+valuationDate: {  
 
-    condition: {
+  type: Date,  
 
-      type: String,
+  default: null  
 
-      trim: true,
+},  
 
-      default: ""
 
-    },
+/* =====================================================  
+   STATUS  
+     
+   Only active assets should normally contribute to  
+   net worth.  
+===================================================== */  
 
+status: {  
 
-    /* =====================================================
-       LOCATION
-    ===================================================== */
+  type: String,  
 
-    location: {
+  enum: [  
 
-      type: String,
+    "active",  
 
-      trim: true,
+    "sold",  
 
-      default: ""
+    "disposed",  
 
-    },
+    "inactive"  
 
+  ],  
 
-    /* =====================================================
-       ACQUISITION DATE
+  default: "active",  
 
-       Dairy-generated asset:
-           Dairy.createdAt.
+  index: true  
 
-       Manual structure asset:
-           Time the user saves the asset.
-    ===================================================== */
+},  
 
-    acquisitionDate: {
 
-      type: Date,
+/* =====================================================  
+   SOURCE  
+     
+   dairy:  
+   Automatically created from a Dairy record.  
 
-      required: true
+   structure:  
+   Manually created asset belonging to a structure.  
+===================================================== */  
 
-    },
+source: {  
 
+  type: String,  
 
-    /* =====================================================
-       VALUATION DATE
+  enum: [  
 
-       Date on which currentWorth was last evaluated.
-    ===================================================== */
+    "dairy",  
 
-    valuationDate: {
+    "structure"  
 
-      type: Date,
+  ],  
 
-      default: null
+  required: true,  
 
-    },
+  index: true  
 
+},  
 
-    /* =====================================================
-       STATUS
-    ===================================================== */
 
-    status: {
+/* =====================================================  
+   SOURCE ID  
+     
+   For Dairy-generated assets this points to the  
+   original Dairy document.  
+===================================================== */  
 
-      type: String,
+sourceId: {  
 
-      enum: [
+  type: mongoose.Schema.Types.ObjectId,  
 
-        "active",
+  ref: "Dairy",  
 
-        "sold",
+  default: null,  
 
-        "disposed",
+  index: true  
 
-        "inactive"
+},  
 
-      ],
 
-      default: "active",
+/* =====================================================  
+   PARENT STRUCTURE  
+     
+   Used when an asset belongs to a Dairy structure.  
 
-      index: true
+   For example:  
 
-    },
+   Structure:  
+       Main Dairy Shed  
+       code = -10  
 
+   Cow:  
+       code = 25  
+       assetCode = -10  
 
-    /* =====================================================
-       SOURCE
+   The corresponding Net Worth asset can point to  
+   the structure through this field.  
+===================================================== */  
 
-       dairy:
-           Automatically generated from Dairy.
+parentStructure: {  
 
-       structure:
-           Manually created asset belonging to a structure.
-    ===================================================== */
+  type: mongoose.Schema.Types.ObjectId,  
 
-    source: {
+  ref: "NetWorth",  
 
-      type: String,
+  default: null,  
 
-      enum: [
+  index: true  
 
-        "dairy",
+},  
 
-        "structure"
 
-      ],
+/* =====================================================  
+   STRUCTURE CODE  
+     
+   Stores the Dairy structure code when the asset  
+   belongs to a Dairy structure.  
 
-      required: true,
+   Example:  
 
-      index: true
+   structure.code = -10  
 
-    },
+   cow.assetCode = -10  
 
+   structureCode = -10  
+===================================================== */  
 
-    /* =====================================================
-       SOURCE ID
+structureCode: {  
 
-       For Dairy-generated assets, points to the original
-       Dairy document.
+  type: Number,  
 
-       Manual assets have no Dairy source.
-    ===================================================== */
+  default: null,  
 
-    sourceId: {
+  index: true  
 
-      type: mongoose.Schema.Types.ObjectId,
+}
 
-      ref: "Dairy",
+},
 
-      default: null,
+{
 
-      index: true
+timestamps: true,  
 
-    },
+minimize: false
 
-
-    /* =====================================================
-       PARENT STRUCTURE
-
-       Points to the NetWorth record representing the
-       structure containing this asset.
-
-       NULL means the asset is standalone.
-
-       Examples:
-
-       Standalone cow:
-           parentStructure = null
-
-       Cow inside structure:
-           parentStructure = structure._id
-
-       Structure:
-           parentStructure = null
-
-       Manual asset inside structure:
-           parentStructure = structure._id
-    ===================================================== */
-
-    parentStructure: {
-
-      type: mongoose.Schema.Types.ObjectId,
-
-      ref: "NetWorth",
-
-      default: null,
-
-      index: true
-
-    },
-
-
-    /* =====================================================
-       STRUCTURE CODE
-
-       Stores the Dairy.code of the structure containing
-       the asset.
-
-       Example:
-
-           Structure Dairy.code = -10
-
-       Cow:
-
-           assetCode = 25
-           structureCode = -10
-
-       Standalone cow:
-
-           assetCode = 25
-           structureCode = null
-
-       Structure:
-
-           structureCode = null
-
-       Manual structure asset:
-
-           structureCode = structure's Dairy.code
-    ===================================================== */
-
-    structureCode: {
-
-      type: Number,
-
-      default: null,
-
-      index: true
-
-    }
-
-  },
-
-  {
-
-    timestamps: true,
-
-    minimize: false
-
-  }
+}
 
 );
 
-
 /* =========================================================
-   VIRTUAL
-   CURRENT ASSET VALUE
+VIRTUAL
+CURRENT ASSET VALUE
 ========================================================= */
 
 netWorthSchema.virtual("assetValue").get(function () {
 
-  return Number(this.currentWorth) || 0;
+return Number(this.currentWorth) || 0;
 
 });
 
-
 /* =========================================================
-   STATIC
-   CALCULATE TOTAL NET WORTH
+STATIC
+CALCULATE TOTAL NET WORTH
 
-   Net worth is simply:
+Net worth for now is simply:
 
-       SUM(currentWorth)
+SUM(currentWorth)
 
-   Only active assets are included.
+Only active assets are included.
 ========================================================= */
 
 netWorthSchema.statics.calculateNetWorth = async function () {
 
-  const result = await this.aggregate([
+const result = await this.aggregate([
 
-    {
+{  
+  $match: {  
+    status: "active"  
+  }  
+},  
 
-      $match: {
+{  
+  $group: {  
 
-        status: "active"
+    _id: null,  
 
-      }
+    totalNetWorth: {  
 
-    },
+      $sum: "$currentWorth"  
 
-    {
+    }  
 
-      $group: {
+  }  
 
-        _id: null,
+}
 
-        totalNetWorth: {
+]);
 
-          $sum: "$currentWorth"
+return result.length
 
-        }
+? result[0].totalNetWorth  
 
-      }
-
-    }
-
-  ]);
-
-
-  return result.length
-
-    ? result[0].totalNetWorth
-
-    : 0;
+: 0;
 
 };
 
-
 /* =========================================================
-   STATIC
-   CALCULATE TOTAL CURRENT WORTH
+STATIC
+CALCULATE TOTAL CURRENT WORTH
 ========================================================= */
 
-netWorthSchema.statics.getTotalCurrentWorth =
-  async function () {
+netWorthSchema.statics.getTotalCurrentWorth = async function () {
 
-    return this.calculateNetWorth();
+return this.calculateNetWorth();
 
-  };
-
+};
 
 /* =========================================================
-   INDEXES
+INDEXES
 ========================================================= */
 
-
 /* ---------------------------------------------------------
-   Find assets belonging to a structure
+Find all assets belonging to a structure
 --------------------------------------------------------- */
 
 netWorthSchema.index({
 
-  parentStructure: 1,
+parentStructure: 1,
 
-  status: 1
+status: 1
 
 });
 
-
 /* ---------------------------------------------------------
-   Find Dairy-generated assets
+Find Dairy-generated assets
 --------------------------------------------------------- */
 
 netWorthSchema.index({
 
-  source: 1,
+source: 1,
 
-  sourceId: 1
+sourceId: 1
 
 });
 
-
 /* ---------------------------------------------------------
-   Find assets by asset code
-
-   Primarily useful for positive-code Dairy assets.
+Find assets by structure code
 --------------------------------------------------------- */
 
 netWorthSchema.index({
 
-  assetCode: 1
+structureCode: 1,
+
+status: 1
 
 });
-
-
-/* ---------------------------------------------------------
-   Find assets by structure code
---------------------------------------------------------- */
-
-netWorthSchema.index({
-
-  structureCode: 1,
-
-  status: 1
-
-});
-
 
 /* =========================================================
-   EXPORT
+EXPORT
 ========================================================= */
 
 module.exports = mongoose.model(
 
-  "NetWorth",
+"NetWorth",
 
-  netWorthSchema
+netWorthSchema
 
 );
