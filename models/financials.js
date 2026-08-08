@@ -21,6 +21,7 @@ const financialSchema = new mongoose.Schema({
 
   maintenanceCost: { type: Number, default: 0 },
   medicalCost: { type: Number, default: 0 },
+  liabilities: { type: Number, default: 0 },
 
   totalExpenses: { type: Number, default: 0 },
 
@@ -37,9 +38,11 @@ const financialSchema = new mongoose.Schema({
    CORE CALCULATION HELPER
 ========================= */
 financialSchema.statics._calculate = function (data) {
+
   const totalExpenses =
     (data.maintenanceCost || 0) +
-    (data.medicalCost || 0);
+    (data.medicalCost || 0) +
+    (data.liabilities || 0);
 
   const profit =
     (data.milkCash || 0) - totalExpenses;
@@ -57,6 +60,7 @@ financialSchema.statics._calculate = function (data) {
    UNIFIED UPSERT METHOD
 ========================= */
 financialSchema.statics.upsertFinancial = async function (query, data) {
+
   const computed = this._calculate(data);
 
   return this.findOneAndUpdate(
@@ -64,6 +68,7 @@ financialSchema.statics.upsertFinancial = async function (query, data) {
     { $set: computed },
     { upsert: true, new: true }
   );
+
 };
 
 
@@ -71,6 +76,7 @@ financialSchema.statics.upsertFinancial = async function (query, data) {
    DAILY
 ========================= */
 financialSchema.statics.computeDailyFinancials = async function (data) {
+
   return this.upsertFinancial(
     {
       periodType: "daily",
@@ -78,6 +84,7 @@ financialSchema.statics.computeDailyFinancials = async function (data) {
     },
     data
   );
+
 };
 
 
@@ -85,6 +92,7 @@ financialSchema.statics.computeDailyFinancials = async function (data) {
    MONTHLY
 ========================= */
 financialSchema.statics.computeMonthlyFinancials = async function (data) {
+
   return this.upsertFinancial(
     {
       periodType: "monthly",
@@ -92,6 +100,7 @@ financialSchema.statics.computeMonthlyFinancials = async function (data) {
     },
     data
   );
+
 };
 
 
@@ -99,6 +108,7 @@ financialSchema.statics.computeMonthlyFinancials = async function (data) {
    YEARLY
 ========================= */
 financialSchema.statics.computeYearlyFinancials = async function (data) {
+
   return this.upsertFinancial(
     {
       periodType: "yearly",
@@ -106,6 +116,7 @@ financialSchema.statics.computeYearlyFinancials = async function (data) {
     },
     data
   );
+
 };
 
 
