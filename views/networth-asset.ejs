@@ -1,5 +1,6 @@
 <style>
-/* ==========================.================================
+
+/* ==========================================================
    NET WORTH ASSET DETAILS / EDIT PAGE
 ========================================================== */
 
@@ -692,9 +693,6 @@
 
         <!-- =================================================
              DAIRY CODE
-             
-             The Dairy code identifies this record.
-             It cannot be changed here.
         ================================================== -->
 
         <div class="form-group">
@@ -716,8 +714,9 @@
         <!-- =================================================
              TYPE
              
-             Positive code = cow / asset
-             Negative code = Dairy Farm / structure
+             dairy.code > 0  = asset
+             dairy.code < 0  = Dairy Farm
+             no dairy.code     = unclassified Dairy record
         ================================================== -->
 
         <div class="form-group">
@@ -731,7 +730,9 @@
                 id="type"
                 value="<%= Number(dairy.code) < 0
                     ? 'Dairy Farm'
-                    : 'Asset' %>"
+                    : Number(dairy.code) > 0
+                        ? 'Asset'
+                        : 'Dairy' %>"
                 readonly
             >
 
@@ -847,13 +848,22 @@
 
 
         <!-- =================================================
-             STRUCTURE ASSIGNMENT
+             DAIRY FARM ASSIGNMENT
              
-             Only positive-code Dairy records can be
-             assigned to a Dairy Farm.
-             
-             The selected assetCode is the code of the
-             negative-code Dairy Farm.
+             ONLY a Dairy with:
+                 
+                 dairy.code > 0
+                 
+             may receive an assetCode.
+
+             The value stored in dairy.assetCode is
+             the dairy.code of the selected Dairy Farm.
+
+             Dairy Farms themselves:
+                 
+                 dairy.code < 0
+                 
+             cannot be assigned to another Dairy Farm.
         ================================================== -->
 
         <% if (Number(dairy.code) > 0) { %>
@@ -879,22 +889,32 @@
                         structures.length > 0
                     ) { %>
 
+
                         <% structures.forEach(function(structure) { %>
 
-                            <option
-                                value="<%= structure.code %>"
-                                <%= Number(dairy.assetCode) === Number(structure.code)
-                                    ? "selected"
-                                    : "" %>
-                            >
+                            <% if (Number(structure.code) < 0) { %>
 
-                                <%= structure.code %>
-                                —
-                                <%= structure.name || structure.item %>
+                                <option
+                                    value="<%= structure.code %>"
+                                    <%= dairy.assetCode != null &&
+                                        Number(dairy.assetCode) === Number(structure.code)
+                                            ? "selected"
+                                            : "" %>
+                                >
 
-                            </option>
+                                    <%= structure.name ||
+                                        structure.item ||
+                                        structure.code %>
+
+                                    —
+                                    <%= structure.code %>
+
+                                </option>
+
+                            <% } %>
 
                         <% }); %>
+
 
                     <% } %>
 
@@ -902,11 +922,12 @@
 
             </div>
 
+
         <% } else if (Number(dairy.code) < 0) { %>
 
 
             <!-- =================================================
-                 DAIRY FARM / STRUCTURE
+                 DAIRY FARM
             ================================================== -->
 
             <div class="form-group">
@@ -923,12 +944,14 @@
 
                     <br>
 
-                    Dairy Farms cannot be assigned
-                    to another Dairy Farm.
+                    A Dairy Farm cannot be assigned
+                    an assetCode because its dairy.code
+                    is negative.
 
                 </div>
 
             </div>
+
 
         <% } %>
 
