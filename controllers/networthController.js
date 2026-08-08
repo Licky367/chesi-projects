@@ -367,16 +367,16 @@ async function updateAsset(req, res) {
             error.statusCode || 500;
 
 
-        return res
-            .status(statusCode)
-            .render(
-                "error",
-                {
-                    message:
-                        error.message ||
-                        "Unable to update asset."
-                }
-            );
+        return res.status(statusCode).render(
+    "error",
+    {
+        message:
+            error.message ||
+            "Unable to load page.",
+
+        statusCode
+    }
+);
 
     }
 
