@@ -1,0 +1,377 @@
+<div class="financial-page networth-page">
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="financial-header">
+
+        <div>
+
+            <a
+                href="/networth"
+                class="financial-back-link"
+            >
+                ← Net Worth
+            </a>
+
+            <h1>
+                <%= asset.item %>
+            </h1>
+
+            <p>
+                Asset details and valuation.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         ASSET FORM
+    ====================================================== -->
+
+    <div class="financial-card">
+
+        <form
+            action="/networth/asset/<%= asset._id %>"
+            method="POST"
+            class="networth-form"
+        >
+
+            <input
+                type="hidden"
+                name="_method"
+                value="PUT"
+            >
+
+
+            <!-- =================================================
+                 ITEM
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="item">
+                    Item
+                </label>
+
+                <input
+                    type="text"
+                    id="item"
+                    name="item"
+                    value="<%= asset.item || '' %>"
+                    required
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 TYPE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="type">
+                    Type
+                </label>
+
+                <input
+                    type="text"
+                    id="type"
+                    name="type"
+                    value="<%= asset.type || '' %>"
+                    required
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 BUYING PRICE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="buyingPrice">
+                    Buying Price
+                </label>
+
+                <input
+                    type="number"
+                    id="buyingPrice"
+                    name="buyingPrice"
+                    value="<%= asset.buyingPrice || 0 %>"
+                    min="0"
+                    step="0.01"
+                    required
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 CURRENT WORTH
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="currentWorth">
+                    Current Worth
+                </label>
+
+                <input
+                    type="number"
+                    id="currentWorth"
+                    name="currentWorth"
+                    value="<%= asset.currentWorth || 0 %>"
+                    min="0"
+                    step="0.01"
+                    required
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 DESCRIPTION
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="description">
+                    Description
+                </label>
+
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="4"
+                ><%= asset.description || '' %></textarea>
+
+            </div>
+
+
+            <!-- =================================================
+                 CONDITION
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="condition">
+                    Condition
+                </label>
+
+                <input
+                    type="text"
+                    id="condition"
+                    name="condition"
+                    value="<%= asset.condition || '' %>"
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 LOCATION
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="location">
+                    Location
+                </label>
+
+                <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value="<%= asset.location || '' %>"
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 STATUS
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="status">
+                    Status
+                </label>
+
+                <select
+                    id="status"
+                    name="status"
+                    required
+                >
+
+                    <option
+                        value="active"
+                        <%= asset.status === "active" ? "selected" : "" %>
+                    >
+                        Active
+                    </option>
+
+                    <option
+                        value="sold"
+                        <%= asset.status === "sold" ? "selected" : "" %>
+                    >
+                        Sold
+                    </option>
+
+                    <option
+                        value="disposed"
+                        <%= asset.status === "disposed" ? "selected" : "" %>
+                    >
+                        Disposed
+                    </option>
+
+                    <option
+                        value="inactive"
+                        <%= asset.status === "inactive" ? "selected" : "" %>
+                    >
+                        Inactive
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- =================================================
+                 VALUATION DATE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="valuationDate">
+                    Valuation Date
+                </label>
+
+                <input
+                    type="date"
+                    id="valuationDate"
+                    name="valuationDate"
+                    value="<%= asset.valuationDate ? new Date(asset.valuationDate).toISOString().slice(0, 10) : '' %>"
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 ASSET CODE
+                 
+                 Only applicable to Dairy animals.
+                 
+                 Structure codes are negative.
+            ================================================== -->
+
+            <% if (
+                dairy &&
+                Number(dairy.code) > 0
+            ) { %>
+
+                <div class="form-group">
+
+                    <label for="assetCode">
+                        Assign to Structure
+                    </label>
+
+                    <select
+                        id="assetCode"
+                        name="assetCode"
+                    >
+
+                        <option value="">
+                            Standalone Asset
+                        </option>
+
+                        <% if (
+                            structures &&
+                            structures.length
+                        ) { %>
+
+                            <% structures.forEach(function(structure) { %>
+
+                                <option
+                                    value="<%= structure.code %>"
+                                    <%= Number(dairy.assetCode) === Number(structure.code)
+                                        ? "selected"
+                                        : "" %>
+                                >
+
+                                    <%= structure.code %>
+                                    —
+                                    <%= structure.name %>
+
+                                </option>
+
+                            <% }); %>
+
+                        <% } %>
+
+                    </select>
+
+                </div>
+
+            <% } %>
+
+
+            <!-- =================================================
+                 ACQUISITION DATE
+                 
+                 Display only.
+                 It is not editable.
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label>
+                    Acquisition Date
+                </label>
+
+                <input
+                    type="text"
+                    value="<%= asset.acquisitionDate
+                        ? new Date(asset.acquisitionDate).toLocaleString('en-KE', {
+                            timeZone: 'Africa/Nairobi'
+                        })
+                        : '' %>"
+                    readonly
+                >
+
+            </div>
+
+
+            <!-- =================================================
+                 ACTIONS
+            ================================================== -->
+
+            <div class="form-actions">
+
+                <a
+                    href="/networth"
+                    class="button button-secondary"
+                >
+                    Cancel
+                </a>
+
+                <button
+                    type="submit"
+                    class="button button-primary"
+                >
+                    Save Changes
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
