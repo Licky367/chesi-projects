@@ -1,331 +1,228 @@
-const networthService =
-    require(
-        "../services/networthService"
-    );
+const networthService = require("../services/networthService");
 
 
-/* =========================================================
-   HELPER
-   RENDER ERROR
+/* ==========================================================
+   NET WORTH
+========================================================== */
 
-   Keeps controller error handling consistent without
-   exposing internal database errors to the browser.
-========================================================= */
-
-function renderError(
-    res,
-    error,
-    fallbackPath = "/networth"
-) {
-
-    console.error(
-        "Net Worth Controller Error:",
-        error
-    );
-
-
-    /*
-     * If the application already provides a global error
-     * middleware, forward the error instead.
-     */
-
-    if (typeof res.locals.renderError === "function") {
-
-        return res.locals.renderError(
-            error
-        );
-
-    }
-
-
-    /*
-     * If the request accepts HTML, return a normal
-     * application-level error response.
-     */
-
-    if (
-        res.req &&
-        res.req.accepts &&
-        res.req.accepts("html")
-    ) {
-
-        return res.status(500).render(
-            "error",
-            {
-                message:
-                    "Unable to complete the Net Worth request.",
-
-                backUrl:
-                    fallbackPath
-            }
-        );
-
-    }
-
-
-    return res.status(500).json({
-
-        success: false,
-
-        message:
-            "Unable to complete the Net Worth request."
-
-    });
-
-}
-
-
-/* =========================================================
-   GET NET WORTH DASHBOARD
-
-   GET /networth
-========================================================= */
-
-exports.getNetWorth =
-async function (
-    req,
-    res
-) {
+/**
+ * GET /networth
+ *
+ * Main Net Worth page.
+ *
+ * Provides:
+ *   - totalNetWorth
+ *   - standaloneAssets
+ *   - structures
+ */
+async function getNetWorth(req, res) {
 
     try {
 
         const data =
             await networthService.getNetWorth();
 
-
         return res.render(
             "networth",
             data
         );
 
-    }
+    } catch (error) {
 
-    catch (error) {
-
-        return renderError(
-            res,
+        console.error(
+            "Error loading Net Worth:",
             error
         );
 
-    }
-
-};
-
-
-/* =========================================================
-   GET STRUCTURE DETAILS
-
-   GET /networth/structure/:id
-========================================================= */
-
-exports.getStructure =
-async function (
-    req,
-    res
-) {
-
-    try {
-
-        const structure =
-            await networthService.getStructure(
-                req.params.id
-            );
-
-
-        if (!structure) {
-
-            return res.status(404).send(
-                "Dairy Farm not found."
-            );
-
-        }
-
-
-        return res.render(
-            "networth-structure",
+        return res.status(500).render(
+            "error",
             {
-                structure
+                message: "Unable to load Net Worth."
             }
         );
 
     }
 
-    catch (error) {
+}
 
-        return renderError(
-            res,
-            error,
-            "/networth"
+
+/* ==========================================================
+   DAIRY FARM
+========================================================== */
+
+/**
+ * GET /networth/structure/:id
+ *
+ * Displays one Dairy Farm and its assigned assets.
+ */
+async function getDairyFarm(req, res) {
+
+    try {
+
+        const {
+            id
+        } = req.params;
+
+
+        const data =
+            await networthService.getDairyFarm(id);
+
+
+        return res.render(
+            "networth-structures",
+            data
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Error loading Dairy Farm:",
+            error
+        );
+
+        const status =
+            error.statusCode || 500;
+
+
+        return res.status(status).render(
+            "error",
+            {
+                message:
+                    error.message ||
+                    "Unable to load Dairy Farm."
+            }
         );
 
     }
 
-};
+}
 
 
-/* =========================================================
-   GET ADD-ASSET FORM
+/* ==========================================================
+   ADD ASSET FORM
+========================================================== */
 
-   GET /networth/structure/:id/add
-========================================================= */
-
-exports.getAddAsset =
-async function (
-    req,
-    res
-) {
+/**
+ * GET /networth/structure/:id/add
+ *
+ * Displays the Add Asset form for a Dairy Farm.
+ */
+async function getAddAsset(req, res) {
 
     try {
 
-        const dairy =
-            await networthService.getStructure(
-                req.params.id
-            );
+        const {
+            id
+        } = req.params;
 
 
-        if (!dairy) {
-
-            return res.status(404).send(
-                "Dairy Farm not found."
-            );
-
-        }
+        const data =
+            await networthService.getAddAsset(id);
 
 
         return res.render(
             "networth-add",
+            data
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Error loading Add Asset page:",
+            error
+        );
+
+        const status =
+            error.statusCode || 500;
+
+
+        return res.status(status).render(
+            "error",
             {
-                dairy
+                message:
+                    error.message ||
+                    "Unable to load Add Asset page."
             }
         );
 
     }
 
-    catch (error) {
-
-        return renderError(
-            res,
-            error,
-            "/networth"
-        );
-
-    }
-
-};
+}
 
 
-/* =========================================================
-   CREATE MANUAL ASSET
+/* ==========================================================
+   ADD ASSET
+========================================================== */
 
-   POST /networth/structure/:id/add
-========================================================= */
-
-exports.addAsset =
-async function (
-    req,
-    res
-) {
+/**
+ * POST /networth/structure/:id/add
+ *
+ * Creates an asset belonging to the selected Dairy Farm.
+ */
+async function addAsset(req, res) {
 
     try {
 
-        const asset =
-            await networthService.addManualAsset(
-                req.params.id,
-                req.body
-            );
+        const {
+            id
+        } = req.params;
 
 
-        /*
-         * After creation, go to the new asset's
-         * details page.
-         */
-
-        return res.redirect(
-            `/networth/asset/${asset._id}`
+        await networthService.addAsset(
+            id,
+            req.body
         );
 
-    }
 
-    catch (error) {
+        return res.redirect(
+            `/networth/structure/${id}`
+        );
+
+    } catch (error) {
 
         console.error(
-            "Unable to add Net Worth asset:",
+            "Error adding Net Worth asset:",
             error
         );
 
-
-        /*
-         * Validation errors should return the user
-         * to the form rather than becoming a generic
-         * server error.
-         */
-
-        if (
-            error.name ===
-            "ValidationError"
-        ) {
-
-            const dairy =
-                await networthService
-                    .getStructure(
-                        req.params.id
-                    );
+        const status =
+            error.statusCode || 500;
 
 
-            return res.status(400).render(
-                "networth-add",
-                {
-                    dairy,
-
-                    error:
-                        error.message,
-
-                    formData:
-                        req.body
-                }
-            );
-
-        }
-
-
-        return renderError(
-            res,
-            error,
-            `/networth/structure/${req.params.id}`
+        return res.status(status).render(
+            "error",
+            {
+                message:
+                    error.message ||
+                    "Unable to add asset."
+            }
         );
 
     }
 
-};
+}
 
 
-/* =========================================================
-   GET ASSET DETAILS / EDIT
+/* ==========================================================
+   ASSET DETAILS
+========================================================== */
 
-   GET /networth/asset/:id
-========================================================= */
-
-exports.getAsset =
-async function (
-    req,
-    res
-) {
+/**
+ * GET /networth/asset/:id
+ *
+ * Displays an asset's details/edit page.
+ */
+async function getAsset(req, res) {
 
     try {
 
+        const {
+            id
+        } = req.params;
+
+
         const data =
-            await networthService.getAsset(
-                req.params.id
-            );
-
-
-        if (!data || !data.dairy) {
-
-            return res.status(404).send(
-                "Asset not found."
-            );
-
-        }
+            await networthService.getAsset(id);
 
 
         return res.render(
@@ -333,99 +230,100 @@ async function (
             data
         );
 
-    }
-
-    catch (error) {
-
-        return renderError(
-            res,
-            error,
-            "/networth"
-        );
-
-    }
-
-};
-
-
-/* =========================================================
-   UPDATE ASSET
-
-   PUT /networth/asset/:id
-========================================================= */
-
-exports.updateAsset =
-async function (
-    req,
-    res
-) {
-
-    try {
-
-        const asset =
-            await networthService.updateAsset(
-                req.params.id,
-                req.body
-            );
-
-
-        if (!asset) {
-
-            return res.status(404).send(
-                "Asset not found."
-            );
-
-        }
-
-
-        return res.redirect(
-            `/networth/asset/${asset._id}`
-        );
-
-    }
-
-    catch (error) {
+    } catch (error) {
 
         console.error(
-            "Unable to update Net Worth asset:",
+            "Error loading Net Worth asset:",
             error
         );
 
-
-        if (
-            error.name ===
-            "ValidationError"
-        ) {
-
-            const data =
-                await networthService
-                    .getAsset(
-                        req.params.id
-                    );
+        const status =
+            error.statusCode || 500;
 
 
-            return res.status(400).render(
-                "networth-asset",
-                {
-                    ...data,
-
-                    error:
-                        error.message,
-
-                    formData:
-                        req.body
-                }
-            );
-
-        }
-
-
-        return renderError(
-            res,
-            error,
-            "/networth"
+        return res.status(status).render(
+            "error",
+            {
+                message:
+                    error.message ||
+                    "Unable to load asset."
+            }
         );
 
     }
+
+}
+
+
+/* ==========================================================
+   UPDATE ASSET
+========================================================== */
+
+/**
+ * POST /networth/asset/:id
+ *
+ * Updates an existing Net Worth asset.
+ */
+async function updateAsset(req, res) {
+
+    try {
+
+        const {
+            id
+        } = req.params;
+
+
+        await networthService.updateAsset(
+            id,
+            req.body
+        );
+
+
+        return res.redirect(
+            `/networth/asset/${id}`
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Error updating Net Worth asset:",
+            error
+        );
+
+        const status =
+            error.statusCode || 500;
+
+
+        return res.status(status).render(
+            "error",
+            {
+                message:
+                    error.message ||
+                    "Unable to update asset."
+            }
+        );
+
+    }
+
+}
+
+
+/* ==========================================================
+   EXPORTS
+========================================================== */
+
+module.exports = {
+
+    getNetWorth,
+
+    getDairyFarm,
+
+    getAddAsset,
+
+    addAsset,
+
+    getAsset,
+
+    updateAsset
 
 };
