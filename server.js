@@ -52,6 +52,15 @@ let newRoutes;
 try { newRoutes = require("./routes/new"); } catch (err) { console.warn("Warning: failed to load new routes:", err.message); }
 let financialsRoutes;
 try { financialsRoutes = require("./routes/financials"); } catch (err) { console.warn("Warning: failed to load financials routes:", err.message); }
+let liabilityRoutes;
+try {
+  liabilityRoutes = require("./routes/liability");
+} catch (err) {
+  console.warn(
+    "Warning: failed to load liability routes:",
+    err.message
+  );
+}
 let indexRoutes;
 try { indexRoutes = require("./routes/index"); } catch (err) { console.warn("Warning: failed to load index routes:", err.message); }
 let profileRoutes;
