@@ -862,109 +862,44 @@
 
 }
 
-</style><div class="financial-page networth-page"><!-- =====================================================
-     DAIRY FARM HEADER
-
-     dairy = the Dairy Farm record
-
-     dairy._id = the Dairy Farm record identifier
-
-     The farm's code is NOT used as its page identifier.
-====================================================== -->
-
-<div class="financial-header">
-
-    <div>
-
-        <a
-            href="/networth"
-            class="financial-back-link"
-        >
-            ← Net Worth
-        </a>
+</style>
 
 
-        <h1>
-            <%= dairy.item || dairy.name || "Dairy Farm" %>
-        </h1>
+<div class="financial-page networth-page">
 
 
-        <p>
-            Assets assigned to this Dairy Farm.
-        </p>
+    <!-- =====================================================
+         DAIRY FARM HEADER
 
-    </div>
+         dairy = the Dairy Farm record
 
-</div>
+         dairy._id = the Dairy Farm record identifier
 
+         dairy.code = the Dairy Farm's code.
 
-<!-- =====================================================
-     DAIRY FARM TOTAL
+         A Dairy Farm is a Dairy record whose
+         dairy.code is negative.
+    ====================================================== -->
 
-     dairyTotal represents the combined current worth
-     of ALL assets assigned to this Dairy Farm.
-
-     IMPORTANT:
-     The calculation must NOT require the asset to have
-     a positive dairy.code.
-
-     A farm asset may have:
-         - a positive dairy.code
-         - no dairy.code
-         - a null dairy.code
-
-     As long as it is assigned to this Dairy Farm,
-     its currentWorth belongs in dairyTotal.
-====================================================== -->
-
-<div class="financial-card networth-total-card">
-
-    <span class="networth-total-label">
-        Dairy Farm Asset Worth
-    </span>
-
-
-    <strong class="networth-total-value">
-
-        KSh
-        <%= Number(
-            dairyTotal || 0
-        ).toLocaleString("en-KE") %>
-
-    </strong>
-
-</div>
-
-
-<!-- =====================================================
-     DAIRY FARM ASSETS
-
-     assets contains ALL Dairy records assigned to this
-     Dairy Farm.
-
-     Asset inclusion is NOT determined by:
-         asset.code > 0
-
-     An asset can therefore lack dairy.code and still
-     appear here.
-
-     Each asset is identified by its own Dairy _id.
-====================================================== -->
-
-<section class="networth-section">
-
-
-    <div class="networth-section-header">
+    <div class="financial-header">
 
         <div>
 
-            <h2>
-                Assets
-            </h2>
+            <a
+                href="/networth"
+                class="financial-back-link"
+            >
+                ← Net Worth
+            </a>
+
+
+            <h1>
+                <%= dairy.item || dairy.name || "Dairy Farm" %>
+            </h1>
 
 
             <p>
-                Assets currently assigned to this Dairy Farm.
+                Assets assigned to this Dairy Farm.
             </p>
 
         </div>
@@ -972,100 +907,195 @@
     </div>
 
 
-    <div class="networth-list">
+    <!-- =====================================================
+         DAIRY FARM TOTAL
+
+         dairyTotal is the combined currentWorth of every
+         Dairy record included in assets.
+
+         assets may contain:
+
+         1. A Dairy whose dairy.assetCode is equal to
+            dairy.code of this Dairy Farm.
+
+         2. Another asset added directly to this Dairy Farm,
+            where dairy.code is null.
+
+         The asset's dairy.code does NOT determine whether
+         it belongs to this Dairy Farm.
+
+         Membership is determined by the backend data passed
+         into assets.
+    ====================================================== -->
+
+    <div class="financial-card networth-total-card">
+
+        <span class="networth-total-label">
+            Dairy Farm Asset Worth
+        </span>
 
 
-        <% if (
-            Array.isArray(assets) &&
-            assets.length > 0
-        ) { %>
+        <strong class="networth-total-value">
 
+            KSh
+            <%= Number(
+                dairyTotal || 0
+            ).toLocaleString("en-KE") %>
 
-            <% assets.forEach(function(asset) { %>
-
-
-                <!-- ======================================
-                     ASSET
-
-                     The asset itself is a Dairy record.
-
-                     asset._id identifies the asset.
-
-                     No assumption is made about
-                     asset.code.
-                ======================================= -->
-
-                <a
-                    href="/networth/asset/<%= asset._id %>"
-                    class="networth-list-item"
-                >
-
-
-                    <span class="networth-list-name">
-
-                        <%= asset.item ||
-                            asset.name ||
-                            "Unnamed Asset" %>
-
-                    </span>
-
-
-                    <span class="networth-list-worth">
-
-                        KSh
-                        <%= Number(
-                            asset.currentWorth || 0
-                        ).toLocaleString("en-KE") %>
-
-                    </span>
-
-
-                </a>
-
-
-            <% }); %>
-
-
-        <% } else { %>
-
-
-            <div class="networth-empty">
-
-                No assets have been assigned
-                to this Dairy Farm.
-
-            </div>
-
-
-        <% } %>
-
+        </strong>
 
     </div>
 
-</section>
+
+    <!-- =====================================================
+         DAIRY FARM ASSETS
+
+         assets contains all assets assigned to this
+         Dairy Farm.
+
+         A Dairy record can be included because:
+
+             dairy.assetCode === dairy.code
+
+         where the second dairy.code refers to the
+         current Dairy Farm.
+
+         OR because the asset was added directly to this
+         Dairy Farm and its dairy.code is null.
+
+         No asset.code or dairyCode field is used.
+    ====================================================== -->
+
+    <section class="networth-section">
 
 
-<!-- =====================================================
-     ADD ASSET
+        <div class="networth-section-header">
 
-     The Dairy Farm is identified by dairy._id.
+            <div>
 
-     The route therefore uses:
+                <h2>
+                    Assets
+                </h2>
 
-         /networth/structure/<dairy._id>/add
 
-     The asset's dairy.code is NOT supplied by this page.
-====================================================== -->
+                <p>
+                    Assets currently assigned to this Dairy Farm.
+                </p>
 
-<div class="networth-actions">
+            </div>
 
-    <a
-        href="/networth/structure/<%= dairy._id %>/add"
-        class="button button-primary"
-    >
-        Add Asset
-    </a>
+        </div>
 
-</div>
+
+        <div class="networth-list">
+
+
+            <% if (
+                Array.isArray(assets) &&
+                assets.length > 0
+            ) { %>
+
+
+                <% assets.forEach(function(asset) { %>
+
+
+                    <!-- ======================================
+                         ASSET
+
+                         Each item is a Dairy record.
+
+                         asset._id identifies the Dairy record.
+
+                         The asset may have:
+
+                             asset.assetCode
+
+                         and/or:
+
+                             asset.code
+
+                         depending on how it was created.
+
+                         The page does not use either field
+                         to determine membership.
+
+                         Membership has already been determined
+                         before assets reaches this EJS.
+                    ======================================= -->
+
+                    <a
+                        href="/networth/asset/<%= asset._id %>"
+                        class="networth-list-item"
+                    >
+
+
+                        <span class="networth-list-name">
+
+                            <%= asset.item ||
+                                asset.name ||
+                                "Unnamed Asset" %>
+
+                        </span>
+
+
+                        <span class="networth-list-worth">
+
+                            KSh
+                            <%= Number(
+                                asset.currentWorth || 0
+                            ).toLocaleString("en-KE") %>
+
+                        </span>
+
+
+                    </a>
+
+
+                <% }); %>
+
+
+            <% } else { %>
+
+
+                <div class="networth-empty">
+
+                    No assets have been assigned
+                    to this Dairy Farm.
+
+                </div>
+
+
+            <% } %>
+
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         ADD ASSET
+
+         The current Dairy Farm is identified by dairy._id.
+
+         The route therefore uses:
+
+             /networth/structure/<dairy._id>/add
+
+         The Dairy Farm's dairy.code is not placed in
+         the URL and is not used as the page identifier.
+    ====================================================== -->
+
+    <div class="networth-actions">
+
+        <a
+            href="/networth/structure/<%= dairy._id %>/add"
+            class="button button-primary"
+        >
+            Add Asset
+        </a>
+
+    </div>
+
 
 </div>
