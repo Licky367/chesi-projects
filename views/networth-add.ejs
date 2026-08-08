@@ -168,10 +168,11 @@
 
 
 /* ==========================================================
-   INPUT / TEXTAREA
+   INPUT / SELECT / TEXTAREA
 ========================================================== */
 
 .networth-form .form-group input,
+.networth-form .form-group select,
 .networth-form .form-group textarea {
 
     display: block;
@@ -203,7 +204,7 @@
 
 
 /* ==========================================================
-   TEXT INPUTS
+   INPUT
 ========================================================== */
 
 .networth-form .form-group input {
@@ -211,6 +212,21 @@
     height: 49px;
 
     padding: 0 14px;
+
+}
+
+
+/* ==========================================================
+   SELECT
+========================================================== */
+
+.networth-form .form-group select {
+
+    height: 49px;
+
+    padding: 0 40px 0 14px;
+
+    cursor: pointer;
 
 }
 
@@ -237,6 +253,7 @@
 ========================================================== */
 
 .networth-form .form-group input:focus,
+.networth-form .form-group select:focus,
 .networth-form .form-group textarea:focus {
 
     background: #ffffff;
@@ -300,7 +317,7 @@
 
 
 /* ==========================================================
-   DAIRY FARM FIELD
+   READ-ONLY DAIRY FARM
 ========================================================== */
 
 .networth-form input[readonly] {
@@ -501,7 +518,8 @@
 
     }
 
-    .networth-form .form-group input {
+    .networth-form .form-group input,
+    .networth-form .form-group select {
 
         height: 48px;
 
@@ -563,6 +581,7 @@
     }
 
     .networth-form .form-group input,
+    .networth-form .form-group select,
     .networth-form .form-group textarea {
 
         font-size: 14px;
@@ -579,14 +598,6 @@
 
     <!-- =====================================================
          HEADER
-
-         dairy = the current Dairy Farm record.
-
-         dairy._id identifies the Dairy Farm for routing.
-
-         dairy.code identifies the Dairy Farm's code.
-
-         The farm must have dairy.code < 0.
     ====================================================== -->
 
     <div class="financial-header">
@@ -597,7 +608,7 @@
                 href="/networth/structure/<%= dairy._id %>"
                 class="financial-back-link"
             >
-                ← <%= dairy.name || dairy.item || dairy.code %>
+                ← <%= dairy.name || dairy.code %>
             </a>
 
 
@@ -616,21 +627,7 @@
 
 
     <!-- =====================================================
-         FORM
-
-         This form creates an ordinary asset directly inside
-         the current Dairy Farm.
-
-         The newly-created Dairy must have:
-
-             dairy.code = null
-
-         It must NOT receive a dairy.assetCode.
-
-         dairy.assetCode is only used when an existing Dairy
-         is assigned to a Dairy Farm.
-
-         The current Dairy Farm is identified by its _id.
+         ASSET FORM
     ====================================================== -->
 
     <div class="financial-card">
@@ -643,23 +640,20 @@
 
 
             <!-- =================================================
-                 ITEM
-
-                 Service mapping:
-                     item -> Dairy.name
+                 NAME
             ================================================== -->
 
             <div class="form-group">
 
-                <label for="item">
-                    Item
+                <label for="name">
+                    Name
                 </label>
 
 
                 <input
                     type="text"
-                    id="item"
-                    name="item"
+                    id="name"
+                    name="name"
                     placeholder="Enter asset name"
                     autocomplete="off"
                     required
@@ -670,9 +664,6 @@
 
             <!-- =================================================
                  TYPE
-
-                 Service mapping:
-                     type -> Dairy.assetType
             ================================================== -->
 
             <div class="form-group">
@@ -696,8 +687,6 @@
 
             <!-- =================================================
                  BUYING PRICE
-
-                 Maps directly to Dairy.buyingPrice.
             ================================================== -->
 
             <div class="form-group">
@@ -722,8 +711,6 @@
 
             <!-- =================================================
                  CURRENT WORTH
-
-                 Maps directly to Dairy.currentWorth.
             ================================================== -->
 
             <div class="form-group">
@@ -748,9 +735,6 @@
 
             <!-- =================================================
                  DESCRIPTION
-
-                 Service mapping:
-                     description -> Dairy.assetDescription
             ================================================== -->
 
             <div class="form-group">
@@ -773,8 +757,6 @@
 
             <!-- =================================================
                  CONDITION
-
-                 Maps directly to Dairy.condition.
             ================================================== -->
 
             <div class="form-group">
@@ -798,8 +780,6 @@
 
             <!-- =================================================
                  LOCATION
-
-                 Maps directly to Dairy.location.
             ================================================== -->
 
             <div class="form-group">
@@ -822,15 +802,53 @@
 
 
             <!-- =================================================
+                 STATUS
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label for="status">
+                    Status
+                </label>
+
+
+                <select
+                    id="status"
+                    name="status"
+                    required
+                >
+
+                    <option
+                        value="active"
+                        selected
+                    >
+                        Active
+                    </option>
+
+                    <option value="sold">
+                        Sold
+                    </option>
+
+                    <option value="disposed">
+                        Disposed
+                    </option>
+
+                    <option value="inactive">
+                        Inactive
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- =================================================
                  DAIRY FARM
-
+                 
                  Display only.
-
-                 The farm is identified by dairy._id.
-
-                 No dairy.code is submitted by this form.
-
-                 No dairy.assetCode is submitted by this form.
+                 
+                 The relationship is created by the service
+                 using the current Dairy Farm's negative code.
             ================================================== -->
 
             <div class="form-group">
@@ -843,14 +861,14 @@
                 <input
                     type="text"
                     id="dairyFarmName"
-                    value="<%= dairy.name || dairy.item || dairy.code %>"
+                    value="<%= dairy.name || dairy.code %>"
                     readonly
                 >
 
             </div>
 
 
-            <!-- =================================.================
+            <!-- =================================================
                  ACTIONS
             ================================================== -->
 
