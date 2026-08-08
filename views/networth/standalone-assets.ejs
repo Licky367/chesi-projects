@@ -1,0 +1,70 @@
+<!-- ==========================================================
+     STANDALONE ASSETS
+     
+     Rules:
+     - Dairy record must have a positive code.
+     - Dairy record must NOT have an assigned assetCode.
+     
+     Each item opens the Dairy asset details page using
+     the Dairy document _id.
+========================================================== -->
+
+<section class="networth-section">
+
+    <div class="networth-section-header">
+
+        <div>
+
+            <h2>
+                Standalone Assets
+            </h2>
+
+            <p>
+                Dairy assets that have not yet been assigned
+                to a Dairy Farm.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="networth-list">
+
+        <% if (
+            Array.isArray(standaloneAssets) &&
+            standaloneAssets.length > 0
+        ) { %>
+
+
+            <% standaloneAssets.forEach(function(dairy) { %>
+
+                <a
+                    href="/networth/asset/<%= dairy._id %>"
+                    class="networth-list-item"
+                >
+
+                    <span class="networth-list-name">
+
+                        <%= dairy.name || dairy.item || dairy.code %>
+
+                    </span>
+
+                </a>
+
+            <% }); %>
+
+
+        <% } else { %>
+
+            <div class="networth-empty">
+
+                No standalone assets found.
+
+            </div>
+
+        <% } %>
+
+    </div>
+
+</section>
