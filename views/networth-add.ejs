@@ -1,233 +1,721 @@
-<div class="financial-page networth-page">
+<style>
+/* ==========================================================
+   ADD ASSET PAGE
+========================================================== */
 
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
+.financial-page.networth-page {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 25px 18px 55px;
+    box-sizing: border-box;
+}
 
-    <div class="financial-header">
 
-        <div>
+/* ==========================================================
+   HEADER
+========================================================== */
 
-            <a
-                href="/networth/structure/<%= structure._id %>"
-                class="financial-back-link"
+.networth-page .financial-header {
+    margin-bottom: 25px;
+}
+
+.networth-page .financial-header h1 {
+    margin: 10px 0 6px;
+
+    color: #173b2a;
+
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.2;
+
+    letter-spacing: -0.6px;
+}
+
+.networth-page .financial-header p {
+    margin: 0;
+
+    color: #718078;
+
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+
+/* ==========================================================
+   BACK LINK
+========================================================== */
+
+.financial-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    max-width: 100%;
+
+    color: #2f7d4c;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.financial-back-link:hover {
+    color: #1e6037;
+    transform: translateX(-2px);
+}
+
+
+/* ==========================================================
+   MAIN CARD
+========================================================== */
+
+.networth-page > .financial-card {
+    overflow: hidden;
+
+    padding: 30px;
+
+    box-sizing: border-box;
+
+    background: #ffffff;
+
+    border: 1px solid #e1e9e4;
+    border-radius: 18px;
+
+    box-shadow:
+        0 8px 25px rgba(25, 70, 43, 0.055),
+        0 2px 6px rgba(25, 70, 43, 0.025);
+}
+
+
+/* ==========================================================
+   FORM
+========================================================== */
+
+.networth-form {
+    width: 100%;
+}
+
+
+/* ==========================================================
+   FORM GROUP
+========================================================== */
+
+.networth-form .form-group {
+    margin-bottom: 21px;
+}
+
+.networth-form .form-group:last-of-type {
+    margin-bottom: 28px;
+}
+
+
+/* ==========================================================
+   LABEL
+========================================================== */
+
+.networth-form .form-group label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    color: #304139;
+
+    font-size: 13px;
+    font-weight: 750;
+
+    line-height: 1.4;
+}
+
+
+/* ==========================================================
+   INPUT / TEXTAREA
+========================================================== */
+
+.networth-form .form-group input,
+.networth-form .form-group textarea {
+    display: block;
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    border: 1px solid #d5dfd9;
+    border-radius: 11px;
+
+    background: #fbfdfb;
+
+    color: #24352c;
+
+    font-family: inherit;
+    font-size: 14px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+
+/* ==========================================================
+   TEXT INPUTS
+========================================================== */
+
+.networth-form .form-group input {
+    height: 49px;
+
+    padding: 0 14px;
+}
+
+
+/* ==========================================================
+   TEXTAREA
+========================================================== */
+
+.networth-form .form-group textarea {
+    min-height: 115px;
+
+    padding: 13px 14px;
+
+    resize: vertical;
+
+    line-height: 1.55;
+}
+
+
+/* ==========================================================
+   FOCUS
+========================================================== */
+
+.networth-form .form-group input:focus,
+.networth-form .form-group textarea:focus {
+    background: #ffffff;
+
+    border-color: #3b945b;
+
+    box-shadow:
+        0 0 0 3px rgba(59, 148, 91, 0.11);
+}
+
+
+/* ==========================================================
+   PLACEHOLDER
+========================================================== */
+
+.networth-form input::placeholder,
+.networth-form textarea::placeholder {
+    color: #9aa79f;
+}
+
+
+/* ==========================================================
+   MONEY FIELDS
+========================================================== */
+
+.networth-form #buyingPrice,
+.networth-form #currentWorth {
+    font-weight: 650;
+
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* ==========================================================
+   CURRENT WORTH
+========================================================== */
+
+.networth-form #currentWorth {
+    border-color: #bcd8c5;
+
+    background: #f7fcf8;
+}
+
+.networth-form #currentWorth:focus {
+    background: #ffffff;
+
+    border-color: #328650;
+
+    box-shadow:
+        0 0 0 3px rgba(50, 134, 80, 0.12);
+}
+
+
+/* ==========================================================
+   STRUCTURE FIELD
+========================================================== */
+
+.networth-form input[readonly] {
+    background: #f1f6f2;
+
+    border-color: #d8e4dc;
+
+    color: #4f6758;
+
+    font-weight: 650;
+
+    cursor: not-allowed;
+}
+
+
+/* ==========================================================
+   STRUCTURE FIELD VISUAL INDICATOR
+========================================================== */
+
+.networth-form input[readonly]:focus {
+    border-color: #d8e4dc;
+
+    box-shadow: none;
+}
+
+
+/* ==========================================================
+   ACTIONS
+========================================================== */
+
+.networth-form .form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 11px;
+
+    margin-top: 8px;
+    padding-top: 22px;
+
+    border-top: 1px solid #edf1ee;
+}
+
+
+/* ==========================================================
+   BUTTON BASE
+========================================================== */
+
+.networth-form .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 46px;
+
+    padding: 0 19px;
+
+    box-sizing: border-box;
+
+    border-radius: 10px;
+
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+/* ==========================================================
+   SECONDARY BUTTON
+========================================================== */
+
+.networth-form .button-secondary {
+    background: #ffffff;
+
+    color: #536159;
+
+    border: 1px solid #d6dfd9;
+}
+
+.networth-form .button-secondary:hover {
+    background: #f7f9f7;
+
+    border-color: #c4d0c8;
+
+    color: #29382f;
+
+    transform: translateY(-1px);
+}
+
+
+/* ==========================================================
+   PRIMARY BUTTON
+========================================================== */
+
+.networth-form .button-primary {
+    background: #2f8f55;
+
+    color: #ffffff;
+
+    border: 1px solid #2f8f55;
+
+    box-shadow:
+        0 5px 12px rgba(47, 143, 85, 0.17);
+}
+
+.networth-form .button-primary::before {
+    content: "✓";
+
+    font-size: 14px;
+}
+
+.networth-form .button-primary:hover {
+    background: #267747;
+
+    border-color: #267747;
+
+    box-shadow:
+        0 7px 16px rgba(47, 143, 85, 0.22);
+
+    transform: translateY(-1px);
+}
+
+.networth-form .button:active {
+    transform: translateY(0);
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 650px) {
+
+    .financial-page.networth-page {
+        padding: 18px 14px 45px;
+    }
+
+
+    /* Header */
+
+    .networth-page .financial-header h1 {
+        font-size: 25px;
+    }
+
+    .networth-page .financial-header p {
+        font-size: 14px;
+    }
+
+
+    /* Card */
+
+    .networth-page > .financial-card {
+        padding: 22px 18px;
+
+        border-radius: 15px;
+    }
+
+
+    /* Form */
+
+    .networth-form .form-group {
+        margin-bottom: 19px;
+    }
+
+    .networth-form .form-group input {
+        height: 48px;
+    }
+
+    .networth-form .form-group textarea {
+        min-height: 110px;
+    }
+
+
+    /* Actions */
+
+    .networth-form .form-actions {
+        flex-direction: column-reverse;
+
+        align-items: stretch;
+
+        gap: 10px;
+
+        padding-top: 19px;
+    }
+
+    .networth-form .button {
+        width: 100%;
+
+        min-height: 48px;
+    }
+}
+
+
+/* ==========================================================
+   SMALL PHONES
+========================================================== */
+
+@media (max-width: 380px) {
+
+    .financial-page.networth-page {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .networth-page > .financial-card {
+        padding: 19px 14px;
+    }
+
+    .networth-page .financial-header h1 {
+        font-size: 23px;
+    }
+
+    .networth-form .form-group input,
+    .networth-form .form-group textarea {
+        font-size: 14px;
+    }
+}
+</style><div class="financial-page networth-page"><!-- =====================================================
+     HEADER
+====================================================== -->
+
+<div class="financial-header">
+
+    <div>
+
+        <a
+            href="/networth/structure/<%= structure._id %>"
+            class="financial-back-link"
+        >
+            ← <%= structure.item %>
+        </a>
+
+        <h1>
+            Add Asset
+        </h1>
+
+        <p>
+            Add an asset belonging to this structure.
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     FORM
+====================================================== -->
+
+<div class="financial-card">
+
+    <form
+        action="/networth/structure/<%= structure._id %>/add"
+        method="POST"
+        class="networth-form"
+    >
+
+
+        <!-- =================================================
+             ITEM
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="item">
+                Item
+            </label>
+
+            <input
+                type="text"
+                id="item"
+                name="item"
+                placeholder="Enter asset name"
+                autocomplete="off"
+                required
             >
-                ← <%= structure.item %>
-            </a>
-
-            <h1>
-                Add Asset
-            </h1>
-
-            <p>
-                Add an asset belonging to this structure.
-            </p>
 
         </div>
 
-    </div>
+
+        <!-- =================================================
+             TYPE
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="type">
+                Type
+            </label>
+
+            <input
+                type="text"
+                id="type"
+                name="type"
+                placeholder="e.g. Equipment, Building, Vehicle"
+                autocomplete="off"
+                required
+            >
+
+        </div>
 
 
-    <!-- =====================================================
-         FORM
-    ====================================================== -->
+        <!-- =================================================
+             BUYING PRICE
+        ================================================== -->
 
-    <div class="financial-card">
+        <div class="form-group">
 
-        <form
-            action="/networth/structure/<%= structure._id %>/add"
-            method="POST"
-            class="networth-form"
-        >
+            <label for="buyingPrice">
+                Buying Price
+            </label>
 
+            <input
+                type="number"
+                id="buyingPrice"
+                name="buyingPrice"
+                placeholder="Enter purchase price"
+                min="0"
+                step="0.01"
+                required
+            >
 
-            <!-- =================================================
-                 ITEM
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="item">
-                    Item
-                </label>
-
-                <input
-                    type="text"
-                    id="item"
-                    name="item"
-                    required
-                >
-
-            </div>
+        </div>
 
 
-            <!-- =================================================
-                 TYPE
-            ================================================== -->
+        <!-- =================================================
+             CURRENT WORTH
+        ================================================== -->
 
-            <div class="form-group">
+        <div class="form-group">
 
-                <label for="type">
-                    Type
-                </label>
+            <label for="currentWorth">
+                Current Worth
+            </label>
 
-                <input
-                    type="text"
-                    id="type"
-                    name="type"
-                    required
-                >
+            <input
+                type="number"
+                id="currentWorth"
+                name="currentWorth"
+                placeholder="Enter current estimated worth"
+                min="0"
+                step="0.01"
+                required
+            >
 
-            </div>
-
-
-            <!-- =================================================
-                 BUYING PRICE
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="buyingPrice">
-                    Buying Price
-                </label>
-
-                <input
-                    type="number"
-                    id="buyingPrice"
-                    name="buyingPrice"
-                    min="0"
-                    step="0.01"
-                    required
-                >
-
-            </div>
+        </div>
 
 
-            <!-- =================================================
-                 CURRENT WORTH
-            ================================================== -->
+        <!-- =================================================
+             DESCRIPTION
+        ================================================== -->
 
-            <div class="form-group">
+        <div class="form-group">
 
-                <label for="currentWorth">
-                    Current Worth
-                </label>
+            <label for="description">
+                Description
+            </label>
 
-                <input
-                    type="number"
-                    id="currentWorth"
-                    name="currentWorth"
-                    min="0"
-                    step="0.01"
-                    required
-                >
+            <textarea
+                id="description"
+                name="description"
+                rows="4"
+                placeholder="Describe the asset..."
+                required
+            ></textarea>
 
-            </div>
-
-
-            <!-- =================================================
-                 DESCRIPTION
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="description">
-                    Description
-                </label>
-
-                <textarea
-                    id="description"
-                    name="description"
-                    rows="4"
-                    required
-                ></textarea>
-
-            </div>
+        </div>
 
 
-            <!-- =================================================
-                 CONDITION
-            ================================================== -->
+        <!-- =================================================
+             CONDITION
+        ================================================== -->
 
-            <div class="form-group">
+        <div class="form-group">
 
-                <label for="condition">
-                    Condition
-                </label>
+            <label for="condition">
+                Condition
+            </label>
 
-                <input
-                    type="text"
-                    id="condition"
-                    name="condition"
-                    required
-                >
+            <input
+                type="text"
+                id="condition"
+                name="condition"
+                placeholder="e.g. Good, New, Needs Repair"
+                autocomplete="off"
+                required
+            >
 
-            </div>
-
-
-            <!-- =================================================
-                 LOCATION
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="location">
-                    Location
-                </label>
-
-                <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    required
-                >
-
-            </div>
+        </div>
 
 
-            <!-- =================================================
-                 PARENT STRUCTURE
-            ================================================== -->
+        <!-- =================================================
+             LOCATION
+        ================================================== -->
 
-            <div class="form-group">
+        <div class="form-group">
 
-                <label>
-                    Structure
-                </label>
+            <label for="location">
+                Location
+            </label>
 
-                <input
-                    type="text"
-                    value="<%= structure.item %>"
-                    readonly
-                >
+            <input
+                type="text"
+                id="location"
+                name="location"
+                placeholder="Where is the asset located?"
+                autocomplete="off"
+                required
+            >
 
-            </div>
+        </div>
 
 
-            <!-- =================================================
-                 ACTIONS
-            ================================================== -->
+        <!-- =================================================
+             PARENT STRUCTURE
+        ================================================== -->
 
-            <div class="form-actions">
+        <div class="form-group">
 
-                <a
-                    href="/networth/structure/<%= structure._id %>"
-                    class="button button-secondary"
-                >
-                    Cancel
-                </a>
+            <label>
+                Structure
+            </label>
 
-                <button
-                    type="submit"
-                    class="button button-primary"
-                >
-                    Save Asset
-                </button>
+            <input
+                type="text"
+                value="<%= structure.item %>"
+                readonly
+            >
 
-            </div>
+        </div>
 
-        </form>
 
-    </div>
+        <!-- =================================================
+             ACTIONS
+        ================================================== -->
+
+        <div class="form-actions">
+
+            <a
+                href="/networth/structure/<%= structure._id %>"
+                class="button button-secondary"
+            >
+                Cancel
+            </a>
+
+            <button
+                type="submit"
+                class="button button-primary"
+            >
+                Save Asset
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
 
 </div>
