@@ -1,4 +1,5 @@
-const networthService = require("../services/networthService");
+const networthService =
+    require("../services/networthService");
 
 
 /* =========================================================
@@ -12,9 +13,11 @@ exports.index = async (req, res, next) => {
         const data =
             await networthService.getNetWorthOverview();
 
+
         return res.render("networth", {
 
-            title: "Net Worth",
+            title:
+                "Net Worth",
 
             totalNetWorth:
                 data.totalNetWorth,
@@ -44,38 +47,49 @@ exports.viewStructure = async (req, res, next) => {
 
     try {
 
+        const structureId =
+            req.params.id;
+
+
         const data =
             await networthService.getStructureDetails(
-                req.params.id
+                structureId
             );
+
 
         if (!data) {
 
             return res.status(404).render("404", {
 
-                title: "404 - Structure Not Found",
+                title:
+                    "404 - Structure Not Found",
 
-                user: req.user || null
+                user:
+                    req.user || null
 
             });
 
         }
 
-        return res.render("networth-structure", {
 
-            title:
-                `${data.structure.item} - Net Worth`,
+        return res.render(
+            "networth-structure",
+            {
 
-            structure:
-                data.structure,
+                title:
+                    `${data.structure.name} - Net Worth`,
 
-            assets:
-                data.assets,
+                structure:
+                    data.structure,
 
-            structureTotal:
-                data.structureTotal
+                assets:
+                    data.assets,
 
-        });
+                structureTotal:
+                    data.structureTotal
+
+            }
+        );
 
     } catch (error) {
 
@@ -94,38 +108,49 @@ exports.viewAsset = async (req, res, next) => {
 
     try {
 
+        const assetId =
+            req.params.id;
+
+
         const data =
             await networthService.getAssetDetails(
-                req.params.id
+                assetId
             );
+
 
         if (!data) {
 
             return res.status(404).render("404", {
 
-                title: "404 - Asset Not Found",
+                title:
+                    "404 - Asset Not Found",
 
-                user: req.user || null
+                user:
+                    req.user || null
 
             });
 
         }
 
-        return res.render("networth-asset", {
 
-            title:
-                `${data.asset.item} - Net Worth`,
+        return res.render(
+            "networth-asset",
+            {
 
-            asset:
-                data.asset,
+                title:
+                    `${data.asset.name} - Net Worth`,
 
-            dairy:
-                data.dairy,
+                asset:
+                    data.asset,
 
-            structures:
-                data.structures
+                dairy:
+                    data.dairy,
 
-        });
+                structures:
+                    data.structures
+
+            }
+        );
 
     } catch (error) {
 
@@ -144,16 +169,34 @@ exports.updateAsset = async (req, res, next) => {
 
     try {
 
+        const assetId =
+            req.params.id;
+
+
+        /*
+         * The ID comes directly from:
+         *
+         * /networth/asset/:id
+         *
+         * The service is responsible for resolving
+         * the corresponding Dairy document.
+         */
+
         await networthService.updateAsset(
 
-            req.params.id,
+            assetId,
 
             req.body
 
         );
 
+
+        /*
+         * Stay on the same asset after saving.
+         */
+
         return res.redirect(
-            `/networth/asset/${req.params.id}`
+            `/networth/asset/${assetId}`
         );
 
     } catch (error) {
@@ -173,31 +216,42 @@ exports.addAssetPage = async (req, res, next) => {
 
     try {
 
+        const structureId =
+            req.params.id;
+
+
         const structure =
             await networthService.getStructureById(
-                req.params.id
+                structureId
             );
+
 
         if (!structure) {
 
             return res.status(404).render("404", {
 
-                title: "404 - Structure Not Found",
+                title:
+                    "404 - Structure Not Found",
 
-                user: req.user || null
+                user:
+                    req.user || null
 
             });
 
         }
 
-        return res.render("networth-add", {
 
-            title:
-                `Add Asset - ${structure.item}`,
+        return res.render(
+            "networth-add",
+            {
 
-            structure
+                title:
+                    `Add Asset - ${structure.name}`,
 
-        });
+                structure
+
+            }
+        );
 
     } catch (error) {
 
@@ -216,14 +270,28 @@ exports.addAsset = async (req, res, next) => {
 
     try {
 
+        const structureId =
+            req.params.id;
+
+
         const asset =
             await networthService.addManualAsset(
 
-                req.params.id,
+                structureId,
 
                 req.body
 
             );
+
+
+        if (!asset || !asset._id) {
+
+            throw new Error(
+                "Asset was not created."
+            );
+
+        }
+
 
         return res.redirect(
             `/networth/asset/${asset._id}`
