@@ -21,17 +21,23 @@
 
 .networth-page .financial-header h1 {
     margin: 10px 0 6px;
+
     color: #173b2a;
+
     font-size: 30px;
     font-weight: 800;
     line-height: 1.2;
+
     letter-spacing: -0.6px;
+
     overflow-wrap: anywhere;
 }
 
 .networth-page .financial-header p {
     margin: 0;
+
     color: #718078;
+
     font-size: 15px;
     line-height: 1.5;
 }
@@ -45,10 +51,14 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+
     color: #2f7d4c;
+
     font-size: 13px;
     font-weight: 700;
+
     text-decoration: none;
+
     transition:
         color 0.2s ease,
         transform 0.2s ease;
@@ -66,11 +76,16 @@
 
 .networth-page > .financial-card {
     overflow: hidden;
+
     padding: 30px;
+
     box-sizing: border-box;
+
     background: #ffffff;
+
     border: 1px solid #e1e9e4;
     border-radius: 18px;
+
     box-shadow:
         0 8px 25px rgba(25, 70, 43, 0.055),
         0 2px 6px rgba(25, 70, 43, 0.025);
@@ -105,10 +120,14 @@
 
 .networth-form .form-group label {
     display: block;
+
     margin-bottom: 8px;
+
     color: #304139;
+
     font-size: 13px;
     font-weight: 750;
+
     line-height: 1.4;
 }
 
@@ -121,37 +140,67 @@
 .networth-form .form-group select,
 .networth-form .form-group textarea {
     display: block;
+
     width: 100%;
+
     box-sizing: border-box;
+
     border: 1px solid #d5dfd9;
     border-radius: 11px;
+
     background: #fbfdfb;
+
     color: #24352c;
+
     font-family: inherit;
     font-size: 14px;
+
     outline: none;
+
     transition:
         border-color 0.2s ease,
         box-shadow 0.2s ease,
         background 0.2s ease;
 }
 
+
+/* ==========================================================
+   INPUT
+========================================================== */
+
 .networth-form .form-group input {
     height: 49px;
+
     padding: 0 14px;
 }
 
+
+/* ==========================================================
+   SELECT
+========================================================== */
+
 .networth-form .form-group select {
     height: 49px;
+
     padding: 0 40px 0 14px;
+
     cursor: pointer;
+
     appearance: auto;
 }
 
+
+/* ==========================================================
+   TEXTAREA
+========================================================== */
+
 .networth-form .form-group textarea {
     min-height: 115px;
+
     padding: 13px 14px;
+
     resize: vertical;
+
     line-height: 1.55;
 }
 
@@ -164,7 +213,9 @@
 .networth-form .form-group select:focus,
 .networth-form .form-group textarea:focus {
     background: #ffffff;
+
     border-color: #3b945b;
+
     box-shadow:
         0 0 0 3px rgba(59, 148, 91, 0.11);
 }
@@ -184,22 +235,36 @@
    READ-ONLY / DERIVED FIELDS
 ========================================================== */
 
-.networth-form input[readonly],
-.networth-form select[disabled] {
+.networth-form input[readonly] {
     background: #f3f6f4;
+
     border-color: #e0e7e2;
+
     color: #69766e;
+
     cursor: not-allowed;
 }
 
 
 /* ==========================================================
-   NUMBER / MONEY FIELDS
+   CODE
+========================================================== */
+
+.networth-form #code {
+    font-weight: 650;
+
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* ==========================================================
+   MONEY FIELDS
 ========================================================== */
 
 .networth-form #buyingPrice,
 .networth-form #currentWorth {
     font-weight: 650;
+
     font-variant-numeric: tabular-nums;
 }
 
@@ -210,14 +275,41 @@
 
 .networth-form #currentWorth {
     border-color: #bcd8c5;
+
     background: #f7fcf8;
 }
 
 .networth-form #currentWorth:focus {
     background: #ffffff;
+
     border-color: #328650;
+
     box-shadow:
         0 0 0 3px rgba(50, 134, 80, 0.12);
+}
+
+
+/* ==========================================================
+   STRUCTURE INFORMATION
+========================================================== */
+
+.structure-info {
+    padding: 14px 16px;
+
+    background: #f3f8f4;
+
+    border: 1px solid #dce9df;
+    border-radius: 11px;
+
+    color: #50665a;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+.structure-info strong {
+    color: #294c37;
 }
 
 
@@ -227,11 +319,15 @@
 
 .networth-form .form-actions {
     display: flex;
+
     align-items: center;
     justify-content: flex-end;
+
     gap: 11px;
+
     margin-top: 8px;
     padding-top: 22px;
+
     border-top: 1px solid #edf1ee;
 }
 
@@ -242,18 +338,28 @@
 
 .networth-form .button {
     display: inline-flex;
+
     align-items: center;
     justify-content: center;
+
     gap: 8px;
+
     min-height: 46px;
+
     padding: 0 19px;
+
     box-sizing: border-box;
+
     border-radius: 10px;
+
     font-family: inherit;
     font-size: 14px;
     font-weight: 700;
+
     text-decoration: none;
+
     cursor: pointer;
+
     transition:
         background 0.2s ease,
         border-color 0.2s ease,
@@ -269,14 +375,19 @@
 
 .networth-form .button-secondary {
     background: #ffffff;
+
     color: #536159;
+
     border: 1px solid #d6dfd9;
 }
 
 .networth-form .button-secondary:hover {
     background: #f7f9f7;
+
     border-color: #c4d0c8;
+
     color: #29382f;
+
     transform: translateY(-1px);
 }
 
@@ -287,22 +398,29 @@
 
 .networth-form .button-primary {
     background: #2f8f55;
+
     color: #ffffff;
+
     border: 1px solid #2f8f55;
+
     box-shadow:
         0 5px 12px rgba(47, 143, 85, 0.17);
 }
 
 .networth-form .button-primary::before {
     content: "✓";
+
     font-size: 14px;
 }
 
 .networth-form .button-primary:hover {
     background: #267747;
+
     border-color: #267747;
+
     box-shadow:
         0 7px 16px rgba(47, 143, 85, 0.22);
+
     transform: translateY(-1px);
 }
 
@@ -321,6 +439,7 @@
         padding: 18px 14px 45px;
     }
 
+
     .networth-page .financial-header h1 {
         font-size: 25px;
     }
@@ -329,10 +448,13 @@
         font-size: 14px;
     }
 
+
     .networth-page > .financial-card {
         padding: 22px 18px;
+
         border-radius: 15px;
     }
+
 
     .networth-form .form-group {
         margin-bottom: 19px;
@@ -347,15 +469,20 @@
         min-height: 110px;
     }
 
+
     .networth-form .form-actions {
         flex-direction: column-reverse;
+
         align-items: stretch;
+
         gap: 10px;
+
         padding-top: 19px;
     }
 
     .networth-form .button {
         width: 100%;
+
         min-height: 48px;
     }
 }
@@ -394,16 +521,35 @@
 
     <div>
 
-        <a
-            href="/networth"
-            class="financial-back-link"
-        >
-            ← Net Worth
-        </a>
+        <% if (
+            asset.assetCode !== null &&
+            asset.assetCode !== undefined &&
+            asset.assetCode !== ""
+        ) { %>
+
+            <a
+                href="/networth"
+                class="financial-back-link"
+            >
+                ← Net Worth
+            </a>
+
+        <% } else { %>
+
+            <a
+                href="/networth"
+                class="financial-back-link"
+            >
+                ← Net Worth
+            </a>
+
+        <% } %>
+
 
         <h1>
-            <%= asset.item %>
+            <%= asset.name || asset.item || "Asset" %>
         </h1>
+
 
         <p>
             Asset details and valuation.
@@ -426,6 +572,8 @@
         class="networth-form"
     >
 
+        <!-- Express method override -->
+
         <input
             type="hidden"
             name="_method"
@@ -434,7 +582,7 @@
 
 
         <!-- =================================================
-             ITEM / NAME
+             NAME
         ================================================== -->
 
         <div class="form-group">
@@ -447,8 +595,32 @@
                 type="text"
                 id="item"
                 name="item"
-                value="<%= dairy ? (dairy.name || '') : (asset.item || '') %>"
+                value="<%= asset.name || asset.item || '' %>"
+                autocomplete="off"
                 required
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             CODE
+             
+             Code identifies the Dairy record.
+             It must not be changed from Net Worth.
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="code">
+                Dairy Code
+            </label>
+
+            <input
+                type="text"
+                id="code"
+                value="<%= asset.code ?? '' %>"
+                readonly
             >
 
         </div>
@@ -457,8 +629,10 @@
         <!-- =================================================
              TYPE
              
-             Dairy type is derived from Dairy.code.
-             Manual assets keep their NetWorth type.
+             Derived from code:
+             
+             negative = dairy Facility
+             positive = cow
         ================================================== -->
 
         <div class="form-group">
@@ -467,32 +641,12 @@
                 Type
             </label>
 
-            <% if (dairy) { %>
-
-                <input
-                    type="text"
-                    id="type"
-                    value="<%= Number(dairy.code) < 0 ? 'dairy Facility' : 'cow' %>"
-                    readonly
-                >
-
-                <input
-                    type="hidden"
-                    name="type"
-                    value="<%= Number(dairy.code) < 0 ? 'dairy Facility' : 'cow' %>"
-                >
-
-            <% } else { %>
-
-                <input
-                    type="text"
-                    id="type"
-                    name="type"
-                    value="<%= asset.type || '' %>"
-                    required
-                >
-
-            <% } %>
+            <input
+                type="text"
+                id="type"
+                value="<%= Number(asset.code) < 0 ? 'dairy Facility' : 'cow' %>"
+                readonly
+            >
 
         </div>
 
@@ -557,6 +711,7 @@
                 id="description"
                 name="description"
                 rows="4"
+                placeholder="Describe the asset..."
             ><%= asset.description || '' %></textarea>
 
         </div>
@@ -577,6 +732,7 @@
                 id="condition"
                 name="condition"
                 value="<%= asset.condition || '' %>"
+                placeholder="e.g. Good, New, Needs Repair"
             >
 
         </div>
@@ -597,9 +753,93 @@
                 id="location"
                 name="location"
                 value="<%= asset.location || '' %>"
+                placeholder="Where is the asset located?"
             >
 
         </div>
+
+
+        <!-- =================================================
+             STRUCTURE ASSIGNMENT
+             
+             Only positive-code Dairy records can belong
+             to a negative-code structure.
+        ================================================== -->
+
+        <% if (Number(asset.code) > 0) { %>
+
+            <div class="form-group">
+
+                <label for="assetCode">
+                    Assign to Structure
+                </label>
+
+                <select
+                    id="assetCode"
+                    name="assetCode"
+                >
+
+                    <option value="">
+                        Standalone Asset
+                    </option>
+
+
+                    <% if (
+                        structures &&
+                        structures.length
+                    ) { %>
+
+                        <% structures.forEach(function(structure) { %>
+
+                            <option
+                                value="<%= structure.code %>"
+                                <%= Number(asset.assetCode) === Number(structure.code)
+                                    ? "selected"
+                                    : "" %>
+                            >
+
+                                <%= structure.code %>
+                                —
+                                <%= structure.name %>
+
+                            </option>
+
+                        <% }); %>
+
+                    <% } %>
+
+                </select>
+
+            </div>
+
+        <% } else if (Number(asset.code) < 0) { %>
+
+            <!-- =================================================
+                 STRUCTURE ITSELF
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label>
+                    Structure
+                </label>
+
+                <div class="structure-info">
+
+                    <strong>
+                        This is a Dairy structure.
+                    </strong>
+
+                    <br>
+
+                    Structures cannot be assigned
+                    to another structure.
+
+                </div>
+
+            </div>
+
+        <% } %>
 
 
         <!-- =================================================
@@ -620,28 +860,36 @@
 
                 <option
                     value="active"
-                    <%= asset.status === "active" ? "selected" : "" %>
+                    <%= asset.status === "active"
+                        ? "selected"
+                        : "" %>
                 >
                     Active
                 </option>
 
                 <option
                     value="sold"
-                    <%= asset.status === "sold" ? "selected" : "" %>
+                    <%= asset.status === "sold"
+                        ? "selected"
+                        : "" %>
                 >
                     Sold
                 </option>
 
                 <option
                     value="disposed"
-                    <%= asset.status === "disposed" ? "selected" : "" %>
+                    <%= asset.status === "disposed"
+                        ? "selected"
+                        : "" %>
                 >
                     Disposed
                 </option>
 
                 <option
                     value="inactive"
-                    <%= asset.status === "inactive" ? "selected" : "" %>
+                    <%= asset.status === "inactive"
+                        ? "selected"
+                        : "" %>
                 >
                     Inactive
                 </option>
@@ -666,70 +914,13 @@
                 id="valuationDate"
                 name="valuationDate"
                 value="<%= asset.valuationDate
-                    ? new Date(asset.valuationDate).toISOString().slice(0, 10)
+                    ? new Date(asset.valuationDate)
+                        .toISOString()
+                        .slice(0, 10)
                     : '' %>"
             >
 
         </div>
-
-
-        <!-- =================================================
-             ASSET CODE / STRUCTURE ASSIGNMENT
-             
-             Only positive-code Dairy records can be
-             assigned to a negative-code structure.
-        ================================================== -->
-
-        <% if (
-            dairy &&
-            Number(dairy.code) > 0
-        ) { %>
-
-            <div class="form-group">
-
-                <label for="assetCode">
-                    Assign to Structure
-                </label>
-
-                <select
-                    id="assetCode"
-                    name="assetCode"
-                >
-
-                    <option value="">
-                        Standalone Asset
-                    </option>
-
-
-                    <% if (
-                        structures &&
-                        structures.length > 0
-                    ) { %>
-
-                        <% structures.forEach(function(structure) { %>
-
-                            <option
-                                value="<%= structure.code %>"
-                                <%= Number(dairy.assetCode) === Number(structure.code)
-                                    ? "selected"
-                                    : "" %>
-                            >
-
-                                <%= structure.code %>
-                                —
-                                <%= structure.name %>
-
-                            </option>
-
-                        <% }); %>
-
-                    <% } %>
-
-                </select>
-
-            </div>
-
-        <% } %>
 
 
         <!-- =================================================
@@ -746,9 +937,10 @@
                 type="text"
                 id="acquisitionDate"
                 value="<%= asset.acquisitionDate
-                    ? new Date(asset.acquisitionDate).toLocaleString('en-KE', {
-                        timeZone: 'Africa/Nairobi'
-                    })
+                    ? new Date(asset.acquisitionDate)
+                        .toLocaleString('en-KE', {
+                            timeZone: 'Africa/Nairobi'
+                        })
                     : '' %>"
                 readonly
             >
