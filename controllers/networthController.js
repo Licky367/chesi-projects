@@ -1,355 +1,431 @@
 const networthService =
-require("../services/networthService");
-
-/* =========================================================
-NET WORTH ENTRY PAGE
-
-Displays:
-
-- Standalone Assets
-- Dairy Farms
-- Total Net Worth
-  ========================================================= */
-
-exports.index = async (req, res, next) => {
-
-try {
-
-    const data =
-        await networthService.getNetWorthOverview();
-
-
-    return res.render(
-        "networth",
-        {
-
-            title:
-                "Net Worth",
-
-            totalNetWorth:
-                data.totalNetWorth,
-
-            standaloneAssets:
-                data.standaloneAssets,
-
-            structures:
-                data.structures
-
-        }
+    require(
+        "../services/networthService"
     );
 
-} catch (error) {
-
-    next(error);
-
-}
-
-};
 
 /* =========================================================
-DAIRY FARM ASSETS PAGE
+   HELPER
+   RENDER ERROR
 
-:id = dairy._id
-
-The selected Dairy record must be a Dairy Farm,
-identified by its negative dairy.code.
-
-The page displays assets belonging to that farm.
+   Keeps controller error handling consistent without
+   exposing internal database errors to the browser.
 ========================================================= */
 
-exports.viewStructure = async (req, res, next) => {
+function renderError(
+    res,
+    error,
+    fallbackPath = "/networth"
+) {
 
-try {
-
-    const dairyId =
-        req.params.id;
-
-
-    const data =
-        await networthService.getStructureDetails(
-            dairyId
-        );
-
-
-    if (!data) {
-
-        return res.status(404).render(
-            "404",
-            {
-
-                title:
-                    "404 - Dairy Farm Not Found",
-
-                user:
-                    req.user || null
-
-            }
-        );
-
-    }
-
-
-    const dairyFarm =
-        data.structure;
-
-
-    return res.render(
-        "networth-structure",
-        {
-
-            title:
-                `${dairyFarm.name || dairyFarm.item || "Dairy Farm"} - Net Worth`,
-
-            structure:
-                dairyFarm,
-
-            assets:
-                data.assets,
-
-            structureTotal:
-                data.structureTotal
-
-        }
-    );
-
-} catch (error) {
-
-    next(error);
-
-}
-
-};
-
-/* =========================================================
-DAIRY / ASSET DETAILS PAGE
-
-:id = dairy._id
-
-The same page is used for:
-
-- standalone positive-code Dairy records
-- assets belonging to a Dairy Farm
-- Dairy records without their own code
-
-The service determines the actual Dairy record.
-========================================================= */
-
-exports.viewAsset = async (req, res, next) => {
-
-try {
-
-    const dairyId =
-        req.params.id;
-
-
-    const data =
-        await networthService.getAssetDetails(
-            dairyId
-        );
-
-
-    if (!data) {
-
-        return res.status(404).render(
-            "404",
-            {
-
-                title:
-                    "404 - Dairy Asset Not Found",
-
-                user:
-                    req.user || null
-
-            }
-        );
-
-    }
-
-
-    return res.render(
-        "networth-asset",
-        {
-
-            title:
-                `${data.asset.name || data.asset.item || "Asset"} - Net Worth`,
-
-            asset:
-                data.asset,
-
-            dairy:
-                data.dairy,
-
-            structures:
-                data.structures
-
-        }
-    );
-
-} catch (error) {
-
-    next(error);
-
-}
-
-};
-
-/* =========================================================
-UPDATE DAIRY / ASSET
-
-:id = dairy._id
-
-The service is responsible for enforcing the rule that
-assetCode can only be manually changed for a Dairy
-record that has a positive dairy.code.
-========================================================= */
-
-exports.updateAsset = async (req, res, next) => {
-
-try {
-
-    const dairyId =
-        req.params.id;
-
-
-    await networthService.updateAsset(
-
-        dairyId,
-
-        req.body
-
+    console.error(
+        "Net Worth Controller Error:",
+        error
     );
 
 
     /*
-     * Stay on the same Dairy record after saving.
+     * If the application already provides a global error
+     * middleware, forward the error instead.
      */
 
-    return res.redirect(
-        `/networth/asset/${dairyId}`
-    );
+    if (typeof res.locals.renderError === "function") {
 
-} catch (error) {
-
-    next(error);
-
-}
-
-};
-
-/* =========================================================
-ADD ASSET TO DAIRY FARM — PAGE
-
-:id = dairyFarm._id
-
-The selected Dairy Farm must have a negative code.
-
-No asset code is entered in the form.
-========================================================= */
-
-exports.addAssetPage = async (req, res, next) => {
-
-try {
-
-    const dairyFarmId =
-        req.params.id;
-
-
-    const dairyFarm =
-        await networthService.getStructureById(
-            dairyFarmId
+        return res.locals.renderError(
+            error
         );
 
+    }
 
-    if (!dairyFarm) {
 
-        return res.status(404).render(
-            "404",
+    /*
+     * If the request accepts HTML, return a normal
+     * application-level error response.
+     */
+
+    if (
+        res.req &&
+        res.req.accepts &&
+        res.req.accepts("html")
+    ) {
+
+        return res.status(500).render(
+            "error",
             {
+                message:
+                    "Unable to complete the Net Worth request.",
 
-                title:
-                    "404 - Dairy Farm Not Found",
-
-                user:
-                    req.user || null
-
+                backUrl:
+                    fallbackPath
             }
         );
 
     }
 
 
-    return res.render(
-        "networth-add",
-        {
+    return res.status(500).json({
 
-            title:
-                `Add Asset - ${dairyFarm.name || dairyFarm.item || "Dairy Farm"}`,
+        success: false,
 
-            structure:
-                dairyFarm
+        message:
+            "Unable to complete the Net Worth request."
 
-        }
-    );
-
-} catch (error) {
-
-    next(error);
+    });
 
 }
 
-};
 
 /* =========================================================
-ADD ASSET TO DAIRY FARM
+   GET NET WORTH DASHBOARD
 
-:id = dairyFarm._id
-
-IMPORTANT:
-
-The submitted form does NOT contain assetCode.
-
-The service must automatically assign:
-
-   assetCode = dairyFarm.code
-
-The new asset does not need its own dairy.code.
+   GET /networth
 ========================================================= */
 
-exports.addAsset = async (req, res, next) => {
+exports.getNetWorth =
+async function (
+    req,
+    res
+) {
 
-try {
+    try {
 
-    const dairyFarmId =
-        req.params.id;
-
-
-    const dairy =
-        await networthService.addManualAsset(
-
-            dairyFarmId,
-
-            req.body
-
-        );
+        const data =
+            await networthService.getNetWorth();
 
 
-    if (!dairy || !dairy._id) {
-
-        throw new Error(
-            "Asset was not created."
+        return res.render(
+            "networth",
+            data
         );
 
     }
 
+    catch (error) {
 
-    return res.redirect(
-        `/networth/asset/${dairy._id}`
-    );
+        return renderError(
+            res,
+            error
+        );
 
-} catch (error) {
+    }
 
-    next(error);
+};
 
-}
+
+/* =========================================================
+   GET STRUCTURE DETAILS
+
+   GET /networth/structure/:id
+========================================================= */
+
+exports.getStructure =
+async function (
+    req,
+    res
+) {
+
+    try {
+
+        const structure =
+            await networthService.getStructure(
+                req.params.id
+            );
+
+
+        if (!structure) {
+
+            return res.status(404).send(
+                "Dairy Farm not found."
+            );
+
+        }
+
+
+        return res.render(
+            "networth-structure",
+            {
+                structure
+            }
+        );
+
+    }
+
+    catch (error) {
+
+        return renderError(
+            res,
+            error,
+            "/networth"
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   GET ADD-ASSET FORM
+
+   GET /networth/structure/:id/add
+========================================================= */
+
+exports.getAddAsset =
+async function (
+    req,
+    res
+) {
+
+    try {
+
+        const dairy =
+            await networthService.getStructure(
+                req.params.id
+            );
+
+
+        if (!dairy) {
+
+            return res.status(404).send(
+                "Dairy Farm not found."
+            );
+
+        }
+
+
+        return res.render(
+            "networth-add",
+            {
+                dairy
+            }
+        );
+
+    }
+
+    catch (error) {
+
+        return renderError(
+            res,
+            error,
+            "/networth"
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   CREATE MANUAL ASSET
+
+   POST /networth/structure/:id/add
+========================================================= */
+
+exports.addAsset =
+async function (
+    req,
+    res
+) {
+
+    try {
+
+        const asset =
+            await networthService.addManualAsset(
+                req.params.id,
+                req.body
+            );
+
+
+        /*
+         * After creation, go to the new asset's
+         * details page.
+         */
+
+        return res.redirect(
+            `/networth/asset/${asset._id}`
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Unable to add Net Worth asset:",
+            error
+        );
+
+
+        /*
+         * Validation errors should return the user
+         * to the form rather than becoming a generic
+         * server error.
+         */
+
+        if (
+            error.name ===
+            "ValidationError"
+        ) {
+
+            const dairy =
+                await networthService
+                    .getStructure(
+                        req.params.id
+                    );
+
+
+            return res.status(400).render(
+                "networth-add",
+                {
+                    dairy,
+
+                    error:
+                        error.message,
+
+                    formData:
+                        req.body
+                }
+            );
+
+        }
+
+
+        return renderError(
+            res,
+            error,
+            `/networth/structure/${req.params.id}`
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   GET ASSET DETAILS / EDIT
+
+   GET /networth/asset/:id
+========================================================= */
+
+exports.getAsset =
+async function (
+    req,
+    res
+) {
+
+    try {
+
+        const data =
+            await networthService.getAsset(
+                req.params.id
+            );
+
+
+        if (!data || !data.dairy) {
+
+            return res.status(404).send(
+                "Asset not found."
+            );
+
+        }
+
+
+        return res.render(
+            "networth-asset",
+            data
+        );
+
+    }
+
+    catch (error) {
+
+        return renderError(
+            res,
+            error,
+            "/networth"
+        );
+
+    }
+
+};
+
+
+/* =========================================================
+   UPDATE ASSET
+
+   PUT /networth/asset/:id
+========================================================= */
+
+exports.updateAsset =
+async function (
+    req,
+    res
+) {
+
+    try {
+
+        const asset =
+            await networthService.updateAsset(
+                req.params.id,
+                req.body
+            );
+
+
+        if (!asset) {
+
+            return res.status(404).send(
+                "Asset not found."
+            );
+
+        }
+
+
+        return res.redirect(
+            `/networth/asset/${asset._id}`
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Unable to update Net Worth asset:",
+            error
+        );
+
+
+        if (
+            error.name ===
+            "ValidationError"
+        ) {
+
+            const data =
+                await networthService
+                    .getAsset(
+                        req.params.id
+                    );
+
+
+            return res.status(400).render(
+                "networth-asset",
+                {
+                    ...data,
+
+                    error:
+                        error.message,
+
+                    formData:
+                        req.body
+                }
+            );
+
+        }
+
+
+        return renderError(
+            res,
+            error,
+            "/networth"
+        );
+
+    }
 
 };
