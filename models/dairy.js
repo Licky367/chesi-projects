@@ -1,13 +1,12 @@
 const mongoose = require("mongoose");
 
-
 /* =========================================================
-   DAIRY SCHEMA
+DAIRY ANIMAL / STRUCTURE SCHEMA
 ========================================================= */
 
 const dairySchema = new mongoose.Schema(
 
-  {
+{
 
     /* =====================================================
        PROFILE IMAGE
@@ -15,11 +14,11 @@ const dairySchema = new mongoose.Schema(
 
     profileImage: {
 
-      type: String,
+        type: String,
 
-      trim: true,
+        trim: true,
 
-      default: ""
+        default: ""
 
     },
 
@@ -28,7 +27,7 @@ const dairySchema = new mongoose.Schema(
        UNIQUE CODE
 
        Positive:
-           Real dairy animal
+           Real Dairy animal
 
        Negative:
            Dairy structure / facility
@@ -36,19 +35,20 @@ const dairySchema = new mongoose.Schema(
 
     code: {
 
-      type: Number,
+        type: Number,
 
-      required: true,
+        required: true,
 
-      unique: true,
+        unique: true,
 
-      validate: {
+        validate: {
 
-        validator: Number.isInteger,
+            validator: Number.isInteger,
 
-        message: "Code must be a whole number."
+            message:
+                "Code must be a whole number."
 
-      }
+        }
 
     },
 
@@ -59,51 +59,11 @@ const dairySchema = new mongoose.Schema(
 
     name: {
 
-      type: String,
+        type: String,
 
-      required: true,
+        required: true,
 
-      trim: true
-
-    },
-
-
-    /* =====================================================
-       DATE OF BIRTH
-
-       Only positive-code Dairy records are animals.
-    ===================================================== */
-
-    dateOfBirth: {
-
-      type: Date,
-
-      required: function () {
-
-        return this.code >= 0;
-
-      },
-
-      default: null
-
-    },
-
-
-    /* =====================================================
-       MASS
-       
-       Applies to Dairy records.
-    ===================================================== */
-
-    mass: {
-
-      type: Number,
-
-      required: true,
-
-      min: 0,
-
-      default: 0
+        trim: true
 
     },
 
@@ -111,116 +71,108 @@ const dairySchema = new mongoose.Schema(
     /* =====================================================
        ASSET CODE
 
-       ONLY positive-code Dairy records may have an
-       assetCode.
+       Only positive-code Dairy records use this.
+
+       It identifies the negative-code Dairy structure
+       to which the asset belongs.
 
        Example:
 
-           cow.code = 25
-           cow.assetCode = -10
+           Cow:
+               code = 25
+               assetCode = -10
 
-       means cow 25 belongs to structure -10.
-
-       Negative-code structures must always have null.
+           Structure:
+               code = -10
     ===================================================== */
 
     assetCode: {
 
-      type: Number,
+        type: Number,
 
-      default: null
+        default: null,
+
+        validate: {
+
+            validator: function (value) {
+
+                if (
+                    value === null ||
+                    value === undefined
+                ) {
+
+                    return true;
+
+                }
+
+                if (!Number.isInteger(value)) {
+
+                    return false;
+
+                }
+
+                /*
+                 * Structures themselves cannot have
+                 * an assetCode.
+                 */
+
+                if (this.code < 0) {
+
+                    return false;
+
+                }
+
+                /*
+                 * A positive Dairy record may point
+                 * to a negative structure code.
+                 */
+
+                return value < 0;
+
+            },
+
+            message:
+                "Asset code must be a negative structure code."
+
+        },
+
+        index: true
 
     },
 
 
     /* =====================================================
-       NET WORTH / ASSET INFORMATION
-
-       These fields are stored in Dairy as the source
-       of truth for Dairy-generated NetWorth assets.
+       DATE OF BIRTH
     ===================================================== */
 
-    buyingPrice: {
+    dateOfBirth: {
 
-      type: Number,
+        type: Date,
 
-      default: 0,
+        required: function () {
 
-      min: 0
+            return this.code >= 0;
 
-    },
+        },
 
-
-    currentWorth: {
-
-      type: Number,
-
-      default: 0,
-
-      min: 0
+        default: null
 
     },
 
 
-    description: {
+    /* =====================================================
+       MASS
+    ===================================================== */
 
-      type: String,
+    mass: {
 
-      trim: true,
+        type: Number,
 
-      default: ""
+        required: true,
 
-    },
+        min: 0,
 
-
-    condition: {
-
-      type: String,
-
-      trim: true,
-
-      default: ""
-
-    },
-
-
-    location: {
-
-      type: String,
-
-      trim: true,
-
-      default: ""
-
-    },
-
-
-    valuationDate: {
-
-      type: Date,
-
-      default: null
-
-    },
-
-
-    status: {
-
-      type: String,
-
-      enum: [
-
-        "active",
-
-        "sold",
-
-        "disposed",
-
-        "inactive"
-
-      ],
-
-      default: "active"
+        default: 0
 
     },
 
@@ -231,42 +183,41 @@ const dairySchema = new mongoose.Schema(
 
     isMilking: {
 
-      type: Boolean,
+        type: Boolean,
 
-      default: false,
+        default: false,
 
-      validate: {
+        validate: {
 
-        validator: function (value) {
+            validator: function (value) {
 
-          if (value && this.code < 0) {
+                if (
+                    value &&
+                    this.code < 0
+                ) {
 
-            return false;
+                    return false;
 
-          }
+                }
 
-          if (
+                if (
+                    value &&
+                    this.code >= 0 &&
+                    this.code % 2 !== 0
+                ) {
 
-            value &&
+                    return false;
 
-            this.code >= 0 &&
+                }
 
-            this.code % 2 !== 0
+                return true;
 
-          ) {
+            },
 
-            return false;
+            message:
+                "Only female animals can be marked as milking."
 
-          }
-
-          return true;
-
-        },
-
-        message:
-          "Only female animals can be marked as milking."
-
-      }
+        }
 
     },
 
@@ -277,82 +228,82 @@ const dairySchema = new mongoose.Schema(
 
     needsMaintenance: {
 
-      type: Boolean,
+        type: Boolean,
 
-      default: false
+        default: false
 
     },
 
 
     maintenance: {
 
-      type: {
+        type: {
 
-        type: String,
+            type: String,
 
-        default: ""
+            default: ""
 
-      },
+        },
 
-      description: {
+        description: {
 
-        type: String,
+            type: String,
 
-        default: ""
+            default: ""
 
-      },
+        },
 
-      charges: {
+        charges: {
 
-        type: Number,
+            type: Number,
 
-        default: 0
+            default: 0
 
-      },
+        },
 
-      completionDescription: {
+        completionDescription: {
 
-        type: String,
+            type: String,
 
-        default: ""
+            default: ""
 
-      },
+        },
 
-      markedBy: {
+        markedBy: {
 
-        type: mongoose.Schema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,
 
-        ref: "User",
+            ref: "User",
 
-        default: null
+            default: null
 
-      },
+        },
 
-      markedAt: {
+        markedAt: {
 
-        type: Date,
+            type: Date,
 
-        default: null
+            default: null
 
-      },
+        },
 
-      clearedBy: {
+        clearedBy: {
 
-        type: mongoose.Schema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,
 
-        ref: "User",
+            ref: "User",
 
-        default: null
+            default: null
 
-      },
+        },
 
-      clearedAt: {
+        clearedAt: {
 
-        type: Date,
+            type: Date,
 
-        default: null
+            default: null
 
-      }
+        }
 
     },
 
@@ -363,99 +314,99 @@ const dairySchema = new mongoose.Schema(
 
     medicalAttention: {
 
-      isMarked: {
+        isMarked: {
 
-        type: Boolean,
+            type: Boolean,
 
-        default: false
+            default: false
 
-      },
+        },
 
-      type: {
+        type: {
 
-        type: String,
+            type: String,
 
-        trim: true,
+            trim: true,
 
-        default: ""
+            default: ""
 
-      },
+        },
 
-      details: {
+        details: {
 
-        type: String,
+            type: String,
 
-        trim: true,
+            trim: true,
 
-        default: ""
+            default: ""
 
-      },
+        },
 
-      charges: {
+        charges: {
 
-        type: Number,
+            type: Number,
 
-        default: 0
+            default: 0
 
-      },
+        },
 
-      description: {
+        description: {
 
-        type: String,
+            type: String,
 
-        default: ""
+            default: ""
 
-      },
+        },
 
-      markedBy: {
+        markedBy: {
 
-        type: mongoose.Schema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,
 
-        ref: "User",
+            ref: "User",
 
-        default: null
+            default: null
 
-      },
+        },
 
-      markedAt: {
+        markedAt: {
 
-        type: Date,
+            type: Date,
 
-        default: null
+            default: null
 
-      },
+        },
 
-      clearedBy: {
+        clearedBy: {
 
-        type: mongoose.Schema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,
 
-        ref: "User",
+            ref: "User",
 
-        default: null
+            default: null
 
-      },
+        },
 
-      clearedAt: {
+        clearedAt: {
 
-        type: Date,
+            type: Date,
 
-        default: null
+            default: null
 
-      },
+        },
 
-      updatedAt: {
+        updatedAt: {
 
-        type: Date,
+            type: Date,
 
-        default: null
+            default: null
 
-      }
+        }
 
     }
 
-  },
+},
 
-  {
+{
 
     timestamps: true,
 
@@ -463,212 +414,187 @@ const dairySchema = new mongoose.Schema(
 
     toJSON: {
 
-      virtuals: true
+        virtuals: true
 
     },
 
     toObject: {
 
-      virtuals: true
+        virtuals: true
 
     }
 
-  }
+}
 
 );
 
+/* =========================================================
+VIRTUALS
+========================================================= */
 
 /* =========================================================
-   VIRTUAL
-   GENDER
+GENDER
 ========================================================= */
 
 dairySchema.virtual("gender").get(function () {
 
-  if (this.code < 0) {
+if (this.code < 0) {
 
     return null;
 
-  }
+}
 
-  return this.code % 2 === 0
-
+return this.code % 2 === 0
     ? "Female"
-
     : "Male";
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   FEMALE CHECK
+FEMALE CHECK
 ========================================================= */
 
 dairySchema.virtual("isFemale").get(function () {
 
-  return (
+return (
 
     this.code >= 0 &&
 
     this.code % 2 === 0
 
-  );
+);
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   REAL ANIMAL CHECK
+REAL ANIMAL CHECK
 ========================================================= */
 
 dairySchema.virtual("hasIdentity").get(function () {
 
-  return this.code >= 0;
+return this.code >= 0;
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   AGE
+AGE
 ========================================================= */
 
 dairySchema.virtual("ageText").get(function () {
 
-  if (!this.dateOfBirth) {
+if (!this.dateOfBirth) {
 
     return "";
 
-  }
+}
 
-  const now = new Date();
+const now = new Date();
 
-  const dob =
+const dob =
     new Date(this.dateOfBirth);
 
-  let years =
+let years =
     now.getFullYear() -
     dob.getFullYear();
 
-  let months =
+let months =
     now.getMonth() -
     dob.getMonth();
 
-  let days =
+let days =
     now.getDate() -
     dob.getDate();
 
-
-  if (days < 0) {
+if (days < 0) {
 
     months--;
 
     const previousMonth =
-      new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        0
-      );
+        new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            0
+        );
 
     days +=
-      previousMonth.getDate();
+        previousMonth.getDate();
 
-  }
+}
 
-
-  if (months < 0) {
+if (months < 0) {
 
     years--;
 
     months += 12;
 
-  }
+}
 
-
-  return `${years} years, ${months} months, ${days} days`;
+return `${years} years, ${months} months, ${days} days`;
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   MILKING TEXT
+MILKING TEXT
 ========================================================= */
 
 dairySchema.virtual("isMilkingText").get(function () {
 
-  return this.isMilking
-
+return this.isMilking
     ? "Yes"
-
     : "No";
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   PROFILE IMAGE
+PROFILE IMAGE
 ========================================================= */
 
 dairySchema.virtual("displayImage").get(function () {
 
-  if (this.profileImage) {
+if (this.profileImage) {
 
     return `/uploads/${this.profileImage}`;
 
-  }
+}
 
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-
+return `https://ui-avatars.com/api/?name=${encodeURIComponent(
     this.name
-
-  )}`;
+)}`;
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   MAINTENANCE SHORTCUT
+MAINTENANCE SHORTCUT
 ========================================================= */
 
 dairySchema.virtual("requiresMaintenance").get(function () {
 
-  return !!this.needsMaintenance;
+return !!this.needsMaintenance;
 
 });
 
-
 /* =========================================================
-   VIRTUAL
-   MEDICAL SHORTCUT
+MEDICAL SHORTCUT
 ========================================================= */
 
 dairySchema.virtual("needsMedicalAttention").get(function () {
 
-  return !!(
-
+return !!(
     this.medicalAttention &&
-
     this.medicalAttention.isMarked
-
-  );
+);
 
 });
 
-
 /* =========================================================
-   PRE VALIDATE
+PRE VALIDATE
 ========================================================= */
 
 dairySchema.pre(
 
-  "validate",
+"validate",
 
-  function (next) {
+function (next) {
 
     /* ---------------------------------------------
        ONLY FEMALES CAN BE MILKING
@@ -676,7 +602,7 @@ dairySchema.pre(
 
     if (!this.isFemale) {
 
-      this.isMilking = false;
+        this.isMilking = false;
 
     }
 
@@ -687,19 +613,14 @@ dairySchema.pre(
 
     if (this.code < 0) {
 
-      this.dateOfBirth = null;
+        this.dateOfBirth = null;
 
-    }
+        /*
+         * Structures cannot belong to another
+         * structure.
+         */
 
-
-    /* ---------------------------------------------
-       ONLY POSITIVE-CODE DAIRY RECORDS CAN HAVE
-       AN ASSET CODE
-    --------------------------------------------- */
-
-    if (this.code < 0) {
-
-      this.assetCode = null;
+        this.assetCode = null;
 
     }
 
@@ -710,40 +631,39 @@ dairySchema.pre(
 
     if (!this.medicalAttention) {
 
-      this.medicalAttention = {};
+        this.medicalAttention = {};
 
     }
 
-
     this.medicalAttention.isMarked =
-      !!this.medicalAttention.isMarked;
+        !!this.medicalAttention.isMarked;
 
     this.medicalAttention.type =
-      this.medicalAttention.type || "";
+        this.medicalAttention.type || "";
 
     this.medicalAttention.details =
-      this.medicalAttention.details || "";
+        this.medicalAttention.details || "";
 
     this.medicalAttention.charges =
-      Number(this.medicalAttention.charges) || 0;
+        Number(this.medicalAttention.charges) || 0;
 
     this.medicalAttention.description =
-      this.medicalAttention.description || "";
+        this.medicalAttention.description || "";
 
     this.medicalAttention.markedBy =
-      this.medicalAttention.markedBy || null;
+        this.medicalAttention.markedBy || null;
 
     this.medicalAttention.markedAt =
-      this.medicalAttention.markedAt || null;
-
-    this.medicalAttention.clearedBy =
-      this.medicalAttention.clearedBy || null;
-
-    this.medicalAttention.clearedAt =
-      this.medicalAttention.clearedAt || null;
+        this.medicalAttention.markedAt || null;
 
     this.medicalAttention.updatedAt =
-      this.medicalAttention.updatedAt || null;
+        this.medicalAttention.updatedAt || null;
+
+    this.medicalAttention.clearedBy =
+        this.medicalAttention.clearedBy || null;
+
+    this.medicalAttention.clearedAt =
+        this.medicalAttention.clearedAt || null;
 
 
     /* ---------------------------------------------
@@ -752,93 +672,86 @@ dairySchema.pre(
 
     if (!this.medicalAttention.isMarked) {
 
-      this.medicalAttention.type = "";
+        this.medicalAttention.type = "";
 
-      this.medicalAttention.details = "";
+        this.medicalAttention.details = "";
 
-      this.medicalAttention.charges = 0;
+        this.medicalAttention.charges = 0;
 
-      this.medicalAttention.description = "";
+        this.medicalAttention.description = "";
 
-      this.medicalAttention.markedBy = null;
+        this.medicalAttention.markedBy = null;
 
-      this.medicalAttention.markedAt = null;
+        this.medicalAttention.markedAt = null;
 
-      this.medicalAttention.clearedBy = null;
+        this.medicalAttention.clearedBy = null;
 
-      this.medicalAttention.clearedAt = null;
+        this.medicalAttention.clearedAt = null;
 
     }
 
 
     next();
 
-  }
+}
 
 );
 
-
 /* =========================================================
-   PRE SAVE
+PRE SAVE
 ========================================================= */
 
 dairySchema.pre(
 
-  "save",
+"save",
 
-  function (next) {
+function (next) {
 
     if (
-
-      this.isModified("medicalAttention")
-
+        this.isModified("medicalAttention")
     ) {
 
-      this.medicalAttention.updatedAt =
-        new Date();
+        this.medicalAttention.updatedAt =
+            new Date();
 
     }
 
     next();
 
-  }
+}
 
 );
 
-
 /* =========================================================
-   INDEXES
+INDEXES
 ========================================================= */
 
 dairySchema.index({
 
-  isMilking: 1
+isMilking: 1
 
 });
-
 
 dairySchema.index({
 
-  needsMaintenance: 1
+needsMaintenance: 1
 
 });
-
 
 dairySchema.index({
 
-  "medicalAttention.isMarked": 1
+"medicalAttention.isMarked": 1
 
 });
-
 
 /* =========================================================
-   EXPORT
+EXPORT
 ========================================================= */
 
 module.exports = mongoose.model(
 
-  "Dairy",
+"Dairy",
 
-  dairySchema
+dairySchema
 
 );
