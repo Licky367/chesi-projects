@@ -1,0 +1,123 @@
+<div class="financial-page">
+
+    <!-- =====================================================
+         PAGE HEADER
+    ====================================================== -->
+
+    <div class="financial-header">
+
+        <div>
+            <h1>Liability Summary</h1>
+
+            <p>
+                View all recorded liabilities.
+            </p>
+        </div>
+
+        <a
+            href="/financials/liability"
+            class="financial-header-link"
+        >
+            Add Liability
+        </a>
+
+    </div>
+
+
+    <!-- =====================================================
+         LIABILITY TABLE
+    ====================================================== -->
+
+    <div class="financial-card">
+
+        <div class="financial-table-wrapper">
+
+            <table class="financial-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Type
+                        </th>
+
+                        <th>
+                            Liability
+                        </th>
+
+                        <th>
+                            Description
+                        </th>
+
+                        <th>
+                            Time
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    <% if (liabilities && liabilities.length > 0) { %>
+
+                        <% liabilities.forEach(function(item) { %>
+
+                            <tr>
+
+                                <td>
+                                    <%= item.type %>
+                                </td>
+
+                                <td>
+                                    <%= Number(item.amount || 0).toLocaleString() %>
+                                </td>
+
+                                <td>
+                                    <%= item.description %>
+                                </td>
+
+                                <td>
+
+                                    <% if (item.time) { %>
+
+                                        <%= new Date(item.time).toLocaleString() %>
+
+                                    <% } else { %>
+
+                                        —
+
+                                    <% } %>
+
+                                </td>
+
+                            </tr>
+
+                        <% }); %>
+
+                    <% } else { %>
+
+                        <tr>
+
+                            <td
+                                colspan="4"
+                                class="financial-empty"
+                            >
+                                No liabilities have been recorded yet.
+                            </td>
+
+                        </tr>
+
+                    <% } %>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
