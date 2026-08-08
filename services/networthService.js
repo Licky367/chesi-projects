@@ -25,6 +25,17 @@ function isValidObjectId(id) {
 }
 
 
+function hasValue(value) {
+
+    return (
+        value !== undefined &&
+        value !== null &&
+        String(value).trim() !== ""
+    );
+
+}
+
+
 /* =========================================================
    CONSTANTS
 ========================================================= */
@@ -43,13 +54,46 @@ const ALLOWED_STATUSES = [
 
 
 /* =========================================================
-   DETERMINE ASSET TYPE
+   DETERMINE DAIRY ASSET TYPE
+=========================================================
+
+   Positive code:
+       cow
+
+   Negative code:
+       dairy Facility
+
+   No code:
+       asset
+
 ========================================================= */
 
 function getDairyAssetType(code) {
 
+    if (
+        code === undefined ||
+        code === null ||
+        String(code).trim() === ""
+    ) {
+
+        return "asset";
+
+    }
+
+
     const numericCode =
         Number(code);
+
+
+    if (
+        !Number.isFinite(
+            numericCode
+        )
+    ) {
+
+        return "asset";
+
+    }
 
 
     if (numericCode > 0) {
@@ -91,16 +135,28 @@ function normalizeAsset(asset) {
 
 /* =========================================================
    GET STRUCTURE BY CODE
+
+   A structure is a Dairy record with a negative code.
+
 ========================================================= */
 
 async function getStructureByCode(code) {
+
+    if (!hasValue(code)) {
+
+        return null;
+
+    }
+
 
     const numericCode =
         Number(code);
 
 
     if (
-        !Number.isInteger(numericCode) ||
+        !Number.isInteger(
+            numericCode
+        ) ||
         numericCode >= 0
     ) {
 
@@ -111,7 +167,11 @@ async function getStructureByCode(code) {
 
     return Dairy.findOne({
 
-        code: numericCode
+        code:
+            numericCode,
+
+        status:
+            "active"
 
     });
 
@@ -121,35 +181,56 @@ async function getStructureByCode(code) {
 /* =========================================================
    GET NET WORTH OVERVIEW
 
-   ALL DATA COMES DIRECTLY FROM DAIRY.
+   SOURCE OF TRUTH:
+       Dairy
 
-   No synchronization is required because Dairy is now
-   the only source of truth.
+   ACTIVE RECORDS:
+       contribute to net worth
+
+   STRUCTURES:
+       negative code
+
+   STANDALONE ASSETS:
+       records without an assetCode
+
+   IMPORTANT:
+
+   An asset does NOT need a Dairy code.
+
+   Therefore:
+
+       code = undefined
+       code = null
+
+   are both valid.
+
 ========================================================= */
 
 exports.getNetWorthOverview =
 async function () {
 
-    /*
-     * Active records contribute to net worth.
-     */
+    /* -----------------------------------------------------
+       ACTIVE DAIRY RECORDS
+    ----------------------------------------------------- */
 
     const activeAssets =
         await Dairy.find({
 
-            status: "active"
+            status:
+                "active"
 
         })
         .sort({
 
-            name: 1
+            name:
+                1
 
         });
 
 
-    /*
-     * Total current worth.
-     */
+    /* -----------------------------------------------------
+       TOTAL NET WORTH
+    ----------------------------------------------------- */
 
     const totalResult =
         await Dairy.aggregate([
@@ -158,7 +239,8 @@ async function () {
 
                 $match: {
 
-                    status: "active"
+                    status:
+                        "active"
 
                 }
 
@@ -168,7 +250,8 @@ async function () {
 
                 $group: {
 
-                    _id: null,
+                    _id:
+                        null,
 
                     total: {
 
@@ -194,51 +277,70 @@ async function () {
             : 0;
 
 
-    /*
-     * Negative-code records are structures.
-     */
+    /* -----------------------------------------------------
+       STRUCTURES
+
+       Negative Dairy codes represent structures.
+    ----------------------------------------------------- */
 
     const structures =
         activeAssets.filter(
 
-            asset =>
-                Number(asset.code) < 0
+            asset => {
+
+                if (
+                    !hasValue(
+                        asset.code
+                    )
+                ) {
+
+                    return false;
+
+                }
+
+
+                return (
+                    Number(asset.code) < 0
+                );
+
+            }
 
         );
 
 
-    /*
-     * Assets which do not belong to a structure.
-     *
-     * A positive-code Dairy record is standalone when
-     * assetCode is empty/null.
-     *
-     * Code 0 is also treated as a standalone asset.
-     */
+    /* -----------------------------------------------------
+       STANDALONE ASSETS
+
+       An asset is standalone when it does not have an
+       assetCode.
+
+       The asset may have:
+           - positive code
+           - no code
+           - code 0
+
+       None of those determine structure membership.
+
+       assetCode determines membership.
+
+    ----------------------------------------------------- */
 
     const standaloneAssets =
-        activeAssets.filter(asset => {
+        activeAssets.filter(
 
-            const code =
-                Number(asset.code);
+            asset => {
 
-
-            const hasStructure =
-                asset.assetCode !== null &&
-
-                asset.assetCode !== undefined &&
-
-                String(
-                    asset.assetCode
-                ).trim() !== "";
+                const hasStructure =
+                    hasValue(
+                        asset.assetCode
+                    );
 
 
-            return (
-                code >= 0 &&
-                !hasStructure
-            );
+                return !hasStructure;
 
-        });
+            }
+
+        );
 
 
     return {
@@ -257,7 +359,12 @@ async function () {
 /* =========================================================
    GET STRUCTURE BY ID
 
-   STRUCTURE ID IS NOW Dairy._id.
+   STRUCTURE ID:
+       Dairy._id
+
+   STRUCTURE REQUIREMENT:
+       code < 0
+
 ========================================================= */
 
 exports.getStructureById =
@@ -273,13 +380,16 @@ async function (id) {
     const structure =
         await Dairy.findOne({
 
-            _id: id,
+            _id:
+                id,
 
             code: {
-                $lt: 0
+                $lt:
+                    0
             },
 
-            status: "active"
+            status:
+                "active"
 
         });
 
@@ -299,6 +409,11 @@ async function (id) {
 
    Child assets:
        Dairy.assetCode === structure.code
+
+   IMPORTANT:
+
+   Child assets do NOT need to have their own `code`.
+
 ========================================================= */
 
 exports.getStructureDetails =
@@ -311,16 +426,23 @@ async function (id) {
     }
 
 
+    /* -----------------------------------------------------
+       FIND STRUCTURE
+    ----------------------------------------------------- */
+
     const structure =
         await Dairy.findOne({
 
-            _id: id,
+            _id:
+                id,
 
             code: {
-                $lt: 0
+                $lt:
+                    0
             },
 
-            status: "active"
+            status:
+                "active"
 
         });
 
@@ -338,10 +460,9 @@ async function (id) {
         );
 
 
-    /*
-     * All assets assigned to this structure are
-     * identified by the structure's negative code.
-     */
+    /* -----------------------------------------------------
+       FIND CHILD ASSETS
+    ----------------------------------------------------- */
 
     const assets =
         await Dairy.find({
@@ -349,19 +470,21 @@ async function (id) {
             assetCode:
                 structureCode,
 
-            status: "active"
+            status:
+                "active"
 
         })
         .sort({
 
-            name: 1
+            name:
+                1
 
         });
 
 
-    /*
-     * Calculate the value of assets inside the structure.
-     */
+    /* -----------------------------------------------------
+       STRUCTURE ASSET TOTAL
+    ----------------------------------------------------- */
 
     const totalResult =
         await Dairy.aggregate([
@@ -384,7 +507,8 @@ async function (id) {
 
                 $group: {
 
-                    _id: null,
+                    _id:
+                        null,
 
                     total: {
 
@@ -428,9 +552,12 @@ async function (id) {
 
    IMPORTANT:
 
-   The ID is now ALWAYS Dairy._id.
+   `id` is ALWAYS:
 
-   There is no NetWorth ID anymore.
+       Dairy._id
+
+   There is no NetWorth ID.
+
 ========================================================= */
 
 exports.getAssetDetails =
@@ -443,8 +570,14 @@ async function (id) {
     }
 
 
+    /* -----------------------------------------------------
+       FIND DAIRY ASSET
+    ----------------------------------------------------- */
+
     const asset =
-        await Dairy.findById(id);
+        await Dairy.findById(
+            id
+        );
 
 
     if (!asset) {
@@ -454,21 +587,25 @@ async function (id) {
     }
 
 
-    /*
-     * Resolve the structure assignment.
+    /* -----------------------------------------------------
+       RESOLVE STRUCTURE
 
-     * Only positive-code assets can belong to a
-     * negative-code structure.
-     */
+       Structure relationship is determined ONLY by:
 
-    let structure = null;
+           asset.assetCode
+
+       The asset itself does NOT need a code.
+
+    ----------------------------------------------------- */
+
+    let structure =
+        null;
 
 
     if (
-        Number(asset.code) > 0 &&
-        asset.assetCode !== null &&
-        asset.assetCode !== undefined &&
-        String(asset.assetCode).trim() !== ""
+        hasValue(
+            asset.assetCode
+        )
     ) {
 
         structure =
@@ -479,28 +616,31 @@ async function (id) {
     }
 
 
-    /*
-     * Get all available structures.
-     *
-     * These are Dairy records with negative codes.
-     */
+    /* -----------------------------------------------------
+       GET AVAILABLE STRUCTURES
+    ----------------------------------------------------- */
 
     const structures =
         await Dairy.find({
 
             code: {
-                $lt: 0
-            }
+                $lt:
+                    0
+            },
+
+            status:
+                "active"
 
         })
         .select(
 
-            "code name"
+            "code name item"
 
         )
         .sort({
 
-            code: 1
+            code:
+                1
 
         })
         .lean();
@@ -510,7 +650,8 @@ async function (id) {
 
         asset,
 
-        dairy: asset,
+        dairy:
+            asset,
 
         structure,
 
@@ -526,9 +667,29 @@ async function (id) {
 
    EVERYTHING IS SAVED DIRECTLY TO DAIRY.
 
-   There is no second model.
+   ID:
+       Dairy._id
 
-   The ID is Dairy._id.
+   IMPORTANT:
+
+   `code` is editable.
+
+   However:
+
+       structure code < 0
+           = structure
+
+       asset code > 0
+           = coded Dairy asset
+
+       no code
+           = uncoded asset
+
+       code 0
+           = explicitly coded zero, if the model allows it
+
+   We do NOT automatically convert missing code to 0.
+
 ========================================================= */
 
 exports.updateAsset =
@@ -546,8 +707,14 @@ async function (
     }
 
 
+    /* -----------------------------------------------------
+       FIND EXISTING DAIRY RECORD
+    ----------------------------------------------------- */
+
     const asset =
-        await Dairy.findById(id);
+        await Dairy.findById(
+            id
+        );
 
 
     if (!asset) {
@@ -559,15 +726,13 @@ async function (
     }
 
 
-    const dairyCode =
-        Number(asset.code);
-
-
     /* =====================================================
        NAME
     ===================================================== */
 
-    if (data.item !== undefined) {
+    if (
+        data.item !== undefined
+    ) {
 
         const name =
             String(
@@ -586,6 +751,172 @@ async function (
 
         asset.name =
             name;
+
+    }
+
+
+    /* =====================================================
+       CODE
+
+       Code is editable.
+
+       Empty value:
+           removes the code.
+
+       Positive:
+           coded Dairy asset.
+
+       Negative:
+           structure.
+
+       IMPORTANT:
+
+       A negative code must not be assigned to an ordinary
+       asset because negative codes identify structures.
+
+    ===================================================== */
+
+    if (
+        data.code !== undefined
+    ) {
+
+        const rawCode =
+            String(
+                data.code
+            ).trim();
+
+
+        /* -------------------------------------------------
+           REMOVE CODE
+        ------------------------------------------------- */
+
+        if (!rawCode) {
+
+            /*
+             * Do not force code = 0.
+             *
+             * Remove the field/value instead.
+             */
+
+            asset.code =
+                undefined;
+
+        }
+
+
+        /* -------------------------------------------------
+           SET CODE
+        ------------------------------------------------- */
+
+        else {
+
+            const newCode =
+                Number(
+                    rawCode
+                );
+
+
+            if (
+                !Number.isInteger(
+                    newCode
+                )
+            ) {
+
+                throw new Error(
+                    "Dairy code must be a valid integer."
+                );
+
+            }
+
+
+            /* ---------------------------------------------
+               NEGATIVE CODE
+
+               Negative codes identify structures.
+
+               An asset currently being edited cannot simply
+               become a structure while still having children
+               or being assigned to another structure.
+            --------------------------------------------- */
+
+            if (
+                newCode < 0
+            ) {
+
+                const existingChildren =
+                    await Dairy.exists({
+
+                        assetCode:
+                            newCode
+
+                    });
+
+
+                if (existingChildren) {
+
+                    throw new Error(
+                        "This code already identifies a structure with assigned assets."
+                    );
+
+                }
+
+
+                asset.assetCode =
+                    null;
+
+            }
+
+
+            /* ---------------------------------------------
+               POSITIVE CODE
+
+               Positive codes identify Dairy assets.
+
+               Prevent duplicate Dairy codes.
+            --------------------------------------------- */
+
+            else if (
+                newCode > 0
+            ) {
+
+                const duplicate =
+                    await Dairy.findOne({
+
+                        code:
+                            newCode,
+
+                        _id: {
+                            $ne:
+                                asset._id
+                        }
+
+                    });
+
+
+                if (duplicate) {
+
+                    throw new Error(
+                        "This Dairy code is already in use."
+                    );
+
+                }
+
+            }
+
+
+            /* ---------------------------------------------
+               ZERO
+
+               Explicit zero is permitted.
+
+               It is NOT used automatically when code is
+               missing.
+            --------------------------------------------- */
+
+            asset.code =
+                newCode;
+
+        }
 
     }
 
@@ -765,7 +1096,9 @@ async function (
         else {
 
             const valuationDate =
-                new Date(rawDate);
+                new Date(
+                    rawDate
+                );
 
 
             if (
@@ -791,12 +1124,126 @@ async function (
 
     /* =====================================================
        STRUCTURE ASSIGNMENT
-       
-       Structures themselves cannot belong to another
-       structure.
+
+       IMPORTANT:
+
+       Structure assignment does NOT depend on whether
+       the asset has a Dairy code.
+
+       Any asset can belong to a structure.
+
+       The relationship is:
+
+           asset.assetCode = structure.code
+
     ===================================================== */
 
-    if (dairyCode < 0) {
+    if (
+        data.assetCode !== undefined
+    ) {
+
+        const rawAssetCode =
+            String(
+                data.assetCode
+            ).trim();
+
+
+        /* -------------------------------------------------
+           REMOVE STRUCTURE ASSIGNMENT
+        ------------------------------------------------- */
+
+        if (!rawAssetCode) {
+
+            asset.assetCode =
+                null;
+
+        }
+
+
+        /* -------------------------------------------------
+           ASSIGN STRUCTURE
+        ------------------------------------------------- */
+
+        else {
+
+            const selectedCode =
+                Number(
+                    rawAssetCode
+                );
+
+
+            if (
+                !Number.isInteger(
+                    selectedCode
+                )
+            ) {
+
+                throw new Error(
+                    "Selected structure is invalid."
+                );
+
+            }
+
+
+            if (
+                selectedCode >= 0
+            ) {
+
+                throw new Error(
+                    "Selected structure must have a negative code."
+                );
+
+            }
+
+
+            const structure =
+                await Dairy.findOne({
+
+                    code:
+                        selectedCode,
+
+                    status:
+                        "active"
+
+                });
+
+
+            if (!structure) {
+
+                throw new Error(
+                    "Selected structure does not exist."
+                );
+
+            }
+
+
+            asset.assetCode =
+                selectedCode;
+
+        }
+
+    }
+
+
+    /* =====================================================
+       STRUCTURE SAFETY
+
+       If this record itself has a negative code, it is a
+       structure and therefore cannot belong to another
+       structure.
+
+    ===================================================== */
+
+    const finalCode =
+        asset.code;
+
+
+    if (
+        hasValue(
+            finalCode
+        ) &&
+        Number(finalCode) < 0
+    ) {
 
         asset.assetCode =
             null;
@@ -805,190 +1252,7 @@ async function (
 
 
     /* =====================================================
-       POSITIVE-CODE ASSET
-    ===================================================== */
-
-    else if (dairyCode > 0) {
-
-        if (
-            data.assetCode !== undefined
-        ) {
-
-            const rawCode =
-                String(
-                    data.assetCode
-                ).trim();
-
-
-            /*
-             * Empty selection means standalone.
-             */
-
-            if (!rawCode) {
-
-                asset.assetCode =
-                    null;
-
-            }
-
-            else {
-
-                const selectedCode =
-                    Number(rawCode);
-
-
-                if (
-                    !Number.isInteger(
-                        selectedCode
-                    ) ||
-                    selectedCode >= 0
-                ) {
-
-                    throw new Error(
-                        "Selected structure is invalid."
-                    );
-
-                }
-
-
-                const structure =
-                    await Dairy.findOne({
-
-                        code:
-                            selectedCode,
-
-                        status:
-                            "active"
-
-                    });
-
-
-                if (!structure) {
-
-                    throw new Error(
-                        "Selected structure does not exist."
-                    );
-
-                }
-
-
-                if (
-                    Number(
-                        structure.code
-                    ) >= 0
-                ) {
-
-                    throw new Error(
-                        "Selected structure must have a negative code."
-                    );
-
-                }
-
-
-                /*
-                 * The negative structure code is the
-                 * authoritative relationship.
-                 */
-
-                asset.assetCode =
-                    selectedCode;
-
-            }
-
-        }
-
-    }
-
-
-    /* =====================================================
-       CODE ZERO / MANUAL ASSET
-    ===================================================== */
-
-    else {
-
-        /*
-         * A code-zero standalone asset does not belong
-         * to a structure unless the model later explicitly
-         * permits such a relationship.
-         */
-
-        if (
-            data.assetCode !== undefined
-        ) {
-
-            const rawCode =
-                String(
-                    data.assetCode
-                ).trim();
-
-
-            if (!rawCode) {
-
-                asset.assetCode =
-                    null;
-
-            }
-
-            else {
-
-                const selectedCode =
-                    Number(rawCode);
-
-
-                if (
-                    !Number.isInteger(
-                        selectedCode
-                    ) ||
-                    selectedCode >= 0
-                ) {
-
-                    throw new Error(
-                        "Selected structure is invalid."
-                    );
-
-                }
-
-
-                const structure =
-                    await Dairy.findOne({
-
-                        code:
-                            selectedCode,
-
-                        status:
-                            "active"
-
-                    });
-
-
-                if (!structure) {
-
-                    throw new Error(
-                        "Selected structure does not exist."
-                    );
-
-                }
-
-
-                asset.assetCode =
-                    selectedCode;
-
-            }
-
-        }
-
-    }
-
-
-    /* =====================================================
        SAVE
-
-       THIS IS THE IMPORTANT PART:
-
-       The exact Dairy document found using the URL ID
-       is saved.
-
-       Its _id does not change.
     ===================================================== */
 
     await asset.save();
@@ -1002,11 +1266,15 @@ async function (
 /* =========================================================
    ADD MANUAL ASSET TO STRUCTURE
 
-   Everything is stored in Dairy.
+   IMPORTANT:
 
-   The new asset gets:
-       code = 0
-       assetCode = structure.code
+   The new asset:
+
+       - uses Dairy._id automatically
+       - does NOT receive a forced `code`
+       - receives assetCode = structure.code
+       - is therefore immediately associated with the farm
+
 ========================================================= */
 
 exports.addManualAsset =
@@ -1028,6 +1296,10 @@ async function (
     }
 
 
+    /* -----------------------------------------------------
+       FIND STRUCTURE
+    ----------------------------------------------------- */
+
     const structure =
         await Dairy.findOne({
 
@@ -1035,7 +1307,8 @@ async function (
                 structureId,
 
             code: {
-                $lt: 0
+                $lt:
+                    0
             },
 
             status:
@@ -1052,6 +1325,10 @@ async function (
 
     }
 
+
+    /* =====================================================
+       BASIC FIELDS
+    ===================================================== */
 
     const item =
         String(
@@ -1128,16 +1405,13 @@ async function (
     }
 
 
+    /* =====================================================
+       BUYING PRICE
+    ===================================================== */
+
     const buyingPrice =
         toNumber(
             data.buyingPrice,
-            NaN
-        );
-
-
-    const currentWorth =
-        toNumber(
-            data.currentWorth,
             NaN
         );
 
@@ -1156,6 +1430,28 @@ async function (
 
 
     if (
+        buyingPrice < 0
+    ) {
+
+        throw new Error(
+            "Buying price cannot be negative."
+        );
+
+    }
+
+
+    /* =====================================================
+       CURRENT WORTH
+    ===================================================== */
+
+    const currentWorth =
+        toNumber(
+            data.currentWorth,
+            NaN
+        );
+
+
+    if (
         !Number.isFinite(
             currentWorth
         )
@@ -1169,59 +1465,68 @@ async function (
 
 
     if (
-        buyingPrice < 0 ||
         currentWorth < 0
     ) {
 
         throw new Error(
-            "Asset prices cannot be negative."
+            "Current worth cannot be negative."
         );
 
     }
 
 
+    /* =====================================================
+       CREATE DAIRY RECORD
+
+       DO NOT SET `code`.
+
+       MongoDB/Mongoose will therefore leave it absent
+       unless the schema itself supplies a default.
+
+       The structure relationship is established through:
+
+           assetCode = structure.code
+
+    ===================================================== */
+
+    const assetData = {
+
+        name:
+            item,
+
+        assetCode:
+            Number(
+                structure.code
+            ),
+
+        type,
+
+        buyingPrice,
+
+        currentWorth,
+
+        description,
+
+        condition,
+
+        location,
+
+        acquisitionDate:
+            new Date(),
+
+        valuationDate:
+            new Date(),
+
+        status:
+            "active"
+
+    };
+
+
     const asset =
-        await Dairy.create({
-
-            name:
-                item,
-
-            /*
-             * Code 0 identifies a manually-created
-             * standalone/structure asset rather than
-             * a cow or facility.
-             */
-
-            code:
-                0,
-
-            assetCode:
-                Number(
-                    structure.code
-                ),
-
-            type,
-
-            buyingPrice,
-
-            currentWorth,
-
-            description,
-
-            condition,
-
-            location,
-
-            acquisitionDate:
-                new Date(),
-
-            valuationDate:
-                new Date(),
-
-            status:
-                "active"
-
-        });
+        await Dairy.create(
+            assetData
+        );
 
 
     return asset;
