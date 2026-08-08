@@ -624,443 +624,547 @@
 
 </style><div class="financial-page networth-page"><!-- =====================================================
      HEADER
-====================================================== --><div class="financial-header"><div>
+====================================================== -->
 
-    <a
-        href="/networth"
-        class="financial-back-link"
-    >
-        ← Net Worth
-    </a>
+<div class="financial-header">
 
-    <h1>
-        <%= dairy.name || "Asset" %>
-    </h1>
+    <div>
 
-    <p>
-        Asset details and valuation.
-    </p>
+        <a
+            href="/networth"
+            class="financial-back-link"
+        >
+            ← Net Worth
+        </a>
+
+
+        <h1>
+            <%= dairy.name || "Asset" %>
+        </h1>
+
+
+        <p>
+            Asset details and valuation.
+        </p>
+
+    </div>
 
 </div>
 
-</div><!-- =====================================================
-     ASSET FORM
-====================================================== --><div class="financial-card"><form
-    action="/networth/asset/<%= dairy._id %>"
-    method="POST"
-    class="networth-form"
->
 
-    <input
-        type="hidden"
-        name="_method"
-        value="PUT"
+<!-- =====================================================
+     ASSET FORM
+====================================================== -->
+
+<div class="financial-card">
+
+    <form
+        action="/networth/asset/<%= dairy._id %>"
+        method="POST"
+        class="networth-form"
     >
 
-
-    <!-- =================================================
-         NAME
-    ================================================== -->
-
-    <div class="form-group">
-
-        <label for="name">
-            Name
-        </label>
-
         <input
-            type="text"
-            id="name"
-            name="name"
-            value="<%= dairy.name || '' %>"
-            autocomplete="off"
-            required
+            type="hidden"
+            name="_method"
+            value="PUT"
         >
 
-    </div>
 
-
-    <!-- =================================================
-         DAIRY CODE
-    ================================================== -->
-
-    <div class="form-group">
-
-        <label for="code">
-            Dairy Code
-        </label>
-
-        <input
-            type="text"
-            id="code"
-            value="<%= dairy.code ?? '' %>"
-            readonly
-        >
-
-    </div>
-
-
-    <!-- =================================================
-         TYPE
-    ================================================== -->
-
-    <div class="form-group">
-
-        <label for="type">
-            Type
-        </label>
-
-        <input
-            type="text"
-            id="type"
-            name="type"
-            value="<%= dairy.type || '' %>"
-            autocomplete="off"
-            required
-        >
-
-    </div>
-
-
-    <!-- =================================================
-         BUYING PRICE
-    ================================================== -->
-
-    <div class="form-group">
-
-        <label for="buyingPrice">
-            Buying Price
-        </label>
-
-        <input
-            type="number"
-            id="buyingPrice"
-            name="buyingPrice"
-            value="<%= dairy.buyingPrice ?? 0 %>"
-            min="0"
-            step="0.01"
-            required
-        >
-
-    </div>
-
-
-    <!-- =================================================
-         CURRENT WORTH
-    ================================================== -->
-
-    <div class="form-group">
-
-        <label for="currentWorth">
-            Current Worth
-        </label>
-
-        <input
-            type="number"
-            id="currentWorth"
-            name="currentWorth"
-            value="<%= dairy.currentWorth ?? 0 %>"
-            min="0"
-            step="0.01"
-            required
-        >
-
-    </div>
-
-
-    <!-- =================================================
-         DESCRIPTION
-    ================================================== -->
-
-    <div class="form-group">
-
-        <label for="description">
-            Description
-        </label>
-
-        <textarea
-            id="description"
-            name="description"
-            rows="4"
-            placeholder="Describe the asset..."
-        ><%= dairy.description || '' %></textarea>
-
-    </div>
-
-
-    <!-- =================================================
-         CONDITION
-    ================================================== -->
-
-    <div class="form-group">
-
-        <label for="condition">
-            Condition
-        </label>
-
-        <input
-            type="text"
-            id="condition"
-            name="condition"
-            value="<%= dairy.condition || '' %>"
-            placeholder="e.g. Good, New, Needs Repair"
-        >
-
-    </div>
-
-
-    <!-- =================================================
-         LOCATION
-    ================================================== -->
-
-    <div class="form-group">
-
-        <label for="location">
-            Location
-        </label>
-
-        <input
-            type="text"
-            id="location"
-            name="location"
-            value="<%= dairy.location || '' %>"
-            placeholder="Where is the asset located?"
-        >
-
-    </div>
-
-
-    <!-- =================================================
-         DAIRY FARM ASSIGNMENT
-    ================================================= -->
-
-    <% if (
-        dairy.code !== null &&
-        dairy.code !== undefined &&
-        Number(dairy.code) > 0
-    ) { %>
+        <!-- =================================================
+             NAME
+        ================================================== -->
 
         <div class="form-group">
 
-            <label for="assetCode">
-                Assign to Dairy Farm
+            <label for="name">
+                Name
             </label>
 
-            <select
-                id="assetCode"
-                name="assetCode"
+
+            <input
+                type="text"
+                id="name"
+                name="name"
+                value="<%= dairy.name || '' %>"
+                autocomplete="off"
+                required
             >
 
-                <option value="">
-                    Standalone Asset
+        </div>
+
+
+        <!-- =================================================
+             DAIRY CODE
+             
+             IMPORTANT:
+             
+             code is never edited here.
+
+             > 0  = identified dairy / animal
+             < 0  = Dairy Farm / structure
+             null = manual asset
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="code">
+                Dairy Code
+            </label>
+
+
+            <input
+                type="text"
+                id="code"
+                value="<%= dairy.code !== null && dairy.code !== undefined
+                    ? dairy.code
+                    : 'Manual Asset' %>"
+                readonly
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             TYPE
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="type">
+                Type
+            </label>
+
+
+            <input
+                type="text"
+                id="type"
+                name="type"
+                value="<%= dairy.type || '' %>"
+                autocomplete="off"
+                required
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             BUYING PRICE
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="buyingPrice">
+                Buying Price
+            </label>
+
+
+            <input
+                type="number"
+                id="buyingPrice"
+                name="buyingPrice"
+                value="<%= dairy.buyingPrice ?? 0 %>"
+                min="0"
+                step="0.01"
+                required
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             CURRENT WORTH
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="currentWorth">
+                Current Worth
+            </label>
+
+
+            <input
+                type="number"
+                id="currentWorth"
+                name="currentWorth"
+                value="<%= dairy.currentWorth ?? 0 %>"
+                min="0"
+                step="0.01"
+                required
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             DESCRIPTION
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="description">
+                Description
+            </label>
+
+
+            <textarea
+                id="description"
+                name="description"
+                rows="4"
+                placeholder="Describe the asset..."
+            ><%= dairy.description || '' %></textarea>
+
+        </div>
+
+
+        <!-- =================================================
+             CONDITION
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="condition">
+                Condition
+            </label>
+
+
+            <input
+                type="text"
+                id="condition"
+                name="condition"
+                value="<%= dairy.condition || '' %>"
+                placeholder="e.g. Good, New, Needs Repair"
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             LOCATION
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="location">
+                Location
+            </label>
+
+
+            <input
+                type="text"
+                id="location"
+                name="location"
+                value="<%= dairy.location || '' %>"
+                placeholder="Where is the asset located?"
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             ASSET / DAIRY FARM ASSIGNMENT
+             
+             RULES:
+             
+             1. code > 0
+                - assetCode null = standalone
+                - assetCode < 0 = belongs to Dairy Farm
+
+             2. code === null
+                - manual asset
+                - assetCode should identify its Dairy Farm
+
+             3. code < 0
+                - this is the Dairy Farm itself
+                - assetCode must remain null
+        ================================================== -->
+
+        <% if (
+            dairy.code === null ||
+            dairy.code === undefined ||
+            Number(dairy.code) > 0
+        ) { %>
+
+
+            <div class="form-group">
+
+                <label for="assetCode">
+                    Assign to Dairy Farm
+                </label>
+
+
+                <select
+                    id="assetCode"
+                    name="assetCode"
+                >
+
+                    <!-- =================================================
+                         STANDALONE OPTION
+
+                         Only meaningful for identified dairies
+                         where code > 0.
+
+                         Manual assets should not normally be
+                         standalone.
+                    ================================================== -->
+
+                    <% if (
+                        dairy.code !== null &&
+                        dairy.code !== undefined &&
+                        Number(dairy.code) > 0
+                    ) { %>
+
+                        <option
+                            value=""
+                            <%= dairy.assetCode === null ||
+                                dairy.assetCode === undefined
+                                    ? "selected"
+                                    : "" %>
+                        >
+                            Standalone Asset
+                        </option>
+
+                    <% } %>
+
+
+                    <!-- =================================================
+                         DAIRY FARM OPTIONS
+
+                         Only negative codes are valid parents.
+                    ================================================== -->
+
+                    <% if (
+                        Array.isArray(structures) &&
+                        structures.length > 0
+                    ) { %>
+
+
+                        <% structures.forEach(function(structure) { %>
+
+
+                            <% if (
+                                structure.code !== null &&
+                                structure.code !== undefined &&
+                                Number(structure.code) < 0
+                            ) { %>
+
+
+                                <option
+                                    value="<%= structure.code %>"
+                                    <%= dairy.assetCode != null &&
+                                        Number(dairy.assetCode) ===
+                                        Number(structure.code)
+                                            ? "selected"
+                                            : "" %>
+                                >
+
+                                    <%= structure.name || structure.code %>
+                                    —
+                                    <%= structure.code %>
+
+                                </option>
+
+
+                            <% } %>
+
+
+                        <% }); %>
+
+
+                    <% } %>
+
+                </select>
+
+            </div>
+
+
+        <% } else if (
+            dairy.code !== null &&
+            dairy.code !== undefined &&
+            Number(dairy.code) < 0
+        ) { %>
+
+
+            <!-- =================================================
+                 DAIRY FARM / STRUCTURE
+            ================================================== -->
+
+            <div class="form-group">
+
+                <label>
+                    Dairy Farm
+                </label>
+
+
+                <div class="structure-info">
+
+                    <strong>
+                        This is a Dairy Farm.
+                    </strong>
+
+
+                    <br>
+
+
+                    Its dairy code is
+                    <strong>
+                        <%= dairy.code %>
+                    </strong>.
+
+
+                    <br>
+
+
+                    A Dairy Farm cannot have an
+                    assetCode.
+
+                </div>
+
+            </div>
+
+
+        <% } %>
+
+
+        <!-- =================================================
+             STATUS
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="status">
+                Status
+            </label>
+
+
+            <select
+                id="status"
+                name="status"
+                required
+            >
+
+                <option
+                    value="active"
+                    <%= dairy.status === "active"
+                        ? "selected"
+                        : "" %>
+                >
+                    Active
                 </option>
 
 
-                <% if (
-                    Array.isArray(structures) &&
-                    structures.length > 0
-                ) { %>
+                <option
+                    value="sold"
+                    <%= dairy.status === "sold"
+                        ? "selected"
+                        : "" %>
+                >
+                    Sold
+                </option>
 
 
-                    <% structures.forEach(function(structure) { %>
-
-                        <% if (
-                            structure.code !== null &&
-                            structure.code !== undefined &&
-                            Number(structure.code) < 0
-                        ) { %>
-
-                            <option
-                                value="<%= structure.code %>"
-                                <%= dairy.assetCode != null &&
-                                    Number(dairy.assetCode) === Number(structure.code)
-                                        ? "selected"
-                                        : "" %>
-                            >
-
-                                <%= structure.name || structure.code %>
-                                —
-                                <%= structure.code %>
-
-                            </option>
-
-                        <% } %>
-
-                    <% }); %>
+                <option
+                    value="disposed"
+                    <%= dairy.status === "disposed"
+                        ? "selected"
+                        : "" %>
+                >
+                    Disposed
+                </option>
 
 
-                <% } %>
+                <option
+                    value="inactive"
+                    <%= dairy.status === "inactive"
+                        ? "selected"
+                        : "" %>
+                >
+                    Inactive
+                </option>
 
             </select>
 
         </div>
 
 
-    <% } else if (
-        dairy.code !== null &&
-        dairy.code !== undefined &&
-        Number(dairy.code) < 0
-    ) { %>
-
-
         <!-- =================================================
-             DAIRY FARM
+             VALUATION DATE
         ================================================== -->
 
         <div class="form-group">
 
-            <label>
-                Dairy Farm
+            <label for="valuationDate">
+                Valuation Date
             </label>
 
-            <div class="structure-info">
 
-                <strong>
-                    This is a Dairy Farm.
-                </strong>
-
-                <br>
-
-                A Dairy Farm cannot be assigned
-                an assetCode because its dairy.code
-                is negative.
-
-            </div>
+            <input
+                type="date"
+                id="valuationDate"
+                name="valuationDate"
+                value="<%= dairy.valuationDate
+                    ? new Date(dairy.valuationDate)
+                        .toISOString()
+                        .slice(0, 10)
+                    : '' %>"
+            >
 
         </div>
 
 
-    <% } %>
+        <!-- =================================================
+             ACQUISITION DATE
+             
+             Display only.
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="acquisitionDate">
+                Acquisition Date
+            </label>
 
 
-    <!-- =================================================
-         STATUS
-    ================================================== -->
-
-    <div class="form-group">
-
-        <label for="status">
-            Status
-        </label>
-
-        <select
-            id="status"
-            name="status"
-            required
-        >
-
-            <option
-                value="active"
-                <%= dairy.status === "active"
-                    ? "selected"
-                    : "" %>
+            <input
+                type="text"
+                id="acquisitionDate"
+                value="<%= dairy.acquisitionDate
+                    ? new Date(dairy.acquisitionDate)
+                        .toLocaleString('en-KE', {
+                            timeZone: 'Africa/Nairobi'
+                        })
+                    : '' %>"
+                readonly
             >
-                Active
-            </option>
 
-            <option
-                value="sold"
-                <%= dairy.status === "sold"
-                    ? "selected"
-                    : "" %>
+        </div>
+
+
+        <!-- =================================================
+             ACTIONS
+        ================================================== -->
+
+        <div class="form-actions">
+
+            <a
+                href="/networth"
+                class="button button-secondary"
             >
-                Sold
-            </option>
+                Cancel
+            </a>
 
-            <option
-                value="disposed"
-                <%= dairy.status === "disposed"
-                    ? "selected"
-                    : "" %>
+
+            <button
+                type="submit"
+                class="button button-primary"
             >
-                Disposed
-            </option>
+                Save Changes
+            </button>
 
-            <option
-                value="inactive"
-                <%= dairy.status === "inactive"
-                    ? "selected"
-                    : "" %>
-            >
-                Inactive
-            </option>
+        </div>
 
-        </select>
+    </form>
 
-    </div>
+</div>
 
-
-    <!-- =================================================
-         VALUATION DATE
-    ================================================== -->
-
-    <div class="form-group">
-
-        <label for="valuationDate">
-            Valuation Date
-        </label>
-
-        <input
-            type="date"
-            id="valuationDate"
-            name="valuationDate"
-            value="<%= dairy.valuationDate
-                ? new Date(dairy.valuationDate)
-                    .toISOString()
-                    .slice(0, 10)
-                : '' %>"
-        >
-
-    </div>
-
-
-    <!-- =================================================
-         ACQUISITION DATE
-    ================================================== -->
-
-    <div class="form-group">
-
-        <label for="acquisitionDate">
-            Acquisition Date
-        </label>
-
-        <input
-            type="text"
-            id="acquisitionDate"
-            value="<%= dairy.acquisitionDate
-                ? new Date(dairy.acquisitionDate)
-                    .toLocaleString('en-KE', {
-                        timeZone: 'Africa/Nairobi'
-                    })
-                : '' %>"
-            readonly
-        >
-
-    </div>
-
-
-    <!-- =================================================
-         ACTIONS
-    ================================================== -->
-
-    <div class="form-actions">
-
-        <a
-            href="/networth"
-            class="button button-secondary"
-        >
-            Cancel
-        </a>
-
-        <button
-            type="submit"
-            class="button button-primary"
-        >
-            Save Changes
-        </button>
-
-    </div>
-
-</form>
-
-</div></div>
+</div>
