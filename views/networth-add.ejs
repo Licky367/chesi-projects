@@ -300,7 +300,7 @@
 
 
 /* ==========================================================
-   FARM FIELD
+   DAIRY FARM FIELD
 ========================================================== */
 
 .networth-form input[readonly] {
@@ -316,7 +316,6 @@
     cursor: not-allowed;
 
 }
-
 
 .networth-form input[readonly]:focus {
 
@@ -580,6 +579,14 @@
 
     <!-- =====================================================
          HEADER
+
+         dairy = the current Dairy Farm record.
+
+         dairy._id identifies the Dairy Farm for routing.
+
+         dairy.code identifies the Dairy Farm's code.
+
+         The farm must have dairy.code < 0.
     ====================================================== -->
 
     <div class="financial-header">
@@ -600,7 +607,7 @@
 
 
             <p>
-                Add an asset belonging to this dairy farm.
+                Add an asset belonging to this Dairy Farm.
             </p>
 
         </div>
@@ -611,13 +618,19 @@
     <!-- =====================================================
          FORM
 
-         The parent Dairy Farm is identified exclusively by
-         dairy._id.
+         This form creates an ordinary asset directly inside
+         the current Dairy Farm.
 
-         No assetCode is submitted by this form.
+         The newly-created Dairy must have:
 
-         The service is responsible for creating the new
-         Dairy asset and assigning its parentStructure.
+             dairy.code = null
+
+         It must NOT receive a dairy.assetCode.
+
+         dairy.assetCode is only used when an existing Dairy
+         is assigned to a Dairy Farm.
+
+         The current Dairy Farm is identified by its _id.
     ====================================================== -->
 
     <div class="financial-card">
@@ -630,7 +643,7 @@
 
 
             <!-- =================================================
-                 ITEM / ASSET NAME
+                 ITEM
 
                  Service mapping:
                      item -> Dairy.name
@@ -814,7 +827,10 @@
                  Display only.
 
                  The farm is identified by dairy._id.
-                 No farm code and no assetCode are submitted.
+
+                 No dairy.code is submitted by this form.
+
+                 No dairy.assetCode is submitted by this form.
             ================================================== -->
 
             <div class="form-group">
