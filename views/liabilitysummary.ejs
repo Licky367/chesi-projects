@@ -1,123 +1,498 @@
-<div class="financial-page">
+<style>
+/* ==========================================================
+   LIABILITY SUMMARY PAGE
+========================================================== */
 
-    <!-- =====================================================
-         PAGE HEADER
-    ====================================================== -->
+.financial-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 25px 18px 50px;
+    box-sizing: border-box;
+}
 
-    <div class="financial-header">
 
-        <div>
-            <h1>Liability Summary</h1>
+/* ==========================================================
+   PAGE HEADER
+========================================================== */
 
-            <p>
-                View all recorded liabilities.
-            </p>
-        </div>
+.financial-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
 
-        <a
-            href="/financials/liability"
-            class="financial-header-link"
-        >
-            Add Liability
-        </a>
+    margin-bottom: 25px;
+}
 
+.financial-header h1 {
+    margin: 0 0 7px;
+
+    color: #172033;
+
+    font-size: 30px;
+    font-weight: 750;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+}
+
+.financial-header p {
+    margin: 0;
+
+    color: #6b7280;
+
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+
+/* ==========================================================
+   HEADER BUTTON
+========================================================== */
+
+.financial-header-link {
+    flex-shrink: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    min-height: 44px;
+    padding: 0 17px;
+
+    box-sizing: border-box;
+
+    border-radius: 10px;
+
+    background: #4f46e5;
+    color: #ffffff;
+
+    border: 1px solid #4f46e5;
+
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    box-shadow:
+        0 4px 10px rgba(79, 70, 229, 0.16);
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.financial-header-link::before {
+    content: "+";
+    font-size: 18px;
+    line-height: 1;
+}
+
+.financial-header-link:hover {
+    background: #4338ca;
+    border-color: #4338ca;
+
+    box-shadow:
+        0 6px 15px rgba(79, 70, 229, 0.22);
+
+    transform: translateY(-1px);
+}
+
+
+/* ==========================================================
+   MAIN CARD
+========================================================== */
+
+.financial-card {
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border: 1px solid #e8ebf0;
+    border-radius: 18px;
+
+    box-shadow:
+        0 8px 25px rgba(15, 23, 42, 0.06),
+        0 2px 6px rgba(15, 23, 42, 0.03);
+}
+
+
+/* ==========================================================
+   TABLE WRAPPER
+========================================================== */
+
+.financial-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+
+/* ==========================================================
+   TABLE
+========================================================== */
+
+.financial-table {
+    width: 100%;
+
+    min-width: 700px;
+
+    border-collapse: collapse;
+
+    text-align: left;
+}
+
+
+/* ==========================================================
+   TABLE HEADER
+========================================================== */
+
+.financial-table thead {
+    background: #f8f9fc;
+}
+
+.financial-table th {
+    padding: 16px 20px;
+
+    color: #697386;
+
+    font-size: 12px;
+    font-weight: 750;
+
+    text-transform: uppercase;
+    letter-spacing: 0.55px;
+
+    white-space: nowrap;
+
+    border-bottom: 1px solid #e7eaf0;
+}
+
+
+/* ==========================================================
+   TABLE BODY
+========================================================== */
+
+.financial-table td {
+    padding: 18px 20px;
+
+    color: #374151;
+
+    font-size: 14px;
+    line-height: 1.5;
+
+    vertical-align: middle;
+
+    border-bottom: 1px solid #eef0f4;
+}
+
+.financial-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* ==========================================================
+   ROW HOVER
+========================================================== */
+
+.financial-table tbody tr {
+    transition: background 0.18s ease;
+}
+
+.financial-table tbody tr:hover {
+    background: #fafbff;
+}
+
+
+/* ==========================================================
+   TYPE
+========================================================== */
+
+.financial-table td:first-child {
+    color: #1f2937;
+    font-weight: 700;
+}
+
+
+/* ==========================================================
+   LIABILITY AMOUNT
+========================================================== */
+
+.financial-table td:nth-child(2) {
+    color: #b42318;
+
+    font-size: 15px;
+    font-weight: 750;
+
+    white-space: nowrap;
+}
+
+.financial-table td:nth-child(2)::before {
+    content: "KES ";
+    
+    color: #8b95a5;
+
+    font-size: 11px;
+    font-weight: 650;
+}
+
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.financial-table td:nth-child(3) {
+    max-width: 360px;
+
+    color: #596273;
+}
+
+
+/* ==========================================================
+   TIME
+========================================================== */
+
+.financial-table td:nth-child(4) {
+    color: #7a8494;
+
+    font-size: 13px;
+
+    white-space: nowrap;
+}
+
+
+/* ==========================================================
+   EMPTY STATE
+========================================================== */
+
+.financial-empty {
+    padding: 55px 20px !important;
+
+    text-align: center;
+
+    color: #8a94a5 !important;
+
+    font-size: 14px !important;
+    font-weight: 500 !important;
+}
+
+
+/* ==========================================================
+   EMPTY STATE ICON
+========================================================== */
+
+.financial-empty::before {
+    content: "📋";
+
+    display: block;
+
+    margin-bottom: 10px;
+
+    font-size: 30px;
+}
+
+
+/* ==========================================================
+   TABLE SCROLLBAR
+========================================================== */
+
+.financial-table-wrapper::-webkit-scrollbar {
+    height: 7px;
+}
+
+.financial-table-wrapper::-webkit-scrollbar-track {
+    background: #f1f3f6;
+}
+
+.financial-table-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd1db;
+    border-radius: 10px;
+}
+
+.financial-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #aeb6c3;
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 650px) {
+
+    .financial-page {
+        padding: 18px 14px 40px;
+    }
+
+    .financial-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .financial-header h1 {
+        font-size: 25px;
+    }
+
+    .financial-header p {
+        font-size: 14px;
+    }
+
+    .financial-header-link {
+        width: 100%;
+    }
+
+    .financial-card {
+        border-radius: 15px;
+    }
+
+    .financial-table {
+        min-width: 650px;
+    }
+
+    .financial-table th,
+    .financial-table td {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+
+
+/* ==========================================================
+   SMALL PHONES
+========================================================== */
+
+@media (max-width: 380px) {
+
+    .financial-page {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .financial-header h1 {
+        font-size: 23px;
+    }
+}
+</style><div class="financial-page"><!-- =====================================================
+     PAGE HEADER
+====================================================== -->
+
+<div class="financial-header">
+
+    <div>
+        <h1>Liability Summary</h1>
+
+        <p>
+            View all recorded liabilities.
+        </p>
     </div>
 
+    <a
+        href="/financials/liability"
+        class="financial-header-link"
+    >
+        Add Liability
+    </a>
 
-    <!-- =====================================================
-         LIABILITY TABLE
-    ====================================================== -->
-
-    <div class="financial-card">
-
-        <div class="financial-table-wrapper">
-
-            <table class="financial-table">
-
-                <thead>
-
-                    <tr>
-
-                        <th>
-                            Type
-                        </th>
-
-                        <th>
-                            Liability
-                        </th>
-
-                        <th>
-                            Description
-                        </th>
-
-                        <th>
-                            Time
-                        </th>
-
-                    </tr>
-
-                </thead>
+</div>
 
 
-                <tbody>
+<!-- =====================================================
+     LIABILITY TABLE
+====================================================== -->
 
-                    <% if (liabilities && liabilities.length > 0) { %>
+<div class="financial-card">
 
-                        <% liabilities.forEach(function(item) { %>
+    <div class="financial-table-wrapper">
 
-                            <tr>
+        <table class="financial-table">
 
-                                <td>
-                                    <%= item.type %>
-                                </td>
+            <thead>
 
-                                <td>
-                                    <%= Number(item.amount || 0).toLocaleString() %>
-                                </td>
+                <tr>
 
-                                <td>
-                                    <%= item.description %>
-                                </td>
+                    <th>
+                        Type
+                    </th>
 
-                                <td>
+                    <th>
+                        Liability
+                    </th>
 
-                                    <% if (item.time) { %>
+                    <th>
+                        Description
+                    </th>
 
-                                        <%= new Date(item.time).toLocaleString() %>
+                    <th>
+                        Time
+                    </th>
 
-                                    <% } else { %>
+                </tr>
 
-                                        —
+            </thead>
 
-                                    <% } %>
 
-                                </td>
+            <tbody>
 
-                            </tr>
+                <% if (liabilities && liabilities.length > 0) { %>
 
-                        <% }); %>
-
-                    <% } else { %>
+                    <% liabilities.forEach(function(item) { %>
 
                         <tr>
 
-                            <td
-                                colspan="4"
-                                class="financial-empty"
-                            >
-                                No liabilities have been recorded yet.
+                            <td>
+                                <%= item.type %>
+                            </td>
+
+                            <td>
+                                <%= Number(item.amount || 0).toLocaleString() %>
+                            </td>
+
+                            <td>
+                                <%= item.description %>
+                            </td>
+
+                            <td>
+
+                                <% if (item.time) { %>
+
+                                    <%= new Date(item.time).toLocaleString() %>
+
+                                <% } else { %>
+
+                                    —
+
+                                <% } %>
+
                             </td>
 
                         </tr>
 
-                    <% } %>
+                    <% }); %>
 
-                </tbody>
+                <% } else { %>
 
-            </table>
+                    <tr>
 
-        </div>
+                        <td
+                            colspan="4"
+                            class="financial-empty"
+                        >
+                            No liabilities have been recorded yet.
+                        </td>
+
+                    </tr>
+
+                <% } %>
+
+            </tbody>
+
+        </table>
 
     </div>
+
+</div>
 
 </div>
