@@ -2,17 +2,33 @@ const express = require("express");
 
 const router = express.Router();
 
-const updateAssetController =
-    require("../controllers/networth/updateAsset");
+const structuresController =
+    require("../controllers/networth/structures");
 
-const updateAssetUpload =
-    require("../middleware/networthUpload");
+
+/* ==========================================================
+   DAIRY FARM STRUCTURE
+========================================================== */
+
+router.get(
+    "/structure/:id",
+    structuresController.getDairyFarm
+);
+
+
+/* ==========================================================
+   ADD ASSET TO DAIRY FARM
+========================================================== */
+
+router.get(
+    "/structure/:id/add",
+    structuresController.getAddAsset
+);
 
 
 router.post(
-    "/asset/:id",
-    updateAssetUpload,
-    updateAssetController.updateAsset
+    "/structure/:id/add",
+    structuresController.addAsset
 );
 
 
