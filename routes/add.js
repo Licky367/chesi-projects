@@ -1,20 +1,11 @@
 // ==========================================================
 // routes/add.js
+// ADD DAIRY / ANIMAL / STRUCTURE ROUTES
 // ==========================================================
 
-const express =
-    require("express");
+const express = require("express");
 
-const router =
-    express.Router();
-
-
-// ==========================================================
-// MIDDLEWARE
-// ==========================================================
-
-const upload =
-    require("../middleware/uploadMiddleware");
+const router = express.Router();
 
 
 // ==========================================================
@@ -23,12 +14,27 @@ const upload =
 
 const {
 
-    showAddPage,
+    getAddPage,
 
-    createDairy
+    createRecord
 
-} =
-    require("../controllers/addController");
+} = require("../controllers/addController");
+
+
+// ==========================================================
+// OPTIONAL UPLOAD MIDDLEWARE
+// ==========================================================
+//
+// Keep this import if your project already has an upload
+// middleware for profileImage.
+//
+// If your existing middleware has a different path/name,
+// change ONLY this import.
+//
+// ==========================================================
+
+const upload =
+    require("../middleware/upload");
 
 
 // ==========================================================
@@ -37,18 +43,27 @@ const {
 
 router.get(
     "/",
-    showAddPage
+    getAddPage
 );
 
 
 // ==========================================================
-// CREATE DAIRY / ASSET
+// CREATE RECORD
+// ==========================================================
+//
+// The EJS form uses:
+//
+// enctype="multipart/form-data"
+//
+// Therefore multer must process profileImage before
+// the controller receives the request.
+//
 // ==========================================================
 
 router.post(
     "/",
     upload.single("profileImage"),
-    createDairy
+    createRecord
 );
 
 
@@ -56,5 +71,4 @@ router.post(
 // EXPORT
 // ==========================================================
 
-module.exports =
-    router;
+module.exports = router;
