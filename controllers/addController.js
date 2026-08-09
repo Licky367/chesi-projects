@@ -1,5 +1,6 @@
 // ==========================================================
 // controllers/addController.js
+// ADD DAIRY / ANIMAL / STRUCTURE CONTROLLER
 // ==========================================================
 
 const addService =
@@ -7,14 +8,10 @@ const addService =
 
 
 // ==========================================================
-// SHOW ADD PAGE
+// GET ADD PAGE
 // ==========================================================
 
-async function showAddPage(
-    req,
-    res,
-    next
-) {
+async function getAddPage(req, res) {
 
     try {
 
@@ -26,21 +23,37 @@ async function showAddPage(
             "add",
             {
 
-                title:
-                    "Add Dairy / Asset",
-
                 dairyBreeds:
                     data.dairyBreeds,
 
                 structures:
-                    data.dairyFarms
+                    data.dairyFarms,
+
+                user:
+                    req.user
 
             }
         );
 
     } catch (error) {
 
-        next(error);
+        console.error(
+            "GET /add error:",
+            error
+        );
+
+
+        return res.status(500).render(
+            "error",
+            {
+
+                statusCode: 500,
+
+                message:
+                    "Unable to load the add record page."
+
+            }
+        );
 
     }
 
@@ -48,329 +61,74 @@ async function showAddPage(
 
 
 // ==========================================================
-// CREATE DAIRY / ASSET
+// CREATE RECORD
 // ==========================================================
 
-async function createDairy(
-    req,
-    res,
-    next
-) {
+async function createRecord(req, res) {
 
     try {
 
-        const {
+        /*
+         * req.body contains the normal form fields.
+         *
+         * req.file contains profileImage when supplied.
+         */
 
-            recordType,
+        const result =
+            await addService.createRecord({
 
-            name,
+                body:
+                    req.body,
 
-            farmType,
+                file:
+                    req.file,
 
-            assetCode,
+                user:
+                    req.user
 
-            structureFarmCode,
+            });
 
-            dateOfBirth,
 
-            type,
-
-            mass,
-
-            buyingPrice,
-
-            currentWorth,
-
-            description,
-
-            condition,
-
-            location,
-
-            status
-
-        } =
-            req.body;
-
-
-        // ==================================================
-        // BASIC VALIDATION
-        // ==================================================
-
-        const validRecordTypes = [
-
-            "dairyFarm",
-
-            "animal",
-
-            "structure"
-
-        ];
-
-
-        if (
-            !validRecordTypes.includes(
-                recordType
-            )
-        ) {
-
-            const error =
-                new Error(
-                    "Please select a valid record type."
-                );
-
-            error.statusCode =
-                400;
-
-            throw error;
-
-        }
-
-
-        if (
-            !name ||
-            !name.trim()
-        ) {
-
-            const error =
-                new Error(
-                    "Name is required."
-                );
-
-            error.statusCode =
-                400;
-
-            throw error;
-
-        }
-
-
-        // ==================================================
-        // DAIRY FARM VALIDATION
-        // ==================================================
-
-        if (
-            recordType ===
-            "dairyFarm"
-        ) {
-
-            if (
-                !farmType ||
-                !farmType.trim()
-            ) {
-
-                const error =
-                    new Error(
-                        "Please select the dairy farm type."
-                    );
-
-                error.statusCode =
-                    400;
-
-                throw error;
-
-            }
-
-        }
-
-
-        // ==================================================
-        // ANIMAL VALIDATION
-        // ==================================================
-
-        if (
-            recordType ===
-            "animal"
-        ) {
-
-            if (
-                !dateOfBirth
-            ) {
-
-                const error =
-                    new Error(
-                        "Date of birth is required for an animal."
-                    );
-
-                error.statusCode =
-                    400;
-
-                throw error;
-
-            }
-
-
-            if (
-                !type ||
-                !type.trim()
-            ) {
-
-                const error =
-                    new Error(
-                        "Please select the animal breed."
-                    );
-
-                error.statusCode =
-                    400;
-
-                throw error;
-
-            }
-
-        }
-
-
-        // ==================================================
-        // STRUCTURE VALIDATION
-        // ==================================================
-
-        if (
-            recordType ===
-            "structure"
-        ) {
-
-            if (
-                !type ||
-                !type.trim()
-            ) {
-
-                const error =
-                    new Error(
-                        "Please select the structure or facility type."
-                    );
-
-                error.statusCode =
-                    400;
-
-                throw error;
-
-            }
-
-        }
-
-
-        // ==================================================
-        // PREPARE DATA
-        // ==================================================
-
-        const recordData = {
-
-            recordType,
-
-            name:
-                name.trim(),
-
-            farmType:
-                farmType?.trim() || null,
-
-            assetCode:
-                assetCode?.trim() || null,
-
-            structureFarmCode:
-                structureFarmCode?.trim() || null,
-
-            dateOfBirth:
-                dateOfBirth || null,
-
-            type:
-                type?.trim() || null,
-
-            mass:
-                mass !== undefined &&
-                mass !== ""
-                    ? Number(mass)
-                    : null,
-
-            buyingPrice:
-                buyingPrice !== undefined &&
-                buyingPrice !== ""
-                    ? Number(buyingPrice)
-                    : 0,
-
-            currentWorth:
-                currentWorth !== undefined &&
-                currentWorth !== ""
-                    ? Number(currentWorth)
-                    : 0,
-
-            description:
-                description?.trim() || "",
-
-            condition:
-                condition?.trim() || "",
-
-            location:
-                location?.trim() || "",
-
-            status:
-                status || "active",
-
-            profileImage:
-                req.file || null
-
-        };
-
-
-        // ==================================================
-        // CREATE
-        // ==================================================
-
-        const createdRecord =
-            await addService.createDairy(
-                recordData
-            );
-
-
-        // ==================================================
-        // RESPONSE
-        // ==================================================
+        /*
+         * Normal form submission.
+         *
+         * Redirect back to Net Worth after successful
+         * creation.
+         */
 
         return res.redirect(
             "/networth"
         );
 
+
     } catch (error) {
 
+        console.error(
+            "POST /add error:",
+            error
+        );
+
+
         /*
-         * If an uploaded image exists but
-         * creation fails, remove it.
+         * Return the actual validation/service message
+         * instead of hiding it behind a generic error.
          */
 
-        if (
-            req.file &&
-            req.file.path
-        ) {
+        return res.status(
+            error.statusCode || 500
+        ).render(
+            "error",
+            {
 
-            const fs =
-                require("fs");
+                statusCode:
+                    error.statusCode || 500,
 
-            try {
-
-                if (
-                    fs.existsSync(
-                        req.file.path
-                    )
-                ) {
-
-                    fs.unlinkSync(
-                        req.file.path
-                    );
-
-                }
-
-            } catch (cleanupError) {
-
-                console.error(
-                    "Image cleanup failed:",
-                    cleanupError
-                );
+                message:
+                    error.message ||
+                    "Unable to create record."
 
             }
-
-        }
-
-
-        next(error);
+        );
 
     }
 
@@ -383,8 +141,8 @@ async function createDairy(
 
 module.exports = {
 
-    showAddPage,
+    getAddPage,
 
-    createDairy
+    createRecord
 
 };
