@@ -1,3 +1,7 @@
+// ==========================================================
+// routes/add.js
+// ==========================================================
+
 const express =
     require("express");
 
@@ -5,38 +9,52 @@ const router =
     express.Router();
 
 
-const addController =
-    require("../controllers/addController");
-
+// ==========================================================
+// MIDDLEWARE
+// ==========================================================
 
 const upload =
     require("../middleware/uploadMiddleware");
 
 
-// ========================================================== 
-// GET /add
+// ==========================================================
+// CONTROLLER
+// ==========================================================
+
+const {
+
+    showAddPage,
+
+    createDairy
+
+} =
+    require("../controllers/addController");
+
+
+// ==========================================================
+// GET ADD PAGE
 // ==========================================================
 
 router.get(
     "/",
-    addController.getAddPage
+    showAddPage
 );
 
 
 // ==========================================================
-// POST /add
-//
-// Handles:
-// - profileImage
-// - all normal form fields
+// CREATE DAIRY / ASSET
 // ==========================================================
 
 router.post(
     "/",
     upload.single("profileImage"),
-    addController.createDairy
+    createDairy
 );
 
+
+// ==========================================================
+// EXPORT
+// ==========================================================
 
 module.exports =
     router;
