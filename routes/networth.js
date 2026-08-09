@@ -5,19 +5,13 @@ const router = express.Router();
 const updateAssetController =
     require("../controllers/networth/updateAsset");
 
+const updateAssetUpload =
+    require("../middleware/networthUpload");
 
-/* ==========================================================
-   UPDATE ASSET
-
-   Mounted as:
-       /networth
-
-   Final endpoint:
-       POST /networth/asset/:id
-========================================================== */
 
 router.post(
     "/asset/:id",
+    updateAssetUpload,
     updateAssetController.updateAsset
 );
 
