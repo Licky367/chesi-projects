@@ -96,18 +96,63 @@ function isValidObjectId(
 // NUMBER
 // ==========================================================
 
-function parseNumber(
-    value,
-    fieldName
+function toNumber(
+    value
 ) {
 
+    const number =
+        Number(value);
+
+
+    return Number.isFinite(number)
+        ? number
+        : 0;
+
+}
+
+
+// ==========================================================
+// OPTIONAL NUMBER
+//
+// undefined
+//     do not change
+//
+// ""
+//     clear
+//
+// valid number
+//     update
+// ==========================================================
+
+function parseNumber(
+    value,
+    fieldName,
+    options = {}
+) {
+
+    const {
+        allowNull = true,
+        nonNegative = true
+    } = options;
+
+
     if (
-        value === undefined ||
+        value === undefined
+    ) {
+
+        return undefined;
+
+    }
+
+
+    if (
         value === null ||
         value === ""
     ) {
 
-        return undefined;
+        return allowNull
+            ? null
+            : undefined;
 
     }
 
@@ -129,11 +174,12 @@ function parseNumber(
 
 
     if (
+        nonNegative &&
         number < 0
     ) {
 
         throw createError(
-            `${fieldName} cannot be negative.`,
+            `${fieldName} must be a non-negative number.`,
             400
         );
 
@@ -146,7 +192,16 @@ function parseNumber(
 
 
 // ==========================================================
-// DATE
+// OPTIONAL DATE
+//
+// undefined
+//     do not change
+//
+// ""
+//     clear
+//
+// valid date
+//     update
 // ==========================================================
 
 function parseDate(
@@ -197,23 +252,26 @@ function parseDate(
 
 
 // ==========================================================
-// RECORD TYPE
+// BOOLEAN
 // ==========================================================
 
-function isDairyFarm(
-    record
+function parseBoolean(
+    value
 ) {
 
-    if (!record) {
+    if (
+        typeof value === "boolean"
+    ) {
 
-        return false;
+        return value;
 
     }
 
 
     if (
-        record.code === null ||
-        record.code === undefined
+        value === undefined ||
+        value === null ||
+        value === ""
     ) {
 
         return false;
@@ -221,82 +279,46 @@ function isDairyFarm(
     }
 
 
-    return Number(record.code) < 0;
+    const normalized =
+        String(value)
+            .trim()
+            .toLowerCase();
+
+
+    return (
+
+        normalized === "true" ||
+
+        normalized === "1" ||
+
+        normalized === "yes" ||
+
+        normalized === "on"
+
+    );
 
 }
 
 
-function isIdentifiedDairy(
-    record
+// ==========================================================
+// TEXT
+// ==========================================================
+
+function parseText(
+    value
 ) {
-
-    if (!record) {
-
-        return false;
-
-    }
-
 
     if (
-        record.code === null ||
-        record.code === undefined
+        value === undefined ||
+        value === null
     ) {
 
-        return false;
+        return "";
 
     }
 
 
-    return Number(record.code) > 0;
-
-}
-
-
-function isManualAsset(
-    record
-) {
-
-    if (!record) {
-
-        return false;
-
-    }
-
-
-    const noCode =
-        record.code === null ||
-        record.code === undefined;
-
-
-    const hasParent =
-        record.assetCode !== null &&
-        record.assetCode !== undefined;
-
-
-    return (
-        noCode &&
-        hasParent
-    );
-
-}
-
-
-function isStandaloneAsset(
-    record
-) {
-
-    return (
-
-        isIdentifiedDairy(
-            record
-        ) &&
-
-        (
-            record.assetCode === null ||
-            record.assetCode === undefined
-        )
-
-    );
+    return String(value).trim();
 
 }
 
@@ -309,7 +331,9 @@ function calculateAge(
     dateOfBirth
 ) {
 
-    if (!dateOfBirth) {
+    if (
+        !dateOfBirth
+    ) {
 
         return null;
 
@@ -317,7 +341,9 @@ function calculateAge(
 
 
     const dob =
-        new Date(dateOfBirth);
+        new Date(
+            dateOfBirth
+        );
 
 
     if (
@@ -350,12 +376,17 @@ function calculateAge(
 
 
     const birthdayNotReached =
+
         today.getMonth() <
-            dob.getMonth() ||
+            dob.getMonth()
+
+        ||
 
         (
             today.getMonth() ===
-                dob.getMonth() &&
+                dob.getMonth()
+
+            &&
 
             today.getDate() <
                 dob.getDate()
@@ -386,7 +417,9 @@ function calculateAgeText(
     dateOfBirth
 ) {
 
-    if (!dateOfBirth) {
+    if (
+        !dateOfBirth
+    ) {
 
         return "";
 
@@ -394,7 +427,9 @@ function calculateAgeText(
 
 
     const dob =
-        new Date(dateOfBirth);
+        new Date(
+            dateOfBirth
+        );
 
 
     if (
@@ -478,9 +513,135 @@ function calculateAgeText(
 
 
     return (
+
         `${years} years, ` +
+
         `${months} months, ` +
+
         `${days} days`
+
+    );
+
+}
+
+
+// ==========================================================
+// RECORD TYPES
+// ==========================================================
+
+function isDairyFarm(
+    record
+) {
+
+    if (
+        !record
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        record.code === null ||
+        record.code === undefined
+    ) {
+
+        return false;
+
+    }
+
+
+    return Number(
+        record.code
+    ) < 0;
+
+}
+
+
+function isIdentifiedDairy(
+    record
+) {
+
+    if (
+        !record
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        record.code === null ||
+        record.code === undefined
+    ) {
+
+        return false;
+
+    }
+
+
+    return Number(
+        record.code
+    ) > 0;
+
+}
+
+
+function isManualAsset(
+    record
+) {
+
+    if (
+        !record
+    ) {
+
+        return false;
+
+    }
+
+
+    const noCode =
+
+        record.code === null ||
+
+        record.code === undefined;
+
+
+    const hasParent =
+
+        record.assetCode !== null &&
+
+        record.assetCode !== undefined;
+
+
+    return (
+        noCode &&
+        hasParent
+    );
+
+}
+
+
+function isStandaloneAsset(
+    record
+) {
+
+    return (
+
+        isIdentifiedDairy(
+            record
+        )
+
+        &&
+
+        (
+            record.assetCode === null ||
+
+            record.assetCode === undefined
+        )
+
     );
 
 }
@@ -494,7 +655,9 @@ function decorateRecord(
     record
 ) {
 
-    if (!record) {
+    if (
+        !record
+    ) {
 
         return record;
 
@@ -502,15 +665,20 @@ function decorateRecord(
 
 
     const object =
+
         typeof record.toObject === "function"
 
-            ? record.toObject({
-                virtuals: true
-            })
+            ?
 
-            : {
-                ...record
-            };
+        record.toObject({
+            virtuals: true
+        })
+
+            :
+
+        {
+            ...record
+        };
 
 
     const identified =
@@ -536,19 +704,40 @@ function decorateRecord(
 
 
     object.isFemale =
+
         identified &&
+
         Number(object.code) % 2 === 0;
 
 
     object.isStandaloneAsset =
-        isStandaloneAsset(
-            object
+
+        identified &&
+
+        (
+            object.assetCode === null ||
+
+            object.assetCode === undefined
         );
 
 
     object.isAssignedAsset =
+
         object.assetCode !== null &&
+
         object.assetCode !== undefined;
+
+
+    object.isManualAsset =
+        isManualAsset(
+            object
+        );
+
+
+    object.isDairyFarm =
+        isDairyFarm(
+            object
+        );
 
 
     return object;
@@ -564,13 +753,18 @@ function decorateRecords(
     records
 ) {
 
-    return Array.isArray(records)
+    if (
+        !Array.isArray(records)
+    ) {
 
-        ? records.map(
-            decorateRecord
-        )
+        return [];
 
-        : [];
+    }
+
+
+    return records.map(
+        decorateRecord
+    );
 
 }
 
@@ -601,7 +795,9 @@ async function findDairyFarmById(
             .lean();
 
 
-    if (!farm) {
+    if (
+        !farm
+    ) {
 
         throw createError(
             "Dairy Farm not found.",
@@ -646,6 +842,7 @@ async function findDairyFarmByCode(
         !Number.isFinite(
             numericCode
         ) ||
+
         numericCode >= 0
     ) {
 
@@ -671,7 +868,9 @@ async function findDairyFarmByCode(
             .lean();
 
 
-    if (!farm) {
+    if (
+        !farm
+    ) {
 
         throw createError(
             "Selected Dairy Farm was not found.",
@@ -726,7 +925,7 @@ async function getDairyFarms() {
 
 async function getNetWorth() {
 
-    const records =
+    const allDairy =
         await Dairy
             .find({})
             .sort({
@@ -739,27 +938,27 @@ async function getNetWorth() {
 
 
     const standaloneAssets =
-        records.filter(
+        allDairy.filter(
             isStandaloneAsset
         );
 
 
     const structures =
-        records.filter(
+        allDairy.filter(
             isDairyFarm
         );
 
 
     const totalNetWorth =
-        records.reduce(
+        allDairy.reduce(
+
             (
                 total,
                 record
             ) => {
 
                 if (
-                    record.status !==
-                    "active"
+                    record.status !== "active"
                 ) {
 
                     return total;
@@ -768,16 +967,19 @@ async function getNetWorth() {
 
 
                 return (
+
                     total +
-                    (
-                        Number(
-                            record.currentWorth
-                        ) || 0
+
+                    toNumber(
+                        record.currentWorth
                     )
+
                 );
 
             },
+
             0
+
         );
 
 
@@ -839,14 +1041,14 @@ async function getDairyFarm(
 
     const dairyTotal =
         assets.reduce(
+
             (
                 total,
                 asset
             ) => {
 
                 if (
-                    asset.status !==
-                    "active"
+                    asset.status !== "active"
                 ) {
 
                     return total;
@@ -855,16 +1057,19 @@ async function getDairyFarm(
 
 
                 return (
+
                     total +
-                    (
-                        Number(
-                            asset.currentWorth
-                        ) || 0
+
+                    toNumber(
+                        asset.currentWorth
                     )
+
                 );
 
             },
+
             0
+
         );
 
 
@@ -898,21 +1103,24 @@ async function getAddAsset(
     id
 ) {
 
-    const farm =
+    const dairy =
         await findDairyFarmById(
             id
         );
+
+
+    const structures =
+        await getDairyFarms();
 
 
     return {
 
         dairy:
             decorateRecord(
-                farm
+                dairy
             ),
 
-        structures:
-            await getDairyFarms(),
+        structures,
 
         dairyBreeds:
             DAIRY_BREEDS
@@ -938,114 +1146,75 @@ async function addAsset(
         );
 
 
+    const farmCode =
+        Number(
+            farm.code
+        );
+
+
+    const suppliedName =
+
+        body.name !== undefined
+
+            ?
+
+        body.name
+
+            :
+
+        body.item;
+
+
     const name =
-        String(
-            body.name ||
-            body.item ||
-            ""
-        ).trim();
+        parseText(
+            suppliedName
+        );
 
 
-    if (!name) {
+    if (
+        !name
+    ) {
 
         throw createError(
-            "Name is required.",
+            "Name is required when creating an asset.",
             400
         );
 
     }
 
 
-    const buyingPrice =
-        parseNumber(
-            body.buyingPrice,
-            "Buying Price"
-        );
-
-
-    const currentWorth =
-        parseNumber(
-            body.currentWorth,
-            "Current Worth"
-        );
-
-
-    const valuationDate =
-        parseDate(
-            body.valuationDate,
-            "Valuation Date"
-        );
-
-
-    let profileImage =
-        "";
-
-
-    if (
-        body.profileImage
-    ) {
-
-        profileImage =
-            String(
-                body.profileImage
-            ).trim();
-
-    }
-
-
-    if (
-        file
-    ) {
-
-        profileImage =
-            file.path ||
-            file.location ||
-            file.filename ||
-            profileImage;
-
-    }
-
-
     const assetData = {
-
-        profileImage,
 
         name,
 
         type:
-            String(
-                body.type || ""
-            ).trim(),
+            parseText(
+                body.type
+            ),
 
         description:
-            String(
-                body.description || ""
-            ).trim(),
+            parseText(
+                body.description
+            ),
 
         condition:
-            String(
-                body.condition || ""
-            ).trim(),
+            parseText(
+                body.condition
+            ),
 
         location:
-            String(
-                body.location || ""
-            ).trim(),
+            parseText(
+                body.location
+            ),
 
         code:
             null,
 
         assetCode:
-            Number(
-                farm.code
-            ),
+            farmCode,
 
         status:
-            ALLOWED_STATUSES.includes(
-                body.status
-            )
-                ? body.status
-                : "active",
+            "active",
 
         acquisitionDate:
             new Date()
@@ -1054,33 +1223,116 @@ async function addAsset(
 
 
     if (
-        buyingPrice !== undefined
+        body.status !== undefined
     ) {
 
-        assetData.buyingPrice =
-            buyingPrice;
+        const status =
+            parseText(
+                body.status
+            );
+
+
+        if (
+            status &&
+            !ALLOWED_STATUSES.includes(
+                status
+            )
+        ) {
+
+            throw createError(
+                "Invalid asset status.",
+                400
+            );
+
+        }
+
+
+        if (
+            status
+        ) {
+
+            assetData.status =
+                status;
+
+        }
 
     }
 
 
     if (
-        currentWorth !== undefined
+        body.profileImage !== undefined
     ) {
 
-        assetData.currentWorth =
-            currentWorth;
+        assetData.profileImage =
+            parseText(
+                body.profileImage
+            );
 
     }
 
 
     if (
-        valuationDate !== undefined
+        body.buyingPrice !== undefined
+    ) {
+
+        const value =
+            parseNumber(
+                body.buyingPrice,
+                "Buying Price"
+            );
+
+
+        if (
+            value !== null &&
+            value !== undefined
+        ) {
+
+            assetData.buyingPrice =
+                value;
+
+        }
+
+    }
+
+
+    if (
+        body.currentWorth !== undefined
+    ) {
+
+        const value =
+            parseNumber(
+                body.currentWorth,
+                "Current Worth"
+            );
+
+
+        if (
+            value !== null &&
+            value !== undefined
+        ) {
+
+            assetData.currentWorth =
+                value;
+
+        }
+
+    }
+
+
+    if (
+        body.valuationDate !== undefined
     ) {
 
         assetData.valuationDate =
-            valuationDate;
+            parseDate(
+                body.valuationDate,
+                "Valuation Date"
+            );
 
     }
+
+
+    void file;
 
 
     const asset =
@@ -1127,13 +1379,15 @@ async function getAsset(
     }
 
 
-    const asset =
+    const dairy =
         await Dairy
             .findById(id)
             .lean();
 
 
-    if (!asset) {
+    if (
+        !dairy
+    ) {
 
         throw createError(
             "Asset not found.",
@@ -1145,33 +1399,21 @@ async function getAsset(
 
     if (
         isDairyFarm(
-            asset
+            dairy
         )
     ) {
 
         throw createError(
-            "A Dairy Farm cannot be edited as an asset.",
+            "The selected record is a Dairy Farm, not an asset.",
             400
         );
 
     }
 
 
-    const identified =
-        isIdentifiedDairy(
-            asset
-        );
-
-
-    const manual =
-        isManualAsset(
-            asset
-        );
-
-
     if (
-        !identified &&
-        !manual
+        !isIdentifiedDairy(dairy) &&
+        !isManualAsset(dairy)
     ) {
 
         throw createError(
@@ -1182,9 +1424,13 @@ async function getAsset(
     }
 
 
+    const structures =
+        await getDairyFarms();
+
+
     const decorated =
         decorateRecord(
-            asset
+            dairy
         );
 
 
@@ -1193,8 +1439,7 @@ async function getAsset(
         dairy:
             decorated,
 
-        structures:
-            await getDairyFarms(),
+        structures,
 
         age:
             decorated.age,
@@ -1213,29 +1458,18 @@ async function getAsset(
 // ==========================================================
 // UPDATE ASSET
 //
-// THIS IS THE IMPORTANT PART.
+// TRUE PARTIAL UPDATE
 //
-// The controller sends:
+// Every editable field supplied by the browser is processed.
 //
-// profileImage
-// name
-// dateOfBirth
-// type
-// mass
-// isMilking
-// buyingPrice
-// currentWorth
-// description
-// condition
-// location
-// assetCode
-// status
-// valuationDate
-// acquisitionDate
+// Protected:
 //
-// Only submitted fields are changed.
+//     _id
+//     code
 //
-// Anything not submitted remains untouched.
+// are NEVER changed.
+//
+// This function NEVER creates a document.
 // ==========================================================
 
 async function updateAsset(
@@ -1244,7 +1478,7 @@ async function updateAsset(
 ) {
 
     // ======================================================
-    // ID
+    // VALIDATE ID
     // ======================================================
 
     if (
@@ -1260,15 +1494,18 @@ async function updateAsset(
 
 
     // ======================================================
-    // FIND EXISTING DOCUMENT
+    // FIND EXISTING RECORD
     // ======================================================
 
-    const asset =
-        await Dairy
-            .findById(id);
+    const dairy =
+        await Dairy.findById(
+            id
+        );
 
 
-    if (!asset) {
+    if (
+        !dairy
+    ) {
 
         throw createError(
             "Asset not found.",
@@ -1284,7 +1521,7 @@ async function updateAsset(
 
     if (
         isDairyFarm(
-            asset
+            dairy
         )
     ) {
 
@@ -1296,19 +1533,15 @@ async function updateAsset(
     }
 
 
-    // ======================================================
-    // DETERMINE ASSET TYPE
-    // ======================================================
-
     const identified =
         isIdentifiedDairy(
-            asset
+            dairy
         );
 
 
     const manual =
         isManualAsset(
-            asset
+            dairy
         );
 
 
@@ -1334,14 +1567,16 @@ async function updateAsset(
     ) {
 
         const image =
-            String(
+            parseText(
                 body.profileImage
-            ).trim();
+            );
 
 
-        if (image) {
+        if (
+            image
+        ) {
 
-            asset.profileImage =
+            dairy.profileImage =
                 image;
 
         }
@@ -1358,14 +1593,16 @@ async function updateAsset(
     ) {
 
         const name =
-            String(
+            parseText(
                 body.name
-            ).trim();
+            );
 
 
-        if (name) {
+        if (
+            name
+        ) {
 
-            asset.name =
+            dairy.name =
                 name;
 
         }
@@ -1374,7 +1611,53 @@ async function updateAsset(
 
 
     // ======================================================
+    // ITEM
+    //
+    // Legacy support.
+    // ======================================================
+
+    else if (
+        body.item !== undefined
+    ) {
+
+        const item =
+            parseText(
+                body.item
+            );
+
+
+        if (
+            item
+        ) {
+
+            dairy.name =
+                item;
+
+        }
+
+    }
+
+
+    // ======================================================
+    // TYPE / BREED
+    // ======================================================
+
+    if (
+        body.type !== undefined
+    ) {
+
+        dairy.type =
+            parseText(
+                body.type
+            );
+
+    }
+
+
+    // ======================================================
     // DATE OF BIRTH
+    //
+    // Identified dairies only.
     // ======================================================
 
     if (
@@ -1382,7 +1665,7 @@ async function updateAsset(
         body.dateOfBirth !== undefined
     ) {
 
-        asset.dateOfBirth =
+        dairy.dateOfBirth =
             parseDate(
                 body.dateOfBirth,
                 "Date of Birth"
@@ -1392,23 +1675,9 @@ async function updateAsset(
 
 
     // ======================================================
-    // TYPE
-    // ======================================================
-
-    if (
-        body.type !== undefined
-    ) {
-
-        asset.type =
-            String(
-                body.type
-            ).trim();
-
-    }
-
-
-    // ======================================================
     // MASS
+    //
+    // Identified dairies only.
     // ======================================================
 
     if (
@@ -1424,10 +1693,15 @@ async function updateAsset(
 
 
         if (
-            mass !== undefined
+            mass === null
         ) {
 
-            asset.mass =
+            dairy.mass =
+                null;
+
+        } else {
+
+            dairy.mass =
                 mass;
 
         }
@@ -1436,7 +1710,12 @@ async function updateAsset(
 
 
     // ======================================================
-    // IS MILKING
+    // MILKING
+    //
+    // Identified dairies only.
+    //
+    // The controller converts the browser value into
+    // true / false before it reaches this service.
     // ======================================================
 
     if (
@@ -1444,23 +1723,10 @@ async function updateAsset(
         body.isMilking !== undefined
     ) {
 
-        if (
-            typeof body.isMilking === "boolean"
-        ) {
-
-            asset.isMilking =
-                body.isMilking;
-
-        } else {
-
-            asset.isMilking =
-                (
-                    body.isMilking === "true" ||
-                    body.isMilking === "1" ||
-                    body.isMilking === "on"
-                );
-
-        }
+        dairy.isMilking =
+            parseBoolean(
+                body.isMilking
+            );
 
     }
 
@@ -1473,21 +1739,15 @@ async function updateAsset(
         body.buyingPrice !== undefined
     ) {
 
-        const value =
+        const buyingPrice =
             parseNumber(
                 body.buyingPrice,
                 "Buying Price"
             );
 
 
-        if (
-            value !== undefined
-        ) {
-
-            asset.buyingPrice =
-                value;
-
-        }
+        dairy.buyingPrice =
+            buyingPrice;
 
     }
 
@@ -1500,21 +1760,15 @@ async function updateAsset(
         body.currentWorth !== undefined
     ) {
 
-        const value =
+        const currentWorth =
             parseNumber(
                 body.currentWorth,
                 "Current Worth"
             );
 
 
-        if (
-            value !== undefined
-        ) {
-
-            asset.currentWorth =
-                value;
-
-        }
+        dairy.currentWorth =
+            currentWorth;
 
     }
 
@@ -1527,10 +1781,10 @@ async function updateAsset(
         body.description !== undefined
     ) {
 
-        asset.description =
-            String(
+        dairy.description =
+            parseText(
                 body.description
-            ).trim();
+            );
 
     }
 
@@ -1543,10 +1797,10 @@ async function updateAsset(
         body.condition !== undefined
     ) {
 
-        asset.condition =
-            String(
+        dairy.condition =
+            parseText(
                 body.condition
-            ).trim();
+            );
 
     }
 
@@ -1559,10 +1813,10 @@ async function updateAsset(
         body.location !== undefined
     ) {
 
-        asset.location =
-            String(
+        dairy.location =
+            parseText(
                 body.location
-            ).trim();
+            );
 
     }
 
@@ -1576,9 +1830,21 @@ async function updateAsset(
     ) {
 
         const status =
-            String(
+            parseText(
                 body.status
-            ).trim();
+            );
+
+
+        if (
+            !status
+        ) {
+
+            throw createError(
+                "Asset status cannot be empty.",
+                400
+            );
+
+        }
 
 
         if (
@@ -1595,7 +1861,7 @@ async function updateAsset(
         }
 
 
-        asset.status =
+        dairy.status =
             status;
 
     }
@@ -1609,7 +1875,7 @@ async function updateAsset(
         body.valuationDate !== undefined
     ) {
 
-        asset.valuationDate =
+        dairy.valuationDate =
             parseDate(
                 body.valuationDate,
                 "Valuation Date"
@@ -1621,14 +1887,14 @@ async function updateAsset(
     // ======================================================
     // ACQUISITION DATE
     //
-    // Supported if submitted.
+    // Supported because the controller allows it.
     // ======================================================
 
     if (
         body.acquisitionDate !== undefined
     ) {
 
-        asset.acquisitionDate =
+        dairy.acquisitionDate =
             parseDate(
                 body.acquisitionDate,
                 "Acquisition Date"
@@ -1638,30 +1904,40 @@ async function updateAsset(
 
 
     // ======================================================
-    // PARENT FARM
+    // ASSET CODE
+    //
+    // This controls the parent Dairy Farm.
+    //
+    // Empty:
+    //     identified dairy becomes standalone.
+    //
+    // Supplied negative farm code:
+    //     asset becomes assigned to that farm.
+    //
+    // Manual assets:
+    //     MUST have a farm.
     // ======================================================
 
     if (
         body.assetCode !== undefined
     ) {
 
+        const supplied =
+            body.assetCode;
+
+
         // --------------------------------------------------
-        // EMPTY = STANDALONE IDENTIFIED DAIRY
+        // CLEAR PARENT
         // --------------------------------------------------
 
         if (
-            body.assetCode === "" ||
-            body.assetCode === null
+            supplied === null ||
+            supplied === ""
         ) {
 
             if (
-                identified
+                manual
             ) {
-
-                asset.assetCode =
-                    null;
-
-            } else {
 
                 throw createError(
                     "A manual asset must belong to a Dairy Farm.",
@@ -1670,21 +1946,25 @@ async function updateAsset(
 
             }
 
+
+            dairy.assetCode =
+                null;
+
         }
 
         // --------------------------------------------------
-        // ASSIGN TO FARM
+        // ASSIGN PARENT
         // --------------------------------------------------
 
         else {
 
             const farm =
                 await findDairyFarmByCode(
-                    body.assetCode
+                    supplied
                 );
 
 
-            asset.assetCode =
+            dairy.assetCode =
                 Number(
                     farm.code
                 );
@@ -1695,10 +1975,42 @@ async function updateAsset(
 
 
     // ======================================================
+    // MANUAL ASSET SAFETY
+    // ======================================================
+
+    if (
+        manual &&
+        (
+            dairy.assetCode === null ||
+            dairy.assetCode === undefined
+        )
+    ) {
+
+        throw createError(
+            "A manual asset must belong to a Dairy Farm.",
+            400
+        );
+
+    }
+
+
+    // ======================================================
+    // PROTECTED FIELDS
+    //
+    // DO NOT assign:
+    //
+    //     dairy._id
+    //     dairy.code
+    //
+    // They remain untouched.
+    // ======================================================
+
+
+    // ======================================================
     // SAVE
     // ======================================================
 
-    await asset.save();
+    await dairy.save();
 
 
     // ======================================================
@@ -1708,12 +2020,14 @@ async function updateAsset(
     const updated =
         await Dairy
             .findById(
-                asset._id
+                dairy._id
             )
             .lean();
 
 
-    if (!updated) {
+    if (
+        !updated
+    ) {
 
         throw createError(
             "Asset could not be retrieved after update.",
@@ -1722,6 +2036,10 @@ async function updateAsset(
 
     }
 
+
+    // ======================================================
+    // RETURN ACTUAL DATABASE RECORD
+    // ======================================================
 
     return decorateRecord(
         updated
