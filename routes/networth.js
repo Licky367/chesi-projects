@@ -7,7 +7,7 @@ const router = express.Router();
    CONTROLLERS
 ========================================================== */
 
-const indexController =
+/* const indexController =
     require("../controllers/networth/entry");
 
 const structuresController =
@@ -18,7 +18,10 @@ const addController =
 
 const updateAssetController =
     require("../controllers/networth/updateAsset");
+*/
 
+const networthController =
+    require("../controllers/networthController");
 
 /* ==========================================================
    MIDDLEWARE
