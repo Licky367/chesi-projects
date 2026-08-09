@@ -344,6 +344,66 @@
 
 
 /* ==========================================================
+   SUBMISSION STATE
+========================================================== */
+
+.networth-form.is-submitting {
+
+    opacity: 0.75;
+
+    pointer-events: none;
+
+}
+
+
+/* ==========================================================
+   FORM MESSAGE
+========================================================== */
+
+.networth-form-message {
+
+    display: none;
+
+    margin-bottom: 20px;
+
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+
+}
+
+.networth-form-message.show {
+
+    display: block;
+
+}
+
+.networth-form-message.success {
+
+    background: #eef8f1;
+
+    border: 1px solid #cde6d4;
+
+    color: #27633b;
+
+}
+
+.networth-form-message.error {
+
+    background: #fff3f3;
+
+    border: 1px solid #eccaca;
+
+    color: #9a3535;
+
+}
+
+
+/* ==========================================================
    ACTIONS
 ========================================================== */
 
@@ -628,37 +688,31 @@
 
     <!-- =====================================================
          ASSET FORM
-
-         IMPORTANT:
-
-         The form does NOT submit:
-
-             code
-             assetCode
-
-         The service determines both automatically.
-
-         New manual asset:
-
-             code      = null
-             assetCode = parent Dairy Farm code
     ====================================================== -->
 
     <div class="financial-card">
 
         <form
+            id="networthAddForm"
             action="/networth/structure/<%= dairy._id %>/add"
             method="POST"
             class="networth-form"
         >
 
+            <!-- =================================================
+                 FORM MESSAGE
+            ================================================== -->
+
+            <div
+                id="networthFormMessage"
+                class="networth-form-message"
+                role="status"
+                aria-live="polite"
+            ></div>
+
 
             <!-- =================================================
                  NAME
-
-                 Maps to:
-
-                     Dairy.name
             ================================================== -->
 
             <div class="form-group">
@@ -682,10 +736,6 @@
 
             <!-- =================================================
                  TYPE
-
-                 Maps to:
-
-                     Dairy.type
             ================================================== -->
 
             <div class="form-group">
@@ -709,10 +759,6 @@
 
             <!-- =================================================
                  BUYING PRICE
-
-                 Maps to:
-
-                     Dairy.buyingPrice
             ================================================== -->
 
             <div class="form-group">
@@ -737,10 +783,6 @@
 
             <!-- =================================================
                  CURRENT WORTH
-
-                 Maps to:
-
-                     Dairy.currentWorth
             ================================================== -->
 
             <div class="form-group">
@@ -765,10 +807,6 @@
 
             <!-- =================================================
                  DESCRIPTION
-
-                 Maps to:
-
-                     Dairy.description
             ================================================== -->
 
             <div class="form-group">
@@ -791,10 +829,6 @@
 
             <!-- =================================================
                  CONDITION
-
-                 Maps to:
-
-                     Dairy.condition
             ================================================== -->
 
             <div class="form-group">
@@ -817,17 +851,13 @@
 
 
             <!-- =================================================
-                 LOCATION
-
-                 Maps to:
-
-                     Dairy.location
+                 PHYSICAL LOCATION
             ================================================== -->
 
             <div class="form-group">
 
                 <label for="location">
-                    Location
+                    Physical Location
                 </label>
 
 
@@ -835,7 +865,7 @@
                     type="text"
                     id="location"
                     name="location"
-                    placeholder="Where is the asset located?"
+                    placeholder="Where is the asset physically located?"
                     autocomplete="off"
                     required
                 >
@@ -845,10 +875,6 @@
 
             <!-- =================================================
                  STATUS
-
-                 Maps to:
-
-                     Dairy.status
             ================================================== -->
 
             <div class="form-group">
@@ -871,13 +897,16 @@
                         Active
                     </option>
 
+
                     <option value="sold">
                         Sold
                     </option>
 
+
                     <option value="disposed">
                         Disposed
                     </option>
+
 
                     <option value="inactive">
                         Inactive
@@ -890,27 +919,14 @@
 
             <!-- =================================================
                  DAIRY FARM
+                 
+                 DISPLAY ONLY.
 
-                 Display only.
-
-                 The parent is NOT submitted by the browser.
-
-                 The route identifies the parent:
-
+                 The parent is determined from:
+                 
                      /networth/structure/:id/add
-
-                 The service will:
-
-                     1. Find the Dairy Farm by :id.
-                     2. Verify its code is negative.
-                     3. Take dairy.code.
-                     4. Create:
-
-                            code: null
-                            assetCode: dairy.code
-
-                 Therefore the user cannot manually alter
-                 the parent relationship.
+                 
+                 The browser does NOT submit assetCode.
             ================================================== -->
 
             <div class="form-group">
@@ -946,6 +962,7 @@
 
                 <button
                     type="submit"
+                    id="saveAssetButton"
                     class="button button-primary"
                 >
                     Save Asset
@@ -958,3 +975,17 @@
     </div>
 
 </div>
+
+
+<!-- ==========================================================
+     PAGE JAVASCRIPT
+     
+     Keep this outside the HTML structure.
+
+     The external file handles asynchronous submission.
+========================================================== -->
+
+<script
+    src="/js/networth-add.js"
+    defer
+></script>
