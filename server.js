@@ -151,39 +151,6 @@ try {
 }
 
 
-let financialsRoutes;
-
-try {
-
-  financialsRoutes =
-    require("./routes/financials");
-
-} catch (err) {
-
-  console.warn(
-    "Warning: failed to load financials routes:",
-    err.message
-  );
-
-}
-
-
-let liabilityRoutes;
-
-try {
-
-  liabilityRoutes =
-    require("./routes/liability");
-
-} catch (err) {
-
-  console.warn(
-    "Warning: failed to load liability routes:",
-    err.message
-  );
-
-}
-
 
 /* =========================================================
    NET WORTH ROUTES
