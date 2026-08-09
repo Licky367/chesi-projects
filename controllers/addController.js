@@ -7,134 +7,40 @@ const addService =
 
 
 // ==========================================================
-// JSON DETECTION
+// SHOW ADD PAGE
 // ==========================================================
 
-function wantsJSON(req) {
-
-    return (
-
-        req.xhr === true ||
-
-        (
-            typeof req.headers.accept === "string" &&
-            req.headers.accept.includes(
-                "application/json"
-            )
-        )
-
-    );
-
-}
-
-
-// ==========================================================
-// JSON ERROR
-// ==========================================================
-
-function jsonError(
-    res,
-    error,
-    fallbackMessage
-) {
-
-    const statusCode =
-        error.statusCode || 500;
-
-
-    return res
-        .status(statusCode)
-        .json({
-
-            success: false,
-
-            message:
-                error.message ||
-                fallbackMessage
-
-        });
-
-}
-
-
-// ==========================================================
-// HTML ERROR
-// ==========================================================
-
-function renderError(
-    res,
-    error,
-    fallbackMessage
-) {
-
-    const statusCode =
-        error.statusCode || 500;
-
-
-    return res
-        .status(statusCode)
-        .render(
-            "error",
-            {
-
-                message:
-                    error.message ||
-                    fallbackMessage,
-
-                statusCode
-
-            }
-        );
-
-}
-
-
-// ==========================================================
-// GET /add
-// ==========================================================
-
-async function getAddPage(
+async function showAddPage(
     req,
-    res
+    res,
+    next
 ) {
 
     try {
 
         const data =
-            await addService.getAddPage();
+            await addService.getAddPageData();
 
 
         return res.render(
             "add",
-            data
+            {
+
+                title:
+                    "Add Dairy / Asset",
+
+                dairyBreeds:
+                    data.dairyBreeds,
+
+                structures:
+                    data.dairyFarms
+
+            }
         );
 
     } catch (error) {
 
-        console.error(
-            "Error loading Add Dairy page:",
-            error
-        );
-
-
-        if (
-            wantsJSON(req)
-        ) {
-
-            return jsonError(
-                res,
-                error,
-                "Unable to load Add Dairy page."
-            );
-
-        }
-
-
-        return renderError(
-            res,
-            error,
-            "Unable to load Add Dairy page."
-        );
+        next(error);
 
     }
 
@@ -142,111 +48,329 @@ async function getAddPage(
 
 
 // ==========================================================
-// POST /add
+// CREATE DAIRY / ASSET
 // ==========================================================
 
 async function createDairy(
     req,
-    res
+    res,
+    next
 ) {
 
     try {
 
-        console.log(
-            "=================================================="
-        );
+        const {
 
-        console.log(
-            "CREATE DAIRY / ASSET"
-        );
+            recordType,
 
-        console.log(
-            "Request body:",
-            req.body
-        );
+            name,
 
-        console.log(
-            "Uploaded file:",
-            req.file
-        );
+            farmType,
 
-        console.log(
-            "=================================================="
-        );
+            assetCode,
 
+            structureFarmCode,
 
-        const dairy =
-            await addService.createDairy(
-                req.body,
-                req.file || null
-            );
+            dateOfBirth,
+
+            type,
+
+            mass,
+
+            buyingPrice,
+
+            currentWorth,
+
+            description,
+
+            condition,
+
+            location,
+
+            status
+
+        } =
+            req.body;
 
 
         // ==================================================
-        // JSON CLIENT
+        // BASIC VALIDATION
         // ==================================================
+
+        const validRecordTypes = [
+
+            "dairyFarm",
+
+            "animal",
+
+            "structure"
+
+        ];
+
 
         if (
-            wantsJSON(req)
+            !validRecordTypes.includes(
+                recordType
+            )
         ) {
 
-            return res.status(201).json({
+            const error =
+                new Error(
+                    "Please select a valid record type."
+                );
 
-                success: true,
+            error.statusCode =
+                400;
 
-                message:
-                    "Dairy / asset created successfully.",
+            throw error;
 
-                dairy
+        }
 
-            });
+
+        if (
+            !name ||
+            !name.trim()
+        ) {
+
+            const error =
+                new Error(
+                    "Name is required."
+                );
+
+            error.statusCode =
+                400;
+
+            throw error;
 
         }
 
 
         // ==================================================
-        // NORMAL BROWSER
+        // DAIRY FARM VALIDATION
         // ==================================================
 
-        /*
-         * Send the user to the newly created
-         * record's edit/details page.
-         *
-         * This also makes it immediately possible
-         * to verify that the saved values are actually
-         * present in MongoDB.
-         */
+        if (
+            recordType ===
+            "dairyFarm"
+        ) {
+
+            if (
+                !farmType ||
+                !farmType.trim()
+            ) {
+
+                const error =
+                    new Error(
+                        "Please select the dairy farm type."
+                    );
+
+                error.statusCode =
+                    400;
+
+                throw error;
+
+            }
+
+        }
+
+
+        // ==================================================
+        // ANIMAL VALIDATION
+        // ==================================================
+
+        if (
+            recordType ===
+            "animal"
+        ) {
+
+            if (
+                !dateOfBirth
+            ) {
+
+                const error =
+                    new Error(
+                        "Date of birth is required for an animal."
+                    );
+
+                error.statusCode =
+                    400;
+
+                throw error;
+
+            }
+
+
+            if (
+                !type ||
+                !type.trim()
+            ) {
+
+                const error =
+                    new Error(
+                        "Please select the animal breed."
+                    );
+
+                error.statusCode =
+                    400;
+
+                throw error;
+
+            }
+
+        }
+
+
+        // ==================================================
+        // STRUCTURE VALIDATION
+        // ==================================================
+
+        if (
+            recordType ===
+            "structure"
+        ) {
+
+            if (
+                !type ||
+                !type.trim()
+            ) {
+
+                const error =
+                    new Error(
+                        "Please select the structure or facility type."
+                    );
+
+                error.statusCode =
+                    400;
+
+                throw error;
+
+            }
+
+        }
+
+
+        // ==================================================
+        // PREPARE DATA
+        // ==================================================
+
+        const recordData = {
+
+            recordType,
+
+            name:
+                name.trim(),
+
+            farmType:
+                farmType?.trim() || null,
+
+            assetCode:
+                assetCode?.trim() || null,
+
+            structureFarmCode:
+                structureFarmCode?.trim() || null,
+
+            dateOfBirth:
+                dateOfBirth || null,
+
+            type:
+                type?.trim() || null,
+
+            mass:
+                mass !== undefined &&
+                mass !== ""
+                    ? Number(mass)
+                    : null,
+
+            buyingPrice:
+                buyingPrice !== undefined &&
+                buyingPrice !== ""
+                    ? Number(buyingPrice)
+                    : 0,
+
+            currentWorth:
+                currentWorth !== undefined &&
+                currentWorth !== ""
+                    ? Number(currentWorth)
+                    : 0,
+
+            description:
+                description?.trim() || "",
+
+            condition:
+                condition?.trim() || "",
+
+            location:
+                location?.trim() || "",
+
+            status:
+                status || "active",
+
+            profileImage:
+                req.file || null
+
+        };
+
+
+        // ==================================================
+        // CREATE
+        // ==================================================
+
+        const createdRecord =
+            await addService.createDairy(
+                recordData
+            );
+
+
+        // ==================================================
+        // RESPONSE
+        // ==================================================
 
         return res.redirect(
-            `/networth/asset/${dairy._id}`
+            "/networth"
         );
 
     } catch (error) {
 
-        console.error(
-            "Error creating Dairy / Asset:",
-            error
-        );
-
+        /*
+         * If an uploaded image exists but
+         * creation fails, remove it.
+         */
 
         if (
-            wantsJSON(req)
+            req.file &&
+            req.file.path
         ) {
 
-            return jsonError(
-                res,
-                error,
-                "Unable to create Dairy / Asset."
-            );
+            const fs =
+                require("fs");
+
+            try {
+
+                if (
+                    fs.existsSync(
+                        req.file.path
+                    )
+                ) {
+
+                    fs.unlinkSync(
+                        req.file.path
+                    );
+
+                }
+
+            } catch (cleanupError) {
+
+                console.error(
+                    "Image cleanup failed:",
+                    cleanupError
+                );
+
+            }
 
         }
 
 
-        return renderError(
-            res,
-            error,
-            "Unable to create Dairy / Asset."
-        );
+        next(error);
 
     }
 
@@ -254,12 +378,12 @@ async function createDairy(
 
 
 // ==========================================================
-// EXPORTS
+// EXPORT
 // ==========================================================
 
 module.exports = {
 
-    getAddPage,
+    showAddPage,
 
     createDairy
 
