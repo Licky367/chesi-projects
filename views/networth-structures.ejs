@@ -1,6 +1,48 @@
+<!-- ==========================================================
+     views/networth/networth-structures.ejs
+
+     DISPLAYS:
+         One Dairy Farm and all assets assigned to it.
+
+     MODEL ALIGNMENT:
+
+         Dairy Farm:
+             code < 0
+
+         Assigned asset:
+             assetCode === dairy.code
+             OR otherwise explicitly assigned by backend
+             where applicable.
+
+         Standalone asset:
+             assetCode === null / undefined
+
+     IMPORTANT:
+
+         This view does NOT determine asset membership.
+
+         The controller/service is responsible for supplying
+         the correct `assets` array.
+
+         Asset value is always:
+             currentWorth
+
+         NOT:
+             assetValue
+
+         The Dairy model has:
+             name
+             code
+             assetCode
+             currentWorth
+
+         There is no `item` field in the model.
+========================================================== -->
+
+
 <style>
 
-/* ======================.====================================
+/* ==========================================================
    DAIRY FARM NET WORTH PAGE
 ========================================================== */
 
@@ -27,6 +69,7 @@
 
 }
 
+
 .networth-page .financial-header h1 {
 
     margin: 10px 0 6px;
@@ -44,6 +87,7 @@
     overflow-wrap: anywhere;
 
 }
+
 
 .networth-page .financial-header p {
 
@@ -83,6 +127,7 @@
         transform 0.2s ease;
 
 }
+
 
 .financial-back-link:hover {
 
@@ -187,6 +232,7 @@
 
 }
 
+
 .networth-total-label::before {
 
     content: "◆";
@@ -260,6 +306,7 @@
 
 }
 
+
 .networth-section-header h2 {
 
     display: flex;
@@ -280,6 +327,7 @@
 
 }
 
+
 .networth-section-header h2::before {
 
     content: "";
@@ -295,6 +343,7 @@
     background: #2f8f55;
 
 }
+
 
 .networth-section-header p {
 
@@ -430,6 +479,10 @@
 
 /* ==========================================================
    ASSET WORTH
+
+   MODEL FIELD:
+       currentWorth
+
 ========================================================== */
 
 .networth-list-worth {
@@ -495,6 +548,7 @@
 
 }
 
+
 .networth-list-item:hover::before {
 
     background: #dff1e5;
@@ -502,6 +556,7 @@
     color: #216b3e;
 
 }
+
 
 .networth-list-item:hover::after {
 
@@ -547,6 +602,7 @@
     text-align: center;
 
 }
+
 
 .networth-empty::before {
 
@@ -637,6 +693,7 @@
 
 }
 
+
 .networth-actions .button-primary::before {
 
     content: "+";
@@ -648,6 +705,7 @@
     line-height: 1;
 
 }
+
 
 .networth-actions .button-primary:hover {
 
@@ -661,6 +719,7 @@
     transform: translateY(-1px);
 
 }
+
 
 .networth-actions .button-primary:active {
 
@@ -871,19 +930,21 @@
     <!-- =====================================================
          DAIRY FARM HEADER
 
-         dairy = the Dairy Farm record
+         `dairy` is the current Dairy Farm record.
 
-         dairy._id = the Dairy Farm record identifier
+         Model definition:
 
-         dairy.code = the Dairy Farm's code.
+             Dairy Farm = code < 0
 
-         A Dairy Farm is a Dairy record whose
-         dairy.code is negative.
+         The record is identified by `_id`.
+
+         The model uses `name`, not `item`.
     ====================================================== -->
 
     <div class="financial-header">
 
         <div>
+
 
             <a
                 href="/networth"
@@ -894,13 +955,18 @@
 
 
             <h1>
-                <%= dairy.item || dairy.name || "Dairy Farm" %>
+
+                <%= dairy && dairy.name
+                    ? dairy.name
+                    : "Dairy Farm" %>
+
             </h1>
 
 
             <p>
                 Assets assigned to this Dairy Farm.
             </p>
+
 
         </div>
 
@@ -910,60 +976,45 @@
     <!-- =====================================================
          DAIRY FARM TOTAL
 
-         dairyTotal is the combined currentWorth of every
-         Dairy record included in assets.
+         `dairyTotal` must be calculated by the service /
+         controller from the `currentWorth` of the assets
+         belonging to this Dairy Farm.
 
-         assets may contain:
+         MODEL VALUE FIELD:
 
-         1. A Dairy whose dairy.assetCode is equal to
-            dairy.code of this Dairy Farm.
+             currentWorth
 
-         2. Another asset added directly to this Dairy Farm,
-            where dairy.code is null.
+         NOT:
 
-         The asset's dairy.code does NOT determine whether
-         it belongs to this Dairy Farm.
-
-         Membership is determined by the backend data passed
-         into assets.
+             assetValue
     ====================================================== -->
 
     <div class="financial-card networth-total-card">
 
+
         <span class="networth-total-label">
+
             Dairy Farm Asset Worth
+
         </span>
 
 
         <strong class="networth-total-value">
 
             KSh
+
             <%= Number(
                 dairyTotal || 0
             ).toLocaleString("en-KE") %>
 
         </strong>
 
+
     </div>
 
 
     <!-- =====================================================
          DAIRY FARM ASSETS
-
-         assets contains all assets assigned to this
-         Dairy Farm.
-
-         A Dairy record can be included because:
-
-             dairy.assetCode === dairy.code
-
-         where the second dairy.code refers to the
-         current Dairy Farm.
-
-         OR because the asset was added directly to this
-         Dairy Farm and its dairy.code is null.
-
-         No asset.code or dairyCode field is used.
     ====================================================== -->
 
     <section class="networth-section">
@@ -973,6 +1024,7 @@
 
             <div>
 
+
                 <h2>
                     Assets
                 </h2>
@@ -981,6 +1033,7 @@
                 <p>
                     Assets currently assigned to this Dairy Farm.
                 </p>
+
 
             </div>
 
@@ -1002,25 +1055,15 @@
                     <!-- ======================================
                          ASSET
 
-                         Each item is a Dairy record.
+                         Every asset here is already selected
+                         by the backend as belonging to the
+                         current Dairy Farm.
 
-                         asset._id identifies the Dairy record.
+                         This EJS does NOT decide membership.
 
-                         The asset may have:
+                         Asset value comes from:
 
-                             asset.assetCode
-
-                         and/or:
-
-                             asset.code
-
-                         depending on how it was created.
-
-                         The page does not use either field
-                         to determine membership.
-
-                         Membership has already been determined
-                         before assets reaches this EJS.
+                             asset.currentWorth
                     ======================================= -->
 
                     <a
@@ -1031,9 +1074,9 @@
 
                         <span class="networth-list-name">
 
-                            <%= asset.item ||
-                                asset.name ||
-                                "Unnamed Asset" %>
+                            <%= asset && asset.name
+                                ? asset.name
+                                : "Unnamed Asset" %>
 
                         </span>
 
@@ -1041,6 +1084,7 @@
                         <span class="networth-list-worth">
 
                             KSh
+
                             <%= Number(
                                 asset.currentWorth || 0
                             ).toLocaleString("en-KE") %>
@@ -1056,6 +1100,10 @@
 
             <% } else { %>
 
+
+                <!-- ==========================================
+                     EMPTY STATE
+                =========================================== -->
 
                 <div class="networth-empty">
 
@@ -1076,17 +1124,20 @@
     <!-- =====================================================
          ADD ASSET
 
-         The current Dairy Farm is identified by dairy._id.
+         Current Dairy Farm identifier:
 
-         The route therefore uses:
+             dairy._id
 
-             /networth/structure/<dairy._id>/add
+         Route:
 
-         The Dairy Farm's dairy.code is not placed in
-         the URL and is not used as the page identifier.
+             /networth/structure/:id/add
+
+         The farm's negative `code` is NOT used as the
+         URL identifier.
     ====================================================== -->
 
     <div class="networth-actions">
+
 
         <a
             href="/networth/structure/<%= dairy._id %>/add"
@@ -1094,6 +1145,7 @@
         >
             Add Asset
         </a>
+
 
     </div>
 
