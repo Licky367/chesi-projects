@@ -830,24 +830,6 @@ if (accountsRoutes)
   );
 
 
-if (financialsRoutes)
-  app.use(
-    "/financials",
-    financialsRoutes
-  );
-
-
-/* =========================================================
-   LIABILITIES
-========================================================= */
-
-if (liabilityRoutes)
-  app.use(
-    "/financials",
-    liabilityRoutes
-  );
-
-
 /* =========================================================
    NET WORTH
 ========================================================= */
