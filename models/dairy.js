@@ -1,30 +1,84 @@
+// ==========================================================
+// models/dairy.js
+// ==========================================================
+
 const mongoose = require("mongoose");
 
 
-/* ==========================================================
-   DAIRY SCHEMA
-========================================================== */
+// ==========================================================
+// DAIRY BREEDS
+//
+// Used when:
+//
+//     code > 0
+//
+// For identified dairy animals, "type" represents the breed.
+//
+// Manual assets and Dairy Farms may use type for their own
+// asset/structure classification.
+// ==========================================================
+
+const DAIRY_BREEDS = [
+
+    "Ayrshire",
+
+    "Brown Swiss",
+
+    "Friesian",
+
+    "Holstein",
+
+    "Guernsey",
+
+    "Jersey",
+
+    "Sahiwal",
+
+    "Boran",
+
+    "Ankole",
+
+    "Fleckvieh",
+
+    "Simmental",
+
+    "Guernsey",
+
+    "Crossbreed",
+
+    "Other"
+
+];
+
+
+// ==========================================================
+// STATUS VALUES
+// ==========================================================
+
+const DAIRY_STATUSES = [
+
+    "active",
+
+    "sold",
+
+    "disposed",
+
+    "inactive"
+
+];
+
+
+// ==========================================================
+// DAIRY SCHEMA
+// ==========================================================
 
 const dairySchema = new mongoose.Schema(
 
     {
 
-        /* ==================================================
-           PROFILE IMAGE
-
-           Applies to:
-
-               code > 0
-                   identified dairy / animal
-
-               code < 0
-                   Dairy Farm / structure
-
-               code === null
-                   manual asset
-
-           The image is optional for every record.
-        ================================================== */
+        // ==================================================
+        // PROFILE IMAGE
+        // ==================================================
 
         profileImage: {
 
@@ -37,21 +91,18 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           CODE
-
-           > 0
-               Identified dairy / animal
-
-           < 0
-               Dairy Farm / structure
-
-           null
-               Manual Net Worth asset
-
-           Only actual numeric codes are required to be
-           unique through the partial unique index below.
-        ================================================== */
+        // ==================================================
+        // CODE
+        //
+        // > 0
+        //     Identified dairy animal
+        //
+        // < 0
+        //     Dairy Farm / structure
+        //
+        // null
+        //     Manual asset
+        // ==================================================
 
         code: {
 
@@ -85,9 +136,11 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           NAME
-        ================================================== */
+        // ==================================================
+        // NAME
+        //
+        // Every actual record needs a name.
+        // ==================================================
 
         name: {
 
@@ -100,20 +153,17 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           DATE OF BIRTH
-
-           Only identified dairies / animals have DOB.
-
-           code > 0
-               → required
-
-           code < 0
-               → null
-
-           code === null
-               → null
-        ================================================== */
+        // ==================================================
+        // DATE OF BIRTH
+        //
+        // Only identified animals have DOB.
+        //
+        // code > 0
+        //     DOB allowed / required
+        //
+        // code <= 0
+        //     DOB is cleared automatically
+        // ==================================================
 
         dateOfBirth: {
 
@@ -138,9 +188,9 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           MASS
-        ================================================== */
+        // ==================================================
+        // MASS
+        // ==================================================
 
         mass: {
 
@@ -153,86 +203,42 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           MILKING
-        ================================================== */
+        // ==================================================
+        // MILKING
+        //
+        // Only positive even-numbered codes are female.
+        // ==================================================
 
         isMilking: {
 
             type: Boolean,
 
-            default: false,
-
-            validate: {
-
-                validator: function(value) {
-
-                    if (!value) {
-
-                        return true;
-
-                    }
-
-
-                    /*
-                     * Only identified positive-code
-                     * dairies can be marked as milking.
-                     */
-
-                    if (
-                        this.code === null ||
-                        this.code === undefined ||
-                        Number(this.code) <= 0
-                    ) {
-
-                        return false;
-
-                    }
-
-
-                    /*
-                     * Even positive codes represent
-                     * female animals.
-                     */
-
-                    return (
-
-                        Number(this.code) % 2 === 0
-
-                    );
-
-                },
-
-                message:
-                    "Only female animals can be marked as milking."
-
-            }
+            default: false
 
         },
 
 
-        /* ==================================================
-           PARENT / STRUCTURE ASSIGNMENT
-
-           Positive identified dairy:
-
-               null
-                   → standalone
-
-               negative code
-                   → assigned to Dairy Farm
-
-           Negative code:
-
-               null
-                   → Dairy Farm / structure
-
-           Null code:
-
-               negative code
-                   → manual asset belonging to
-                     a Dairy Farm
-        ================================================== */
+        // ==================================================
+        // PARENT / FARM ASSIGNMENT
+        //
+        // Positive code:
+        //
+        //     null
+        //         standalone animal
+        //
+        //     negative number
+        //         assigned to Dairy Farm
+        //
+        // Negative code:
+        //
+        //     null
+        //         Dairy Farm
+        //
+        // Null code:
+        //
+        //     negative number
+        //         manual asset belonging to farm
+        // ==================================================
 
         assetCode: {
 
@@ -243,9 +249,9 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           MAINTENANCE
-        ================================================== */
+        // ==================================================
+        // MAINTENANCE
+        // ==================================================
 
         needsMaintenance: {
 
@@ -254,6 +260,7 @@ const dairySchema = new mongoose.Schema(
             default: false
 
         },
+
 
         maintenance: {
 
@@ -338,9 +345,9 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           MEDICAL ATTENTION
-        ================================================== */
+        // ==================================================
+        // MEDICAL ATTENTION
+        // ==================================================
 
         medicalAttention: {
 
@@ -441,17 +448,22 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           TYPE
-
-           Examples:
-
-               Cow
-               Equipment
-               Building
-               Vehicle
-               Machine
-        ================================================== */
+        // ==================================================
+        // TYPE
+        //
+        // code > 0:
+        //     animal breed
+        //
+        // code < 0:
+        //     structure type
+        //
+        // code === null:
+        //     manual asset type
+        //
+        // We intentionally do NOT use a global enum here,
+        // because structures and manual assets need their
+        // own types.
+        // ==================================================
 
         type: {
 
@@ -464,9 +476,9 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           BUYING PRICE
-        ================================================== */
+        // ==================================================
+        // BUYING PRICE
+        // ==================================================
 
         buyingPrice: {
 
@@ -479,9 +491,9 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           CURRENT WORTH
-        ================================================== */
+        // ==================================================
+        // CURRENT WORTH
+        // ==================================================
 
         currentWorth: {
 
@@ -494,9 +506,9 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           DESCRIPTION
-        ================================================== */
+        // ==================================================
+        // DESCRIPTION
+        // ==================================================
 
         description: {
 
@@ -509,9 +521,9 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           CONDITION
-        ================================================== */
+        // ==================================================
+        // CONDITION
+        // ==================================================
 
         condition: {
 
@@ -524,9 +536,9 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           LOCATION
-        ================================================== */
+        // ==================================================
+        // LOCATION
+        // ==================================================
 
         location: {
 
@@ -539,9 +551,9 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           ACQUISITION DATE
-        ================================================== */
+        // ==================================================
+        // ACQUISITION DATE
+        // ==================================================
 
         acquisitionDate: {
 
@@ -552,9 +564,9 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           VALUATION DATE
-        ================================================== */
+        // ==================================================
+        // VALUATION DATE
+        // ==================================================
 
         valuationDate: {
 
@@ -565,25 +577,15 @@ const dairySchema = new mongoose.Schema(
         },
 
 
-        /* ==================================================
-           STATUS
-        ================================================== */
+        // ==================================================
+        // STATUS
+        // ==================================================
 
         status: {
 
             type: String,
 
-            enum: [
-
-                "active",
-
-                "sold",
-
-                "disposed",
-
-                "inactive"
-
-            ],
+            enum: DAIRY_STATUSES,
 
             default: "active",
 
@@ -616,9 +618,20 @@ const dairySchema = new mongoose.Schema(
 );
 
 
-/* ==========================================================
-   GENDER
-========================================================== */
+// ==========================================================
+// GENDER
+//
+// Based on positive dairy code.
+//
+// Even:
+//     Female
+//
+// Odd:
+//     Male
+//
+// Structures/manual assets:
+//     null
+// ==========================================================
 
 dairySchema.virtual("gender").get(function() {
 
@@ -650,9 +663,9 @@ dairySchema.virtual("gender").get(function() {
 });
 
 
-/* ==========================================================
-   FEMALE
-========================================================== */
+// ==========================================================
+// IS FEMALE
+// ==========================================================
 
 dairySchema.virtual("isFemale").get(function() {
 
@@ -671,9 +684,11 @@ dairySchema.virtual("isFemale").get(function() {
 });
 
 
-/* ==========================================================
-   HAS IDENTITY
-========================================================== */
+// ==========================================================
+// HAS IDENTITY
+//
+// Positive code = identified animal.
+// ==========================================================
 
 dairySchema.virtual("hasIdentity").get(function() {
 
@@ -690,9 +705,11 @@ dairySchema.virtual("hasIdentity").get(function() {
 });
 
 
-/* ==========================================================
-   IS STRUCTURE
-========================================================== */
+// ==========================================================
+// IS STRUCTURE
+//
+// Negative code = Dairy Farm.
+// ==========================================================
 
 dairySchema.virtual("isStructure").get(function() {
 
@@ -709,9 +726,11 @@ dairySchema.virtual("isStructure").get(function() {
 });
 
 
-/* ==========================================================
-   IS MANUAL ASSET
-========================================================== */
+// ==========================================================
+// IS MANUAL ASSET
+//
+// Null code = manually created asset.
+// ==========================================================
 
 dairySchema.virtual("isManualAsset").get(function() {
 
@@ -726,14 +745,11 @@ dairySchema.virtual("isManualAsset").get(function() {
 });
 
 
-/* ==========================================================
-   IS STANDALONE ASSET
-
-   Identified dairy / animal:
-
-       code > 0
-       assetCode = null
-========================================================== */
+// ==========================================================
+// IS STANDALONE ASSET
+//
+// Identified animal that is not assigned to a farm.
+// ==========================================================
 
 dairySchema.virtual("isStandaloneAsset").get(function() {
 
@@ -758,9 +774,9 @@ dairySchema.virtual("isStandaloneAsset").get(function() {
 });
 
 
-/* ==========================================================
-   IS ASSIGNED ASSET
-========================================================== */
+// ==========================================================
+// IS ASSIGNED ASSET
+// ==========================================================
 
 dairySchema.virtual("isAssignedAsset").get(function() {
 
@@ -775,9 +791,13 @@ dairySchema.virtual("isAssignedAsset").get(function() {
 });
 
 
-/* ==========================================================
-   AGE
-========================================================== */
+// ==========================================================
+// AGE
+//
+// Calculated dynamically from dateOfBirth.
+//
+// This is NOT stored in MongoDB.
+// ==========================================================
 
 dairySchema.virtual("ageText").get(function() {
 
@@ -788,14 +808,32 @@ dairySchema.virtual("ageText").get(function() {
     }
 
 
-    const now =
-        new Date();
-
-
     const dob =
         new Date(
             this.dateOfBirth
         );
+
+
+    const now =
+        new Date();
+
+
+    if (
+        Number.isNaN(
+            dob.getTime()
+        )
+    ) {
+
+        return "";
+
+    }
+
+
+    if (dob > now) {
+
+        return "";
+
+    }
 
 
     let years =
@@ -845,14 +883,91 @@ dairySchema.virtual("ageText").get(function() {
     }
 
 
-    return `${years} years, ${months} months, ${days} days`;
+    return (
+
+        `${years} years, ` +
+
+        `${months} months, ` +
+
+        `${days} days`
+
+    );
 
 });
 
 
-/* ==========================================================
-   MILKING TEXT
-========================================================== */
+// ==========================================================
+// AGE IN YEARS
+//
+// Useful when the frontend only wants:
+//
+//     4 years
+// ==========================================================
+
+dairySchema.virtual("ageYears").get(function() {
+
+    if (!this.dateOfBirth) {
+
+        return null;
+
+    }
+
+
+    const dob =
+        new Date(
+            this.dateOfBirth
+        );
+
+
+    const now =
+        new Date();
+
+
+    if (
+        Number.isNaN(
+            dob.getTime()
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    let age =
+        now.getFullYear() -
+        dob.getFullYear();
+
+
+    const monthDifference =
+        now.getMonth() -
+        dob.getMonth();
+
+
+    if (
+        monthDifference < 0 ||
+        (
+            monthDifference === 0 &&
+            now.getDate() < dob.getDate()
+        )
+    ) {
+
+        age--;
+
+    }
+
+
+    return Math.max(
+        0,
+        age
+    );
+
+});
+
+
+// ==========================================================
+// MILKING TEXT
+// ==========================================================
 
 dairySchema.virtual("isMilkingText").get(function() {
 
@@ -865,31 +980,62 @@ dairySchema.virtual("isMilkingText").get(function() {
 });
 
 
-/* ==========================================================
-   DISPLAY IMAGE
-========================================================== */
+// ==========================================================
+// DISPLAY IMAGE
+//
+// If profileImage already contains a complete URL,
+// use it directly.
+//
+// Otherwise assume it is a filename under /uploads.
+// ==========================================================
 
 dairySchema.virtual("displayImage").get(function() {
 
-    if (this.profileImage) {
+    if (!this.profileImage) {
 
-        return `/uploads/${this.profileImage}`;
+        return (
+
+            `https://ui-avatars.com/api/?name=` +
+
+            `${encodeURIComponent(
+
+                this.name || "Dairy"
+
+            )}`
+
+        );
 
     }
 
 
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    if (
+        /^https?:\/\//i.test(
+            this.profileImage
+        )
+    ) {
 
-        this.name || "Dairy"
+        return this.profileImage;
 
-    )}`;
+    }
+
+
+    if (
+        this.profileImage.startsWith("/")
+    ) {
+
+        return this.profileImage;
+
+    }
+
+
+    return `/uploads/${this.profileImage}`;
 
 });
 
 
-/* ==========================================================
-   MAINTENANCE SHORTCUT
-========================================================== */
+// ==========================================================
+// REQUIRES MAINTENANCE
+// ==========================================================
 
 dairySchema.virtual("requiresMaintenance").get(function() {
 
@@ -898,9 +1044,9 @@ dairySchema.virtual("requiresMaintenance").get(function() {
 });
 
 
-/* ==========================================================
-   MEDICAL SHORTCUT
-========================================================== */
+// ==========================================================
+// NEEDS MEDICAL ATTENTION
+// ==========================================================
 
 dairySchema.virtual("needsMedicalAttention").get(function() {
 
@@ -915,72 +1061,73 @@ dairySchema.virtual("needsMedicalAttention").get(function() {
 });
 
 
-/* ==========================================================
-   ASSET VALUE
-========================================================== */
+// ==========================================================
+// ASSET VALUE
+// ==========================================================
 
 dairySchema.virtual("assetValue").get(function() {
 
-    return Number(
+    return (
 
-        this.currentWorth
+        Number(
+            this.currentWorth
+        ) || 0
 
-    ) || 0;
+    );
 
 });
 
 
-/* ==========================================================
-   ACTIVE ASSET
-========================================================== */
+// ==========================================================
+// ACTIVE ASSET
+// ==========================================================
 
 dairySchema.virtual("isActiveAsset").get(function() {
 
-    return this.status === "active";
+    return (
+
+        this.status === "active"
+
+    );
 
 });
 
 
-/* ==========================================================
-   PRE VALIDATE
-========================================================== */
+// ==========================================================
+// IS IDENTIFIED DAIRY
+// ==========================================================
+
+dairySchema.virtual("isIdentifiedDairy").get(function() {
+
+    return (
+
+        this.code !== null &&
+
+        this.code !== undefined &&
+
+        Number(this.code) > 0
+
+    );
+
+});
+
+
+// ==========================================================
+// PRE VALIDATE
+// ==========================================================
 
 dairySchema.pre(
     "validate",
     function(next) {
 
-        /* ==================================================
-           ONLY FEMALES CAN MILK
-        ================================================== */
-
-        if (!this.isFemale) {
-
-            this.isMilking = false;
-
-        }
-
-
-        /* ==================================================
-           STRUCTURE
-
-           code < 0
-
-           Structures:
-
-               - no DOB
-               - cannot milk
-               - cannot have parent
-               - assetCode = null
-        ================================================== */
+        // ==================================================
+        // STRUCTURE
+        // ==================================================
 
         if (
-
             this.code !== null &&
-
             this.code !== undefined &&
-
             Number(this.code) < 0
-
         ) {
 
             this.dateOfBirth = null;
@@ -992,60 +1139,13 @@ dairySchema.pre(
         }
 
 
-        /* ==================================================
-           IDENTIFIED DAIRY / ANIMAL
-
-           code > 0
-
-           DOB is required by the schema.
-
-           Parent assignment may be:
-
-               null
-                   standalone
-
-               negative code
-                   assigned to Dairy Farm
-        ================================================== */
+        // ==================================================
+        // MANUAL ASSET
+        // ==================================================
 
         if (
-
-            this.code !== null &&
-
-            this.code !== undefined &&
-
-            Number(this.code) > 0
-
-        ) {
-
-            /*
-             * No parent manipulation.
-             *
-             * DateOfBirth remains available and is
-             * validated by the schema.
-             */
-
-        }
-
-
-        /* ==================================================
-           MANUAL ASSET
-
-           code === null
-
-           Manual assets:
-
-               - no DOB
-               - cannot milk
-               - must belong to a parent
-        ================================================== */
-
-        if (
-
             this.code === null ||
-
             this.code === undefined
-
         ) {
 
             this.dateOfBirth = null;
@@ -1054,19 +1154,14 @@ dairySchema.pre(
 
 
             if (
-
                 this.assetCode === null ||
-
                 this.assetCode === undefined
-
             ) {
 
                 return next(
 
                     new Error(
-
-                        "Manual assets must belong to a parent. assetCode is required."
-
+                        "Manual assets must belong to a Dairy Farm. assetCode is required."
                     )
 
                 );
@@ -1076,30 +1171,73 @@ dairySchema.pre(
         }
 
 
-        /* ==================================================
-           STRUCTURES CANNOT HAVE A PARENT
-        ================================================== */
+        // ==================================================
+        // IDENTIFIED ANIMAL
+        //
+        // code > 0
+        // ==================================================
 
         if (
-
             this.code !== null &&
-
             this.code !== undefined &&
+            Number(this.code) > 0
+        ) {
 
+            // ----------------------------------------------
+            // Female / male milking validation
+            // ----------------------------------------------
+
+            if (!this.isFemale) {
+
+                this.isMilking = false;
+
+            }
+
+
+            // ----------------------------------------------
+            // Breed
+            //
+            // Existing records are allowed to remain
+            // untouched if type is empty, but a supplied
+            // type must be a recognized breed.
+            // ----------------------------------------------
+
+            if (
+                this.type &&
+                !DAIRY_BREEDS.includes(
+                    this.type
+                )
+            ) {
+
+                return next(
+
+                    new Error(
+                        `Invalid dairy breed: ${this.type}.`
+                    )
+
+                );
+
+            }
+
+        }
+
+
+        // ==================================================
+        // STRUCTURES CANNOT HAVE PARENT
+        // ==================================================
+
+        if (
+            this.code !== null &&
+            this.code !== undefined &&
             Number(this.code) < 0 &&
-
             this.assetCode !== null &&
-
             this.assetCode !== undefined
-
         ) {
 
             return next(
 
                 new Error(
-
                     "Dairy Farms / structures cannot have an assetCode."
-
                 )
 
             );
@@ -1107,9 +1245,9 @@ dairySchema.pre(
         }
 
 
-        /* ==================================================
-           MEDICAL OBJECT
-        ================================================== */
+        // ==================================================
+        // MEDICAL OBJECT
+        // ==================================================
 
         if (!this.medicalAttention) {
 
@@ -1160,14 +1298,12 @@ dairySchema.pre(
             this.medicalAttention.clearedAt || null;
 
 
-        /* ==================================================
-           CLEAR MEDICAL DATA
-        ================================================== */
+        // ==================================================
+        // CLEAR MEDICAL DATA WHEN NOT MARKED
+        // ==================================================
 
         if (
-
             !this.medicalAttention.isMarked
-
         ) {
 
             this.medicalAttention.type = "";
@@ -1195,24 +1331,22 @@ dairySchema.pre(
 );
 
 
-/* ==========================================================
-   PRE SAVE
-========================================================== */
+// ==========================================================
+// PRE SAVE
+// ==========================================================
 
 dairySchema.pre(
     "save",
     function(next) {
 
-        /* ==================================================
-           MEDICAL UPDATED DATE
-        ================================================== */
+        // ==================================================
+        // MEDICAL UPDATED DATE
+        // ==================================================
 
         if (
-
             this.isModified(
                 "medicalAttention"
             )
-
         ) {
 
             this.medicalAttention.updatedAt =
@@ -1221,9 +1355,12 @@ dairySchema.pre(
         }
 
 
-        /* ==================================================
-           ACQUISITION DATE
-        ================================================== */
+        // ==================================================
+        // ACQUISITION DATE
+        //
+        // Preserve an existing date.
+        // Only create one when missing.
+        // ==================================================
 
         if (!this.acquisitionDate) {
 
@@ -1234,23 +1371,33 @@ dairySchema.pre(
         }
 
 
-        /* ==================================================
-           STRUCTURE
-
-           Structures never have a parent.
-        ================================================== */
+        // ==================================================
+        // STRUCTURE
+        // ==================================================
 
         if (
-
             this.code !== null &&
-
             this.code !== undefined &&
-
             Number(this.code) < 0
-
         ) {
 
             this.assetCode = null;
+
+        }
+
+
+        // ==================================================
+        // MANUAL ASSET
+        // ==================================================
+
+        if (
+            this.code === null ||
+            this.code === undefined
+        ) {
+
+            this.dateOfBirth = null;
+
+            this.isMilking = false;
 
         }
 
@@ -1261,14 +1408,14 @@ dairySchema.pre(
 );
 
 
-/* ==========================================================
-   INDEXES
-========================================================== */
+// ==========================================================
+// INDEXES
+// ==========================================================
 
 
-/* ==========================================================
-   MILKING INDEX
-========================================================== */
+// ==========================================================
+// MILKING
+// ==========================================================
 
 dairySchema.index({
 
@@ -1277,9 +1424,9 @@ dairySchema.index({
 });
 
 
-/* ==========================================================
-   MAINTENANCE INDEX
-========================================================== */
+// ==========================================================
+// MAINTENANCE
+// ==========================================================
 
 dairySchema.index({
 
@@ -1288,9 +1435,9 @@ dairySchema.index({
 });
 
 
-/* ==========================================================
-   MEDICAL INDEX
-========================================================== */
+// ==========================================================
+// MEDICAL
+// ==========================================================
 
 dairySchema.index({
 
@@ -1299,9 +1446,9 @@ dairySchema.index({
 });
 
 
-/* ==========================================================
-   ASSET ASSIGNMENT INDEX
-========================================================== */
+// ==========================================================
+// ASSET ASSIGNMENT
+// ==========================================================
 
 dairySchema.index({
 
@@ -1312,28 +1459,35 @@ dairySchema.index({
 });
 
 
-/* ==========================================================
-   CODE INDEX
-
-   ONLY NUMERIC CODES ARE UNIQUE.
-
-   Therefore:
-
-       code: 1
-           unique
-
-       code: -1
-           unique
-
-       code: null
-           NOT included
-
-   This allows unlimited manual assets.
-========================================================== */
+// ==========================================================
+// CODE
+//
+// Numeric codes are unique.
+//
+// null codes are NOT included.
+//
+// Therefore:
+//
+//     1
+//     2
+//     3
+//     -1
+//     -2
+//
+// are unique, while:
+//
+//     null
+//     null
+//     null
+//
+// is allowed.
+// ==========================================================
 
 dairySchema.index(
 
-    { code: 1 },
+    {
+        code: 1
+    },
 
     {
 
@@ -1354,9 +1508,23 @@ dairySchema.index(
 );
 
 
-/* ==========================================================
-   CALCULATE TOTAL NET WORTH
-========================================================== */
+// ==========================================================
+// STATIC: GET BREEDS
+// ==========================================================
+
+dairySchema.statics.getDairyBreeds =
+function() {
+
+    return [
+        ...DAIRY_BREEDS
+    ];
+
+};
+
+
+// ==========================================================
+// STATIC: CALCULATE NET WORTH
+// ==========================================================
 
 dairySchema.statics.calculateNetWorth =
 async function() {
@@ -1365,7 +1533,6 @@ async function() {
         await this.aggregate([
 
             {
-
                 $match: {
 
                     status: "active"
@@ -1375,7 +1542,6 @@ async function() {
             },
 
             {
-
                 $group: {
 
                     _id: null,
@@ -1394,22 +1560,24 @@ async function() {
         ]);
 
 
-    return result.length
+    return (
 
-        ? Number(
+        result.length
 
-            result[0].totalNetWorth || 0
+            ? Number(
+                result[0].totalNetWorth || 0
+            )
 
-        )
+            : 0
 
-        : 0;
+    );
 
 };
 
 
-/* ==========================================================
-   TOTAL CURRENT WORTH
-========================================================== */
+// ==========================================================
+// STATIC: TOTAL CURRENT WORTH
+// ==========================================================
 
 dairySchema.statics.getTotalCurrentWorth =
 async function() {
@@ -1419,12 +1587,30 @@ async function() {
 };
 
 
-/* ==========================================================
-   EXPORT
-========================================================== */
+// ==========================================================
+// EXPORT MODEL
+// ==========================================================
 
-module.exports =
+const Dairy =
     mongoose.model(
         "Dairy",
         dairySchema
     );
+
+
+// ==========================================================
+// EXPORT
+// ==========================================================
+
+module.exports =
+    Dairy;
+
+
+// Export constants as properties so the service/controller
+// can use the exact same lists if required.
+
+module.exports.DAIRY_BREEDS =
+    DAIRY_BREEDS;
+
+module.exports.DAIRY_STATUSES =
+    DAIRY_STATUSES;
