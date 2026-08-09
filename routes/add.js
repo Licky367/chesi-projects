@@ -10,7 +10,7 @@ const addController =
 
 
 const upload =
-    require("../middleware/uploadMidleware");
+    require("../middleware/uploadMiddleware");
 
 
 // ==========================================================
