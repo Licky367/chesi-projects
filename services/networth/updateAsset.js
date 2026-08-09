@@ -27,41 +27,6 @@ const ALLOWED_STATUSES = [
 
 
 // ==========================================================
-// DAIRY BREEDS
-// ==========================================================
-
-const DAIRY_BREEDS = [
-
-    "Friesian",
-
-    "Ayrshire",
-
-    "Guernsey",
-
-    "Jersey",
-
-    "Brown Swiss",
-
-    "Sahiwal",
-
-    "Boran",
-
-    "Ankole",
-
-    "Fleckvieh",
-
-    "Simmental",
-
-    "Holstein",
-
-    "Crossbreed",
-
-    "Other"
-
-];
-
-
-// ==========================================================
 // ERROR HELPER
 // ==========================================================
 
@@ -85,13 +50,33 @@ function createError(
 // OBJECT ID
 // ==========================================================
 
-function isValidObjectId(
-    id
-) {
+function isValidObjectId(id) {
 
     return mongoose.Types.ObjectId.isValid(
         id
     );
+
+}
+
+
+// ==========================================================
+// TEXT
+// ==========================================================
+
+function parseText(value) {
+
+    if (
+        value === undefined ||
+        value === null
+    ) {
+
+        return "";
+
+    }
+
+    return String(
+        value
+    ).trim();
 
 }
 
@@ -102,18 +87,8 @@ function isValidObjectId(
 
 function parseNumber(
     value,
-    fieldName,
-    options = {}
+    fieldName
 ) {
-
-    const {
-
-        allowNull = true,
-
-        nonNegative = true
-
-    } = options;
-
 
     if (
         value === undefined
@@ -129,9 +104,7 @@ function parseNumber(
         value === ""
     ) {
 
-        return allowNull
-            ? null
-            : undefined;
+        return null;
 
     }
 
@@ -153,12 +126,11 @@ function parseNumber(
 
 
     if (
-        nonNegative &&
         number < 0
     ) {
 
         throw createError(
-            `${fieldName} must be a non-negative number.`,
+            `${fieldName} cannot be negative.`,
             400
         );
 
@@ -225,9 +197,7 @@ function parseDate(
 // BOOLEAN
 // ==========================================================
 
-function parseBoolean(
-    value
-) {
+function parseBoolean(value) {
 
     if (
         typeof value === "boolean"
@@ -271,37 +241,10 @@ function parseBoolean(
 
 
 // ==========================================================
-// TEXT
+// DAIRY FARM
 // ==========================================================
 
-function parseText(
-    value
-) {
-
-    if (
-        value === undefined ||
-        value === null
-    ) {
-
-        return "";
-
-    }
-
-
-    return String(
-        value
-    ).trim();
-
-}
-
-
-// ==========================================================
-// RECORD TYPE
-// ==========================================================
-
-function isDairyFarm(
-    record
-) {
+function isDairyFarm(record) {
 
     if (
         !record
@@ -333,9 +276,7 @@ function isDairyFarm(
 // IDENTIFIED DAIRY
 // ==========================================================
 
-function isIdentifiedDairy(
-    record
-) {
+function isIdentifiedDairy(record) {
 
     if (
         !record
@@ -367,9 +308,7 @@ function isIdentifiedDairy(
 // MANUAL ASSET
 // ==========================================================
 
-function isManualAsset(
-    record
-) {
+function isManualAsset(record) {
 
     if (
         !record
@@ -406,35 +345,63 @@ function isManualAsset(
 
 
 // ==========================================================
-// STANDALONE IDENTIFIED ASSET
+// FIND PARENT DAIRY FARM
 // ==========================================================
 
-function isStandaloneAsset(
-    record
+async function findDairyFarmByCode(
+    code
 ) {
 
-    return (
+    const numericCode =
+        Number(code);
 
-        isIdentifiedDairy(
-            record
-        )
 
-        &&
+    if (
+        !Number.isFinite(
+            numericCode
+        ) ||
+        numericCode >= 0
+    ) {
 
-        (
-            record.assetCode === null ||
+        throw createError(
+            "Invalid Dairy Farm code.",
+            400
+        );
 
-            record.assetCode === undefined
+    }
 
-        )
 
-    );
+    const farm =
+        await Dairy.findOne({
+
+            code:
+                numericCode,
+
+            assetCode:
+                null
+
+        }).lean();
+
+
+    if (
+        !farm
+    ) {
+
+        throw createError(
+            "Selected Dairy Farm was not found.",
+            404
+        );
+
+    }
+
+
+    return farm;
 
 }
 
 
 // ==========================================================
-// CALCULATE AGE
+// AGE
 // ==========================================================
 
 function calculateAge(
@@ -524,7 +491,7 @@ function calculateAge(
 
 
 // ==========================================================
-// CALCULATE AGE TEXT
+// AGE TEXT
 // ==========================================================
 
 function calculateAgeText(
@@ -689,10 +656,6 @@ function decorateRecord(
         );
 
 
-    // ------------------------------------------------------
-    // AGE
-    // ------------------------------------------------------
-
     object.age =
 
         identified
@@ -723,13 +686,6 @@ function decorateRecord(
         "";
 
 
-    // ------------------------------------------------------
-    // FEMALE
-    //
-    // Even code = female
-    // Odd code = male
-    // ------------------------------------------------------
-
     object.isFemale =
 
         identified &&
@@ -739,14 +695,26 @@ function decorateRecord(
         ) % 2 === 0;
 
 
-    // ------------------------------------------------------
-    // ASSET FLAGS
-    // ------------------------------------------------------
+    object.isManualAsset =
+        isManualAsset(
+            object
+        );
+
+
+    object.isDairyFarm =
+        isDairyFarm(
+            object
+        );
+
 
     object.isStandaloneAsset =
 
-        isStandaloneAsset(
-            object
+        identified &&
+
+        (
+            object.assetCode === null ||
+
+            object.assetCode === undefined
         );
 
 
@@ -756,24 +724,6 @@ function decorateRecord(
 
         object.assetCode !== undefined;
 
-
-    object.isManualAsset =
-
-        isManualAsset(
-            object
-        );
-
-
-    object.isDairyFarm =
-
-        isDairyFarm(
-            object
-        );
-
-
-    // ------------------------------------------------------
-    // DISPLAY IMAGE
-    // ------------------------------------------------------
 
     object.displayImage =
 
@@ -785,65 +735,6 @@ function decorateRecord(
 
 
     return object;
-
-}
-
-
-// ==========================================================
-// FIND DAIRY FARM BY CODE
-// ==========================================================
-
-async function findDairyFarmByCode(
-    code
-) {
-
-    const numericCode =
-        Number(code);
-
-
-    if (
-        !Number.isFinite(
-            numericCode
-        ) ||
-
-        numericCode >= 0
-    ) {
-
-        throw createError(
-            "Invalid Dairy Farm code.",
-            400
-        );
-
-    }
-
-
-    const farm =
-        await Dairy
-            .findOne({
-
-                code:
-                    numericCode,
-
-                assetCode:
-                    null
-
-            })
-            .lean();
-
-
-    if (
-        !farm
-    ) {
-
-        throw createError(
-            "Selected Dairy Farm was not found.",
-            404
-        );
-
-    }
-
-
-    return farm;
 
 }
 
@@ -875,7 +766,7 @@ async function updateAsset(
 
 
     // ======================================================
-    // FIND EXISTING RECORD
+    // FIND RECORD
     // ======================================================
 
     const dairy =
@@ -897,7 +788,7 @@ async function updateAsset(
 
 
     // ======================================================
-    // NEVER EDIT A DAIRY FARM HERE
+    // DETERMINE RECORD TYPE
     // ======================================================
 
     if (
@@ -913,10 +804,6 @@ async function updateAsset(
 
     }
 
-
-    // ======================================================
-    // DETERMINE RECORD TYPE
-    // ======================================================
 
     const identified =
         isIdentifiedDairy(
@@ -947,10 +834,6 @@ async function updateAsset(
     // PROFILE IMAGE
     // ======================================================
 
-    /*
-     * A newly uploaded image always takes priority.
-     */
-
     if (
         file &&
         file.filename
@@ -958,33 +841,6 @@ async function updateAsset(
 
         dairy.profileImage =
             `/uploads/${file.filename}`;
-
-    }
-
-
-    /*
-     * Also support a controller that already
-     * provides a profileImage path.
-     */
-
-    else if (
-        body.profileImage !== undefined
-    ) {
-
-        const image =
-            parseText(
-                body.profileImage
-            );
-
-
-        if (
-            image
-        ) {
-
-            dairy.profileImage =
-                image;
-
-        }
 
     }
 
@@ -1022,78 +878,23 @@ async function updateAsset(
 
 
     // ======================================================
-    // LEGACY ITEM FIELD
-    // ======================================================
-
-    else if (
-        body.item !== undefined
-    ) {
-
-        const item =
-            parseText(
-                body.item
-            );
-
-
-        if (
-            !item
-        ) {
-
-            throw createError(
-                "Name cannot be empty.",
-                400
-            );
-
-        }
-
-
-        dairy.name =
-            item;
-
-    }
-
-
-    // ======================================================
     // TYPE / BREED
-    //
-    // Identified dairy:
-    //     Breed
-    //
-    // Manual asset:
-    //     Asset Type
-    //
-    // Both use database field:
-    //     type
     // ======================================================
 
     if (
         body.type !== undefined
     ) {
 
-        const type =
+        dairy.type =
             parseText(
                 body.type
             );
-
-
-        /*
-         * An identified animal may have an empty breed.
-         * Manual assets may also have an empty type.
-         *
-         * Therefore we do not force a value here unless
-         * your schema itself requires it.
-         */
-
-        dairy.type =
-            type;
 
     }
 
 
     // ======================================================
     // DATE OF BIRTH
-    //
-    // Only identified dairy records.
     // ======================================================
 
     if (
@@ -1101,20 +902,34 @@ async function updateAsset(
         body.dateOfBirth !== undefined
     ) {
 
-        dairy.dateOfBirth =
-
+        const dateOfBirth =
             parseDate(
                 body.dateOfBirth,
                 "Date of Birth"
             );
+
+
+        if (
+            dateOfBirth &&
+            dateOfBirth > new Date()
+        ) {
+
+            throw createError(
+                "Date of Birth cannot be in the future.",
+                400
+            );
+
+        }
+
+
+        dairy.dateOfBirth =
+            dateOfBirth;
 
     }
 
 
     // ======================================================
     // MASS
-    //
-    // Only identified dairy records.
     // ======================================================
 
     if (
@@ -1123,7 +938,6 @@ async function updateAsset(
     ) {
 
         dairy.mass =
-
             parseNumber(
                 body.mass,
                 "Mass"
@@ -1134,15 +948,13 @@ async function updateAsset(
 
     // ======================================================
     // MILKING
-    //
-    // Only identified female dairy records.
     // ======================================================
 
     if (
         identified
     ) {
 
-        const female =
+        const isFemale =
 
             Number(
                 dairy.code
@@ -1150,39 +962,24 @@ async function updateAsset(
 
 
         if (
-            female
+            isFemale
         ) {
 
             /*
-             * HTML checkboxes are special:
+             * Checked checkbox:
+             *     "true"
              *
-             * Checked:
-             *     req.body.isMilking === "true"
+             * Unchecked checkbox:
+             *     field absent
              *
-             * Unchecked:
-             *     req.body.isMilking === undefined
-             *
-             * Since this page is specifically an edit form,
-             * absence of the checkbox means FALSE.
+             * For this edit form, absence means false.
              */
 
-            if (
-                body.isMilking !== undefined
-            ) {
+            dairy.isMilking =
 
-                dairy.isMilking =
-                    parseBoolean(
-                        body.isMilking
-                    );
-
-            }
-
-            else {
-
-                dairy.isMilking =
-                    false;
-
-            }
+                parseBoolean(
+                    body.isMilking
+                );
 
         }
 
@@ -1198,7 +995,6 @@ async function updateAsset(
     ) {
 
         dairy.buyingPrice =
-
             parseNumber(
                 body.buyingPrice,
                 "Buying Price"
@@ -1216,7 +1012,6 @@ async function updateAsset(
     ) {
 
         dairy.currentWorth =
-
             parseNumber(
                 body.currentWorth,
                 "Current Worth"
@@ -1234,7 +1029,6 @@ async function updateAsset(
     ) {
 
         dairy.description =
-
             parseText(
                 body.description
             );
@@ -1251,7 +1045,6 @@ async function updateAsset(
     ) {
 
         dairy.condition =
-
             parseText(
                 body.condition
             );
@@ -1268,7 +1061,6 @@ async function updateAsset(
     ) {
 
         dairy.location =
-
             parseText(
                 body.location
             );
@@ -1285,7 +1077,9 @@ async function updateAsset(
     ) {
 
         const supplied =
-            body.assetCode;
+            parseText(
+                body.assetCode
+            );
 
 
         // --------------------------------------------------
@@ -1293,14 +1087,8 @@ async function updateAsset(
         // --------------------------------------------------
 
         if (
-            supplied === null ||
-            supplied === ""
+            !supplied
         ) {
-
-            /*
-             * Manual assets are never allowed to become
-             * parentless.
-             */
 
             if (
                 manual
@@ -1343,15 +1131,14 @@ async function updateAsset(
 
 
     // ======================================================
-    // MANUAL ASSET PARENT SAFETY
+    // MANUAL ASSET SAFETY
     // ======================================================
 
     if (
         manual &&
         (
             dairy.assetCode === null ||
-            dairy.assetCode === undefined ||
-            dairy.assetCode === ""
+            dairy.assetCode === undefined
         )
     ) {
 
@@ -1375,18 +1162,6 @@ async function updateAsset(
             parseText(
                 body.status
             );
-
-
-        if (
-            !status
-        ) {
-
-            throw createError(
-                "Asset status cannot be empty.",
-                400
-            );
-
-        }
 
 
         if (
@@ -1418,7 +1193,6 @@ async function updateAsset(
     ) {
 
         dairy.valuationDate =
-
             parseDate(
                 body.valuationDate,
                 "Valuation Date"
@@ -1430,13 +1204,13 @@ async function updateAsset(
     // ======================================================
     // PROTECTED FIELDS
     //
-    // We intentionally DO NOT assign:
+    // We intentionally never modify:
     //
-    //     dairy._id
-    //     dairy.code
-    //     dairy.acquisitionDate
+    //     _id
+    //     code
+    //     acquisitionDate
     //
-    // The EJS does not submit those fields for editing.
+    // These remain unchanged in MongoDB.
     // ======================================================
 
 
@@ -1448,7 +1222,7 @@ async function updateAsset(
 
 
     // ======================================================
-    // RELOAD ACTUAL DATABASE RECORD
+    // RELOAD
     // ======================================================
 
     const updated =
@@ -1472,7 +1246,7 @@ async function updateAsset(
 
 
     // ======================================================
-    // RETURN DECORATED DATABASE RECORD
+    // RETURN
     // ======================================================
 
     return decorateRecord(
@@ -1500,8 +1274,6 @@ module.exports = {
 
     calculateAge,
 
-    calculateAgeText,
-
-    DAIRY_BREEDS
+    calculateAgeText
 
 };
