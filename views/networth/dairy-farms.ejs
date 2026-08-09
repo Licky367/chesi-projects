@@ -1,14 +1,23 @@
-<!-- ===================.=======================================
+<!-- ==========================================================
      views/networth/dairy-farms.ejs
 
-     Displays ALL Dairy Farms / structures.
+     Displays ALL Dairy Farm records.
 
-     A Dairy Farm is defined by:
-         dairy.code < 0
+     MODEL DEFINITION:
 
-     Every negative-code Dairy record is displayed.
+         code < 0
+             = Dairy Farm
 
-     The Dairy _id is used to open the farm detail page.
+         code > 0
+             = Animal
+
+         code === null
+             = Structure / Facility / Equipment
+
+     This partial therefore displays ONLY records whose
+     `code` is negative.
+
+     `assetCode` is always null for a Dairy Farm.
 ========================================================== --><section class="networth-section"><!-- ======================================================
      SECTION HEADER
 ======================================================= -->
@@ -22,7 +31,7 @@
         </h2>
 
         <p>
-            Dairy farms and facilities containing assigned assets.
+            Dairy farms and their current estimated worth.
         </p>
 
     </div>
@@ -36,30 +45,39 @@
 
 <div class="networth-list">
 
+
     <%
         /*
-         * `structures` is expected to contain the Dairy
-         * records supplied to this partial.
+         * `structures` is the collection supplied by the
+         * controller/service for this partial.
          *
-         * We explicitly filter here so that this view
-         * only displays records whose code is negative.
+         * The model defines a Dairy Farm exclusively by
+         * a negative `code`.
          *
-         * Number() also allows the check to work if the
-         * value happens to arrive as a numeric string.
+         * We keep the filtering defensive here so the
+         * partial cannot accidentally display animals or
+         * standalone structures.
          */
 
         const dairyFarms =
             Array.isArray(structures)
+
                 ? structures.filter(function (dairy) {
 
                     return (
+
                         dairy &&
+
                         dairy.code !== null &&
+
                         dairy.code !== undefined &&
+
                         Number(dairy.code) < 0
+
                     );
 
                 })
+
                 : [];
     %>
 
@@ -71,7 +89,7 @@
 
 
             <!-- ==========================================
-                 DAIRY FARM / STRUCTURE
+                 DAIRY FARM
             =========================================== -->
 
             <a
@@ -79,11 +97,13 @@
                 class="networth-list-item networth-structure-item"
             >
 
+
                 <span class="networth-list-name">
 
-                    <%= dairy.name || dairy.item || dairy.code %>
+                    <%= dairy.name || dairy.code %>
 
                 </span>
+
 
             </a>
 
