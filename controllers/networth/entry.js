@@ -2,7 +2,7 @@ const networthService =
     require("../../services/networth/entry");
 
 
-/* =========================================================
+/* ==========================================================
    GET NET WORTH
 ========================================================== */
 
@@ -14,71 +14,67 @@ async function getNetWorth(req, res) {
             await networthService.getNetWorth();
 
 
-        /* ==================================================
-           SAFETY
-           
-           Make sure the service always gives the view
-           arrays, even if one of them is missing.
-        ================================================== */
+        /* ======================================================
+           SAFE VALUES FOR EJS
+        ====================================================== */
+
+        const totalNetWorth =
+            Number(
+                networth.totalNetWorth || 0
+            );
+
 
         const standaloneAssets =
-            Array.isArray(networth.standaloneAssets)
+            Array.isArray(
+                networth.standaloneAssets
+            )
                 ? networth.standaloneAssets
                 : [];
 
 
         const structures =
-            Array.isArray(networth.structures)
+            Array.isArray(
+                networth.structures
+            )
                 ? networth.structures
                 : [];
 
 
-        const totalNetWorth =
-            Number(networth.totalNetWorth || 0);
-
-
-        /* ==================================================
-           RENDER NET WORTH
-        ================================================== */
+        /* ======================================================
+           RENDER NET WORTH PAGE
+        ====================================================== */
 
         return res.render(
             "networth",
             {
 
-                /* ------------------------------------------
-                   TOTAL NET WORTH
-                ------------------------------------------ */
+                /*
+                 * Total current estimated worth
+                 * of all actual assets.
+                 */
 
                 totalNetWorth,
 
 
-                /* ------------------------------------------
-                   STANDALONE ASSETS
-
-                   Definition:
-
-                       Dairy
-                       code > 0
-                       AND
-                       assetCode is null/missing
-
-                   The service is responsible for applying
-                   this definition.
-                ------------------------------------------ */
+                /*
+                 * Standalone identified assets.
+                 *
+                 * Definition handled by the service:
+                 *
+                 *     code > 0
+                 *     assetCode is null/missing/empty
+                 */
 
                 standaloneAssets,
 
 
-                /* ------------------------------------------
-                   DAIRY FARMS / STRUCTURES
-
-                   Definition:
-
-                       dairy.code < 0
-
-                   The service is responsible for filtering
-                   these records.
-                ------------------------------------------ */
+                /*
+                 * Dairy Farm structures.
+                 *
+                 * Definition handled by the service:
+                 *
+                 *     code < 0
+                 */
 
                 structures
 
@@ -93,10 +89,6 @@ async function getNetWorth(req, res) {
         );
 
 
-        /* ==================================================
-           ERROR RESPONSE
-        ================================================== */
-
         return res.status(500).send(
             "Unable to load Net Worth."
         );
@@ -106,7 +98,7 @@ async function getNetWorth(req, res) {
 }
 
 
-/* =========================================================
+/* ==========================================================
    EXPORTS
 ========================================================== */
 
