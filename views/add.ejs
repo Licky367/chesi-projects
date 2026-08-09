@@ -1,6 +1,16 @@
 <%
 /* ==========================================================
 ADD DAIRY / ASSET PAGE
+
+Backend provides:
+
+dairyBreeds:
+Breeds supplied by the Dairy model.
+
+structures:
+Existing Dairy Farm records.
+
+Access control must also be enforced server-side.
 ========================================================== */
 
 const breeds =
@@ -12,1363 +22,741 @@ const dairyFarms =
 Array.isArray(structures)
 ? structures
 : [];
+
 %>
 
-<style>
-
-/* ==========================================================
-   ADD PAGE
-========================================================== */
-
-.financial-page.add-dairy-page {
-
-    max-width: 850px;
-
-    margin: 0 auto;
-
-    padding: 25px 18px 55px;
-
-    box-sizing: border-box;
-
-}
-
-
-/* ==========================================================
-   HEADER
-========================================================== */
-
-.add-dairy-page .financial-header {
-
-    margin-bottom: 25px;
-
-}
-
-.add-dairy-page .financial-header h1 {
-
-    margin: 10px 0 6px;
-
-    color: #173b2a;
-
-    font-size: 30px;
-
-    font-weight: 800;
-
-    line-height: 1.2;
-
-    letter-spacing: -0.6px;
-
-}
-
-.add-dairy-page .financial-header p {
-
-    margin: 0;
-
-    color: #718078;
-
-    font-size: 15px;
-
-    line-height: 1.5;
-
-}
-
-
-/* ==========================================================
-   BACK
-========================================================== */
-
-.financial-back-link {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    color: #2f7d4c;
-
-    font-size: 13px;
-
-    font-weight: 700;
-
-    text-decoration: none;
-
-}
-
-.financial-back-link:hover {
-
-    color: #1e6037;
-
-}
-
-
-/* ==========================================================
-   CARD
-========================================================== */
-
-.add-dairy-page > .financial-card {
-
-    overflow: hidden;
-
-    padding: 30px;
-
-    box-sizing: border-box;
-
-    background: #fff;
-
-    border: 1px solid #e1e9e4;
-
-    border-radius: 18px;
-
-    box-shadow:
-        0 8px 25px rgba(25, 70, 43, 0.055),
-        0 2px 6px rgba(25, 70, 43, 0.025);
-
-}
-
-
-/* ==========================================================
-   FORM
-========================================================== */
-
-.add-dairy-form {
-
-    width: 100%;
-
-}
-
-.add-dairy-form .form-group {
-
-    margin-bottom: 21px;
-
-}
-
-.add-dairy-form .form-group label {
-
-    display: block;
-
-    margin-bottom: 8px;
-
-    color: #304139;
-
-    font-size: 13px;
-
-    font-weight: 750;
-
-    line-height: 1.4;
-
-}
-
-
-/* ==========================================================
-   INPUTS
-========================================================== */
-
-.add-dairy-form input,
-.add-dairy-form select,
-.add-dairy-form textarea {
-
-    display: block;
-
-    width: 100%;
-
-    box-sizing: border-box;
-
-    border: 1px solid #d5dfd9;
-
-    border-radius: 11px;
-
-    background: #fbfdfb;
-
-    color: #24352c;
-
-    font-family: inherit;
-
-    font-size: 14px;
-
-    outline: none;
-
-    transition:
-        border-color .2s ease,
-        box-shadow .2s ease,
-        background .2s ease;
-
-}
-
-.add-dairy-form input {
-
-    height: 49px;
-
-    padding: 0 14px;
-
-}
-
-.add-dairy-form select {
-
-    height: 49px;
-
-    padding: 0 14px;
-
-}
-
-.add-dairy-form textarea {
-
-    min-height: 115px;
-
-    padding: 13px 14px;
-
-    resize: vertical;
-
-    line-height: 1.55;
-
-}
-
-.add-dairy-form input[type="file"] {
-
-    height: auto;
-
-    min-height: 49px;
-
-    padding: 12px 14px;
-
-    cursor: pointer;
-
-}
-
-.add-dairy-form input:focus,
-.add-dairy-form select:focus,
-.add-dairy-form textarea:focus {
-
-    background: #fff;
-
-    border-color: #3b945b;
-
-    box-shadow:
-        0 0 0 3px rgba(59, 148, 91, .11);
-
-}
-
-
-/* ==========================================================
-   PROFILE IMAGE
-========================================================== */
-
-.profile-image-section {
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    margin-bottom: 30px;
-
-    padding-bottom: 25px;
-
-    border-bottom: 1px solid #edf1ee;
-
-}
-
-.profile-image-preview {
-
-    width: 125px;
-
-    height: 125px;
-
-    margin-bottom: 15px;
-
-    border-radius: 50%;
-
-    overflow: hidden;
-
-    background: #f1f5f2;
-
-    border: 4px solid #fff;
-
-    box-shadow:
-        0 4px 15px rgba(25, 70, 43, .12);
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-}
-
-.profile-image-preview img {
-
-    width: 100%;
-
-    height: 100%;
-
-    object-fit: cover;
-
-    display: none;
-
-}
-
-.profile-image-placeholder {
-
-    color: #8b9991;
-
-    font-size: 42px;
-
-}
-
-.profile-image-title {
-
-    margin-bottom: 5px;
-
-    color: #304139;
-
-    font-size: 14px;
-
-    font-weight: 750;
-
-}
-
-.profile-image-description {
-
-    margin: 0 0 15px;
-
-    color: #7a8880;
-
-    font-size: 12px;
-
-    text-align: center;
-
-}
-
-.profile-image-input {
-
-    width: 100%;
-
-    max-width: 400px;
-
-}
-
-
-/* ==========================================================
-   DYNAMIC SECTIONS
-========================================================== */
-
-.record-section {
-
-    display: none;
-
-}
-
-.record-section.visible {
-
-    display: block;
-
-}
-
-
-/* ==========================================================
-   STATUS
-========================================================== */
-
-.form-save-status {
-
-    display: none;
-
-    margin-bottom: 18px;
-
-    padding: 12px 14px;
-
-    border-radius: 10px;
-
-    font-size: 13px;
-
-}
-
-.form-save-status.success {
-
-    display: block;
-
-    background: #eef8f1;
-
-    border: 1px solid #cfe5d5;
-
-    color: #28633b;
-
-}
-
-.form-save-status.error {
-
-    display: block;
-
-    background: #fff3f2;
-
-    border: 1px solid #efd0cd;
-
-    color: #a13c35;
-
-}
-
-
-/* ==========================================================
-   ACTIONS
-========================================================== */
-
-.form-actions {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: flex-end;
-
-    gap: 11px;
-
-    margin-top: 8px;
-
-    padding-top: 22px;
-
-    border-top: 1px solid #edf1ee;
-
-}
-
-.button {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    min-height: 46px;
-
-    padding: 0 19px;
-
-    box-sizing: border-box;
-
-    border-radius: 10px;
-
-    font-family: inherit;
-
-    font-size: 14px;
-
-    font-weight: 700;
-
-    text-decoration: none;
-
-    cursor: pointer;
-
-}
-
-.button-secondary {
-
-    background: #fff;
-
-    color: #536159;
-
-    border: 1px solid #d6dfd9;
-
-}
-
-.button-primary {
-
-    background: #2f8f55;
-
-    color: #fff;
-
-    border: 1px solid #2f8f55;
-
-}
-
-.button-primary:disabled {
-
-    opacity: .65;
-
-    cursor: wait;
-
-}
-
-
-/* ==========================================================
-   MOBILE
-========================================================== */
-
-@media (max-width: 650px) {
-
-    .financial-page.add-dairy-page {
-
-        padding: 18px 14px 45px;
-
-    }
-
-    .add-dairy-page .financial-header h1 {
-
-        font-size: 25px;
-
-    }
-
-    .add-dairy-page > .financial-card {
-
-        padding: 22px 18px;
-
-        border-radius: 15px;
-
-    }
-
-    .form-actions {
-
-        flex-direction: column-reverse;
-
-        align-items: stretch;
-
-    }
-
-    .button {
-
-        width: 100%;
-
-        min-height: 48px;
-
-    }
-
-    .profile-image-preview {
-
-        width: 110px;
-
-        height: 110px;
-
-    }
-
-}
-
-</style><div class="financial-page add-dairy-page"><!-- ======================================================
-     HEADER
-======================================================= -->
-
-<div class="financial-header">
-
-    <a
-        href="/networth"
-        class="financial-back-link"
-    >
-
-        ← Net Worth
-
-    </a>
-
-    <h1>
-
-        Add Dairy / Asset
-
-    </h1>
-
-    <p>
-
-        Create a dairy farm, animal,
-        structure, facility, or equipment.
-
-    </p>
-
-</div>
-
-
-<div class="financial-card">
-
-
-    <form
-        id="addDairyForm"
-        action="/add"
-        method="POST"
-        enctype="multipart/form-data"
-        class="add-dairy-form"
-    >
-
-
-        <div
-            id="formSaveStatus"
-            class="form-save-status"
-            role="status"
-            aria-live="polite"
-        ></div>
-
-
-        <!-- =================================================
-             PROFILE IMAGE
-        ================================================== -->
-
-        <div class="profile-image-section">
-
-            <div class="profile-image-preview">
-
-                <img
-                    id="profileImagePreview"
-                    src=""
-                    alt="Profile image preview"
-                >
-
-                <span
-                    id="profileImagePlaceholder"
-                    class="profile-image-placeholder"
-                >
-
-                    🐄
-
-                </span>
-
-            </div>
-
-
-            <div class="profile-image-title">
-
-                Profile Image
-
-            </div>
-
-
-            <p class="profile-image-description">
-
-                Optional. Choose an image for
-                this record.
-
-            </p>
-
-
-            <input
-                type="file"
-                id="profileImage"
-                name="profileImage"
-                class="profile-image-input"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
+<!-- ==========================================================
+     PAGE HEADER
+========================================================== --><div class="financial-header"><a
+    href="/networth"
+    class="financial-back-link"
+>
+    ← Net Worth
+</a>
+
+<h1>
+    Add Dairy / Asset
+</h1>
+
+</div><!-- ==========================================================
+     FORM CARD
+========================================================== --><div class="financial-card"><form
+    id="addDairyForm"
+    action="/add"
+    method="POST"
+    enctype="multipart/form-data"
+    class="add-dairy-form"
+>
+
+    <!-- ==================================================
+         FORM STATUS
+    ================================================== -->
+
+    <div
+        id="formSaveStatus"
+        class="form-save-status"
+        role="status"
+        aria-live="polite"
+    ></div>
+
+
+    <!-- ==================================================
+         PROFILE IMAGE
+    ================================================== -->
+
+    <div class="profile-image-section">
+
+        <div class="profile-image-preview">
+
+            <img
+                id="profileImagePreview"
+                src=""
+                alt="Profile image preview"
+                style="display:none;"
             >
+
+            <span
+                id="profileImagePlaceholder"
+                class="profile-image-placeholder"
+            >
+                🐄
+            </span>
 
         </div>
 
-
-        <!-- =================================================
-             RECORD TYPE
-        ================================================== -->
-
-        <div class="form-group">
-
-            <label for="recordType">
-
-                What are you adding? *
-
-            </label>
-
-
-            <select
-                id="recordType"
-                name="recordType"
-                required
-            >
-
-                <option value="">
-
-                    Select record type
-
-                </option>
-
-                <option value="dairyFarm">
-
-                    Dairy Farm
-
-                </option>
-
-                <option value="animal">
-
-                    Animal
-
-                </option>
-
-                <option value="structure">
-
-                    Structure / Facility
-
-                </option>
-
-            </select>
-
+        <div class="profile-image-title">
+            Profile Image
         </div>
 
+        <p class="profile-image-description">
+            Optional. Choose an image for this record.
+        </p>
 
-        <!-- =================================================
-             NAME
-        ================================================== -->
-
-        <div class="form-group">
-
-            <label for="name">
-
-                Name *
-
-            </label>
-
-            <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                autocomplete="off"
-                placeholder="Enter name"
-            >
-
-        </div>
-
-
-        <!-- =================================================
-             FARM TYPE
-        ================================================== -->
-
-        <div
-            id="farmTypeGroup"
-            class="form-group record-section"
+        <input
+            type="file"
+            id="profileImage"
+            name="profileImage"
+            class="profile-image-input"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
         >
 
-            <label for="farmType">
-
-                Dairy Farm Type *
-
-            </label>
+    </div>
 
 
-            <select
-                id="farmType"
-                name="farmType"
-            >
+    <!-- ==================================================
+         RECORD TYPE
+    ================================================== -->
 
-                <option value="">
+    <div class="form-group">
 
-                    Select farm type
+        <label for="recordType">
+            What are you adding? *
+        </label>
 
-                </option>
-
-                <option value="ranch">
-
-                    Ranch
-
-                </option>
-
-                <option value="zeroGrazing">
-
-                    Zero Grazing
-
-                </option>
-
-                <option value="semiZeroGrazing">
-
-                    Semi-Zero Grazing
-
-                </option>
-
-                <option value="pastureBased">
-
-                    Pasture-Based
-
-                </option>
-
-                <option value="mixedFarming">
-
-                    Mixed Farming
-
-                </option>
-
-                <option value="cooperative">
-
-                    Dairy Cooperative
-
-                </option>
-
-                <option value="other">
-
-                    Other
-
-                </option>
-
-            </select>
-
-        </div>
-
-
-        <!-- =================================================
-             ANIMAL FARM
-        ================================================== -->
-
-        <div
-            id="animalFarmGroup"
-            class="form-group record-section"
+        <select
+            id="recordType"
+            name="recordType"
+            required
         >
 
-            <label for="animalFarmCode">
+            <option value="">
+                Select record type
+            </option>
 
+            <option value="dairyFarm">
                 Dairy Farm
+            </option>
 
-            </label>
+            <option value="animal">
+                Animal
+            </option>
 
+            <option value="structure">
+                Structure / Facility
+            </option>
 
-            <select
-                id="animalFarmCode"
-                name="assetCode"
-            >
+        </select>
 
-                <option value="">
-
-                    No Dairy Farm
-
-                </option>
-
-
-                <% dairyFarms.forEach(function(farm) { %>
-
-                    <% if (
-                        farm.code !== null &&
-                        farm.code !== undefined &&
-                        Number(farm.code) < 0
-                    ) { %>
-
-                        <option
-                            value="<%= farm.code %>"
-                        >
-
-                            <%= farm.name || "Dairy Farm" %>
-                            —
-                            <%= farm.code %>
-
-                        </option>
-
-                    <% } %>
-
-                <% }); %>
-
-            </select>
-
-        </div>
+    </div>
 
 
-        <!-- =================================================
-             ANIMAL DATE OF BIRTH
-        ================================================== -->
+    <!-- ==================================================
+         INTERNAL STATUS ELEMENT
 
-        <div
-            id="dateOfBirthGroup"
-            class="form-group record-section"
+         JavaScript may use this internally.
+         It is never displayed to the user.
+    ================================================== -->
+
+    <div
+        id="recordTypeInfo"
+        class="record-type-info"
+        style="display:none;"
+        aria-hidden="true"
+    ></div>
+
+
+    <!-- ==================================================
+         NAME
+    ================================================== -->
+
+    <div class="form-group">
+
+        <label for="name">
+            Name *
+        </label>
+
+        <input
+            type="text"
+            id="name"
+            name="name"
+            required
+            autocomplete="off"
+            placeholder="Enter name"
         >
 
-            <label for="dateOfBirth">
-
-                Date of Birth *
-
-            </label>
-
-            <input
-                type="date"
-                id="dateOfBirth"
-                name="dateOfBirth"
-            >
-
-        </div>
+    </div>
 
 
-        <!-- =================================================
-             ANIMAL BREED
-        ================================================== -->
+    <!-- ==================================================
+         DAIRY FARM TYPE
+    ================================================== -->
 
-        <div
-            id="animalBreedGroup"
-            class="form-group record-section"
+    <div
+        id="farmTypeGroup"
+        class="form-group record-section"
+        style="display:none;"
+    >
+
+        <label for="farmType">
+            Dairy Farm Type *
+        </label>
+
+        <select
+            id="farmType"
+            name="farmType"
+            disabled
         >
 
-            <label for="breed">
+            <option value="">
+                Select farm type
+            </option>
 
-                Breed *
+            <option value="ranch">
+                Ranch
+            </option>
 
-            </label>
+            <option value="zeroGrazing">
+                Zero Grazing
+            </option>
+
+            <option value="semiZeroGrazing">
+                Semi-Zero Grazing
+            </option>
+
+            <option value="pastureBased">
+                Pasture-Based
+            </option>
+
+            <option value="mixedFarming">
+                Mixed Farming
+            </option>
+
+            <option value="cooperative">
+                Dairy Cooperative
+            </option>
+
+            <option value="other">
+                Other
+            </option>
+
+        </select>
+
+    </div>
 
 
-            <select
-                id="breed"
-                name="type"
-            >
+    <!-- ==================================================
+         ANIMAL PARENT DAIRY FARM
+    ================================================== -->
 
-                <option value="">
+    <div
+        id="animalFarmGroup"
+        class="form-group record-section"
+        style="display:none;"
+    >
 
-                    Select breed
+        <label for="animalFarmCode">
+            Dairy Farm *
+        </label>
 
-                </option>
+        <select
+            id="animalFarmCode"
+            name="assetCode"
+            disabled
+        >
 
+            <option value="">
+                Select Dairy Farm
+            </option>
 
-                <% breeds.forEach(function(breed) { %>
+            <% dairyFarms.forEach(function(farm) { %>
+
+                <% if (
+                    farm.code !== null &&
+                    farm.code !== undefined &&
+                    Number(farm.code) < 0
+                ) { %>
 
                     <option
-                        value="<%= breed %>"
+                        value="<%= farm.code %>"
                     >
-
-                        <%= breed %>
-
+                        <%= farm.name || "Dairy Farm" %>
+                        —
+                        <%= farm.code %>
                     </option>
 
-                <% }); %>
+                <% } %>
 
-            </select>
+            <% }); %>
 
-        </div>
+        </select>
+
+    </div>
 
 
-        <!-- =================================================
-             ANIMAL GENDER
-        ================================================== -->
+    <!-- ==================================================
+         ANIMAL GENDER
 
-        <div
-            id="genderGroup"
-            class="form-group record-section"
+         Sent as:
+
+         male
+         female
+
+         The backend uses gender to determine the
+         automatically generated animal code parity.
+
+         Male:
+             odd numbers
+
+         Female:
+             even numbers
+    ================================================== -->
+
+    <div
+        id="animalGenderGroup"
+        class="form-group record-section"
+        style="display:none;"
+    >
+
+        <label for="gender">
+            Gender *
+        </label>
+
+        <select
+            id="gender"
+            name="gender"
+            disabled
         >
 
-            <label for="gender">
+            <option value="">
+                Select gender
+            </option>
 
-                Gender *
+            <option value="male">
+                Male
+            </option>
 
-            </label>
+            <option value="female">
+                Female
+            </option>
 
+        </select>
 
-            <select
-                id="gender"
-                name="gender"
-            >
-
-                <option value="">
-
-                    Select gender
-
-                </option>
-
-                <option value="female">
-
-                    Female
-
-                </option>
-
-                <option value="male">
-
-                    Male
-
-                </option>
-
-            </select>
-
-        </div>
+    </div>
 
 
-        <!-- =================================================
-             ANIMAL MASS
-        ================================================== -->
+    <!-- ==================================================
+         ANIMAL DATE OF BIRTH
+    ================================================== -->
 
-        <div
-            id="massGroup"
-            class="form-group record-section"
+    <div
+        id="dateOfBirthGroup"
+        class="form-group record-section"
+        style="display:none;"
+    >
+
+        <label for="dateOfBirth">
+            Date of Birth *
+        </label>
+
+        <input
+            type="date"
+            id="dateOfBirth"
+            name="dateOfBirth"
+            disabled
         >
 
-            <label for="mass">
-
-                Mass (kg)
-
-            </label>
-
-            <input
-                type="number"
-                id="mass"
-                name="mass"
-                min="0"
-                step="0.01"
-                placeholder="Enter animal mass"
-            >
-
-        </div>
+    </div>
 
 
-        <!-- =================================================
-             STRUCTURE TYPE
-        ================================================== -->
+    <!-- ==================================================
+         ANIMAL BREED
 
-        <div
-            id="structureTypeGroup"
-            class="form-group record-section"
+         The options come directly from dairyBreeds,
+         which comes from the Dairy model.
+    ================================================== -->
+
+    <div
+        id="animalBreedGroup"
+        class="form-group record-section"
+        style="display:none;"
+    >
+
+        <label for="breed">
+            Breed *
+        </label>
+
+        <select
+            id="breed"
+            name="type"
+            disabled
         >
 
-            <label for="structureType">
-
-                Type *
-
-            </label>
-
-
-            <select
-                id="structureType"
-                name="type"
-            >
-
-                <option value="">
-
-                    Select type
-
-                </option>
-
-                <option value="machine">
-
-                    Machine
-
-                </option>
-
-                <option value="equipment">
-
-                    Equipment
-
-                </option>
-
-                <option value="tool">
-
-                    Tool
-
-                </option>
-
-                <option value="building">
-
-                    Building
-
-                </option>
-
-                <option value="cowshed">
-
-                    Cowshed
-
-                </option>
-
-                <option value="milkingParlour">
-
-                    Milking Parlour
-
-                </option>
-
-                <option value="feedStore">
-
-                    Feed Store
-
-                </option>
-
-                <option value="hayShed">
-
-                    Hay Shed
-
-                </option>
-
-                <option value="waterSystem">
-
-                    Water System
-
-                </option>
-
-                <option value="fencing">
-
-                    Fencing
-
-                </option>
-
-                <option value="vehicle">
-
-                    Vehicle
-
-                </option>
-
-                <option value="generator">
-
-                    Generator
-
-                </option>
-
-                <option value="solarSystem">
-
-                    Solar System
-
-                </option>
-
-                <option value="other">
-
-                    Other
-
-                </option>
-
-            </select>
-
-        </div>
-
-
-        <!-- =================================================
-             STRUCTURE FARM
-        ================================================== -->
-
-        <div
-            id="structureFarmGroup"
-            class="form-group record-section"
-        >
-
-            <label for="structureFarmCode">
-
-                Dairy Farm
-
-            </label>
-
-
-            <select
-                id="structureFarmCode"
-                name="structureFarmCode"
-            >
-
-                <option value="">
-
-                    No Dairy Farm
-
-                </option>
-
-
-                <% dairyFarms.forEach(function(farm) { %>
-
-                    <% if (
-                        farm.code !== null &&
-                        farm.code !== undefined &&
-                        Number(farm.code) < 0
-                    ) { %>
-
-                        <option
-                            value="<%= farm.code %>"
-                        >
-
-                            <%= farm.name || "Dairy Farm" %>
-                            —
-                            <%= farm.code %>
-
-                        </option>
-
-                    <% } %>
-
-                <% }); %>
-
-            </select>
-
-        </div>
-
-
-        <!-- =================================================
-             BUYING PRICE
-        ================================================== -->
-
-        <div class="form-group">
-
-            <label for="buyingPrice">
-
-                Buying Price
-
-            </label>
-
-            <input
-                type="number"
-                id="buyingPrice"
-                name="buyingPrice"
-                min="0"
-                step="0.01"
-                placeholder="Enter buying price"
-            >
-
-        </div>
-
-
-        <!-- =================================================
-             CURRENT WORTH
-        ================================================== -->
-
-        <div class="form-group">
-
-            <label for="currentWorth">
-
-                Current Worth
-
-            </label>
-
-            <input
-                type="number"
-                id="currentWorth"
-                name="currentWorth"
-                min="0"
-                step="0.01"
-                placeholder="Enter current worth"
-            >
-
-        </div>
-
-
-        <!-- =================================================
-             DESCRIPTION
-        ================================================== -->
-
-        <div class="form-group">
-
-            <label for="description">
-
-                Description
-
-            </label>
-
-            <textarea
-                id="description"
-                name="description"
-                placeholder="Describe the dairy, animal, structure, or asset..."
-            ></textarea>
-
-        </div>
-
-
-        <!-- =================================================
-             CONDITION
-        ================================================== -->
-
-        <div class="form-group">
-
-            <label for="condition">
-
-                Condition
-
-            </label>
-
-            <input
-                type="text"
-                id="condition"
-                name="condition"
-                placeholder="e.g. New, Good, Needs Repair"
-            >
-
-        </div>
-
-
-        <!-- =================================================
-             LOCATION
-        ================================================== -->
-
-        <div class="form-group">
-
-            <label for="location">
-
-                Physical Location
-
-            </label>
-
-            <input
-                type="text"
-                id="location"
-                name="location"
-                placeholder="Where is it physically located?"
-            >
-
-        </div>
-
-
-        <!-- =================================================
-             STATUS
-        ================================================== -->
-
-        <div class="form-group">
-
-            <label for="status">
-
-                Status
-
-            </label>
-
-            <select
-                id="status"
-                name="status"
-            >
+            <option value="">
+                Select breed
+            </option>
+
+            <% breeds.forEach(function(breed) { %>
 
                 <option
-                    value="active"
-                    selected
+                    value="<%= breed %>"
                 >
-
-                    Active
-
+                    <%= breed %>
                 </option>
 
-                <option value="sold">
+            <% }); %>
 
-                    Sold
+        </select>
 
-                </option>
-
-                <option value="disposed">
-
-                    Disposed
-
-                </option>
-
-                <option value="inactive">
-
-                    Inactive
-
-                </option>
-
-            </select>
-
-        </div>
+    </div>
 
 
-        <!-- =================================================
-             ACTIONS
-        ================================================== -->
+    <!-- ==================================================
+         ANIMAL MASS
+    ================================================== -->
 
-        <div class="form-actions">
+    <div
+        id="massGroup"
+        class="form-group record-section"
+        style="display:none;"
+    >
 
-            <a
-                href="/networth"
-                class="button button-secondary"
+        <label for="mass">
+            Mass (kg)
+        </label>
+
+        <input
+            type="number"
+            id="mass"
+            name="mass"
+            min="0"
+            step="0.01"
+            placeholder="Enter animal mass"
+            disabled
+        >
+
+    </div>
+
+
+    <!-- ==================================================
+         STRUCTURE TYPE
+    ================================================== -->
+
+    <div
+        id="structureTypeGroup"
+        class="form-group record-section"
+        style="display:none;"
+    >
+
+        <label for="structureType">
+            Type *
+        </label>
+
+        <select
+            id="structureType"
+            name="type"
+            disabled
+        >
+
+            <option value="">
+                Select type
+            </option>
+
+            <option value="machine">
+                Machine
+            </option>
+
+            <option value="equipment">
+                Equipment
+            </option>
+
+            <option value="tool">
+                Tool
+            </option>
+
+            <option value="building">
+                Building
+            </option>
+
+            <option value="cowshed">
+                Cowshed
+            </option>
+
+            <option value="milkingParlour">
+                Milking Parlour
+            </option>
+
+            <option value="feedStore">
+                Feed Store
+            </option>
+
+            <option value="hayShed">
+                Hay Shed
+            </option>
+
+            <option value="waterSystem">
+                Water System
+            </option>
+
+            <option value="fencing">
+                Fencing
+            </option>
+
+            <option value="vehicle">
+                Vehicle
+            </option>
+
+            <option value="generator">
+                Generator
+            </option>
+
+            <option value="solarSystem">
+                Solar System
+            </option>
+
+            <option value="other">
+                Other
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <!-- ==================================================
+         STRUCTURE PARENT DAIRY FARM
+    ================================================== -->
+
+    <div
+        id="structureFarmGroup"
+        class="form-group record-section"
+        style="display:none;"
+    >
+
+        <label for="structureFarmCode">
+            Dairy Farm
+        </label>
+
+        <select
+            id="structureFarmCode"
+            name="structureFarmCode"
+            disabled
+        >
+
+            <option value="">
+                No Dairy Farm
+            </option>
+
+            <% dairyFarms.forEach(function(farm) { %>
+
+                <% if (
+                    farm.code !== null &&
+                    farm.code !== undefined &&
+                    Number(farm.code) < 0
+                ) { %>
+
+                    <option
+                        value="<%= farm.code %>"
+                    >
+                        <%= farm.name || "Dairy Farm" %>
+                        —
+                        <%= farm.code %>
+                    </option>
+
+                <% } %>
+
+            <% }); %>
+
+        </select>
+
+    </div>
+
+
+    <!-- ==================================================
+         BUYING PRICE
+    ================================================== -->
+
+    <div class="form-group">
+
+        <label for="buyingPrice">
+            Buying Price
+        </label>
+
+        <input
+            type="number"
+            id="buyingPrice"
+            name="buyingPrice"
+            min="0"
+            step="0.01"
+            placeholder="Enter buying price"
+        >
+
+    </div>
+
+
+    <!-- ==================================================
+         CURRENT WORTH
+    ================================================== -->
+
+    <div class="form-group">
+
+        <label for="currentWorth">
+            Current Worth
+        </label>
+
+        <input
+            type="number"
+            id="currentWorth"
+            name="currentWorth"
+            min="0"
+            step="0.01"
+            placeholder="Enter current worth"
+        >
+
+    </div>
+
+
+    <!-- ==================================================
+         DESCRIPTION
+    ================================================== -->
+
+    <div class="form-group">
+
+        <label for="description">
+            Description
+        </label>
+
+        <textarea
+            id="description"
+            name="description"
+            placeholder="Describe the dairy, animal, structure, or asset..."
+        ></textarea>
+
+    </div>
+
+
+    <!-- ==================================================
+         CONDITION
+    ================================================== -->
+
+    <div class="form-group">
+
+        <label for="condition">
+            Condition
+        </label>
+
+        <input
+            type="text"
+            id="condition"
+            name="condition"
+            placeholder="e.g. New, Good, Needs Repair"
+        >
+
+    </div>
+
+
+    <!-- ==================================================
+         LOCATION
+    ================================================== -->
+
+    <div class="form-group">
+
+        <label for="location">
+            Physical Location
+        </label>
+
+        <input
+            type="text"
+            id="location"
+            name="location"
+            placeholder="Where is it physically located?"
+        >
+
+    </div>
+
+
+    <!-- ==================================================
+         STATUS
+    ================================================== -->
+
+    <div class="form-group">
+
+        <label for="status">
+            Status
+        </label>
+
+        <select
+            id="status"
+            name="status"
+        >
+
+            <option
+                value="active"
+                selected
             >
+                Active
+            </option>
 
-                Cancel
+            <option value="sold">
+                Sold
+            </option>
 
-            </a>
+            <option value="disposed">
+                Disposed
+            </option>
+
+            <option value="inactive">
+                Inactive
+            </option>
+
+        </select>
+
+    </div>
 
 
-            <button
-                type="submit"
-                id="saveDairyButton"
-                class="button button-primary"
-            >
+    <!-- ==================================================
+         ACTIONS
+    ================================================== -->
 
-                Create Record
+    <div class="form-actions">
 
-            </button>
+        <a
+            href="/networth"
+            class="button button-secondary"
+        >
+            Cancel
+        </a>
 
-        </div>
+        <button
+            type="submit"
+            id="saveDairyButton"
+            class="button button-primary"
+        >
+            Create Record
+        </button>
 
+    </div>
 
-    </form>
-
-</div>
+</form>
 
 </div><script>
 
 document.addEventListener(
     "DOMContentLoaded",
-    function () {
+    function() {
 
 
-        /* ======================================================
+        /* =====================================================
            ELEMENTS
-        ====================================================== */
+        ===================================================== */
 
         const form =
             document.getElementById(
                 "addDairyForm"
             );
 
-
         const recordType =
             document.getElementById(
                 "recordType"
+            );
+
+        const formSaveStatus =
+            document.getElementById(
+                "formSaveStatus"
+            );
+
+        const saveButton =
+            document.getElementById(
+                "saveDairyButton"
             );
 
 
@@ -1377,10 +765,31 @@ document.addEventListener(
                 "farmTypeGroup"
             );
 
+        const farmType =
+            document.getElementById(
+                "farmType"
+            );
+
 
         const animalFarmGroup =
             document.getElementById(
                 "animalFarmGroup"
+            );
+
+        const animalFarmCode =
+            document.getElementById(
+                "animalFarmCode"
+            );
+
+
+        const animalGenderGroup =
+            document.getElementById(
+                "animalGenderGroup"
+            );
+
+        const gender =
+            document.getElementById(
+                "gender"
             );
 
 
@@ -1389,16 +798,20 @@ document.addEventListener(
                 "dateOfBirthGroup"
             );
 
+        const dateOfBirth =
+            document.getElementById(
+                "dateOfBirth"
+            );
+
 
         const animalBreedGroup =
             document.getElementById(
                 "animalBreedGroup"
             );
 
-
-        const genderGroup =
+        const breed =
             document.getElementById(
-                "genderGroup"
+                "breed"
             );
 
 
@@ -1407,10 +820,20 @@ document.addEventListener(
                 "massGroup"
             );
 
+        const mass =
+            document.getElementById(
+                "mass"
+            );
+
 
         const structureTypeGroup =
             document.getElementById(
                 "structureTypeGroup"
+            );
+
+        const structureType =
+            document.getElementById(
+                "structureType"
             );
 
 
@@ -1419,243 +842,447 @@ document.addEventListener(
                 "structureFarmGroup"
             );
 
-
-        const farmType =
-            document.getElementById(
-                "farmType"
-            );
-
-
-        const animalFarmCode =
-            document.getElementById(
-                "animalFarmCode"
-            );
-
-
-        const dateOfBirth =
-            document.getElementById(
-                "dateOfBirth"
-            );
-
-
-        const breed =
-            document.getElementById(
-                "breed"
-            );
-
-
-        const gender =
-            document.getElementById(
-                "gender"
-            );
-
-
-        const mass =
-            document.getElementById(
-                "mass"
-            );
-
-
-        const structureType =
-            document.getElementById(
-                "structureType"
-            );
-
-
         const structureFarmCode =
             document.getElementById(
                 "structureFarmCode"
             );
 
 
-        const imageInput =
+        const profileImage =
             document.getElementById(
                 "profileImage"
             );
 
-
-        const imagePreview =
+        const profileImagePreview =
             document.getElementById(
                 "profileImagePreview"
             );
 
-
-        const imagePlaceholder =
+        const profileImagePlaceholder =
             document.getElementById(
                 "profileImagePlaceholder"
             );
 
 
-        /* ======================================================
-           HIDE RECORD-SPECIFIC SECTIONS
-        ====================================================== */
+        /* =====================================================
+           RECORD-SPECIFIC SECTIONS
+        ===================================================== */
 
-        function hideRecordSections() {
+        const sections = [
 
-            const sections = [
+            farmTypeGroup,
 
-                farmTypeGroup,
+            animalFarmGroup,
 
-                animalFarmGroup,
+            animalGenderGroup,
 
-                dateOfBirthGroup,
+            dateOfBirthGroup,
 
-                animalBreedGroup,
+            animalBreedGroup,
 
-                genderGroup,
+            massGroup,
 
-                massGroup,
+            structureTypeGroup,
 
-                structureTypeGroup,
+            structureFarmGroup
 
-                structureFarmGroup
+        ];
 
-            ];
+
+        /* =====================================================
+           HIDE SECTION
+        ===================================================== */
+
+        function hideSection(
+            section
+        ) {
+
+            section.style.display =
+                "none";
+
+        }
+
+
+        /* =====================================================
+           SHOW SECTION
+        ===================================================== */
+
+        function showSection(
+            section
+        ) {
+
+            section.style.display =
+                "";
+
+        }
+
+
+        /* =====================================================
+           ENABLE FIELD
+        ===================================================== */
+
+        function enableField(
+            field
+        ) {
+
+            field.disabled =
+                false;
+
+        }
+
+
+        /* =====================================================
+           DISABLE FIELD
+        ===================================================== */
+
+        function disableField(
+            field
+        ) {
+
+            field.disabled =
+                true;
+
+        }
+
+
+        /* =====================================================
+           REQUIRED STATE
+        ===================================================== */
+
+        function setRequired(
+            field,
+            required
+        ) {
+
+            field.required =
+                required;
+
+        }
+
+
+        /* =====================================================
+           RESET FIELD
+        ===================================================== */
+
+        function resetField(
+            field
+        ) {
+
+            if (!field) {
+
+                return;
+
+            }
+
+
+            if (
+                field.tagName ===
+                "SELECT"
+            ) {
+
+                field.selectedIndex =
+                    0;
+
+            } else {
+
+                field.value =
+                    "";
+
+            }
+
+        }
+
+
+        /* =====================================================
+           RESET ALL CONDITIONAL FIELDS
+        ===================================================== */
+
+        function resetConditionalFields() {
 
 
             sections.forEach(
-                function (section) {
+                hideSection
+            );
 
-                    section.classList.remove(
-                        "visible"
-                    );
 
-                }
+            resetField(
+                farmType
+            );
+
+            resetField(
+                animalFarmCode
+            );
+
+            resetField(
+                gender
+            );
+
+            resetField(
+                dateOfBirth
+            );
+
+            resetField(
+                breed
+            );
+
+            resetField(
+                mass
+            );
+
+            resetField(
+                structureType
+            );
+
+            resetField(
+                structureFarmCode
+            );
+
+
+            disableField(
+                farmType
+            );
+
+            disableField(
+                animalFarmCode
+            );
+
+            disableField(
+                gender
+            );
+
+            disableField(
+                dateOfBirth
+            );
+
+            disableField(
+                breed
+            );
+
+            disableField(
+                mass
+            );
+
+            disableField(
+                structureType
+            );
+
+            disableField(
+                structureFarmCode
+            );
+
+
+            setRequired(
+                farmType,
+                false
+            );
+
+            setRequired(
+                animalFarmCode,
+                false
+            );
+
+            setRequired(
+                gender,
+                false
+            );
+
+            setRequired(
+                dateOfBirth,
+                false
+            );
+
+            setRequired(
+                breed,
+                false
+            );
+
+            setRequired(
+                structureType,
+                false
             );
 
         }
 
 
-        /* ======================================================
+        /* =====================================================
+           CONFIGURE DAIRY FARM
+        ===================================================== */
+
+        function configureDairyFarm() {
+
+
+            showSection(
+                farmTypeGroup
+            );
+
+
+            enableField(
+                farmType
+            );
+
+
+            setRequired(
+                farmType,
+                true
+            );
+
+        }
+
+
+        /* =====================================================
+           CONFIGURE ANIMAL
+        ===================================================== */
+
+        function configureAnimal() {
+
+
+            showSection(
+                animalFarmGroup
+            );
+
+            showSection(
+                animalGenderGroup
+            );
+
+            showSection(
+                dateOfBirthGroup
+            );
+
+            showSection(
+                animalBreedGroup
+            );
+
+            showSection(
+                massGroup
+            );
+
+
+            enableField(
+                animalFarmCode
+            );
+
+            enableField(
+                gender
+            );
+
+            enableField(
+                dateOfBirth
+            );
+
+            enableField(
+                breed
+            );
+
+            enableField(
+                mass
+            );
+
+
+            setRequired(
+                animalFarmCode,
+                true
+            );
+
+            setRequired(
+                gender,
+                true
+            );
+
+            setRequired(
+                dateOfBirth,
+                true
+            );
+
+            setRequired(
+                breed,
+                true
+            );
+
+        }
+
+
+        /* =====================================================
+           CONFIGURE STRUCTURE
+        ===================================================== */
+
+        function configureStructure() {
+
+
+            showSection(
+                structureTypeGroup
+            );
+
+            showSection(
+                structureFarmGroup
+            );
+
+
+            enableField(
+                structureType
+            );
+
+            enableField(
+                structureFarmCode
+            );
+
+
+            setRequired(
+                structureType,
+                true
+            );
+
+        }
+
+
+        /* =====================================================
            UPDATE FORM
-        ====================================================== */
+        ===================================================== */
 
         function updateForm() {
+
+
+            resetConditionalFields();
+
 
             const selectedType =
                 recordType.value;
 
-
-            hideRecordSections();
-
-
-            /* --------------------------------------------------
-               RESET CONDITIONAL REQUIRED FIELDS
-            -------------------------------------------------- */
-
-            farmType.required =
-                false;
-
-            animalFarmCode.required =
-                false;
-
-            dateOfBirth.required =
-                false;
-
-            breed.required =
-                false;
-
-            gender.required =
-                false;
-
-            structureType.required =
-                false;
-
-
-            /* --------------------------------------------------
-               DAIRY FARM
-            -------------------------------------------------- */
 
             if (
                 selectedType ===
                 "dairyFarm"
             ) {
 
-                farmTypeGroup.classList.add(
-                    "visible"
-                );
-
-
-                farmType.required =
-                    true;
+                configureDairyFarm();
 
             }
 
 
-            /* --------------------------------------------------
-               ANIMAL
-            -------------------------------------------------- */
-
-            else if (
+            if (
                 selectedType ===
                 "animal"
             ) {
 
-                animalFarmGroup.classList.add(
-                    "visible"
-                );
-
-
-                dateOfBirthGroup.classList.add(
-                    "visible"
-                );
-
-
-                animalBreedGroup.classList.add(
-                    "visible"
-                );
-
-
-                genderGroup.classList.add(
-                    "visible"
-                );
-
-
-                massGroup.classList.add(
-                    "visible"
-                );
-
-
-                dateOfBirth.required =
-                    true;
-
-
-                breed.required =
-                    true;
-
-
-                gender.required =
-                    true;
+                configureAnimal();
 
             }
 
 
-            /* --------------------------------------------------
-               STRUCTURE / FACILITY
-            -------------------------------------------------- */
-
-            else if (
+            if (
                 selectedType ===
                 "structure"
             ) {
 
-                structureTypeGroup.classList.add(
-                    "visible"
-                );
-
-
-                structureFarmGroup.classList.add(
-                    "visible"
-                );
-
-
-                structureType.required =
-                    true;
+                configureStructure();
 
             }
 
         }
 
+
+        /* =====================================================
+           RECORD TYPE CHANGE
+        ===================================================== */
 
         recordType.addEventListener(
             "change",
@@ -1663,77 +1290,256 @@ document.addEventListener(
         );
 
 
-        updateForm();
+        /* =====================================================
+           PROFILE IMAGE PREVIEW
+        ===================================================== */
 
-
-        /* ======================================================
-           IMAGE PREVIEW
-        ====================================================== */
-
-        imageInput.addEventListener(
+        profileImage.addEventListener(
             "change",
-            function () {
+            function() {
+
 
                 const file =
-                    imageInput.files &&
-                    imageInput.files[0];
+                    profileImage.files &&
+                    profileImage.files[0];
 
 
                 if (!file) {
 
-                    imagePreview.src =
+                    profileImagePreview.src =
                         "";
 
-                    imagePreview.style.display =
+                    profileImagePreview.style.display =
                         "none";
 
-                    imagePlaceholder.style.display =
-                        "block";
+                    profileImagePlaceholder.style.display =
+                        "";
 
                     return;
 
                 }
 
 
-                const url =
+                const allowedTypes = [
+
+                    "image/jpeg",
+
+                    "image/jpg",
+
+                    "image/png",
+
+                    "image/webp"
+
+                ];
+
+
+                if (
+                    !allowedTypes.includes(
+                        file.type
+                    )
+                ) {
+
+                    profileImage.value =
+                        "";
+
+                    profileImagePreview.src =
+                        "";
+
+                    profileImagePreview.style.display =
+                        "none";
+
+                    profileImagePlaceholder.style.display =
+                        "";
+
+                    formSaveStatus.textContent =
+                        "Invalid image type.";
+
+                    return;
+
+                }
+
+
+                const imageUrl =
                     URL.createObjectURL(
                         file
                     );
 
 
-                imagePreview.src =
-                    url;
+                profileImagePreview.src =
+                    imageUrl;
 
-                imagePreview.style.display =
-                    "block";
 
-                imagePlaceholder.style.display =
+                profileImagePreview.style.display =
+                    "";
+
+
+                profileImagePlaceholder.style.display =
                     "none";
+
+
+                profileImagePreview.onload =
+                    function() {
+
+                        URL.revokeObjectURL(
+                            imageUrl
+                        );
+
+                    };
 
             }
         );
 
 
-        /* ======================================================
+        /* =====================================================
            FORM SUBMISSION
-        ====================================================== */
+        ===================================================== */
 
         form.addEventListener(
             "submit",
-            function () {
-
-                const button =
-                    document.getElementById(
-                        "saveDairyButton"
-                    );
+            function(event) {
 
 
-                if (button) {
+                formSaveStatus.textContent =
+                    "";
 
-                    button.disabled =
+
+                const selectedType =
+                    recordType.value;
+
+
+                if (!selectedType) {
+
+                    event.preventDefault();
+
+                    recordType.focus();
+
+                    return;
+
+                }
+
+
+                /* =============================================
+                   ANIMAL VALIDATION
+                ============================================= */
+
+                if (
+                    selectedType ===
+                    "animal"
+                ) {
+
+
+                    if (
+                        !animalFarmCode.value
+                    ) {
+
+                        event.preventDefault();
+
+                        animalFarmCode.focus();
+
+                        return;
+
+                    }
+
+
+                    if (
+                        !gender.value
+                    ) {
+
+                        event.preventDefault();
+
+                        gender.focus();
+
+                        return;
+
+                    }
+
+
+                    if (
+                        !dateOfBirth.value
+                    ) {
+
+                        event.preventDefault();
+
+                        dateOfBirth.focus();
+
+                        return;
+
+                    }
+
+
+                    if (
+                        !breed.value
+                    ) {
+
+                        event.preventDefault();
+
+                        breed.focus();
+
+                        return;
+
+                    }
+
+                }
+
+
+                /* =============================================
+                   DAIRY FARM VALIDATION
+                ============================================= */
+
+                if (
+                    selectedType ===
+                    "dairyFarm"
+                ) {
+
+                    if (
+                        !farmType.value
+                    ) {
+
+                        event.preventDefault();
+
+                        farmType.focus();
+
+                        return;
+
+                    }
+
+                }
+
+
+                /* =============================================
+                   STRUCTURE VALIDATION
+                ============================================= */
+
+                if (
+                    selectedType ===
+                    "structure"
+                ) {
+
+                    if (
+                        !structureType.value
+                    ) {
+
+                        event.preventDefault();
+
+                        structureType.focus();
+
+                        return;
+
+                    }
+
+                }
+
+
+                /* =============================================
+                   PREVENT DOUBLE SUBMISSION
+                ============================================= */
+
+                if (saveButton) {
+
+                    saveButton.disabled =
                         true;
 
-                    button.textContent =
+                    saveButton.textContent =
                         "Creating...";
 
                 }
@@ -1741,7 +1547,15 @@ document.addEventListener(
             }
         );
 
+
+        /* =====================================================
+           INITIAL FORM STATE
+        ===================================================== */
+
+        updateForm();
+
     }
+
 );
 
 </script>
