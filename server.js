@@ -134,23 +134,6 @@ try {
 }
 
 
-let newRoutes;
-
-try {
-
-  newRoutes =
-    require("./routes/new");
-
-} catch (err) {
-
-  console.warn(
-    "Warning: failed to load new routes:",
-    err.message
-  );
-
-}
-
-
 
 /* =========================================================
    NET WORTH ROUTES
@@ -838,13 +821,6 @@ if (networthRoutes)
   app.use(
     "/networth",
     networthRoutes
-  );
-
-
-if (newRoutes)
-  app.use(
-    "/",
-    newRoutes
   );
 
 
