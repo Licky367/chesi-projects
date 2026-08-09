@@ -241,8 +241,7 @@ async function getDairyFarm(
 /**
  * Displays the Add Asset page.
  *
- * This is the ONLY controller here that opens the
- * creation workflow.
+ * This is the creation workflow.
  */
 async function getAddAsset(
     req,
@@ -306,15 +305,9 @@ async function getAddAsset(
 /**
  * Creates a NEW manual asset.
  *
- * IMPORTANT:
- *
- * This is a creation operation.
- *
  * Creation rules belong to:
  *
  *     networthService.addAsset()
- *
- * and are intentionally separate from updateAsset().
  */
 async function addAsset(
     req,
@@ -328,14 +321,6 @@ async function addAsset(
         } = req.params;
 
 
-        /*
-         * ------------------------------------------------------
-         * CREATE ASSET
-         * ------------------------------------------------------
-         *
-         * The service owns all creation rules.
-         */
-
         const asset =
             await networthService.addAsset(
                 id,
@@ -343,12 +328,6 @@ async function addAsset(
                 req.file
             );
 
-
-        /*
-         * ------------------------------------------------------
-         * JSON / FETCH RESPONSE
-         * ------------------------------------------------------
-         */
 
         if (
             wantsJSON(req)
@@ -375,12 +354,6 @@ async function addAsset(
 
         }
 
-
-        /*
-         * ------------------------------------------------------
-         * NORMAL BROWSER RESPONSE
-         * ------------------------------------------------------
-         */
 
         return res.redirect(
             `/networth/structure/${id}`
@@ -425,21 +398,6 @@ async function addAsset(
 /**
  * Displays an EXISTING Dairy record.
  *
- * ==========================================================
- * IMPORTANT
- * ==========================================================
- *
- * This is an EDIT page.
- *
- * It does NOT create anything.
- *
- * It does NOT validate creation requirements.
- *
- * It does NOT require dateOfBirth.
- *
- * It simply asks the service for the existing database
- * record and renders it.
- *
  * The service returns:
  *
  *     dairy
@@ -447,9 +405,6 @@ async function addAsset(
  *     age
  *     ageText
  *     dairyBreeds
- *
- * Therefore networth-asset.ejs can display the actual
- * database values.
  */
 async function getAsset(
     req,
@@ -463,23 +418,11 @@ async function getAsset(
         } = req.params;
 
 
-        /*
-         * ------------------------------------------------------
-         * READ EXISTING DATABASE RECORD
-         * ------------------------------------------------------
-         */
-
         const data =
             await networthService.getAsset(
                 id
             );
 
-
-        /*
-         * ------------------------------------------------------
-         * RENDER EDIT PAGE
-         * ------------------------------------------------------
-         */
 
         return res.render(
             "networth-asset",
@@ -523,39 +466,52 @@ async function getAsset(
 // ==========================================================
 
 /**
- * Updates an EXISTING Dairy record.
+ * Updates an EXISTING Dairy / Asset record.
  *
- * ==========================================================
- * IMPORTANT EDIT RULE
- * ==========================================================
+ * IMPORTANT:
  *
- * This controller NEVER creates a new Dairy document.
+ * This controller NEVER creates a new document.
  *
- * It sends changes to:
+ * It only forwards editable fields to:
  *
  *     networthService.updateAsset()
  *
- * The service performs a PATCH-style update:
+ * Protected identity fields such as:
  *
- *     undefined
- *         -> leave existing DB value unchanged
+ *     _id
+ *     code
  *
- *     supplied value
- *         -> update that field
+ * are never accepted from the form.
  *
- *     empty value
- *         -> service decides whether it means clear
- *            or preserve, according to the field
+ * ==========================================================
  *
+ * IDENTIFIED DAIRY EDITABLE FIELDS
+ * ==========================================================
  *
- * The controller does NOT impose creation validation.
+ *     name
+ *     dateOfBirth
+ *     type
+ *     mass
+ *     isMilking
+ *     buyingPrice
+ *     currentWorth
+ *     description
+ *     condition
+ *     location
+ *     assetCode
+ *     status
+ *     valuationDate
+ *     profileImage
  *
- * In particular:
+ * ==========================================================
  *
- *     dateOfBirth is NOT required here.
+ * READ-ONLY FIELDS
+ * ==========================================================
  *
- * An existing record with no dateOfBirth can therefore
- * still be opened and edited.
+ *     code
+ *     age
+ *     acquisitionDate
+ *
  */
 async function updateAsset(
     req,
@@ -569,23 +525,9 @@ async function updateAsset(
         } = req.params;
 
 
-        /*
-         * ======================================================
-         * UPDATE DATA
-         * ======================================================
-         *
-         * Only fields supported by the service are forwarded.
-         *
-         * Protected identity fields such as:
-         *
-         *     _id
-         *     code
-         *
-         * are deliberately excluded.
-         *
-         * The service itself protects `code`.
-         */
-
+        // ======================================================
+        // UPDATE DATA
+        // ======================================================
 
         const updateData = {};
 
@@ -607,8 +549,7 @@ async function updateAsset(
         // ======================================================
         // ITEM
         //
-        // Service supports item as an alternative name
-        // for backwards compatibility.
+        // Kept for backwards compatibility with the service.
         // ======================================================
 
         if (
@@ -624,15 +565,15 @@ async function updateAsset(
         // ======================================================
         // DATE OF BIRTH
         //
-        // NOT REQUIRED.
+        // Not required.
         //
         // If omitted:
         //
-        //     existing DB value remains untouched.
+        //     Existing value remains unchanged.
         //
         // If submitted empty:
         //
-        //     service interprets it as an explicit clear.
+        //     Service decides whether to clear it.
         // ======================================================
 
         if (
@@ -655,6 +596,64 @@ async function updateAsset(
 
             updateData.type =
                 req.body.type;
+
+        }
+
+
+        // ======================================================
+        // MASS
+        //
+        // Applies to identified dairies.
+        //
+        // Example:
+        //
+        //     428.50
+        //
+        // The service remains responsible for final validation
+        // and persistence.
+        // ======================================================
+
+        if (
+            req.body.mass !== undefined
+        ) {
+
+            updateData.mass =
+                req.body.mass;
+
+        }
+
+
+        // ======================================================
+        // MILKING
+        //
+        // IMPORTANT:
+        //
+        // A checkbox behaves differently from normal inputs.
+        //
+        // Checked:
+        //
+        //     req.body.isMilking === "true"
+        //
+        // Unchecked:
+        //
+        //     req.body.isMilking === undefined
+        //
+        // Therefore, if the field exists in the form structure
+        // for an identified female, we must be able to save
+        // FALSE when it is unchecked.
+        //
+        // We do NOT blindly update this field for manual assets.
+        //
+        // The service should additionally validate that the
+        // underlying dairy is eligible for this field.
+        // ======================================================
+
+        if (
+            req.body.isMilking !== undefined
+        ) {
+
+            updateData.isMilking =
+                req.body.isMilking === "true";
 
         }
 
@@ -735,9 +734,8 @@ async function updateAsset(
         //
         // Used for:
         //
-        //     manual assets
-        //
-        //     identified dairies
+        //     Manual assets
+        //     Identified dairies
         //
         // The service validates the selected Dairy Farm.
         // ======================================================
@@ -782,14 +780,14 @@ async function updateAsset(
 
         // ======================================================
         // ACQUISITION DATE
-        // ======================================================
         //
-        // The service supports this field.
+        // The current EJS does NOT submit this field.
         //
-        // It is NOT required.
+        // This compatibility block is retained in case another
+        // client submits it.
         //
-        // If the edit form does not submit it, the database
-        // value remains unchanged.
+        // The service remains responsible for deciding whether
+        // the field is actually allowed to change.
         // ======================================================
 
         if (
@@ -806,26 +804,12 @@ async function updateAsset(
         // PROFILE IMAGE
         // ======================================================
         //
-        // IMPORTANT:
+        // If the upload layer has already converted the uploaded
+        // image into a URL/path and placed it into req.body,
+        // forward it.
         //
-        // The current service expects:
-        //
-        //     body.profileImage
-        //
-        // to be a string.
-        //
-        // Therefore we must NOT pass:
-        //
-        //     req.file
-        //
-        // directly into updateAsset().
-        //
-        // If your image upload middleware already converts
-        // the uploaded file to a URL/path, pass that string
-        // here.
-        //
-        // If req.body.profileImage already contains the
-        // image path/URL, use it.
+        // Otherwise the service should receive the processed
+        // image path rather than the raw multer file object.
         // ======================================================
 
         if (
@@ -838,30 +822,8 @@ async function updateAsset(
         }
 
 
-        /*
-         * ======================================================
-         * IMPORTANT IMAGE NOTE
-         * ======================================================
-         *
-         * If multer provides req.file and there is no
-         * image-processing/upload middleware converting it
-         * to a string URL/path, do NOT send req.file to the
-         * current service.
-         *
-         * The current service contains:
-         *
-         *     String(body.profileImage).trim()
-         *
-         * so passing a file object would be incorrect.
-         *
-         * Image storage should be handled by the upload layer,
-         * after which the resulting path/URL should be placed
-         * in updateData.profileImage.
-         */
-
-
         // ======================================================
-        // UPDATE EXISTING DATABASE RECORD
+        // UPDATE DATABASE RECORD
         // ======================================================
 
         const updatedAsset =
@@ -873,9 +835,6 @@ async function updateAsset(
 
         // ======================================================
         // REFRESH NET WORTH
-        // ======================================================
-        //
-        // This happens AFTER the database update.
         // ======================================================
 
         const netWorth =
@@ -913,10 +872,8 @@ async function updateAsset(
         // NORMAL FORM SUBMISSION
         // ======================================================
         //
-        // Redirect to GET.
-        //
-        // GET then reads the actual persisted record
-        // from MongoDB.
+        // Redirect to GET so the page reloads using the actual
+        // persisted MongoDB record.
         // ======================================================
 
         return res.redirect(
@@ -931,10 +888,6 @@ async function updateAsset(
         );
 
 
-        // ======================================================
-        // JSON / FETCH ERROR
-        // ======================================================
-
         if (
             wantsJSON(req)
         ) {
@@ -947,10 +900,6 @@ async function updateAsset(
 
         }
 
-
-        // ======================================================
-        // NORMAL BROWSER ERROR
-        // ======================================================
 
         return renderError(
             res,
