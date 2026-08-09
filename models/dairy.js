@@ -8,15 +8,6 @@ const mongoose =
 
 // ==========================================================
 // DAIRY BREEDS
-//
-// Used when:
-//
-//     code > 0
-//
-// For identified dairy animals, "type" represents the breed.
-//
-// Manual assets and Dairy Farms may use "type" for their
-// own asset / structure classification.
 // ==========================================================
 
 const DAIRY_BREEDS = [
@@ -156,10 +147,11 @@ const dairySchema =
             // ==================================================
             // DATE OF BIRTH
             //
-            // Identified animals may have DOB.
+            // Only identified dairy animals use DOB.
             //
-            // The service supports patch-style editing and
-            // therefore DOB may also be cleared explicitly.
+            // It is intentionally NOT required at schema level
+            // because updateAsset() supports PATCH-style updates
+            // and explicit clearing.
             // ==================================================
 
             dateOfBirth: {
@@ -189,7 +181,7 @@ const dairySchema =
             // ==================================================
             // MILKING
             //
-            // Only positive even-numbered codes can be female.
+            // Only female identified dairy animals can milk.
             // ==================================================
 
             isMilking: {
@@ -435,7 +427,7 @@ const dairySchema =
             // TYPE
             //
             // code > 0:
-            //     animal breed
+            //     dairy breed
             //
             // code < 0:
             //     structure type
@@ -443,8 +435,8 @@ const dairySchema =
             // code === null:
             //     manual asset type
             //
-            // No global enum is used because structures and
-            // manual assets can have their own types.
+            // No global enum is used here because structures
+            // and manual assets can have their own types.
             // ==================================================
 
             type: {
@@ -670,8 +662,6 @@ dairySchema.virtual(
 
 // ==========================================================
 // HAS IDENTITY
-//
-// Positive code = identified animal.
 // ==========================================================
 
 dairySchema.virtual(
@@ -693,8 +683,6 @@ dairySchema.virtual(
 
 // ==========================================================
 // IS STRUCTURE
-//
-// Negative code = Dairy Farm.
 // ==========================================================
 
 dairySchema.virtual(
@@ -716,8 +704,6 @@ dairySchema.virtual(
 
 // ==========================================================
 // IS MANUAL ASSET
-//
-// Null code = manually created asset.
 // ==========================================================
 
 dairySchema.virtual(
@@ -738,7 +724,7 @@ dairySchema.virtual(
 // ==========================================================
 // IS STANDALONE ASSET
 //
-// Positive identified animal with no parent farm.
+// Positive identified dairy with no parent farm.
 // ==========================================================
 
 dairySchema.virtual(
@@ -791,8 +777,6 @@ dairySchema.virtual(
 // Example:
 //
 //     4 years, 3 months, 12 days
-//
-// Display-only.
 // ==========================================================
 
 dairySchema.virtual(
@@ -911,8 +895,6 @@ dairySchema.virtual(
 
 // ==========================================================
 // AGE IN YEARS
-//
-// Display-only.
 // ==========================================================
 
 dairySchema.virtual(
@@ -1180,7 +1162,7 @@ dairySchema.pre(
         // ==================================================
         // MANUAL ASSET
         //
-        // Manual assets MUST belong to a Dairy Farm.
+        // Manual assets must belong to a Dairy Farm.
         // ==================================================
 
         if (
@@ -1218,7 +1200,7 @@ dairySchema.pre(
 
 
         // ==================================================
-        // IDENTIFIED ANIMAL
+        // IDENTIFIED DAIRY
         // ==================================================
 
         if (
@@ -1417,7 +1399,7 @@ dairySchema.pre(
         // ==================================================
         // ACQUISITION DATE
         //
-        // Preserve existing value.
+        // Preserve an existing date.
         // Create one only when missing.
         // ==================================================
 
@@ -1532,7 +1514,7 @@ dairySchema.index({
 //
 // Numeric codes are unique.
 //
-// null codes are allowed multiple times.
+// Multiple null values are allowed.
 //
 // Examples:
 //
@@ -1542,9 +1524,7 @@ dairySchema.index({
 //     -1
 //     -2
 //
-// must all be unique.
-//
-// Multiple null records are allowed.
+// must be unique.
 // ==========================================================
 
 dairySchema.index(
@@ -1602,12 +1582,6 @@ function() {
 
 // ==========================================================
 // STATIC: CALCULATE NET WORTH
-//
-// This remains available for other parts of the project.
-//
-// networthService.js performs its own more detailed
-// calculation, so this static is not required by that
-// service.
 // ==========================================================
 
 dairySchema.statics.calculateNetWorth =
@@ -1672,24 +1646,22 @@ async function() {
 
 
 // ==========================================================
-// CREATE MONGOOSE MODEL
-// ==========================================================
+// CREATE / REUSE MONGOOSE MODEL
 //
 // IMPORTANT:
 //
-// This MUST be the actual Mongoose model.
+// NEVER blindly call:
 //
-// The service expects:
+//     mongoose.model("Dairy", dairySchema)
 //
-//     Dairy.find()
-//     Dairy.findById()
-//     Dairy.findOne()
-//     new Dairy()
+// because this file can be loaded by multiple routes,
+// services, controllers, etc.
 //
-// Do NOT replace module.exports with a plain object.
+// Reuse the already compiled model when available.
 // ==========================================================
 
 const Dairy =
+    mongoose.models.Dairy ||
     mongoose.model(
         "Dairy",
         dairySchema
@@ -1698,14 +1670,6 @@ const Dairy =
 
 // ==========================================================
 // ATTACH CONSTANTS TO MODEL
-//
-// This keeps these available if another part of the
-// application wants:
-//
-//     Dairy.DAIRY_BREEDS
-//     Dairy.DAIRY_STATUSES
-//
-// while keeping Dairy itself as the Mongoose model.
 // ==========================================================
 
 Dairy.DAIRY_BREEDS =
@@ -1717,6 +1681,22 @@ Dairy.DAIRY_STATUSES =
 
 // ==========================================================
 // EXPORT MODEL
+// ==========================================================
+//
+// IMPORTANT:
+//
+// Export the actual Mongoose model.
+//
+// This allows:
+//
+//     Dairy.find()
+//
+//     Dairy.findById()
+//
+//     Dairy.findOne()
+//
+//     new Dairy()
+//
 // ==========================================================
 
 module.exports =
