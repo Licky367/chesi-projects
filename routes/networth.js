@@ -45,7 +45,7 @@ const networthController =
 // ==========================================================
 
 const upload =
-    require("../middleware/uploadMidleware");
+    require("../middleware/uploadMiddleware");
 
 
 // ==========================================================
