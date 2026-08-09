@@ -15,21 +15,16 @@ const Dairy =
 function isDairyFarm(dairy) {
 
     if (!dairy) {
-
         return false;
-
     }
-
 
     const code =
         Number(dairy.code);
-
 
     return (
         Number.isFinite(code) &&
         code < 0
     );
-
 }
 
 
@@ -38,7 +33,7 @@ function isDairyFarm(dairy) {
 ========================================================== */
 
 /**
- * A standalone asset is a Dairy record that:
+ * A standalone identified Dairy asset is:
  *
  *     code > 0
  *
@@ -46,49 +41,72 @@ function isDairyFarm(dairy) {
  *
  *     assetCode is null, undefined, or empty.
  *
- * Therefore:
+ * Examples:
  *
- *     code > 0 + no assetCode
- *         = standalone asset
+ *     code = 10
+ *     assetCode = null
+ *     => standalone asset
  *
- *     code > 0 + assetCode
- *         = assigned asset
+ *     code = 10
+ *     assetCode = -5
+ *     => assigned asset
  *
- *     code < 0
- *         = Dairy Farm
+ *     code = -5
+ *     => Dairy Farm
  *
- *     code === null
- *         = manual asset
+ *     code = null
+ *     => manual asset
  */
 function isStandaloneAsset(dairy) {
 
     if (!dairy) {
-
         return false;
-
     }
-
 
     const code =
         Number(dairy.code);
 
-
     const hasPositiveCode =
         Number.isFinite(code) &&
         code > 0;
-
 
     const hasNoAssetCode =
         dairy.assetCode === null ||
         dairy.assetCode === undefined ||
         dairy.assetCode === "";
 
-
     return (
         hasPositiveCode &&
         hasNoAssetCode
     );
+}
 
+
+/* ==========================================================
+   ASSET CHECK
+========================================================== */
+
+/**
+ * Anything that is NOT a Dairy Farm is considered
+ * an asset for Net Worth purposes.
+ *
+ * Included:
+ *
+ *     code > 0
+ *     code === null
+ *     code === undefined
+ *
+ * Excluded:
+ *
+ *     code < 0
+ */
+function isNetWorthAsset(dairy) {
+
+    if (!dairy) {
+        return false;
+    }
+
+    return !isDairyFarm(dairy);
 }
 
 
@@ -99,7 +117,7 @@ function isStandaloneAsset(dairy) {
 async function getNetWorth() {
 
     /* ========================================================
-       LOAD DAIRY RECORDS
+       LOAD ALL DAIRY RECORDS
     ======================================================== */
 
     const dairyRecords =
@@ -109,12 +127,6 @@ async function getNetWorth() {
 
     /* ========================================================
        DAIRY FARMS
-
-       Every Dairy record with:
-
-           code < 0
-
-       is a Dairy Farm / structure.
     ======================================================== */
 
     const structures =
@@ -124,13 +136,7 @@ async function getNetWorth() {
 
 
     /* ========================================================
-       STANDALONE ASSETS
-
-       Every Dairy record with:
-
-           code > 0
-           AND
-           assetCode null/missing/empty
+       STANDALONE IDENTIFIED ASSETS
     ======================================================== */
 
     const standaloneAssets =
@@ -140,34 +146,15 @@ async function getNetWorth() {
 
 
     /* ========================================================
-       ACTUAL NET WORTH ASSETS
-
-       Dairy Farm structures are containers and therefore
-       are NOT counted directly.
-
-       Everything else is an asset:
-
-           code > 0
-           OR
-           code === null
-           OR
-           other non-farm records
+       NET WORTH ASSETS
+       
+       Dairy Farms are containers and are therefore excluded
+       from the Net Worth calculation.
     ======================================================== */
 
     const assets =
         dairyRecords.filter(
-            function (dairy) {
-
-                if (!dairy) {
-
-                    return false;
-
-                }
-
-
-                return !isDairyFarm(dairy);
-
-            }
+            isNetWorthAsset
         );
 
 
@@ -184,10 +171,6 @@ async function getNetWorth() {
                         asset.currentWorth
                     );
 
-
-                /*
-                 * Ignore missing, invalid, or negative values.
-                 */
 
                 if (
                     !Number.isFinite(
@@ -212,7 +195,7 @@ async function getNetWorth() {
 
 
     /* ========================================================
-       RETURN DATA TO CONTROLLER
+       RETURN
     ======================================================== */
 
     return {
@@ -238,6 +221,8 @@ module.exports = {
 
     isStandaloneAsset,
 
-    isDairyFarm
+    isDairyFarm,
+
+    isNetWorthAsset
 
 };
