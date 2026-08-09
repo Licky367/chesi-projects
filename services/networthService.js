@@ -12,11 +12,6 @@ const Dairy =
 // ==========================================================
 // CONSTANTS
 // ==========================================================
-//
-// Use the constants already defined by the Dairy model.
-// This prevents the service from drifting away from the
-// schema's actual allowed values.
-//
 
 const ALLOWED_STATUSES =
     Dairy.DAIRY_STATUSES || [
@@ -35,8 +30,10 @@ const ALLOWED_STATUSES =
 const DAIRY_BREEDS =
     Dairy.DAIRY_BREEDS || [];
 
+
 const DAIRY_FARM_TYPES =
     Dairy.DAIRY_FARM_TYPES || [];
+
 
 const STRUCTURE_TYPES =
     Dairy.STRUCTURE_TYPES || [];
@@ -495,11 +492,16 @@ function calculateAgeText(
 // RECORD TYPE HELPERS
 // ==========================================================
 //
-// These definitions intentionally mirror the Dairy model:
+// Dairy model identity:
 //
-// code < 0  = Dairy Farm
-// code > 0  = Animal
-// code null = Structure / Facility / Equipment
+//     code < 0
+//         Dairy Farm
+//
+//     code > 0
+//         Animal
+//
+//     code === null
+//         Structure / Facility / Equipment
 //
 
 function isDairyFarm(
@@ -533,7 +535,7 @@ function isDairyFarm(
 
 
 // ==========================================================
-// IS ANIMAL
+// IS IDENTIFIED DAIRY / ANIMAL
 // ==========================================================
 
 function isIdentifiedDairy(
@@ -569,18 +571,6 @@ function isIdentifiedDairy(
 // ==========================================================
 // IS STRUCTURE
 // ==========================================================
-//
-// According to the model:
-//
-//     code === null
-//
-// represents Structure / Facility / Equipment.
-//
-// This includes BOTH:
-//
-//     assigned structures
-//     standalone structures
-//
 
 function isStructure(
     record
@@ -596,8 +586,11 @@ function isStructure(
 
 
     return (
+
         record.code === null ||
+
         record.code === undefined
+
     );
 
 }
@@ -606,9 +599,6 @@ function isStructure(
 // ==========================================================
 // IS ASSIGNED ASSET
 // ==========================================================
-//
-// Any record with an assetCode belongs to a Dairy Farm.
-//
 
 function isAssignedAsset(
     record
@@ -637,14 +627,6 @@ function isAssignedAsset(
 // ==========================================================
 // IS STANDALONE ASSET
 // ==========================================================
-//
-// In the model:
-//
-//     code === null
-//     assetCode === null
-//
-// means a standalone structure/facility/equipment.
-//
 
 function isStandaloneAsset(
     record
@@ -677,16 +659,6 @@ function isStandaloneAsset(
 // ==========================================================
 // IS MANUAL ASSET
 // ==========================================================
-//
-// Kept for backwards compatibility.
-//
-// In the current model, a manual asset is simply a
-// structure/facility/equipment record:
-//
-//     code === null
-//
-// It does NOT require a parent Dairy Farm.
-//
 
 function isManualAsset(
     record
@@ -1126,13 +1098,9 @@ async function getNetWorth() {
             .lean();
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // STANDALONE STRUCTURES
-    // ------------------------------------------------------
-    //
-    // code === null
-    // assetCode === null
-    //
+    // ======================================================
 
     const standaloneAssets =
         allDairy.filter(
@@ -1140,9 +1108,9 @@ async function getNetWorth() {
         );
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // DAIRY FARMS
-    // ------------------------------------------------------
+    // ======================================================
 
     const structures =
         allDairy.filter(
@@ -1150,15 +1118,9 @@ async function getNetWorth() {
         );
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // TOTAL NET WORTH
-    // ------------------------------------------------------
-    //
-    // The Dairy model calculates net worth from ALL active
-    // records using currentWorth.
-    //
-    // We therefore follow exactly the same rule here.
-    //
+    // ======================================================
 
     const totalNetWorth =
         allDairy.reduce(
@@ -1233,15 +1195,9 @@ async function getDairyFarm(
         );
 
 
-    // ------------------------------------------------------
-    // ALL ASSETS BELONGING TO FARM
-    // ------------------------------------------------------
-    //
-    // This includes structures/facilities and animals.
-    //
-    // Dairy Farm itself has assetCode === null and therefore
-    // is not returned here.
-    //
+    // ======================================================
+    // FARM ASSETS
+    // ======================================================
 
     const assets =
         await Dairy
@@ -1260,9 +1216,9 @@ async function getDairyFarm(
             .lean();
 
 
-    // ------------------------------------------------------
-    // FARM ASSET TOTAL
-    // ------------------------------------------------------
+    // ======================================================
+    // FARM TOTAL
+    // ======================================================
 
     const dairyTotal =
         assets.reduce(
@@ -1327,17 +1283,22 @@ async function getDairyFarm(
 // GET ADD ASSET
 // ==========================================================
 //
-// The route is:
+// Route:
 //
-//     /networth/structure/:id/add
+//     GET /networth/structure/:id/add
 //
-// Therefore the supplied id identifies the parent Dairy Farm.
+// The :id is the parent Dairy Farm.
 //
-// The form creates a Structure / Facility / Equipment record
-// with:
+// The returned dairy object is used by:
 //
-//     code: null
-//     assetCode: parent farm's negative code
+//     networth-add.ejs
+//
+// The browser does NOT need to submit:
+//
+//     code
+//     assetCode
+//
+// The backend derives assetCode from dairy.code.
 //
 
 async function getAddAsset(
@@ -1378,14 +1339,21 @@ async function getAddAsset(
 // ADD ASSET
 // ==========================================================
 //
-// Creates a STRUCTURE / FACILITY / EQUIPMENT record.
+// Creates a manually-created Structure / Facility.
 //
-// According to the model:
+// Identity:
 //
-//     code      = null
+//     code = null
+//
+// Parent:
+//
 //     assetCode = negative Dairy Farm code
 //
-// No animal identity/code is generated here.
+// IMPORTANT:
+//
+// The parent is determined exclusively from :id.
+//
+// The browser cannot choose assetCode.
 //
 
 async function addAsset(
@@ -1393,6 +1361,10 @@ async function addAsset(
     body = {},
     file = null
 ) {
+
+    // ======================================================
+    // FIND PARENT FARM
+    // ======================================================
 
     const farm =
         await findDairyFarmById(
@@ -1442,39 +1414,100 @@ async function addAsset(
 
 
     // ======================================================
-    // BASE DATA
+    // TYPE
+    // ======================================================
+
+    const type =
+        parseText(
+            body.type
+        );
+
+
+    if (
+        !type
+    ) {
+
+        throw createError(
+            "Asset type is required.",
+            400
+        );
+
+    }
+
+
+    if (
+        STRUCTURE_TYPES.length > 0 &&
+
+        !STRUCTURE_TYPES.includes(
+            type
+        )
+    ) {
+
+        throw createError(
+            "Invalid asset type.",
+            400
+        );
+
+    }
+
+
+    // ======================================================
+    // STATUS
+    // ======================================================
+
+    const submittedStatus =
+        body.status !== undefined
+
+            ?
+
+        parseText(
+            body.status
+        )
+
+            :
+
+        "active";
+
+
+    if (
+        !submittedStatus
+    ) {
+
+        throw createError(
+            "Asset status cannot be empty.",
+            400
+        );
+
+    }
+
+
+    if (
+        !ALLOWED_STATUSES.includes(
+            submittedStatus
+        )
+    ) {
+
+        throw createError(
+            "Invalid asset status.",
+            400
+        );
+
+    }
+
+
+    // ======================================================
+    // BASE ASSET
     // ======================================================
 
     const assetData = {
 
+        // --------------------------------------------------
+        // USER DATA
+        // --------------------------------------------------
+
         name,
 
-        // --------------------------------------------------
-        // STRUCTURE
-        // --------------------------------------------------
-        //
-        // code === null means Structure / Facility /
-        // Equipment according to the model.
-        //
-
-        code:
-            null,
-
-        // --------------------------------------------------
-        // PARENT DAIRY FARM
-        // --------------------------------------------------
-
-        assetCode:
-            farmCode,
-
-        // --------------------------------------------------
-        // STRUCTURE TYPE
-        // --------------------------------------------------
-
-        type:
-            parseText(
-                body.type
-            ),
+        type,
 
         description:
             parseText(
@@ -1491,95 +1524,42 @@ async function addAsset(
                 body.location
             ),
 
+        // --------------------------------------------------
+        // STATUS
+        // --------------------------------------------------
+
         status:
-            "active",
+            submittedStatus,
+
+        // --------------------------------------------------
+        // SYSTEM IDENTITY
+        // --------------------------------------------------
+        //
+        // STRUCTURE:
+        //
+        //     code = null
+        //
+        // Parent:
+        //
+        //     assetCode = farmCode
+        //
+        // Both values are determined by the backend.
+        //
+
+        code:
+            null,
+
+        assetCode:
+            farmCode,
+
+        // --------------------------------------------------
+        // ACQUISITION
+        // --------------------------------------------------
 
         acquisitionDate:
             new Date()
 
     };
-
-
-    // ======================================================
-    // STATUS
-    // ======================================================
-
-    if (
-        body.status !== undefined
-    ) {
-
-        const status =
-            parseText(
-                body.status
-            );
-
-
-        if (
-            status &&
-            !ALLOWED_STATUSES.includes(
-                status
-            )
-        ) {
-
-            throw createError(
-                "Invalid asset status.",
-                400
-            );
-
-        }
-
-
-        if (
-            status
-        ) {
-
-            assetData.status =
-                status;
-
-        }
-
-    }
-
-
-    // ======================================================
-    // PROFILE IMAGE
-    // ======================================================
-
-    if (
-        body.profileImage !== undefined
-    ) {
-
-        const image =
-            parseText(
-                body.profileImage
-            );
-
-
-        if (
-            image
-        ) {
-
-            assetData.profileImage =
-                image;
-
-        }
-
-    }
-
-
-    // ======================================================
-    // MULTER FILE
-    // ======================================================
-
-    if (
-        file &&
-        file.filename
-    ) {
-
-        assetData.profileImage =
-            `/uploads/${file.filename}`;
-
-    }
 
 
     // ======================================================
@@ -1634,6 +1614,47 @@ async function addAsset(
 
 
     // ======================================================
+    // PROFILE IMAGE
+    // ======================================================
+
+    if (
+        body.profileImage !== undefined
+    ) {
+
+        const image =
+            parseText(
+                body.profileImage
+            );
+
+
+        if (
+            image
+        ) {
+
+            assetData.profileImage =
+                image;
+
+        }
+
+    }
+
+
+    // ======================================================
+    // MULTER FILE
+    // ======================================================
+
+    if (
+        file &&
+        file.filename
+    ) {
+
+        assetData.profileImage =
+            `/uploads/${file.filename}`;
+
+    }
+
+
+    // ======================================================
     // SAVE
     // ======================================================
 
@@ -1658,6 +1679,18 @@ async function addAsset(
             .lean();
 
 
+    if (
+        !saved
+    ) {
+
+        throw createError(
+            "Asset could not be retrieved after creation.",
+            500
+        );
+
+    }
+
+
     return decorateRecord(
         saved
     );
@@ -1669,19 +1702,19 @@ async function addAsset(
 // GET ASSET
 // ==========================================================
 //
-// Valid editable records:
+// Valid asset records:
 //
 //     Animal
 //         code > 0
 //
-//     Structure / Facility / Equipment
+//     Structure
 //         code === null
 //
-// Dairy Farms:
+// Dairy Farm:
 //
 //     code < 0
 //
-// cannot be edited through this page.
+// is rejected.
 //
 
 async function getAsset(
@@ -1718,10 +1751,6 @@ async function getAsset(
     }
 
 
-    // ======================================================
-    // FARM CANNOT BE EDITED HERE
-    // ======================================================
-
     if (
         isDairyFarm(
             dairy
@@ -1736,10 +1765,6 @@ async function getAsset(
     }
 
 
-    // ======================================================
-    // VALID ASSET
-    // ======================================================
-
     if (
         !isIdentifiedDairy(dairy) &&
         !isStructure(dairy)
@@ -1752,10 +1777,6 @@ async function getAsset(
 
     }
 
-
-    // ======================================================
-    // AVAILABLE DAIRY FARMS
-    // ======================================================
 
     const structures =
         await getDairyFarms();
@@ -1795,29 +1816,22 @@ async function getAsset(
 // UPDATE ASSET
 // ==========================================================
 //
-// Updates the existing Dairy document.
+// Updates an existing animal or structure.
 //
-// Protected:
+// NEVER changes:
 //
 //     _id
 //     code
 //
-// The service never assigns a new code.
+// The controller also removes:
 //
-// For animals:
+//     assetCode
 //
-//     code > 0
-//     assetCode MUST remain negative
+// before reaching this service.
 //
-// For structures:
-//
-//     code === null
-//     assetCode may be negative OR null
-//
-// For Dairy Farms:
-//
-//     code < 0
-//     editing is rejected.
+// Therefore the existing parent relationship remains intact
+// unless a future explicit parent-selection mechanism is
+// introduced.
 //
 
 async function updateAsset(
@@ -1843,7 +1857,7 @@ async function updateAsset(
 
 
     // ======================================================
-    // FIND EXISTING RECORD
+    // FIND ASSET
     // ======================================================
 
     const dairy =
@@ -1865,22 +1879,6 @@ async function updateAsset(
 
 
     // ======================================================
-    // DETERMINE RECORD TYPE
-    // ======================================================
-
-    const identified =
-        isIdentifiedDairy(
-            dairy
-        );
-
-
-    const structure =
-        isStructure(
-            dairy
-        );
-
-
-    // ======================================================
     // NEVER EDIT DAIRY FARM HERE
     // ======================================================
 
@@ -1899,8 +1897,20 @@ async function updateAsset(
 
 
     // ======================================================
-    // VALID ASSET CHECK
+    // DETERMINE TYPE
     // ======================================================
+
+    const identified =
+        isIdentifiedDairy(
+            dairy
+        );
+
+
+    const structure =
+        isStructure(
+            dairy
+        );
+
 
     if (
         !identified &&
@@ -2013,24 +2023,49 @@ async function updateAsset(
     // ======================================================
     // TYPE
     // ======================================================
-    //
-    // Animal:
-    //     breed
-    //
-    // Structure:
-    //     structure type
-    //
-    // The Dairy model performs the final validation.
-    //
 
     if (
         body.type !== undefined
     ) {
 
-        dairy.type =
+        const type =
             parseText(
                 body.type
             );
+
+
+        if (
+            !type
+        ) {
+
+            throw createError(
+                "Asset type cannot be empty.",
+                400
+            );
+
+        }
+
+
+        if (
+            structure &&
+
+            STRUCTURE_TYPES.length > 0 &&
+
+            !STRUCTURE_TYPES.includes(
+                type
+            )
+        ) {
+
+            throw createError(
+                "Invalid structure type.",
+                400
+            );
+
+        }
+
+
+        dairy.type =
+            type;
 
     }
 
@@ -2038,9 +2073,6 @@ async function updateAsset(
     // ======================================================
     // DATE OF BIRTH
     // ======================================================
-    //
-    // Only animals use DOB.
-    //
 
     if (
         identified &&
@@ -2059,9 +2091,6 @@ async function updateAsset(
     // ======================================================
     // MASS
     // ======================================================
-    //
-    // Only animals use mass.
-    //
 
     if (
         identified &&
@@ -2080,12 +2109,6 @@ async function updateAsset(
     // ======================================================
     // MILKING
     // ======================================================
-    //
-    // Only animals can use isMilking.
-    //
-    // The Dairy model itself guarantees that males are not
-    // milking.
-    //
 
     if (
         identified &&
@@ -2183,76 +2206,6 @@ async function updateAsset(
 
 
     // ======================================================
-    // PARENT DAIRY FARM
-    // ======================================================
-
-    if (
-        body.assetCode !== undefined
-    ) {
-
-        const supplied =
-            body.assetCode;
-
-
-        // --------------------------------------------------
-        // REMOVE PARENT
-        // --------------------------------------------------
-        //
-        // Structures MAY be standalone.
-        //
-        // Animals MAY NOT be standalone.
-        //
-
-        if (
-            supplied === null ||
-            supplied === ""
-        ) {
-
-            if (
-                identified
-            ) {
-
-                throw createError(
-                    "An animal must belong to a Dairy Farm.",
-                    400
-                );
-
-            }
-
-
-            // Structure:
-            //
-            // assetCode === null is valid.
-
-            dairy.assetCode =
-                null;
-
-        }
-
-
-        // --------------------------------------------------
-        // ASSIGN PARENT
-        // --------------------------------------------------
-
-        else {
-
-            const farm =
-                await findDairyFarmByCode(
-                    supplied
-                );
-
-
-            dairy.assetCode =
-                Number(
-                    farm.code
-                );
-
-        }
-
-    }
-
-
-    // ======================================================
     // STATUS
     // ======================================================
 
@@ -2318,11 +2271,6 @@ async function updateAsset(
     // ======================================================
     // ACQUISITION DATE
     // ======================================================
-    //
-    // Normally not supplied by the EJS.
-    //
-    // If a trusted client explicitly sends it, allow it.
-    //
 
     if (
         body.acquisitionDate !== undefined
@@ -2338,14 +2286,14 @@ async function updateAsset(
 
 
     // ======================================================
-    // FINAL ASSET-CODE SAFETY
+    // FINAL IDENTITY SAFETY
     // ======================================================
 
     if (
         identified
     ) {
 
-        // Animals MUST belong to a Dairy Farm.
+        // Animals must always have a parent farm.
 
         if (
             dairy.assetCode === null ||
@@ -2361,7 +2309,9 @@ async function updateAsset(
 
 
         if (
-            Number(dairy.assetCode) >= 0
+            Number(
+                dairy.assetCode
+            ) >= 0
         ) {
 
             throw createError(
@@ -2374,16 +2324,22 @@ async function updateAsset(
     }
 
 
+    // ======================================================
+    // STRUCTURE SAFETY
+    // ======================================================
+
     if (
         structure
     ) {
 
-        // Structures may be standalone.
-
         if (
             dairy.assetCode !== null &&
+
             dairy.assetCode !== undefined &&
-            Number(dairy.assetCode) >= 0
+
+            Number(
+                dairy.assetCode
+            ) >= 0
         ) {
 
             throw createError(
@@ -2394,19 +2350,6 @@ async function updateAsset(
         }
 
     }
-
-
-    // ======================================================
-    // PROTECTED IDENTITY
-    // ======================================================
-    //
-    // We deliberately never assign:
-    //
-    //     dairy._id
-    //     dairy.code
-    //
-    // Therefore the existing identity remains untouched.
-    //
 
 
     // ======================================================
@@ -2439,10 +2382,6 @@ async function updateAsset(
 
     }
 
-
-    // ======================================================
-    // RETURN ACTUAL DATABASE RECORD
-    // ======================================================
 
     return decorateRecord(
         updated
