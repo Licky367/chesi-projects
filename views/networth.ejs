@@ -1,12 +1,15 @@
 <style>
 /* ==========================================================
    NET WORTH PAGE
-=========================.================================= */
+========================================================== */
 
 .financial-page.networth-page {
     max-width: 1050px;
+
     margin: 0 auto;
+
     padding: 25px 18px 55px;
+
     box-sizing: border-box;
 }
 
@@ -19,17 +22,21 @@
     margin-bottom: 25px;
 }
 
+
 .networth-page .financial-header h1 {
     margin: 0 0 7px;
 
     color: #173b2a;
 
     font-size: 31px;
+
     font-weight: 800;
+
     line-height: 1.2;
 
     letter-spacing: -0.6px;
 }
+
 
 .networth-page .financial-header p {
     margin: 0;
@@ -37,6 +44,7 @@
     color: #718078;
 
     font-size: 15px;
+
     line-height: 1.5;
 }
 
@@ -51,7 +59,9 @@
     overflow: hidden;
 
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
 
     gap: 25px;
@@ -59,11 +69,13 @@
     min-height: 155px;
 
     margin-bottom: 35px;
+
     padding: 30px 34px;
 
     box-sizing: border-box;
 
     border: 1px solid #cfe5d7;
+
     border-radius: 20px;
 
     background:
@@ -84,9 +96,11 @@
     position: absolute;
 
     width: 190px;
+
     height: 190px;
 
     right: -70px;
+
     top: -75px;
 
     border-radius: 50%;
@@ -103,9 +117,11 @@
 
 .networth-total-label {
     position: relative;
+
     z-index: 1;
 
     display: flex;
+
     align-items: center;
 
     gap: 10px;
@@ -113,17 +129,22 @@
     color: #52705f;
 
     font-size: 14px;
+
     font-weight: 700;
 }
+
 
 .networth-total-label::before {
     content: "◆";
 
     display: inline-flex;
+
     align-items: center;
+
     justify-content: center;
 
     width: 34px;
+
     height: 34px;
 
     border-radius: 10px;
@@ -142,11 +163,13 @@
 
 .networth-total-value {
     position: relative;
+
     z-index: 1;
 
     color: #176337;
 
     font-size: 34px;
+
     font-weight: 800;
 
     line-height: 1.15;
@@ -167,6 +190,7 @@
     margin-bottom: 32px;
 }
 
+
 .networth-section:last-child {
     margin-bottom: 0;
 }
@@ -178,14 +202,18 @@
 
 .networth-section-header {
     display: flex;
+
     align-items: flex-start;
+
     justify-content: space-between;
 
     margin-bottom: 13px;
 }
 
+
 .networth-section-header h2 {
     display: flex;
+
     align-items: center;
 
     gap: 10px;
@@ -195,10 +223,12 @@
     color: #24352c;
 
     font-size: 19px;
+
     font-weight: 750;
 
     line-height: 1.3;
 }
+
 
 .networth-section-header h2::before {
     content: "";
@@ -206,12 +236,14 @@
     display: block;
 
     width: 4px;
+
     height: 20px;
 
     border-radius: 5px;
 
     background: #2f8f55;
 }
+
 
 .networth-section-header p {
     margin: 0;
@@ -230,7 +262,9 @@
 
 .networth-list {
     display: flex;
+
     flex-direction: column;
+
     gap: 9px;
 }
 
@@ -243,6 +277,7 @@
     position: relative;
 
     display: flex;
+
     align-items: center;
 
     min-height: 62px;
@@ -252,6 +287,7 @@
     box-sizing: border-box;
 
     border: 1px solid #e4ebe6;
+
     border-radius: 13px;
 
     background: #ffffff;
@@ -281,10 +317,13 @@
     flex-shrink: 0;
 
     display: flex;
+
     align-items: center;
+
     justify-content: center;
 
     width: 36px;
+
     height: 36px;
 
     margin-right: 13px;
@@ -300,7 +339,7 @@
 
 
 /* ==========================================================
-   FARM ICON
+   STRUCTURE / FACILITY ICON
 ========================================================== */
 
 .networth-structure-item::before {
@@ -324,11 +363,13 @@
     color: #293a31;
 
     font-size: 14px;
+
     font-weight: 650;
 
     line-height: 1.4;
 
     text-overflow: ellipsis;
+
     white-space: nowrap;
 }
 
@@ -371,11 +412,13 @@
     transform: translateY(-1px);
 }
 
+
 .networth-list-item:hover::before {
     background: #dff1e5;
 
     color: #216b3e;
 }
+
 
 .networth-list-item:hover::after {
     color: #267345;
@@ -390,7 +433,9 @@
 
 .networth-empty {
     display: flex;
+
     align-items: center;
+
     justify-content: center;
 
     flex-direction: column;
@@ -402,6 +447,7 @@
     box-sizing: border-box;
 
     border: 1px dashed #cddbd2;
+
     border-radius: 14px;
 
     background: #fbfdfb;
@@ -415,14 +461,18 @@
     text-align: center;
 }
 
+
 .networth-empty::before {
     content: "◇";
 
     display: flex;
+
     align-items: center;
+
     justify-content: center;
 
     width: 40px;
+
     height: 40px;
 
     margin-bottom: 10px;
@@ -447,13 +497,16 @@
         padding: 18px 14px 45px;
     }
 
+
     .networth-page .financial-header h1 {
         font-size: 26px;
     }
 
+
     .networth-page .financial-header p {
         font-size: 14px;
     }
+
 
     .networth-total-card {
         align-items: flex-start;
@@ -469,9 +522,11 @@
         border-radius: 17px;
     }
 
+
     .networth-total-label {
         font-size: 13px;
     }
+
 
     .networth-total-value {
         font-size: 28px;
@@ -479,17 +534,21 @@
         white-space: normal;
     }
 
+
     .networth-section {
         margin-bottom: 27px;
     }
+
 
     .networth-section-header h2 {
         font-size: 18px;
     }
 
+
     .networth-section-header p {
         font-size: 12.5px;
     }
+
 
     .networth-list-item {
         min-height: 58px;
@@ -497,16 +556,20 @@
         padding: 0 13px;
     }
 
+
     .networth-list-item::before {
         width: 34px;
+
         height: 34px;
 
         margin-right: 11px;
     }
 
+
     .networth-list-name {
         font-size: 14px;
     }
+
 }
 
 
@@ -518,95 +581,114 @@
 
     .financial-page.networth-page {
         padding-left: 10px;
+
         padding-right: 10px;
     }
+
 
     .networth-page .financial-header h1 {
         font-size: 24px;
     }
 
+
     .networth-total-card {
         padding: 21px 18px;
     }
+
 
     .networth-total-value {
         font-size: 25px;
     }
 
+
     .networth-section-header h2 {
         font-size: 17px;
     }
 
+
     .networth-list-item {
         min-height: 56px;
     }
+
 }
-</style>
+</style><div class="financial-page networth-page"><!-- =====================================================
+     HEADER
+====================================================== -->
 
+<div class="financial-header">
 
-<div class="financial-page networth-page">
+    <div>
 
+        <h1>
+            Net Worth
+        </h1>
 
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
-
-    <div class="financial-header">
-
-        <div>
-
-            <h1>
-                Net Worth
-            </h1>
-
-            <p>
-                Assets and their current estimated worth.
-            </p>
-
-        </div>
+        <p>
+            Assets and their current estimated worth.
+        </p>
 
     </div>
 
-
-    <!-- =====================================================
-         TOTAL NET WORTH
-    ====================================================== -->
-
-    <div class="financial-card networth-total-card">
-
-        <span class="networth-total-label">
-            Total Net Worth
-        </span>
-
-        <strong class="networth-total-value">
-
-            KSh
-            <%= Number(totalNetWorth || 0)
-                .toLocaleString("en-KE") %>
-
-        </strong>
-
-    </div>
+</div>
 
 
-    <!-- =====================================================
-         STANDALONE ASSETS
-         
-         Partial:
+<!-- =====================================================
+     TOTAL NET WORTH
+     
+     Uses:
+         totalNetWorth
+     
+     Source:
+         Dairy.calculateNetWorth()
+     
+     Calculation:
+         Active Dairy records
+         summed by currentWorth
+====================================================== -->
+
+<div class="financial-card networth-total-card">
+
+    <span class="networth-total-label">
+        Total Net Worth
+    </span>
+
+
+    <strong class="networth-total-value">
+
+        KSh
+        <%= Number(totalNetWorth || 0)
+            .toLocaleString("en-KE") %>
+
+    </strong>
+
+</div>
+
+
+<!-- =====================================================
+     STANDALONE ASSETS
+     
+     A standalone asset is a Dairy record whose
+     assetCode is null.
+     
+     This is NOT limited to "identified dairies".
+     
+     Partial:
          networth/standalone-assets.ejs
-    ====================================================== -->
+====================================================== -->
 
-    <%- include("networth/standalone-assets") %>
+<%- include("networth/standalone-assets") %>
 
 
-    <!-- =====================================================
-         DAIRY FARMS
-         
-         Partial:
+<!-- =====================================================
+     DAIRY FARMS
+     
+     Dairy farms are Dairy records where:
+         code < 0
+     
+     Partial:
          networth/dairy-farms.ejs
-    ====================================================== -->
+====================================================== -->
 
-    <%- include("networth/dairy-farms") %>
-
+<%- include("networth/dairy-farms") %>
 
 </div>
