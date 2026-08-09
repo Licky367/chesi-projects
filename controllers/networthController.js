@@ -18,9 +18,11 @@ function wantsJSON(req) {
 
         (
             typeof req.headers.accept === "string" &&
+
             req.headers.accept.includes(
                 "application/json"
             )
+
         )
 
     );
@@ -258,13 +260,65 @@ async function addAsset(
 
     try {
 
+        console.log(
+            "=================================================="
+        );
+
+        console.log(
+            "NET WORTH ADD ASSET"
+        );
+
+        console.log(
+            "Farm ID:",
+            req.params.id
+        );
+
+        console.log(
+            "Request body:",
+            req.body
+        );
+
+        console.log(
+            "Uploaded file:",
+            req.file
+        );
+
+        console.log(
+            "=================================================="
+        );
+
+
+        const body =
+            {
+                ...req.body
+            };
+
+
+        // --------------------------------------------------
+        // PROFILE IMAGE
+        // --------------------------------------------------
+
+        if (
+            req.file
+        ) {
+
+            body.profileImage =
+                `/uploads/${req.file.filename}`;
+
+        }
+
+
         const asset =
             await networthService.addAsset(
                 req.params.id,
-                req.body,
+                body,
                 req.file || null
             );
 
+
+        // --------------------------------------------------
+        // JSON RESPONSE
+        // --------------------------------------------------
 
         if (
             wantsJSON(req)
@@ -291,6 +345,10 @@ async function addAsset(
 
         }
 
+
+        // --------------------------------------------------
+        // NORMAL FORM
+        // --------------------------------------------------
 
         return res.redirect(
             `/networth/structure/${req.params.id}`
@@ -402,8 +460,6 @@ async function updateAsset(
 
         // ======================================================
         // DEBUG
-        //
-        // Useful while fixing the form submission.
         // ======================================================
 
         console.log(
@@ -425,6 +481,11 @@ async function updateAsset(
         );
 
         console.log(
+            "Content type:",
+            req.headers["content-type"]
+        );
+
+        console.log(
             "Request body:",
             req.body
         );
@@ -440,61 +501,34 @@ async function updateAsset(
 
 
         // ======================================================
-        // BUILD UPDATE DATA
-        //
-        // Only fields actually submitted by the browser
-        // are forwarded.
+        // COPY BODY
         // ======================================================
 
-        const updateData = {};
+        const updateData = {
+
+            ...req.body
+
+        };
 
 
         // ======================================================
         // PROFILE IMAGE
+        //
+        // multer.diskStorage saves the file as:
+        //
+        // public/uploads/<filename>
+        //
+        // Browser URL therefore becomes:
+        //
+        // /uploads/<filename>
         // ======================================================
-
-        /*
-         * If multer/upload middleware provides req.file,
-         * the upload middleware should have a path/url
-         * available on the file object.
-         *
-         * We support the common possibilities.
-         */
 
         if (
             req.file
         ) {
 
-            const imagePath =
-                req.file.path ||
-                req.file.location ||
-                req.file.filename;
-
-
-            if (
-                imagePath
-            ) {
-
-                updateData.profileImage =
-                    imagePath;
-
-            }
-
-        }
-
-
-        /*
-         * Also support profileImage being supplied directly
-         * by another upload layer.
-         */
-
-        if (
-            req.body.profileImage !== undefined &&
-            req.body.profileImage !== ""
-        ) {
-
             updateData.profileImage =
-                req.body.profileImage;
+                `/uploads/${req.file.filename}`;
 
         }
 
@@ -504,7 +538,10 @@ async function updateAsset(
         // ======================================================
 
         if (
-            req.body.name !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "name"
+            )
         ) {
 
             updateData.name =
@@ -518,7 +555,10 @@ async function updateAsset(
         // ======================================================
 
         if (
-            req.body.dateOfBirth !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "dateOfBirth"
+            )
         ) {
 
             updateData.dateOfBirth =
@@ -532,7 +572,10 @@ async function updateAsset(
         // ======================================================
 
         if (
-            req.body.type !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "type"
+            )
         ) {
 
             updateData.type =
@@ -546,7 +589,10 @@ async function updateAsset(
         // ======================================================
 
         if (
-            req.body.mass !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "mass"
+            )
         ) {
 
             updateData.mass =
@@ -558,30 +604,55 @@ async function updateAsset(
         // ======================================================
         // MILKING
         //
-        // Checkbox handling is IMPORTANT.
+        // Supports:
         //
-        // Checked:
-        //     "true"
+        // true
+        // false
+        // "true"
+        // "false"
+        // "1"
+        // "0"
+        // "on"
         //
-        // Unchecked:
-        //     field is normally absent.
-        //
-        // The EJS should therefore include a hidden false
-        // value before the checkbox, or the controller needs
-        // to know that the field belongs to the form.
+        // If the browser sends an array because a hidden
+        // false input and checkbox are both submitted, use
+        // the last value.
         // ======================================================
 
         if (
-            req.body.isMilking !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "isMilking"
+            )
         ) {
 
+            let milking =
+                req.body.isMilking;
+
+
+            if (
+                Array.isArray(
+                    milking
+                )
+            ) {
+
+                milking =
+                    milking[
+                        milking.length - 1
+                    ];
+
+            }
+
+
             updateData.isMilking =
-                (
-                    req.body.isMilking === true ||
-                    req.body.isMilking === "true" ||
-                    req.body.isMilking === "1" ||
-                    req.body.isMilking === "on"
-                );
+
+                milking === true ||
+
+                milking === "true" ||
+
+                milking === "1" ||
+
+                milking === "on";
 
         }
 
@@ -591,7 +662,10 @@ async function updateAsset(
         // ======================================================
 
         if (
-            req.body.buyingPrice !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "buyingPrice"
+            )
         ) {
 
             updateData.buyingPrice =
@@ -605,7 +679,10 @@ async function updateAsset(
         // ======================================================
 
         if (
-            req.body.currentWorth !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "currentWorth"
+            )
         ) {
 
             updateData.currentWorth =
@@ -619,7 +696,10 @@ async function updateAsset(
         // ======================================================
 
         if (
-            req.body.description !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "description"
+            )
         ) {
 
             updateData.description =
@@ -633,7 +713,10 @@ async function updateAsset(
         // ======================================================
 
         if (
-            req.body.condition !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "condition"
+            )
         ) {
 
             updateData.condition =
@@ -647,7 +730,10 @@ async function updateAsset(
         // ======================================================
 
         if (
-            req.body.location !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "location"
+            )
         ) {
 
             updateData.location =
@@ -657,11 +743,14 @@ async function updateAsset(
 
 
         // ======================================================
-        // ASSET CODE / PARENT FARM
+        // ASSET CODE
         // ======================================================
 
         if (
-            req.body.assetCode !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "assetCode"
+            )
         ) {
 
             updateData.assetCode =
@@ -675,7 +764,10 @@ async function updateAsset(
         // ======================================================
 
         if (
-            req.body.status !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "status"
+            )
         ) {
 
             updateData.status =
@@ -689,7 +781,10 @@ async function updateAsset(
         // ======================================================
 
         if (
-            req.body.valuationDate !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "valuationDate"
+            )
         ) {
 
             updateData.valuationDate =
@@ -701,21 +796,68 @@ async function updateAsset(
         // ======================================================
         // ACQUISITION DATE
         //
-        // The current EJS does not submit this field because
-        // it is readonly and has no name.
-        //
-        // We nevertheless support it if another browser client
-        // sends it.
+        // Supported if another form/client sends it.
         // ======================================================
 
         if (
-            req.body.acquisitionDate !== undefined
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "acquisitionDate"
+            )
         ) {
 
             updateData.acquisitionDate =
                 req.body.acquisitionDate;
 
         }
+
+
+        // ======================================================
+        // LEGACY ITEM FIELD
+        // ======================================================
+
+        if (
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "item"
+            )
+        ) {
+
+            updateData.item =
+                req.body.item;
+
+        }
+
+
+        // ======================================================
+        // DIRECT PROFILE IMAGE FIELD
+        //
+        // Only use this when there was no uploaded file.
+        // ======================================================
+
+        if (
+            !req.file &&
+
+            Object.prototype.hasOwnProperty.call(
+                req.body,
+                "profileImage"
+            )
+        ) {
+
+            updateData.profileImage =
+                req.body.profileImage;
+
+        }
+
+
+        // ======================================================
+        // LOG FINAL UPDATE DATA
+        // ======================================================
+
+        console.log(
+            "Final update data:",
+            updateData
+        );
 
 
         // ======================================================
@@ -738,7 +880,7 @@ async function updateAsset(
 
 
         // ======================================================
-        // FETCH / AJAX
+        // JSON / FETCH RESPONSE
         // ======================================================
 
         if (
@@ -765,7 +907,7 @@ async function updateAsset(
 
 
         // ======================================================
-        // NORMAL BROWSER FORM
+        // NORMAL BROWSER SUBMISSION
         // ======================================================
 
         return res.redirect(
@@ -775,8 +917,19 @@ async function updateAsset(
     } catch (error) {
 
         console.error(
-            "Error updating Net Worth asset:",
+            "=================================================="
+        );
+
+        console.error(
+            "ERROR UPDATING NET WORTH ASSET"
+        );
+
+        console.error(
             error
+        );
+
+        console.error(
+            "=================================================="
         );
 
 
