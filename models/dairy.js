@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 
 /* ==========================================================
    DAIRY SCHEMA
-=========================.================================= */
+========================================================== */
 
 const dairySchema = new mongoose.Schema(
 
@@ -11,6 +11,19 @@ const dairySchema = new mongoose.Schema(
 
         /* ==================================================
            PROFILE IMAGE
+
+           Applies to:
+
+               code > 0
+                   identified dairy / animal
+
+               code < 0
+                   Dairy Farm / structure
+
+               code === null
+                   manual asset
+
+           The image is optional for every record.
         ================================================== */
 
         profileImage: {
@@ -27,45 +40,49 @@ const dairySchema = new mongoose.Schema(
         /* ==================================================
            CODE
 
-           > 0  = identified dairy / animal
-           < 0  = Dairy Farm / structure
-           null = manual asset
+           > 0
+               Identified dairy / animal
 
-           Manual Net Worth assets are created with:
+           < 0
+               Dairy Farm / structure
 
-               code      = null
-               assetCode = parent Dairy Farm code
+           null
+               Manual Net Worth asset
+
+           Only actual numeric codes are required to be
+           unique through the partial unique index below.
         ================================================== */
 
         code: {
 
-    type: Number,
+            type: Number,
 
-    default: null,
+            default: null,
 
-    validate: {
+            validate: {
 
-        validator: function(value) {
+                validator: function(value) {
 
-            if (
-                value === null ||
-                value === undefined
-            ) {
+                    if (
+                        value === null ||
+                        value === undefined
+                    ) {
 
-                return true;
+                        return true;
+
+                    }
+
+
+                    return Number.isInteger(value);
+
+                },
+
+                message:
+                    "Code must be a whole number or null."
 
             }
 
-            return Number.isInteger(value);
-
         },
-
-        message:
-            "Code must be a whole number or null."
-
-    }
-
-},
 
 
         /* ==================================================
@@ -86,22 +103,16 @@ const dairySchema = new mongoose.Schema(
         /* ==================================================
            DATE OF BIRTH
 
-           REQUIRED ONLY WHEN:
+           Only identified dairies / animals have DOB.
 
-               code exists
-               AND
-               code > 0
+           code > 0
+               → required
 
-           Therefore:
+           code < 0
+               → null
 
-               code > 0
-                   → required
-
-               code < 0
-                   → not required
-
-               code === null
-                   → not required
+           code === null
+               → null
         ================================================== */
 
         dateOfBirth: {
@@ -111,9 +122,13 @@ const dairySchema = new mongoose.Schema(
             required: function() {
 
                 return (
+
                     this.code !== null &&
+
                     this.code !== undefined &&
+
                     Number(this.code) > 0
+
                 );
 
             },
@@ -160,8 +175,8 @@ const dairySchema = new mongoose.Schema(
 
 
                     /*
-                     * Only identified dairy with
-                     * a positive code can be female.
+                     * Only identified positive-code
+                     * dairies can be marked as milking.
                      */
 
                     if (
@@ -181,7 +196,9 @@ const dairySchema = new mongoose.Schema(
                      */
 
                     return (
+
                         Number(this.code) % 2 === 0
+
                     );
 
                 },
@@ -197,26 +214,24 @@ const dairySchema = new mongoose.Schema(
         /* ==================================================
            PARENT / STRUCTURE ASSIGNMENT
 
-           code > 0:
+           Positive identified dairy:
 
-               assetCode = null
-                   → standalone identified dairy
+               null
+                   → standalone
 
-               assetCode < 0
-                   → identified dairy assigned to
-                     a Dairy Farm
+               negative code
+                   → assigned to Dairy Farm
 
-           code < 0:
+           Negative code:
 
-               assetCode = null
+               null
                    → Dairy Farm / structure
 
-           code === null:
+           Null code:
 
-               assetCode = parent code
-                   → manual Net Worth asset
-
-           Manual assets cannot be standalone.
+               negative code
+                   → manual asset belonging to
+                     a Dairy Farm
         ================================================== */
 
         assetCode: {
@@ -429,8 +444,6 @@ const dairySchema = new mongoose.Schema(
         /* ==================================================
            TYPE
 
-           Net Worth asset type.
-
            Examples:
 
                Cow
@@ -610,9 +623,13 @@ const dairySchema = new mongoose.Schema(
 dairySchema.virtual("gender").get(function() {
 
     if (
+
         this.code === null ||
+
         this.code === undefined ||
+
         Number(this.code) <= 0
+
     ) {
 
         return null;
@@ -620,11 +637,15 @@ dairySchema.virtual("gender").get(function() {
     }
 
 
-    return Number(this.code) % 2 === 0
+    return (
 
-        ? "Female"
+        Number(this.code) % 2 === 0
 
-        : "Male";
+            ? "Female"
+
+            : "Male"
+
+    );
 
 });
 
@@ -708,7 +729,7 @@ dairySchema.virtual("isManualAsset").get(function() {
 /* ==========================================================
    IS STANDALONE ASSET
 
-   A standalone identified dairy/animal has:
+   Identified dairy / animal:
 
        code > 0
        assetCode = null
@@ -725,8 +746,11 @@ dairySchema.virtual("isStandaloneAsset").get(function() {
         Number(this.code) > 0 &&
 
         (
+
             this.assetCode === null ||
+
             this.assetCode === undefined
+
         )
 
     );
@@ -767,6 +791,7 @@ dairySchema.virtual("ageText").get(function() {
     const now =
         new Date();
 
+
     const dob =
         new Date(
             this.dateOfBirth
@@ -777,9 +802,11 @@ dairySchema.virtual("ageText").get(function() {
         now.getFullYear() -
         dob.getFullYear();
 
+
     let months =
         now.getMonth() -
         dob.getMonth();
+
 
     let days =
         now.getDate() -
@@ -853,7 +880,7 @@ dairySchema.virtual("displayImage").get(function() {
 
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(
 
-        this.name
+        this.name || "Dairy"
 
     )}`;
 
@@ -895,7 +922,9 @@ dairySchema.virtual("needsMedicalAttention").get(function() {
 dairySchema.virtual("assetValue").get(function() {
 
     return Number(
+
         this.currentWorth
+
     ) || 0;
 
 });
@@ -938,16 +967,20 @@ dairySchema.pre(
 
            Structures:
 
-               - do not need DOB
+               - no DOB
                - cannot milk
                - cannot have parent
                - assetCode = null
         ================================================== */
 
         if (
+
             this.code !== null &&
+
             this.code !== undefined &&
+
             Number(this.code) < 0
+
         ) {
 
             this.dateOfBirth = null;
@@ -966,26 +999,30 @@ dairySchema.pre(
 
            DOB is required by the schema.
 
-           assetCode may be:
+           Parent assignment may be:
 
                null
-                   → standalone
+                   standalone
 
                negative code
-                   → assigned to a Dairy Farm
+                   assigned to Dairy Farm
         ================================================== */
 
         if (
+
             this.code !== null &&
+
             this.code !== undefined &&
+
             Number(this.code) > 0
+
         ) {
 
             /*
-             * No parent manipulation here.
+             * No parent manipulation.
              *
-             * An identified dairy may legitimately
-             * be standalone or assigned.
+             * DateOfBirth remains available and is
+             * validated by the schema.
              */
 
         }
@@ -998,14 +1035,17 @@ dairySchema.pre(
 
            Manual assets:
 
-               - have no DOB
+               - no DOB
                - cannot milk
-               - MUST have a parent
+               - must belong to a parent
         ================================================== */
 
         if (
+
             this.code === null ||
+
             this.code === undefined
+
         ) {
 
             this.dateOfBirth = null;
@@ -1014,14 +1054,21 @@ dairySchema.pre(
 
 
             if (
+
                 this.assetCode === null ||
+
                 this.assetCode === undefined
+
             ) {
 
                 return next(
+
                     new Error(
+
                         "Manual assets must belong to a parent. assetCode is required."
+
                     )
+
                 );
 
             }
@@ -1034,17 +1081,27 @@ dairySchema.pre(
         ================================================== */
 
         if (
+
             this.code !== null &&
+
             this.code !== undefined &&
+
             Number(this.code) < 0 &&
+
             this.assetCode !== null &&
+
             this.assetCode !== undefined
+
         ) {
 
             return next(
+
                 new Error(
+
                     "Dairy Farms / structures cannot have an assetCode."
+
                 )
+
             );
 
         }
@@ -1108,7 +1165,9 @@ dairySchema.pre(
         ================================================== */
 
         if (
+
             !this.medicalAttention.isMarked
+
         ) {
 
             this.medicalAttention.type = "";
@@ -1149,9 +1208,11 @@ dairySchema.pre(
         ================================================== */
 
         if (
+
             this.isModified(
                 "medicalAttention"
             )
+
         ) {
 
             this.medicalAttention.updatedAt =
@@ -1180,9 +1241,13 @@ dairySchema.pre(
         ================================================== */
 
         if (
+
             this.code !== null &&
+
             this.code !== undefined &&
+
             Number(this.code) < 0
+
         ) {
 
             this.assetCode = null;
@@ -1200,12 +1265,21 @@ dairySchema.pre(
    INDEXES
 ========================================================== */
 
+
+/* ==========================================================
+   MILKING INDEX
+========================================================== */
+
 dairySchema.index({
 
     isMilking: 1
 
 });
 
+
+/* ==========================================================
+   MAINTENANCE INDEX
+========================================================== */
 
 dairySchema.index({
 
@@ -1214,12 +1288,20 @@ dairySchema.index({
 });
 
 
+/* ==========================================================
+   MEDICAL INDEX
+========================================================== */
+
 dairySchema.index({
 
     "medicalAttention.isMarked": 1
 
 });
 
+
+/* ==========================================================
+   ASSET ASSIGNMENT INDEX
+========================================================== */
 
 dairySchema.index({
 
@@ -1229,21 +1311,24 @@ dairySchema.index({
 
 });
 
+
 /* ==========================================================
    CODE INDEX
 
-   Only actual numeric codes participate in the
-   unique index.
+   ONLY NUMERIC CODES ARE UNIQUE.
 
    Therefore:
 
-       code: 1       -> indexed and unique
-       code: -1      -> indexed and unique
-       code: null    -> NOT indexed
+       code: 1
+           unique
 
-   This allows unlimited manual assets with:
+       code: -1
+           unique
 
        code: null
+           NOT included
+
+   This allows unlimited manual assets.
 ========================================================== */
 
 dairySchema.index(
@@ -1251,12 +1336,15 @@ dairySchema.index(
     { code: 1 },
 
     {
+
         unique: true,
 
         partialFilterExpression: {
 
             code: {
+
                 $type: "number"
+
             }
 
         }
@@ -1309,7 +1397,9 @@ async function() {
     return result.length
 
         ? Number(
+
             result[0].totalNetWorth || 0
+
         )
 
         : 0;
