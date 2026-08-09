@@ -1,21 +1,22 @@
-<%
-/* ==========================================================
-   ADD DAIRY / ASSET PAGE
+<% /*
+============================================================
+ADD DAIRY / ASSET PAGE
 
-   BACKEND DATA
-   ----------------------------------------------------------
-   dairyBreeds:
-       Breed values supplied by the Dairy model/service.
+BACKEND DATA
+------------------------------------------------------------
+dairyBreeds:
+    Breed values supplied by the Dairy model/service.
 
-   structures:
-       Existing Dairy Farm records supplied by the backend.
+structures:
+    Existing Dairy Farm records supplied by the backend.
 
-   SECURITY
-   ----------------------------------------------------------
-   This page must also be protected by server-side
-   authentication/authorization. Client-side JavaScript is
-   only responsible for UI behavior and is NOT security.
-   ========================================================== */
+SECURITY
+------------------------------------------------------------
+Server-side authentication and authorization must protect
+the route. Browser JavaScript is only for UI behavior and
+client-side validation.
+============================================================
+*/
 
 const breeds =
     Array.isArray(dairyBreeds)
@@ -34,7 +35,7 @@ const dairyFarms =
 
 /* ==========================================================
    PAGE
-   ========================================================== */
+========================================================== */
 
 .add-dairy-page {
 
@@ -42,14 +43,14 @@ const dairyFarms =
 
     margin: 0 auto;
 
-    padding: 24px 16px 50px;
+    padding: 24px 16px 60px;
 
 }
 
 
 /* ==========================================================
    HEADER
-   ========================================================== */
+========================================================== */
 
 .add-dairy-header {
 
@@ -63,8 +64,6 @@ const dairyFarms =
 
     align-items: center;
 
-    gap: 12px;
-
     margin-bottom: 18px;
 
 }
@@ -75,19 +74,21 @@ const dairyFarms =
 
     align-items: center;
 
-    gap: 6px;
+    gap: 7px;
 
-    color: #2563eb;
+    color: #15803d;
 
     text-decoration: none;
 
-    font-weight: 600;
+    font-weight: 700;
 
     font-size: 14px;
 
 }
 
 .financial-back-link:hover {
+
+    color: #166534;
 
     text-decoration: underline;
 
@@ -97,11 +98,11 @@ const dairyFarms =
 
     margin: 0;
 
+    color: #172033;
+
     font-size: 30px;
 
     line-height: 1.2;
-
-    color: #172033;
 
 }
 
@@ -113,32 +114,34 @@ const dairyFarms =
 
     font-size: 15px;
 
+    line-height: 1.6;
+
 }
 
 
 /* ==========================================================
-   CARD
-   ========================================================== */
+   MAIN CARD
+========================================================== */
 
 .add-dairy-card {
 
     background: #ffffff;
 
+    border: 1px solid #e5e7eb;
+
     border-radius: 22px;
 
-    padding: 24px;
+    padding: 26px;
 
     box-shadow:
         0 8px 30px rgba(15, 23, 42, 0.08);
-
-    border: 1px solid #eef1f5;
 
 }
 
 
 /* ==========================================================
    FORM STATUS
-   ========================================================== */
+========================================================== */
 
 .form-save-status {
 
@@ -146,13 +149,15 @@ const dairyFarms =
 
     margin-bottom: 20px;
 
-    padding: 12px 14px;
+    padding: 13px 15px;
 
     border-radius: 12px;
 
     font-size: 14px;
 
     font-weight: 600;
+
+    line-height: 1.5;
 
 }
 
@@ -183,7 +188,7 @@ const dairyFarms =
 
 /* ==========================================================
    PROFILE IMAGE
-   ========================================================== */
+========================================================== */
 
 .profile-image-section {
 
@@ -195,7 +200,7 @@ const dairyFarms =
 
     text-align: center;
 
-    padding: 8px 0 28px;
+    padding-bottom: 28px;
 
     margin-bottom: 24px;
 
@@ -219,7 +224,7 @@ const dairyFarms =
 
     justify-content: center;
 
-    background: #f3f6f9;
+    background: #f0fdf4;
 
     border: 4px solid #ffffff;
 
@@ -248,11 +253,11 @@ const dairyFarms =
 
 .profile-image-title {
 
+    color: #172033;
+
     font-size: 17px;
 
     font-weight: 700;
-
-    color: #172033;
 
 }
 
@@ -278,8 +283,8 @@ const dairyFarms =
 
 
 /* ==========================================================
-   RECORD TYPE SELECTOR
-   ========================================================== */
+   RECORD TYPE
+========================================================== */
 
 .record-type-card {
 
@@ -289,24 +294,22 @@ const dairyFarms =
 
     border-radius: 16px;
 
-    background: #f8fafc;
+    background: #f0fdf4;
 
-    border: 1px solid #e6ebf1;
+    border: 1px solid #bbf7d0;
 
 }
 
-.record-type-card label {
+.record-type-card .form-group {
 
-    font-weight: 700;
-
-    color: #172033;
+    margin-bottom: 0;
 
 }
 
 
 /* ==========================================================
-   FORM GROUPS
-   ========================================================== */
+   FORM GROUP
+========================================================== */
 
 .form-group {
 
@@ -361,10 +364,10 @@ const dairyFarms =
 .form-group select:focus,
 .form-group textarea:focus {
 
-    border-color: #2563eb;
+    border-color: #16a34a;
 
     box-shadow:
-        0 0 0 3px rgba(37, 99, 235, 0.10);
+        0 0 0 3px rgba(22, 163, 74, 0.12);
 
 }
 
@@ -390,8 +393,8 @@ const dairyFarms =
 
 
 /* ==========================================================
-   RECORD-SPECIFIC SECTIONS
-   ========================================================== */
+   RECORD SECTIONS
+========================================================== */
 
 .record-section {
 
@@ -403,9 +406,9 @@ const dairyFarms =
 
     border-radius: 16px;
 
-    background: #fbfcfe;
+    background: #fbfefc;
 
-    border: 1px solid #e8edf3;
+    border: 1px solid #dcfce7;
 
 }
 
@@ -415,33 +418,28 @@ const dairyFarms =
 
 }
 
-
-/* ==========================================================
-   SECTION TITLE ACCENT
-   ========================================================== */
-
 .record-section::before {
 
     content: "";
 
     display: block;
 
-    width: 35px;
+    width: 36px;
 
     height: 3px;
 
-    margin-bottom: 14px;
+    margin-bottom: 15px;
 
     border-radius: 5px;
 
-    background: #2563eb;
+    background: #16a34a;
 
 }
 
 
 /* ==========================================================
    HELP TEXT
-   ========================================================== */
+========================================================== */
 
 .code-help {
 
@@ -457,8 +455,8 @@ const dairyFarms =
 
 
 /* ==========================================================
-   TWO COLUMN LAYOUT
-   ========================================================== */
+   FORM GRID
+========================================================== */
 
 .form-grid {
 
@@ -480,7 +478,7 @@ const dairyFarms =
 
 /* ==========================================================
    ACTIONS
-   ========================================================== */
+========================================================== */
 
 .form-actions {
 
@@ -514,9 +512,9 @@ const dairyFarms =
 
     border-radius: 12px;
 
-    text-decoration: none;
-
     border: none;
+
+    text-decoration: none;
 
     cursor: pointer;
 
@@ -557,19 +555,48 @@ const dairyFarms =
 
 .button-primary {
 
-    background: #2563eb;
+    background: #16a34a;
 
     color: #ffffff;
 
     box-shadow:
-        0 5px 14px rgba(37, 99, 235, 0.20);
+        0 5px 14px rgba(22, 163, 74, 0.22);
+
+}
+
+.button-primary:hover {
+
+    background: #15803d;
+
+    box-shadow:
+        0 7px 18px rgba(22, 163, 74, 0.28);
+
+}
+
+
+/* ==========================================================
+   REQUIRED FIELD INDICATOR
+========================================================== */
+
+.form-group label::after {
+
+    content: "";
+
+}
+
+.form-group label:has(+ input[required])::after,
+.form-group label:has(+ select[required])::after {
+
+    content: " *";
+
+    color: #dc2626;
 
 }
 
 
 /* ==========================================================
    MOBILE
-   ========================================================== */
+========================================================== */
 
 @media (max-width: 700px) {
 
@@ -618,6 +645,24 @@ const dairyFarms =
 
 }
 
+
+/* ==========================================================
+   REDUCED MOTION
+========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .button,
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+
+        transition: none;
+
+    }
+
+}
+
 </style>
 
 
@@ -626,7 +671,7 @@ const dairyFarms =
 
     <!-- ======================================================
          HEADER
-         ====================================================== -->
+    ====================================================== -->
 
     <div class="add-dairy-header">
 
@@ -655,7 +700,7 @@ const dairyFarms =
 
     <!-- ======================================================
          MAIN CARD
-         ====================================================== -->
+    ====================================================== -->
 
     <div class="add-dairy-card">
 
@@ -671,7 +716,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  FORM STATUS
-                 ================================================== -->
+            ================================================== -->
 
             <div
                 id="formSaveStatus"
@@ -683,7 +728,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  PROFILE IMAGE
-                 ================================================== -->
+            ================================================== -->
 
             <div class="profile-image-section">
 
@@ -726,14 +771,14 @@ const dairyFarms =
 
             <!-- ==================================================
                  RECORD TYPE
-                 ================================================== -->
+            ================================================== -->
 
             <div class="record-type-card">
 
                 <div class="form-group">
 
                     <label for="recordType">
-                        What are you adding? *
+                        What are you adding?
                     </label>
 
                     <select
@@ -768,25 +813,24 @@ const dairyFarms =
             <!-- ==================================================
                  INTERNAL STATUS ELEMENT
 
-                 Never displayed to the user.
-                 Used only by JavaScript when necessary.
-                 ================================================== -->
+                 Hidden from the user.
+            ================================================== -->
 
             <div
                 id="recordTypeInfo"
-                aria-hidden="true"
                 hidden
+                aria-hidden="true"
             ></div>
 
 
             <!-- ==================================================
                  NAME
-                 ================================================== -->
+            ================================================== -->
 
             <div class="form-group">
 
                 <label for="name">
-                    Name *
+                    Name
                 </label>
 
                 <input
@@ -803,7 +847,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  DAIRY FARM TYPE
-                 ================================================== -->
+            ================================================== -->
 
             <div
                 id="farmTypeGroup"
@@ -811,7 +855,7 @@ const dairyFarms =
             >
 
                 <label for="farmType">
-                    Dairy Farm Type *
+                    Dairy Farm Type
                 </label>
 
                 <select
@@ -858,8 +902,8 @@ const dairyFarms =
 
 
             <!-- ==================================================
-                 ANIMAL FARM
-                 ================================================== -->
+                 ANIMAL PARENT DAIRY FARM
+            ================================================== -->
 
             <div
                 id="animalFarmGroup"
@@ -867,7 +911,7 @@ const dairyFarms =
             >
 
                 <label for="animalFarmCode">
-                    Dairy Farm *
+                    Dairy Farm
                 </label>
 
                 <div class="code-help">
@@ -897,11 +941,9 @@ const dairyFarms =
                         <option
                             value="<%= farm.code %>"
                         >
-
                             <%= farm.name || "Dairy Farm" %>
                             —
                             <%= farm.code %>
-
                         </option>
 
                     <%
@@ -917,7 +959,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  ANIMAL GENDER
-                 ================================================== -->
+            ================================================== -->
 
             <div
                 id="animalGenderGroup"
@@ -925,7 +967,7 @@ const dairyFarms =
             >
 
                 <label for="gender">
-                    Gender *
+                    Gender
                 </label>
 
                 <select
@@ -953,7 +995,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  ANIMAL DATE OF BIRTH
-                 ================================================== -->
+            ================================================== -->
 
             <div
                 id="dateOfBirthGroup"
@@ -961,7 +1003,7 @@ const dairyFarms =
             >
 
                 <label for="dateOfBirth">
-                    Date of Birth *
+                    Date of Birth
                 </label>
 
                 <input
@@ -977,11 +1019,10 @@ const dairyFarms =
             <!-- ==================================================
                  ANIMAL BREED
 
-                 IMPORTANT:
-                 Breed values are generated from dairyBreeds,
-                 which must come from the Dairy model/backend.
-                 No breed list is hardcoded here.
-                 ================================================== -->
+                 Breed options come from dairyBreeds.
+                 dairyBreeds must be supplied by the backend
+                 from the Dairy model.
+            ================================================== -->
 
             <div
                 id="animalBreedGroup"
@@ -989,7 +1030,7 @@ const dairyFarms =
             >
 
                 <label for="breed">
-                    Breed *
+                    Breed
                 </label>
 
                 <select
@@ -1023,7 +1064,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  ANIMAL MASS
-                 ================================================== -->
+            ================================================== -->
 
             <div
                 id="massGroup"
@@ -1049,7 +1090,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  STRUCTURE TYPE
-                 ================================================== -->
+            ================================================== -->
 
             <div
                 id="structureTypeGroup"
@@ -1057,7 +1098,7 @@ const dairyFarms =
             >
 
                 <label for="structureType">
-                    Type *
+                    Type
                 </label>
 
                 <select
@@ -1132,8 +1173,8 @@ const dairyFarms =
 
 
             <!-- ==================================================
-                 STRUCTURE FARM
-                 ================================================== -->
+                 STRUCTURE PARENT FARM
+            ================================================== -->
 
             <div
                 id="structureFarmGroup"
@@ -1172,11 +1213,9 @@ const dairyFarms =
                         <option
                             value="<%= farm.code %>"
                         >
-
                             <%= farm.name || "Dairy Farm" %>
                             —
                             <%= farm.code %>
-
                         </option>
 
                     <%
@@ -1192,12 +1231,10 @@ const dairyFarms =
 
             <!-- ==================================================
                  FINANCIAL INFORMATION
-                 ================================================== -->
+            ================================================== -->
 
             <div class="form-grid">
 
-
-                <!-- BUYING PRICE -->
 
                 <div class="form-group">
 
@@ -1216,8 +1253,6 @@ const dairyFarms =
 
                 </div>
 
-
-                <!-- CURRENT WORTH -->
 
                 <div class="form-group">
 
@@ -1242,7 +1277,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  DESCRIPTION
-                 ================================================== -->
+            ================================================== -->
 
             <div class="form-group">
 
@@ -1261,7 +1296,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  CONDITION
-                 ================================================== -->
+            ================================================== -->
 
             <div class="form-group">
 
@@ -1281,7 +1316,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  LOCATION
-                 ================================================== -->
+            ================================================== -->
 
             <div class="form-group">
 
@@ -1301,7 +1336,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  STATUS
-                 ================================================== -->
+            ================================================== -->
 
             <div class="form-group">
 
@@ -1340,7 +1375,7 @@ const dairyFarms =
 
             <!-- ==================================================
                  ACTIONS
-                 ================================================== -->
+            ================================================== -->
 
             <div class="form-actions">
 
@@ -1371,25 +1406,21 @@ const dairyFarms =
 
 <script>
 
-/* ==========================================================
-   ADD DAIRY / ASSET PAGE JAVASCRIPT
+/*
+============================================================
+ADD DAIRY / ASSET PAGE JAVASCRIPT
 
-   All logic here controls the browser UI only.
+This script controls:
+- Showing the correct fields
+- Hiding irrelevant fields
+- Enabling/disabling conditional fields
+- Image preview
+- Basic browser-side validation
 
-   The server remains responsible for validating:
-   - record type
-   - farm type
-   - animal gender
-   - breed
-   - parent farm
-   - prices
-   - dates
-   - permissions
-   - generated codes
-
-   Never trust browser validation as authorization/security.
-   ========================================================== */
-
+The server remains responsible for all final validation,
+authorization, breed validation and code generation.
+============================================================
+*/
 
 document.addEventListener(
     "DOMContentLoaded",
@@ -1397,44 +1428,38 @@ document.addEventListener(
 
 
         /* ==================================================
-           SELECTORS
-           ================================================== */
+           MAIN ELEMENTS
+        ================================================== */
 
         const form =
             document.getElementById(
                 "addDairyForm"
             );
 
-
         const recordType =
             document.getElementById(
                 "recordType"
             );
-
 
         const statusBox =
             document.getElementById(
                 "formSaveStatus"
             );
 
-
         const saveButton =
             document.getElementById(
                 "saveDairyButton"
             );
-
 
         const profileImage =
             document.getElementById(
                 "profileImage"
             );
 
-
         const profileImagePreview =
             document.getElementById(
                 "profileImagePreview"
             );
-
 
         const profileImagePlaceholder =
             document.getElementById(
@@ -1443,50 +1468,43 @@ document.addEventListener(
 
 
         /* ==================================================
-           RECORD SECTIONS
-           ================================================== */
+           CONDITIONAL SECTIONS
+        ================================================== */
 
         const farmTypeGroup =
             document.getElementById(
                 "farmTypeGroup"
             );
 
-
         const animalFarmGroup =
             document.getElementById(
                 "animalFarmGroup"
             );
-
 
         const animalGenderGroup =
             document.getElementById(
                 "animalGenderGroup"
             );
 
-
         const dateOfBirthGroup =
             document.getElementById(
                 "dateOfBirthGroup"
             );
-
 
         const animalBreedGroup =
             document.getElementById(
                 "animalBreedGroup"
             );
 
-
         const massGroup =
             document.getElementById(
                 "massGroup"
             );
 
-
         const structureTypeGroup =
             document.getElementById(
                 "structureTypeGroup"
             );
-
 
         const structureFarmGroup =
             document.getElementById(
@@ -1495,50 +1513,43 @@ document.addEventListener(
 
 
         /* ==================================================
-           FIELDS
-           ================================================== */
+           CONDITIONAL FIELDS
+        ================================================== */
 
         const farmType =
             document.getElementById(
                 "farmType"
             );
 
-
         const animalFarmCode =
             document.getElementById(
                 "animalFarmCode"
             );
-
 
         const gender =
             document.getElementById(
                 "gender"
             );
 
-
         const dateOfBirth =
             document.getElementById(
                 "dateOfBirth"
             );
-
 
         const breed =
             document.getElementById(
                 "breed"
             );
 
-
         const mass =
             document.getElementById(
                 "mass"
             );
 
-
         const structureType =
             document.getElementById(
                 "structureType"
             );
-
 
         const structureFarmCode =
             document.getElementById(
@@ -1547,49 +1558,65 @@ document.addEventListener(
 
 
         /* ==================================================
-           ALL CONDITIONAL SECTIONS
-           ================================================== */
+           SECTION MAP
+        ================================================== */
 
         const sections = [
 
             {
                 element: farmTypeGroup,
-                fields: [farmType]
+                fields: [
+                    farmType
+                ]
             },
 
             {
                 element: animalFarmGroup,
-                fields: [animalFarmCode]
+                fields: [
+                    animalFarmCode
+                ]
             },
 
             {
                 element: animalGenderGroup,
-                fields: [gender]
+                fields: [
+                    gender
+                ]
             },
 
             {
                 element: dateOfBirthGroup,
-                fields: [dateOfBirth]
+                fields: [
+                    dateOfBirth
+                ]
             },
 
             {
                 element: animalBreedGroup,
-                fields: [breed]
+                fields: [
+                    breed
+                ]
             },
 
             {
                 element: massGroup,
-                fields: [mass]
+                fields: [
+                    mass
+                ]
             },
 
             {
                 element: structureTypeGroup,
-                fields: [structureType]
+                fields: [
+                    structureType
+                ]
             },
 
             {
                 element: structureFarmGroup,
-                fields: [structureFarmCode]
+                fields: [
+                    structureFarmCode
+                ]
             }
 
         ];
@@ -1597,7 +1624,7 @@ document.addEventListener(
 
         /* ==================================================
            HIDE ALL CONDITIONAL SECTIONS
-           ================================================== */
+        ================================================== */
 
         function hideAllSections() {
 
@@ -1606,7 +1633,9 @@ document.addEventListener(
 
                     section.element
                         .classList
-                        .remove("visible");
+                        .remove(
+                            "visible"
+                        );
 
 
                     section.fields.forEach(
@@ -1629,24 +1658,12 @@ document.addEventListener(
 
         /* ==================================================
            SHOW SECTION
-           ================================================== */
+        ================================================== */
 
         function showSection(
             section,
             requiredFields = []
         ) {
-
-            if (!section) {
-
-                return;
-
-            }
-
-
-            section.classList.add(
-                "visible"
-            );
-
 
             const sectionData =
                 sections.find(
@@ -1666,6 +1683,11 @@ document.addEventListener(
                 return;
 
             }
+
+
+            section.classList.add(
+                "visible"
+            );
 
 
             sectionData.fields.forEach(
@@ -1695,12 +1717,50 @@ document.addEventListener(
 
 
         /* ==================================================
-           UPDATE FORM FOR RECORD TYPE
-           ================================================== */
+           CLEAR CONDITIONAL VALUES
+        ================================================== */
+
+        function clearConditionalValues() {
+
+            sections.forEach(
+                function (section) {
+
+                    section.fields.forEach(
+                        function (field) {
+
+                            if (
+                                field.tagName ===
+                                "SELECT"
+                            ) {
+
+                                field.selectedIndex =
+                                    0;
+
+                            } else {
+
+                                field.value =
+                                    "";
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* ==================================================
+           UPDATE RECORD TYPE
+        ================================================== */
 
         function updateRecordType() {
 
             hideAllSections();
+
+            clearConditionalValues();
 
 
             const selectedType =
@@ -1714,7 +1774,9 @@ document.addEventListener(
 
                 showSection(
                     farmTypeGroup,
-                    [farmType]
+                    [
+                        farmType
+                    ]
                 );
 
             }
@@ -1727,25 +1789,33 @@ document.addEventListener(
 
                 showSection(
                     animalFarmGroup,
-                    [animalFarmCode]
+                    [
+                        animalFarmCode
+                    ]
                 );
 
 
                 showSection(
                     animalGenderGroup,
-                    [gender]
+                    [
+                        gender
+                    ]
                 );
 
 
                 showSection(
                     dateOfBirthGroup,
-                    [dateOfBirth]
+                    [
+                        dateOfBirth
+                    ]
                 );
 
 
                 showSection(
                     animalBreedGroup,
-                    [breed]
+                    [
+                        breed
+                    ]
                 );
 
 
@@ -1763,7 +1833,9 @@ document.addEventListener(
 
                 showSection(
                     structureTypeGroup,
-                    [structureType]
+                    [
+                        structureType
+                    ]
                 );
 
 
@@ -1778,15 +1850,15 @@ document.addEventListener(
 
         /* ==================================================
            RECORD TYPE CHANGE
-           ================================================== */
+        ================================================== */
 
         recordType.addEventListener(
             "change",
             function () {
 
-                updateRecordType();
-
                 clearStatus();
+
+                updateRecordType();
 
             }
         );
@@ -1794,11 +1866,14 @@ document.addEventListener(
 
         /* ==================================================
            IMAGE PREVIEW
-           ================================================== */
+        ================================================== */
 
         profileImage.addEventListener(
             "change",
             function () {
+
+                clearStatus();
+
 
                 const file =
                     this.files &&
@@ -1832,7 +1907,8 @@ document.addEventListener(
                         "Please select a valid image file."
                     );
 
-                    this.value = "";
+                    this.value =
+                        "";
 
                     return;
 
@@ -1850,12 +1926,10 @@ document.addEventListener(
                             .src =
                             event.target.result;
 
-
                         profileImagePreview
                             .style
                             .display =
                             "block";
-
 
                         profileImagePlaceholder
                             .style
@@ -1875,7 +1949,7 @@ document.addEventListener(
 
         /* ==================================================
            STATUS HELPERS
-           ================================================== */
+        ================================================== */
 
         function clearStatus() {
 
@@ -1902,8 +1976,8 @@ document.addEventListener(
 
 
         /* ==================================================
-           CLIENT-SIDE VALIDATION
-           ================================================== */
+           CLIENT VALIDATION
+        ================================================== */
 
         function validateForm() {
 
@@ -1922,7 +1996,9 @@ document.addEventListener(
 
             const name =
                 document
-                    .getElementById("name")
+                    .getElementById(
+                        "name"
+                    )
                     .value
                     .trim();
 
@@ -2082,7 +2158,7 @@ document.addEventListener(
 
         /* ==================================================
            FORM SUBMISSION
-           ================================================== */
+        ================================================== */
 
         form.addEventListener(
             "submit",
@@ -2099,7 +2175,9 @@ document.addEventListener(
 
                     event.preventDefault();
 
-                    showError(error);
+                    showError(
+                        error
+                    );
 
                     return;
 
@@ -2118,12 +2196,14 @@ document.addEventListener(
 
         /* ==================================================
            INITIAL STATE
-           ================================================== */
+        ================================================== */
+
+        hideAllSections();
 
         updateRecordType();
 
-    }
 
+    }
 );
 
 </script>
