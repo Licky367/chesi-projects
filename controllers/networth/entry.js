@@ -14,38 +14,73 @@ async function getNetWorth(req, res) {
             await networthService.getNetWorth();
 
 
+        /* ==================================================
+           SAFETY
+           
+           Make sure the service always gives the view
+           arrays, even if one of them is missing.
+        ================================================== */
+
+        const standaloneAssets =
+            Array.isArray(networth.standaloneAssets)
+                ? networth.standaloneAssets
+                : [];
+
+
+        const structures =
+            Array.isArray(networth.structures)
+                ? networth.structures
+                : [];
+
+
+        const totalNetWorth =
+            Number(networth.totalNetWorth || 0);
+
+
+        /* ==================================================
+           RENDER NET WORTH
+        ================================================== */
+
         return res.render(
             "networth",
             {
 
-                /*
-                 * Total current estimated worth
-                 * of all assets included in Net Worth.
-                 */
+                /* ------------------------------------------
+                   TOTAL NET WORTH
+                ------------------------------------------ */
 
-                totalNetWorth:
-                    networth.totalNetWorth,
+                totalNetWorth,
 
 
-                /*
-                 * Identified Dairy assets that:
-                 *
-                 * code > 0
-                 * assetCode === null
-                 */
+                /* ------------------------------------------
+                   STANDALONE ASSETS
 
-                standaloneAssets:
-                    networth.standaloneAssets,
+                   Definition:
+
+                       Dairy
+                       code > 0
+                       AND
+                       assetCode is null/missing
+
+                   The service is responsible for applying
+                   this definition.
+                ------------------------------------------ */
+
+                standaloneAssets,
 
 
-                /*
-                 * Dairy Farms / structures:
-                 *
-                 * code < 0
-                 */
+                /* ------------------------------------------
+                   DAIRY FARMS / STRUCTURES
 
-                structures:
-                    networth.structures
+                   Definition:
+
+                       dairy.code < 0
+
+                   The service is responsible for filtering
+                   these records.
+                ------------------------------------------ */
+
+                structures
 
             }
         );
@@ -58,6 +93,10 @@ async function getNetWorth(req, res) {
         );
 
 
+        /* ==================================================
+           ERROR RESPONSE
+        ================================================== */
+
         return res.status(500).send(
             "Unable to load Net Worth."
         );
@@ -66,6 +105,10 @@ async function getNetWorth(req, res) {
 
 }
 
+
+/* =========================================================
+   EXPORTS
+========================================================== */
 
 module.exports = {
 
