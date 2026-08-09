@@ -41,43 +41,15 @@ async function getNetWorth(req, res) {
 
 
         /* ======================================================
-           RENDER NET WORTH PAGE
+           RENDER
         ====================================================== */
 
         return res.render(
             "networth",
             {
-
-                /*
-                 * Total current estimated worth
-                 * of all actual assets.
-                 */
-
                 totalNetWorth,
-
-
-                /*
-                 * Standalone identified assets.
-                 *
-                 * Definition handled by the service:
-                 *
-                 *     code > 0
-                 *     assetCode is null/missing/empty
-                 */
-
                 standaloneAssets,
-
-
-                /*
-                 * Dairy Farm structures.
-                 *
-                 * Definition handled by the service:
-                 *
-                 *     code < 0
-                 */
-
                 structures
-
             }
         );
 
