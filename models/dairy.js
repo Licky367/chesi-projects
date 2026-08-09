@@ -12,17 +12,29 @@ const mongoose = require("mongoose");
 const DAIRY_BREEDS = [
 
     "Friesian",
+
     "Ayrshire",
+
     "Guernsey",
+
     "Jersey",
+
     "Brown Swiss",
+
     "Sahiwal",
+
     "Boran",
+
     "Ankole",
+
     "Fleckvieh",
+
     "Simmental",
+
     "Holstein",
+
     "Crossbreed",
+
     "Other"
 
 ];
@@ -31,8 +43,11 @@ const DAIRY_BREEDS = [
 const DAIRY_STATUSES = [
 
     "active",
+
     "sold",
+
     "disposed",
+
     "inactive"
 
 ];
@@ -64,9 +79,14 @@ const dairySchema = new mongoose.Schema(
         // ==================================================
         // CODE
         //
-        // > 0  = identified dairy animal
-        // < 0  = Dairy Farm / structure
-        // null = manual asset
+        // Positive:
+        //     Identified dairy animal
+        //
+        // Negative:
+        //     Dairy Farm / structure
+        //
+        // Null:
+        //     Manual asset
         // ==================================================
 
         code: {
@@ -87,6 +107,7 @@ const dairySchema = new mongoose.Schema(
                         return true;
 
                     }
+
 
                     return Number.isInteger(value);
 
@@ -117,25 +138,23 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // DATE OF BIRTH
+        //
+        // IMPORTANT:
+        //
+        // This field is NOT mandatory.
+        //
+        // It can be:
+        //
+        //     a valid Date
+        //     null
+        //     undefined
+        //
+        // No `required` validator is used.
         // ==================================================
 
         dateOfBirth: {
 
             type: Date,
-
-            required: function() {
-
-                return (
-
-                    this.code !== null &&
-
-                    this.code !== undefined &&
-
-                    Number(this.code) > 0
-
-                );
-
-            },
 
             default: null
 
@@ -171,7 +190,7 @@ const dairySchema = new mongoose.Schema(
 
 
         // ==================================================
-        // PARENT / FARM ASSIGNMENT
+        // ASSET / FARM ASSIGNMENT
         // ==================================================
 
         assetCode: {
@@ -240,7 +259,8 @@ const dairySchema = new mongoose.Schema(
 
             markedBy: {
 
-                type: mongoose.Schema.Types.ObjectId,
+                type:
+                    mongoose.Schema.Types.ObjectId,
 
                 ref: "User",
 
@@ -258,7 +278,8 @@ const dairySchema = new mongoose.Schema(
 
             clearedBy: {
 
-                type: mongoose.Schema.Types.ObjectId,
+                type:
+                    mongoose.Schema.Types.ObjectId,
 
                 ref: "User",
 
@@ -333,7 +354,8 @@ const dairySchema = new mongoose.Schema(
 
             markedBy: {
 
-                type: mongoose.Schema.Types.ObjectId,
+                type:
+                    mongoose.Schema.Types.ObjectId,
 
                 ref: "User",
 
@@ -351,7 +373,8 @@ const dairySchema = new mongoose.Schema(
 
             clearedBy: {
 
-                type: mongoose.Schema.Types.ObjectId,
+                type:
+                    mongoose.Schema.Types.ObjectId,
 
                 ref: "User",
 
@@ -381,9 +404,14 @@ const dairySchema = new mongoose.Schema(
         // ==================================================
         // TYPE
         //
-        // Positive code = breed
-        // Negative code = structure type
-        // Null code = manual asset type
+        // Positive code:
+        //     Dairy breed
+        //
+        // Negative code:
+        //     Structure type
+        //
+        // Null code:
+        //     Manual asset type
         // ==================================================
 
         type: {
@@ -541,6 +569,11 @@ const dairySchema = new mongoose.Schema(
 
 // ==========================================================
 // VIRTUAL: GENDER
+//
+// Positive code only.
+//
+// Even = Female
+// Odd  = Male
 // ==========================================================
 
 dairySchema.virtual("gender").get(function() {
@@ -695,6 +728,9 @@ dairySchema.virtual("isAssignedAsset").get(function() {
 
 // ==========================================================
 // VIRTUAL: AGE TEXT
+//
+// DOB is optional.
+// If DOB does not exist, returns "".
 // ==========================================================
 
 dairySchema.virtual("ageText").get(function() {
@@ -719,9 +755,15 @@ dairySchema.virtual("ageText").get(function() {
     if (
         Number.isNaN(
             dob.getTime()
-        ) ||
-        dob > now
+        )
     ) {
+
+        return "";
+
+    }
+
+
+    if (dob > now) {
 
         return "";
 
@@ -814,8 +856,7 @@ dairySchema.virtual("ageYears").get(function() {
     if (
         Number.isNaN(
             dob.getTime()
-        ) ||
-        dob > now
+        )
     ) {
 
         return null;
@@ -864,7 +905,9 @@ dairySchema.virtual("ageYears").get(function() {
 dairySchema.virtual("isMilkingText").get(function() {
 
     return this.isMilking
+
         ? "Yes"
+
         : "No";
 
 });
@@ -883,7 +926,9 @@ dairySchema.virtual("displayImage").get(function() {
             `https://ui-avatars.com/api/?name=` +
 
             `${encodeURIComponent(
+
                 this.name || "Dairy"
+
             )}`
 
         );
@@ -950,9 +995,13 @@ dairySchema.virtual("needsMedicalAttention").get(function() {
 
 dairySchema.virtual("assetValue").get(function() {
 
-    return Number(
-        this.currentWorth
-    ) || 0;
+    return (
+
+        Number(
+            this.currentWorth
+        ) || 0
+
+    );
 
 });
 
@@ -963,7 +1012,11 @@ dairySchema.virtual("assetValue").get(function() {
 
 dairySchema.virtual("isActiveAsset").get(function() {
 
-    return this.status === "active";
+    return (
+
+        this.status === "active"
+
+    );
 
 });
 
@@ -1057,7 +1110,7 @@ dairySchema.pre(
 
 
         // ==================================================
-        // IDENTIFIED DAIRY
+        // IDENTIFIED ANIMAL
         // ==================================================
 
         if (
@@ -1070,9 +1123,9 @@ dairySchema.pre(
 
         ) {
 
-            // ------------------------------------------------
-            // Male animals cannot be milking
-            // ------------------------------------------------
+            // ----------------------------------------------
+            // Male animals cannot be milking.
+            // ----------------------------------------------
 
             if (!this.isFemale) {
 
@@ -1081,9 +1134,9 @@ dairySchema.pre(
             }
 
 
-            // ------------------------------------------------
-            // Validate breed when supplied
-            // ------------------------------------------------
+            // ----------------------------------------------
+            // Validate breed only when supplied.
+            // ----------------------------------------------
 
             if (
 
@@ -1138,7 +1191,7 @@ dairySchema.pre(
 
 
         // ==================================================
-        // ENSURE MEDICAL OBJECT
+        // MEDICAL OBJECT
         // ==================================================
 
         if (!this.medicalAttention) {
@@ -1308,12 +1361,21 @@ dairySchema.pre(
 // INDEXES
 // ==========================================================
 
+
+// ==========================================================
+// MILKING
+// ==========================================================
+
 dairySchema.index({
 
     isMilking: 1
 
 });
 
+
+// ==========================================================
+// MAINTENANCE
+// ==========================================================
 
 dairySchema.index({
 
@@ -1322,12 +1384,20 @@ dairySchema.index({
 });
 
 
+// ==========================================================
+// MEDICAL
+// ==========================================================
+
 dairySchema.index({
 
     "medicalAttention.isMarked": 1
 
 });
 
+
+// ==========================================================
+// ASSET ASSIGNMENT
+// ==========================================================
 
 dairySchema.index({
 
@@ -1339,11 +1409,11 @@ dairySchema.index({
 
 
 // ==========================================================
-// UNIQUE CODE INDEX
+// CODE
 //
 // Numeric codes are unique.
 //
-// null is allowed multiple times.
+// Multiple null values are allowed.
 // ==========================================================
 
 dairySchema.index(
@@ -1410,6 +1480,7 @@ async function() {
         await this.aggregate([
 
             {
+
                 $match: {
 
                     status: "active"
@@ -1419,6 +1490,7 @@ async function() {
             },
 
             {
+
                 $group: {
 
                     _id: null,
@@ -1469,16 +1541,10 @@ async function() {
 //
 // IMPORTANT:
 //
-// mongoose.models.Dairy
-//
-// prevents:
+// mongoose.models.Dairy prevents:
 //
 //     OverwriteModelError:
 //     Cannot overwrite `Dairy` model once compiled.
-//
-// This is especially important during development,
-// hot reloads, and when multiple route modules require
-// this model.
 // ==========================================================
 
 const Dairy =
@@ -1490,24 +1556,41 @@ const Dairy =
 
 
 // ==========================================================
-// ATTACH CONSTANTS TO THE MODEL
+// EXPORT MODEL
 //
-// This preserves:
+// IMPORTANT:
 //
-//     Dairy.DAIRY_BREEDS
-//     Dairy.DAIRY_STATUSES
+// Export the MODEL itself.
 //
-// WITHOUT changing module.exports into a plain object.
+// This allows:
 //
-// Therefore this continues to work:
+//     Dairy.find()
+//     Dairy.findOne()
+//     Dairy.findById()
+//     new Dairy()
+//     Dairy.aggregate()
+//
+// ==========================================================
+
+module.exports = Dairy;
+
+
+// ==========================================================
+// OPTIONAL CONSTANT EXPORTS
+//
+// These are attached to the model itself rather than
+// replacing module.exports.
+//
+// Therefore:
 //
 //     const Dairy = require("../models/dairy");
 //
-//     Dairy.find(...);
+// still gives the actual Mongoose model.
 //
-//     Dairy.findById(...);
+// Constants can be accessed as:
 //
-//     new Dairy(...);
+//     Dairy.DAIRY_BREEDS
+//     Dairy.DAIRY_STATUSES
 // ==========================================================
 
 Dairy.DAIRY_BREEDS =
@@ -1515,30 +1598,3 @@ Dairy.DAIRY_BREEDS =
 
 Dairy.DAIRY_STATUSES =
     DAIRY_STATUSES;
-
-
-// ==========================================================
-// EXPORT
-//
-// IMPORTANT:
-//
-// Export the MODEL itself.
-//
-// DO NOT do:
-//
-//     module.exports = {
-//         Dairy,
-//         DAIRY_BREEDS,
-//         DAIRY_STATUSES
-//     };
-//
-// because your services use:
-//
-//     Dairy.find()
-//     Dairy.findOne()
-//     Dairy.findById()
-//     new Dairy()
-// ==========================================================
-
-module.exports =
-    Dairy;
