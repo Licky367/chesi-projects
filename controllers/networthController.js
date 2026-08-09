@@ -11,29 +11,32 @@ const networthService =
 // ==========================================================
 
 /**
- * Determine whether the request expects a JSON response.
+ * Determine whether the request expects JSON.
  *
- * The frontend should send:
- *
- *     Accept: application/json
- *
- * when using fetch().
- *
- * Normal browser form submissions can continue to
- * receive redirects.
+ * Used by fetch/AJAX requests.
  */
 function wantsJSON(req) {
 
     return (
+
         req.xhr === true ||
+
         (
             typeof req.headers.accept === "string" &&
-            req.headers.accept.includes("application/json")
+
+            req.headers.accept.includes(
+                "application/json"
+            )
         )
+
     );
 
 }
 
+
+// ==========================================================
+// ERROR RESPONSE HELPERS
+// ==========================================================
 
 /**
  * Render the standard application error page.
@@ -53,6 +56,7 @@ function renderError(
         .render(
             "error",
             {
+
                 message:
                     error.message ||
                     fallbackMessage,
@@ -80,15 +84,17 @@ function jsonError(
 
     return res
         .status(statusCode)
-        .json({
+        .json(
+            {
 
-            success: false,
+                success: false,
 
-            message:
-                error.message ||
-                fallbackMessage
+                message:
+                    error.message ||
+                    fallbackMessage
 
-        });
+            }
+        );
 
 }
 
@@ -100,16 +106,14 @@ function jsonError(
 /**
  * Main Net Worth page.
  *
- * Provides:
+ * Service provides:
  *
  *     totalNetWorth
  *     standaloneAssets
  *     structures
  *
- * The service reads directly from MongoDB.
- *
- * Therefore every normal page load receives the
- * latest database state.
+ * The service reads the current state directly
+ * from MongoDB.
  */
 async function getNetWorth(
     req,
@@ -164,18 +168,8 @@ async function getNetWorth(
 // ==========================================================
 
 /**
- * Displays a Dairy Farm and all assets belonging
+ * Displays a Dairy Farm and all assets assigned
  * to that farm.
- *
- * The service:
- *
- *     1. Finds the Dairy Farm.
- *     2. Reads its negative code.
- *     3. Finds all records whose assetCode matches
- *        that farm code.
- *     4. Calculates the farm's current asset value.
- *
- * Every request therefore reads fresh data from MongoDB.
  */
 async function getDairyFarm(
     req,
@@ -238,9 +232,6 @@ async function getDairyFarm(
 
 /**
  * Displays the Add Asset page.
- *
- * This remains separate from editing an existing
- * asset.
  */
 async function getAddAsset(
     req,
@@ -302,22 +293,15 @@ async function getAddAsset(
 // ==========================================================
 
 /**
- * Creates a NEW manual Net Worth asset.
+ * Creates a NEW manual asset.
  *
- * This endpoint is intentionally different from:
+ * The service is responsible for enforcing the
+ * Dairy model's creation rules.
  *
- *     updateAsset()
+ * For manual assets:
  *
- * because this endpoint really is creating something
- * from scratch.
- *
- * The service is responsible for:
- *
- *     code = null
- *
+ *     code      = null
  *     assetCode = parent Dairy Farm code
- *
- * and all other creation rules.
  */
 async function addAsset(
     req,
@@ -331,22 +315,24 @@ async function addAsset(
         } = req.params;
 
 
+        /*
+         * ------------------------------------------------------
+         * CREATE ASSET
+         * ------------------------------------------------------
+         */
+
         const asset =
             await networthService.addAsset(
                 id,
-                req.body
+                req.body,
+                req.file
             );
 
 
         /*
-         * ======================================================
-         * AJAX / FETCH
-         * ======================================================
-         *
-         * Return the newly-created asset plus refreshed
-         * Net Worth information.
-         *
-         * This allows the frontend to update immediately.
+         * ------------------------------------------------------
+         * JSON / FETCH
+         * ------------------------------------------------------
          */
 
         if (
@@ -357,26 +343,28 @@ async function addAsset(
                 await networthService.getNetWorth();
 
 
-            return res.json({
+            return res.json(
+                {
 
-                success: true,
+                    success: true,
 
-                message:
-                    "Asset created successfully.",
+                    message:
+                        "Asset created successfully.",
 
-                asset,
+                    asset,
 
-                netWorth
+                    netWorth
 
-            });
+                }
+            );
 
         }
 
 
         /*
-         * ======================================================
+         * ------------------------------------------------------
          * NORMAL BROWSER REQUEST
-         * ======================================================
+         * ------------------------------------------------------
          */
 
         return res.redirect(
@@ -420,19 +408,18 @@ async function addAsset(
 // ==========================================================
 
 /**
- * Displays an existing asset's details/edit page.
+ * Displays an existing Dairy record for editing.
  *
  * IMPORTANT:
  *
- * This is an EDIT operation.
+ * This method does NOT create anything.
  *
- * It must never behave like addAsset().
+ * The service must return:
  *
- * Existing database values are supplied by the service
- * and displayed by networth-asset.ejs.
+ *     dairy
+ *     structures
  *
- * No "required field" validation should be imposed merely
- * because an existing optional database field is empty.
+ * for networth-asset.ejs.
  */
 async function getAsset(
     req,
@@ -494,40 +481,42 @@ async function getAsset(
 // ==========================================================
 
 /**
- * Updates an EXISTING asset.
+ * Updates an EXISTING Dairy record.
  *
- * This endpoint must NOT recreate the asset.
+ * This is the most important edit-page controller.
  *
- * The service updates only the fields that are actually
- * editable.
+ * It deliberately does NOT construct a new Dairy document.
  *
- * Existing database identity is preserved:
+ * It passes the submitted editable values to the service.
+ *
+ *
+ * Editable fields from networth-asset.ejs:
+ *
+ *     profileImage
+ *     name
+ *     dateOfBirth
+ *     type
+ *     buyingPrice
+ *     currentWorth
+ *     description
+ *     condition
+ *     location
+ *     assetCode
+ *     status
+ *     valuationDate
+ *
+ *
+ * Fields deliberately NOT accepted from the edit form:
  *
  *     _id
  *     code
+ *     acquisitionDate
+ *     needsMaintenance
+ *     maintenance
+ *     medicalAttention
  *
- * The service also handles:
- *
- *     assetCode
- *
- *     dateOfBirth
- *
- *     profileImage
- *
- *     financial fields
- *
- *     descriptive fields
- *
- *     status
- *
- *     valuation date
- *
- *
- * IMPORTANT:
- *
- * The controller does NOT perform creation validation.
- *
- * It simply passes the submitted changes to the service.
+ * The service/model remains responsible for enforcing
+ * all Dairy business rules.
  */
 async function updateAsset(
     req,
@@ -543,6 +532,86 @@ async function updateAsset(
 
         /*
          * ======================================================
+         * BUILD EDIT DATA
+         * ======================================================
+         *
+         * Do NOT simply pass req.body directly.
+         *
+         * Explicitly selecting editable fields prevents
+         * a client from modifying protected fields such as:
+         *
+         *     code
+         *     acquisitionDate
+         *     maintenance
+         *     medicalAttention
+         *
+         * This is especially important because the model
+         * contains several business rules based on `code`.
+         */
+
+        const updateData = {
+
+            name:
+                req.body.name,
+
+            dateOfBirth:
+                req.body.dateOfBirth,
+
+            type:
+                req.body.type,
+
+            buyingPrice:
+                req.body.buyingPrice,
+
+            currentWorth:
+                req.body.currentWorth,
+
+            description:
+                req.body.description,
+
+            condition:
+                req.body.condition,
+
+            location:
+                req.body.location,
+
+            assetCode:
+                req.body.assetCode,
+
+            status:
+                req.body.status,
+
+            valuationDate:
+                req.body.valuationDate
+
+        };
+
+
+        /*
+         * ======================================================
+         * PROFILE IMAGE
+         * ======================================================
+         *
+         * Multer should place the uploaded file in:
+         *
+         *     req.file
+         *
+         * The service decides how the image is stored and
+         * what value is written into Dairy.profileImage.
+         */
+
+        if (
+            req.file
+        ) {
+
+            updateData.profileImage =
+                req.file;
+
+        }
+
+
+        /*
+         * ======================================================
          * UPDATE EXISTING RECORD
          * ======================================================
          */
@@ -550,26 +619,16 @@ async function updateAsset(
         const updatedAsset =
             await networthService.updateAsset(
                 id,
-                req.body
+                updateData
             );
 
 
         /*
          * ======================================================
-         * REFRESH NET WORTH DATA
+         * REFRESH NET WORTH
          * ======================================================
          *
-         * This is deliberately calculated AFTER the update.
-         *
-         * Therefore:
-         *
-         *     currentWorth changes
-         *
-         *     status changes
-         *
-         *     asset location changes
-         *
-         * are immediately reflected in the returned data.
+         * Recalculate AFTER the update.
          */
 
         const netWorth =
@@ -578,47 +637,40 @@ async function updateAsset(
 
         /*
          * ======================================================
-         * AJAX / FETCH RESPONSE
+         * JSON / FETCH RESPONSE
          * ======================================================
-         *
-         * networth-asset.js can use this response to:
-         *
-         *     - show "Saved"
-         *     - update displayed values
-         *     - refresh Net Worth totals
-         *     - navigate/reload if necessary
          */
 
         if (
             wantsJSON(req)
         ) {
 
-            return res.json({
+            return res.json(
+                {
 
-                success: true,
+                    success: true,
 
-                message:
-                    "Asset updated successfully.",
+                    message:
+                        "Asset updated successfully.",
 
-                asset:
-                    updatedAsset,
+                    asset:
+                        updatedAsset,
 
-                netWorth
+                    netWorth
 
-            });
+                }
+            );
 
         }
 
 
         /*
          * ======================================================
-         * NORMAL BROWSER SUBMISSION
+         * NORMAL FORM SUBMISSION
          * ======================================================
          *
-         * Redirect back to the same asset page.
-         *
-         * The GET request will read the updated record
-         * directly from MongoDB.
+         * The GET page will load the fresh record again
+         * from MongoDB.
          */
 
         return res.redirect(
@@ -635,7 +687,7 @@ async function updateAsset(
 
         /*
          * ======================================================
-         * AJAX ERROR
+         * JSON / FETCH ERROR
          * ======================================================
          */
 
@@ -654,7 +706,7 @@ async function updateAsset(
 
         /*
          * ======================================================
-         * NORMAL BROWSER ERROR
+         * NORMAL FORM ERROR
          * ======================================================
          */
 
@@ -670,19 +722,11 @@ async function updateAsset(
 
 
 // ==========================================================
-// OPTIONAL JSON REFRESH ENDPOINT
+// GET /networth/data
 // ==========================================================
 
 /**
- * GET /networth/data
- *
- * This endpoint is useful for frontend automatic refresh.
- *
- * It returns the current Net Worth data without rendering
- * an EJS page.
- *
- * A frontend script can periodically call this endpoint,
- * or we can later replace polling with Socket.IO.
+ * Returns current Net Worth data as JSON.
  */
 async function getNetWorthData(
     req,
@@ -695,13 +739,15 @@ async function getNetWorthData(
             await networthService.getNetWorth();
 
 
-        return res.json({
+        return res.json(
+            {
 
-            success: true,
+                success: true,
 
-            ...data
+                ...data
 
-        });
+            }
+        );
 
     } catch (error) {
 
@@ -723,17 +769,12 @@ async function getNetWorthData(
 
 
 // ==========================================================
-// OPTIONAL JSON STRUCTURE REFRESH ENDPOINT
+// GET /networth/structure/:id/data
 // ==========================================================
 
 /**
- * GET /networth/structure/:id/data
- *
  * Returns the current Dairy Farm and its assets
- * without rendering the EJS page.
- *
- * This will allow networth-structures.js to refresh
- * the page after an asset is changed elsewhere.
+ * as JSON.
  */
 async function getDairyFarmData(
     req,
@@ -753,13 +794,15 @@ async function getDairyFarmData(
             );
 
 
-        return res.json({
+        return res.json(
+            {
 
-            success: true,
+                success: true,
 
-            ...data
+                ...data
 
-        });
+            }
+        );
 
     } catch (error) {
 
