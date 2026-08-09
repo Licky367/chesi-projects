@@ -192,18 +192,33 @@ async function getAddAsset(req, res) {
 ========================================================== */
 
 /**
- * Creates a manual asset belonging to a
- * Dairy Farm.
+ * Creates a manual Net Worth asset.
  *
- * The service creates the asset with:
+ * IMPORTANT:
  *
- *     code: null
+ * The manual asset remains:
  *
- *     assetCode:
+ *     code = null
+ *
+ *     assetCode =
  *         parent Dairy Farm's negative code
  *
- * The controller does not generate or modify
- * either code.
+ * assetCode is NOT changed by the controller.
+ *
+ * The service is responsible for creating
+ * the correct manual asset.
+ *
+ *
+ * After creation:
+ *
+ *     The service returns the newly created
+ *     asset.
+ *
+ *     The controller redirects to the parent
+ *     Dairy Farm page.
+ *
+ * The page can then use the normal automatic
+ * update mechanism on the client side.
  */
 async function addAsset(req, res) {
 
@@ -214,11 +229,20 @@ async function addAsset(req, res) {
         } = req.params;
 
 
-        await networthService.addAsset(
-            id,
-            req.body
-        );
+        const asset =
+            await networthService.addAsset(
+                id,
+                req.body
+            );
 
+
+        /*
+         * Normal browser request.
+         *
+         * Redirect back to the Dairy Farm
+         * after the asset has been successfully
+         * created.
+         */
 
         return res.redirect(
             `/networth/structure/${id}`
@@ -260,8 +284,10 @@ async function addAsset(req, res) {
  * Displays an asset's details/edit page.
  *
  * The service determines whether the selected
- * record is a valid asset and also provides
- * the available Dairy Farms for assignment.
+ * record is a valid asset.
+ *
+ * It also supplies the available Dairy Farms
+ * so the asset's location can be displayed/changed.
  */
 async function getAsset(req, res) {
 
@@ -316,25 +342,40 @@ async function getAsset(req, res) {
 ========================================================== */
 
 /**
- * Updates an existing asset.
+ * Updates an existing Net Worth asset.
  *
- * The service is responsible for enforcing
- * the asset ownership rules:
+ * The controller does NOT manipulate:
  *
- *     code > 0
- *         assetCode may be null
- *         or a valid negative Dairy Farm code
+ *     code
+ *     assetCode
  *
- *     code === null
- *         manual asset
- *         assetCode may identify its parent farm
+ * Those rules belong to networthService.
  *
- *     code < 0
- *         Dairy Farm
- *         assetCode must remain null
  *
- * The controller only passes the submitted
- * form data to the service.
+ * The service handles:
+ *
+ *     identified dairy:
+ *         code > 0
+ *
+ *     manual asset:
+ *         code === null
+ *
+ *     Dairy Farm:
+ *         code < 0
+ *
+ *
+ * For a manual asset:
+ *
+ *     code remains null
+ *
+ *     assetCode remains the negative code
+ *     of its parent Dairy Farm.
+ *
+ *
+ * The important point here is that once the
+ * service successfully saves the change,
+ * the response tells the client that the
+ * update has completed.
  */
 async function updateAsset(req, res) {
 
@@ -345,10 +386,44 @@ async function updateAsset(req, res) {
         } = req.params;
 
 
-        await networthService.updateAsset(
-            id,
-            req.body
-        );
+        const updatedAsset =
+            await networthService.updateAsset(
+                id,
+                req.body
+            );
+
+
+        /*
+         * Successful update.
+         *
+         * For a normal browser form submission,
+         * return to the asset page.
+         *
+         * The client-side automatic update logic
+         * can also use the returned updated record
+         * when this endpoint is called through fetch.
+         */
+
+        if (
+            req.headers.accept &&
+            req.headers.accept.includes(
+                "application/json"
+            )
+        ) {
+
+            return res.json({
+
+                success: true,
+
+                message:
+                    "Asset updated successfully.",
+
+                asset:
+                    updatedAsset
+
+            });
+
+        }
 
 
         return res.redirect(
@@ -367,16 +442,47 @@ async function updateAsset(req, res) {
             error.statusCode || 500;
 
 
-        return res.status(statusCode).render(
-    "error",
-    {
-        message:
-            error.message ||
-            "Unable to load page.",
+        /*
+         * If the request came through fetch/AJAX,
+         * return JSON so the page can update
+         * immediately without navigating away.
+         */
 
-        statusCode
-    }
-);
+        if (
+            req.headers.accept &&
+            req.headers.accept.includes(
+                "application/json"
+            )
+        ) {
+
+            return res
+                .status(statusCode)
+                .json({
+
+                    success: false,
+
+                    message:
+                        error.message ||
+                        "Unable to update asset."
+
+                });
+
+        }
+
+
+        return res
+            .status(statusCode)
+            .render(
+                "error",
+                {
+                    message:
+                        error.message ||
+                        "Unable to update asset.",
+
+                    statusCode
+
+                }
+            );
 
     }
 
