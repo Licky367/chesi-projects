@@ -8,7 +8,7 @@ const breeds =
         ? dairyBreeds
         : [];
 
-const farms =
+const dairyFarms =
     Array.isArray(structures)
         ? structures
         : [];
@@ -350,7 +350,7 @@ const farms =
 
 
 /* ==========================================================
-   CODE HELP
+   HELP TEXT
 ========================================================== */
 
 .code-help {
@@ -376,18 +376,24 @@ const farms =
    DYNAMIC SECTIONS
 ========================================================== */
 
-.code-dependent {
+.record-section {
 
     display: none;
 
 }
 
+.record-section.visible {
+
+    display: block;
+
+}
+
 
 /* ==========================================================
-   INFO
+   TYPE INFO
 ========================================================== */
 
-.structure-info {
+.record-type-info {
 
     padding: 14px 16px;
 
@@ -407,7 +413,7 @@ const farms =
 
 }
 
-.structure-info strong {
+.record-type-info strong {
 
     color: #294c37;
 
@@ -617,8 +623,8 @@ const farms =
 
         <p>
 
-            Create a new dairy, animal, farm,
-            structure, or other asset.
+            Create a dairy farm, animal,
+            structure, facility, or equipment.
 
         </p>
 
@@ -681,7 +687,7 @@ const farms =
                 <p class="profile-image-description">
 
                     Optional. Choose an image for
-                    this dairy or asset.
+                    this record.
 
                 </p>
 
@@ -698,43 +704,62 @@ const farms =
 
 
             <!-- =================================================
-                 CODE
+                 RECORD TYPE
             ================================================== -->
 
             <div class="form-group">
 
-                <label for="code">
+                <label for="recordType">
 
-                    Dairy Code
+                    What are you adding? *
 
                 </label>
 
-                <input
-                    type="number"
-                    id="code"
-                    name="code"
-                    step="1"
-                    placeholder="Leave empty for a structure or asset"
+
+                <select
+                    id="recordType"
+                    name="recordType"
+                    required
                 >
 
-                <div class="code-help">
+                    <option value="">
 
-                    <strong>Negative code:</strong>
-                    Dairy Farm.
+                        Select record type
 
-                    <br>
+                    </option>
 
-                    <strong>Positive code:</strong>
-                    Identified dairy / animal.
+                    <option value="dairyFarm">
 
-                    <br>
+                        Dairy Farm
 
-                    <strong>No code:</strong>
-                    Structure or manual asset.
+                    </option>
 
-                </div>
+                    <option value="animal">
+
+                        Animal
+
+                    </option>
+
+                    <option value="structure">
+
+                        Structure / Facility
+
+                    </option>
+
+                </select>
 
             </div>
+
+
+            <!-- =================================================
+                 RECORD TYPE INFORMATION
+            ================================================== -->
+
+            <div
+                id="recordTypeInfo"
+                class="record-type-info"
+                style="display:none;"
+            ></div>
 
 
             <!-- =================================================
@@ -762,17 +787,154 @@ const farms =
 
 
             <!-- =================================================
-                 DATE OF BIRTH
+                 FARM TYPE
+            ================================================== -->
+
+            <div
+                id="farmTypeGroup"
+                class="form-group record-section"
+            >
+
+                <label for="farmType">
+
+                    Dairy Farm Type *
+
+                </label>
+
+
+                <select
+                    id="farmType"
+                    name="farmType"
+                >
+
+                    <option value="">
+
+                        Select farm type
+
+                    </option>
+
+                    <option value="ranch">
+
+                        Ranch
+
+                    </option>
+
+                    <option value="zeroGrazing">
+
+                        Zero Grazing
+
+                    </option>
+
+                    <option value="semiZeroGrazing">
+
+                        Semi-Zero Grazing
+
+                    </option>
+
+                    <option value="pastureBased">
+
+                        Pasture-Based
+
+                    </option>
+
+                    <option value="mixedFarming">
+
+                        Mixed Farming
+
+                    </option>
+
+                    <option value="cooperative">
+
+                        Dairy Cooperative
+
+                    </option>
+
+                    <option value="other">
+
+                        Other
+
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- =================================================
+                 ANIMAL FARM
+            ================================================== -->
+
+            <div
+                id="animalFarmGroup"
+                class="form-group record-section"
+            >
+
+                <label for="animalFarmCode">
+
+                    Dairy Farm
+
+                </label>
+
+
+                <div class="code-help">
+
+                    Optional. Select the dairy farm
+                    where this animal belongs.
+
+                </div>
+
+
+                <select
+                    id="animalFarmCode"
+                    name="assetCode"
+                >
+
+                    <option value="">
+
+                        No Dairy Farm
+
+                    </option>
+
+
+                    <% dairyFarms.forEach(function(farm) { %>
+
+                        <% if (
+                            farm.code !== null &&
+                            farm.code !== undefined &&
+                            Number(farm.code) < 0
+                        ) { %>
+
+                            <option
+                                value="<%= farm.code %>"
+                            >
+
+                                <%= farm.name || "Dairy Farm" %>
+                                —
+                                <%= farm.code %>
+
+                            </option>
+
+                        <% } %>
+
+                    <% }); %>
+
+                </select>
+
+            </div>
+
+
+            <!-- =================================================
+                 ANIMAL DATE OF BIRTH
             ================================================== -->
 
             <div
                 id="dateOfBirthGroup"
-                class="form-group code-dependent"
+                class="form-group record-section"
             >
 
                 <label for="dateOfBirth">
 
-                    Date of Birth
+                    Date of Birth *
 
                 </label>
 
@@ -786,37 +948,38 @@ const farms =
 
 
             <!-- =================================================
-                 TYPE / BREED
+                 ANIMAL BREED
             ================================================== -->
 
-            <div class="form-group">
+            <div
+                id="animalBreedGroup"
+                class="form-group record-section"
+            >
 
-                <label for="type">
+                <label for="breed">
 
-                    <span id="typeLabel">
-
-                        Type
-
-                    </span>
+                    Breed *
 
                 </label>
 
 
                 <select
-                    id="type"
+                    id="breed"
                     name="type"
                 >
 
                     <option value="">
 
-                        Select type
+                        Select breed
 
                     </option>
 
 
                     <% breeds.forEach(function(breed) { %>
 
-                        <option value="<%= breed %>">
+                        <option
+                            value="<%= breed %>"
+                        >
 
                             <%= breed %>
 
@@ -824,19 +987,18 @@ const farms =
 
                     <% }); %>
 
-
                 </select>
 
             </div>
 
 
             <!-- =================================================
-                 MASS
+                 ANIMAL MASS
             ================================================== -->
 
             <div
                 id="massGroup"
-                class="form-group code-dependent"
+                class="form-group record-section"
             >
 
                 <label for="mass">
@@ -853,6 +1015,185 @@ const farms =
                     step="0.01"
                     placeholder="Enter animal mass"
                 >
+
+            </div>
+
+
+            <!-- =================================================
+                 STRUCTURE TYPE
+            ================================================== -->
+
+            <div
+                id="structureTypeGroup"
+                class="form-group record-section"
+            >
+
+                <label for="structureType">
+
+                    Type *
+
+                </label>
+
+
+                <select
+                    id="structureType"
+                    name="type"
+                >
+
+                    <option value="">
+
+                        Select type
+
+                    </option>
+
+                    <option value="machine">
+
+                        Machine
+
+                    </option>
+
+                    <option value="equipment">
+
+                        Equipment
+
+                    </option>
+
+                    <option value="tool">
+
+                        Tool
+
+                    </option>
+
+                    <option value="building">
+
+                        Building
+
+                    </option>
+
+                    <option value="cowshed">
+
+                        Cowshed
+
+                    </option>
+
+                    <option value="milkingParlour">
+
+                        Milking Parlour
+
+                    </option>
+
+                    <option value="feedStore">
+
+                        Feed Store
+
+                    </option>
+
+                    <option value="hayShed">
+
+                        Hay Shed
+
+                    </option>
+
+                    <option value="waterSystem">
+
+                        Water System
+
+                    </option>
+
+                    <option value="fencing">
+
+                        Fencing
+
+                    </option>
+
+                    <option value="vehicle">
+
+                        Vehicle
+
+                    </option>
+
+                    <option value="generator">
+
+                        Generator
+
+                    </option>
+
+                    <option value="solarSystem">
+
+                        Solar System
+
+                    </option>
+
+                    <option value="other">
+
+                        Other
+
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- =================================================
+                 STRUCTURE FARM
+            ================================================== -->
+
+            <div
+                id="structureFarmGroup"
+                class="form-group record-section"
+            >
+
+                <label for="structureFarmCode">
+
+                    Dairy Farm
+
+                </label>
+
+
+                <div class="code-help">
+
+                    Optional. Select the dairy farm
+                    where this structure or facility belongs.
+
+                </div>
+
+
+                <select
+                    id="structureFarmCode"
+                    name="structureFarmCode"
+                >
+
+                    <option value="">
+
+                        No Dairy Farm
+
+                    </option>
+
+
+                    <% dairyFarms.forEach(function(farm) { %>
+
+                        <% if (
+                            farm.code !== null &&
+                            farm.code !== undefined &&
+                            Number(farm.code) < 0
+                        ) { %>
+
+                            <option
+                                value="<%= farm.code %>"
+                            >
+
+                                <%= farm.name || "Dairy Farm" %>
+                                —
+                                <%= farm.code %>
+
+                            </option>
+
+                        <% } %>
+
+                    <% }); %>
+
+                </select>
 
             </div>
 
@@ -875,6 +1216,7 @@ const farms =
                     name="buyingPrice"
                     min="0"
                     step="0.01"
+                    placeholder="Enter buying price"
                 >
 
             </div>
@@ -898,6 +1240,7 @@ const farms =
                     name="currentWorth"
                     min="0"
                     step="0.01"
+                    placeholder="Enter current worth"
                 >
 
             </div>
@@ -918,7 +1261,7 @@ const farms =
                 <textarea
                     id="description"
                     name="description"
-                    placeholder="Describe the dairy or asset..."
+                    placeholder="Describe the dairy, animal, structure, or asset..."
                 ></textarea>
 
             </div>
@@ -969,66 +1312,6 @@ const farms =
 
 
             <!-- =================================================
-                 PARENT FARM
-            ================================================== -->
-
-            <div
-                id="parentFarmGroup"
-                class="form-group code-dependent"
-            >
-
-                <label for="assetCode">
-
-                    Parent Dairy Farm
-
-                </label>
-
-                <div class="code-help">
-
-                    Optional. Select the Dairy Farm
-                    where this dairy or asset belongs.
-
-                </div>
-
-
-                <select
-                    id="assetCode"
-                    name="assetCode"
-                >
-
-                    <option value="">
-
-                        No Parent Dairy Farm
-
-                    </option>
-
-
-                    <% farms.forEach(function(farm) { %>
-
-                        <% if (
-                            farm.code !== null &&
-                            farm.code !== undefined &&
-                            Number(farm.code) < 0
-                        ) { %>
-
-                            <option value="<%= farm.code %>">
-
-                                <%= farm.name || "Dairy Farm" %>
-                                —
-                                <%= farm.code %>
-
-                            </option>
-
-                        <% } %>
-
-                    <% }); %>
-
-                </select>
-
-            </div>
-
-
-            <!-- =================================================
                  STATUS
             ================================================== -->
 
@@ -1045,7 +1328,10 @@ const farms =
                     name="status"
                 >
 
-                    <option value="active" selected>
+                    <option
+                        value="active"
+                        selected
+                    >
 
                         Active
 
@@ -1080,9 +1366,15 @@ const farms =
 
             <div class="structure-info">
 
+                <strong>Code</strong>
+                is automatically assigned by the
+                system based on the record type.
+
+                <br><br>
+
                 <strong>Acquisition date</strong>
                 is automatically recorded when
-                this record is created.
+                the record is created.
 
                 <br><br>
 
@@ -1141,9 +1433,27 @@ document.addEventListener(
             );
 
 
-        const code =
+        const recordType =
             document.getElementById(
-                "code"
+                "recordType"
+            );
+
+
+        const recordTypeInfo =
+            document.getElementById(
+                "recordTypeInfo"
+            );
+
+
+        const farmTypeGroup =
+            document.getElementById(
+                "farmTypeGroup"
+            );
+
+
+        const animalFarmGroup =
+            document.getElementById(
+                "animalFarmGroup"
             );
 
 
@@ -1153,27 +1463,69 @@ document.addEventListener(
             );
 
 
+        const animalBreedGroup =
+            document.getElementById(
+                "animalBreedGroup"
+            );
+
+
         const massGroup =
             document.getElementById(
                 "massGroup"
             );
 
 
-        const parentFarmGroup =
+        const structureTypeGroup =
             document.getElementById(
-                "parentFarmGroup"
+                "structureTypeGroup"
             );
 
 
-        const type =
+        const structureFarmGroup =
             document.getElementById(
-                "type"
+                "structureFarmGroup"
             );
 
 
-        const typeLabel =
+        const farmType =
             document.getElementById(
-                "typeLabel"
+                "farmType"
+            );
+
+
+        const animalFarmCode =
+            document.getElementById(
+                "animalFarmCode"
+            );
+
+
+        const dateOfBirth =
+            document.getElementById(
+                "dateOfBirth"
+            );
+
+
+        const breed =
+            document.getElementById(
+                "breed"
+            );
+
+
+        const mass =
+            document.getElementById(
+                "mass"
+            );
+
+
+        const structureType =
+            document.getElementById(
+                "structureType"
+            );
+
+
+        const structureFarmCode =
+            document.getElementById(
+                "structureFarmCode"
             );
 
 
@@ -1195,94 +1547,221 @@ document.addEventListener(
             );
 
 
-        function updateCodeFields() {
+        /* ======================================================
+           HIDE ALL RECORD-SPECIFIC SECTIONS
+        ====================================================== */
 
-            const raw =
-                code.value.trim();
+        function hideRecordSections() {
 
+            const sections = [
 
-            const hasCode =
-                raw !== "";
+                farmTypeGroup,
 
+                animalFarmGroup,
 
-            const numericCode =
-                Number(raw);
+                dateOfBirthGroup,
 
+                animalBreedGroup,
 
-            const positive =
-                hasCode &&
-                Number.isFinite(numericCode) &&
-                numericCode > 0;
+                massGroup,
 
+                structureTypeGroup,
 
-            const negative =
-                hasCode &&
-                Number.isFinite(numericCode) &&
-                numericCode < 0;
+                structureFarmGroup
 
-
-            dateOfBirthGroup.style.display =
-                positive
-                    ? "block"
-                    : "none";
+            ];
 
 
-            massGroup.style.display =
-                positive
-                    ? "block"
-                    : "none";
+            sections.forEach(
+                function (section) {
+
+                    section.classList.remove(
+                        "visible"
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* ======================================================
+           UPDATE FORM
+        ====================================================== */
+
+        function updateForm() {
+
+            const selectedType =
+                recordType.value;
+
+
+            hideRecordSections();
+
+
+            recordTypeInfo.style.display =
+                "none";
+
+
+            recordTypeInfo.innerHTML =
+                "";
 
 
             /*
-             * Parent farm is available when:
-             *
-             * no code
-             * OR
-             * positive code
+             * Reset conditional required fields.
              */
 
-            parentFarmGroup.style.display =
-                (!hasCode || positive)
-                    ? "block"
-                    : "none";
+            farmType.required =
+                false;
+
+            animalFarmCode.required =
+                false;
+
+            dateOfBirth.required =
+                false;
+
+            breed.required =
+                false;
+
+            structureType.required =
+                false;
 
 
-            if (positive) {
+            /*
+             * DAIRY FARM
+             */
 
-                typeLabel.textContent =
-                    "Breed";
+            if (
+                selectedType ===
+                "dairyFarm"
+            ) {
 
-            } else {
+                farmTypeGroup.classList.add(
+                    "visible"
+                );
 
-                typeLabel.textContent =
-                    "Type";
+
+                farmType.required =
+                    true;
+
+
+                recordTypeInfo.innerHTML =
+
+                    "<strong>Dairy Farm:</strong> " +
+
+                    "The system will automatically " +
+
+                    "assign a unique negative dairy code. " +
+
+                    "You do not need to enter a code.";
+
+
+                recordTypeInfo.style.display =
+                    "block";
 
             }
 
 
             /*
-             * Dairy Farm itself does not
-             * receive a parent farm.
+             * ANIMAL
              */
 
-            if (negative) {
+            else if (
+                selectedType ===
+                "animal"
+            ) {
 
-                document
-                    .getElementById("assetCode")
-                    .value = "";
+                animalFarmGroup.classList.add(
+                    "visible"
+                );
+
+
+                dateOfBirthGroup.classList.add(
+                    "visible"
+                );
+
+
+                animalBreedGroup.classList.add(
+                    "visible"
+                );
+
+
+                massGroup.classList.add(
+                    "visible"
+                );
+
+
+                dateOfBirth.required =
+                    true;
+
+
+                breed.required =
+                    true;
+
+
+                recordTypeInfo.innerHTML =
+
+                    "<strong>Animal:</strong> " +
+
+                    "The system will automatically " +
+
+                    "assign a unique positive dairy code. " +
+
+                    "Select the dairy farm where the animal belongs.";
+
+
+                recordTypeInfo.style.display =
+                    "block";
+
+            }
+
+
+            /*
+             * STRUCTURE / FACILITY
+             */
+
+            else if (
+                selectedType ===
+                "structure"
+            ) {
+
+                structureTypeGroup.classList.add(
+                    "visible"
+                );
+
+
+                structureFarmGroup.classList.add(
+                    "visible"
+                );
+
+
+                structureType.required =
+                    true;
+
+
+                recordTypeInfo.innerHTML =
+
+                    "<strong>Structure / Facility:</strong> " +
+
+                    "This record will not receive a dairy code. " +
+
+                    "The dairy farm association is optional.";
+
+
+                recordTypeInfo.style.display =
+                    "block";
 
             }
 
         }
 
 
-        code.addEventListener(
-            "input",
-            updateCodeFields
+        recordType.addEventListener(
+            "change",
+            updateForm
         );
 
 
-        updateCodeFields();
+        updateForm();
 
 
         /* ======================================================
@@ -1300,7 +1779,8 @@ document.addEventListener(
 
                 if (!file) {
 
-                    imagePreview.src = "";
+                    imagePreview.src =
+                        "";
 
                     imagePreview.style.display =
                         "none";
