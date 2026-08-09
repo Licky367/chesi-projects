@@ -2,7 +2,8 @@ const express = require("express");
 
 const router = express.Router();
 
-const networthController = require("../controllers/networthController");
+const updateNetController =
+    require("../controllers/networthUpdate");
 
 
 /* ==========================================================
@@ -11,7 +12,7 @@ const networthController = require("../controllers/networthController");
 
 router.get(
     "/",
-    networthController.getNetWorth
+    updateNetController.getNetWorth
 );
 
 
@@ -21,22 +22,22 @@ router.get(
 
 router.get(
     "/structure/:id",
-    networthController.getDairyFarm
+    updateNetController.getDairyFarm
 );
 
 
 /* ==========================================================
    ADD ASSET TO DAIRY FARM
-===============================.=========================== */
+========================================================== */
 
 router.get(
     "/structure/:id/add",
-    networthController.getAddAsset
+    updateNetController.getAddAsset
 );
 
 router.post(
     "/structure/:id/add",
-    networthController.addAsset
+    updateNetController.addAsset
 );
 
 
@@ -46,12 +47,17 @@ router.post(
 
 router.get(
     "/asset/:id",
-    networthController.getAsset
+    updateNetController.getAsset
 );
+
+
+/* ==========================================================
+   UPDATE ASSET
+========================================================== */
 
 router.post(
     "/asset/:id",
-    networthController.updateAsset
+    updateNetController.updateAsset
 );
 
 
