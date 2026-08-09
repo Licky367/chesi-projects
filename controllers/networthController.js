@@ -91,7 +91,7 @@ function jsonError(
 // BUILD IMAGE URL
 // ==========================================================
 //
-// multer.diskStorage() stores files here:
+// multer.diskStorage() stores files in:
 //
 //     public/uploads/<filename>
 //
@@ -99,25 +99,21 @@ function jsonError(
 //
 //     /uploads/<filename>
 //
-// We therefore DO NOT save req.file.path directly.
+// Never save req.file.path directly.
 //
 
 function getUploadedImageUrl(
     file
 ) {
 
-    if (
-        !file
-    ) {
+    if (!file) {
 
         return null;
 
     }
 
 
-    if (
-        file.filename
-    ) {
+    if (file.filename) {
 
         return `/uploads/${file.filename}`;
 
@@ -125,6 +121,49 @@ function getUploadedImageUrl(
 
 
     return null;
+
+}
+
+
+// ==========================================================
+// REMOVE PROTECTED SYSTEM FIELDS
+// ==========================================================
+//
+// IMPORTANT:
+//
+// These values are NEVER user-assigned.
+//
+// code:
+//
+//     Dairy Farm  -> negative auto-generated code
+//     Animal      -> positive auto-generated code
+//     Structure   -> null
+//
+// assetCode:
+//
+//     Automatically derived from the selected parent
+//     Dairy Farm's negative code.
+//
+// Therefore neither field may come from req.body.
+//
+
+function removeProtectedAssetFields(
+    data
+) {
+
+    delete data.code;
+
+    delete data.assetCode;
+
+    delete data._id;
+
+    delete data.__v;
+
+    delete data.createdAt;
+
+    delete data.updatedAt;
+
+    return data;
 
 }
 
@@ -157,9 +196,7 @@ async function getNetWorth(
         );
 
 
-        if (
-            wantsJSON(req)
-        ) {
+        if (wantsJSON(req)) {
 
             return jsonError(
                 res,
@@ -184,6 +221,11 @@ async function getNetWorth(
 // ==========================================================
 // GET /networth/structure/:id
 // ==========================================================
+//
+// :id identifies the Dairy Farm being viewed.
+//
+// The service is responsible for resolving the farm.
+//
 
 async function getDairyFarm(
     req,
@@ -211,9 +253,7 @@ async function getDairyFarm(
         );
 
 
-        if (
-            wantsJSON(req)
-        ) {
+        if (wantsJSON(req)) {
 
             return jsonError(
                 res,
@@ -238,6 +278,13 @@ async function getDairyFarm(
 // ==========================================================
 // GET /networth/structure/:id/add
 // ==========================================================
+//
+// :id identifies the selected parent Dairy Farm.
+//
+// The user does NOT enter assetCode.
+//
+// The service will obtain the parent's negative code.
+//
 
 async function getAddAsset(
     req,
@@ -265,9 +312,7 @@ async function getAddAsset(
         );
 
 
-        if (
-            wantsJSON(req)
-        ) {
+        if (wantsJSON(req)) {
 
             return jsonError(
                 res,
@@ -292,6 +337,31 @@ async function getAddAsset(
 // ==========================================================
 // POST /networth/structure/:id/add
 // ==========================================================
+//
+// CREATE ASSET
+//
+// The :id is the selected parent Dairy Farm.
+//
+// IMPORTANT:
+//
+// The client does NOT provide:
+//
+//     code
+//     assetCode
+//
+// The backend/service determines:
+//
+//     Animal
+//         -> positive auto-generated code
+//         -> assetCode = parent's negative Dairy Farm code
+//
+//     Structure / Facility
+//         -> code = null
+//         -> assetCode = parent's negative Dairy Farm code
+//
+// The controller therefore passes only legitimate form data
+// to the service.
+//
 
 async function addAsset(
     req,
@@ -306,9 +376,18 @@ async function addAsset(
             };
 
 
-        // ------------------------------------------------------
+        // ======================================================
+        // NEVER TRUST CLIENT-SUPPLIED SYSTEM IDENTITY
+        // ======================================================
+
+        removeProtectedAssetFields(
+            body
+        );
+
+
+        // ======================================================
         // PROFILE IMAGE
-        // ------------------------------------------------------
+        // ======================================================
 
         const uploadedImage =
             getUploadedImageUrl(
@@ -316,9 +395,7 @@ async function addAsset(
             );
 
 
-        if (
-            uploadedImage
-        ) {
+        if (uploadedImage) {
 
             body.profileImage =
                 uploadedImage;
@@ -326,9 +403,42 @@ async function addAsset(
         }
 
 
-        // ------------------------------------------------------
+        // ======================================================
+        // MILKING CHECKBOX
+        // ======================================================
+
+        if (
+            body.isMilking !== undefined
+        ) {
+
+            const value =
+                String(
+                    body.isMilking
+                )
+                    .trim()
+                    .toLowerCase();
+
+
+            body.isMilking =
+                (
+                    value === "true" ||
+                    value === "1" ||
+                    value === "yes" ||
+                    value === "on"
+                );
+
+        }
+
+
+        // ======================================================
         // CREATE ASSET
-        // ------------------------------------------------------
+        // ======================================================
+        //
+        // The parent Dairy Farm is identified by :id.
+        //
+        // The service must resolve that Dairy Farm and derive
+        // the correct negative assetCode from its code.
+        //
 
         const asset =
             await networthService.addAsset(
@@ -338,13 +448,11 @@ async function addAsset(
             );
 
 
-        // ------------------------------------------------------
+        // ======================================================
         // JSON / FETCH
-        // ------------------------------------------------------
+        // ======================================================
 
-        if (
-            wantsJSON(req)
-        ) {
+        if (wantsJSON(req)) {
 
             const netWorth =
                 await networthService.getNetWorth();
@@ -368,9 +476,9 @@ async function addAsset(
         }
 
 
-        // ------------------------------------------------------
+        // ======================================================
         // NORMAL FORM SUBMISSION
-        // ------------------------------------------------------
+        // ======================================================
 
         return res.redirect(
             `/networth/structure/${req.params.id}`
@@ -384,9 +492,7 @@ async function addAsset(
         );
 
 
-        if (
-            wantsJSON(req)
-        ) {
+        if (wantsJSON(req)) {
 
             return jsonError(
                 res,
@@ -438,9 +544,7 @@ async function getAsset(
         );
 
 
-        if (
-            wantsJSON(req)
-        ) {
+        if (wantsJSON(req)) {
 
             return jsonError(
                 res,
@@ -470,38 +574,21 @@ async function getAsset(
 //
 // IMPORTANT:
 //
-// The EJS form uses:
+// code and assetCode are protected.
 //
-//     method="POST"
+// The user cannot:
 //
-//     enctype="multipart/form-data"
+//     change an animal's code
+//     change an animal into another identity
+//     manually assign a structure code
+//     forge an assetCode
+//     attach an asset to an arbitrary farm by typing a code
 //
-// Therefore multer MUST run before this controller.
+// If parent reassignment is supported by the service/UI,
+// it must happen through an explicit parent-selection mechanism
+// that the service resolves into the parent's negative code.
 //
-// The controller supports:
-//
-//     name
-//     dateOfBirth
-//     type
-//     mass
-//     isMilking
-//     buyingPrice
-//     currentWorth
-//     description
-//     condition
-//     location
-//     assetCode
-//     status
-//     valuationDate
-//     acquisitionDate
-//     profileImage
-//
-// Protected fields:
-//
-//     _id
-//     code
-//
-// are never sent to the service for modification.
+// This controller itself never accepts assetCode as authoritative.
 //
 
 async function updateAsset(
@@ -561,9 +648,6 @@ async function updateAsset(
         // ======================================================
         // COPY FORM DATA
         // ======================================================
-        //
-        // Never mutate req.body directly.
-        //
 
         const updateData =
             {
@@ -574,35 +658,35 @@ async function updateAsset(
         // ======================================================
         // REMOVE METHOD OVERRIDE
         // ======================================================
-        //
-        // Your EJS contains:
-        //
-        //     <input
-        //         type="hidden"
-        //         name="_method"
-        //         value="PUT"
-        //     >
-        //
-        // This is not an actual asset field.
-        //
 
         delete updateData._method;
 
 
         // ======================================================
-        // PROFILE IMAGE
+        // REMOVE PROTECTED SYSTEM FIELDS
         // ======================================================
         //
-        // The browser sends the image as:
+        // code:
         //
-        //     req.file
+        //     Never editable.
         //
-        // multer stores it in:
+        // assetCode:
         //
-        //     public/uploads/
+        //     Never manually editable.
         //
-        // Save the browser-accessible URL instead.
+        // If a future parent-selection field is introduced,
+        // the service should resolve it into the correct
+        // negative parent code.
         //
+
+        removeProtectedAssetFields(
+            updateData
+        );
+
+
+        // ======================================================
+        // PROFILE IMAGE
+        // ======================================================
 
         const uploadedImage =
             getUploadedImageUrl(
@@ -610,9 +694,7 @@ async function updateAsset(
             );
 
 
-        if (
-            uploadedImage
-        ) {
+        if (uploadedImage) {
 
             updateData.profileImage =
                 uploadedImage;
@@ -623,31 +705,6 @@ async function updateAsset(
         // ======================================================
         // MILKING CHECKBOX
         // ======================================================
-        //
-        // The EJS contains:
-        //
-        //     <input
-        //         type="checkbox"
-        //         name="isMilking"
-        //         value="true"
-        //     >
-        //
-        // When checked:
-        //
-        //     req.body.isMilking === "true"
-        //
-        // When unchecked:
-        //
-        //     req.body.isMilking === undefined
-        //
-        // For an identified female, absence means FALSE.
-        //
-        // We deliberately do NOT add the field for every asset
-        // because the service already restricts isMilking to
-        // identified dairy records.
-        //
-        // If the checkbox was present, pass its value.
-        //
 
         if (
             updateData.isMilking !== undefined
@@ -692,12 +749,10 @@ async function updateAsset(
 
 
         // ======================================================
-        // JSON / FETCH REQUEST
+        // JSON / FETCH
         // ======================================================
 
-        if (
-            wantsJSON(req)
-        ) {
+        if (wantsJSON(req)) {
 
             return res.json(
                 {
@@ -734,9 +789,7 @@ async function updateAsset(
         );
 
 
-        if (
-            wantsJSON(req)
-        ) {
+        if (wantsJSON(req)) {
 
             return jsonError(
                 res,
