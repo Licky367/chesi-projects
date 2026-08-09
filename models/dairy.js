@@ -1,443 +1,202 @@
-// ==========================.================================
+// ==========================================================
 // models/dairy.js
 // ==========================================================
 
-const mongoose =
-    require("mongoose");
+const mongoose = require("mongoose");
 
 
 // ==========================================================
-// DAIRY BREEDS
+// CONSTANTS
 // ==========================================================
 
 const DAIRY_BREEDS = [
 
     "Friesian",
-
     "Ayrshire",
-
     "Guernsey",
-
     "Jersey",
-
     "Brown Swiss",
-
     "Sahiwal",
-
     "Boran",
-
     "Ankole",
-
     "Fleckvieh",
-
     "Simmental",
-
     "Holstein",
-
     "Crossbreed",
-
     "Other"
 
 ];
 
 
-// ==========================================================
-// STATUS VALUES
-// ==========================================================
-
 const DAIRY_STATUSES = [
 
     "active",
-
     "sold",
-
     "disposed",
-
     "inactive"
 
 ];
 
 
 // ==========================================================
-// DAIRY SCHEMA
+// SCHEMA
 // ==========================================================
 
-const dairySchema =
-    new mongoose.Schema(
+const dairySchema = new mongoose.Schema(
 
-        {
+    {
 
-            // ==================================================
-            // PROFILE IMAGE
-            // ==================================================
+        // ==================================================
+        // PROFILE IMAGE
+        // ==================================================
 
-            profileImage: {
+        profileImage: {
 
-                type: String,
+            type: String,
 
-                trim: true,
+            trim: true,
 
-                default: ""
+            default: ""
+
+        },
+
+
+        // ==================================================
+        // CODE
+        //
+        // > 0  = identified dairy animal
+        // < 0  = Dairy Farm / structure
+        // null = manual asset
+        // ==================================================
+
+        code: {
+
+            type: Number,
+
+            default: null,
+
+            validate: {
+
+                validator: function(value) {
+
+                    if (
+                        value === null ||
+                        value === undefined
+                    ) {
+
+                        return true;
+
+                    }
+
+                    return Number.isInteger(value);
+
+                },
+
+                message:
+                    "Code must be a whole number or null."
+
+            }
+
+        },
+
+
+        // ==================================================
+        // NAME
+        // ==================================================
+
+        name: {
+
+            type: String,
+
+            required: true,
+
+            trim: true
+
+        },
+
+
+        // ==================================================
+        // DATE OF BIRTH
+        // ==================================================
+
+        dateOfBirth: {
+
+            type: Date,
+
+            required: function() {
+
+                return (
+
+                    this.code !== null &&
+
+                    this.code !== undefined &&
+
+                    Number(this.code) > 0
+
+                );
 
             },
 
+            default: null
 
-            // ==================================================
-            // CODE
-            //
-            // > 0
-            //     Identified dairy animal
-            //
-            // < 0
-            //     Dairy Farm / structure
-            //
-            // null
-            //     Manual asset
-            // ==================================================
+        },
 
-            code: {
 
-                type: Number,
+        // ==================================================
+        // MASS
+        // ==================================================
 
-                default: null,
+        mass: {
 
-                validate: {
+            type: Number,
 
-                    validator: function(value) {
+            min: 0,
 
-                        if (
-                            value === null ||
-                            value === undefined
-                        ) {
+            default: 0
 
-                            return true;
+        },
 
-                        }
 
+        // ==================================================
+        // MILKING
+        // ==================================================
 
-                        return Number.isInteger(
-                            value
-                        );
+        isMilking: {
 
-                    },
+            type: Boolean,
 
-                    message:
-                        "Code must be a whole number or null."
+            default: false
 
-                }
+        },
 
-            },
 
+        // ==================================================
+        // PARENT / FARM ASSIGNMENT
+        // ==================================================
 
-            // ==================================================
-            // NAME
-            // ==================================================
+        assetCode: {
 
-            name: {
+            type: Number,
 
-                type: String,
+            default: null
 
-                required: true,
+        },
 
-                trim: true
 
-            },
+        // ==================================================
+        // MAINTENANCE
+        // ==================================================
 
+        needsMaintenance: {
 
-            // ==================================================
-            // DATE OF BIRTH
-            //
-            // Only identified dairy animals use DOB.
-            //
-            // It is intentionally NOT required at schema level
-            // because updateAsset() supports PATCH-style updates
-            // and explicit clearing.
-            // ==================================================
+            type: Boolean,
 
-            dateOfBirth: {
+            default: false
 
-                type: Date,
+        },
 
-                default: null
 
-            },
-
-
-            // ==================================================
-            // MASS
-            // ==================================================
-
-            mass: {
-
-                type: Number,
-
-                min: 0,
-
-                default: 0
-
-            },
-
-
-            // ==================================================
-            // MILKING
-            //
-            // Only female identified dairy animals can milk.
-            // ==================================================
-
-            isMilking: {
-
-                type: Boolean,
-
-                default: false
-
-            },
-
-
-            // ==================================================
-            // PARENT / FARM ASSIGNMENT
-            //
-            // Positive code:
-            //
-            //     null
-            //         standalone animal
-            //
-            //     negative number
-            //         assigned to Dairy Farm
-            //
-            // Negative code:
-            //
-            //     null
-            //         Dairy Farm
-            //
-            // Null code:
-            //
-            //     negative number
-            //         manual asset belonging to farm
-            // ==================================================
-
-            assetCode: {
-
-                type: Number,
-
-                default: null
-
-            },
-
-
-            // ==================================================
-            // MAINTENANCE
-            // ==================================================
-
-            needsMaintenance: {
-
-                type: Boolean,
-
-                default: false
-
-            },
-
-
-            maintenance: {
-
-                type: {
-
-                    type: String,
-
-                    trim: true,
-
-                    default: ""
-
-                },
-
-                description: {
-
-                    type: String,
-
-                    trim: true,
-
-                    default: ""
-
-                },
-
-                charges: {
-
-                    type: Number,
-
-                    min: 0,
-
-                    default: 0
-
-                },
-
-                completionDescription: {
-
-                    type: String,
-
-                    trim: true,
-
-                    default: ""
-
-                },
-
-                markedBy: {
-
-                    type:
-                        mongoose.Schema.Types.ObjectId,
-
-                    ref: "User",
-
-                    default: null
-
-                },
-
-                markedAt: {
-
-                    type: Date,
-
-                    default: null
-
-                },
-
-                clearedBy: {
-
-                    type:
-                        mongoose.Schema.Types.ObjectId,
-
-                    ref: "User",
-
-                    default: null
-
-                },
-
-                clearedAt: {
-
-                    type: Date,
-
-                    default: null
-
-                }
-
-            },
-
-
-            // ==================================================
-            // MEDICAL ATTENTION
-            // ==================================================
-
-            medicalAttention: {
-
-                isMarked: {
-
-                    type: Boolean,
-
-                    default: false
-
-                },
-
-                type: {
-
-                    type: String,
-
-                    trim: true,
-
-                    default: ""
-
-                },
-
-                details: {
-
-                    type: String,
-
-                    trim: true,
-
-                    default: ""
-
-                },
-
-                charges: {
-
-                    type: Number,
-
-                    min: 0,
-
-                    default: 0
-
-                },
-
-                description: {
-
-                    type: String,
-
-                    trim: true,
-
-                    default: ""
-
-                },
-
-                markedBy: {
-
-                    type:
-                        mongoose.Schema.Types.ObjectId,
-
-                    ref: "User",
-
-                    default: null
-
-                },
-
-                markedAt: {
-
-                    type: Date,
-
-                    default: null
-
-                },
-
-                clearedBy: {
-
-                    type:
-                        mongoose.Schema.Types.ObjectId,
-
-                    ref: "User",
-
-                    default: null
-
-                },
-
-                clearedAt: {
-
-                    type: Date,
-
-                    default: null
-
-                },
-
-                updatedAt: {
-
-                    type: Date,
-
-                    default: null
-
-                }
-
-            },
-
-
-            // ==================================================
-            // TYPE
-            //
-            // code > 0:
-            //     dairy breed
-            //
-            // code < 0:
-            //     structure type
-            //
-            // code === null:
-            //     manual asset type
-            //
-            // No global enum is used here because structures
-            // and manual assets can have their own types.
-            // ==================================================
+        maintenance: {
 
             type: {
 
@@ -449,12 +208,17 @@ const dairySchema =
 
             },
 
+            description: {
 
-            // ==================================================
-            // BUYING PRICE
-            // ==================================================
+                type: String,
 
-            buyingPrice: {
+                trim: true,
+
+                default: ""
+
+            },
+
+            charges: {
 
                 type: Number,
 
@@ -464,12 +228,90 @@ const dairySchema =
 
             },
 
+            completionDescription: {
 
-            // ==================================================
-            // CURRENT WORTH
-            // ==================================================
+                type: String,
 
-            currentWorth: {
+                trim: true,
+
+                default: ""
+
+            },
+
+            markedBy: {
+
+                type: mongoose.Schema.Types.ObjectId,
+
+                ref: "User",
+
+                default: null
+
+            },
+
+            markedAt: {
+
+                type: Date,
+
+                default: null
+
+            },
+
+            clearedBy: {
+
+                type: mongoose.Schema.Types.ObjectId,
+
+                ref: "User",
+
+                default: null
+
+            },
+
+            clearedAt: {
+
+                type: Date,
+
+                default: null
+
+            }
+
+        },
+
+
+        // ==================================================
+        // MEDICAL ATTENTION
+        // ==================================================
+
+        medicalAttention: {
+
+            isMarked: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+            type: {
+
+                type: String,
+
+                trim: true,
+
+                default: ""
+
+            },
+
+            details: {
+
+                type: String,
+
+                trim: true,
+
+                default: ""
+
+            },
+
+            charges: {
 
                 type: Number,
 
@@ -478,11 +320,6 @@ const dairySchema =
                 default: 0
 
             },
-
-
-            // ==================================================
-            // DESCRIPTION
-            // ==================================================
 
             description: {
 
@@ -494,42 +331,17 @@ const dairySchema =
 
             },
 
+            markedBy: {
 
-            // ==================================================
-            // CONDITION
-            // ==================================================
+                type: mongoose.Schema.Types.ObjectId,
 
-            condition: {
+                ref: "User",
 
-                type: String,
-
-                trim: true,
-
-                default: ""
+                default: null
 
             },
 
-
-            // ==================================================
-            // LOCATION
-            // ==================================================
-
-            location: {
-
-                type: String,
-
-                trim: true,
-
-                default: ""
-
-            },
-
-
-            // ==================================================
-            // ACQUISITION DATE
-            // ==================================================
-
-            acquisitionDate: {
+            markedAt: {
 
                 type: Date,
 
@@ -537,12 +349,17 @@ const dairySchema =
 
             },
 
+            clearedBy: {
 
-            // ==================================================
-            // VALUATION DATE
-            // ==================================================
+                type: mongoose.Schema.Types.ObjectId,
 
-            valuationDate: {
+                ref: "User",
+
+                default: null
+
+            },
+
+            clearedAt: {
 
                 type: Date,
 
@@ -550,64 +367,183 @@ const dairySchema =
 
             },
 
+            updatedAt: {
 
-            // ==================================================
-            // STATUS
-            // ==================================================
+                type: Date,
 
-            status: {
-
-                type: String,
-
-                enum: DAIRY_STATUSES,
-
-                default: "active",
-
-                index: true
+                default: null
 
             }
 
         },
 
-        {
 
-            timestamps: true,
+        // ==================================================
+        // TYPE
+        //
+        // Positive code = breed
+        // Negative code = structure type
+        // Null code = manual asset type
+        // ==================================================
 
-            minimize: false,
+        type: {
 
-            toJSON: {
+            type: String,
 
-                virtuals: true
+            trim: true,
 
-            },
+            default: ""
 
-            toObject: {
+        },
 
-                virtuals: true
 
-            }
+        // ==================================================
+        // BUYING PRICE
+        // ==================================================
+
+        buyingPrice: {
+
+            type: Number,
+
+            min: 0,
+
+            default: 0
+
+        },
+
+
+        // ==================================================
+        // CURRENT WORTH
+        // ==================================================
+
+        currentWorth: {
+
+            type: Number,
+
+            min: 0,
+
+            default: 0
+
+        },
+
+
+        // ==================================================
+        // DESCRIPTION
+        // ==================================================
+
+        description: {
+
+            type: String,
+
+            trim: true,
+
+            default: ""
+
+        },
+
+
+        // ==================================================
+        // CONDITION
+        // ==================================================
+
+        condition: {
+
+            type: String,
+
+            trim: true,
+
+            default: ""
+
+        },
+
+
+        // ==================================================
+        // LOCATION
+        // ==================================================
+
+        location: {
+
+            type: String,
+
+            trim: true,
+
+            default: ""
+
+        },
+
+
+        // ==================================================
+        // ACQUISITION DATE
+        // ==================================================
+
+        acquisitionDate: {
+
+            type: Date,
+
+            default: null
+
+        },
+
+
+        // ==================================================
+        // VALUATION DATE
+        // ==================================================
+
+        valuationDate: {
+
+            type: Date,
+
+            default: null
+
+        },
+
+
+        // ==================================================
+        // STATUS
+        // ==================================================
+
+        status: {
+
+            type: String,
+
+            enum: DAIRY_STATUSES,
+
+            default: "active",
+
+            index: true
 
         }
 
-    );
+    },
+
+    {
+
+        timestamps: true,
+
+        minimize: false,
+
+        toJSON: {
+
+            virtuals: true
+
+        },
+
+        toObject: {
+
+            virtuals: true
+
+        }
+
+    }
+
+);
 
 
 // ==========================================================
-// GENDER
-//
-// Positive code:
-//
-// Even = Female
-// Odd  = Male
-//
-// Structures/manual assets:
-//
-// null
+// VIRTUAL: GENDER
 // ==========================================================
 
-dairySchema.virtual(
-    "gender"
-).get(function() {
+dairySchema.virtual("gender").get(function() {
 
     if (
 
@@ -638,12 +574,10 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// IS FEMALE
+// VIRTUAL: IS FEMALE
 // ==========================================================
 
-dairySchema.virtual(
-    "isFemale"
-).get(function() {
+dairySchema.virtual("isFemale").get(function() {
 
     return (
 
@@ -661,12 +595,10 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// HAS IDENTITY
+// VIRTUAL: HAS IDENTITY
 // ==========================================================
 
-dairySchema.virtual(
-    "hasIdentity"
-).get(function() {
+dairySchema.virtual("hasIdentity").get(function() {
 
     return (
 
@@ -682,12 +614,10 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// IS STRUCTURE
+// VIRTUAL: IS STRUCTURE
 // ==========================================================
 
-dairySchema.virtual(
-    "isStructure"
-).get(function() {
+dairySchema.virtual("isStructure").get(function() {
 
     return (
 
@@ -703,12 +633,10 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// IS MANUAL ASSET
+// VIRTUAL: IS MANUAL ASSET
 // ==========================================================
 
-dairySchema.virtual(
-    "isManualAsset"
-).get(function() {
+dairySchema.virtual("isManualAsset").get(function() {
 
     return (
 
@@ -722,14 +650,10 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// IS STANDALONE ASSET
-//
-// Positive identified dairy with no parent farm.
+// VIRTUAL: IS STANDALONE ASSET
 // ==========================================================
 
-dairySchema.virtual(
-    "isStandaloneAsset"
-).get(function() {
+dairySchema.virtual("isStandaloneAsset").get(function() {
 
     return (
 
@@ -753,12 +677,10 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// IS ASSIGNED ASSET
+// VIRTUAL: IS ASSIGNED ASSET
 // ==========================================================
 
-dairySchema.virtual(
-    "isAssignedAsset"
-).get(function() {
+dairySchema.virtual("isAssignedAsset").get(function() {
 
     return (
 
@@ -772,16 +694,10 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// AGE TEXT
-//
-// Example:
-//
-//     4 years, 3 months, 12 days
+// VIRTUAL: AGE TEXT
 // ==========================================================
 
-dairySchema.virtual(
-    "ageText"
-).get(function() {
+dairySchema.virtual("ageText").get(function() {
 
     if (!this.dateOfBirth) {
 
@@ -803,15 +719,7 @@ dairySchema.virtual(
     if (
         Number.isNaN(
             dob.getTime()
-        )
-    ) {
-
-        return "";
-
-    }
-
-
-    if (
+        ) ||
         dob > now
     ) {
 
@@ -835,9 +743,7 @@ dairySchema.virtual(
         dob.getDate();
 
 
-    if (
-        days < 0
-    ) {
+    if (days < 0) {
 
         months--;
 
@@ -860,22 +766,11 @@ dairySchema.virtual(
     }
 
 
-    if (
-        months < 0
-    ) {
+    if (months < 0) {
 
         years--;
 
         months += 12;
-
-    }
-
-
-    if (
-        years < 0
-    ) {
-
-        return "";
 
     }
 
@@ -894,12 +789,10 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// AGE IN YEARS
+// VIRTUAL: AGE YEARS
 // ==========================================================
 
-dairySchema.virtual(
-    "ageYears"
-).get(function() {
+dairySchema.virtual("ageYears").get(function() {
 
     if (!this.dateOfBirth) {
 
@@ -921,15 +814,7 @@ dairySchema.virtual(
     if (
         Number.isNaN(
             dob.getTime()
-        )
-    ) {
-
-        return null;
-
-    }
-
-
-    if (
+        ) ||
         dob > now
     ) {
 
@@ -973,29 +858,23 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// MILKING TEXT
+// VIRTUAL: MILKING TEXT
 // ==========================================================
 
-dairySchema.virtual(
-    "isMilkingText"
-).get(function() {
+dairySchema.virtual("isMilkingText").get(function() {
 
     return this.isMilking
-
         ? "Yes"
-
         : "No";
 
 });
 
 
 // ==========================================================
-// DISPLAY IMAGE
+// VIRTUAL: DISPLAY IMAGE
 // ==========================================================
 
-dairySchema.virtual(
-    "displayImage"
-).get(function() {
+dairySchema.virtual("displayImage").get(function() {
 
     if (!this.profileImage) {
 
@@ -1004,9 +883,7 @@ dairySchema.virtual(
             `https://ui-avatars.com/api/?name=` +
 
             `${encodeURIComponent(
-
                 this.name || "Dairy"
-
             )}`
 
         );
@@ -1040,12 +917,10 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// REQUIRES MAINTENANCE
+// VIRTUAL: REQUIRES MAINTENANCE
 // ==========================================================
 
-dairySchema.virtual(
-    "requiresMaintenance"
-).get(function() {
+dairySchema.virtual("requiresMaintenance").get(function() {
 
     return !!this.needsMaintenance;
 
@@ -1053,12 +928,10 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// NEEDS MEDICAL ATTENTION
+// VIRTUAL: NEEDS MEDICAL ATTENTION
 // ==========================================================
 
-dairySchema.virtual(
-    "needsMedicalAttention"
-).get(function() {
+dairySchema.virtual("needsMedicalAttention").get(function() {
 
     return !!(
 
@@ -1072,48 +945,34 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// ASSET VALUE
+// VIRTUAL: ASSET VALUE
 // ==========================================================
 
-dairySchema.virtual(
-    "assetValue"
-).get(function() {
+dairySchema.virtual("assetValue").get(function() {
 
-    return (
-
-        Number(
-            this.currentWorth
-        ) || 0
-
-    );
+    return Number(
+        this.currentWorth
+    ) || 0;
 
 });
 
 
 // ==========================================================
-// ACTIVE ASSET
+// VIRTUAL: ACTIVE ASSET
 // ==========================================================
 
-dairySchema.virtual(
-    "isActiveAsset"
-).get(function() {
+dairySchema.virtual("isActiveAsset").get(function() {
 
-    return (
-
-        this.status === "active"
-
-    );
+    return this.status === "active";
 
 });
 
 
 // ==========================================================
-// IS IDENTIFIED DAIRY
+// VIRTUAL: IS IDENTIFIED DAIRY
 // ==========================================================
 
-dairySchema.virtual(
-    "isIdentifiedDairy"
-).get(function() {
+dairySchema.virtual("isIdentifiedDairy").get(function() {
 
     return (
 
@@ -1161,8 +1020,6 @@ dairySchema.pre(
 
         // ==================================================
         // MANUAL ASSET
-        //
-        // Manual assets must belong to a Dairy Farm.
         // ==================================================
 
         if (
@@ -1213,9 +1070,9 @@ dairySchema.pre(
 
         ) {
 
-            // ----------------------------------------------
-            // Male animals cannot be milking.
-            // ----------------------------------------------
+            // ------------------------------------------------
+            // Male animals cannot be milking
+            // ------------------------------------------------
 
             if (!this.isFemale) {
 
@@ -1224,9 +1081,9 @@ dairySchema.pre(
             }
 
 
-            // ----------------------------------------------
-            // Validate breed when supplied.
-            // ----------------------------------------------
+            // ------------------------------------------------
+            // Validate breed when supplied
+            // ------------------------------------------------
 
             if (
 
@@ -1281,7 +1138,7 @@ dairySchema.pre(
 
 
         // ==================================================
-        // MEDICAL OBJECT
+        // ENSURE MEDICAL OBJECT
         // ==================================================
 
         if (!this.medicalAttention) {
@@ -1384,28 +1241,17 @@ dairySchema.pre(
             )
         ) {
 
-            if (
-                this.medicalAttention
-            ) {
-
-                this.medicalAttention.updatedAt =
-                    new Date();
-
-            }
+            this.medicalAttention.updatedAt =
+                new Date();
 
         }
 
 
         // ==================================================
         // ACQUISITION DATE
-        //
-        // Preserve an existing date.
-        // Create one only when missing.
         // ==================================================
 
-        if (
-            !this.acquisitionDate
-        ) {
+        if (!this.acquisitionDate) {
 
             this.acquisitionDate =
                 this.createdAt ||
@@ -1462,21 +1308,12 @@ dairySchema.pre(
 // INDEXES
 // ==========================================================
 
-
-// ==========================================================
-// MILKING
-// ==========================================================
-
 dairySchema.index({
 
     isMilking: 1
 
 });
 
-
-// ==========================================================
-// MAINTENANCE
-// ==========================================================
 
 dairySchema.index({
 
@@ -1485,20 +1322,12 @@ dairySchema.index({
 });
 
 
-// ==========================================================
-// MEDICAL
-// ==========================================================
-
 dairySchema.index({
 
     "medicalAttention.isMarked": 1
 
 });
 
-
-// ==========================================================
-// ASSET ASSIGNMENT
-// ==========================================================
 
 dairySchema.index({
 
@@ -1510,21 +1339,11 @@ dairySchema.index({
 
 
 // ==========================================================
-// CODE
+// UNIQUE CODE INDEX
 //
 // Numeric codes are unique.
 //
-// Multiple null values are allowed.
-//
-// Examples:
-//
-//     1
-//     2
-//     3
-//     -1
-//     -2
-//
-// must be unique.
+// null is allowed multiple times.
 // ==========================================================
 
 dairySchema.index(
@@ -1646,18 +1465,20 @@ async function() {
 
 
 // ==========================================================
-// CREATE / REUSE MONGOOSE MODEL
+// MODEL
 //
 // IMPORTANT:
 //
-// NEVER blindly call:
+// mongoose.models.Dairy
 //
-//     mongoose.model("Dairy", dairySchema)
+// prevents:
 //
-// because this file can be loaded by multiple routes,
-// services, controllers, etc.
+//     OverwriteModelError:
+//     Cannot overwrite `Dairy` model once compiled.
 //
-// Reuse the already compiled model when available.
+// This is especially important during development,
+// hot reloads, and when multiple route modules require
+// this model.
 // ==========================================================
 
 const Dairy =
@@ -1669,7 +1490,24 @@ const Dairy =
 
 
 // ==========================================================
-// ATTACH CONSTANTS TO MODEL
+// ATTACH CONSTANTS TO THE MODEL
+//
+// This preserves:
+//
+//     Dairy.DAIRY_BREEDS
+//     Dairy.DAIRY_STATUSES
+//
+// WITHOUT changing module.exports into a plain object.
+//
+// Therefore this continues to work:
+//
+//     const Dairy = require("../models/dairy");
+//
+//     Dairy.find(...);
+//
+//     Dairy.findById(...);
+//
+//     new Dairy(...);
 // ==========================================================
 
 Dairy.DAIRY_BREEDS =
@@ -1680,23 +1518,26 @@ Dairy.DAIRY_STATUSES =
 
 
 // ==========================================================
-// EXPORT MODEL
-// ==========================================================
+// EXPORT
 //
 // IMPORTANT:
 //
-// Export the actual Mongoose model.
+// Export the MODEL itself.
 //
-// This allows:
+// DO NOT do:
+//
+//     module.exports = {
+//         Dairy,
+//         DAIRY_BREEDS,
+//         DAIRY_STATUSES
+//     };
+//
+// because your services use:
 //
 //     Dairy.find()
-//
-//     Dairy.findById()
-//
 //     Dairy.findOne()
-//
+//     Dairy.findById()
 //     new Dairy()
-//
 // ==========================================================
 
 module.exports =
