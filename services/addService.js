@@ -26,67 +26,18 @@ const RECORD_TYPES = {
 
 
 // ==========================================================
-// FARM TYPES
-// ==========================================================
-
-const FARM_TYPES = [
-
-    "ranch",
-
-    "zeroGrazing",
-
-    "semiZeroGrazing",
-
-    "pastureBased",
-
-    "mixedFarming",
-
-    "cooperative",
-
-    "other"
-
-];
-
-
-// ==========================================================
-// STRUCTURE TYPES
-// ==========================================================
-
-const STRUCTURE_TYPES = [
-
-    "machine",
-
-    "equipment",
-
-    "tool",
-
-    "building",
-
-    "cowshed",
-
-    "milkingParlour",
-
-    "feedStore",
-
-    "hayShed",
-
-    "waterSystem",
-
-    "fencing",
-
-    "vehicle",
-
-    "generator",
-
-    "solarSystem",
-
-    "other"
-
-];
-
-
-// ==========================================================
 // GENDER TYPES
+// ==========================================================
+//
+// Gender is NOT stored directly in the Dairy model.
+//
+// It is determined from the animal code:
+//
+// Odd  = Male
+// Even = Female
+//
+// The submitted gender is therefore used only when
+// generating the next animal code.
 // ==========================================================
 
 const GENDER_TYPES = [
@@ -94,33 +45,6 @@ const GENDER_TYPES = [
     "male",
 
     "female"
-
-];
-
-
-// ==========================================================
-// DEFAULT BREEDS
-// ==========================================================
-
-const DAIRY_BREEDS = [
-
-    "Friesian",
-
-    "Ayrshire",
-
-    "Guernsey",
-
-    "Jersey",
-
-    "Brown Swiss",
-
-    "Sahiwal",
-
-    "Boran",
-
-    "Crossbreed",
-
-    "Other"
 
 ];
 
@@ -170,7 +94,9 @@ function toNumber(
 
 
     return Number.isFinite(number)
+
         ? number
+
         : defaultValue;
 
 }
@@ -208,17 +134,30 @@ function normalizeStatus(value) {
         .toLowerCase();
 
 
-    const allowed = [
+    /*
+     * Get the allowed statuses from the model.
+     *
+     * This prevents the service from maintaining a
+     * second independent status list.
+     */
 
-        "active",
+    const allowed =
+        typeof Dairy.getDairyStatuses ===
+        "function"
 
-        "sold",
+            ? Dairy.getDairyStatuses()
 
-        "disposed",
+            : [
 
-        "inactive"
+                "active",
 
-    ];
+                "sold",
+
+                "disposed",
+
+                "inactive"
+
+            ];
 
 
     if (
@@ -236,13 +175,127 @@ function normalizeStatus(value) {
 
 
 // ==========================================================
+// GET MODEL BREEDS
+// ==========================================================
+//
+// The Dairy model is the SINGLE SOURCE OF TRUTH.
+//
+// No breed list is duplicated in this service.
+// ==========================================================
+
+function getDairyBreeds() {
+
+    if (
+        typeof Dairy.getDairyBreeds ===
+        "function"
+    ) {
+
+        return Dairy.getDairyBreeds();
+
+    }
+
+
+    /*
+     * This fallback should normally never be required
+     * because the current Dairy model exposes the static.
+     */
+
+    if (
+        Array.isArray(
+            Dairy.DAIRY_BREEDS
+        )
+    ) {
+
+        return [
+            ...Dairy.DAIRY_BREEDS
+        ];
+
+    }
+
+
+    return [];
+
+}
+
+
+// ==========================================================
+// GET MODEL FARM TYPES
+// ==========================================================
+
+function getDairyFarmTypes() {
+
+    if (
+        typeof Dairy.getDairyFarmTypes ===
+        "function"
+    ) {
+
+        return Dairy.getDairyFarmTypes();
+
+    }
+
+
+    if (
+        Array.isArray(
+            Dairy.DAIRY_FARM_TYPES
+        )
+    ) {
+
+        return [
+            ...Dairy.DAIRY_FARM_TYPES
+        ];
+
+    }
+
+
+    return [];
+
+}
+
+
+// ==========================================================
+// GET MODEL STRUCTURE TYPES
+// ==========================================================
+
+function getStructureTypes() {
+
+    if (
+        typeof Dairy.getStructureTypes ===
+        "function"
+    ) {
+
+        return Dairy.getStructureTypes();
+
+    }
+
+
+    if (
+        Array.isArray(
+            Dairy.STRUCTURE_TYPES
+        )
+    ) {
+
+        return [
+            ...Dairy.STRUCTURE_TYPES
+        ];
+
+    }
+
+
+    return [];
+
+}
+
+
+// ==========================================================
 // GET ADD PAGE DATA
 // ==========================================================
 
 async function getAddPageData() {
 
     /*
-     * Retrieve existing Dairy Farm records.
+     * ------------------------------------------------------
+     * EXISTING DAIRY FARMS
+     * ------------------------------------------------------
      *
      * Negative codes identify Dairy Farms.
      */
@@ -256,15 +309,38 @@ async function getAddPageData() {
 
         })
         .sort({
+
             code: 1
+
         })
         .lean();
 
 
+    /*
+     * ------------------------------------------------------
+     * MODEL-DEFINED OPTIONS
+     * ------------------------------------------------------
+     */
+
+    const dairyBreeds =
+        getDairyBreeds();
+
+
+    const dairyFarmTypes =
+        getDairyFarmTypes();
+
+
+    const structureTypes =
+        getStructureTypes();
+
+
     return {
 
-        dairyBreeds:
-            DAIRY_BREEDS,
+        dairyBreeds,
+
+        dairyFarmTypes,
+
+        structureTypes,
 
         dairyFarms
 
@@ -277,13 +353,14 @@ async function getAddPageData() {
 // FIND NEXT NEGATIVE DAIRY FARM CODE
 // ==========================================================
 //
-// Dairy Farms use negative codes:
+// Dairy Farms:
 //
 // -1
 // -2
 // -3
 // -4
 //
+// The browser never supplies this code.
 // ==========================================================
 
 async function getNextNegativeCode() {
@@ -297,7 +374,9 @@ async function getNextNegativeCode() {
 
         })
         .sort({
+
             code: 1
+
         })
         .select("code")
         .lean();
@@ -306,7 +385,9 @@ async function getNextNegativeCode() {
     if (
         !lastFarm ||
         !Number.isFinite(
-            Number(lastFarm.code)
+            Number(
+                lastFarm.code
+            )
         )
     ) {
 
@@ -316,7 +397,11 @@ async function getNextNegativeCode() {
 
 
     return (
-        Number(lastFarm.code) - 1
+
+        Number(
+            lastFarm.code
+        ) - 1
+
     );
 
 }
@@ -334,9 +419,7 @@ async function getNextNegativeCode() {
 // FEMALE
 // 2, 4, 6, 8, 10...
 //
-// The backend generates the code.
-// The browser never supplies it.
-//
+// The browser never supplies the code.
 // ==========================================================
 
 async function getNextPositiveCode(
@@ -350,8 +433,8 @@ async function getNextPositiveCode(
 
 
     /*
-     * Male = odd
      * Female = even
+     * Male   = odd
      */
 
     const isFemale =
@@ -361,16 +444,15 @@ async function getNextPositiveCode(
 
     const parity =
         isFemale
+
             ? 0
+
             : 1;
 
 
     /*
-     * Find the highest existing positive code
-     * belonging to the selected gender/parity.
-     *
-     * MongoDB $expr is used so parity is checked
-     * directly against the code.
+     * Find the highest existing positive animal
+     * code having the required parity.
      */
 
     const lastAnimal =
@@ -381,53 +463,68 @@ async function getNextPositiveCode(
             },
 
             $expr: {
+
                 $eq: [
+
                     {
                         $mod: [
+
                             "$code",
+
                             2
+
                         ]
+
                     },
+
                     parity
+
                 ]
+
             }
 
         })
         .sort({
+
             code: -1
+
         })
         .select("code")
         .lean();
 
 
     /*
-     * If there are no existing animals of this
-     * gender, start at:
-     *
-     * male   -> 1
-     * female -> 2
+     * No existing animal of this gender.
      */
 
     if (
         !lastAnimal ||
         !Number.isFinite(
-            Number(lastAnimal.code)
+            Number(
+                lastAnimal.code
+            )
         )
     ) {
 
         return isFemale
+
             ? 2
+
             : 1;
 
     }
 
 
     /*
-     * Move to the next number with the same parity.
+     * Keep the same parity.
      */
 
     return (
-        Number(lastAnimal.code) + 2
+
+        Number(
+            lastAnimal.code
+        ) + 2
+
     );
 
 }
@@ -439,7 +536,6 @@ async function getNextPositiveCode(
 //
 // assetCode must be the NEGATIVE CODE of an existing
 // Dairy Farm.
-//
 // ==========================================================
 
 async function verifyDairyFarm(
@@ -447,11 +543,15 @@ async function verifyDairyFarm(
 ) {
 
     const farmCode =
-        Number(assetCode);
+        Number(
+            assetCode
+        );
 
 
     if (
-        !Number.isFinite(farmCode) ||
+        !Number.isFinite(
+            farmCode
+        ) ||
         farmCode >= 0
     ) {
 
@@ -481,13 +581,14 @@ async function verifyDairyFarm(
 
 
     /*
-     * Extra protection:
-     * the selected record must actually have
-     * a negative Dairy Farm code.
+     * Negative code confirms that this is a
+     * Dairy Farm under the current model convention.
      */
 
     if (
-        Number(farm.code) >= 0
+        Number(
+            farm.code
+        ) >= 0
     ) {
 
         throw createError(
@@ -510,12 +611,22 @@ function validateDate(
     value
 ) {
 
+    if (!value) {
+
+        throw createError(
+            "A valid Date of Birth is required."
+        );
+
+    }
+
+
     const date =
-        new Date(value);
+        new Date(
+            value
+        );
 
 
     if (
-        !value ||
         Number.isNaN(
             date.getTime()
         )
@@ -528,7 +639,162 @@ function validateDate(
     }
 
 
+    /*
+     * Do not allow a future date of birth.
+     */
+
+    if (
+        date > new Date()
+    ) {
+
+        throw createError(
+            "Date of Birth cannot be in the future."
+        );
+
+    }
+
+
     return date;
+
+}
+
+
+// ==========================================================
+// VALIDATE BREED
+// ==========================================================
+//
+// IMPORTANT:
+//
+// Breed comes directly from the Dairy model.
+// ==========================================================
+
+function validateBreed(
+    breed
+) {
+
+    const normalizedBreed =
+        cleanString(
+            breed
+        );
+
+
+    if (!normalizedBreed) {
+
+        throw createError(
+            "Animal breed is required."
+        );
+
+    }
+
+
+    const dairyBreeds =
+        getDairyBreeds();
+
+
+    if (
+        !dairyBreeds.includes(
+            normalizedBreed
+        )
+    ) {
+
+        throw createError(
+            "Invalid animal breed."
+        );
+
+    }
+
+
+    return normalizedBreed;
+
+}
+
+
+// ==========================================================
+// VALIDATE FARM TYPE
+// ==========================================================
+
+function validateFarmType(
+    farmType
+) {
+
+    const normalizedType =
+        cleanString(
+            farmType
+        );
+
+
+    if (!normalizedType) {
+
+        throw createError(
+            "Dairy Farm Type is required."
+        );
+
+    }
+
+
+    const farmTypes =
+        getDairyFarmTypes();
+
+
+    if (
+        !farmTypes.includes(
+            normalizedType
+        )
+    ) {
+
+        throw createError(
+            "Invalid Dairy Farm Type."
+        );
+
+    }
+
+
+    return normalizedType;
+
+}
+
+
+// ==========================================================
+// VALIDATE STRUCTURE TYPE
+// ==========================================================
+
+function validateStructureType(
+    structureType
+) {
+
+    const normalizedType =
+        cleanString(
+            structureType
+        );
+
+
+    if (!normalizedType) {
+
+        throw createError(
+            "Structure / Facility Type is required."
+        );
+
+    }
+
+
+    const structureTypes =
+        getStructureTypes();
+
+
+    if (
+        !structureTypes.includes(
+            normalizedType
+        )
+    ) {
+
+        throw createError(
+            "Invalid Structure / Facility Type."
+        );
+
+    }
+
+
+    return normalizedType;
 
 }
 
@@ -547,23 +813,17 @@ async function createRecord({
         body || {};
 
 
+    /*
+     * ======================================================
+     * RECORD TYPE
+     * ======================================================
+     */
+
     const recordType =
         cleanString(
             body.recordType
         );
 
-
-    const name =
-        cleanString(
-            body.name
-        );
-
-
-    /*
-     * ======================================================
-     * BASIC VALIDATION
-     * ======================================================
-     */
 
     if (!recordType) {
 
@@ -577,7 +837,9 @@ async function createRecord({
     if (
         !Object.values(
             RECORD_TYPES
-        ).includes(recordType)
+        ).includes(
+            recordType
+        )
     ) {
 
         throw createError(
@@ -585,6 +847,18 @@ async function createRecord({
         );
 
     }
+
+
+    /*
+     * ======================================================
+     * NAME
+     * ======================================================
+     */
+
+    const name =
+        cleanString(
+            body.name
+        );
 
 
     if (!name) {
@@ -598,7 +872,7 @@ async function createRecord({
 
     /*
      * ======================================================
-     * COMMON DATA
+     * COMMON FINANCIAL DATA
      * ======================================================
      */
 
@@ -638,6 +912,12 @@ async function createRecord({
     }
 
 
+    /*
+     * ======================================================
+     * COMMON TEXT DATA
+     * ======================================================
+     */
+
     const description =
         cleanString(
             body.description
@@ -674,9 +954,13 @@ async function createRecord({
     if (file) {
 
         profileImage =
+
             file.path ||
+
             file.location ||
+
             file.filename ||
+
             undefined;
 
     }
@@ -708,7 +992,7 @@ async function createRecord({
 
 
     /*
-     * Only add profileImage when supplied.
+     * Only save profileImage when supplied.
      */
 
     if (profileImage) {
@@ -724,7 +1008,7 @@ async function createRecord({
      * DAIRY FARM
      * ======================================================
      *
-     * Negative code.
+     * Negative automatically generated code.
      *
      * Example:
      *
@@ -741,31 +1025,9 @@ async function createRecord({
     ) {
 
         const farmType =
-            cleanString(
+            validateFarmType(
                 body.farmType
             );
-
-
-        if (!farmType) {
-
-            throw createError(
-                "Dairy Farm Type is required."
-            );
-
-        }
-
-
-        if (
-            !FARM_TYPES.includes(
-                farmType
-            )
-        ) {
-
-            throw createError(
-                "Invalid Dairy Farm Type."
-            );
-
-        }
 
 
         const code =
@@ -781,8 +1043,8 @@ async function createRecord({
 
 
         /*
-         * A Dairy Farm cannot belong to
-         * another Dairy Farm.
+         * Dairy Farms cannot belong to another
+         * Dairy Farm.
          */
 
         recordData.assetCode =
@@ -790,17 +1052,29 @@ async function createRecord({
 
 
         /*
-         * Explicitly prevent animal-only data.
+         * Animal-only fields are cleared by the
+         * model as well, but explicitly setting them
+         * here keeps the service intent clear.
          */
 
         recordData.dateOfBirth =
-            undefined;
+            null;
+
 
         recordData.mass =
-            undefined;
+            0;
 
-        recordData.gender =
-            undefined;
+
+        recordData.isMilking =
+            false;
+
+
+        /*
+         * Do not save gender.
+         *
+         * Gender is derived from positive animal codes
+         * by the model's virtual.
+         */
 
 
         const created =
@@ -828,15 +1102,13 @@ async function createRecord({
      * ANIMAL
      * ======================================================
      *
-     * Positive code.
+     * Positive automatically generated code.
      *
-     * Gender controls parity:
+     * Male:
+     *   1, 3, 5, 7...
      *
-     * MALE:
-     * 1, 3, 5, 7...
-     *
-     * FEMALE:
-     * 2, 4, 6, 8...
+     * Female:
+     *   2, 4, 6, 8...
      *
      * ======================================================
      */
@@ -922,21 +1194,18 @@ async function createRecord({
          * --------------------------------------------------
          * BREED
          * --------------------------------------------------
+         *
+         * IMPORTANT:
+         *
+         * This is validated against the breed list
+         * defined in models/dairy.js.
+         * --------------------------------------------------
          */
 
         const breed =
-            cleanString(
+            validateBreed(
                 body.type
             );
-
-
-        if (!breed) {
-
-            throw createError(
-                "Animal breed is required."
-            );
-
-        }
 
 
         /*
@@ -954,7 +1223,9 @@ async function createRecord({
         ) {
 
             animalMass =
-                Number(body.mass);
+                Number(
+                    body.mass
+                );
 
 
             if (
@@ -975,18 +1246,8 @@ async function createRecord({
 
         /*
          * --------------------------------------------------
-         * GENERATE CODE
+         * GENERATE ANIMAL CODE
          * --------------------------------------------------
-         *
-         * Gender determines whether the code is
-         * even or odd.
-         *
-         * Male:
-         *   1, 3, 5, 7...
-         *
-         * Female:
-         *   2, 4, 6, 8...
-         *
          */
 
         const code =
@@ -1006,7 +1267,9 @@ async function createRecord({
          */
 
         recordData.assetCode =
-            Number(assetCode);
+            Number(
+                assetCode
+            );
 
 
         /*
@@ -1023,8 +1286,14 @@ async function createRecord({
             breed;
 
 
-        recordData.gender =
-            gender;
+        /*
+         * Gender is intentionally NOT stored as
+         * recordData.gender because the current model
+         * derives gender from the animal code.
+         *
+         * Even code = Female
+         * Odd code  = Male
+         */
 
 
         if (
@@ -1033,6 +1302,40 @@ async function createRecord({
 
             recordData.mass =
                 animalMass;
+
+        }
+
+
+        /*
+         * --------------------------------------------------
+         * MILKING
+         * --------------------------------------------------
+         *
+         * Only females can be milking.
+         *
+         * The model also enforces this using the
+         * generated code.
+         */
+
+        const isFemale =
+            gender === "female";
+
+
+        if (
+            isFemale &&
+            body.isMilking !== undefined
+        ) {
+
+            recordData.isMilking =
+                body.isMilking === true ||
+                body.isMilking === "true" ||
+                body.isMilking === "1" ||
+                body.isMilking === "on";
+
+        } else {
+
+            recordData.isMilking =
+                false;
 
         }
 
@@ -1057,9 +1360,13 @@ async function createRecord({
             code,
 
             assetCode:
-                Number(assetCode),
+                Number(
+                    assetCode
+                ),
 
             gender,
+
+            breed,
 
             recordType
 
@@ -1073,9 +1380,10 @@ async function createRecord({
      * STRUCTURE / FACILITY
      * ======================================================
      *
-     * No dairy code.
+     * code = null
      *
      * Parent Dairy Farm is optional.
+     *
      * ======================================================
      */
 
@@ -1091,31 +1399,9 @@ async function createRecord({
          */
 
         const structureType =
-            cleanString(
+            validateStructureType(
                 body.type
             );
-
-
-        if (!structureType) {
-
-            throw createError(
-                "Structure / Facility Type is required."
-            );
-
-        }
-
-
-        if (
-            !STRUCTURE_TYPES.includes(
-                structureType
-            )
-        ) {
-
-            throw createError(
-                "Invalid Structure / Facility Type."
-            );
-
-        }
 
 
         /*
@@ -1153,7 +1439,11 @@ async function createRecord({
 
 
         /*
-         * Structures receive no Dairy code.
+         * --------------------------------------------------
+         * STRUCTURE CODE
+         * --------------------------------------------------
+         *
+         * Structures do not receive a Dairy code.
          */
 
         recordData.code =
@@ -1165,17 +1455,21 @@ async function createRecord({
 
 
         /*
-         * Structures do not receive animal-only data.
+         * --------------------------------------------------
+         * REMOVE ANIMAL-ONLY DATA
+         * --------------------------------------------------
          */
 
         recordData.dateOfBirth =
-            undefined;
+            null;
+
 
         recordData.mass =
-            undefined;
+            0;
 
-        recordData.gender =
-            undefined;
+
+        recordData.isMilking =
+            false;
 
 
         /*
