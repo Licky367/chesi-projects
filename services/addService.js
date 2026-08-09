@@ -2,53 +2,25 @@
 // services/addService.js
 // ==========================================================
 
-const mongoose =
-    require("mongoose");
-
 const Dairy =
     require("../models/dairy");
 
 
 // ==========================================================
-// CONSTANTS
+// BREEDS
 // ==========================================================
 
-const ALLOWED_STATUSES = [
-
-    "active",
-
-    "sold",
-
-    "disposed",
-
-    "inactive"
-
-];
-
-
-const DAIRY_BREEDS = [
+const dairyBreeds = [
 
     "Friesian",
 
     "Ayrshire",
 
-    "Guernsey",
-
     "Jersey",
 
-    "Brown Swiss",
+    "Guernsey",
 
     "Sahiwal",
-
-    "Boran",
-
-    "Ankole",
-
-    "Fleckvieh",
-
-    "Simmental",
-
-    "Holstein",
 
     "Crossbreed",
 
@@ -58,847 +30,398 @@ const DAIRY_BREEDS = [
 
 
 // ==========================================================
-// ERROR
+// FARM TYPE
 // ==========================================================
 
-function createError(
-    message,
-    statusCode = 500
-) {
+const farmTypes = [
 
-    const error =
-        new Error(message);
+    "ranch",
 
-    error.statusCode =
-        statusCode;
+    "zeroGrazing",
 
-    return error;
+    "semiZeroGrazing",
 
-}
+    "pastureBased",
+
+    "mixedFarming",
+
+    "cooperative",
+
+    "other"
+
+];
 
 
 // ==========================================================
-// OBJECT ID
+// GENERATE NEGATIVE FARM CODE
 // ==========================================================
 
-function isValidObjectId(
-    id
-) {
+async function generateFarmCode() {
 
-    return mongoose.Types.ObjectId.isValid(
-        id
+    const lastFarm =
+        await Dairy
+            .findOne({
+                code: {
+                    $lt: 0
+                }
+            })
+            .sort({
+                code: 1
+            })
+            .lean();
+
+
+    if (
+        !lastFarm ||
+        typeof lastFarm.code !== "number"
+    ) {
+
+        return -1;
+
+    }
+
+
+    return (
+        Number(lastFarm.code) -
+        1
     );
 
 }
 
 
 // ==========================================================
-// TEXT
+// GENERATE POSITIVE ANIMAL CODE
 // ==========================================================
 
-function parseText(
-    value
-) {
+async function generateAnimalCode() {
 
-    if (
-        value === undefined ||
-        value === null
-    ) {
-
-        return "";
-
-    }
-
-
-    return String(value).trim();
-
-}
-
-
-// ==========================================================
-// NUMBER
-// ==========================================================
-
-function parseNumber(
-    value,
-    fieldName,
-    options = {}
-) {
-
-    const {
-        allowNull = true,
-        nonNegative = true
-    } = options;
-
-
-    if (
-        value === undefined
-    ) {
-
-        return undefined;
-
-    }
-
-
-    if (
-        value === null ||
-        value === ""
-    ) {
-
-        return allowNull
-            ? null
-            : undefined;
-
-    }
-
-
-    const number =
-        Number(value);
-
-
-    if (
-        !Number.isFinite(number)
-    ) {
-
-        throw createError(
-            `${fieldName} must be a valid number.`,
-            400
-        );
-
-    }
-
-
-    if (
-        nonNegative &&
-        number < 0
-    ) {
-
-        throw createError(
-            `${fieldName} must be a non-negative number.`,
-            400
-        );
-
-    }
-
-
-    return number;
-
-}
-
-
-// ==========================================================
-// DATE
-// ==========================================================
-
-function parseDate(
-    value,
-    fieldName
-) {
-
-    if (
-        value === undefined ||
-        value === null ||
-        value === ""
-    ) {
-
-        return null;
-
-    }
-
-
-    const date =
-        new Date(value);
-
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        throw createError(
-            `${fieldName} is invalid.`,
-            400
-        );
-
-    }
-
-
-    return date;
-
-}
-
-
-// ==========================================================
-// FILE PATH
-//
-// Your multer middleware stores files in:
-//
-// public/uploads/filename.ext
-//
-// Browser URL:
-//
-// /uploads/filename.ext
-// ==========================================================
-
-function getImagePath(
-    file
-) {
-
-    if (!file) {
-
-        return "";
-
-    }
-
-
-    if (
-        file.filename
-    ) {
-
-        return `/uploads/${file.filename}`;
-
-    }
-
-
-    if (
-        file.path
-    ) {
-
-        const normalized =
-            String(file.path)
-                .replace(/\\/g, "/");
-
-
-        const marker =
-            "/public/";
-
-
-        const index =
-            normalized.lastIndexOf(
-                marker
-            );
-
-
-        if (
-            index !== -1
-        ) {
-
-            return (
-                "/" +
-                normalized
-                    .slice(
-                        index + marker.length
-                    )
-            );
-
-        }
-
-    }
-
-
-    return "";
-
-}
-
-
-// ==========================================================
-// FIND DAIRY FARM
-//
-// Dairy Farms are identified by NEGATIVE code.
-// ==========================================================
-
-async function findDairyFarmByCode(
-    code
-) {
-
-    const numericCode =
-        Number(code);
-
-
-    if (
-        !Number.isFinite(
-            numericCode
-        ) ||
-        numericCode >= 0
-    ) {
-
-        throw createError(
-            "Invalid Dairy Farm code.",
-            400
-        );
-
-    }
-
-
-    const farm =
+    const lastAnimal =
         await Dairy
             .findOne({
-
-                code:
-                    numericCode,
-
-                assetCode:
-                    null
-
+                code: {
+                    $gt: 0
+                }
+            })
+            .sort({
+                code: -1
             })
             .lean();
 
 
     if (
-        !farm
+        !lastAnimal ||
+        typeof lastAnimal.code !== "number"
     ) {
 
-        throw createError(
-            "The selected Parent Dairy Farm does not exist.",
-            404
-        );
+        return 1;
 
     }
 
 
-    return farm;
+    return (
+        Number(lastAnimal.code) +
+        1
+    );
 
 }
 
 
 // ==========================================================
-// GET AVAILABLE DAIRY FARMS
-// ==========================================================
-
-async function getDairyFarms() {
-
-    return Dairy
-        .find({
-
-            code: {
-                $lt: 0
-            },
-
-            assetCode:
-                null
-
-        })
-        .sort({
-
-            name:
-                1
-
-        })
-        .lean();
-
-}
-
-
-// ==========================================================
-// GET ADD PAGE
-// ==========================================================
-
-async function getAddPage() {
-
-    const structures =
-        await getDairyFarms();
-
-
-    return {
-
-        structures,
-
-        dairyBreeds:
-            DAIRY_BREEDS
-
-    };
-
-}
-
-
-// ==========================================================
-// CREATE DAIRY / ASSET
+// CREATE RECORD
 // ==========================================================
 
 async function createDairy(
-    body = {},
-    file = null
+    data
 ) {
 
-    // ======================================================
-    // NAME
-    // ======================================================
+    const {
 
-    const name =
-        parseText(
-            body.name
-        );
-
-
-    if (
-        !name
-    ) {
-
-        throw createError(
-            "Name is required.",
-            400
-        );
-
-    }
-
-
-    // ======================================================
-    // CODE
-    //
-    // EMPTY  = manual asset / structure
-    // NEGATIVE = Dairy Farm
-    // POSITIVE = identified dairy
-    // ======================================================
-
-    const rawCode =
-        body.code;
-
-
-    const hasCode =
-        rawCode !== undefined &&
-        rawCode !== null &&
-        String(rawCode).trim() !== "";
-
-
-    let code =
-        null;
-
-
-    if (
-        hasCode
-    ) {
-
-        code =
-            parseNumber(
-                rawCode,
-                "Dairy Code",
-                {
-                    allowNull: false,
-                    nonNegative: false
-                }
-            );
-
-
-        if (
-            !Number.isInteger(
-                code
-            )
-        ) {
-
-            throw createError(
-                "Dairy Code must be a whole number.",
-                400
-            );
-
-        }
-
-
-        if (
-            code === 0
-        ) {
-
-            throw createError(
-                "Dairy Code cannot be zero. Use a positive code for an animal, a negative code for a Dairy Farm, or leave it empty for a structure/manual asset.",
-                400
-            );
-
-        }
-
-    }
-
-
-    const isDairyFarm =
-        code !== null &&
-        code < 0;
-
-
-    const isIdentifiedDairy =
-        code !== null &&
-        code > 0;
-
-
-    const isManualAsset =
-        code === null;
-
-
-    // ======================================================
-    // TYPE
-    // ======================================================
-
-    const type =
-        parseText(
-            body.type
-        );
-
-
-    // ======================================================
-    // BUILD DATA
-    // ======================================================
-
-    const dairyData = {
+        recordType,
 
         name,
 
-        code,
+        farmType,
+
+        assetCode,
+
+        structureFarmCode,
+
+        dateOfBirth,
 
         type,
 
-        description:
-            parseText(
-                body.description
-            ),
+        mass,
 
-        condition:
-            parseText(
-                body.condition
-            ),
+        buyingPrice,
 
-        location:
-            parseText(
-                body.location
-            ),
+        currentWorth,
 
-        status:
-            "active",
+        description,
 
-        acquisitionDate:
-            new Date()
+        condition,
 
-    };
+        location,
+
+        status,
+
+        profileImage
+
+    } =
+        data;
 
 
     // ======================================================
-    // STATUS
+    // VALIDATE RECORD TYPE
     // ======================================================
+
+    const validRecordTypes = [
+
+        "dairyFarm",
+
+        "animal",
+
+        "structure"
+
+    ];
+
 
     if (
-        body.status !== undefined &&
-        body.status !== null &&
-        String(body.status).trim() !== ""
+        !validRecordTypes.includes(
+            recordType
+        )
     ) {
 
-        const status =
-            parseText(
-                body.status
-            );
-
-
-        if (
-            !ALLOWED_STATUSES.includes(
-                status
-            )
-        ) {
-
-            throw createError(
-                "Invalid status.",
-                400
-            );
-
-        }
-
-
-        dairyData.status =
-            status;
+        throw new Error(
+            "Invalid record type."
+        );
 
     }
+
+
+    // ======================================================
+    // BASE DATA
+    // ======================================================
+
+    const record = {
+
+        name:
+            name.trim(),
+
+        type:
+            type || null,
+
+        buyingPrice:
+            Number(buyingPrice) || 0,
+
+        currentWorth:
+            Number(currentWorth) || 0,
+
+        description:
+            description || "",
+
+        condition:
+            condition || "",
+
+        location:
+            location || "",
+
+        status:
+            status || "active"
+
+    };
 
 
     // ======================================================
     // PROFILE IMAGE
     // ======================================================
 
-    const imagePath =
-        getImagePath(
-            file
-        );
-
-
     if (
-        imagePath
+        profileImage
     ) {
 
-        dairyData.profileImage =
-            imagePath;
+        record.profileImage =
+            `/uploads/${profileImage.filename}`;
 
     }
 
 
     // ======================================================
-    // BUYING PRICE
+    // DAIRY FARM
     // ======================================================
 
     if (
-        body.buyingPrice !== undefined
+        recordType ===
+        "dairyFarm"
     ) {
 
-        const buyingPrice =
-            parseNumber(
-                body.buyingPrice,
-                "Buying Price"
-            );
+        record.code =
+            await generateFarmCode();
 
 
-        if (
-            buyingPrice !== null
-        ) {
+        record.farmType =
+            farmType;
 
-            dairyData.buyingPrice =
-                buyingPrice;
 
-        }
+        /*
+         * Dairy farms cannot belong
+         * to another dairy farm.
+         */
 
-    }
+        record.assetCode =
+            null;
 
 
-    // ======================================================
-    // CURRENT WORTH
-    // ======================================================
+        record.dateOfBirth =
+            null;
 
-    if (
-        body.currentWorth !== undefined
-    ) {
 
-        const currentWorth =
-            parseNumber(
-                body.currentWorth,
-                "Current Worth"
-            );
-
-
-        if (
-            currentWorth !== null
-        ) {
-
-            dairyData.currentWorth =
-                currentWorth;
-
-        }
-
-    }
-
-
-    // ======================================================
-    // IDENTIFIED DAIRY ONLY
-    //
-    // DATE OF BIRTH
-    // MASS
-    // ======================================================
-
-    if (
-        isIdentifiedDairy
-    ) {
-
-        if (
-            body.dateOfBirth !== undefined
-        ) {
-
-            const dateOfBirth =
-                parseDate(
-                    body.dateOfBirth,
-                    "Date of Birth"
-                );
-
-
-            if (
-                dateOfBirth
-            ) {
-
-                const now =
-                    new Date();
-
-
-                if (
-                    dateOfBirth > now
-                ) {
-
-                    throw createError(
-                        "Date of Birth cannot be in the future.",
-                        400
-                    );
-
-                }
-
-
-                dairyData.dateOfBirth =
-                    dateOfBirth;
-
-            }
-
-        }
-
-
-        if (
-            body.mass !== undefined
-        ) {
-
-            const mass =
-                parseNumber(
-                    body.mass,
-                    "Mass"
-                );
-
-
-            if (
-                mass !== null
-            ) {
-
-                dairyData.mass =
-                    mass;
-
-            }
-
-        }
-
-    }
-
-
-    // ======================================================
-    // NON-IDENTIFIED RECORDS
-    //
-    // Do not accidentally store animal-specific data.
-    // ======================================================
-
-    else {
-
-        delete dairyData.dateOfBirth;
-
-        delete dairyData.mass;
-
-    }
-
-
-    // ======================================================
-    // PARENT DAIRY FARM
-    //
-    // Allowed:
-    //
-    // 1. No code
-    // 2. Positive code
-    //
-    // Not allowed:
-    //
-    // Negative code / Dairy Farm
-    // ======================================================
-
-    if (
-        body.assetCode !== undefined
-    ) {
-
-        const suppliedAssetCode =
-            parseText(
-                body.assetCode
-            );
-
-
-        if (
-            suppliedAssetCode
-        ) {
-
-            if (
-                isDairyFarm
-            ) {
-
-                throw createError(
-                    "A Dairy Farm cannot belong to another Dairy Farm.",
-                    400
-                );
-
-            }
-
-
-            const farm =
-                await findDairyFarmByCode(
-                    suppliedAssetCode
-                );
-
-
-            dairyData.assetCode =
-                Number(
-                    farm.code
-                );
-
-        }
-
-        else {
-
-            dairyData.assetCode =
-                null;
-
-        }
-
-    }
-
-    else {
-
-        dairyData.assetCode =
+        record.mass =
             null;
 
     }
 
 
     // ======================================================
-    // CREATE DOCUMENT
+    // ANIMAL
     // ======================================================
 
-    const dairy =
-        new Dairy(
-            dairyData
-        );
-
-
-    // ======================================================
-    // SAVE
-    // ======================================================
-
-    await dairy.save();
-
-
-    // ======================================================
-    // RELOAD
-    // ======================================================
-
-    const saved =
-        await Dairy
-            .findById(
-                dairy._id
-            )
-            .lean();
-
-
-    if (
-        !saved
+    else if (
+        recordType ===
+        "animal"
     ) {
 
-        throw createError(
-            "The Dairy / Asset was created but could not be retrieved.",
-            500
-        );
+        record.code =
+            await generateAnimalCode();
+
+
+        record.dateOfBirth =
+            dateOfBirth;
+
+
+        record.mass =
+            mass !== null &&
+            mass !== undefined &&
+            mass !== ""
+                ? Number(mass)
+                : null;
+
+
+        /*
+         * Animal may optionally belong
+         * to a dairy farm.
+         */
+
+        record.assetCode =
+            assetCode || null;
+
+
+        record.farmType =
+            null;
 
     }
 
 
     // ======================================================
-    // RETURN
+    // STRUCTURE / FACILITY
     // ======================================================
 
-    return saved;
+    else if (
+        recordType ===
+        "structure"
+    ) {
+
+        /*
+         * Structures do not receive
+         * a dairy code.
+         */
+
+        record.code =
+            null;
+
+
+        record.dateOfBirth =
+            null;
+
+
+        record.mass =
+            null;
+
+
+        record.farmType =
+            null;
+
+
+        /*
+         * Structure/facility may optionally
+         * belong to a dairy farm.
+         */
+
+        record.assetCode =
+            structureFarmCode ||
+            null;
+
+    }
+
+
+    // ======================================================
+    // CREATE
+    // ======================================================
+
+    const createdRecord =
+        await Dairy.create(
+            record
+        );
+
+
+    return createdRecord;
 
 }
 
 
 // ==========================================================
-// EXPORTS
+// GET ADD PAGE DATA
+// ==========================================================
+
+async function getAddPageData() {
+
+    const dairyFarms =
+        await Dairy
+            .find({
+                code: {
+                    $lt: 0
+                }
+            })
+            .sort({
+                code: 1
+            })
+            .lean();
+
+
+    return {
+
+        dairyBreeds,
+
+        dairyFarms,
+
+        farmTypes
+
+    };
+
+}
+
+
+// ==========================================================
+// EXPORT
 // ==========================================================
 
 module.exports = {
 
-    getAddPage,
-
     createDairy,
 
-    getDairyFarms,
+    getAddPageData,
 
-    DAIRY_BREEDS
+    generateFarmCode,
+
+    generateAnimalCode
 
 };
