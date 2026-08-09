@@ -8,7 +8,7 @@ const router = express.Router();
 ========================================================== */
 
 const indexController =
-    require("../controllers/networth/index");
+    require("../controllers/networth/entry");
 
 const structuresController =
     require("../controllers/networth/structures");
