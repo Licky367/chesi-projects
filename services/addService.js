@@ -86,14 +86,20 @@ const STRUCTURE_TYPES = [
 
 
 // ==========================================================
-// DEFAULT BREEDS
+// GENDER TYPES
 // ==========================================================
-//
-// The EJS receives dairyBreeds from here.
-//
-// If your application already stores breeds somewhere else,
-// replace this list with that source.
-//
+
+const GENDER_TYPES = [
+
+    "male",
+
+    "female"
+
+];
+
+
+// ==========================================================
+// DEFAULT BREEDS
 // ==========================================================
 
 const DAIRY_BREEDS = [
@@ -236,8 +242,9 @@ function normalizeStatus(value) {
 async function getAddPageData() {
 
     /*
-     * We need the existing Dairy records in order to
-     * populate the Dairy Farm selector.
+     * Retrieve existing Dairy Farm records.
+     *
+     * Negative codes identify Dairy Farms.
      */
 
     const dairyFarms =
@@ -270,17 +277,12 @@ async function getAddPageData() {
 // FIND NEXT NEGATIVE DAIRY FARM CODE
 // ==========================================================
 //
-// Example:
+// Dairy Farms use negative codes:
 //
-// existing:
 // -1
 // -2
-// -5
-//
-// next:
-// -6
-//
-// This function does NOT trust the browser to supply a code.
+// -3
+// -4
 //
 // ==========================================================
 
@@ -324,27 +326,70 @@ async function getNextNegativeCode() {
 // FIND NEXT POSITIVE ANIMAL CODE
 // ==========================================================
 //
-// Example:
+// Gender determines parity:
 //
-// existing:
-// 1
-// 2
-// 7
+// MALE
+// 1, 3, 5, 7, 9...
 //
-// next:
-// 8
+// FEMALE
+// 2, 4, 6, 8, 10...
 //
-// Again, the browser does not supply this.
+// The backend generates the code.
+// The browser never supplies it.
 //
 // ==========================================================
 
-async function getNextPositiveCode() {
+async function getNextPositiveCode(
+    gender
+) {
+
+    const normalizedGender =
+        cleanString(
+            gender
+        ).toLowerCase();
+
+
+    /*
+     * Male = odd
+     * Female = even
+     */
+
+    const isFemale =
+        normalizedGender ===
+        "female";
+
+
+    const parity =
+        isFemale
+            ? 0
+            : 1;
+
+
+    /*
+     * Find the highest existing positive code
+     * belonging to the selected gender/parity.
+     *
+     * MongoDB $expr is used so parity is checked
+     * directly against the code.
+     */
 
     const lastAnimal =
         await Dairy.findOne({
 
             code: {
                 $gt: 0
+            },
+
+            $expr: {
+                $eq: [
+                    {
+                        $mod: [
+                            "$code",
+                            2
+                        ]
+                    },
+                    parity
+                ]
             }
 
         })
@@ -355,6 +400,14 @@ async function getNextPositiveCode() {
         .lean();
 
 
+    /*
+     * If there are no existing animals of this
+     * gender, start at:
+     *
+     * male   -> 1
+     * female -> 2
+     */
+
     if (
         !lastAnimal ||
         !Number.isFinite(
@@ -362,13 +415,19 @@ async function getNextPositiveCode() {
         )
     ) {
 
-        return 1;
+        return isFemale
+            ? 2
+            : 1;
 
     }
 
 
+    /*
+     * Move to the next number with the same parity.
+     */
+
     return (
-        Number(lastAnimal.code) + 1
+        Number(lastAnimal.code) + 2
     );
 
 }
@@ -380,8 +439,6 @@ async function getNextPositiveCode() {
 //
 // assetCode must be the NEGATIVE CODE of an existing
 // Dairy Farm.
-//
-// We intentionally do not accept a positive code here.
 //
 // ==========================================================
 
@@ -425,10 +482,8 @@ async function verifyDairyFarm(
 
     /*
      * Extra protection:
-     * a parent must actually be a Dairy Farm.
-     *
-     * The negative code convention is the primary
-     * identifier used by the current system.
+     * the selected record must actually have
+     * a negative Dairy Farm code.
      */
 
     if (
@@ -611,23 +666,12 @@ async function createRecord({
      * ======================================================
      * PROFILE IMAGE
      * ======================================================
-     *
-     * This preserves compatibility with an existing upload
-     * middleware.
-     *
-     * Adjust the saved field below only if your Dairy model
-     * uses a different image field.
      */
 
     let profileImage;
 
 
     if (file) {
-
-        /*
-         * If the upload middleware has already produced
-         * a filename/path, use that.
-         */
 
         profileImage =
             file.path ||
@@ -664,8 +708,7 @@ async function createRecord({
 
 
     /*
-     * Only add profileImage when an image was actually
-     * supplied.
+     * Only add profileImage when supplied.
      */
 
     if (profileImage) {
@@ -681,17 +724,14 @@ async function createRecord({
      * DAIRY FARM
      * ======================================================
      *
-     * Negative code generated by backend.
+     * Negative code.
      *
-     * No assetCode.
+     * Example:
      *
-     * No dateOfBirth.
+     * -1
+     * -2
+     * -3
      *
-     * No animal mass.
-     *
-     * Farm type becomes `type`.
-     *
-     * No parent Dairy Farm.
      * ======================================================
      */
 
@@ -741,8 +781,8 @@ async function createRecord({
 
 
         /*
-         * A Dairy Farm cannot belong to another
-         * Dairy Farm.
+         * A Dairy Farm cannot belong to
+         * another Dairy Farm.
          */
 
         recordData.assetCode =
@@ -750,7 +790,7 @@ async function createRecord({
 
 
         /*
-         * Explicitly prevent animal-only fields.
+         * Explicitly prevent animal-only data.
          */
 
         recordData.dateOfBirth =
@@ -759,10 +799,9 @@ async function createRecord({
         recordData.mass =
             undefined;
 
+        recordData.gender =
+            undefined;
 
-        /*
-         * Create the record.
-         */
 
         const created =
             await Dairy.create(
@@ -789,9 +828,16 @@ async function createRecord({
      * ANIMAL
      * ======================================================
      *
-     * Positive code generated by backend.
+     * Positive code.
      *
-     * assetCode = negative parent Dairy Farm code.
+     * Gender controls parity:
+     *
+     * MALE:
+     * 1, 3, 5, 7...
+     *
+     * FEMALE:
+     * 2, 4, 6, 8...
+     *
      * ======================================================
      */
 
@@ -800,15 +846,17 @@ async function createRecord({
         RECORD_TYPES.ANIMAL
     ) {
 
+        /*
+         * --------------------------------------------------
+         * PARENT DAIRY FARM
+         * --------------------------------------------------
+         */
+
         const assetCode =
             cleanString(
                 body.assetCode
             );
 
-
-        /*
-         * Animal MUST belong to a Dairy Farm.
-         */
 
         if (!assetCode) {
 
@@ -825,7 +873,43 @@ async function createRecord({
 
 
         /*
-         * Date of birth is required for animals.
+         * --------------------------------------------------
+         * GENDER
+         * --------------------------------------------------
+         */
+
+        const gender =
+            cleanString(
+                body.gender
+            ).toLowerCase();
+
+
+        if (!gender) {
+
+            throw createError(
+                "Animal gender is required."
+            );
+
+        }
+
+
+        if (
+            !GENDER_TYPES.includes(
+                gender
+            )
+        ) {
+
+            throw createError(
+                "Invalid animal gender."
+            );
+
+        }
+
+
+        /*
+         * --------------------------------------------------
+         * DATE OF BIRTH
+         * --------------------------------------------------
          */
 
         const dateOfBirth =
@@ -835,7 +919,9 @@ async function createRecord({
 
 
         /*
-         * Breed is required.
+         * --------------------------------------------------
+         * BREED
+         * --------------------------------------------------
          */
 
         const breed =
@@ -854,7 +940,9 @@ async function createRecord({
 
 
         /*
-         * Mass is optional.
+         * --------------------------------------------------
+         * MASS
+         * --------------------------------------------------
          */
 
         let animalMass;
@@ -886,11 +974,25 @@ async function createRecord({
 
 
         /*
-         * Generate the positive code here.
+         * --------------------------------------------------
+         * GENERATE CODE
+         * --------------------------------------------------
+         *
+         * Gender determines whether the code is
+         * even or odd.
+         *
+         * Male:
+         *   1, 3, 5, 7...
+         *
+         * Female:
+         *   2, 4, 6, 8...
+         *
          */
 
         const code =
-            await getNextPositiveCode();
+            await getNextPositiveCode(
+                gender
+            );
 
 
         recordData.code =
@@ -898,17 +1000,20 @@ async function createRecord({
 
 
         /*
-         * IMPORTANT:
-         *
-         * assetCode is NOT generated as a new code.
-         *
-         * It is the negative code of the selected
-         * parent Dairy Farm.
+         * --------------------------------------------------
+         * PARENT FARM
+         * --------------------------------------------------
          */
 
         recordData.assetCode =
             Number(assetCode);
 
+
+        /*
+         * --------------------------------------------------
+         * ANIMAL DATA
+         * --------------------------------------------------
+         */
 
         recordData.dateOfBirth =
             dateOfBirth;
@@ -916,6 +1021,10 @@ async function createRecord({
 
         recordData.type =
             breed;
+
+
+        recordData.gender =
+            gender;
 
 
         if (
@@ -927,6 +1036,12 @@ async function createRecord({
 
         }
 
+
+        /*
+         * --------------------------------------------------
+         * CREATE ANIMAL
+         * --------------------------------------------------
+         */
 
         const created =
             await Dairy.create(
@@ -944,6 +1059,8 @@ async function createRecord({
             assetCode:
                 Number(assetCode),
 
+            gender,
+
             recordType
 
         };
@@ -956,13 +1073,9 @@ async function createRecord({
      * STRUCTURE / FACILITY
      * ======================================================
      *
-     * No code.
+     * No dairy code.
      *
      * Parent Dairy Farm is optional.
-     *
-     * If a parent is selected:
-     *
-     * assetCode = negative code of parent farm.
      * ======================================================
      */
 
@@ -970,6 +1083,12 @@ async function createRecord({
         recordType ===
         RECORD_TYPES.STRUCTURE
     ) {
+
+        /*
+         * --------------------------------------------------
+         * STRUCTURE TYPE
+         * --------------------------------------------------
+         */
 
         const structureType =
             cleanString(
@@ -1000,13 +1119,9 @@ async function createRecord({
 
 
         /*
-         * The EJS sends the optional parent farm as:
-         *
-         * structureFarmCode
-         *
-         * We convert that into the actual model field:
-         *
-         * assetCode
+         * --------------------------------------------------
+         * OPTIONAL PARENT FARM
+         * --------------------------------------------------
          */
 
         const structureFarmCode =
@@ -1031,10 +1146,6 @@ async function createRecord({
 
         } else {
 
-            /*
-             * No parent farm.
-             */
-
             recordData.assetCode =
                 null;
 
@@ -1042,7 +1153,7 @@ async function createRecord({
 
 
         /*
-         * Structures/facilities receive NO dairy code.
+         * Structures receive no Dairy code.
          */
 
         recordData.code =
@@ -1054,7 +1165,7 @@ async function createRecord({
 
 
         /*
-         * Structures do not receive animal-only fields.
+         * Structures do not receive animal-only data.
          */
 
         recordData.dateOfBirth =
@@ -1063,6 +1174,15 @@ async function createRecord({
         recordData.mass =
             undefined;
 
+        recordData.gender =
+            undefined;
+
+
+        /*
+         * --------------------------------------------------
+         * CREATE STRUCTURE
+         * --------------------------------------------------
+         */
 
         const created =
             await Dairy.create(
@@ -1089,8 +1209,9 @@ async function createRecord({
 
 
     /*
-     * This should never be reached because recordType
-     * was validated above.
+     * ======================================================
+     * FALLBACK
+     * ======================================================
      */
 
     throw createError(
