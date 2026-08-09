@@ -1,21 +1,53 @@
-const express = require("express");
-const http = require("http");
-const path = require("path");
-const expressLayouts = require("express-ejs-layouts");
-const session = require("express-session");
-const { rateLimit } = require("express-rate-limit");
-const { Server } = require("socket.io");
+// ==========================================================
+// server.js
+// ==========================================================
+
+const express =
+  require("express");
+
+const http =
+  require("http");
+
+const path =
+  require("path");
+
+const expressLayouts =
+  require("express-ejs-layouts");
+
+const session =
+  require("express-session");
+
+const { rateLimit } =
+  require("express-rate-limit");
+
+const { Server } =
+  require("socket.io");
+
+const helmet =
+  require("helmet");
+
+const compression =
+  require("compression");
+
+const morgan =
+  require("morgan");
+
+const methodOverride =
+  require("method-override");
+
 require("dotenv").config();
-const helmet = require("helmet");
-const compression = require("compression");
-const morgan = require("morgan");
-const methodOverride = require("method-override");
+
+
+// ==========================================================
+// CONNECT-MONGO
+// ==========================================================
 
 let MongoStore;
 
 try {
 
-  MongoStore = require("connect-mongo");
+  MongoStore =
+    require("connect-mongo");
 
 } catch (error) {
 
@@ -25,6 +57,11 @@ try {
 
 }
 
+
+// ==========================================================
+// ENVIRONMENT
+// ==========================================================
+
 const isProduction =
   process.env.NODE_ENV === "production";
 
@@ -32,20 +69,28 @@ const isProduction =
 if (isProduction) {
 
   const requiredEnvVars = [
+
     "MONGO_URI",
+
     "SESSION_SECRET",
+
     "FRONTEND_URL"
+
   ];
+
 
   const missing =
     requiredEnvVars.filter(
       (key) => !process.env[key]
     );
 
+
   if (missing.length) {
 
     console.error(
+
       `❌ Production startup failed: missing required environment variables: ${missing.join(", ")}`
+
     );
 
     process.exit(1);
@@ -55,106 +100,22 @@ if (isProduction) {
 }
 
 
-// ======================
+// ==========================================================
 // DATABASE
-// ======================
+// ==========================================================
 
-const connectDB = require("./db");
+const connectDB =
+  require("./db");
 
 
-// ======================
+// ==========================================================
 // ROUTES
-// =====================.=
-
-let createRoutes;
-
-try {
-
-  createRoutes =
-    require("./routes/create");
-
-} catch (err) {
-
-  console.warn(
-    "Warning: failed to load create routes:",
-    err.message
-  );
-
-}
+// ==========================================================
 
 
-let authRoutes;
-
-try {
-
-  authRoutes =
-    require("./routes/auth");
-
-} catch (err) {
-
-  console.warn(
-    "Warning: failed to load auth routes:",
-    err.message
-  );
-
-}
-
-
-let updateRoutes;
-
-try {
-
-  updateRoutes =
-    require("./routes/update");
-
-} catch (err) {
-
-  console.warn(
-    "Warning: failed to load update routes:",
-    err.message
-  );
-
-}
-
-
-let milkRoutes;
-
-try {
-
-  milkRoutes =
-    require("./routes/milk");
-
-} catch (err) {
-
-  console.warn(
-    "Warning: failed to load milk routes:",
-    err.message
-  );
-
-}
-
-
-
-/* =========================================================
-   NET WORTH ROUTES
-========================================================= */
-
-let networthRoutes;
-
-try {
-
-  networthRoutes =
-    require("./routes/networth");
-
-} catch (err) {
-
-  console.warn(
-    "Warning: failed to load networth routes:",
-    err.message
-  );
-
-}
-
+// ----------------------------------------------------------
+// INDEX
+// ----------------------------------------------------------
 
 let indexRoutes;
 
@@ -173,6 +134,94 @@ try {
 }
 
 
+// ----------------------------------------------------------
+// AUTH
+// ----------------------------------------------------------
+
+let authRoutes;
+
+try {
+
+  authRoutes =
+    require("./routes/auth");
+
+} catch (err) {
+
+  console.warn(
+    "Warning: failed to load auth routes:",
+    err.message
+  );
+
+}
+
+
+// ----------------------------------------------------------
+// CREATE INVITE
+// ----------------------------------------------------------
+
+let createRoutes;
+
+try {
+
+  createRoutes =
+    require("./routes/create");
+
+} catch (err) {
+
+  console.warn(
+    "Warning: failed to load create routes:",
+    err.message
+  );
+
+}
+
+
+// ----------------------------------------------------------
+// UPDATE
+// ----------------------------------------------------------
+
+let updateRoutes;
+
+try {
+
+  updateRoutes =
+    require("./routes/update");
+
+} catch (err) {
+
+  console.warn(
+    "Warning: failed to load update routes:",
+    err.message
+  );
+
+}
+
+
+// ----------------------------------------------------------
+// ADD DAIRY / ASSET
+// ----------------------------------------------------------
+
+let addRoutes;
+
+try {
+
+  addRoutes =
+    require("./routes/add");
+
+} catch (err) {
+
+  console.warn(
+    "Warning: failed to load add routes:",
+    err.message
+  );
+
+}
+
+
+// ----------------------------------------------------------
+// PROFILE
+// ----------------------------------------------------------
+
 let profileRoutes;
 
 try {
@@ -189,6 +238,31 @@ try {
 
 }
 
+
+// ----------------------------------------------------------
+// MILK
+// ----------------------------------------------------------
+
+let milkRoutes;
+
+try {
+
+  milkRoutes =
+    require("./routes/milk");
+
+} catch (err) {
+
+  console.warn(
+    "Warning: failed to load milk routes:",
+    err.message
+  );
+
+}
+
+
+// ----------------------------------------------------------
+// ACCOUNTS
+// ----------------------------------------------------------
 
 let accountsRoutes;
 
@@ -207,7 +281,35 @@ try {
 }
 
 
-/*______POULTRY___,__*/
+// ==========================================================
+// NET WORTH
+// ==========================================================
+
+let networthRoutes;
+
+try {
+
+  networthRoutes =
+    require("./routes/networth");
+
+} catch (err) {
+
+  console.warn(
+    "Warning: failed to load networth routes:",
+    err.message
+  );
+
+}
+
+
+// ==========================================================
+// POULTRY
+// ==========================================================
+
+
+// ----------------------------------------------------------
+// POULTRY STATS
+// ----------------------------------------------------------
 
 let poultryStatsRoutes;
 
@@ -226,6 +328,10 @@ try {
 }
 
 
+// ----------------------------------------------------------
+// EGGS
+// ----------------------------------------------------------
+
 let eggRoutes;
 
 try {
@@ -242,6 +348,10 @@ try {
 
 }
 
+
+// ----------------------------------------------------------
+// CAGE
+// ----------------------------------------------------------
 
 let cageRoutes;
 
@@ -260,6 +370,10 @@ try {
 }
 
 
+// ----------------------------------------------------------
+// NURSING
+// ----------------------------------------------------------
+
 let nursingRoutes;
 
 try {
@@ -276,6 +390,10 @@ try {
 
 }
 
+
+// ----------------------------------------------------------
+// FINANCE
+// ----------------------------------------------------------
 
 let financeRoutes;
 
@@ -294,6 +412,10 @@ try {
 }
 
 
+// ----------------------------------------------------------
+// INCUBATION
+// ----------------------------------------------------------
+
 let incubationRoutes;
 
 try {
@@ -310,6 +432,10 @@ try {
 
 }
 
+
+// ----------------------------------------------------------
+// DASHBOARD
+// ----------------------------------------------------------
 
 let dashboardRoutes;
 
@@ -328,7 +454,9 @@ try {
 }
 
 
-/*________AGRICULTURE_______*/
+// ==========================================================
+// AGRICULTURE
+// ==========================================================
 
 let farmRoutes;
 
@@ -347,70 +475,83 @@ try {
 }
 
 
-// ======================
+// ==========================================================
 // SOCKET HANDLER
-// ======================
+// ==========================================================
 
 const socketHandler =
   require("./socket/socket");
 
 
-// ======================
+// ==========================================================
 // SEED ADMIN
-// ======================
+// ==========================================================
 
 const seedAdmin =
   require("./utils/seedAdmin");
 
 
-// ======================
-// INIT APP + SERVER
-// ======================
+// ==========================================================
+// APP
+// ==========================================================
 
 const app =
   express();
+
 
 const server =
   http.createServer(app);
 
 
-app.disable("x-powered-by");
+app.disable(
+  "x-powered-by"
+);
 
 
-// ======================
+// ==========================================================
 // TRUST PROXY
-// ======================
+// ==========================================================
 
 if (
   isProduction ||
   process.env.TRUST_PROXY === "1"
 ) {
 
-  app.enable("trust proxy");
+  app.enable(
+    "trust proxy"
+  );
 
 } else {
 
-  app.disable("trust proxy");
+  app.disable(
+    "trust proxy"
+  );
 
 }
 
 
-// ======================
-// SECURITY + PERFORMANCE
-// ======================
+// ==========================================================
+// SECURITY
+// ==========================================================
 
 app.use(
 
   helmet({
 
-    contentSecurityPolicy: false,
+    contentSecurityPolicy:
+      false,
 
-    crossOriginEmbedderPolicy: false,
+    crossOriginEmbedderPolicy:
+      false
 
   })
 
 );
 
+
+// ==========================================================
+// RATE LIMIT
+// ==========================================================
 
 app.use(
 
@@ -424,58 +565,87 @@ app.use(
         ? 200
         : 1000,
 
-    standardHeaders: true,
+    standardHeaders:
+      true,
 
-    legacyHeaders: false,
+    legacyHeaders:
+      false,
 
     message: {
+
       message:
         "Too many requests, please try again later."
-    },
+
+    }
 
   })
 
 );
 
 
+// ==========================================================
+// COMPRESSION
+// ==========================================================
+
 app.use(
   compression()
 );
 
 
+// ==========================================================
+// LOGGING
+// ==========================================================
+
 app.use(
+
   morgan(
+
     process.env.MORGAN_FORMAT ||
     "combined"
+
   )
+
 );
 
 
-// ======================
-// SOCKET.IO SETUP
-// ======================
+// ==========================================================
+// SOCKET.IO
+// ==========================================================
 
 const allowedOrigin =
   process.env.FRONTEND_URL ||
-  (isProduction ? false : "*");
+  (
+    isProduction
+      ? false
+      : "*"
+  );
 
 
 const io =
-  new Server(server, {
+  new Server(
 
-    cors: {
+    server,
 
-      origin:
-        allowedOrigin,
+    {
 
-      methods: [
-        "GET",
-        "POST"
-      ],
+      cors: {
 
-    },
+        origin:
+          allowedOrigin,
 
-  });
+        methods: [
+
+          "GET",
+
+          "POST"
+
+        ]
+
+      }
+
+    }
+
+  );
 
 
 app.set(
@@ -484,56 +654,27 @@ app.set(
 );
 
 
-socketHandler(io);
+socketHandler(
+  io
+);
 
 
-// ======================
-// BOOTSTRAP APP
-// ======================
-
-const bootstrap = async () => {
-
-  const dbConnected =
-    await connectDB();
-
-
-  if (dbConnected) {
-
-    await seedAdmin();
-
-  } else if (isProduction) {
-
-    console.error(
-      "❌ Production startup failed: MongoDB is unavailable."
-    );
-
-    process.exit(1);
-
-  } else {
-
-    console.warn(
-      "⚠️ Skipping admin seed because MongoDB is unavailable."
-    );
-
-  }
-
-
-  startServer(PORT);
-
-};
-
-
-// ======================
-// MIDDLEWARE
-// ======================
+// ==========================================================
+// BODY PARSERS
+//
+// IMPORTANT:
+// These must be registered before the routes.
+// ==========================================================
 
 app.use(
 
   express.urlencoded({
 
-    extended: true,
+    extended:
+      true,
 
-    limit: "10mb"
+    limit:
+      "10mb"
 
   })
 
@@ -544,26 +685,33 @@ app.use(
 
   express.json({
 
-    limit: "10mb"
+    limit:
+      "10mb"
 
   })
 
 );
 
 
+// ==========================================================
+// METHOD OVERRIDE
+// ==========================================================
+
 app.use(
   methodOverride("_method")
 );
 
 
-// ======================
-// SESSION CONFIG
-// ======================
+// ==========================================================
+// SESSION
+// ==========================================================
 
 const sessionStore =
 
   isProduction &&
+
   process.env.MONGO_URI &&
+
   MongoStore
 
     ? MongoStore.create({
@@ -575,7 +723,7 @@ const sessionStore =
           24 * 60 * 60,
 
         touchAfter:
-          60 * 60,
+          60 * 60
 
       })
 
@@ -587,11 +735,15 @@ app.use(
   session({
 
     secret:
+
       process.env.SESSION_SECRET ||
+
       (
+
         isProduction
           ? ""
           : "development-session-secret"
+
       ),
 
     store:
@@ -615,21 +767,25 @@ app.use(
         "lax",
 
       maxAge:
-        1000 *
-        60 *
-        60 *
-        24,
 
-    },
+        1000 *
+
+        60 *
+
+        60 *
+
+        24
+
+    }
 
   })
 
 );
 
 
-// ======================
-// GLOBAL USER (EJS)
-// ======================
+// ==========================================================
+// GLOBAL USER
+// ==========================================================
 
 app.use(
 
@@ -663,44 +819,61 @@ app.use(
 );
 
 
-// ======================
+// ==========================================================
 // HEALTH CHECK
-// ======================
+// ==========================================================
 
 app.get(
+
   "/health",
+
   (req, res) => {
 
-    res.status(200).json({
+    return res.status(200).json({
 
       status:
         "ok",
 
       environment:
+
         process.env.NODE_ENV ||
-        "development",
+        "development"
 
     });
 
   }
+
 );
 
 
-// ======================
+// ==========================================================
 // STATIC FILES
-// ======================
+// ==========================================================
 
 app.use(
 
   express.static(
+
     path.join(
       __dirname,
       "public"
     )
+
   )
 
 );
 
+
+// ==========================================================
+// UPLOADS
+//
+// Files uploaded by middleware/uploadMidleware.js
+// are stored in:
+//     public/uploads
+//
+// They are accessible in the browser through:
+//     /uploads/filename.ext
+// ==========================================================
 
 app.use(
 
@@ -709,8 +882,11 @@ app.use(
   express.static(
 
     path.join(
+
       __dirname,
+
       "public/uploads"
+
     )
 
   )
@@ -718,21 +894,9 @@ app.use(
 );
 
 
-app.use(
-
-  express.static(
-    path.join(
-      __dirname,
-      "public"
-    )
-  )
-
-);
-
-
-// ======================
+// ==========================================================
 // VIEW ENGINE
-// ======================
+// ==========================================================
 
 app.set(
   "view engine",
@@ -741,11 +905,14 @@ app.set(
 
 
 app.set(
+
   "views",
+
   path.join(
     __dirname,
     "views"
   )
+
 );
 
 
@@ -760,139 +927,295 @@ app.set(
 );
 
 
-// ======================
+// ==========================================================
 // ROUTES
-// ======================
+// ==========================================================
 
-if (indexRoutes)
+
+// ----------------------------------------------------------
+// INDEX
+// ----------------------------------------------------------
+
+if (indexRoutes) {
+
   app.use(
+
     "/",
+
     indexRoutes
+
   );
 
+}
 
-if (createRoutes)
+
+// ----------------------------------------------------------
+// CREATE INVITE
+// ----------------------------------------------------------
+
+if (createRoutes) {
+
   app.use(
+
     "/create-invite",
+
     createRoutes
+
   );
 
+}
 
-if (authRoutes)
+
+// ----------------------------------------------------------
+// AUTH
+// ----------------------------------------------------------
+
+if (authRoutes) {
+
   app.use(
+
     "/",
+
     authRoutes
+
   );
 
+}
 
-if (updateRoutes)
+
+// ----------------------------------------------------------
+// UPDATE
+// ----------------------------------------------------------
+
+if (updateRoutes) {
+
   app.use(
+
     "/",
+
     updateRoutes
+
   );
 
+}
 
-if (profileRoutes)
+
+// ----------------------------------------------------------
+// ADD DAIRY / ASSET
+//
+// routes/add.js:
+//
+//     router.get("/")
+//     router.post("/")
+//
+// Therefore:
+//
+//     GET  /add
+//     POST /add
+// ----------------------------------------------------------
+
+if (addRoutes) {
+
   app.use(
+
+    "/add",
+
+    addRoutes
+
+  );
+
+}
+
+
+// ----------------------------------------------------------
+// PROFILE
+// ----------------------------------------------------------
+
+if (profileRoutes) {
+
+  app.use(
+
     "/",
+
     profileRoutes
+
   );
 
+}
 
-if (milkRoutes)
+
+// ----------------------------------------------------------
+// MILK
+// ----------------------------------------------------------
+
+if (milkRoutes) {
+
   app.use(
+
     "/",
+
     milkRoutes
+
   );
 
+}
 
-if (accountsRoutes)
+
+// ----------------------------------------------------------
+// ACCOUNTS
+// ----------------------------------------------------------
+
+if (accountsRoutes) {
+
   app.use(
+
     "/accounts",
+
     accountsRoutes
+
   );
 
+}
 
-/* =========================================================
-   NET WORTH
-========================================================= */
 
-if (networthRoutes)
+// ==========================================================
+// NET WORTH
+// ==========================================================
+
+if (networthRoutes) {
+
   app.use(
+
     "/networth",
+
     networthRoutes
+
   );
 
+}
 
-/*______POULTRY_____*/
 
-if (poultryStatsRoutes)
+// ==========================================================
+// POULTRY
+// ==========================================================
+
+if (poultryStatsRoutes) {
+
   app.use(
+
     "/poultry-stats",
+
     poultryStatsRoutes
+
   );
 
+}
 
-if (eggRoutes)
+
+if (eggRoutes) {
+
   app.use(
+
     "/eggs",
+
     eggRoutes
+
   );
 
+}
 
-if (cageRoutes)
+
+if (cageRoutes) {
+
   app.use(
+
     "/cage",
+
     cageRoutes
+
   );
 
+}
 
-if (nursingRoutes)
+
+if (nursingRoutes) {
+
   app.use(
+
     "/nursing",
+
     nursingRoutes
+
   );
 
+}
 
-if (incubationRoutes)
+
+if (incubationRoutes) {
+
   app.use(
+
     "/incubation",
+
     incubationRoutes
+
   );
 
+}
 
-if (financeRoutes)
+
+if (financeRoutes) {
+
   app.use(
+
     "/finance",
+
     financeRoutes
+
   );
 
+}
 
-if (dashboardRoutes)
+
+if (dashboardRoutes) {
+
   app.use(
+
     "/dashboard",
+
     dashboardRoutes
+
   );
 
+}
 
-/*________AGRICULTURE_______*/
 
-if (farmRoutes)
+// ==========================================================
+// AGRICULTURE
+// ==========================================================
+
+if (farmRoutes) {
+
   app.use(
+
     "/farm",
+
     farmRoutes
+
   );
 
+}
 
-// ======================
-// 404 HANDLER
-// ======================
+
+// ==========================================================
+// 404
+// ==========================================================
 
 app.use(
 
   (req, res) => {
 
-    res.status(404).render(
+    return res.status(404).render(
 
       "404",
 
@@ -903,7 +1226,7 @@ app.use(
 
         user:
           req.user ||
-          null,
+          null
 
       }
 
@@ -914,13 +1237,18 @@ app.use(
 );
 
 
-// ======================
+// ==========================================================
 // GLOBAL ERROR HANDLER
-// ======================
+// ==========================================================
 
 app.use(
 
-  (err, req, res, next) => {
+  (
+    err,
+    req,
+    res,
+    next
+  ) => {
 
     console.error(
       "❌ Unhandled error:",
@@ -930,11 +1258,44 @@ app.use(
 
     const statusCode =
       Number(
+
         err.statusCode ||
+
         err.status ||
+
         500
+
       );
 
+
+    // ------------------------------------------------------
+    // MULTER ERRORS
+    // ------------------------------------------------------
+
+    if (
+      err &&
+      err.name === "MulterError"
+    ) {
+
+      if (
+        err.code ===
+        "LIMIT_FILE_SIZE"
+      ) {
+
+        err.statusCode =
+          400;
+
+        err.message =
+          "The uploaded image is too large. Maximum size is 5MB.";
+
+      }
+
+    }
+
+
+    // ------------------------------------------------------
+    // HTML RESPONSE
+    // ------------------------------------------------------
 
     if (
       req.accepts("html")
@@ -942,19 +1303,26 @@ app.use(
 
       const views = {
 
-        400: "400",
+        400:
+          "400",
 
-        401: "401",
+        401:
+          "401",
 
-        403: "403",
+        403:
+          "403",
 
-        404: "404",
+        404:
+          "404",
 
-        409: "409",
+        409:
+          "409",
 
-        422: "422",
+        422:
+          "422",
 
-        500: "500"
+        500:
+          "500"
 
       };
 
@@ -989,7 +1357,11 @@ app.use(
     }
 
 
-    res.status(
+    // ------------------------------------------------------
+    // JSON RESPONSE
+    // ------------------------------------------------------
+
+    return res.status(
       statusCode
     ).json({
 
@@ -1012,23 +1384,31 @@ app.use(
 );
 
 
-// ======================
-// START SERVER
-// ======================
+// ==========================================================
+// PORT
+// ==========================================================
 
 const PORT =
   Number(
+
     process.env.PORT ||
     3000
+
   );
 
+
+// ==========================================================
+// START SERVER
+// ==========================================================
 
 const startServer = (
   port
 ) => {
 
   server.listen(
+
     port,
+
     () => {
 
       console.log(
@@ -1036,13 +1416,20 @@ const startServer = (
       );
 
     }
+
   );
 
 };
 
 
+// ==========================================================
+// SERVER ERROR
+// ==========================================================
+
 server.on(
+
   "error",
+
   (error) => {
 
     if (
@@ -1052,7 +1439,7 @@ server.on(
 
       console.error(
 
-        `❌ Port ${PORT} is already in use. Free it or set a different PORT in the environment.`
+        `❌ Port ${PORT} is already in use. Free it or set a different port in the environment.`
 
       );
 
@@ -1070,41 +1457,143 @@ server.on(
     process.exit(1);
 
   }
+
 );
 
 
+// ==========================================================
+// GRACEFUL SHUTDOWN
+// ==========================================================
+
 process.on(
+
   "SIGTERM",
+
   () => {
 
     console.log(
       "🛑 Received SIGTERM. Shutting down gracefully..."
     );
 
+
     server.close(
-      () =>
-        process.exit(0)
+
+      () => {
+
+        process.exit(0);
+
+      }
+
     );
 
   }
+
 );
 
 
 process.on(
+
   "SIGINT",
+
   () => {
 
     console.log(
       "🛑 Received SIGINT. Shutting down gracefully..."
     );
 
+
     server.close(
-      () =>
-        process.exit(0)
+
+      () => {
+
+        process.exit(0);
+
+      }
+
     );
 
   }
+
 );
 
+
+// ==========================================================
+// DATABASE BOOTSTRAP
+// ==========================================================
+
+const bootstrap = async () => {
+
+  try {
+
+    const dbConnected =
+      await connectDB();
+
+
+    if (
+      dbConnected
+    ) {
+
+      await seedAdmin();
+
+    }
+
+    else if (
+      isProduction
+    ) {
+
+      console.error(
+
+        "❌ Production startup failed: MongoDB is unavailable."
+
+      );
+
+      process.exit(1);
+
+    }
+
+    else {
+
+      console.warn(
+
+        "⚠️ Skipping admin seed because MongoDB is unavailable."
+
+      );
+
+    }
+
+
+    startServer(
+      PORT
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Application bootstrap failed:",
+      error
+    );
+
+
+    if (
+      isProduction
+    ) {
+
+      process.exit(1);
+
+    }
+
+
+    startServer(
+      PORT
+    );
+
+  }
+
+};
+
+
+// ==========================================================
+// START
+// ==========================================================
 
 bootstrap();
