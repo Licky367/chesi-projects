@@ -8,10 +8,75 @@ const addService =
 
 
 // ==========================================================
-// GET ADD PAGE
+// ADMIN ACCESS
 // ==========================================================
+//
+// The Add page is strictly for administrators.
+//
+// This check is intentionally performed in the controller
+// so users cannot bypass the restriction by manually visiting
+// /add or submitting POST /add.
+//
 
-async function getAddPage(req, res) {
+function requireAdmin(
+    req,
+    res
+) {
+
+    if (
+        !req.user ||
+        req.user.role !== "admin"
+    ) {
+
+        return res.status(403).render(
+            "error",
+            {
+
+                statusCode: 403,
+
+                message:
+                    "You are not authorized to access this page."
+
+            }
+        );
+
+    }
+
+
+    return null;
+
+}
+
+
+// ==========================================================
+// GET /add
+// ==========================================================
+//
+// ADMIN ONLY
+//
+// Loads the Add Dairy / Animal / Structure page.
+//
+
+async function getAddPage(
+    req,
+    res
+) {
+
+    const accessDenied =
+        requireAdmin(
+            req,
+            res
+        );
+
+
+    if (
+        accessDenied
+    ) {
+
+        return accessDenied;
+
+    }
+
 
     try {
 
@@ -43,13 +108,17 @@ async function getAddPage(req, res) {
         );
 
 
-        return res.status(500).render(
+        return res.status(
+            error.statusCode || 500
+        ).render(
             "error",
             {
 
-                statusCode: 500,
+                statusCode:
+                    error.statusCode || 500,
 
                 message:
+                    error.message ||
                     "Unable to load the add record page."
 
             }
@@ -61,27 +130,58 @@ async function getAddPage(req, res) {
 
 
 // ==========================================================
-// CREATE RECORD
+// POST /add
 // ==========================================================
+//
+// ADMIN ONLY
+//
+// Creates:
+//
+//     Dairy Farm
+//     Animal
+//     Structure / Facility
+//
+// The service is responsible for:
+//
+//     - record type handling
+//     - automatic code generation
+//     - gender/code relationship
+//     - parent Dairy Farm validation
+//     - field validation
+//     - database creation
+//
 
-async function createRecord(req, res) {
+async function createRecord(
+    req,
+    res
+) {
+
+    const accessDenied =
+        requireAdmin(
+            req,
+            res
+        );
+
+
+    if (
+        accessDenied
+    ) {
+
+        return accessDenied;
+
+    }
+
 
     try {
-
-        /*
-         * req.body contains the normal form fields.
-         *
-         * req.file contains profileImage when supplied.
-         */
 
         const result =
             await addService.createRecord({
 
                 body:
-                    req.body,
+                    req.body || {},
 
                 file:
-                    req.file,
+                    req.file || null,
 
                 user:
                     req.user
@@ -89,17 +189,13 @@ async function createRecord(req, res) {
             });
 
 
-        /*
-         * Normal form submission.
-         *
-         * Redirect back to Net Worth after successful
-         * creation.
-         */
+        // ==================================================
+        // SUCCESS
+        // ==================================================
 
         return res.redirect(
             "/networth"
         );
-
 
     } catch (error) {
 
@@ -108,11 +204,6 @@ async function createRecord(req, res) {
             error
         );
 
-
-        /*
-         * Return the actual validation/service message
-         * instead of hiding it behind a generic error.
-         */
 
         return res.status(
             error.statusCode || 500
