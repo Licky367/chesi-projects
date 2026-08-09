@@ -18,11 +18,9 @@ function wantsJSON(req) {
 
         (
             typeof req.headers.accept === "string" &&
-
             req.headers.accept.includes(
                 "application/json"
             )
-
         )
 
     );
@@ -85,6 +83,48 @@ function jsonError(
 
             }
         );
+
+}
+
+
+// ==========================================================
+// BUILD IMAGE URL
+// ==========================================================
+//
+// multer.diskStorage() stores files here:
+//
+//     public/uploads/<filename>
+//
+// Browser URL:
+//
+//     /uploads/<filename>
+//
+// We therefore DO NOT save req.file.path directly.
+//
+
+function getUploadedImageUrl(
+    file
+) {
+
+    if (
+        !file
+    ) {
+
+        return null;
+
+    }
+
+
+    if (
+        file.filename
+    ) {
+
+        return `/uploads/${file.filename}`;
+
+    }
+
+
+    return null;
 
 }
 
@@ -260,53 +300,35 @@ async function addAsset(
 
     try {
 
-        console.log(
-            "=================================================="
-        );
-
-        console.log(
-            "NET WORTH ADD ASSET"
-        );
-
-        console.log(
-            "Farm ID:",
-            req.params.id
-        );
-
-        console.log(
-            "Request body:",
-            req.body
-        );
-
-        console.log(
-            "Uploaded file:",
-            req.file
-        );
-
-        console.log(
-            "=================================================="
-        );
-
-
         const body =
             {
-                ...req.body
+                ...(req.body || {})
             };
 
 
-        // --------------------------------------------------
+        // ------------------------------------------------------
         // PROFILE IMAGE
-        // --------------------------------------------------
+        // ------------------------------------------------------
+
+        const uploadedImage =
+            getUploadedImageUrl(
+                req.file
+            );
+
 
         if (
-            req.file
+            uploadedImage
         ) {
 
             body.profileImage =
-                `/uploads/${req.file.filename}`;
+                uploadedImage;
 
         }
 
+
+        // ------------------------------------------------------
+        // CREATE ASSET
+        // ------------------------------------------------------
 
         const asset =
             await networthService.addAsset(
@@ -316,9 +338,9 @@ async function addAsset(
             );
 
 
-        // --------------------------------------------------
-        // JSON RESPONSE
-        // --------------------------------------------------
+        // ------------------------------------------------------
+        // JSON / FETCH
+        // ------------------------------------------------------
 
         if (
             wantsJSON(req)
@@ -346,9 +368,9 @@ async function addAsset(
         }
 
 
-        // --------------------------------------------------
-        // NORMAL FORM
-        // --------------------------------------------------
+        // ------------------------------------------------------
+        // NORMAL FORM SUBMISSION
+        // ------------------------------------------------------
 
         return res.redirect(
             `/networth/structure/${req.params.id}`
@@ -445,6 +467,42 @@ async function getAsset(
 //
 // UPDATE EXISTING ASSET
 // ==========================================================
+//
+// IMPORTANT:
+//
+// The EJS form uses:
+//
+//     method="POST"
+//
+//     enctype="multipart/form-data"
+//
+// Therefore multer MUST run before this controller.
+//
+// The controller supports:
+//
+//     name
+//     dateOfBirth
+//     type
+//     mass
+//     isMilking
+//     buyingPrice
+//     currentWorth
+//     description
+//     condition
+//     location
+//     assetCode
+//     status
+//     valuationDate
+//     acquisitionDate
+//     profileImage
+//
+// Protected fields:
+//
+//     _id
+//     code
+//
+// are never sent to the service for modification.
+//
 
 async function updateAsset(
     req,
@@ -481,7 +539,7 @@ async function updateAsset(
         );
 
         console.log(
-            "Content type:",
+            "Content-Type:",
             req.headers["content-type"]
         );
 
@@ -501,363 +559,117 @@ async function updateAsset(
 
 
         // ======================================================
-        // COPY BODY
+        // COPY FORM DATA
         // ======================================================
+        //
+        // Never mutate req.body directly.
+        //
 
-        const updateData = {
+        const updateData =
+            {
+                ...(req.body || {})
+            };
 
-            ...req.body
 
-        };
+        // ======================================================
+        // REMOVE METHOD OVERRIDE
+        // ======================================================
+        //
+        // Your EJS contains:
+        //
+        //     <input
+        //         type="hidden"
+        //         name="_method"
+        //         value="PUT"
+        //     >
+        //
+        // This is not an actual asset field.
+        //
+
+        delete updateData._method;
 
 
         // ======================================================
         // PROFILE IMAGE
-        //
-        // multer.diskStorage saves the file as:
-        //
-        // public/uploads/<filename>
-        //
-        // Browser URL therefore becomes:
-        //
-        // /uploads/<filename>
         // ======================================================
+        //
+        // The browser sends the image as:
+        //
+        //     req.file
+        //
+        // multer stores it in:
+        //
+        //     public/uploads/
+        //
+        // Save the browser-accessible URL instead.
+        //
+
+        const uploadedImage =
+            getUploadedImageUrl(
+                req.file
+            );
+
 
         if (
-            req.file
+            uploadedImage
         ) {
 
             updateData.profileImage =
-                `/uploads/${req.file.filename}`;
+                uploadedImage;
 
         }
 
 
         // ======================================================
-        // NAME
+        // MILKING CHECKBOX
         // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "name"
-            )
-        ) {
-
-            updateData.name =
-                req.body.name;
-
-        }
-
-
-        // ======================================================
-        // DATE OF BIRTH
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "dateOfBirth"
-            )
-        ) {
-
-            updateData.dateOfBirth =
-                req.body.dateOfBirth;
-
-        }
-
-
-        // ======================================================
-        // TYPE / BREED
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "type"
-            )
-        ) {
-
-            updateData.type =
-                req.body.type;
-
-        }
-
-
-        // ======================================================
-        // MASS
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "mass"
-            )
-        ) {
-
-            updateData.mass =
-                req.body.mass;
-
-        }
-
-
-        // ======================================================
-        // MILKING
         //
-        // Supports:
+        // The EJS contains:
         //
-        // true
-        // false
-        // "true"
-        // "false"
-        // "1"
-        // "0"
-        // "on"
+        //     <input
+        //         type="checkbox"
+        //         name="isMilking"
+        //         value="true"
+        //     >
         //
-        // If the browser sends an array because a hidden
-        // false input and checkbox are both submitted, use
-        // the last value.
-        // ======================================================
+        // When checked:
+        //
+        //     req.body.isMilking === "true"
+        //
+        // When unchecked:
+        //
+        //     req.body.isMilking === undefined
+        //
+        // For an identified female, absence means FALSE.
+        //
+        // We deliberately do NOT add the field for every asset
+        // because the service already restricts isMilking to
+        // identified dairy records.
+        //
+        // If the checkbox was present, pass its value.
+        //
 
         if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "isMilking"
-            )
+            updateData.isMilking !== undefined
         ) {
 
-            let milking =
-                req.body.isMilking;
-
-
-            if (
-                Array.isArray(
-                    milking
+            const value =
+                String(
+                    updateData.isMilking
                 )
-            ) {
-
-                milking =
-                    milking[
-                        milking.length - 1
-                    ];
-
-            }
+                    .trim()
+                    .toLowerCase();
 
 
             updateData.isMilking =
-
-                milking === true ||
-
-                milking === "true" ||
-
-                milking === "1" ||
-
-                milking === "on";
+                (
+                    value === "true" ||
+                    value === "1" ||
+                    value === "yes" ||
+                    value === "on"
+                );
 
         }
-
-
-        // ======================================================
-        // BUYING PRICE
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "buyingPrice"
-            )
-        ) {
-
-            updateData.buyingPrice =
-                req.body.buyingPrice;
-
-        }
-
-
-        // ======================================================
-        // CURRENT WORTH
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "currentWorth"
-            )
-        ) {
-
-            updateData.currentWorth =
-                req.body.currentWorth;
-
-        }
-
-
-        // ======================================================
-        // DESCRIPTION
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "description"
-            )
-        ) {
-
-            updateData.description =
-                req.body.description;
-
-        }
-
-
-        // ======================================================
-        // CONDITION
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "condition"
-            )
-        ) {
-
-            updateData.condition =
-                req.body.condition;
-
-        }
-
-
-        // ======================================================
-        // LOCATION
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "location"
-            )
-        ) {
-
-            updateData.location =
-                req.body.location;
-
-        }
-
-
-        // ======================================================
-        // ASSET CODE
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "assetCode"
-            )
-        ) {
-
-            updateData.assetCode =
-                req.body.assetCode;
-
-        }
-
-
-        // ======================================================
-        // STATUS
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "status"
-            )
-        ) {
-
-            updateData.status =
-                req.body.status;
-
-        }
-
-
-        // ======================================================
-        // VALUATION DATE
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "valuationDate"
-            )
-        ) {
-
-            updateData.valuationDate =
-                req.body.valuationDate;
-
-        }
-
-
-        // ======================================================
-        // ACQUISITION DATE
-        //
-        // Supported if another form/client sends it.
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "acquisitionDate"
-            )
-        ) {
-
-            updateData.acquisitionDate =
-                req.body.acquisitionDate;
-
-        }
-
-
-        // ======================================================
-        // LEGACY ITEM FIELD
-        // ======================================================
-
-        if (
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "item"
-            )
-        ) {
-
-            updateData.item =
-                req.body.item;
-
-        }
-
-
-        // ======================================================
-        // DIRECT PROFILE IMAGE FIELD
-        //
-        // Only use this when there was no uploaded file.
-        // ======================================================
-
-        if (
-            !req.file &&
-
-            Object.prototype.hasOwnProperty.call(
-                req.body,
-                "profileImage"
-            )
-        ) {
-
-            updateData.profileImage =
-                req.body.profileImage;
-
-        }
-
-
-        // ======================================================
-        // LOG FINAL UPDATE DATA
-        // ======================================================
-
-        console.log(
-            "Final update data:",
-            updateData
-        );
 
 
         // ======================================================
@@ -880,7 +692,7 @@ async function updateAsset(
 
 
         // ======================================================
-        // JSON / FETCH RESPONSE
+        // JSON / FETCH REQUEST
         // ======================================================
 
         if (
@@ -907,7 +719,7 @@ async function updateAsset(
 
 
         // ======================================================
-        // NORMAL BROWSER SUBMISSION
+        // NORMAL BROWSER FORM
         // ======================================================
 
         return res.redirect(
@@ -917,19 +729,8 @@ async function updateAsset(
     } catch (error) {
 
         console.error(
-            "=================================================="
-        );
-
-        console.error(
-            "ERROR UPDATING NET WORTH ASSET"
-        );
-
-        console.error(
+            "Error updating Net Worth asset:",
             error
-        );
-
-        console.error(
-            "=================================================="
         );
 
 
