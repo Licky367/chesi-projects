@@ -1,109 +1,135 @@
 <!-- ==========================================================
-     standalone-assets.ejs
+     standalone-asset.ejs
 
-     Displays identified dairy / animal assets that are
-     currently not assigned to a Dairy Farm.
+     Displays standalone Dairy assets.
 
-     STANDALONE ASSET:
+     MODEL DEFINITION:
+
+         assetCode === null
+             = Standalone asset
+
+     This is independent of `code`.
+
+     Therefore standalone assets may include:
 
          code > 0
-         assetCode === null
+             = Animal
+
+         code === null
+             = Structure / Facility / Equipment
 
      NOT INCLUDED:
 
-         code < 0
-             = Dairy Farm
-
-         code === null
-             = Manual asset
-
          assetCode !== null
              = Assigned asset
-========================================================== -->
+
+     Dairy Farms:
+
+         code < 0
+             = Dairy Farm
+             = assetCode is always null
+
+     IMPORTANT:
+
+         currentWorth is the value field used by the
+         Dairy model for net-worth calculations.
+========================================================== --><section class="networth-section"><!-- ======================================================
+     SECTION HEADER
+======================================================= -->
+
+<div class="networth-section-header">
+
+    <div>
+
+        <h2>
+            Standalone Assets
+        </h2>
+
+        <p>
+            Assets that are not assigned to a Dairy Farm.
+        </p>
+
+    </div>
+
+</div>
 
 
-<section class="networth-section">
+<!-- ======================================================
+     ASSET LIST
+======================================================= -->
+
+<div class="networth-list">
 
 
-    <!-- ======================================================
-         SECTION HEADER
-    ======================================================= -->
+    <% if (
+        Array.isArray(standaloneAssets) &&
+        standaloneAssets.length > 0
+    ) { %>
 
-    <div class="networth-section-header">
 
-        <div>
+        <% standaloneAssets.forEach(function(dairy) { %>
 
-            <h2>
-                Standalone Assets
-            </h2>
 
-            <p>
-                Identified dairy assets that are not assigned
-                to a Dairy Farm.
-            </p>
+            <a
+                href="/networth/asset/<%= dairy._id %>"
+                class="networth-list-item
+                <%= dairy.code === null ||
+                    dairy.code === undefined
+                        ? "networth-structure-item"
+                        : "" %>"
+            >
+
+
+                <!-- ======================================
+                     ASSET NAME
+                ======================================= -->
+
+                <span class="networth-list-name">
+
+                    <%= dairy.name || "Unnamed Asset" %>
+
+                </span>
+
+
+                <!-- ======================================
+                     CURRENT WORTH
+                     
+                     Uses the model field:
+                         currentWorth
+                ======================================= -->
+
+                <span class="networth-list-value">
+
+                    KSh
+                    <%= Number(dairy.currentWorth || 0)
+                        .toLocaleString("en-KE") %>
+
+                </span>
+
+
+            </a>
+
+
+        <% }); %>
+
+
+    <% } else { %>
+
+
+        <!-- ==============================================
+             EMPTY STATE
+        =============================================== -->
+
+        <div class="networth-empty">
+
+            No standalone assets found.
 
         </div>
 
-    </div>
+
+    <% } %>
 
 
-    <!-- ======================================================
-         ASSET LIST
-    ======================================================= -->
-
-    <div class="networth-list">
-
-
-        <% if (
-            Array.isArray(standaloneAssets) &&
-            standaloneAssets.length > 0
-        ) { %>
-
-
-            <% standaloneAssets.forEach(function(dairy) { %>
-
-
-                <a
-                    href="/networth/asset/<%= dairy._id %>"
-                    class="networth-list-item"
-                >
-
-
-                    <!-- ======================================
-                         ASSET NAME
-                    ======================================= -->
-
-                    <span class="networth-list-name">
-
-                        <%= dairy.name || dairy.code %>
-
-                    </span>
-
-
-                </a>
-
-
-            <% }); %>
-
-
-        <% } else { %>
-
-
-            <!-- ==============================================
-                 EMPTY STATE
-            =============================================== -->
-
-            <div class="networth-empty">
-
-                No standalone assets found.
-
-            </div>
-
-
-        <% } %>
-
-
-    </div>
-
+</div>
 
 </section>
