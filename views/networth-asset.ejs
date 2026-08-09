@@ -326,7 +326,7 @@
 
 
 /* ==========================================================
-   MONEY FIELDS
+   MONEY
 ========================================================== */
 
 .networth-form #buyingPrice,
@@ -383,11 +383,6 @@
 
 }
 
-
-/* ==========================================================
-   CURRENT IMAGE
-========================================================== */
-
 .profile-image-preview {
 
     width: 125px;
@@ -435,11 +430,6 @@
 
 }
 
-
-/* ==========================================================
-   IMAGE TITLE
-========================================================== */
-
 .profile-image-title {
 
     margin-bottom: 5px;
@@ -464,11 +454,6 @@
 
 }
 
-
-/* ==========================================================
-   IMAGE INPUT
-========================================================== */
-
 .profile-image-input {
 
     width: 100%;
@@ -487,7 +472,6 @@
     display: none;
 
 }
-
 
 <% if (
     dairy.code !== null &&
@@ -514,11 +498,6 @@
 
 }
 
-
-/* ==========================================================
-   LOCATION DESCRIPTION
-========================================================== */
-
 .asset-location-description {
 
     margin: 0 0 9px;
@@ -528,17 +507,6 @@
     font-size: 12px;
 
     line-height: 1.5;
-
-}
-
-
-/* ==========================================================
-   LOCATION SELECT
-========================================================== */
-
-.asset-location-select {
-
-    position: relative;
 
 }
 
@@ -576,45 +544,43 @@
    SAVE STATUS
 ========================================================== */
 
-.networth-save-status {
+.form-save-status {
 
     display: none;
 
     margin-bottom: 18px;
 
-    padding: 11px 14px;
+    padding: 12px 14px;
 
     border-radius: 10px;
 
     font-size: 13px;
 
-    line-height: 1.45;
+    line-height: 1.4;
 
 }
 
-.networth-save-status.is-visible {
+.form-save-status.success {
 
     display: block;
 
-}
+    background: #eef8f1;
 
-.networth-save-status.is-success {
+    border: 1px solid #cfe5d5;
 
-    background: #edf8f0;
-
-    border: 1px solid #cfe8d5;
-
-    color: #27633b;
+    color: #28633b;
 
 }
 
-.networth-save-status.is-error {
+.form-save-status.error {
 
-    background: #fff2f2;
+    display: block;
 
-    border: 1px solid #efd0d0;
+    background: #fff3f2;
 
-    color: #8a3030;
+    border: 1px solid #efd0cd;
+
+    color: #a13c35;
 
 }
 
@@ -685,7 +651,7 @@
 
 
 /* ==========================================================
-   SECONDARY BUTTON
+   SECONDARY
 ========================================================== */
 
 .networth-form .button-secondary {
@@ -712,7 +678,7 @@
 
 
 /* ==========================================================
-   PRIMARY BUTTON
+   PRIMARY
 ========================================================== */
 
 .networth-form .button-primary {
@@ -749,24 +715,13 @@
 
 }
 
-.networth-form .button:active {
+.networth-form .button-primary:disabled {
 
-    transform: translateY(0);
-
-}
-
-
-/* ==========================================================
-   SUBMITTING STATE
-========================================================== */
-
-.networth-form.is-submitting .button-primary {
-
-    opacity: 0.7;
-
-    pointer-events: none;
+    opacity: 0.65;
 
     cursor: wait;
+
+    transform: none;
 
 }
 
@@ -892,10 +847,7 @@
 </style>
 
 
-<div
-    class="financial-page networth-page"
-    data-asset-id="<%= dairy._id %>"
->
+<div class="financial-page networth-page">
 
 
     <!-- =====================================================
@@ -914,9 +866,7 @@
             </a>
 
 
-            <h1
-                data-asset-name
-            >
+            <h1 id="assetPageTitle">
                 <%= dairy.name || "Asset" %>
             </h1>
 
@@ -937,12 +887,11 @@
     <div class="financial-card">
 
         <form
+            id="networthAssetForm"
             action="/networth/asset/<%= dairy._id %>"
             method="POST"
             enctype="multipart/form-data"
             class="networth-form"
-            data-networth-asset-form
-            data-asset-id="<%= dairy._id %>"
         >
 
             <input
@@ -953,12 +902,19 @@
 
 
             <!-- =================================================
+                 SAVE STATUS
+            ================================================== -->
+
+            <div
+                id="formSaveStatus"
+                class="form-save-status"
+                role="status"
+                aria-live="polite"
+            ></div>
+
+
+            <!-- =================================================
                  PROFILE IMAGE
-                 
-                 Available for:
-                 
-                     identified dairies
-                     manual assets
             ================================================== -->
 
             <div class="profile-image-section">
@@ -968,16 +924,23 @@
                     <% if (dairy.profileImage) { %>
 
                         <img
+                            id="profileImagePreview"
                             src="<%= dairy.profileImage %>"
                             alt="<%= dairy.name || 'Asset profile image' %>"
-                            data-profile-image
                         >
 
                     <% } else { %>
 
+                        <img
+                            id="profileImagePreview"
+                            src=""
+                            alt=""
+                            style="display:none;"
+                        >
+
                         <span
+                            id="profileImagePlaceholder"
                             class="profile-image-placeholder"
-                            data-profile-image-placeholder
                         >
                             🐄
                         </span>
@@ -1009,20 +972,6 @@
 
 
             <!-- =================================================
-                 SAVE STATUS
-                 
-                 Used by the automatic update JavaScript.
-            ================================================== -->
-
-            <div
-                class="networth-save-status"
-                data-save-status
-                role="status"
-                aria-live="polite"
-            ></div>
-
-
-            <!-- =================================================
                  NAME
             ================================================== -->
 
@@ -1047,8 +996,6 @@
 
             <!-- =================================================
                  DAIRY CODE
-                 
-                 Never editable here.
             ================================================== -->
 
             <div class="form-group">
@@ -1073,10 +1020,6 @@
 
             <!-- =================================================
                  DATE OF BIRTH
-                 
-                 ONLY IDENTIFIED DAIRIES / ANIMALS
-                 
-                 code > 0
             ================================================== -->
 
             <% if (
@@ -1246,24 +1189,10 @@
 
 
             <!-- =================================================
-                 ASSET LOCATION / PARENT DAIRY FARM
+                 PARENT DAIRY FARM
                  
-                 BOTH:
-                 
-                     identified dairies
-                     manual assets
-                 
-                 can be assigned to a Dairy Farm.
-                 
-                 The submitted value is the NEGATIVE
-                 Dairy Farm code.
-                 
-                 Example:
-                 
-                     Dairy Farm A
-                     code = -100
-                 
-                     assetCode = -100
+                 BOTH MANUAL ASSETS AND IDENTIFIED DAIRIES
+                 CAN BE ASSIGNED TO A NEGATIVE-CODE FARM.
             ================================================== -->
 
             <% if (
@@ -1284,105 +1213,78 @@
                     </p>
 
 
-                    <div class="asset-location-select">
+                    <select
+                        id="assetCode"
+                        name="assetCode"
+                        <%= dairy.code === null ||
+                            dairy.code === undefined
+                                ? "required"
+                                : "" %>
+                    >
 
-                        <select
-                            id="assetCode"
-                            name="assetCode"
-                            data-asset-location
-                            <%= dairy.code === null ||
-                                dairy.code === undefined
-                                    ? "required"
-                                    : "" %>
-                        >
+                        <!-- ======================================
+                             IDENTIFIED DAIRY CAN BE STANDALONE
+                        ======================================= -->
 
-                            <!-- ==================================
-                                 IDENTIFIED DAIRY:
-                                 CAN REMAIN STANDALONE
-                            =================================== -->
+                        <% if (
+                            dairy.code !== null &&
+                            dairy.code !== undefined &&
+                            Number(dairy.code) > 0
+                        ) { %>
 
-                            <% if (
-                                dairy.code !== null &&
-                                dairy.code !== undefined &&
-                                Number(dairy.code) > 0
-                            ) { %>
+                            <option
+                                value=""
+                                <%= dairy.assetCode === null ||
+                                    dairy.assetCode === undefined
+                                        ? "selected"
+                                        : "" %>
+                            >
+                                Standalone — No Dairy Farm
+                            </option>
+
+                        <% } %>
+
+
+                        <!-- ======================================
+                             DAIRY FARM OPTIONS
+                        ======================================= -->
+
+                        <% if (
+                            Array.isArray(structures) &&
+                            structures.length > 0
+                        ) { %>
+
+                            <% structures.forEach(function(structure) { %>
 
                                 <option
-                                    value=""
-                                    <%= dairy.assetCode === null ||
-                                        dairy.assetCode === undefined
+                                    value="<%= structure.code %>"
+                                    <%= dairy.assetCode != null &&
+                                        Number(dairy.assetCode) ===
+                                        Number(structure.code)
                                             ? "selected"
                                             : "" %>
                                 >
-                                    Standalone — No Dairy Farm
+
+                                    <%= structure.name || "Dairy Farm" %>
+                                    —
+                                    <%= structure.code %>
+
                                 </option>
 
-                            <% } %>
+                            <% }); %>
 
+                        <% } else { %>
 
-                            <!-- ==================================
-                                 ALL NEGATIVE-CODE DAIRY FARMS
-                            =================================== -->
+                            <option
+                                value=""
+                                disabled
+                            >
+                                No Dairy Farms available
+                            </option>
 
-                            <% if (
-                                Array.isArray(structures) &&
-                                structures.length > 0
-                            ) { %>
+                        <% } %>
 
-
-                                <% structures.forEach(
-                                    function(structure) {
-                                %>
-
-
-                                    <% if (
-                                        structure.code !== null &&
-                                        structure.code !== undefined &&
-                                        Number(structure.code) < 0
-                                    ) { %>
-
-
-                                        <option
-                                            value="<%= structure.code %>"
-                                            <%= dairy.assetCode != null &&
-                                                Number(dairy.assetCode) ===
-                                                Number(structure.code)
-                                                    ? "selected"
-                                                    : "" %>
-                                        >
-
-                                            <%= structure.name ||
-                                                "Dairy Farm" %>
-
-                                            —
-                                            
-                                            <%= structure.code %>
-
-                                        </option>
-
-
-                                    <% } %>
-
-
-                                <% }); %>
-
-
-                            <% } else { %>
-
-
-                                <option
-                                    value=""
-                                    disabled
-                                >
-                                    No Dairy Farms available
-                                </option>
-
-
-                            <% } %>
-
-                        </select>
-
-                    </div>
+                    </select>
 
                 </div>
 
@@ -1392,11 +1294,6 @@
                 dairy.code !== undefined &&
                 Number(dairy.code) < 0
             ) { %>
-
-
-                <!-- =================================================
-                     DAIRY FARM ITSELF
-                ================================================== -->
 
                 <div class="form-group">
 
@@ -1411,9 +1308,7 @@
                             This is a Dairy Farm.
                         </strong>
 
-
                         <br>
-
 
                         Its dairy code is
 
@@ -1421,9 +1316,7 @@
                             <%= dairy.code %>
                         </strong>.
 
-
                         <br>
-
 
                         A Dairy Farm cannot be assigned
                         to another Dairy Farm.
@@ -1431,7 +1324,6 @@
                     </div>
 
                 </div>
-
 
             <% } %>
 
@@ -1462,7 +1354,6 @@
                         Active
                     </option>
 
-
                     <option
                         value="sold"
                         <%= dairy.status === "sold"
@@ -1472,7 +1363,6 @@
                         Sold
                     </option>
 
-
                     <option
                         value="disposed"
                         <%= dairy.status === "disposed"
@@ -1481,7 +1371,6 @@
                     >
                         Disposed
                     </option>
-
 
                     <option
                         value="inactive"
@@ -1524,8 +1413,6 @@
 
             <!-- =================================================
                  ACQUISITION DATE
-                 
-                 DISPLAY ONLY
             ================================================== -->
 
             <div class="form-group">
@@ -1566,6 +1453,7 @@
 
                 <button
                     type="submit"
+                    id="saveAssetButton"
                     class="button button-primary"
                 >
                     Save Changes
@@ -1578,3 +1466,10 @@
     </div>
 
 </div>
+
+
+<!-- ==========================================================
+     PAGE JAVASCRIPT
+========================================================== -->
+
+<script src="/js/networth-asset.js"></script>
