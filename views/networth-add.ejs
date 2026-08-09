@@ -650,342 +650,484 @@
 
 }
 
-</style>
+</style><div class="financial-page networth-page"><!-- =====================================================
+     HEADER
+====================================================== -->
 
+<div class="financial-header">
 
-<div class="financial-page networth-page">
+    <div>
 
-
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
-
-    <div class="financial-header">
-
-        <div>
-
-            <a
-                href="/networth/structure/<%= dairy._id %>"
-                class="financial-back-link"
-            >
-                ← <%= dairy.name || dairy.code %>
-            </a>
-
-
-            <h1>
-                Add Asset
-            </h1>
-
-
-            <p>
-                Add an asset belonging to this Dairy Farm.
-            </p>
-
-        </div>
-
-    </div>
-
-
-    <!-- =====================================================
-         ASSET FORM
-    ====================================================== -->
-
-    <div class="financial-card">
-
-        <form
-            id="networthAddForm"
-            action="/networth/structure/<%= dairy._id %>/add"
-            method="POST"
-            class="networth-form"
+        <a
+            href="/networth/structure/<%= dairy._id %>"
+            class="financial-back-link"
         >
+            ← <%= dairy.name || dairy.code %>
+        </a>
 
-            <!-- =================================================
-                 FORM MESSAGE
-            ================================================== -->
 
-            <div
-                id="networthFormMessage"
-                class="networth-form-message"
-                role="status"
-                aria-live="polite"
-            ></div>
+        <h1>
+            Add Asset
+        </h1>
 
 
-            <!-- =================================================
-                 NAME
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="name">
-                    Name
-                </label>
-
-
-                <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    placeholder="Enter asset name"
-                    autocomplete="off"
-                    required
-                >
-
-            </div>
-
-
-            <!-- =================================================
-                 TYPE
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="type">
-                    Type
-                </label>
-
-
-                <input
-                    type="text"
-                    id="type"
-                    name="type"
-                    placeholder="e.g. Equipment, Building, Vehicle"
-                    autocomplete="off"
-                    required
-                >
-
-            </div>
-
-
-            <!-- =================================================
-                 BUYING PRICE
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="buyingPrice">
-                    Buying Price
-                </label>
-
-
-                <input
-                    type="number"
-                    id="buyingPrice"
-                    name="buyingPrice"
-                    placeholder="Enter purchase price"
-                    min="0"
-                    step="0.01"
-                    required
-                >
-
-            </div>
-
-
-            <!-- =================================================
-                 CURRENT WORTH
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="currentWorth">
-                    Current Worth
-                </label>
-
-
-                <input
-                    type="number"
-                    id="currentWorth"
-                    name="currentWorth"
-                    placeholder="Enter current estimated worth"
-                    min="0"
-                    step="0.01"
-                    required
-                >
-
-            </div>
-
-
-            <!-- =================================================
-                 DESCRIPTION
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="description">
-                    Description
-                </label>
-
-
-                <textarea
-                    id="description"
-                    name="description"
-                    rows="4"
-                    placeholder="Describe the asset..."
-                    required
-                ></textarea>
-
-            </div>
-
-
-            <!-- =================================================
-                 CONDITION
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="condition">
-                    Condition
-                </label>
-
-
-                <input
-                    type="text"
-                    id="condition"
-                    name="condition"
-                    placeholder="e.g. Good, New, Needs Repair"
-                    autocomplete="off"
-                    required
-                >
-
-            </div>
-
-
-            <!-- =================================================
-                 PHYSICAL LOCATION
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="location">
-                    Physical Location
-                </label>
-
-
-                <input
-                    type="text"
-                    id="location"
-                    name="location"
-                    placeholder="Where is the asset physically located?"
-                    autocomplete="off"
-                    required
-                >
-
-            </div>
-
-
-            <!-- =================================================
-                 STATUS
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="status">
-                    Status
-                </label>
-
-
-                <select
-                    id="status"
-                    name="status"
-                    required
-                >
-
-                    <option
-                        value="active"
-                        selected
-                    >
-                        Active
-                    </option>
-
-
-                    <option value="sold">
-                        Sold
-                    </option>
-
-
-                    <option value="disposed">
-                        Disposed
-                    </option>
-
-
-                    <option value="inactive">
-                        Inactive
-                    </option>
-
-                </select>
-
-            </div>
-
-
-            <!-- =================================================
-                 DAIRY FARM
-                 
-                 DISPLAY ONLY.
-
-                 The parent is determined from:
-                 
-                     /networth/structure/:id/add
-                 
-                 The browser does NOT submit assetCode.
-            ================================================== -->
-
-            <div class="form-group">
-
-                <label for="dairyFarmName">
-                    Dairy Farm
-                </label>
-
-
-                <input
-                    type="text"
-                    id="dairyFarmName"
-                    value="<%= dairy.name || dairy.code %>"
-                    readonly
-                >
-
-            </div>
-
-
-            <!-- =================================================
-                 ACTIONS
-            ================================================== -->
-
-            <div class="form-actions">
-
-                <a
-                    href="/networth/structure/<%= dairy._id %>"
-                    class="button button-secondary"
-                >
-                    Cancel
-                </a>
-
-
-                <button
-                    type="submit"
-                    id="saveAssetButton"
-                    class="button button-primary"
-                >
-                    Save Asset
-                </button>
-
-            </div>
-
-        </form>
+        <p>
+            Add an asset belonging to this Dairy Farm.
+        </p>
 
     </div>
 
 </div>
 
 
-<!-- ==========================================================
+<!-- =====================================================
+     ASSET FORM
+
+     IMPORTANT MODEL RULES:
+
+     New manually-created assets are STRUCTURES.
+
+     Therefore:
+
+         code = null
+
+     The parent Dairy Farm is determined by the
+     backend from the current Dairy Farm record.
+
+     The browser must NOT submit:
+
+         code
+         assetCode
+
+     The backend is responsible for assigning:
+
+         assetCode = parent Dairy Farm code
+
+     where the parent code is negative.
+====================================================== -->
+
+<div class="financial-card">
+
+    <form
+        id="networthAddForm"
+        action="/networth/structure/<%= dairy._id %>/add"
+        method="POST"
+        class="networth-form"
+    >
+
+
+        <!-- =================================================
+             FORM MESSAGE
+        ================================================== -->
+
+        <div
+            id="networthFormMessage"
+            class="networth-form-message"
+            role="status"
+            aria-live="polite"
+        ></div>
+
+
+        <!-- =================================================
+             NAME
+
+             Model field:
+                 name
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="name">
+                Name
+            </label>
+
+
+            <input
+                type="text"
+                id="name"
+                name="name"
+                placeholder="Enter asset name"
+                autocomplete="off"
+                maxlength="200"
+                required
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             TYPE
+
+             Model field:
+                 type
+
+             STRUCTURE_TYPES:
+
+                 machine
+                 equipment
+                 tool
+                 building
+                 cowshed
+                 milkingParlour
+                 feedStore
+                 hayShed
+                 waterSystem
+                 fencing
+                 vehicle
+                 generator
+                 solarSystem
+                 other
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="type">
+                Type
+            </label>
+
+
+            <select
+                id="type"
+                name="type"
+                required
+            >
+
+                <option
+                    value=""
+                    selected
+                    disabled
+                >
+                    Select asset type
+                </option>
+
+
+                <option value="machine">
+                    Machine
+                </option>
+
+
+                <option value="equipment">
+                    Equipment
+                </option>
+
+
+                <option value="tool">
+                    Tool
+                </option>
+
+
+                <option value="building">
+                    Building
+                </option>
+
+
+                <option value="cowshed">
+                    Cowshed
+                </option>
+
+
+                <option value="milkingParlour">
+                    Milking Parlour
+                </option>
+
+
+                <option value="feedStore">
+                    Feed Store
+                </option>
+
+
+                <option value="hayShed">
+                    Hay Shed
+                </option>
+
+
+                <option value="waterSystem">
+                    Water System
+                </option>
+
+
+                <option value="fencing">
+                    Fencing
+                </option>
+
+
+                <option value="vehicle">
+                    Vehicle
+                </option>
+
+
+                <option value="generator">
+                    Generator
+                </option>
+
+
+                <option value="solarSystem">
+                    Solar System
+                </option>
+
+
+                <option value="other">
+                    Other
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- =================================================
+             BUYING PRICE
+
+             Model field:
+                 buyingPrice
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="buyingPrice">
+                Buying Price
+            </label>
+
+
+            <input
+                type="number"
+                id="buyingPrice"
+                name="buyingPrice"
+                placeholder="Enter purchase price"
+                min="0"
+                step="0.01"
+                inputmode="decimal"
+                required
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             CURRENT WORTH
+
+             Model field:
+                 currentWorth
+
+             IMPORTANT:
+                 Do NOT use assetValue.
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="currentWorth">
+                Current Worth
+            </label>
+
+
+            <input
+                type="number"
+                id="currentWorth"
+                name="currentWorth"
+                placeholder="Enter current estimated worth"
+                min="0"
+                step="0.01"
+                inputmode="decimal"
+                required
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             DESCRIPTION
+
+             Model field:
+                 description
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="description">
+                Description
+            </label>
+
+
+            <textarea
+                id="description"
+                name="description"
+                rows="4"
+                placeholder="Describe the asset..."
+            ></textarea>
+
+        </div>
+
+
+        <!-- =================================================
+             CONDITION
+
+             Model field:
+                 condition
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="condition">
+                Condition
+            </label>
+
+
+            <input
+                type="text"
+                id="condition"
+                name="condition"
+                placeholder="e.g. Good, New, Needs Repair"
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             PHYSICAL LOCATION
+
+             Model field:
+                 location
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="location">
+                Physical Location
+            </label>
+
+
+            <input
+                type="text"
+                id="location"
+                name="location"
+                placeholder="Where is the asset physically located?"
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             STATUS
+
+             Model enum:
+
+                 active
+                 sold
+                 disposed
+                 inactive
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="status">
+                Status
+            </label>
+
+
+            <select
+                id="status"
+                name="status"
+                required
+            >
+
+                <option
+                    value="active"
+                    selected
+                >
+                    Active
+                </option>
+
+
+                <option value="sold">
+                    Sold
+                </option>
+
+
+                <option value="disposed">
+                    Disposed
+                </option>
+
+
+                <option value="inactive">
+                    Inactive
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <!-- =================================================
+             DAIRY FARM
+
+             DISPLAY ONLY.
+
+             The parent Dairy Farm is identified by:
+
+                 dairy._id
+
+             The backend obtains its negative:
+
+                 dairy.code
+
+             and assigns that value to:
+
+                 assetCode
+
+             The browser therefore submits neither
+             code nor assetCode.
+        ================================================== -->
+
+        <div class="form-group">
+
+            <label for="dairyFarmName">
+                Dairy Farm
+            </label>
+
+
+            <input
+                type="text"
+                id="dairyFarmName"
+                value="<%= dairy.name || dairy.code %>"
+                readonly
+            >
+
+        </div>
+
+
+        <!-- =================================================
+             ACTIONS
+        ================================================== -->
+
+        <div class="form-actions">
+
+            <a
+                href="/networth/structure/<%= dairy._id %>"
+                class="button button-secondary"
+            >
+                Cancel
+            </a>
+
+
+            <button
+                type="submit"
+                id="saveAssetButton"
+                class="button button-primary"
+            >
+                Save Asset
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+</div><!-- ==========================================================
      PAGE JAVASCRIPT
-     
-     Keep this outside the HTML structure.
-
-     The external file handles asynchronous submission.
-========================================================== -->
-
-<script
+========================================================== --><script
     src="/js/networth-add.js"
     defer
 ></script>
