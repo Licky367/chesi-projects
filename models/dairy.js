@@ -9,6 +9,11 @@ const mongoose = require("mongoose");
 // CONSTANTS
 // ==========================================================
 
+
+// ==========================================================
+// DAIRY BREEDS
+// ==========================================================
+
 const DAIRY_BREEDS = [
 
     "Friesian",
@@ -39,6 +44,70 @@ const DAIRY_BREEDS = [
 
 ];
 
+
+// ==========================================================
+// DAIRY FARM TYPES
+// ==========================================================
+
+const DAIRY_FARM_TYPES = [
+
+    "ranch",
+
+    "zeroGrazing",
+
+    "semiZeroGrazing",
+
+    "pastureBased",
+
+    "mixedFarming",
+
+    "cooperative",
+
+    "other"
+
+];
+
+
+// ==========================================================
+// STRUCTURE / FACILITY TYPES
+// ==========================================================
+
+const STRUCTURE_TYPES = [
+
+    "machine",
+
+    "equipment",
+
+    "tool",
+
+    "building",
+
+    "cowshed",
+
+    "milkingParlour",
+
+    "feedStore",
+
+    "hayShed",
+
+    "waterSystem",
+
+    "fencing",
+
+    "vehicle",
+
+    "generator",
+
+    "solarSystem",
+
+    "other"
+
+];
+
+
+// ==========================================================
+// STATUSES
+// ==========================================================
 
 const DAIRY_STATUSES = [
 
@@ -79,14 +148,20 @@ const dairySchema = new mongoose.Schema(
         // ==================================================
         // CODE
         //
-        // Positive:
-        //     Identified dairy animal
+        // NEGATIVE:
+        //     Dairy Farm
         //
-        // Negative:
-        //     Dairy Farm / structure
+        // POSITIVE:
+        //     Animal
         //
-        // Null:
-        //     Manual asset
+        // NULL:
+        //     Structure / Facility / Equipment
+        //
+        // IMPORTANT:
+        //
+        // The user never enters this value manually.
+        //
+        // The backend assigns it automatically.
         // ==================================================
 
         code: {
@@ -100,8 +175,11 @@ const dairySchema = new mongoose.Schema(
                 validator: function(value) {
 
                     if (
+
                         value === null ||
+
                         value === undefined
+
                     ) {
 
                         return true;
@@ -139,17 +217,10 @@ const dairySchema = new mongoose.Schema(
         // ==================================================
         // DATE OF BIRTH
         //
-        // IMPORTANT:
+        // Relevant to animals.
         //
-        // This field is NOT mandatory.
-        //
-        // It can be:
-        //
-        //     a valid Date
-        //     null
-        //     undefined
-        //
-        // No `required` validator is used.
+        // Not required at schema level because existing
+        // records and non-animal assets do not use it.
         // ==================================================
 
         dateOfBirth: {
@@ -163,6 +234,8 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // MASS
+        //
+        // Primarily relevant to animals.
         // ==================================================
 
         mass: {
@@ -178,6 +251,8 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // MILKING
+        //
+        // Relevant to female animals.
         // ==================================================
 
         isMilking: {
@@ -190,14 +265,63 @@ const dairySchema = new mongoose.Schema(
 
 
         // ==================================================
-        // ASSET / FARM ASSIGNMENT
+        // ASSET CODE
+        //
+        // This is NOT an independently assigned code.
+        //
+        // It always represents the negative code of the
+        // parent Dairy Farm.
+        //
+        // Animal:
+        //     Required parent Dairy Farm.
+        //
+        // Structure / Facility:
+        //     Optional parent Dairy Farm.
+        //
+        // Dairy Farm:
+        //     Always null.
+        //
+        // The backend obtains this value from the selected
+        // Dairy Farm.
         // ==================================================
 
         assetCode: {
 
             type: Number,
 
-            default: null
+            default: null,
+
+            validate: {
+
+                validator: function(value) {
+
+                    if (
+
+                        value === null ||
+
+                        value === undefined
+
+                    ) {
+
+                        return true;
+
+                    }
+
+
+                    return (
+
+                        Number.isInteger(value) &&
+
+                        value < 0
+
+                    );
+
+                },
+
+                message:
+                    "assetCode must be a negative Dairy Farm code or null."
+
+            }
 
         },
 
@@ -404,14 +528,14 @@ const dairySchema = new mongoose.Schema(
         // ==================================================
         // TYPE
         //
-        // Positive code:
-        //     Dairy breed
+        // Dairy Farm:
+        //     One of DAIRY_FARM_TYPES
         //
-        // Negative code:
-        //     Structure type
+        // Animal:
+        //     One of DAIRY_BREEDS
         //
-        // Null code:
-        //     Manual asset type
+        // Structure:
+        //     One of STRUCTURE_TYPES
         // ==================================================
 
         type: {
@@ -568,9 +692,138 @@ const dairySchema = new mongoose.Schema(
 
 
 // ==========================================================
+// VIRTUAL: IS DAIRY FARM
+//
+// Negative code = Dairy Farm
+// ==========================================================
+
+dairySchema.virtual("isDairyFarm").get(function() {
+
+    return (
+
+        this.code !== null &&
+
+        this.code !== undefined &&
+
+        Number(this.code) < 0
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS ANIMAL
+//
+// Positive code = Animal
+// ==========================================================
+
+dairySchema.virtual("isAnimal").get(function() {
+
+    return (
+
+        this.code !== null &&
+
+        this.code !== undefined &&
+
+        Number(this.code) > 0
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS STRUCTURE
+//
+// Null code = Structure / Facility / Equipment
+// ==========================================================
+
+dairySchema.virtual("isStructure").get(function() {
+
+    return (
+
+        this.code === null ||
+
+        this.code === undefined
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS MANUAL ASSET
+//
+// Kept for backwards compatibility.
+//
+// In the new system, a manual asset is simply a record
+// without a code.
+//
+// Such records may optionally belong to a Dairy Farm.
+// ==========================================================
+
+dairySchema.virtual("isManualAsset").get(function() {
+
+    return (
+
+        this.code === null ||
+
+        this.code === undefined
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS ASSIGNED ASSET
+//
+// True when the record belongs to a Dairy Farm.
+// ==========================================================
+
+dairySchema.virtual("isAssignedAsset").get(function() {
+
+    return (
+
+        this.assetCode !== null &&
+
+        this.assetCode !== undefined
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS STANDALONE ASSET
+//
+// A structure/facility without a parent Dairy Farm.
+// ==========================================================
+
+dairySchema.virtual("isStandaloneAsset").get(function() {
+
+    return (
+
+        this.isStructure &&
+
+        (
+
+            this.assetCode === null ||
+
+            this.assetCode === undefined
+
+        )
+
+    );
+
+});
+
+
+// ==========================================================
 // VIRTUAL: GENDER
 //
-// Positive code only.
+// Positive animal code only.
 //
 // Even = Female
 // Odd  = Male
@@ -614,11 +867,7 @@ dairySchema.virtual("isFemale").get(function() {
 
     return (
 
-        this.code !== null &&
-
-        this.code !== undefined &&
-
-        Number(this.code) > 0 &&
+        this.isAnimal &&
 
         Number(this.code) % 2 === 0
 
@@ -629,108 +878,19 @@ dairySchema.virtual("isFemale").get(function() {
 
 // ==========================================================
 // VIRTUAL: HAS IDENTITY
+//
+// Animals have positive automatically assigned codes.
 // ==========================================================
 
 dairySchema.virtual("hasIdentity").get(function() {
 
-    return (
-
-        this.code !== null &&
-
-        this.code !== undefined &&
-
-        Number(this.code) > 0
-
-    );
-
-});
-
-
-// ==========================================================
-// VIRTUAL: IS STRUCTURE
-// ==========================================================
-
-dairySchema.virtual("isStructure").get(function() {
-
-    return (
-
-        this.code !== null &&
-
-        this.code !== undefined &&
-
-        Number(this.code) < 0
-
-    );
-
-});
-
-
-// ==========================================================
-// VIRTUAL: IS MANUAL ASSET
-// ==========================================================
-
-dairySchema.virtual("isManualAsset").get(function() {
-
-    return (
-
-        this.code === null ||
-
-        this.code === undefined
-
-    );
-
-});
-
-
-// ==========================================================
-// VIRTUAL: IS STANDALONE ASSET
-// ==========================================================
-
-dairySchema.virtual("isStandaloneAsset").get(function() {
-
-    return (
-
-        this.code !== null &&
-
-        this.code !== undefined &&
-
-        Number(this.code) > 0 &&
-
-        (
-
-            this.assetCode === null ||
-
-            this.assetCode === undefined
-
-        )
-
-    );
-
-});
-
-
-// ==========================================================
-// VIRTUAL: IS ASSIGNED ASSET
-// ==========================================================
-
-dairySchema.virtual("isAssignedAsset").get(function() {
-
-    return (
-
-        this.assetCode !== null &&
-
-        this.assetCode !== undefined
-
-    );
+    return this.isAnimal;
 
 });
 
 
 // ==========================================================
 // VIRTUAL: AGE TEXT
-//
-// DOB is optional.
-// If DOB does not exist, returns "".
 // ==========================================================
 
 dairySchema.virtual("ageText").get(function() {
@@ -880,7 +1040,9 @@ dairySchema.virtual("ageYears").get(function() {
 
         (
             monthDifference === 0 &&
+
             now.getDate() < dob.getDate()
+
         )
 
     ) {
@@ -1023,19 +1185,15 @@ dairySchema.virtual("isActiveAsset").get(function() {
 
 // ==========================================================
 // VIRTUAL: IS IDENTIFIED DAIRY
+//
+// Backwards-compatible virtual.
+//
+// In the new system this means an identified animal.
 // ==========================================================
 
 dairySchema.virtual("isIdentifiedDairy").get(function() {
 
-    return (
-
-        this.code !== null &&
-
-        this.code !== undefined &&
-
-        Number(this.code) > 0
-
-    );
+    return this.isAnimal;
 
 });
 
@@ -1049,22 +1207,21 @@ dairySchema.pre(
     function(next) {
 
         // ==================================================
-        // STRUCTURE
+        // NORMALIZE NULLABLE VALUES
         // ==================================================
 
         if (
-
-            this.code !== null &&
-
-            this.code !== undefined &&
-
-            Number(this.code) < 0
-
+            this.code === undefined
         ) {
 
-            this.dateOfBirth = null;
+            this.code = null;
 
-            this.isMilking = false;
+        }
+
+
+        if (
+            this.assetCode === undefined
+        ) {
 
             this.assetCode = null;
 
@@ -1072,34 +1229,49 @@ dairySchema.pre(
 
 
         // ==================================================
-        // MANUAL ASSET
+        // DAIRY FARM
+        //
+        // Negative code.
         // ==================================================
 
-        if (
+        if (this.isDairyFarm) {
 
-            this.code === null ||
+            // ----------------------------------------------
+            // Dairy Farms cannot have a parent farm.
+            // ----------------------------------------------
 
-            this.code === undefined
+            this.assetCode = null;
 
-        ) {
+
+            // ----------------------------------------------
+            // Dairy Farms do not use animal fields.
+            // ----------------------------------------------
 
             this.dateOfBirth = null;
+
+            this.mass = 0;
 
             this.isMilking = false;
 
 
+            // ----------------------------------------------
+            // Validate farm type.
+            // ----------------------------------------------
+
             if (
 
-                this.assetCode === null ||
+                this.type &&
 
-                this.assetCode === undefined
+                !DAIRY_FARM_TYPES.includes(
+                    this.type
+                )
 
             ) {
 
                 return next(
 
                     new Error(
-                        "Manual assets must belong to a Dairy Farm. assetCode is required."
+                        `Invalid dairy farm type: ${this.type}.`
                     )
 
                 );
@@ -1110,18 +1282,12 @@ dairySchema.pre(
 
 
         // ==================================================
-        // IDENTIFIED ANIMAL
+        // ANIMAL
+        //
+        // Positive code.
         // ==================================================
 
-        if (
-
-            this.code !== null &&
-
-            this.code !== undefined &&
-
-            Number(this.code) > 0
-
-        ) {
+        if (this.isAnimal) {
 
             // ----------------------------------------------
             // Male animals cannot be milking.
@@ -1135,7 +1301,47 @@ dairySchema.pre(
 
 
             // ----------------------------------------------
-            // Validate breed only when supplied.
+            // Animal must belong to a Dairy Farm.
+            //
+            // assetCode must therefore be negative.
+            // ----------------------------------------------
+
+            if (
+
+                this.assetCode === null ||
+
+                this.assetCode === undefined
+
+            ) {
+
+                return next(
+
+                    new Error(
+                        "Animal must belong to a Dairy Farm. assetCode is required."
+                    )
+
+                );
+
+            }
+
+
+            if (
+                Number(this.assetCode) >= 0
+            ) {
+
+                return next(
+
+                    new Error(
+                        "Animal assetCode must be the negative code of its parent Dairy Farm."
+                    )
+
+                );
+
+            }
+
+
+            // ----------------------------------------------
+            // Validate breed.
             // ----------------------------------------------
 
             if (
@@ -1162,30 +1368,75 @@ dairySchema.pre(
 
 
         // ==================================================
-        // STRUCTURES CANNOT HAVE PARENT
+        // STRUCTURE / FACILITY
+        //
+        // code === null
         // ==================================================
 
-        if (
+        if (this.isStructure) {
 
-            this.code !== null &&
+            // ----------------------------------------------
+            // Structures do not have animal information.
+            // ----------------------------------------------
 
-            this.code !== undefined &&
+            this.dateOfBirth = null;
 
-            Number(this.code) < 0 &&
+            this.mass = 0;
 
-            this.assetCode !== null &&
+            this.isMilking = false;
 
-            this.assetCode !== undefined
 
-        ) {
+            // ----------------------------------------------
+            // Parent Dairy Farm is OPTIONAL.
+            //
+            // If supplied, it MUST be a negative Dairy
+            // Farm code.
+            // ----------------------------------------------
 
-            return next(
+            if (
 
-                new Error(
-                    "Dairy Farms / structures cannot have an assetCode."
+                this.assetCode !== null &&
+
+                this.assetCode !== undefined &&
+
+                Number(this.assetCode) >= 0
+
+            ) {
+
+                return next(
+
+                    new Error(
+                        "Structure assetCode must be the negative code of its parent Dairy Farm."
+                    )
+
+                );
+
+            }
+
+
+            // ----------------------------------------------
+            // Validate structure type.
+            // ----------------------------------------------
+
+            if (
+
+                this.type &&
+
+                !STRUCTURE_TYPES.includes(
+                    this.type
                 )
 
-            );
+            ) {
+
+                return next(
+
+                    new Error(
+                        `Invalid structure type: ${this.type}.`
+                    )
+
+                );
+
+            }
 
         }
 
@@ -1314,37 +1565,31 @@ dairySchema.pre(
 
 
         // ==================================================
-        // STRUCTURE
+        // DAIRY FARM
         // ==================================================
 
-        if (
-
-            this.code !== null &&
-
-            this.code !== undefined &&
-
-            Number(this.code) < 0
-
-        ) {
+        if (this.isDairyFarm) {
 
             this.assetCode = null;
+
+            this.dateOfBirth = null;
+
+            this.mass = 0;
+
+            this.isMilking = false;
 
         }
 
 
         // ==================================================
-        // MANUAL ASSET
+        // STRUCTURE
         // ==================================================
 
-        if (
-
-            this.code === null ||
-
-            this.code === undefined
-
-        ) {
+        if (this.isStructure) {
 
             this.dateOfBirth = null;
+
+            this.mass = 0;
 
             this.isMilking = false;
 
@@ -1411,7 +1656,7 @@ dairySchema.index({
 // ==========================================================
 // CODE
 //
-// Numeric codes are unique.
+// Every numeric code must be unique.
 //
 // Multiple null values are allowed.
 // ==========================================================
@@ -1450,6 +1695,34 @@ function() {
 
     return [
         ...DAIRY_BREEDS
+    ];
+
+};
+
+
+// ==========================================================
+// STATIC: GET DAIRY FARM TYPES
+// ==========================================================
+
+dairySchema.statics.getDairyFarmTypes =
+function() {
+
+    return [
+        ...DAIRY_FARM_TYPES
+    ];
+
+};
+
+
+// ==========================================================
+// STATIC: GET STRUCTURE TYPES
+// ==========================================================
+
+dairySchema.statics.getStructureTypes =
+function() {
+
+    return [
+        ...STRUCTURE_TYPES
     ];
 
 };
@@ -1538,17 +1811,11 @@ async function() {
 
 // ==========================================================
 // MODEL
-//
-// IMPORTANT:
-//
-// mongoose.models.Dairy prevents:
-//
-//     OverwriteModelError:
-//     Cannot overwrite `Dairy` model once compiled.
 // ==========================================================
 
 const Dairy =
     mongoose.models.Dairy ||
+
     mongoose.model(
         "Dairy",
         dairySchema
@@ -1556,45 +1823,27 @@ const Dairy =
 
 
 // ==========================================================
-// EXPORT MODEL
-//
-// IMPORTANT:
-//
-// Export the MODEL itself.
-//
-// This allows:
-//
-//     Dairy.find()
-//     Dairy.findOne()
-//     Dairy.findById()
-//     new Dairy()
-//     Dairy.aggregate()
-//
-// ==========================================================
-
-module.exports = Dairy;
-
-
-// ==========================================================
-// OPTIONAL CONSTANT EXPORTS
-//
-// These are attached to the model itself rather than
-// replacing module.exports.
-//
-// Therefore:
-//
-//     const Dairy = require("../models/dairy");
-//
-// still gives the actual Mongoose model.
-//
-// Constants can be accessed as:
-//
-//     Dairy.DAIRY_BREEDS
-//     Dairy.DAIRY_STATUSES
+// CONSTANT EXPORTS
 // ==========================================================
 
 Dairy.DAIRY_BREEDS =
     DAIRY_BREEDS;
 
+
+Dairy.DAIRY_FARM_TYPES =
+    DAIRY_FARM_TYPES;
+
+
+Dairy.STRUCTURE_TYPES =
+    STRUCTURE_TYPES;
+
+
 Dairy.DAIRY_STATUSES =
     DAIRY_STATUSES;
+
+
+// ==========================================================
+// EXPORT
+// ==========================================================
+
+module.exports = Dairy;
