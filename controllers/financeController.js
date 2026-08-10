@@ -1,119 +1,665 @@
-const financeService = require("../services/financeService");
+// ==========================================================
+// controllers/financialsController.js
+// ==========================================================
+//
+// FINANCIALS CONTROLLER
+//
+// Handles:
+//
+//     Financial Summary
+//     Liability Entry
+//     Liability Recording
+//     Liability History
+//     Individual Dairy Financials
+//     Financial APIs
+//
+// Views:
+//
+//     views/financials/*
+//
+// ==========================================================
 
-// =========================
-// RENDER FINANCE PAGE
-// =========================
-exports.renderFinancePage = async (req, res) => {
-  try {
-    const stats = await financeService.getLifetimeStats();
 
-    const records = await financeService.getMonthlyStats(
-      new Date().getFullYear(),
-      new Date().getMonth()
+const financialsService =
+    require("../services/financialsService");
+
+
+// ==========================================================
+// HELPER: GET USER ID
+// ==========================================================
+
+function getUserId(req) {
+
+    return (
+
+        req.user?._id ||
+
+        req.user?.id ||
+
+        null
+
     );
 
-    const profitByType = await financeService.getProfitByType();
-
-    res.render("finance/index", {
-      stats,
-      records,
-      profitByType
-    });
-
-  } catch (err) {
-    console.error("Finance page error:", err);
-    res.status(500).send(err.message);
-  }
-};
+}
 
 
-// =========================
-// ADD INVESTMENT
-// =========================
-exports.addInvestment = async (req, res) => {
-  try {
-    const { amount, poultryType, description } = req.body;
+// ==========================================================
+// HELPER: GET FILTERS
+// ==========================================================
+//
+// Keeps date filters consistent throughout all financial
+// pages.
+//
+// ==========================================================
 
-    await financeService.recordInvestment({
-      amount,
-      poultryType,
-      description,
-      userId: req.user._id
-    });
+function getFilters(req) {
 
-    res.redirect("/finance");
+    const {
 
-  } catch (err) {
-    console.error("Add investment error:", err);
-    res.status(400).send(err.message);
-  }
-};
+        startDate,
+
+        endDate
+
+    } = req.query;
 
 
-// =========================
-// REINVEST PROFIT
-// =========================
-exports.reinvest = async (req, res) => {
-  try {
-    const { amount, poultryType, description } = req.body;
+    return {
 
-    await financeService.reinvestProfit({
-      amount,
-      poultryType,
-      description,
-      userId: req.user._id
-    });
+        startDate:
+            startDate || "",
 
-    res.redirect("/finance");
+        endDate:
+            endDate || ""
 
-  } catch (err) {
-    console.error("Reinvest error:", err);
-    res.status(400).send(err.message);
-  }
-};
+    };
+
+}
 
 
-// =========================
-// PAY WORKERS
-// =========================
-exports.payWorkers = async (req, res) => {
-  try {
-    const { amount, poultryType, description } = req.body;
+// ==========================================================
+// LIABILITY ENTRY PAGE
+// ==========================================================
+//
+// GET:
+//
+//     /financials/liability
+//
+// Displays:
+//
+//     - Standalone assets
+//     - Dairy farms
+//     - Assets belonging to each dairy farm
+//
+// ==========================================================
 
-    await financeService.payWorkers({
-      amount,
-      poultryType,
-      description,
-      userId: req.user._id
-    });
+async function getLiabilityEntryPage(
+    req,
+    res,
+    next
+) {
 
-    res.redirect("/finance");
+    try {
 
-  } catch (err) {
-    console.error("Pay workers error:", err);
-    res.status(400).send(err.message);
-  }
-};
+        const structure =
+            await financialsService
+                .getFinancialStructure();
 
 
-// =========================
-// CONSUMPTION / EXPENSES
-// =========================
-exports.consumption = async (req, res) => {
-  try {
-    const { amount, poultryType, description } = req.body;
+        return res.render(
 
-    await financeService.addConsumption({
-      amount,
-      poultryType,
-      description,
-      userId: req.user._id
-    });
+            "financials/liability",
 
-    res.redirect("/finance");
+            {
 
-  } catch (err) {
-    console.error("Consumption error:", err);
-    res.status(400).send(err.message);
-  }
+                title:
+                    "Record Liability",
+
+                user:
+                    req.user,
+
+                farms:
+                    structure.farms,
+
+                standaloneAssets:
+                    structure.standaloneAssets,
+
+                error:
+                    null,
+
+                success:
+                    req.query.success === "1"
+
+            }
+
+        );
+
+    } catch (error) {
+
+        return next(error);
+
+    }
+
+}
+
+
+// ==========================================================
+// RECORD LIABILITY
+// ==========================================================
+//
+// POST:
+//
+//     /financials/liability
+//
+// Records:
+//
+//     dairy
+//     amount
+//     description
+//     recordedBy
+//
+// Timestamp is automatically generated by the Financials
+// model.
+//
+// ==========================================================
+
+async function recordLiability(
+    req,
+    res,
+    next
+) {
+
+    try {
+
+        const {
+
+            dairyId,
+
+            amount,
+
+            description
+
+        } = req.body;
+
+
+        await financialsService.recordLiability({
+
+            dairyId,
+
+            amount,
+
+            description,
+
+            userId:
+                getUserId(req)
+
+        });
+
+
+        return res.redirect(
+
+            "/financials/liability?success=1"
+
+        );
+
+    } catch (error) {
+
+        try {
+
+            const structure =
+                await financialsService
+                    .getFinancialStructure();
+
+
+            return res.status(400).render(
+
+                "financials/liability",
+
+                {
+
+                    title:
+                        "Record Liability",
+
+                    user:
+                        req.user,
+
+                    farms:
+                        structure.farms,
+
+                    standaloneAssets:
+                        structure.standaloneAssets,
+
+                    error:
+                        error.message,
+
+                    success:
+                        false
+
+                }
+
+            );
+
+        } catch (renderError) {
+
+            return next(renderError);
+
+        }
+
+    }
+
+}
+
+
+// ==========================================================
+// LIABILITY HISTORY PAGE
+// ==========================================================
+//
+// GET:
+//
+//     /financials/history
+//
+// Optional:
+//
+//     ?startDate=YYYY-MM-DD
+//     &endDate=YYYY-MM-DD
+//
+// Includes:
+//
+//     - Standalone asset liabilities
+//     - Dairy farm's own liabilities
+//     - Liabilities belonging to farm assets
+//
+// ==========================================================
+
+async function getLiabilityHistoryPage(
+    req,
+    res,
+    next
+) {
+
+    try {
+
+        const filters =
+            getFilters(req);
+
+
+        const history =
+            await financialsService
+                .getLiabilityHistory(
+
+                    filters.startDate,
+
+                    filters.endDate
+
+                );
+
+
+        return res.render(
+
+            "financials/history",
+
+            {
+
+                title:
+                    "Liability History",
+
+                user:
+                    req.user,
+
+                standalone:
+                    history.standalone,
+
+                farms:
+                    history.farms,
+
+                filters
+
+            }
+
+        );
+
+    } catch (error) {
+
+        return next(error);
+
+    }
+
+}
+
+
+// ==========================================================
+// FINANCIAL SUMMARY PAGE
+// ==========================================================
+//
+// GET:
+//
+//     /financials
+//
+// Optional:
+//
+//     ?startDate=YYYY-MM-DD
+//     &endDate=YYYY-MM-DD
+//
+// Without dates:
+//
+//     Lifetime financial summary.
+//
+// With dates:
+//
+//     Filtered financial summary.
+//
+// ==========================================================
+
+async function getFinancialSummaryPage(
+    req,
+    res,
+    next
+) {
+
+    try {
+
+        const filters =
+            getFilters(req);
+
+
+        const summary =
+            await financialsService
+                .getFinancialSummary(
+
+                    filters.startDate,
+
+                    filters.endDate
+
+                );
+
+
+        return res.render(
+
+            "financials/summary",
+
+            {
+
+                title:
+                    "Financial Summary",
+
+                user:
+                    req.user,
+
+                summary,
+
+                // --------------------------------------------------
+                // IMPORTANT:
+                //
+                // Make filters available as a TOP-LEVEL EJS
+                // variable.
+                //
+                // summary.filters also remains available.
+                // --------------------------------------------------
+
+                filters:
+                    summary.filters || filters
+
+            }
+
+        );
+
+    } catch (error) {
+
+        return next(error);
+
+    }
+
+}
+
+
+// ==========================================================
+// INDIVIDUAL DAIRY FINANCIAL DETAILS
+// ==========================================================
+//
+// GET:
+//
+//     /financials/dairy/:id
+//
+// Optional:
+//
+//     ?startDate=YYYY-MM-DD
+//     &endDate=YYYY-MM-DD
+//
+// Displays:
+//
+//     - Current worth
+//     - Buying price
+//     - Selling price
+//     - Liabilities
+//     - Profit
+//     - Liability history
+//
+// Profit is only non-null when the dairy has been sold.
+//
+// ==========================================================
+
+async function getDairyFinancialPage(
+    req,
+    res,
+    next
+) {
+
+    try {
+
+        const {
+
+            id
+
+        } = req.params;
+
+
+        const filters =
+            getFilters(req);
+
+
+        const financial =
+            await financialsService
+                .getDairyFinancial(
+
+                    id,
+
+                    filters.startDate,
+
+                    filters.endDate
+
+                );
+
+
+        const liabilities =
+            await financialsService
+                .getLiabilities(
+
+                    id,
+
+                    filters.startDate,
+
+                    filters.endDate
+
+                );
+
+
+        return res.render(
+
+            "financials/dairy",
+
+            {
+
+                title:
+                    `${financial.name} - Financials`,
+
+                user:
+                    req.user,
+
+                dairy:
+                    financial,
+
+                liabilities,
+
+                filters
+
+            }
+
+        );
+
+    } catch (error) {
+
+        return next(error);
+
+    }
+
+}
+
+
+// ==========================================================
+// API: INDIVIDUAL DAIRY FINANCIAL DATA
+// ==========================================================
+//
+// GET:
+//
+//     /financials/api/dairy/:id
+//
+// Optional:
+//
+//     ?startDate=YYYY-MM-DD
+//     &endDate=YYYY-MM-DD
+//
+// ==========================================================
+
+async function getDairyFinancialApi(
+    req,
+    res,
+    next
+) {
+
+    try {
+
+        const {
+
+            id
+
+        } = req.params;
+
+
+        const filters =
+            getFilters(req);
+
+
+        const financial =
+            await financialsService
+                .getDairyFinancial(
+
+                    id,
+
+                    filters.startDate,
+
+                    filters.endDate
+
+                );
+
+
+        return res.json({
+
+            success:
+                true,
+
+            data:
+                financial,
+
+            filters
+
+        });
+
+    } catch (error) {
+
+        return next(error);
+
+    }
+
+}
+
+
+// ==========================================================
+// API: FINANCIAL SUMMARY
+// ==========================================================
+//
+// GET:
+//
+//     /financials/api/summary
+//
+// Optional:
+//
+//     ?startDate=YYYY-MM-DD
+//     &endDate=YYYY-MM-DD
+//
+// ==========================================================
+
+async function getFinancialSummaryApi(
+    req,
+    res,
+    next
+) {
+
+    try {
+
+        const filters =
+            getFilters(req);
+
+
+        const summary =
+            await financialsService
+                .getFinancialSummary(
+
+                    filters.startDate,
+
+                    filters.endDate
+
+                );
+
+
+        return res.json({
+
+            success:
+                true,
+
+            data:
+                summary,
+
+            filters:
+                summary.filters || filters
+
+        });
+
+    } catch (error) {
+
+        return next(error);
+
+    }
+
+}
+
+
+// ==========================================================
+// EXPORTS
+// ==========================================================
+
+module.exports = {
+
+    getLiabilityEntryPage,
+
+    recordLiability,
+
+    getLiabilityHistoryPage,
+
+    getFinancialSummaryPage,
+
+    getDairyFinancialPage,
+
+    getDairyFinancialApi,
+
+    getFinancialSummaryApi
+
 };
