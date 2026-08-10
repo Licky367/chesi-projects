@@ -682,107 +682,6 @@ async function getFarmFinancialPage(
 
 
 // ==========================================================
-// INDIVIDUAL STANDALONE ASSET FINANCIAL DETAILS
-// ==========================================================
-//
-// CURRENT:
-//
-//     currentWorth
-//     sellingPrice
-//     buyingPrice
-//
-// FILTERED:
-//
-//     revenue
-//     liabilities
-//
-// CALCULATED:
-//
-//     profit
-//
-// ==========================================================
-
-async function getStandaloneFinancialPage(
-    req,
-    res,
-    next
-) {
-
-    try {
-
-        const {
-
-            id
-
-        } = req.params;
-
-
-        const {
-
-            startDate,
-
-            endDate
-
-        } = getDateFilters(req);
-
-
-        const financial =
-            await financialsService
-                .getStandaloneFinancial(
-                    id,
-                    startDate,
-                    endDate
-                );
-
-
-        const liabilities =
-            await financialsService
-                .getLiabilities(
-                    id,
-                    startDate,
-                    endDate
-                );
-
-
-        res.render(
-
-            "financials/standalone",
-
-            {
-
-                title:
-                    `${financial.name || "Standalone Asset"} - Financials`,
-
-                user:
-                    req.user,
-
-                standalone:
-                    financial,
-
-                liabilities,
-
-                filters: {
-
-                    startDate,
-
-                    endDate
-
-                }
-
-            }
-
-        );
-
-    } catch (error) {
-
-        next(error);
-
-    }
-
-}
-
-
-// ==========================================================
 // API: GET DAIRY FINANCIAL DATA
 // ==========================================================
 //
@@ -951,87 +850,6 @@ async function getFarmFinancialApi(
 
 
 // ==========================================================
-// API: GET STANDALONE FINANCIAL DATA
-// ==========================================================
-//
-// CURRENT:
-//
-//     currentWorth
-//     sellingPrice
-//     buyingPrice
-//
-// FILTERED:
-//
-//     revenue
-//     liabilities
-//
-// CALCULATED:
-//
-//     profit
-//
-// ==========================================================
-
-async function getStandaloneFinancialApi(
-    req,
-    res,
-    next
-) {
-
-    try {
-
-        const {
-
-            id
-
-        } = req.params;
-
-
-        const {
-
-            startDate,
-
-            endDate
-
-        } = getDateFilters(req);
-
-
-        const financial =
-            await financialsService
-                .getStandaloneFinancial(
-                    id,
-                    startDate,
-                    endDate
-                );
-
-
-        res.json({
-
-            success:
-                true,
-
-            data:
-                financial,
-
-            filters: {
-
-                startDate,
-
-                endDate
-
-            }
-
-        });
-
-    } catch (error) {
-
-        next(error);
-
-    }
-
-}
-
-
-// ==========================================================
 // API: GET FINANCIAL SUMMARY
 // ==========================================================
 //
@@ -1140,13 +958,9 @@ module.exports = {
 
     getFarmFinancialPage,
 
-    getStandaloneFinancialPage,
-
     getDairyFinancialApi,
 
     getFarmFinancialApi,
-
-    getStandaloneFinancialApi,
 
     getFinancialSummaryApi
 
