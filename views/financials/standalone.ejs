@@ -1,280 +1,177 @@
 <% /* ==========================================================
-   FINANCIAL / STANDALONE ASSETS PAGE
+FINANCIAL / STANDALONE ASSETS PAGE
 
-   PURPOSE
-   ----------------------------------------------------------
-   This page displays ALL standalone assets in a table.
+PURPOSE
 
-   There is NO individual standalone asset page.
+Displays ALL Dairy records that:
 
-   ROUTE:
+   code === null
+   AND
+   assetCode === null
 
-       GET /financials/standalone
+In the current Dairy model:
 
-   EXPECTED BACKEND DATA:
+   code < 0
+       = Dairy Farm
 
-       standalone: {
+   code > 0
+       = Animal
 
-           currentWorth,
-           buyingPrice,
-           sellingPrice,
-           revenue,
-           liabilities,
-           profit,
+   code === null
+       = Structure / Facility / Equipment
 
-           assets: [
+A standalone asset is therefore a structure/facility/
+equipment record that does NOT belong to a Dairy Farm.
 
-               {
-                   _id,
-                   name,
-                   type,
-                   code,
+Farm-owned assets have:
 
-                   currentWorth,
-                   buyingPrice,
-                   sellingPrice,
+   assetCode < 0
 
-                   revenue,
-                   liabilities,
-                   profit
-               }
+IMPORTANT
 
-           ]
+This is a COLLECTION page.
 
-       }
+There is NO:
 
-       filters: {
+   /financials/standalone/:id
 
-           startDate,
-           endDate
+route.
 
-       }
+Therefore individual asset rows do not link to an
+individual standalone financial page.
 
+FINANCIAL FILTERING
 
-   FINANCIAL RULES
-   ----------------------------------------------------------
+CURRENT VALUES:
 
-   CURRENT VALUES:
+   currentWorth
+   buyingPrice
+   sellingPrice
 
-       currentWorth
-       buyingPrice
-       sellingPrice
+FILTERED VALUES:
 
+   revenue
+   liabilities
+   profit/loss
 
-   FILTERED VALUES:
+PROFIT / LOSS:
 
-       revenue
-       liabilities
-       profit/loss
+   sellingPrice
+   - buyingPrice
+   - liabilities
+   + revenue
 
+========================================================== */
 
-   PROFIT / LOSS:
-
-       sellingPrice
-       - buyingPrice
-       - liabilities
-       + revenue
-
-
-   IMPORTANT
-   ----------------------------------------------------------
-
-   Revenue is stored for each asset.
-
-   Liabilities are stored as Financials transactions and
-   are filtered according to startDate/endDate.
-
-   Current worth, buying price and selling price are NOT
-   affected by the date filter.
-
-   ========================================================== */ %>
-
-
-<%
 /* ==========================================================
-   HELPERS
-   ========================================================== */
+HELPERS
+========================================================== */
 
 function number(value) {
 
-    const result =
-        Number(value);
+const result = Number(value);
 
-    return Number.isFinite(result)
-        ? result
-        : 0;
+return Number.isFinite(result)
+    ? result
+    : 0;
 
 }
-
 
 function formatMoney(value) {
 
-    const amount =
-        Number(value);
+const amount = Number(value);
 
-    if (!Number.isFinite(amount)) {
+if (!Number.isFinite(amount)) {
 
-        return "—";
-
-    }
-
-    return amount.toLocaleString(
-
-        "en-KE",
-
-        {
-
-            minimumFractionDigits: 2,
-
-            maximumFractionDigits: 2
-
-        }
-
-    );
+    return "—";
 
 }
 
+return amount.toLocaleString(
+
+    "en-KE",
+
+    {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }
+
+);
+
+}
 
 function profitClass(value) {
 
-    return number(value) < 0
+return number(value) < 0
 
-        ? "financial-negative"
+    ? "financial-negative"
 
-        : "financial-positive";
+    : "financial-positive";
 
 }
-
 
 function profitText(value) {
 
-    const amount =
-        number(value);
+const amount =
+    number(value);
 
 
-    if (amount < 0) {
+return amount < 0
 
-        return (
+    ? "-KSh " +
+      formatMoney(
+          Math.abs(amount)
+      )
 
-            "-KSh " +
-
-            formatMoney(
-                Math.abs(amount)
-            )
-
-        );
-
-    }
-
-
-    return (
-
-        "KSh " +
-
-        formatMoney(amount)
-
-    );
+    : "KSh " +
+      formatMoney(amount);
 
 }
 
-
 /* ==========================================================
-   SAFE DATA
-   ========================================================== */
+SAFE DATA
+========================================================== */
 
 const standaloneData =
-    standalone || {};
-
+standalone || {};
 
 const assets =
-    Array.isArray(
-        standaloneData.assets
-    )
+Array.isArray(
+standaloneData.assets
+)
 
-        ? standaloneData.assets
-        : [];
-
+    ? standaloneData.assets
+    : [];
 
 const filterStart =
-    filters?.startDate || "";
-
+filters?.startDate || "";
 
 const filterEnd =
-    filters?.endDate || "";
-
+filters?.endDate || "";
 
 const hasFilter =
-    Boolean(
-
-        filterStart ||
-
-        filterEnd
-
-    );
-
+Boolean(
+filterStart ||
+filterEnd
+);
 
 /* ==========================================================
-   ASSET FINANCIAL CALCULATOR
-   ==========================================================
-//
-// The backend should preferably supply `profit` and
-// `liabilities` for every asset.
-//
-// This fallback keeps the template safe if one of those
-// values is missing.
-//
+TOTALS
+========================================================== */
 
-   ========================================================== */
+/*
+Current values are NOT date filtered.
 
-function getAssetProfit(asset) {
+   currentWorth
+   buyingPrice
+   sellingPrice
 
-    if (
+Revenue and liabilities are expected to already be
+filtered by the financial service.
 
-        asset?.profit !== undefined &&
-
-        asset?.profit !== null
-
-    ) {
-
-        return number(
-            asset.profit
-        );
-
-    }
-
-
-    return (
-
-        number(
-            asset?.sellingPrice
-        )
-
-        -
-
-        number(
-            asset?.buyingPrice
-        )
-
-        -
-
-        number(
-            asset?.liabilities
-        )
-
-        +
-
-        number(
-            asset?.revenue
-        )
-
-    );
-
-}
-
-
-/* ==========================================================
-   CALCULATE TOTALS
-   ========================================================== */
+Profit is calculated from the filtered revenue and
+liabilities.
+*/
 
 let totalCurrentWorth = 0;
 
@@ -288,449 +185,477 @@ let totalLiabilities = 0;
 
 let totalProfit = 0;
 
+/* ==========================================================
+CALCULATE ASSET TOTALS
+========================================================== */
 
 assets.forEach(function(asset) {
 
-    totalCurrentWorth +=
-        number(
-            asset?.currentWorth
-        );
+const currentWorth =
+    number(
+        asset?.currentWorth
+    );
 
 
-    totalBuyingPrice +=
-        number(
-            asset?.buyingPrice
-        );
+const buyingPrice =
+    number(
+        asset?.buyingPrice
+    );
 
 
-    totalSellingPrice +=
-        number(
-            asset?.sellingPrice
-        );
+const sellingPrice =
+    number(
+        asset?.sellingPrice
+    );
 
 
-    totalRevenue +=
-        number(
-            asset?.revenue
-        );
+const revenue =
+    number(
+        asset?.revenue
+    );
 
 
-    totalLiabilities +=
-        number(
-            asset?.liabilities
-        );
+const liabilities =
+    number(
+        asset?.liabilities
+    );
 
 
-    totalProfit +=
-        getAssetProfit(asset);
+const profit =
+
+    sellingPrice
+
+    - buyingPrice
+
+    - liabilities
+
+    + revenue;
+
+
+totalCurrentWorth +=
+    currentWorth;
+
+
+totalBuyingPrice +=
+    buyingPrice;
+
+
+totalSellingPrice +=
+    sellingPrice;
+
+
+totalRevenue +=
+    revenue;
+
+
+totalLiabilities +=
+    liabilities;
+
+
+totalProfit +=
+    profit;
 
 });
 
+/* ==========================================================
+SERVICE TOTALS
+========================================================== */
+
+/*
+The financial service may provide already calculated
+totals.
+
+Prefer those values where supplied.
+
+This is especially important for revenue and liabilities,
+because those values are date-filtered by the service.
+*/
+
+if (
+standaloneData.currentWorth !== undefined &&
+standaloneData.currentWorth !== null
+) {
+
+totalCurrentWorth =
+    number(
+        standaloneData.currentWorth
+    );
+
+}
+
+if (
+standaloneData.buyingPrice !== undefined &&
+standaloneData.buyingPrice !== null
+) {
+
+totalBuyingPrice =
+    number(
+        standaloneData.buyingPrice
+    );
+
+}
+
+if (
+standaloneData.sellingPrice !== undefined &&
+standaloneData.sellingPrice !== null
+) {
+
+totalSellingPrice =
+    number(
+        standaloneData.sellingPrice
+    );
+
+}
+
+/*
+Backwards compatibility.
+
+Some earlier service versions may use salesAmount
+instead of sellingPrice.
+*/
+
+if (
+standaloneData.salesAmount !== undefined &&
+standaloneData.salesAmount !== null
+) {
+
+totalSellingPrice =
+    number(
+        standaloneData.salesAmount
+    );
+
+}
+
+if (
+standaloneData.revenue !== undefined &&
+standaloneData.revenue !== null
+) {
+
+totalRevenue =
+    number(
+        standaloneData.revenue
+    );
+
+}
+
+if (
+standaloneData.liabilities !== undefined &&
+standaloneData.liabilities !== null
+) {
+
+totalLiabilities =
+    number(
+        standaloneData.liabilities
+    );
+
+}
+
+/*
+If the service supplies profit, use it.
+
+Otherwise calculate it from the filtered values.
+*/
+
+if (
+standaloneData.profit !== undefined &&
+standaloneData.profit !== null
+) {
+
+totalProfit =
+    number(
+        standaloneData.profit
+    );
+
+} else {
+
+totalProfit =
+
+    totalSellingPrice
+
+    - totalBuyingPrice
+
+    - totalLiabilities
+
+    + totalRevenue;
+
+}
 
 /* ==========================================================
-   PREFER SERVICE TOTALS
-   ========================================================== */
+SORT
+========================================================== */
 
-if (
+/*
+Highest profit first.
 
-    standaloneData.currentWorth !== undefined &&
-
-    standaloneData.currentWorth !== null
-
-) {
-
-    totalCurrentWorth =
-        number(
-            standaloneData.currentWorth
-        );
-
-}
-
-
-if (
-
-    standaloneData.buyingPrice !== undefined &&
-
-    standaloneData.buyingPrice !== null
-
-) {
-
-    totalBuyingPrice =
-        number(
-            standaloneData.buyingPrice
-        );
-
-}
-
-
-if (
-
-    standaloneData.sellingPrice !== undefined &&
-
-    standaloneData.sellingPrice !== null
-
-) {
-
-    totalSellingPrice =
-        number(
-            standaloneData.sellingPrice
-        );
-
-}
-
-
-if (
-
-    standaloneData.revenue !== undefined &&
-
-    standaloneData.revenue !== null
-
-) {
-
-    totalRevenue =
-        number(
-            standaloneData.revenue
-        );
-
-}
-
-
-if (
-
-    standaloneData.liabilities !== undefined &&
-
-    standaloneData.liabilities !== null
-
-) {
-
-    totalLiabilities =
-        number(
-            standaloneData.liabilities
-        );
-
-}
-
-
-if (
-
-    standaloneData.profit !== undefined &&
-
-    standaloneData.profit !== null
-
-) {
-
-    totalProfit =
-        number(
-            standaloneData.profit
-        );
-
-}
-
-
-/* ==========================================================
-   SORT ASSETS
-   ----------------------------------------------------------
-   1. Highest profit first
-   2. Highest current worth on tie
-   ========================================================== */
+Tie:
+Highest current worth first.
+*/
 
 assets.sort(function(a, b) {
 
-    const profitA =
-        getAssetProfit(a);
+const profitA =
+
+    a?.profit !== undefined &&
+    a?.profit !== null
+
+        ? number(a.profit)
+
+        : (
+            number(a?.sellingPrice)
+            -
+            number(a?.buyingPrice)
+            -
+            number(a?.liabilities)
+            +
+            number(a?.revenue)
+        );
 
 
-    const profitB =
-        getAssetProfit(b);
+const profitB =
+
+    b?.profit !== undefined &&
+    b?.profit !== null
+
+        ? number(b.profit)
+
+        : (
+            number(b?.sellingPrice)
+            -
+            number(b?.buyingPrice)
+            -
+            number(b?.liabilities)
+            +
+            number(b?.revenue)
+        );
 
 
-    if (profitA !== profitB) {
+if (profitA !== profitB) {
 
-        return profitB - profitA;
+    return profitB - profitA;
 
-    }
+}
 
 
-    return (
+return (
 
-        number(
-            b?.currentWorth
-        )
+    number(b?.currentWorth)
 
-        -
+    -
 
-        number(
-            a?.currentWorth
-        )
+    number(a?.currentWorth)
 
-    );
+);
 
 });
 
 %>
 
+<div class="financial-page standalone-financial-page"><!-- ======================================================
+     HEADER
+     ====================================================== -->
 
-<div class="financial-page standalone-financial-page">
+<div class="financial-page-header">
 
+    <div>
 
-    <!-- ======================================================
-         HEADER
-         ====================================================== -->
+        <span class="financial-eyebrow">
 
-    <div class="financial-page-header">
+            FINANCIALS
 
-
-        <div>
-
-            <span class="financial-eyebrow">
-
-                FINANCIALS
-
-            </span>
+        </span>
 
 
-            <h1 class="financial-title">
+        <h1 class="financial-title">
 
-                Standalone Assets
+            Standalone Assets
 
-            </h1>
-
-
-            <p class="financial-subtitle">
-
-                Financial performance of assets that do not
-                belong to a dairy farm.
-
-            </p>
-
-        </div>
+        </h1>
 
 
-        <a
-            href="/financials/summary"
-            class="financial-button financial-button-secondary"
-        >
+        <p class="financial-subtitle">
 
-            <i class="bi bi-arrow-left"></i>
+            Financial performance of assets that do not
+            belong to any Dairy Farm.
 
-            Summary
-
-        </a>
-
+        </p>
 
     </div>
 
 
-    <!-- ======================================================
-         CURRENT NET WORTH
-         ====================================================== -->
+    <a
+        href="/financials/summary"
+        class="financial-button financial-button-secondary"
+    >
 
-    <section class="financial-worth-card">
+        <i class="bi bi-arrow-left"></i>
 
+        Summary
 
-        <div class="financial-worth-icon">
+    </a>
 
-            <i class="bi bi-box-seam"></i>
-
-        </div>
-
-
-        <div>
-
-            <span>
-
-                Current Net Worth
-
-            </span>
+</div>
 
 
-            <strong>
+<!-- ======================================================
+     CURRENT NET WORTH
+     ====================================================== -->
 
-                KSh
-                <%= formatMoney(
-                    totalCurrentWorth
-                ) %>
+<section class="financial-worth-card">
 
-            </strong>
+    <div class="financial-worth-icon">
 
+        <i class="bi bi-box-seam"></i>
 
-            <small>
-
-                Current value — independent of date filter
-
-            </small>
-
-        </div>
+    </div>
 
 
-    </section>
+    <div>
+
+        <span>
+
+            Current Net Worth
+
+        </span>
 
 
-    <!-- ======================================================
-         FILTER
-         ====================================================== -->
+        <strong>
 
-    <section class="financial-filter-card">
+            KSh
+            <%= formatMoney(
+                totalCurrentWorth
+            ) %>
 
-
-        <form
-            method="GET"
-            action="/financials/standalone"
-            class="financial-filter-form"
-        >
+        </strong>
 
 
-            <div class="financial-filter-group">
+        <small>
+
+            Current value — not affected by date filter
+
+        </small>
+
+    </div>
+
+</section>
 
 
-                <label for="startDate">
+<!-- ======================================================
+     FILTER
+     ====================================================== -->
 
-                    From
-
-                </label>
-
-
-                <input
-                    type="date"
-                    id="startDate"
-                    name="startDate"
-                    value="<%= filterStart %>"
-                >
+<section class="financial-filter-card">
 
 
-            </div>
+    <form
+        method="GET"
+        action="/financials/standalone"
+        class="financial-filter-form"
+    >
 
 
-            <div class="financial-filter-group">
+        <div class="financial-filter-group">
+
+            <label for="startDate">
+
+                From
+
+            </label>
 
 
-                <label for="endDate">
-
-                    To
-
-                </label>
-
-
-                <input
-                    type="date"
-                    id="endDate"
-                    name="endDate"
-                    value="<%= filterEnd %>"
-                >
-
-
-            </div>
-
-
-            <button
-                type="submit"
-                class="financial-button financial-button-primary"
+            <input
+                type="date"
+                id="startDate"
+                name="startDate"
+                value="<%= filterStart %>"
             >
 
-                <i class="bi bi-funnel"></i>
-
-                Apply
-
-            </button>
+        </div>
 
 
-            <% if (hasFilter) { %>
+        <div class="financial-filter-group">
+
+            <label for="endDate">
+
+                To
+
+            </label>
 
 
-                <a
-                    href="/financials/standalone"
-                    class="financial-clear-filter"
-                >
+            <input
+                type="date"
+                id="endDate"
+                name="endDate"
+                value="<%= filterEnd %>"
+            >
 
-                    <i class="bi bi-x-circle"></i>
-
-                    Clear
-
-                </a>
+        </div>
 
 
-            <% } %>
+        <button
+            type="submit"
+            class="financial-button financial-button-primary"
+        >
+
+            <i class="bi bi-funnel"></i>
+
+            Apply
+
+        </button>
 
 
-        </form>
+        <% if (hasFilter) { %>
+
+            <a
+                href="/financials/standalone"
+                class="financial-clear-filter"
+            >
+
+                <i class="bi bi-x-circle"></i>
+
+                Clear
+
+            </a>
+
+        <% } %>
 
 
-    </section>
+    </form>
 
-
-    <!-- ======================================================
-         FILTER STATUS
-         ====================================================== -->
 
     <% if (hasFilter) { %>
 
-
         <div class="financial-filter-status">
-
 
             <i class="bi bi-calendar3"></i>
 
+            Showing revenue, liabilities and
+            profit/loss for the selected period.
 
-            <span>
-
-                Showing filtered revenue, liabilities and
-                profit/loss
-
-
-                <% if (filterStart && filterEnd) { %>
-
-                    from
-                    <strong>
-                        <%= filterStart %>
-                    </strong>
-
-                    to
-
-                    <strong>
-                        <%= filterEnd %>
-                    </strong>
-
-                <% } else if (filterStart) { %>
-
-                    from
-
-                    <strong>
-                        <%= filterStart %>
-                    </strong>
-
-                <% } else if (filterEnd) { %>
-
-                    up to
-
-                    <strong>
-                        <%= filterEnd %>
-                    </strong>
-
-                <% } %>
-
-
-            </span>
-
+            Current worth, buying price and selling
+            price remain current.
 
         </div>
-
 
     <% } %>
 
 
-    <!-- ======================================================
-         ASSET TABLE
-         ====================================================== -->
-
-    <section class="financial-section">
+</section>
 
 
-        <div class="financial-section-header">
+<!-- ======================================================
+     ASSET SECTION
+     ====================================================== -->
 
+<section class="financial-section">
+
+
+    <div class="financial-section-header">
+
+        <div>
 
             <span class="financial-eyebrow">
 
-                ASSET BREAKDOWN
+                STANDALONE ASSETS
 
             </span>
 
@@ -744,313 +669,327 @@ assets.sort(function(a, b) {
 
             <p class="financial-section-description">
 
-                Current asset values remain unchanged by the
-                selected date range. Revenue, liabilities and
-                profit/loss are period-based.
+                Assets that are not assigned to any
+                Dairy Farm.
 
             </p>
-
 
         </div>
 
 
-        <div class="financial-table-wrapper">
+        <span class="financial-count">
+
+            <%= assets.length %>
+
+            <%= assets.length === 1
+                ? "Asset"
+                : "Assets"
+            %>
+
+        </span>
+
+    </div>
 
 
-            <table class="financial-table">
+    <!-- ==================================================
+         TABLE
+         ================================================== -->
+
+    <div class="financial-table-wrapper">
 
 
-                <thead>
-
-                    <tr>
+        <table class="financial-table">
 
 
-                        <th>
+            <thead>
 
-                            Asset
+                <tr>
 
-                        </th>
+                    <th>
 
+                        Asset
 
-                        <th>
-
-                            Buying Price
-
-                        </th>
+                    </th>
 
 
-                        <th>
+                    <th>
 
-                            Selling Price
+                        Type
 
-                        </th>
-
-
-                        <th>
-
-                            Current Worth
-
-                        </th>
+                    </th>
 
 
-                        <th>
+                    <th>
 
-                            Revenue
+                        Current Worth
 
-                        </th>
-
-
-                        <th>
-
-                            Liabilities
-
-                        </th>
+                    </th>
 
 
-                        <th>
+                    <th>
 
-                            Profit / Loss
+                        Buying Price
 
-                        </th>
-
-
-                    </tr>
-
-                </thead>
+                    </th>
 
 
-                <tbody>
+                    <th>
+
+                        Selling Price
+
+                    </th>
 
 
-                    <% if (assets.length) { %>
+                    <th>
+
+                        Revenue
+
+                    </th>
 
 
-                        <% assets.forEach(function(asset) { %>
+                    <th>
+
+                        Liabilities
+
+                    </th>
 
 
-                            <%
+                    <th>
 
-                                const assetProfit =
-                                    getAssetProfit(
-                                        asset
+                        Profit / Loss
+
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+
+                <% if (assets.length) { %>
+
+
+                    <% assets.forEach(function(asset) { %>
+
+
+                        <%
+
+                            const sellingPrice =
+                                number(
+                                    asset?.sellingPrice
+                                );
+
+
+                            const buyingPrice =
+                                number(
+                                    asset?.buyingPrice
+                                );
+
+
+                            const liabilities =
+                                number(
+                                    asset?.liabilities
+                                );
+
+
+                            const revenue =
+                                number(
+                                    asset?.revenue
+                                );
+
+
+                            const assetProfit =
+
+                                asset?.profit !== undefined &&
+                                asset?.profit !== null
+
+                                    ? number(
+                                        asset.profit
+                                    )
+
+                                    : (
+                                        sellingPrice
+                                        -
+                                        buyingPrice
+                                        -
+                                        liabilities
+                                        +
+                                        revenue
                                     );
 
-
-                                const assetLiabilities =
-                                    number(
-                                        asset?.liabilities
-                                    );
-
-
-                            %>
-
-
-                            <tr>
-
-
-                                <!-- ==================================
-                                     ASSET
-                                     ================================== -->
-
-
-                                <td>
-
-
-                                    <div
-                                        class="financial-table-name"
-                                    >
-
-
-                                        <strong>
-
-                                            <%= asset?.name ||
-                                                "Unnamed Asset"
-                                            %>
-
-                                        </strong>
-
-
-                                        <% if (asset?.type) { %>
-
-
-                                            <small>
-
-                                                <%= asset.type %>
-
-                                            </small>
-
-
-                                        <% } %>
-
-
-                                        <% if (
-                                            asset?.code !==
-                                            undefined &&
-                                            asset?.code !== null
-                                        ) { %>
-
-
-                                            <small>
-
-                                                Code:
-                                                <%= asset.code %>
-
-                                            </small>
-
-
-                                        <% } %>
-
-
-                                    </div>
-
-
-                                </td>
-
-
-                                <!-- ==================================
-                                     BUYING PRICE
-                                     ================================== -->
-
-
-                                <td>
-
-                                    KSh
-                                    <%= formatMoney(
-                                        asset?.buyingPrice
-                                    ) %>
-
-                                </td>
-
-
-                                <!-- ==================================
-                                     SELLING PRICE
-                                     ================================== -->
-
-
-                                <td>
-
-                                    KSh
-                                    <%= formatMoney(
-                                        asset?.sellingPrice
-                                    ) %>
-
-                                </td>
-
-
-                                <!-- ==================================
-                                     CURRENT WORTH
-                                     ================================== -->
-
-
-                                <td>
-
-                                    KSh
-                                    <%= formatMoney(
-                                        asset?.currentWorth
-                                    ) %>
-
-                                </td>
-
-
-                                <!-- ==================================
-                                     REVENUE
-                                     ================================== -->
-
-
-                                <td>
-
-                                    KSh
-                                    <%= formatMoney(
-                                        asset?.revenue
-                                    ) %>
-
-                                </td>
-
-
-                                <!-- ==================================
-                                     LIABILITIES
-                                     ================================== -->
-
-
-                                <td>
-
-                                    <span
-                                        class="<%= assetLiabilities > 0
-                                            ? 'financial-negative'
-                                            : 'financial-neutral'
-                                        %>"
-                                    >
-
-                                        KSh
-                                        <%= formatMoney(
-                                            assetLiabilities
-                                        ) %>
-
-                                    </span>
-
-                                </td>
-
-
-                                <!-- ==================================
-                                     PROFIT / LOSS
-                                     ================================== -->
-
-
-                                <td>
-
-
-                                    <strong
-                                        class="<%= profitClass(
-                                            assetProfit
-                                        ) %>"
-                                    >
-
-                                        <%= profitText(
-                                            assetProfit
-                                        ) %>
-
-                                    </strong>
-
-
-                                </td>
-
-
-                            </tr>
-
-
-                        <% }); %>
-
-
-                    <% } else { %>
+                        %>
 
 
                         <tr>
 
 
-                            <td
-                                colspan="7"
-                                class="financial-table-empty"
-                            >
+                            <!-- ==================================
+                                 ASSET
+                                 ================================== -->
+
+                            <td>
+
+                                <div
+                                    class="financial-table-name"
+                                >
+
+                                    <strong>
+
+                                        <%= asset?.name ||
+                                            "Unnamed Asset"
+                                        %>
+
+                                    </strong>
 
 
-                                <i class="bi bi-box-seam"></i>
+                                    <% if (
+                                        asset?.description
+                                    ) { %>
+
+                                        <small>
+
+                                            <%= asset.description %>
+
+                                        </small>
+
+                                    <% } %>
 
 
-                                <strong>
+                                    <% if (
+                                        asset?.code !== undefined &&
+                                        asset?.code !== null
+                                    ) { %>
 
-                                    No standalone assets found
+                                        <small>
 
-                                </strong>
+                                            Code:
+                                            <%= asset.code %>
+
+                                        </small>
+
+                                    <% } else { %>
+
+                                        <small>
+
+                                            Standalone
+
+                                        </small>
+
+                                    <% } %>
+
+                                </div>
+
+                            </td>
 
 
-                                <span>
+                            <!-- ==================================
+                                 TYPE
+                                 ================================== -->
 
-                                    There are currently no
-                                    standalone assets available
-                                    for financial analysis.
+                            <td>
+
+                                <span
+                                    class="financial-type-badge"
+                                >
+
+                                    <%= asset?.type ||
+                                        "Other"
+                                    %>
 
                                 </span>
 
+                            </td>
+
+
+                            <!-- ==================================
+                                 CURRENT WORTH
+                                 ================================== -->
+
+                            <td>
+
+                                KSh
+                                <%= formatMoney(
+                                    asset?.currentWorth
+                                ) %>
+
+                            </td>
+
+
+                            <!-- ==================================
+                                 BUYING PRICE
+                                 ================================== -->
+
+                            <td>
+
+                                KSh
+                                <%= formatMoney(
+                                    asset?.buyingPrice
+                                ) %>
+
+                            </td>
+
+
+                            <!-- ==================================
+                                 SELLING PRICE
+                                 ================================== -->
+
+                            <td>
+
+                                KSh
+                                <%= formatMoney(
+                                    asset?.sellingPrice
+                                ) %>
+
+                            </td>
+
+
+                            <!-- ==================================
+                                 REVENUE
+                                 ================================== -->
+
+                            <td>
+
+                                KSh
+                                <%= formatMoney(
+                                    asset?.revenue
+                                ) %>
+
+                            </td>
+
+
+                            <!-- ==================================
+                                 LIABILITIES
+                                 ================================== -->
+
+                            <td>
+
+                                KSh
+                                <%= formatMoney(
+                                    asset?.liabilities
+                                ) %>
+
+                            </td>
+
+
+                            <!-- ==================================
+                                 PROFIT / LOSS
+                                 ================================== -->
+
+                            <td>
+
+                                <strong
+                                    class="<%= profitClass(
+                                        assetProfit
+                                    ) %>"
+                                >
+
+                                    <%= profitText(
+                                        assetProfit
+                                    ) %>
+
+                                </strong>
 
                             </td>
 
@@ -1058,151 +997,170 @@ assets.sort(function(a, b) {
                         </tr>
 
 
-                    <% } %>
+                    <% }); %>
 
 
-                </tbody>
-
-
-                <!-- ==================================================
-                     TOTAL
-                     ================================================== -->
-
-                <tfoot>
+                <% } else { %>
 
 
                     <tr>
 
+                        <td
+                            colspan="8"
+                            class="financial-table-empty"
+                        >
 
-                        <th>
-
-                            Total
-
-                        </th>
-
-
-                        <th>
-
-                            KSh
-                            <%= formatMoney(
-                                totalBuyingPrice
-                            ) %>
-
-                        </th>
+                            <i class="bi bi-box-seam"></i>
 
 
-                        <th>
+                            <strong>
 
-                            KSh
-                            <%= formatMoney(
-                                totalSellingPrice
-                            ) %>
-
-                        </th>
-
-
-                        <th>
-
-                            KSh
-                            <%= formatMoney(
-                                totalCurrentWorth
-                            ) %>
-
-                        </th>
-
-
-                        <th>
-
-                            KSh
-                            <%= formatMoney(
-                                totalRevenue
-                            ) %>
-
-                        </th>
-
-
-                        <th>
-
-                            KSh
-                            <%= formatMoney(
-                                totalLiabilities
-                            ) %>
-
-                        </th>
-
-
-                        <th>
-
-
-                            <strong
-                                class="<%= profitClass(
-                                    totalProfit
-                                ) %>"
-                            >
-
-                                <%= profitText(
-                                    totalProfit
-                                ) %>
+                                No standalone assets found
 
                             </strong>
 
 
-                        </th>
+                            <span>
 
+                                There are currently no
+                                assets outside a Dairy Farm.
+
+                            </span>
+
+                        </td>
 
                     </tr>
 
 
-                </tfoot>
+                <% } %>
 
 
-            </table>
+            </tbody>
 
 
-        </div>
+            <!-- ==================================================
+                 TOTAL
+                 ================================================== -->
+
+            <tfoot>
+
+                <tr>
+
+                    <th colspan="2">
+
+                        Total
+
+                    </th>
 
 
-    </section>
+                    <th>
+
+                        KSh
+                        <%= formatMoney(
+                            totalCurrentWorth
+                        ) %>
+
+                    </th>
 
 
-    <!-- ======================================================
-         FINANCIAL RULE
-         ====================================================== -->
+                    <th>
 
-    <section class="financial-formula-note">
+                        KSh
+                        <%= formatMoney(
+                            totalBuyingPrice
+                        ) %>
 
-
-        <i class="bi bi-calculator"></i>
-
-
-        <div>
+                    </th>
 
 
-            <strong>
+                    <th>
 
-                Profit / Loss calculation
+                        KSh
+                        <%= formatMoney(
+                            totalSellingPrice
+                        ) %>
 
-            </strong>
-
-
-            <span>
-
-                Selling Price − Buying Price − Filtered
-                Liabilities + Filtered Revenue
-
-            </span>
+                    </th>
 
 
-        </div>
+                    <th>
+
+                        KSh
+                        <%= formatMoney(
+                            totalRevenue
+                        ) %>
+
+                    </th>
 
 
-    </section>
+                    <th>
+
+                        KSh
+                        <%= formatMoney(
+                            totalLiabilities
+                        ) %>
+
+                    </th>
 
 
-</div>
+                    <th>
+
+                        <strong
+                            class="<%= profitClass(
+                                totalProfit
+                            ) %>"
+                        >
+
+                            <%= profitText(
+                                totalProfit
+                            ) %>
+
+                        </strong>
+
+                    </th>
+
+                </tr>
+
+            </tfoot>
 
 
-<style>
+        </table>
+
+    </div>
+
+</section>
+
+
+<!-- ======================================================
+     FINANCIAL RULE
+     ====================================================== -->
+
+<section class="financial-formula-note">
+
+    <i class="bi bi-calculator"></i>
+
+
+    <div>
+
+        <strong>
+
+            Profit / Loss calculation
+
+        </strong>
+
+
+        <span>
+
+            Selling Price − Buying Price −
+            Filtered Liabilities + Filtered Revenue
+
+        </span>
+
+    </div>
+
+</section>
+
+</div><style>
 
 /* ==========================================================
    PAGE
@@ -1223,8 +1181,6 @@ assets.sort(function(a, b) {
     --financial-text:#243329;
 
     --financial-muted:#718078;
-
-    --financial-border:#e5ece7;
 
     padding:24px;
 
@@ -1260,8 +1216,6 @@ assets.sort(function(a, b) {
 
     display:block;
 
-    margin-bottom:5px;
-
     color:var(--financial-green);
 
     font-size:.72rem;
@@ -1269,6 +1223,8 @@ assets.sort(function(a, b) {
     font-weight:800;
 
     letter-spacing:.12em;
+
+    margin-bottom:5px;
 
 }
 
@@ -1288,15 +1244,11 @@ assets.sort(function(a, b) {
 .standalone-financial-page
 .financial-subtitle{
 
-    max-width:700px;
-
     margin:6px 0 0;
 
     color:var(--financial-muted);
 
     font-size:.85rem;
-
-    line-height:1.5;
 
 }
 
@@ -1344,14 +1296,6 @@ assets.sort(function(a, b) {
 
 
 .standalone-financial-page
-.financial-button-primary:hover{
-
-    background:var(--financial-green-dark);
-
-}
-
-
-.standalone-financial-page
 .financial-button-secondary{
 
     background:var(--financial-green-light);
@@ -1362,10 +1306,9 @@ assets.sort(function(a, b) {
 
 
 /* ==========================================================
-   CURRENT WORTH
+   WORTH CARD
    ========================================================== */
 
-.standalone-financial-page
 .financial-worth-card{
 
     display:flex;
@@ -1392,20 +1335,19 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-worth-icon{
 
     width:48px;
 
     height:48px;
 
+    flex:0 0 48px;
+
     display:flex;
 
     align-items:center;
 
     justify-content:center;
-
-    flex:0 0 48px;
 
     border-radius:13px;
 
@@ -1418,7 +1360,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-worth-card span{
 
     display:block;
@@ -1430,7 +1371,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-worth-card strong{
 
     display:block;
@@ -1442,7 +1382,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-worth-card small{
 
     display:block;
@@ -1460,12 +1399,11 @@ assets.sort(function(a, b) {
    FILTER
    ========================================================== */
 
-.standalone-financial-page
 .financial-filter-card{
 
-    padding:12px 15px;
+    padding:15px;
 
-    margin-bottom:12px;
+    margin-bottom:28px;
 
     background:#fff;
 
@@ -1478,7 +1416,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-filter-form{
 
     display:flex;
@@ -1490,7 +1427,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-filter-group{
 
     flex:1;
@@ -1498,7 +1434,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-filter-group label{
 
     display:block;
@@ -1514,7 +1449,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-filter-group input{
 
     width:100%;
@@ -1523,8 +1457,7 @@ assets.sort(function(a, b) {
 
     padding:9px 10px;
 
-    border:1px solid
-        var(--financial-border);
+    border:1px solid #dce5df;
 
     border-radius:9px;
 
@@ -1539,7 +1472,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-filter-group input:focus{
 
     border-color:var(--financial-green);
@@ -1551,7 +1483,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-clear-filter{
 
     display:inline-flex;
@@ -1573,46 +1504,32 @@ assets.sort(function(a, b) {
 }
 
 
-/* ==========================================================
-   FILTER STATUS
-   ========================================================== */
-
-.standalone-financial-page
 .financial-filter-status{
 
     display:flex;
 
-    align-items:center;
+    align-items:flex-start;
 
-    gap:8px;
+    gap:7px;
 
-    padding:10px 13px;
+    margin-top:11px;
 
-    margin-bottom:22px;
+    padding-top:10px;
 
-    border-radius:10px;
-
-    background:var(--financial-green-soft);
+    border-top:1px solid #edf1ee;
 
     color:var(--financial-muted);
 
-    font-size:.75rem;
+    font-size:.72rem;
 
 }
 
 
-.standalone-financial-page
 .financial-filter-status i{
 
     color:var(--financial-green);
 
-}
-
-
-.standalone-financial-page
-.financial-filter-status strong{
-
-    color:var(--financial-text);
+    margin-top:1px;
 
 }
 
@@ -1621,7 +1538,6 @@ assets.sort(function(a, b) {
    SECTION
    ========================================================== */
 
-.standalone-financial-page
 .financial-section{
 
     margin-bottom:20px;
@@ -1629,15 +1545,21 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-section-header{
+
+    display:flex;
+
+    align-items:flex-end;
+
+    justify-content:space-between;
+
+    gap:15px;
 
     margin-bottom:12px;
 
 }
 
 
-.standalone-financial-page
 .financial-section-header h2{
 
     margin:0;
@@ -1649,25 +1571,40 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-section-description{
 
-    margin:5px 0 0;
+    margin:4px 0 0;
 
     color:var(--financial-muted);
 
-    font-size:.75rem;
+    font-size:.76rem;
 
-    line-height:1.45;
+}
+
+
+.financial-count{
+
+    flex:0 0 auto;
+
+    padding:6px 10px;
+
+    border-radius:20px;
+
+    background:var(--financial-green-light);
+
+    color:var(--financial-green-dark);
+
+    font-size:.72rem;
+
+    font-weight:700;
 
 }
 
 
 /* ==========================================================
-   TABLE WRAPPER
+   TABLE
    ========================================================== */
 
-.standalone-financial-page
 .financial-table-wrapper{
 
     width:100%;
@@ -1685,31 +1622,23 @@ assets.sort(function(a, b) {
 }
 
 
-/* ==========================================================
-   TABLE
-   ========================================================== */
-
-.standalone-financial-page
 .financial-table{
 
     width:100%;
 
-    min-width:1000px;
+    min-width:1050px;
 
     border-collapse:collapse;
 
 }
 
 
-.standalone-financial-page
 .financial-table th,
-.standalone-financial-page
 .financial-table td{
 
     padding:14px 15px;
 
-    border-bottom:1px solid
-        #edf1ee;
+    border-bottom:1px solid #edf1ee;
 
     text-align:right;
 
@@ -1722,9 +1651,7 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-table th:first-child,
-.standalone-financial-page
 .financial-table td:first-child{
 
     text-align:left;
@@ -1732,11 +1659,6 @@ assets.sort(function(a, b) {
 }
 
 
-/* ==========================================================
-   TABLE HEADER
-   ========================================================== */
-
-.standalone-financial-page
 .financial-table thead th{
 
     background:#f8faf9;
@@ -1754,10 +1676,16 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-table tbody tr:hover{
 
     background:var(--financial-green-soft);
+
+}
+
+
+.financial-table tbody tr:last-child td{
+
+    border-bottom:0;
 
 }
 
@@ -1766,7 +1694,6 @@ assets.sort(function(a, b) {
    ASSET NAME
    ========================================================== */
 
-.standalone-financial-page
 .financial-table-name{
 
     display:flex;
@@ -1778,15 +1705,15 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-table-name strong{
 
     color:var(--financial-text);
 
+    font-weight:700;
+
 }
 
 
-.standalone-financial-page
 .financial-table-name small{
 
     color:var(--financial-muted);
@@ -1797,12 +1724,33 @@ assets.sort(function(a, b) {
 
 
 /* ==========================================================
+   TYPE
+   ========================================================== */
+
+.financial-type-badge{
+
+    display:inline-block;
+
+    padding:5px 8px;
+
+    border-radius:7px;
+
+    background:var(--financial-green-light);
+
+    color:var(--financial-green-dark);
+
+    font-size:.68rem;
+
+    font-weight:700;
+
+}
+
+
+/* ==========================================================
    TOTAL
    ========================================================== */
 
-.standalone-financial-page
 .financial-table tfoot th,
-.standalone-financial-page
 .financial-table tfoot td{
 
     background:var(--financial-green-soft);
@@ -1817,10 +1765,9 @@ assets.sort(function(a, b) {
 
 
 /* ==========================================================
-   EMPTY TABLE
+   EMPTY
    ========================================================== */
 
-.standalone-financial-page
 .financial-table-empty{
 
     height:150px;
@@ -1830,7 +1777,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-table-empty i{
 
     display:block;
@@ -1844,7 +1790,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-table-empty strong{
 
     display:block;
@@ -1854,7 +1799,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-table-empty span{
 
     display:block;
@@ -1869,10 +1813,9 @@ assets.sort(function(a, b) {
 
 
 /* ==========================================================
-   FINANCIAL STATES
+   PROFIT
    ========================================================== */
 
-.standalone-financial-page
 .financial-positive{
 
     color:var(--financial-green-dark) !important;
@@ -1880,18 +1823,9 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-negative{
 
     color:var(--financial-red) !important;
-
-}
-
-
-.standalone-financial-page
-.financial-neutral{
-
-    color:var(--financial-text) !important;
 
 }
 
@@ -1900,7 +1834,6 @@ assets.sort(function(a, b) {
    FORMULA
    ========================================================== */
 
-.standalone-financial-page
 .financial-formula-note{
 
     display:flex;
@@ -1920,7 +1853,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-formula-note i{
 
     color:var(--financial-green);
@@ -1928,7 +1860,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-formula-note strong{
 
     display:block;
@@ -1942,7 +1873,6 @@ assets.sort(function(a, b) {
 }
 
 
-.standalone-financial-page
 .financial-formula-note span{
 
     font-size:.75rem;
@@ -1954,7 +1884,7 @@ assets.sort(function(a, b) {
    MOBILE
    ========================================================== */
 
-@media(max-width:700px){
+@media(max-width:650px){
 
     .standalone-financial-page{
 
@@ -1982,7 +1912,6 @@ assets.sort(function(a, b) {
     }
 
 
-    .standalone-financial-page
     .financial-filter-form{
 
         flex-wrap:wrap;
@@ -1990,16 +1919,13 @@ assets.sort(function(a, b) {
     }
 
 
-    .standalone-financial-page
     .financial-filter-group{
 
-        min-width:
-            calc(50% - 5px);
+        min-width:calc(50% - 5px);
 
     }
 
 
-    .standalone-financial-page
     .financial-filter-form
     .financial-button{
 
@@ -2008,7 +1934,6 @@ assets.sort(function(a, b) {
     }
 
 
-    .standalone-financial-page
     .financial-clear-filter{
 
         width:100%;
@@ -2018,10 +1943,11 @@ assets.sort(function(a, b) {
     }
 
 
-    .standalone-financial-page
-    .financial-filter-status{
+    .financial-section-header{
 
         align-items:flex-start;
+
+        flex-direction:column;
 
     }
 
