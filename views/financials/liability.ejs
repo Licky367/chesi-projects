@@ -1,41 +1,50 @@
-<% /*
-
+<% /* ==========================================================
 views/financials/liability.ejs
 
 FINANCIAL / LIABILITY ENTRY PAGE
 
-EXPECTED BACKEND DATA
+CONTROLLER DATA
 
 farms:
-Array of farm records.
+Array returned from:
+financialsService.getFinancialStructure()
 
-  Each farm contains:
-      .assets
-
-  containing assets belonging to that farm.
+   Each farm contains:
+       farm fields
+       assets[]
 
 standaloneAssets:
-Array of standalone assets.
+Array of standalone Dairy records.
 
 user:
 Currently authenticated user.
 
 success:
-Optional success message.
+Boolean.
 
 error:
-Optional error message.
+Error message or null.
 
-==========================================================
-*/ %>
+FORM CONTRACT
 
-<!-- ==========================================================
-     PAGE
-========================================================== --><div class="financial-page liability-entry-page"><!-- ======================================================
+POST /financials/liability
+
+Body:
+
+   dairyId
+   amount
+   description
+
+IMPORTANT:
+The controller reads req.body.dairyId.
+
+========================================================== */ %>
+
+<div class="financial-page liability-entry-page"><!-- ======================================================
      PAGE HEADER
-====================================================== -->
+     ====================================================== -->
 
-<header class="financial-page-header">
+<div class="financial-page-header">
 
     <div>
 
@@ -55,20 +64,35 @@ Optional error message.
     </div>
 
 
-    <div class="financial-header-icon">
+    <div class="financial-header-actions">
 
-        <i class="bi bi-wallet2"></i>
+        <a
+            href="/financials/summary"
+            class="financial-header-link"
+        >
+            <i class="bi bi-bar-chart-line"></i>
+            Summary
+        </a>
+
+        <div class="financial-header-icon">
+
+            <i class="bi bi-wallet2"></i>
+
+        </div>
 
     </div>
 
-</header>
+</div>
 
 
 <!-- ======================================================
      SUCCESS MESSAGE
-====================================================== -->
+     ====================================================== -->
 
-<% if (typeof success !== "undefined" && success) { %>
+<% if (
+    typeof success !== "undefined" &&
+    success
+) { %>
 
     <div
         class="financial-alert financial-alert-success"
@@ -100,9 +124,12 @@ Optional error message.
 
 <!-- ======================================================
      ERROR MESSAGE
-====================================================== -->
+     ====================================================== -->
 
-<% if (typeof error !== "undefined" && error) { %>
+<% if (
+    typeof error !== "undefined" &&
+    error
+) { %>
 
     <div
         class="financial-alert financial-alert-error"
@@ -134,14 +161,14 @@ Optional error message.
 
 <!-- ======================================================
      FORM CARD
-====================================================== -->
+     ====================================================== -->
 
-<section class="financial-card liability-form-card">
+<div class="financial-card liability-form-card">
 
 
     <!-- ==================================================
          CARD HEADER
-    ================================================== -->
+         ================================================== -->
 
     <div class="financial-card-header">
 
@@ -152,7 +179,7 @@ Optional error message.
             </h2>
 
             <p>
-                Select the dairy or asset receiving
+                Select the farm, animal, or asset receiving
                 the liability.
             </p>
 
@@ -166,9 +193,17 @@ Optional error message.
     <!-- ==================================================
          FORM
 
-         ROUTE:
-             POST /financials/liability
-    ================================================== -->
+         IMPORTANT:
+
+         Controller expects:
+
+             req.body.dairyId
+
+         Therefore the select name MUST be:
+
+             dairyId
+
+         ================================================== -->
 
     <form
         action="/financials/liability"
@@ -180,21 +215,23 @@ Optional error message.
 
         <!-- ==============================================
              DAIRY / ASSET SELECTOR
-        =============================================== -->
+             ============================================== -->
 
         <div class="financial-form-group">
 
             <label
-                for="dairy"
+                for="dairyId"
                 class="financial-label"
             >
+
                 Dairy / Asset
+
             </label>
 
 
             <select
-                id="dairy"
-                name="dairy"
+                id="dairyId"
+                name="dairyId"
                 class="financial-select"
                 required
             >
@@ -206,7 +243,7 @@ Optional error message.
 
                 <!-- ======================================
                      FARMS
-                ======================================= -->
+                     ====================================== -->
 
                 <% if (
                     Array.isArray(farms) &&
@@ -218,15 +255,15 @@ Optional error message.
 
                         <% farms.forEach(function(farm) { %>
 
-                            <!-- ==================================
+
+                            <!-- ==========================
                                  FARM ITSELF
-                            =================================== -->
+                                 ========================== -->
 
                             <option
                                 value="<%= farm._id %>"
-                                data-code="<%= farm.code ?? '' %>"
-                                data-parent=""
                                 data-kind="farm"
+                                data-name="<%= farm.name || 'Dairy Farm' %>"
                             >
 
                                 <%= farm.name || "Unnamed Farm" %>
@@ -235,11 +272,19 @@ Optional error message.
                             </option>
 
 
-                            <!-- ==================================
+                            <!-- ==========================
                                  FARM ASSETS
 
-                                 Service supplies .assets
-                            =================================== -->
+                                 IMPORTANT:
+
+                                 Service returns:
+
+                                     farm.assets
+
+                                 NOT:
+
+                                     farm.children
+                                 ========================== -->
 
                             <% if (
                                 Array.isArray(farm.assets) &&
@@ -253,10 +298,8 @@ Optional error message.
 
                                     <option
                                         value="<%= asset._id %>"
-                                        data-code="<%= asset.code ?? '' %>"
-                                        data-asset-code="<%= asset.assetCode ?? '' %>"
-                                        data-parent="<%= farm._id %>"
                                         data-kind="asset"
+                                        data-name="<%= asset.name || 'Asset' %>"
                                     >
 
                                         ↳
@@ -287,12 +330,13 @@ Optional error message.
 
                 <!-- ======================================
                      STANDALONE ASSETS
-                ======================================= -->
+                     ====================================== -->
 
                 <% if (
                     Array.isArray(standaloneAssets) &&
                     standaloneAssets.length
                 ) { %>
+
 
                     <optgroup label="Standalone Assets">
 
@@ -303,10 +347,8 @@ Optional error message.
 
                             <option
                                 value="<%= asset._id %>"
-                                data-code="<%= asset.code ?? '' %>"
-                                data-asset-code="<%= asset.assetCode ?? '' %>"
-                                data-parent=""
                                 data-kind="standalone"
+                                data-name="<%= asset.name || 'Asset' %>"
                             >
 
                                 <%= asset.name || "Unnamed Asset" %>
@@ -325,6 +367,7 @@ Optional error message.
 
                     </optgroup>
 
+
                 <% } %>
 
 
@@ -333,8 +376,8 @@ Optional error message.
 
             <small class="financial-help-text">
 
-                A liability may be recorded against
-                a farm, farm asset, or standalone asset.
+                You can record a liability against a farm
+                itself, a farm asset, or a standalone asset.
 
             </small>
 
@@ -343,7 +386,7 @@ Optional error message.
 
         <!-- ==================================================
              SELECTED RECORD
-        ================================================== -->
+             ================================================== -->
 
         <div
             class="financial-selected-record"
@@ -368,15 +411,13 @@ Optional error message.
                 <strong
                     id="selectedDairyName"
                     class="financial-selected-name"
-                >
-                </strong>
+                ></strong>
 
 
                 <span
                     id="selectedDairyType"
                     class="financial-selected-type"
-                >
-                </span>
+                ></span>
 
             </div>
 
@@ -385,7 +426,7 @@ Optional error message.
 
         <!-- ==================================================
              LIABILITY AMOUNT
-        ================================================== -->
+             ================================================== -->
 
         <div class="financial-form-group">
 
@@ -393,7 +434,9 @@ Optional error message.
                 for="amount"
                 class="financial-label"
             >
+
                 Liability Amount
+
             </label>
 
 
@@ -422,7 +465,7 @@ Optional error message.
 
         <!-- ==================================================
              DESCRIPTION
-        ================================================== -->
+             ================================================== -->
 
         <div class="financial-form-group">
 
@@ -430,7 +473,9 @@ Optional error message.
                 for="description"
                 class="financial-label"
             >
+
                 Description
+
             </label>
 
 
@@ -459,8 +504,8 @@ Optional error message.
 
 
         <!-- ==================================================
-             RECORDED BY
-        ================================================== -->
+             RECORDER
+             ================================================== -->
 
         <div class="financial-recorder">
 
@@ -477,7 +522,6 @@ Optional error message.
                     Recorded by
                 </span>
 
-
                 <strong>
                     <%= user?.name || "Current user" %>
                 </strong>
@@ -489,17 +533,10 @@ Optional error message.
 
         <!-- ==================================================
              ACTIONS
-        ================================================== -->
+             ================================================== -->
 
         <div class="financial-form-actions">
 
-
-            <!-- ==========================================
-                 LIABILITY HISTORY
-
-                 ROUTE:
-                     GET /financials/history
-            =========================================== -->
 
             <a
                 href="/financials/history"
@@ -512,13 +549,6 @@ Optional error message.
 
             </a>
 
-
-            <!-- ==========================================
-                 SUBMIT
-
-                 ROUTE:
-                     POST /financials/liability
-            =========================================== -->
 
             <button
                 type="submit"
@@ -538,375 +568,311 @@ Optional error message.
 
     </form>
 
-
-</section>
+</div>
 
 </div><!-- ==========================================================
      PAGE CSS
-========================================================== --><style>
+     ========================================================== --><style>
 
     .financial-page {
 
-        --financial-green:
-            #2f7d4a;
+        --financial-green: #2f7d4a;
+        --financial-green-dark: #236238;
+        --financial-green-light: #eaf6ee;
+        --financial-green-soft: #f4faf6;
 
-        --financial-green-dark:
-            #236238;
+        --financial-red: #c0392b;
+        --financial-red-light: #fceceb;
 
-        --financial-green-light:
-            #eaf6ee;
+        --financial-text: #243329;
+        --financial-muted: #718078;
 
-        --financial-green-soft:
-            #f4faf6;
+        max-width: 1100px;
 
-        --financial-red:
-            #c0392b;
+        margin: 0 auto;
 
-        --financial-red-light:
-            #fceceb;
-
-        --financial-text:
-            #243329;
-
-        --financial-muted:
-            #718078;
-
-
-        max-width:
-            1100px;
-
-        margin:
-            0 auto;
-
-        padding:
-            24px;
+        padding: 24px;
 
     }
 
 
     /* ======================================================
        HEADER
-    ====================================================== */
+       ====================================================== */
 
     .financial-page-header {
 
-        display:
-            flex;
+        display: flex;
 
-        align-items:
-            center;
+        align-items: center;
 
-        justify-content:
-            space-between;
+        justify-content: space-between;
 
-        gap:
-            20px;
+        gap: 20px;
 
-        margin-bottom:
-            24px;
+        margin-bottom: 24px;
 
     }
 
 
     .financial-eyebrow {
 
-        display:
-            block;
+        display: block;
 
-        margin-bottom:
-            5px;
+        margin-bottom: 5px;
 
-        color:
-            var(--financial-green);
+        color: var(--financial-green);
 
-        font-size:
-            .75rem;
+        font-size: .75rem;
 
-        font-weight:
-            700;
+        font-weight: 700;
 
-        letter-spacing:
-            .12em;
+        letter-spacing: .12em;
 
     }
 
 
     .financial-title {
 
-        margin:
-            0;
+        margin: 0;
 
-        color:
-            var(--financial-text);
+        color: var(--financial-text);
 
-        font-size:
-            clamp(1.6rem, 4vw, 2.2rem);
-
-        line-height:
-            1.2;
+        font-size: clamp(1.6rem, 4vw, 2.2rem);
 
     }
 
 
     .financial-subtitle {
 
-        margin:
-            7px 0 0;
+        margin: 7px 0 0;
 
-        color:
-            var(--financial-muted);
+        color: var(--financial-muted);
 
-        line-height:
-            1.5;
+    }
+
+
+    .financial-header-actions {
+
+        display: flex;
+
+        align-items: center;
+
+        gap: 10px;
+
+    }
+
+
+    .financial-header-link {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        gap: 7px;
+
+        padding: 10px 13px;
+
+        border-radius: 10px;
+
+        background: var(--financial-green-light);
+
+        color: var(--financial-green-dark);
+
+        text-decoration: none;
+
+        font-size: .85rem;
+
+        font-weight: 600;
+
+    }
+
+
+    .financial-header-link:hover {
+
+        background: #dcefe3;
 
     }
 
 
     .financial-header-icon {
 
-        width:
-            52px;
+        width: 52px;
 
-        height:
-            52px;
+        height: 52px;
 
-        display:
-            flex;
+        display: flex;
 
-        align-items:
-            center;
+        align-items: center;
 
-        justify-content:
-            center;
+        justify-content: center;
 
-        flex-shrink:
-            0;
+        border-radius: 14px;
 
-        border-radius:
-            14px;
+        background: var(--financial-green-light);
 
-        background:
-            var(--financial-green-light);
+        color: var(--financial-green);
 
-        color:
-            var(--financial-green);
+        font-size: 1.4rem;
 
-        font-size:
-            1.4rem;
+        flex-shrink: 0;
 
     }
 
 
     /* ======================================================
        ALERTS
-    ====================================================== */
+       ====================================================== */
 
     .financial-alert {
 
-        display:
-            flex;
+        display: flex;
 
-        align-items:
-            center;
+        align-items: center;
 
-        gap:
-            12px;
+        gap: 12px;
 
-        padding:
-            14px 16px;
+        padding: 14px 16px;
 
-        margin-bottom:
-            20px;
+        border-radius: 12px;
 
-        border-radius:
-            12px;
+        margin-bottom: 20px;
 
     }
 
 
     .financial-alert-success {
 
-        background:
-            var(--financial-green-light);
+        background: var(--financial-green-light);
 
-        color:
-            var(--financial-green-dark);
+        color: var(--financial-green-dark);
 
     }
 
 
     .financial-alert-error {
 
-        background:
-            var(--financial-red-light);
+        background: var(--financial-red-light);
 
-        color:
-            var(--financial-red);
+        color: var(--financial-red);
 
     }
 
 
     .financial-alert-icon {
 
-        flex-shrink:
-            0;
+        font-size: 1.2rem;
 
-        font-size:
-            1.2rem;
-
-    }
-
-
-    .financial-alert strong {
-
-        display:
-            block;
+        flex-shrink: 0;
 
     }
 
 
     .financial-alert span {
 
-        display:
-            block;
+        display: block;
 
-        margin-top:
-            2px;
+        margin-top: 2px;
 
-        font-size:
-            .85rem;
+        font-size: .85rem;
 
     }
 
 
     /* ======================================================
        CARD
-    ====================================================== */
+       ====================================================== */
 
     .financial-card {
 
-        background:
-            #fff;
+        background: #fff;
 
-        border-radius:
-            18px;
+        border-radius: 18px;
 
-        padding:
-            24px;
+        padding: 24px;
 
-        box-shadow:
-            0 4px 20px rgba(0, 0, 0, .07);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, .07);
 
     }
 
 
     .financial-card-header {
 
-        display:
-            flex;
+        display: flex;
 
-        align-items:
-            flex-start;
+        justify-content: space-between;
 
-        justify-content:
-            space-between;
+        gap: 15px;
 
-        gap:
-            15px;
-
-        margin-bottom:
-            24px;
+        margin-bottom: 24px;
 
     }
 
 
     .financial-card-header h2 {
 
-        margin:
-            0;
+        margin: 0;
 
-        color:
-            var(--financial-text);
+        color: var(--financial-text);
 
-        font-size:
-            1.2rem;
+        font-size: 1.2rem;
 
     }
 
 
     .financial-card-header p {
 
-        margin:
-            5px 0 0;
+        margin: 5px 0 0;
 
-        color:
-            var(--financial-muted);
+        color: var(--financial-muted);
 
-        font-size:
-            .9rem;
-
-        line-height:
-            1.5;
+        font-size: .9rem;
 
     }
 
 
     .financial-card-header > i {
 
-        flex-shrink:
-            0;
+        color: var(--financial-green);
 
-        color:
-            var(--financial-green);
-
-        font-size:
-            1.3rem;
+        font-size: 1.3rem;
 
     }
 
 
     /* ======================================================
        FORM
-    ====================================================== */
+       ====================================================== */
 
     .financial-form {
 
-        display:
-            flex;
+        display: flex;
 
-        flex-direction:
-            column;
+        flex-direction: column;
 
-        gap:
-            20px;
+        gap: 20px;
 
     }
 
 
     .financial-form-group {
 
-        position:
-            relative;
+        position: relative;
 
     }
 
 
     .financial-label {
 
-        display:
-            block;
+        display: block;
 
-        margin-bottom:
-            8px;
+        margin-bottom: 8px;
 
-        color:
-            var(--financial-text);
+        color: var(--financial-text);
 
-        font-size:
-            .9rem;
+        font-size: .9rem;
 
-        font-weight:
-            600;
+        font-weight: 600;
 
     }
 
@@ -915,54 +881,43 @@ Optional error message.
     .financial-textarea,
     .financial-money-input input {
 
-        width:
-            100%;
+        width: 100%;
 
-        box-sizing:
-            border-box;
+        box-sizing: border-box;
 
-        border:
-            1px solid #dce5df;
+        border: 1px solid #dce5df;
 
-        border-radius:
-            11px;
+        border-radius: 11px;
 
-        background:
-            #fff;
+        background: #fff;
 
-        color:
-            var(--financial-text);
+        color: var(--financial-text);
 
-        font:
-            inherit;
+        font: inherit;
 
-        outline:
-            none;
+        outline: none;
 
-        transition:
-            .2s ease;
+        transition: .2s ease;
 
     }
 
 
     .financial-select {
 
-        padding:
-            13px 14px;
+        padding: 13px 14px;
+
+        cursor: pointer;
 
     }
 
 
     .financial-textarea {
 
-        min-height:
-            120px;
+        padding: 13px 14px;
 
-        padding:
-            13px 14px;
+        resize: vertical;
 
-        resize:
-            vertical;
+        min-height: 120px;
 
     }
 
@@ -971,8 +926,7 @@ Optional error message.
     .financial-textarea:focus,
     .financial-money-input:focus-within {
 
-        border-color:
-            var(--financial-green);
+        border-color: var(--financial-green);
 
         box-shadow:
             0 0 0 3px rgba(47, 125, 74, .1);
@@ -982,164 +936,117 @@ Optional error message.
 
     /* ======================================================
        MONEY INPUT
-    ====================================================== */
+       ====================================================== */
 
     .financial-money-input {
 
-        display:
-            flex;
+        display: flex;
 
-        align-items:
-            stretch;
+        align-items: center;
 
-        overflow:
-            hidden;
+        overflow: hidden;
 
-        border:
-            1px solid #dce5df;
+        border: 1px solid #dce5df;
 
-        border-radius:
-            11px;
+        border-radius: 11px;
 
-        transition:
-            .2s ease;
+        background: #fff;
+
+        transition: .2s ease;
 
     }
 
 
     .financial-money-input span {
 
-        display:
-            flex;
+        padding: 13px 14px;
 
-        align-items:
-            center;
+        background: var(--financial-green-soft);
 
-        padding:
-            13px 14px;
+        color: var(--financial-green);
 
-        background:
-            var(--financial-green-soft);
-
-        color:
-            var(--financial-green);
-
-        font-weight:
-            700;
+        font-weight: 700;
 
     }
 
 
     .financial-money-input input {
 
-        min-width:
-            0;
+        border: 0;
 
-        border:
-            0;
-
-        border-radius:
-            0;
-
-        box-shadow:
-            none;
+        border-radius: 0;
 
     }
 
 
     .financial-money-input input:focus {
 
-        border:
-            0;
+        border-color: transparent;
 
-        box-shadow:
-            none;
+        box-shadow: none;
 
     }
 
 
     /* ======================================================
        HELP TEXT
-    ====================================================== */
+       ====================================================== */
 
     .financial-help-text {
 
-        display:
-            block;
+        display: block;
 
-        margin-top:
-            7px;
+        margin-top: 7px;
 
-        color:
-            var(--financial-muted);
+        color: var(--financial-muted);
 
-        font-size:
-            .8rem;
-
-        line-height:
-            1.4;
+        font-size: .8rem;
 
     }
 
 
     /* ======================================================
        SELECTED RECORD
-    ====================================================== */
+       ====================================================== */
 
     .financial-selected-record {
 
-        display:
-            flex;
+        display: flex;
 
-        align-items:
-            center;
+        align-items: center;
 
-        gap:
-            12px;
+        gap: 12px;
 
-        padding:
-            13px;
+        padding: 13px;
 
-        border:
-            1px solid #dceee2;
+        border: 1px solid #dceee2;
 
-        border-radius:
-            12px;
+        border-radius: 12px;
 
-        background:
-            var(--financial-green-soft);
+        background: var(--financial-green-soft);
 
     }
 
 
     .financial-selected-icon {
 
-        width:
-            38px;
+        width: 38px;
 
-        height:
-            38px;
+        height: 38px;
 
-        display:
-            flex;
+        display: flex;
 
-        align-items:
-            center;
+        align-items: center;
 
-        justify-content:
-            center;
+        justify-content: center;
 
-        flex-shrink:
-            0;
+        border-radius: 10px;
 
-        border-radius:
-            10px;
+        background: var(--financial-green-light);
 
-        background:
-            var(--financial-green-light);
+        color: var(--financial-green);
 
-        color:
-            var(--financial-green);
+        flex-shrink: 0;
 
     }
 
@@ -1147,87 +1054,66 @@ Optional error message.
     .financial-selected-label,
     .financial-selected-type {
 
-        display:
-            block;
+        display: block;
 
-        color:
-            var(--financial-muted);
+        color: var(--financial-muted);
 
-        font-size:
-            .75rem;
+        font-size: .75rem;
 
     }
 
 
     .financial-selected-name {
 
-        display:
-            block;
+        display: block;
 
-        margin:
-            2px 0;
+        margin: 2px 0;
 
-        color:
-            var(--financial-text);
+        color: var(--financial-text);
 
     }
 
 
     /* ======================================================
        RECORDER
-    ====================================================== */
+       ====================================================== */
 
     .financial-recorder {
 
-        display:
-            flex;
+        display: flex;
 
-        align-items:
-            center;
+        align-items: center;
 
-        gap:
-            12px;
+        gap: 12px;
 
-        padding:
-            13px;
+        padding: 13px;
 
-        border-radius:
-            12px;
+        border-radius: 12px;
 
-        background:
-            #f8faf9;
+        background: #f8faf9;
 
     }
 
 
     .financial-recorder-icon {
 
-        width:
-            38px;
+        width: 38px;
 
-        height:
-            38px;
+        height: 38px;
 
-        display:
-            flex;
+        display: flex;
 
-        align-items:
-            center;
+        align-items: center;
 
-        justify-content:
-            center;
+        justify-content: center;
 
-        flex-shrink:
-            0;
+        border-radius: 50%;
 
-        border-radius:
-            50%;
+        background: var(--financial-green-light);
 
-        background:
-            var(--financial-green-light);
+        color: var(--financial-green);
 
-        color:
-            var(--financial-green);
+        flex-shrink: 0;
 
     }
 
@@ -1235,211 +1121,182 @@ Optional error message.
     .financial-recorder span,
     .financial-recorder strong {
 
-        display:
-            block;
+        display: block;
 
     }
 
 
     .financial-recorder span {
 
-        color:
-            var(--financial-muted);
+        color: var(--financial-muted);
 
-        font-size:
-            .75rem;
+        font-size: .75rem;
 
     }
 
 
     .financial-recorder strong {
 
-        margin-top:
-            2px;
-
-        color:
-            var(--financial-text);
+        color: var(--financial-text);
 
     }
 
 
     /* ======================================================
-       CHARACTER COUNT
-    ====================================================== */
+       CHARACTER COUNTER
+       ====================================================== */
 
     .financial-character-count {
 
-        margin-top:
-            4px;
+        margin-top: 4px;
 
-        color:
-            var(--financial-muted);
+        color: var(--financial-muted);
 
-        font-size:
-            .75rem;
+        font-size: .75rem;
 
-        text-align:
-            right;
+        text-align: right;
 
     }
 
 
     /* ======================================================
        ACTIONS
-    ====================================================== */
+       ====================================================== */
 
     .financial-form-actions {
 
-        display:
-            flex;
+        display: flex;
 
-        align-items:
-            center;
+        justify-content: flex-end;
 
-        justify-content:
-            flex-end;
+        gap: 10px;
 
-        gap:
-            10px;
-
-        padding-top:
-            4px;
+        padding-top: 4px;
 
     }
 
 
     .financial-button {
 
-        display:
-            inline-flex;
+        display: inline-flex;
 
-        align-items:
-            center;
+        align-items: center;
 
-        justify-content:
-            center;
+        justify-content: center;
 
-        gap:
-            8px;
+        gap: 8px;
 
-        padding:
-            12px 17px;
+        padding: 12px 17px;
 
-        border:
-            0;
+        border: 0;
 
-        border-radius:
-            10px;
+        border-radius: 10px;
 
-        font:
-            inherit;
+        font: inherit;
 
-        font-weight:
-            600;
+        font-weight: 600;
 
-        text-decoration:
-            none;
+        text-decoration: none;
 
-        cursor:
-            pointer;
+        cursor: pointer;
 
-        transition:
-            .2s ease;
+        transition: .2s ease;
 
     }
 
 
     .financial-button-primary {
 
-        background:
-            var(--financial-green);
+        background: var(--financial-green);
 
-        color:
-            #fff;
+        color: #fff;
 
     }
 
 
     .financial-button-primary:hover {
 
-        background:
-            var(--financial-green-dark);
+        background: var(--financial-green-dark);
 
     }
 
 
     .financial-button-primary:disabled {
 
-        opacity:
-            .65;
+        opacity: .65;
 
-        cursor:
-            not-allowed;
+        cursor: not-allowed;
 
     }
 
 
     .financial-button-secondary {
 
-        background:
-            var(--financial-green-light);
+        background: var(--financial-green-light);
 
-        color:
-            var(--financial-green-dark);
+        color: var(--financial-green-dark);
 
     }
 
 
     .financial-button-secondary:hover {
 
-        background:
-            #dcefe3;
+        background: #dcefe3;
 
     }
 
 
     /* ======================================================
        RESPONSIVE
-    ====================================================== */
+       ====================================================== */
 
     @media (max-width: 600px) {
 
         .financial-page {
 
-            padding:
-                16px;
+            padding: 16px;
 
         }
 
 
         .financial-card {
 
-            padding:
-                18px;
+            padding: 18px;
 
         }
 
 
         .financial-page-header {
 
-            align-items:
-                flex-start;
+            align-items: flex-start;
+
+        }
+
+
+        .financial-header-actions {
+
+            align-items: flex-start;
+
+        }
+
+
+        .financial-header-link {
+
+            display: none;
 
         }
 
 
         .financial-form-actions {
 
-            flex-direction:
-                column-reverse;
+            flex-direction: column-reverse;
 
         }
 
 
         .financial-button {
 
-            width:
-                100%;
+            width: 100%;
 
         }
 
@@ -1447,182 +1304,197 @@ Optional error message.
 
 </style><!-- ==========================================================
      PAGE JAVASCRIPT
-========================================================== --><script>
+     ========================================================== --><script>
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
+    document.addEventListener(
 
+        "DOMContentLoaded",
 
-        const dairySelect =
-            document.getElementById(
-                "dairy"
-            );
+        function() {
 
 
-        const selectedInformation =
-            document.getElementById(
-                "selectedDairyInformation"
-            );
+            /* ==================================================
+               ELEMENTS
+               ================================================== */
+
+            const dairySelect =
+                document.getElementById(
+                    "dairyId"
+                );
 
 
-        const selectedName =
-            document.getElementById(
-                "selectedDairyName"
-            );
+            const selectedInformation =
+                document.getElementById(
+                    "selectedDairyInformation"
+                );
 
 
-        const selectedType =
-            document.getElementById(
-                "selectedDairyType"
-            );
+            const selectedName =
+                document.getElementById(
+                    "selectedDairyName"
+                );
 
 
-        const description =
-            document.getElementById(
-                "description"
-            );
+            const selectedType =
+                document.getElementById(
+                    "selectedDairyType"
+                );
 
 
-        const descriptionCount =
-            document.getElementById(
-                "descriptionCount"
-            );
+            const description =
+                document.getElementById(
+                    "description"
+                );
 
 
-        const form =
-            document.getElementById(
-                "liabilityForm"
-            );
+            const descriptionCount =
+                document.getElementById(
+                    "descriptionCount"
+                );
 
 
-        const submitButton =
-            document.getElementById(
-                "submitLiabilityButton"
-            );
+            const form =
+                document.getElementById(
+                    "liabilityForm"
+                );
 
 
-        /* ==================================================
-           UPDATE SELECTED RECORD
-        ================================================== */
-
-        function updateSelectedDairy() {
-
-
-            const option =
-                dairySelect.options[
-                    dairySelect.selectedIndex
-                ];
+            const submitButton =
+                document.getElementById(
+                    "submitLiabilityButton"
+                );
 
 
-            if (
-                !option ||
-                !option.value
-            ) {
+            /* ==================================================
+               SELECTED DAIRY / ASSET
+               ================================================== */
+
+            function updateSelectedDairy() {
+
+                const option =
+                    dairySelect.options[
+                        dairySelect.selectedIndex
+                    ];
+
+
+                if (
+                    !option ||
+                    !option.value
+                ) {
+
+                    selectedInformation.hidden =
+                        true;
+
+                    selectedName.textContent =
+                        "";
+
+                    selectedType.textContent =
+                        "";
+
+                    return;
+
+                }
+
 
                 selectedInformation.hidden =
-                    true;
+                    false;
+
 
                 selectedName.textContent =
-                    "";
+                    option.dataset.name ||
+                    option.textContent.trim();
 
-                selectedType.textContent =
-                    "";
 
-                return;
+                const kind =
+                    option.dataset.kind;
+
+
+                if (
+                    kind === "farm"
+                ) {
+
+                    selectedType.textContent =
+                        "Dairy Farm";
+
+                }
+
+                else if (
+                    kind === "standalone"
+                ) {
+
+                    selectedType.textContent =
+                        "Standalone Asset";
+
+                }
+
+                else {
+
+                    selectedType.textContent =
+                        "Farm Asset";
+
+                }
+
+            }
+
+
+            dairySelect.addEventListener(
+
+                "change",
+
+                updateSelectedDairy
+
+            );
+
+
+            /* ==================================================
+               DESCRIPTION CHARACTER COUNT
+               ================================================== */
+
+            function updateDescriptionCount() {
+
+                descriptionCount.textContent =
+                    description.value.length;
 
             }
 
 
-            selectedInformation.hidden =
-                false;
+            description.addEventListener(
+
+                "input",
+
+                updateDescriptionCount
+
+            );
 
 
-            selectedName.textContent =
-                option.textContent
-                    .replace(/\s+/g, " ")
-                    .trim();
+            updateDescriptionCount();
 
 
-            const kind =
-                option.dataset.kind;
+            /* ==================================================
+               SUBMIT STATE
+               ================================================== */
 
+            form.addEventListener(
 
-            if (
-                kind === "farm"
-            ) {
+                "submit",
 
-                selectedType.textContent =
-                    "Dairy Farm";
+                function() {
 
-            }
+                    submitButton.disabled =
+                        true;
 
-            else if (
-                kind === "standalone"
-            ) {
+                    submitButton.innerHTML =
 
-                selectedType.textContent =
-                    "Standalone Asset";
+                        '<i class="bi bi-hourglass-split"></i>' +
+                        ' Recording...';
 
-            }
+                }
 
-            else {
+            );
 
-                selectedType.textContent =
-                    "Farm Asset";
-
-            }
 
         }
 
-
-        dairySelect.addEventListener(
-            "change",
-            updateSelectedDairy
-        );
-
-
-        /* ==================================================
-           DESCRIPTION COUNTER
-        ================================================== */
-
-        function updateDescriptionCount() {
-
-            descriptionCount.textContent =
-                description.value.length;
-
-        }
-
-
-        description.addEventListener(
-            "input",
-            updateDescriptionCount
-        );
-
-
-        updateDescriptionCount();
-
-
-        /* ==================================================
-           SUBMIT STATE
-        ================================================== */
-
-        form.addEventListener(
-            "submit",
-            function () {
-
-                submitButton.disabled =
-                    true;
-
-                submitButton.innerHTML =
-                    '<i class="bi bi-hourglass-split"></i>' +
-                    ' Recording...';
-
-            }
-        );
-
-
-    }
-);
+    );
 
 </script>
