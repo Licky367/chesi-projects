@@ -1,0 +1,1489 @@
+<% /* ==========================================================
+   FINANCIAL / STANDALONE ASSETS PAGE
+
+   BACKEND DATA
+
+   Expected:
+
+       standalone: {
+           currentWorth,
+           salesAmount,
+           revenue,
+           profit,
+           assets: []
+       }
+
+       filters: {
+           startDate,
+           endDate
+       }
+
+   PROFIT:
+
+       sellingPrice
+       - buyingPrice
+       - liabilities
+       + revenue
+
+   SORT:
+
+       1. Highest profit first
+       2. Highest currentWorth on tie
+
+   ========================================================== */ %>
+
+
+<%
+/* ==========================================================
+   HELPERS
+   ========================================================== */
+
+function number(value) {
+
+    const result = Number(value);
+
+    return Number.isFinite(result)
+        ? result
+        : 0;
+
+}
+
+
+function formatMoney(value) {
+
+    const amount = Number(value);
+
+    if (!Number.isFinite(amount)) {
+
+        return "—";
+
+    }
+
+    return amount.toLocaleString(
+
+        "en-KE",
+
+        {
+            minimumFractionDigits:2,
+            maximumFractionDigits:2
+        }
+
+    );
+
+}
+
+
+function profitClass(value) {
+
+    return number(value) < 0
+        ? "financial-negative"
+        : "financial-positive";
+
+}
+
+
+function profitText(value) {
+
+    const amount =
+        number(value);
+
+
+    return amount < 0
+
+        ? "-KSh " +
+          formatMoney(
+              Math.abs(amount)
+          )
+
+        : "KSh " +
+          formatMoney(amount);
+
+}
+
+
+/* ==========================================================
+   SAFE DATA
+   ========================================================== */
+
+const standaloneData =
+    standalone || {};
+
+
+const assets =
+    Array.isArray(
+        standaloneData.assets
+    )
+
+        ? standaloneData.assets
+        : [];
+
+
+const filterStart =
+    filters?.startDate || "";
+
+
+const filterEnd =
+    filters?.endDate || "";
+
+
+const hasFilter =
+    Boolean(
+        filterStart ||
+        filterEnd
+    );
+
+
+/* ==========================================================
+   TOTALS
+   ========================================================== */
+
+let totalCurrentWorth = 0;
+
+let totalSalesAmount = 0;
+
+let totalRevenue = 0;
+
+let totalProfit = 0;
+
+
+/* ==========================================================
+   ASSET TOTALS
+   ========================================================== */
+
+assets.forEach(function(asset) {
+
+    const sellingPrice =
+        number(
+            asset?.sellingPrice
+        );
+
+
+    const buyingPrice =
+        number(
+            asset?.buyingPrice
+        );
+
+
+    const liabilities =
+        number(
+            asset?.liabilities
+        );
+
+
+    const revenue =
+        number(
+            asset?.revenue
+        );
+
+
+    const calculatedProfit =
+        sellingPrice
+        - buyingPrice
+        - liabilities
+        + revenue;
+
+
+    totalCurrentWorth +=
+        number(
+            asset?.currentWorth
+        );
+
+
+    totalSalesAmount +=
+        sellingPrice;
+
+
+    totalRevenue +=
+        revenue;
+
+
+    totalProfit +=
+        calculatedProfit;
+
+});
+
+
+/* ==========================================================
+   SERVICE-SUPPLIED TOTALS
+
+   Prefer service values when available.
+   ========================================================== */
+
+if (
+    standaloneData.currentWorth !== undefined &&
+    standaloneData.currentWorth !== null
+) {
+
+    totalCurrentWorth =
+        number(
+            standaloneData.currentWorth
+        );
+
+}
+
+
+if (
+    standaloneData.salesAmount !== undefined &&
+    standaloneData.salesAmount !== null
+) {
+
+    totalSalesAmount =
+        number(
+            standaloneData.salesAmount
+        );
+
+}
+
+
+if (
+    standaloneData.revenue !== undefined &&
+    standaloneData.revenue !== null
+) {
+
+    totalRevenue =
+        number(
+            standaloneData.revenue
+        );
+
+}
+
+
+if (
+    standaloneData.profit !== undefined &&
+    standaloneData.profit !== null
+) {
+
+    totalProfit =
+        number(
+            standaloneData.profit
+        );
+
+}
+
+
+/* ==========================================================
+   SORT
+
+   Highest profit first.
+
+   Tie:
+       highest current worth first.
+   ========================================================== */
+
+assets.sort(function(a, b) {
+
+    const profitA =
+        number(a?.profit);
+
+
+    const profitB =
+        number(b?.profit);
+
+
+    if (profitA !== profitB) {
+
+        return profitB - profitA;
+
+    }
+
+
+    return (
+        number(b?.currentWorth)
+        -
+        number(a?.currentWorth)
+    );
+
+});
+
+%>
+
+
+<div class="financial-page standalone-financial-page">
+
+
+    <!-- ======================================================
+         HEADER
+         ====================================================== -->
+
+    <div class="financial-page-header">
+
+        <div>
+
+            <span class="financial-eyebrow">
+
+                FINANCIALS
+
+            </span>
+
+
+            <h1 class="financial-title">
+
+                Standalone Assets
+
+            </h1>
+
+
+            <p class="financial-subtitle">
+
+                Financial performance of assets that do not
+                belong to a dairy farm.
+
+            </p>
+
+        </div>
+
+
+        <a
+            href="/financials/summary"
+            class="financial-button financial-button-secondary"
+        >
+
+            <i class="bi bi-arrow-left"></i>
+
+            Summary
+
+        </a>
+
+    </div>
+
+
+    <!-- ======================================================
+         CURRENT NET WORTH
+         ====================================================== -->
+
+    <section class="financial-worth-card">
+
+        <div class="financial-worth-icon">
+
+            <i class="bi bi-box-seam"></i>
+
+        </div>
+
+
+        <div>
+
+            <span>
+
+                Current Net Worth
+
+            </span>
+
+
+            <strong>
+
+                KSh
+                <%= formatMoney(
+                    totalCurrentWorth
+                ) %>
+
+            </strong>
+
+
+            <small>
+
+                Current value — independent of date filter
+
+            </small>
+
+        </div>
+
+    </section>
+
+
+    <!-- ======================================================
+         FILTER
+         ====================================================== -->
+
+    <section class="financial-filter-card">
+
+
+        <form
+            method="GET"
+            action="/financials/standalone"
+            class="financial-filter-form"
+        >
+
+
+            <div class="financial-filter-group">
+
+                <label for="startDate">
+
+                    From
+
+                </label>
+
+
+                <input
+                    type="date"
+                    id="startDate"
+                    name="startDate"
+                    value="<%= filterStart %>"
+                >
+
+            </div>
+
+
+            <div class="financial-filter-group">
+
+                <label for="endDate">
+
+                    To
+
+                </label>
+
+
+                <input
+                    type="date"
+                    id="endDate"
+                    name="endDate"
+                    value="<%= filterEnd %>"
+                >
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="financial-button financial-button-primary"
+            >
+
+                <i class="bi bi-funnel"></i>
+
+                Apply
+
+            </button>
+
+
+            <% if (hasFilter) { %>
+
+                <a
+                    href="/financials/standalone"
+                    class="financial-clear-filter"
+                >
+
+                    <i class="bi bi-x-circle"></i>
+
+                    Clear
+
+                </a>
+
+            <% } %>
+
+
+        </form>
+
+    </section>
+
+
+    <!-- ======================================================
+         ASSET TABLE
+         ====================================================== -->
+
+    <section class="financial-section">
+
+
+        <div class="financial-section-header">
+
+            <span class="financial-eyebrow">
+
+                ASSET BREAKDOWN
+
+            </span>
+
+
+            <h2>
+
+                Standalone Asset Financials
+
+            </h2>
+
+
+        </div>
+
+
+        <div class="financial-table-wrapper">
+
+
+            <table class="financial-table">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+
+                            Asset
+
+                        </th>
+
+                        <th>
+
+                            Current Worth
+
+                        </th>
+
+                        <th>
+
+                            Sales Amount
+
+                        </th>
+
+                        <th>
+
+                            Revenue
+
+                        </th>
+
+                        <th>
+
+                            Profit / Loss
+
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+
+                    <% if (assets.length) { %>
+
+
+                        <% assets.forEach(function(asset) { %>
+
+                            <%
+                                const assetProfit =
+                                    asset?.profit !== undefined &&
+                                    asset?.profit !== null
+
+                                        ? number(asset.profit)
+
+                                        : (
+                                            number(asset?.sellingPrice)
+                                            -
+                                            number(asset?.buyingPrice)
+                                            -
+                                            number(asset?.liabilities)
+                                            +
+                                            number(asset?.revenue)
+                                        );
+                            %>
+
+
+                            <tr>
+
+
+                                <td>
+
+                                    <a
+                                        href="/financials/asset/<%= asset._id %>"
+                                        class="financial-table-name"
+                                    >
+
+                                        <strong>
+
+                                            <%= asset.name ||
+                                                "Unnamed Asset"
+                                            %>
+
+                                        </strong>
+
+
+                                        <% if (asset.type) { %>
+
+                                            <small>
+
+                                                <%= asset.type %>
+
+                                            </small>
+
+                                        <% } %>
+
+
+                                        <% if (
+                                            asset.code !== undefined &&
+                                            asset.code !== null
+                                        ) { %>
+
+                                            <small>
+
+                                                Code:
+                                                <%= asset.code %>
+
+                                            </small>
+
+                                        <% } %>
+
+                                    </a>
+
+                                </td>
+
+
+                                <td>
+
+                                    KSh
+                                    <%= formatMoney(
+                                        asset.currentWorth
+                                    ) %>
+
+                                </td>
+
+
+                                <td>
+
+                                    KSh
+                                    <%= formatMoney(
+                                        asset.sellingPrice
+                                    ) %>
+
+                                </td>
+
+
+                                <td>
+
+                                    KSh
+                                    <%= formatMoney(
+                                        asset.revenue
+                                    ) %>
+
+                                </td>
+
+
+                                <td>
+
+                                    <strong
+                                        class="<%= profitClass(
+                                            assetProfit
+                                        ) %>"
+                                    >
+
+                                        <%= profitText(
+                                            assetProfit
+                                        ) %>
+
+                                    </strong>
+
+                                </td>
+
+
+                            </tr>
+
+
+                        <% }); %>
+
+
+                    <% } else { %>
+
+
+                        <tr>
+
+                            <td
+                                colspan="5"
+                                class="financial-table-empty"
+                            >
+
+                                <i class="bi bi-box-seam"></i>
+
+
+                                <strong>
+
+                                    No standalone assets found
+
+                                </strong>
+
+
+                                <span>
+
+                                    There are currently no
+                                    standalone assets available
+                                    for financial analysis.
+
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+
+                    <% } %>
+
+
+                </tbody>
+
+
+                <!-- ==================================================
+                     TOTAL
+                     ================================================== -->
+
+                <tfoot>
+
+                    <tr>
+
+                        <th>
+
+                            Total
+
+                        </th>
+
+
+                        <th>
+
+                            KSh
+                            <%= formatMoney(
+                                totalCurrentWorth
+                            ) %>
+
+                        </th>
+
+
+                        <th>
+
+                            KSh
+                            <%= formatMoney(
+                                totalSalesAmount
+                            ) %>
+
+                        </th>
+
+
+                        <th>
+
+                            KSh
+                            <%= formatMoney(
+                                totalRevenue
+                            ) %>
+
+                        </th>
+
+
+                        <th>
+
+                            <strong
+                                class="<%= profitClass(
+                                    totalProfit
+                                ) %>"
+                            >
+
+                                <%= profitText(
+                                    totalProfit
+                                ) %>
+
+                            </strong>
+
+                        </th>
+
+                    </tr>
+
+                </tfoot>
+
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <!-- ======================================================
+         FORMULA
+         ====================================================== -->
+
+    <section class="financial-formula-note">
+
+        <i class="bi bi-calculator"></i>
+
+
+        <div>
+
+            <strong>
+
+                Profit / Loss calculation
+
+            </strong>
+
+
+            <span>
+
+                Selling Price − Buying Price − Liabilities
+                + Revenue
+
+            </span>
+
+        </div>
+
+    </section>
+
+
+</div>
+
+
+<style>
+
+/* ==========================================================
+   PAGE
+   ========================================================== */
+
+.standalone-financial-page{
+
+    --financial-green:#2f7d4a;
+    --financial-green-dark:#236238;
+    --financial-green-light:#eaf6ee;
+    --financial-green-soft:#f4faf6;
+
+    --financial-red:#c0392b;
+
+    --financial-text:#243329;
+    --financial-muted:#718078;
+
+    padding:24px;
+
+    max-width:1400px;
+
+    margin:0 auto;
+
+}
+
+
+/* ==========================================================
+   HEADER
+   ========================================================== */
+
+.standalone-financial-page
+.financial-page-header{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:20px;
+
+    margin-bottom:20px;
+
+}
+
+
+.standalone-financial-page
+.financial-eyebrow{
+
+    display:block;
+
+    color:var(--financial-green);
+
+    font-size:.72rem;
+
+    font-weight:800;
+
+    letter-spacing:.12em;
+
+    margin-bottom:5px;
+
+}
+
+
+.standalone-financial-page
+.financial-title{
+
+    margin:0;
+
+    color:var(--financial-text);
+
+    font-size:clamp(1.5rem,4vw,2.2rem);
+
+}
+
+
+.standalone-financial-page
+.financial-subtitle{
+
+    margin:6px 0 0;
+
+    color:var(--financial-muted);
+
+    font-size:.85rem;
+
+}
+
+
+/* ==========================================================
+   BUTTONS
+   ========================================================== */
+
+.standalone-financial-page
+.financial-button{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:8px;
+
+    padding:11px 16px;
+
+    border:0;
+
+    border-radius:10px;
+
+    text-decoration:none;
+
+    font:inherit;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+}
+
+
+.financial-button-primary{
+
+    background:var(--financial-green);
+
+    color:#fff;
+
+}
+
+
+.financial-button-secondary{
+
+    background:var(--financial-green-light);
+
+    color:var(--financial-green-dark);
+
+}
+
+
+/* ==========================================================
+   WORTH
+   ========================================================== */
+
+.financial-worth-card{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:20px;
+
+    margin-bottom:16px;
+
+    background:#fff;
+
+    border-radius:17px;
+
+    border-left:4px solid
+        var(--financial-green);
+
+    box-shadow:
+        0 3px 16px
+        rgba(0,0,0,.06);
+
+}
+
+
+.financial-worth-icon{
+
+    width:48px;
+
+    height:48px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:13px;
+
+    background:var(--financial-green-light);
+
+    color:var(--financial-green);
+
+    font-size:1.25rem;
+
+}
+
+
+.financial-worth-card span{
+
+    display:block;
+
+    color:var(--financial-muted);
+
+    font-size:.78rem;
+
+}
+
+
+.financial-worth-card strong{
+
+    display:block;
+
+    color:var(--financial-green-dark);
+
+    font-size:1.35rem;
+
+}
+
+
+.financial-worth-card small{
+
+    display:block;
+
+    margin-top:3px;
+
+    color:var(--financial-muted);
+
+    font-size:.68rem;
+
+}
+
+
+/* ==========================================================
+   FILTER
+   ========================================================== */
+
+.financial-filter-card{
+
+    padding:12px 15px;
+
+    margin-bottom:28px;
+
+    background:#fff;
+
+    border-radius:14px;
+
+    box-shadow:
+        0 2px 12px
+        rgba(0,0,0,.05);
+
+}
+
+
+.financial-filter-form{
+
+    display:flex;
+
+    align-items:flex-end;
+
+    gap:10px;
+
+}
+
+
+.financial-filter-group{
+
+    flex:1;
+
+}
+
+
+.financial-filter-group label{
+
+    display:block;
+
+    margin-bottom:5px;
+
+    color:var(--financial-muted);
+
+    font-size:.72rem;
+
+    font-weight:600;
+
+}
+
+
+.financial-filter-group input{
+
+    width:100%;
+
+    box-sizing:border-box;
+
+    padding:9px 10px;
+
+    border:1px solid #dce5df;
+
+    border-radius:9px;
+
+    background:#fff;
+
+    color:var(--financial-text);
+
+    font:inherit;
+
+    outline:none;
+
+}
+
+
+.financial-filter-group input:focus{
+
+    border-color:var(--financial-green);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(47,125,74,.1);
+
+}
+
+
+.financial-clear-filter{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:5px;
+
+    padding:9px 4px;
+
+    color:var(--financial-green);
+
+    text-decoration:none;
+
+    font-size:.8rem;
+
+    font-weight:600;
+
+}
+
+
+/* ==========================================================
+   SECTION
+   ========================================================== */
+
+.financial-section{
+
+    margin-bottom:20px;
+
+}
+
+
+.financial-section-header{
+
+    margin-bottom:12px;
+
+}
+
+
+.financial-section-header h2{
+
+    margin:0;
+
+    color:var(--financial-text);
+
+    font-size:1.25rem;
+
+}
+
+
+/* ==========================================================
+   TABLE
+   ========================================================== */
+
+.financial-table-wrapper{
+
+    width:100%;
+
+    overflow-x:auto;
+
+    background:#fff;
+
+    border-radius:15px;
+
+    box-shadow:
+        0 3px 16px
+        rgba(0,0,0,.06);
+
+}
+
+
+.financial-table{
+
+    width:100%;
+
+    min-width:760px;
+
+    border-collapse:collapse;
+
+}
+
+
+.financial-table th,
+.financial-table td{
+
+    padding:14px 15px;
+
+    border-bottom:1px solid #edf1ee;
+
+    text-align:right;
+
+    white-space:nowrap;
+
+    color:var(--financial-text);
+
+    font-size:.82rem;
+
+}
+
+
+.financial-table th:first-child,
+.financial-table td:first-child{
+
+    text-align:left;
+
+}
+
+
+.financial-table thead th{
+
+    background:#f8faf9;
+
+    color:var(--financial-muted);
+
+    font-size:.7rem;
+
+    font-weight:800;
+
+    text-transform:uppercase;
+
+    letter-spacing:.05em;
+
+}
+
+
+.financial-table tbody tr:hover{
+
+    background:var(--financial-green-soft);
+
+}
+
+
+.financial-table-name{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:2px;
+
+    color:var(--financial-text);
+
+    text-decoration:none;
+
+}
+
+
+.financial-table-name:hover strong{
+
+    color:var(--financial-green);
+
+}
+
+
+.financial-table-name small{
+
+    color:var(--financial-muted);
+
+    font-size:.68rem;
+
+}
+
+
+.financial-table tfoot th,
+.financial-table tfoot td{
+
+    background:var(--financial-green-soft);
+
+    border-bottom:0;
+
+    color:var(--financial-green-dark);
+
+    font-weight:800;
+
+}
+
+
+.financial-table-empty{
+
+    height:140px;
+
+    text-align:center !important;
+
+}
+
+
+.financial-table-empty i{
+
+    display:block;
+
+    margin-bottom:7px;
+
+    color:var(--financial-green);
+
+    font-size:1.4rem;
+
+}
+
+
+.financial-table-empty strong{
+
+    display:block;
+
+}
+
+
+.financial-table-empty span{
+
+    display:block;
+
+    margin-top:3px;
+
+    color:var(--financial-muted);
+
+    font-size:.75rem;
+
+}
+
+
+/* ==========================================================
+   PROFIT
+   ========================================================== */
+
+.financial-positive{
+
+    color:var(--financial-green-dark) !important;
+
+}
+
+
+.financial-negative{
+
+    color:var(--financial-red) !important;
+
+}
+
+
+/* ==========================================================
+   FORMULA
+   ========================================================== */
+
+.financial-formula-note{
+
+    display:flex;
+
+    align-items:flex-start;
+
+    gap:10px;
+
+    padding:13px 15px;
+
+    border-radius:12px;
+
+    background:var(--financial-green-soft);
+
+    color:var(--financial-muted);
+
+}
+
+
+.financial-formula-note i{
+
+    color:var(--financial-green);
+
+}
+
+
+.financial-formula-note strong{
+
+    display:block;
+
+    margin-bottom:2px;
+
+    color:var(--financial-text);
+
+    font-size:.78rem;
+
+}
+
+
+.financial-formula-note span{
+
+    font-size:.75rem;
+
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media(max-width:650px){
+
+    .standalone-financial-page{
+
+        padding:16px;
+
+    }
+
+
+    .standalone-financial-page
+    .financial-page-header{
+
+        align-items:flex-start;
+
+        flex-direction:column;
+
+    }
+
+
+    .standalone-financial-page
+    .financial-page-header
+    .financial-button{
+
+        width:100%;
+
+    }
+
+
+    .financial-filter-form{
+
+        flex-wrap:wrap;
+
+    }
+
+
+    .financial-filter-group{
+
+        min-width:calc(50% - 5px);
+
+    }
+
+
+    .financial-filter-form
+    .financial-button{
+
+        flex:1;
+
+    }
+
+
+    .financial-clear-filter{
+
+        width:100%;
+
+        padding-left:0;
+
+    }
+
+}
+
+</style>
