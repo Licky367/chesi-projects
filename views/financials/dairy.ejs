@@ -1,51 +1,35 @@
 <% /* ==========================================================
-   FINANCIAL / DAIRY DETAILS PAGE
+   DAIRY FARM FINANCIAL PAGE
 
-   BACKEND DATA
+   SERVICE DATA
 
-   Current controller provides:
+   The controller should provide:
 
        dairy
-       liabilities
-       filters
 
-   The updated service should provide:
+   For a Dairy Farm, dairy has:
 
-       dairy: {
-           _id,
-           name,
-           code,
-           currentWorth,
-           salesAmount,
-           revenue,
-           profit,
-           assets: []
-       }
+       dairy.farm
+       dairy.assets
+       dairy.currentWorth
+       dairy.salesAmount
+       dairy.revenue
+       dairy.liabilities
+       dairy.profit
 
-       Each asset may contain:
+   FARM IDENTIFICATION
 
-           _id
-           name
-           code
-           type
-           currentWorth
-           buyingPrice
-           sellingPrice
-           revenue
-           liabilities
-           profit
+       farm.code < 0
 
-       filters: {
-           startDate,
-           endDate
-       }
+   FARM ASSET IDENTIFICATION
 
-   PROFIT RULE:
+       asset.assetCode === farm.code
 
-       sellingPrice
-       - buyingPrice
-       - liabilities
-       + revenue
+   IMPORTANT
+
+   The service is responsible for finding the assets.
+
+   This template only displays the data supplied by the service.
 
    ========================================================== */ %>
 
@@ -57,7 +41,8 @@
 
 function number(value) {
 
-    const result = Number(value);
+    const result =
+        Number(value);
 
     return Number.isFinite(result)
         ? result
@@ -68,9 +53,12 @@ function number(value) {
 
 function formatMoney(value) {
 
-    const amount = Number(value);
+    const amount =
+        Number(value);
 
-    if (!Number.isFinite(amount)) {
+    if (
+        !Number.isFinite(amount)
+    ) {
 
         return "—";
 
@@ -101,29 +89,98 @@ function profitClass(value) {
 
 function profitText(value) {
 
-    const amount = number(value);
+    const amount =
+        number(value);
+
+    if (
+        amount < 0
+    ) {
+
+        return (
+            "-KSh " +
+            formatMoney(
+                Math.abs(amount)
+            )
+        );
+
+    }
 
     return (
-        amount < 0
-            ? "-KSh " + formatMoney(Math.abs(amount))
-            : "KSh " + formatMoney(amount)
+        "KSh " +
+        formatMoney(amount)
     );
 
 }
 
 
 /* ==========================================================
-   SAFE DATA
+   NORMALIZE SERVICE RESPONSE
    ========================================================== */
 
-const farm =
+const financial =
     dairy || {};
 
 
+const farm =
+    financial.farm || financial;
+
+
 const assets =
-    Array.isArray(farm.assets)
-        ? farm.assets
+    Array.isArray(
+        financial.assets
+    )
+
+        ? financial.assets
+
         : [];
+
+
+const farmId =
+    farm._id || "";
+
+
+const farmName =
+    farm.name ||
+    "Dairy Farm";
+
+
+const farmCode =
+    farm.code;
+
+
+const totalCurrentWorth =
+    number(
+        financial.totalCurrentWorth ??
+        financial.currentWorth
+    );
+
+
+const totalSalesAmount =
+    number(
+        financial.totalSalesAmount ??
+        financial.salesAmount
+    );
+
+
+const totalRevenue =
+    number(
+        financial.totalRevenue ??
+        financial.revenue
+    );
+
+
+const totalLiabilities =
+    number(
+        financial.totalLiabilities ??
+        financial.liabilities
+    );
+
+
+const totalProfit =
+    number(
+        financial.totalProfit ??
+        financial.profit
+    );
 
 
 const filterStart =
@@ -142,191 +199,54 @@ const hasFilter =
 
 
 /* ==========================================================
-   FARM TOTALS
-   ========================================================== */
-
-let totalCurrentWorth = 0;
-
-let totalSalesAmount = 0;
-
-let totalBuyingPrice = 0;
-
-let totalRevenue = 0;
-
-let totalLiabilities = 0;
-
-let totalProfit = 0;
-
-
-/* ==========================================================
-   CALCULATE ASSET TOTALS
-
-   The service should preferably supply these values.
-
-   We calculate them here as a safe presentation fallback.
-   ========================================================== */
-
-assets.forEach(function(asset) {
-
-    const currentWorth =
-        number(
-            asset?.currentWorth
-        );
-
-
-    const buyingPrice =
-        number(
-            asset?.buyingPrice
-        );
-
-
-    const sellingPrice =
-        number(
-            asset?.sellingPrice
-        );
-
-
-    const revenue =
-        number(
-            asset?.revenue
-        );
-
-
-    const liabilitiesValue =
-        number(
-            asset?.liabilities
-        );
-
-
-    const calculatedProfit =
-        sellingPrice
-        - buyingPrice
-        - liabilitiesValue
-        + revenue;
-
-
-    totalCurrentWorth +=
-        currentWorth;
-
-
-    totalSalesAmount +=
-        sellingPrice;
-
-
-    totalBuyingPrice +=
-        buyingPrice;
-
-
-    totalRevenue +=
-        revenue;
-
-
-    totalLiabilities +=
-        liabilitiesValue;
-
-
-    totalProfit +=
-        calculatedProfit;
-
-});
-
-
-/* ==========================================================
-   PREFER SERVICE-SUPPLIED FARM TOTALS
-
-   These values will be supplied by the updated service.
-
-   Fall back to asset calculations where necessary.
-   ========================================================== */
-
-if (
-    farm.currentWorth !== undefined &&
-    farm.currentWorth !== null
-) {
-
-    totalCurrentWorth =
-        number(farm.currentWorth);
-
-}
-
-
-if (
-    farm.salesAmount !== undefined &&
-    farm.salesAmount !== null
-) {
-
-    totalSalesAmount =
-        number(farm.salesAmount);
-
-}
-
-
-if (
-    farm.revenue !== undefined &&
-    farm.revenue !== null
-) {
-
-    totalRevenue =
-        number(farm.revenue);
-
-}
-
-
-if (
-    farm.liabilities !== undefined &&
-    farm.liabilities !== null
-) {
-
-    totalLiabilities =
-        number(farm.liabilities);
-
-}
-
-
-if (
-    farm.profit !== undefined &&
-    farm.profit !== null
-) {
-
-    totalProfit =
-        number(farm.profit);
-
-}
-
-
-/* ==========================================================
    SORT ASSETS
-
-   Highest profit first.
-
-   If profit is tied:
-       highest currentWorth first.
    ========================================================== */
 
-assets.sort(function(a, b) {
+assets.sort(
 
-    const profitA =
-        number(a?.profit);
+    function(a, b) {
+
+        const profitA =
+            number(
+                a?.profit
+            );
 
 
-    const profitB =
-        number(b?.profit);
+        const profitB =
+            number(
+                b?.profit
+            );
 
 
-    if (profitA !== profitB) {
+        if (
+            profitA !== profitB
+        ) {
 
-        return profitB - profitA;
+            return (
+                profitB -
+                profitA
+            );
+
+        }
+
+
+        return (
+
+            number(
+                b?.currentWorth
+            )
+
+            -
+
+            number(
+                a?.currentWorth
+            )
+
+        );
 
     }
 
-
-    return (
-        number(b?.currentWorth)
-        -
-        number(a?.currentWorth)
-    );
-
-});
+);
 
 %>
 
@@ -340,6 +260,7 @@ assets.sort(function(a, b) {
 
     <div class="financial-page-header">
 
+
         <div>
 
             <span class="financial-eyebrow">
@@ -351,23 +272,28 @@ assets.sort(function(a, b) {
 
             <h1 class="financial-title">
 
-                <%= farm.name || "Dairy Farm" %>
+                <%= farmName %>
 
             </h1>
 
 
             <p class="financial-subtitle">
 
-                <% if (farm.code !== undefined && farm.code !== null) { %>
+                <% if (
+                    farmCode !== undefined &&
+                    farmCode !== null
+                ) { %>
 
                     Farm Code:
+
                     <strong>
-                        <%= farm.code %>
+                        <%= farmCode %>
                     </strong>
 
                 <% } else { %>
 
-                    Financial performance and asset breakdown.
+                    Financial performance and
+                    asset breakdown.
 
                 <% } %>
 
@@ -387,6 +313,7 @@ assets.sort(function(a, b) {
 
         </a>
 
+
     </div>
 
 
@@ -395,6 +322,7 @@ assets.sort(function(a, b) {
          ====================================================== -->
 
     <section class="financial-worth-card">
+
 
         <div class="financial-worth-icon">
 
@@ -406,27 +334,29 @@ assets.sort(function(a, b) {
         <div>
 
             <span>
-
                 Current Net Worth
-
             </span>
 
 
             <strong>
 
                 KSh
-                <%= formatMoney(totalCurrentWorth) %>
+                <%= formatMoney(
+                    totalCurrentWorth
+                ) %>
 
             </strong>
 
 
             <small>
 
-                Current value — independent of date filter
+                Farm + assigned assets.
+                Independent of liability date filter.
 
             </small>
 
         </div>
+
 
     </section>
 
@@ -440,17 +370,16 @@ assets.sort(function(a, b) {
 
         <form
             method="GET"
-            action="/financials/dairy/<%= farm._id %>"
+            action="/financials/dairy/<%= farmId %>"
             class="financial-filter-form"
         >
 
 
             <div class="financial-filter-group">
 
+
                 <label for="startDate">
-
                     From
-
                 </label>
 
 
@@ -461,15 +390,15 @@ assets.sort(function(a, b) {
                     value="<%= filterStart %>"
                 >
 
+
             </div>
 
 
             <div class="financial-filter-group">
 
+
                 <label for="endDate">
-
                     To
-
                 </label>
 
 
@@ -479,6 +408,7 @@ assets.sort(function(a, b) {
                     name="endDate"
                     value="<%= filterEnd %>"
                 >
+
 
             </div>
 
@@ -498,7 +428,7 @@ assets.sort(function(a, b) {
             <% if (hasFilter) { %>
 
                 <a
-                    href="/financials/dairy/<%= farm._id %>"
+                    href="/financials/dairy/<%= farmId %>"
                     class="financial-clear-filter"
                 >
 
@@ -513,17 +443,19 @@ assets.sort(function(a, b) {
 
         </form>
 
+
     </section>
 
 
     <!-- ======================================================
-         FARM FINANCIAL TABLE
+         FARM ASSETS
          ====================================================== -->
 
     <section class="financial-section">
 
 
         <div class="financial-section-header">
+
 
             <span class="financial-eyebrow">
 
@@ -541,10 +473,11 @@ assets.sort(function(a, b) {
 
             <p>
 
-                Assets are ranked by profit/loss, with current
-                worth used to break ties.
+                Dairy records belonging to this farm
+                through their assetCode.
 
             </p>
+
 
         </div>
 
@@ -560,33 +493,37 @@ assets.sort(function(a, b) {
                     <tr>
 
                         <th>
-
                             Asset
-
                         </th>
 
-                        <th>
 
+                        <th>
+                            Type
+                        </th>
+
+
+                        <th>
                             Current Worth
-
                         </th>
 
-                        <th>
 
+                        <th>
                             Sales Amount
-
                         </th>
 
-                        <th>
 
+                        <th>
                             Revenue
-
                         </th>
 
+
                         <th>
+                            Liabilities
+                        </th>
 
+
+                        <th>
                             Profit / Loss
-
                         </th>
 
                     </tr>
@@ -597,39 +534,29 @@ assets.sort(function(a, b) {
                 <tbody>
 
 
-                    <% if (assets.length) { %>
+                    <% if (assets.length > 0) { %>
 
 
-                        <% assets.forEach(function(asset) { %>
-
-                            <%
-                                const assetProfit =
-                                    asset?.profit !== undefined &&
-                                    asset?.profit !== null
-
-                                        ? number(asset.profit)
-
-                                        : (
-                                            number(asset?.sellingPrice)
-                                            -
-                                            number(asset?.buyingPrice)
-                                            -
-                                            number(asset?.liabilities)
-                                            +
-                                            number(asset?.revenue)
-                                        );
-                            %>
+                        <% assets.forEach(
+                            function(asset) {
+                        { %>
 
 
                             <tr>
 
 
+                                <!-- ==================================
+                                     ASSET
+                                     ================================== -->
+
                                 <td>
+
 
                                     <a
                                         href="/financials/dairy/<%= asset._id %>"
                                         class="financial-table-name"
                                     >
+
 
                                         <strong>
 
@@ -638,17 +565,6 @@ assets.sort(function(a, b) {
                                             %>
 
                                         </strong>
-
-
-                                        <% if (asset.type) { %>
-
-                                            <small>
-
-                                                <%= asset.type %>
-
-                                            </small>
-
-                                        <% } %>
 
 
                                         <% if (
@@ -665,10 +581,44 @@ assets.sort(function(a, b) {
 
                                         <% } %>
 
+
+                                        <% if (
+                                            asset.assetCode !== undefined &&
+                                            asset.assetCode !== null
+                                        ) { %>
+
+                                            <small>
+
+                                                Farm:
+                                                <%= asset.assetCode %>
+
+                                            </small>
+
+                                        <% } %>
+
+
                                     </a>
+
 
                                 </td>
 
+
+                                <!-- ==================================
+                                     TYPE
+                                     ================================== -->
+
+                                <td>
+
+                                    <%= asset.type ||
+                                        "—"
+                                    %>
+
+                                </td>
+
+
+                                <!-- ==================================
+                                     CURRENT WORTH
+                                     ================================== -->
 
                                 <td>
 
@@ -680,15 +630,23 @@ assets.sort(function(a, b) {
                                 </td>
 
 
+                                <!-- ==================================
+                                     SALES AMOUNT
+                                     ================================== -->
+
                                 <td>
 
                                     KSh
                                     <%= formatMoney(
-                                        asset.sellingPrice
+                                        asset.salesAmount
                                     ) %>
 
                                 </td>
 
+
+                                <!-- ==================================
+                                     REVENUE
+                                     ================================== -->
 
                                 <td>
 
@@ -700,19 +658,40 @@ assets.sort(function(a, b) {
                                 </td>
 
 
+                                <!-- ==================================
+                                     LIABILITIES
+                                     ================================== -->
+
                                 <td>
+
+                                    KSh
+                                    <%= formatMoney(
+                                        asset.totalLiabilities ??
+                                        asset.liabilities
+                                    ) %>
+
+                                </td>
+
+
+                                <!-- ==================================
+                                     PROFIT
+                                     ================================== -->
+
+                                <td>
+
 
                                     <strong
                                         class="<%= profitClass(
-                                            assetProfit
+                                            asset.profit
                                         ) %>"
                                     >
 
                                         <%= profitText(
-                                            assetProfit
+                                            asset.profit
                                         ) %>
 
                                     </strong>
+
 
                                 </td>
 
@@ -728,10 +707,12 @@ assets.sort(function(a, b) {
 
                         <tr>
 
+
                             <td
-                                colspan="5"
+                                colspan="7"
                                 class="financial-table-empty"
                             >
+
 
                                 <i class="bi bi-box-seam"></i>
 
@@ -745,13 +726,15 @@ assets.sort(function(a, b) {
 
                                 <span>
 
-                                    This farm currently has no
-                                    assets available for financial
-                                    analysis.
+                                    No Dairy records were found
+                                    with assetCode equal to this
+                                    farm's code.
 
                                 </span>
 
+
                             </td>
+
 
                         </tr>
 
@@ -768,11 +751,13 @@ assets.sort(function(a, b) {
 
                 <tfoot>
 
+
                     <tr>
 
-                        <th>
 
-                            Total
+                        <th colspan="2">
+
+                            Farm Total
 
                         </th>
 
@@ -809,6 +794,17 @@ assets.sort(function(a, b) {
 
                         <th>
 
+                            KSh
+                            <%= formatMoney(
+                                totalLiabilities
+                            ) %>
+
+                        </th>
+
+
+                        <th>
+
+
                             <strong
                                 class="<%= profitClass(
                                     totalProfit
@@ -821,16 +817,21 @@ assets.sort(function(a, b) {
 
                             </strong>
 
+
                         </th>
 
+
                     </tr>
+
 
                 </tfoot>
 
 
             </table>
 
+
         </div>
+
 
     </section>
 
@@ -841,10 +842,12 @@ assets.sort(function(a, b) {
 
     <section class="financial-formula-note">
 
+
         <i class="bi bi-calculator"></i>
 
 
         <div>
+
 
             <strong>
 
@@ -855,12 +858,18 @@ assets.sort(function(a, b) {
 
             <span>
 
-                Selling Price − Buying Price − Liabilities
-                + Revenue
+                For unsold records:
+                Revenue − Liabilities.
+
+                For sold records:
+                Selling Price − Buying Price
+                − Liabilities + Revenue.
 
             </span>
 
+
         </div>
+
 
     </section>
 
@@ -898,7 +907,8 @@ assets.sort(function(a, b) {
    HEADER
    ========================================================== */
 
-.dairy-financial-page .financial-page-header{
+.dairy-financial-page
+.financial-page-header{
 
     display:flex;
 
@@ -913,7 +923,8 @@ assets.sort(function(a, b) {
 }
 
 
-.dairy-financial-page .financial-eyebrow{
+.dairy-financial-page
+.financial-eyebrow{
 
     display:block;
 
@@ -930,7 +941,8 @@ assets.sort(function(a, b) {
 }
 
 
-.dairy-financial-page .financial-title{
+.dairy-financial-page
+.financial-title{
 
     margin:0;
 
@@ -941,7 +953,8 @@ assets.sort(function(a, b) {
 }
 
 
-.dairy-financial-page .financial-subtitle{
+.dairy-financial-page
+.financial-subtitle{
 
     margin:6px 0 0;
 
@@ -956,7 +969,8 @@ assets.sort(function(a, b) {
    BUTTONS
    ========================================================== */
 
-.dairy-financial-page .financial-button{
+.dairy-financial-page
+.financial-button{
 
     display:inline-flex;
 
@@ -1007,6 +1021,7 @@ assets.sort(function(a, b) {
    CURRENT WORTH
    ========================================================== */
 
+.dairy-financial-page
 .financial-worth-card{
 
     display:flex;
@@ -1033,6 +1048,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-worth-icon{
 
     width:48px;
@@ -1058,6 +1074,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-worth-card span{
 
     display:block;
@@ -1069,6 +1086,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-worth-card strong{
 
     display:block;
@@ -1082,6 +1100,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-worth-card small{
 
     display:block;
@@ -1099,7 +1118,8 @@ assets.sort(function(a, b) {
    FILTER
    ========================================================== */
 
-.dairy-financial-page .financial-filter-card{
+.dairy-financial-page
+.financial-filter-card{
 
     padding:12px 15px;
 
@@ -1116,6 +1136,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-filter-form{
 
     display:flex;
@@ -1127,6 +1148,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-filter-group{
 
     flex:1;
@@ -1134,6 +1156,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-filter-group label{
 
     display:block;
@@ -1149,6 +1172,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-filter-group input{
 
     width:100%;
@@ -1172,6 +1196,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-filter-group input:focus{
 
     border-color:var(--financial-green);
@@ -1183,6 +1208,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-clear-filter{
 
     display:inline-flex;
@@ -1208,7 +1234,8 @@ assets.sort(function(a, b) {
    SECTION
    ========================================================== */
 
-.dairy-financial-page .financial-section{
+.dairy-financial-page
+.financial-section{
 
     margin-bottom:20px;
 
@@ -1251,6 +1278,7 @@ assets.sort(function(a, b) {
    TABLE
    ========================================================== */
 
+.dairy-financial-page
 .financial-table-wrapper{
 
     width:100%;
@@ -1268,18 +1296,21 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table{
 
     width:100%;
 
-    min-width:760px;
+    min-width:950px;
 
     border-collapse:collapse;
 
 }
 
 
+.dairy-financial-page
 .financial-table th,
+.dairy-financial-page
 .financial-table td{
 
     padding:14px 15px;
@@ -1297,7 +1328,9 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table th:first-child,
+.dairy-financial-page
 .financial-table td:first-child{
 
     text-align:left;
@@ -1305,6 +1338,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table thead th{
 
     background:#f8faf9;
@@ -1322,6 +1356,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table tbody tr:hover{
 
     background:var(--financial-green-soft);
@@ -1329,6 +1364,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table-name{
 
     display:flex;
@@ -1344,6 +1380,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table-name:hover strong{
 
     color:var(--financial-green);
@@ -1351,6 +1388,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table-name small{
 
     color:var(--financial-muted);
@@ -1360,7 +1398,9 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table tfoot th,
+.dairy-financial-page
 .financial-table tfoot td{
 
     background:#f4faf6;
@@ -1374,6 +1414,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table-empty{
 
     height:140px;
@@ -1383,6 +1424,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table-empty i{
 
     display:block;
@@ -1396,6 +1438,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table-empty strong{
 
     display:block;
@@ -1403,6 +1446,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-table-empty span{
 
     display:block;
@@ -1420,6 +1464,7 @@ assets.sort(function(a, b) {
    PROFIT COLORS
    ========================================================== */
 
+.dairy-financial-page
 .financial-positive{
 
     color:var(--financial-green-dark) !important;
@@ -1427,6 +1472,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-negative{
 
     color:var(--financial-red) !important;
@@ -1435,9 +1481,10 @@ assets.sort(function(a, b) {
 
 
 /* ==========================================================
-   FORMULA NOTE
+   FORMULA
    ========================================================== */
 
+.dairy-financial-page
 .financial-formula-note{
 
     display:flex;
@@ -1457,6 +1504,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-formula-note i{
 
     color:var(--financial-green);
@@ -1466,6 +1514,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-formula-note strong{
 
     display:block;
@@ -1479,6 +1528,7 @@ assets.sort(function(a, b) {
 }
 
 
+.dairy-financial-page
 .financial-formula-note span{
 
     font-size:.75rem;
@@ -1518,6 +1568,7 @@ assets.sort(function(a, b) {
     }
 
 
+    .dairy-financial-page
     .financial-filter-form{
 
         flex-wrap:wrap;
@@ -1525,13 +1576,16 @@ assets.sort(function(a, b) {
     }
 
 
+    .dairy-financial-page
     .financial-filter-group{
 
-        min-width:calc(50% - 5px);
+        min-width:
+            calc(50% - 5px);
 
     }
 
 
+    .dairy-financial-page
     .financial-filter-form
     .financial-button{
 
@@ -1540,6 +1594,7 @@ assets.sort(function(a, b) {
     }
 
 
+    .dairy-financial-page
     .financial-clear-filter{
 
         width:100%;
@@ -1549,6 +1604,7 @@ assets.sort(function(a, b) {
     }
 
 
+    .dairy-financial-page
     .financial-worth-card{
 
         padding:17px;
