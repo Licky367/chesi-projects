@@ -873,7 +873,6 @@ function getSalesAmount(
 // across:
 //
 //     - individual dairy records
-//     - standalone assets
 //     - farm assets
 //
 // currentWorth remains the CURRENT WORTH stored on the Dairy
@@ -974,99 +973,6 @@ async function getDairyFinancial(
 
         throw new Error(
             "Dairy record not found."
-        );
-
-    }
-
-
-    const liabilities =
-        await getLiabilityTotal(
-            dairyId,
-            startDate,
-            endDate
-        );
-
-
-    return buildFinancialRecord(
-        dairy,
-        liabilities
-    );
-
-}
-
-
-// ==========================================================
-// GET STANDALONE FINANCIAL
-// ==========================================================
-//
-// This method exists specifically for standalone.ejs.
-//
-// A standalone asset is:
-//
-//     code      -> empty
-//     assetCode -> empty
-//
-// The method validates that the selected Dairy record is
-// actually standalone before returning its financial data.
-//
-// Returned structure:
-//
-//     {
-//         ...asset,
-//         currentWorth,
-//         salesAmount,
-//         revenue,
-//         totalLiabilities,
-//         profit
-//     }
-// ==========================================================
-
-async function getStandaloneFinancial(
-    dairyId,
-    startDate,
-    endDate
-) {
-
-    const dairy =
-        await Dairy.findById(
-            dairyId
-        )
-
-        .select(
-            [
-                "name",
-                "code",
-                "assetCode",
-                "type",
-                "status",
-                "buyingPrice",
-                "currentWorth",
-                "sellingPrice",
-                "revenue",
-                "description"
-            ].join(" ")
-        )
-
-        .lean();
-
-
-    if (!dairy) {
-
-        throw new Error(
-            "Standalone asset not found."
-        );
-
-    }
-
-
-    if (
-        !isStandaloneAsset(
-            dairy
-        )
-    ) {
-
-        throw new Error(
-            "The selected record is not a standalone asset."
         );
 
     }
@@ -1615,6 +1521,14 @@ async function getFinancialSummary(
     // ======================================================
     // STANDALONE FINANCIALS
     // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // Standalone records are still included here because
+    // the financial SUMMARY depends on them.
+    //
+    // This is NOT standalone.ejs page logic.
+    // ======================================================
 
     const standaloneFinancials =
         [];
@@ -1867,7 +1781,7 @@ async function getFinancialSummary(
 
     // ======================================================
     // RETURN SUMMARY
-    // ======================================================
+    // ==========================================================
 
     return {
 
@@ -2148,8 +2062,6 @@ module.exports = {
     getAllLiabilities,
 
     getDairyFinancial,
-
-    getStandaloneFinancial,
 
     getFarmFinancialTotals,
 
