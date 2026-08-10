@@ -1,37 +1,146 @@
-const express = require("express");
-const router = express.Router();
+// ==========================================================
+// routes/financials.js
+// ==========================================================
 
-const controller = require("../controllers/financialsController");
+const express =
+    require("express");
 
-
-/* =========================
-   DASHBOARD
-========================= */
-router.get("/dashboard", controller.getDashboard);
-
-
-/* =========================
-   DAILY CUSTOMERS (BY DATE)
-========================= */
-router.get("/daily-customers", controller.getDailyCustomers);
+const router =
+    express.Router();
 
 
-/* =========================
-   FINANCIAL SUMMARY (MONTH + YEAR)
-========================= */
-router.get("/summary", controller.getFinancialSummary);
+const financialsController =
+    require("../controllers/financialsController");
 
 
-/* =========================
-   MONTHLY EXPENSES (MONTH + YEAR)
-========================= */
-router.get("/expenses", controller.getMonthlyExpenses);
+// ==========================================================
+// AUTHENTICATION
+//
+// Replace this with your project's existing authentication
+// middleware if the middleware has a different path/name.
+//
+// Server-side authentication is required.
+// ==========================================================
+
+const auth =
+    require("../middleware/auth");
 
 
-/* =========================
-   OPTIONAL: RAW RECORD ACCESS (ADMIN / DEBUG)
-========================= */
-router.get("/record", controller.getFinancialRecord);
+// ==========================================================
+// FINANCIAL HOME / SUMMARY
+// ==========================================================
+
+router.get(
+
+    "/",
+
+    auth,
+
+    financialsController
+        .getFinancialSummaryPage
+
+);
 
 
-module.exports = router;
+// ==========================================================
+// LIABILITY ENTRY PAGE
+// ==========================================================
+
+router.get(
+
+    "/liability",
+
+    auth,
+
+    financialsController
+        .getLiabilityEntryPage
+
+);
+
+
+// ==========================================================
+// RECORD LIABILITY
+// ==========================================================
+
+router.post(
+
+    "/liability",
+
+    auth,
+
+    financialsController
+        .recordLiability
+
+);
+
+
+// ==========================================================
+// LIABILITY HISTORY
+// ==========================================================
+
+router.get(
+
+    "/history",
+
+    auth,
+
+    financialsController
+        .getLiabilityHistoryPage
+
+);
+
+
+// ==========================================================
+// INDIVIDUAL DAIRY FINANCIALS
+// ==========================================================
+
+router.get(
+
+    "/dairy/:id",
+
+    auth,
+
+    financialsController
+        .getDairyFinancialPage
+
+);
+
+
+// ==========================================================
+// API: INDIVIDUAL DAIRY FINANCIALS
+// ==========================================================
+
+router.get(
+
+    "/api/dairy/:id",
+
+    auth,
+
+    financialsController
+        .getDairyFinancialApi
+
+);
+
+
+// ==========================================================
+// API: FINANCIAL SUMMARY
+// ==========================================================
+
+router.get(
+
+    "/api/summary",
+
+    auth,
+
+    financialsController
+        .getFinancialSummaryApi
+
+);
+
+
+// ==========================================================
+// EXPORT
+// ==========================================================
+
+module.exports =
+    router;
