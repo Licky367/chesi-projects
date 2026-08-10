@@ -3,8 +3,7 @@
 // ==========================================================
 
 const financialsService =
-    require("../services/financialsService");
-
+require("../services/financialsService");
 
 // ==========================================================
 // HELPER
@@ -12,845 +11,1129 @@ const financialsService =
 
 function getUserId(req) {
 
-    return (
+return (  
 
-        req.user?._id ||
+    req.user?._id ||  
 
-        req.user?.id ||
+    req.user?.id ||  
 
-        null
+    null  
 
-    );
+);
 
 }
 
-
 // ==========================================================
+// HELPER
 // NORMALIZE DATE FILTERS
+// ==========================================================
+//
+// DATE FILTERING APPLIES TO:
+//
+//     - liabilities
+//     - revenue
+//     - profit/loss
+//
+// CURRENT VALUES ARE NOT DATE FILTERED:
+//
+//     - currentWorth
+//     - sellingPrice
+//     - buyingPrice
+//
+// Profit/loss is calculated by the service using:
+//
+//     SOLD:
+//
+//         sellingPrice
+//         - buyingPrice
+//         - filtered liabilities
+//         + filtered revenue
+//
+//     UNSOLD:
+//
+//         - filtered liabilities
+//         + filtered revenue
+//
 // ==========================================================
 
 function getDateFilters(req) {
 
-    const startDate =
-        typeof req.query?.startDate === "string"
+const startDate =  
+    typeof req.query?.startDate === "string"  
 
-            ? req.query.startDate.trim()
+        ? req.query.startDate.trim()  
 
-            : "";
-
-
-    const endDate =
-        typeof req.query?.endDate === "string"
-
-            ? req.query.endDate.trim()
-
-            : "";
+        : "";  
 
 
-    return {
+const endDate =  
+    typeof req.query?.endDate === "string"  
 
-        startDate,
+        ? req.query.endDate.trim()  
 
-        endDate
+        : "";  
 
-    };
+
+return {  
+
+    startDate,  
+
+    endDate  
+
+};
 
 }
-
 
 // ==========================================================
 // LIABILITY ENTRY PAGE
 // ==========================================================
 
 async function getLiabilityEntryPage(
-    req,
-    res,
-    next
+req,
+res,
+next
 ) {
 
-    try {
+try {  
 
-        const structure =
-            await financialsService
-                .getFinancialStructure();
+    const structure =  
+        await financialsService  
+            .getFinancialStructure();  
 
 
-        res.render(
+    res.render(  
 
-            "financials/liability",
+        "financials/liability",  
 
-            {
+        {  
 
-                title:
-                    "Record Liability",
+            title:  
+                "Record Liability",  
 
-                user:
-                    req.user,
+            user:  
+                req.user,  
 
-                farms:
-                    structure.farms,
+            farms:  
+                structure.farms,  
 
-                standaloneAssets:
-                    structure.standaloneAssets,
+            standaloneAssets:  
+                structure.standaloneAssets,  
 
-                error:
-                    null,
+            error:  
+                null,  
 
-                success:
-                    req.query.success === "1"
+            success:  
+                req.query.success === "1"  
 
-            }
+        }  
 
-        );
+    );  
 
-    } catch (error) {
+} catch (error) {  
 
-        next(error);
-
-    }
+    next(error);  
 
 }
 
+}
 
 // ==========================================================
 // RECORD LIABILITY
 // ==========================================================
 
 async function recordLiability(
-    req,
-    res,
-    next
+req,
+res,
+next
 ) {
 
-    try {
+try {  
 
-        const {
+    const {  
 
-            dairyId,
+        dairyId,  
 
-            amount,
+        amount,  
 
-            description
+        description  
 
-        } = req.body;
-
-
-        await financialsService.recordLiability({
-
-            dairyId,
-
-            amount,
-
-            description,
-
-            userId:
-                getUserId(req)
-
-        });
+    } = req.body;  
 
 
-        res.redirect(
-            "/financials/liability?success=1"
-        );
+    await financialsService.recordLiability({  
 
-    } catch (error) {
+        dairyId,  
 
-        try {
+        amount,  
 
-            const structure =
-                await financialsService
-                    .getFinancialStructure();
+        description,  
+
+        userId:  
+            getUserId(req)  
+
+    });  
 
 
-            res.status(400).render(
+    res.redirect(  
+        "/financials/liability?success=1"  
+    );  
 
-                "financials/liability",
+} catch (error) {  
 
-                {
+    try {  
 
-                    title:
-                        "Record Liability",
+        const structure =  
+            await financialsService  
+                .getFinancialStructure();  
 
-                    user:
-                        req.user,
 
-                    farms:
-                        structure.farms,
+        res.status(400).render(  
 
-                    standaloneAssets:
-                        structure.standaloneAssets,
+            "financials/liability",  
 
-                    error:
-                        error.message,
+            {  
 
-                    success:
-                        false
+                title:  
+                    "Record Liability",  
 
-                }
+                user:  
+                    req.user,  
 
-            );
+                farms:  
+                    structure.farms,  
 
-        } catch (renderError) {
+                standaloneAssets:  
+                    structure.standaloneAssets,  
 
-            next(renderError);
+                error:  
+                    error.message,  
 
-        }
+                success:  
+                    false  
 
-    }
+            }  
+
+        );  
+
+    } catch (renderError) {  
+
+        next(renderError);  
+
+    }  
 
 }
 
+}
 
 // ==========================================================
 // LIABILITY HISTORY PAGE
 // ==========================================================
+//
+// Liability history is filtered by:
+//
+//     startDate
+//     endDate
+//
+// Farm-owned liabilities remain visible in history,
+// regardless of whether they are included in summary totals.
+// ==========================================================
 
 async function getLiabilityHistoryPage(
-    req,
-    res,
-    next
+req,
+res,
+next
 ) {
 
-    try {
+try {  
 
-        const {
+    const {  
 
-            startDate,
+        startDate,  
 
-            endDate
+        endDate  
 
-        } = getDateFilters(req);
-
-
-        const history =
-            await financialsService
-                .getLiabilityHistory(
-                    startDate,
-                    endDate
-                );
+    } = getDateFilters(req);  
 
 
-        res.render(
+    const history =  
+        await financialsService  
+            .getLiabilityHistory(  
+                startDate,  
+                endDate  
+            );  
 
-            "financials/history",
 
-            {
+    res.render(  
 
-                title:
-                    "Liability History",
+        "financials/history",  
 
-                user:
-                    req.user,
+        {  
 
-                standalone:
-                    history.standalone,
+            title:  
+                "Liability History",  
 
-                farms:
-                    history.farms,
+            user:  
+                req.user,  
 
-                filters: {
+            standalone:  
+                history.standalone,  
 
-                    startDate,
+            farms:  
+                history.farms,  
 
-                    endDate
+            filters: {  
 
-                }
+                startDate,  
 
-            }
+                endDate  
 
-        );
+            }  
 
-    } catch (error) {
+        }  
 
-        next(error);
+    );  
 
-    }
+} catch (error) {  
+
+    next(error);  
 
 }
 
+}
 
 // ==========================================================
 // FINANCIAL SUMMARY PAGE
 // ==========================================================
+//
+// SUMMARY STRUCTURE:
+//
+//     summary:
+//
+//         totals:
+//
+//             currentWorth
+//             sellingPrice
+//             buyingPrice
+//             revenue
+//             liabilities
+//             profit
+//
+//         farms:
+//
+//             [
+//                 {
+//                     farm,
+//                     currentWorth,
+//                     sellingPrice,
+//                     buyingPrice,
+//                     revenue,
+//                     farmLiabilities,
+//                     totalLiabilities,
+//                     profit,
+//                     assets
+//                 }
+//             ]
+//
+//         standalone:
+//
+//             {
+//                 currentWorth,
+//                 sellingPrice,
+//                 buyingPrice,
+//                 revenue,
+//                 liabilities,
+//                 profit,
+//                 assets
+//             }
+//
+// ==========================================================
+//
+// DATE FILTER RULES:
+//
+// CURRENT:
+//
+//     currentWorth
+//     sellingPrice
+//     buyingPrice
+//
+// FILTERED:
+//
+//     liabilities
+//     revenue
+//
+// CALCULATED:
+//
+//     profit/loss
+//
+// ==========================================================
 
 async function getFinancialSummaryPage(
-    req,
-    res,
-    next
+req,
+res,
+next
 ) {
 
-    try {
+try {  
 
-        const {
+    const {  
 
-            startDate,
+        startDate,  
 
-            endDate
+        endDate  
 
-        } = getDateFilters(req);
-
-
-        const summary =
-            await financialsService
-                .getFinancialSummary(
-                    startDate,
-                    endDate
-                );
+    } = getDateFilters(req);  
 
 
-        res.render(
+    const summary =  
+        await financialsService  
+            .getFinancialSummary(  
+                startDate,  
+                endDate  
+            );  
 
-            "financials/summary",
 
-            {
+    res.render(  
 
-                title:
-                    "Financial Summary",
+        "financials/summary",  
 
-                user:
-                    req.user,
+        {  
 
-                summary,
+            title:  
+                "Financial Summary",  
 
-                filters: {
+            user:  
+                req.user,  
 
-                    startDate,
+            summary,  
 
-                    endDate
+            filters: {  
 
-                }
+                startDate,  
 
-            }
+                endDate  
 
-        );
+            }  
 
-    } catch (error) {
+        }  
 
-        next(error);
+    );  
 
-    }
+} catch (error) {  
+
+    next(error);  
 
 }
 
+}
 
 // ==========================================================
-// INDIVIDUAL DAIRY / ASSET FINANCIAL PAGE
+// INDIVIDUAL DAIRY / ASSET FINANCIAL DETAILS
+// ==========================================================
+//
+// The service returns:
+//
+//     dairy:
+//
+//         currentWorth
+//             -> CURRENT
+//
+//         sellingPrice
+//             -> CURRENT
+//
+//         buyingPrice
+//             -> CURRENT
+//
+//         revenue
+//             -> FILTERED
+//
+//         totalLiabilities
+//             -> FILTERED
+//
+//         profit
+//             -> FILTERED/CALCULATED
+//
+// ==========================================================
+//
+// PROFIT:
+//
+// SOLD:
+//
+//     sellingPrice
+//     - buyingPrice
+//     - filteredLiabilities
+//     + filteredRevenue
+//
+// UNSOLD:
+//
+//     - filteredLiabilities
+//     + filteredRevenue
+//
 // ==========================================================
 
 async function getDairyFinancialPage(
-    req,
-    res,
-    next
+req,
+res,
+next
 ) {
 
-    try {
+try {  
 
-        const {
-            id
-        } = req.params;
+    const {  
 
+        id  
 
-        const {
-
-            startDate,
-
-            endDate
-
-        } = getDateFilters(req);
+    } = req.params;  
 
 
-        const financial =
-            await financialsService
-                .getDairyFinancial(
-                    id,
-                    startDate,
-                    endDate
-                );
+    const {  
+
+        startDate,  
+
+        endDate  
+
+    } = getDateFilters(req);  
 
 
-        const liabilities =
-            await financialsService
-                .getLiabilities(
-                    id,
-                    startDate,
-                    endDate
-                );
+    const financial =  
+        await financialsService  
+            .getDairyFinancial(  
+                id,  
+                startDate,  
+                endDate  
+            );  
 
 
-        res.render(
+    const liabilities =  
+        await financialsService  
+            .getLiabilities(  
+                id,  
+                startDate,  
+                endDate  
+            );  
 
-            "financials/dairy",
 
-            {
+    res.render(  
 
-                title:
-                    `${financial.name || "Dairy"} - Financials`,
+        "financials/dairy",  
 
-                user:
-                    req.user,
+        {  
 
-                dairy:
-                    financial,
+            title:  
+                `${financial.name} - Financials`,  
 
-                liabilities,
+            user:  
+                req.user,  
 
-                filters: {
+            dairy:  
+                financial,  
 
-                    startDate,
+            liabilities,  
 
-                    endDate
+            filters: {  
 
-                }
+                startDate,  
 
-            }
+                endDate  
 
-        );
+            }  
 
-    } catch (error) {
+        }  
 
-        next(error);
+    );  
 
-    }
+} catch (error) {  
+
+    next(error);  
 
 }
 
+}
 
 // ==========================================================
-// INDIVIDUAL FARM FINANCIAL PAGE
+// INDIVIDUAL FARM FINANCIAL DETAILS
 // ==========================================================
 //
-// IMPORTANT:
+// Opened when a farm name is selected.
 //
-// financialsService exposes:
+// The service MUST include:
 //
-//     getFarmFinancialTotals()
+//     FARM ITSELF
 //
-// It does NOT expose:
+//         currentWorth
+//         sellingPrice
+//         buyingPrice
+//         revenue
+//         liabilities
+//         profit
 //
-//     getFarmFinancialPage()
+//     +
+//     ALL ASSETS BELONGING TO THE FARM
 //
-// Therefore the controller prepares the farm object and
-// passes it to getFarmFinancialTotals().
+//         currentWorth
+//         sellingPrice
+//         buyingPrice
+//         revenue
+//         liabilities
+//         profit
+//
+// ==========================================================
+//
+// FARM TOTALS:
+//
+//     farm itself
+//     +
+//     all farm assets
+//
+// CURRENT:
+//
+//     currentWorth
+//     sellingPrice
+//     buyingPrice
+//
+// FILTERED:
+//
+//     liabilities
+//     revenue
+//
+// CALCULATED:
+//
+//     profit
+//
 // ==========================================================
 
 async function getFarmFinancialPage(
-    req,
-    res,
-    next
+req,
+res,
+next
 ) {
 
-    try {
+try {  
 
-        const {
-            id
-        } = req.params;
+    const {  
 
+        id  
 
-        const {
-
-            startDate,
-
-            endDate
-
-        } = getDateFilters(req);
+    } = req.params;  
 
 
-        // ==================================================
-        // GET ALL DAIRY RECORDS
-        // ==================================================
+    const {  
 
-        const dairies =
-            await financialsService
-                .getAllDairies();
+        startDate,  
 
+        endDate  
 
-        // ==================================================
-        // FIND SELECTED FARM
-        // ==================================================
-
-        const farm =
-            dairies.find(
-
-                dairy =>
-
-                    String(
-                        dairy._id
-                    ) ===
-                    String(
-                        id
-                    )
-
-            );
+    } = getDateFilters(req);  
 
 
-        if (!farm) {
-
-            throw new Error(
-                "Dairy farm not found."
-            );
-
-        }
-
-
-        // ==================================================
-        // VERIFY FARM
-        //
-        // A farm has a negative code.
-        // ==================================================
-
-        if (
-
-            farm.code === null ||
-
-            farm.code === undefined ||
-
-            Number(
-                farm.code
-            ) >= 0
-
-        ) {
-
-            throw new Error(
-                "The selected record is not a dairy farm."
-            );
-
-        }
+    const financial =  
+        await financialsService  
+            .getFarmFinancialPage(  
+                id,  
+                startDate,  
+                endDate  
+            );  
 
 
-        // ==================================================
-        // GET FARM FINANCIALS
-        // ==================================================
+    res.render(  
 
-        const financial =
-            await financialsService
-                .getFarmFinancialTotals(
+        "financials/dairy",  
 
-                    farm,
+        {  
 
-                    dairies,
+            title:  
+                `${financial.farm?.name || "Farm"} - Financials`,  
 
-                    startDate,
+            user:  
+                req.user,  
 
-                    endDate
+            dairy:  
+                financial,  
 
-                );
+            liabilities:  
+                financial.liabilities || [],  
 
+            filters: {  
 
-        // ==================================================
-        // GET FARM LIABILITY HISTORY
-        // ==================================================
+                startDate,  
 
-        const liabilities =
-            await financialsService
-                .getLiabilities(
+                endDate  
 
-                    farm._id,
+            }  
 
-                    startDate,
+        }  
 
-                    endDate
+    );  
 
-                );
+} catch (error) {  
 
-
-        // ==================================================
-        // RENDER
-        // ==================================================
-
-        res.render(
-
-            "financials/dairy",
-
-            {
-
-                title:
-                    `${farm.name || "Farm"} - Financials`,
-
-                user:
-                    req.user,
-
-                dairy:
-                    financial,
-
-                liabilities,
-
-                filters: {
-
-                    startDate,
-
-                    endDate
-
-                }
-
-            }
-
-        );
-
-    } catch (error) {
-
-        next(error);
-
-    }
+    next(error);  
 
 }
 
+}
 
 // ==========================================================
-// API: INDIVIDUAL DAIRY / ASSET
+// INDIVIDUAL STANDALONE ASSET FINANCIAL DETAILS
+// ==========================================================
+//
+// CURRENT:
+//
+//     currentWorth
+//     sellingPrice
+//     buyingPrice
+//
+// FILTERED:
+//
+//     revenue
+//     liabilities
+//
+// CALCULATED:
+//
+//     profit
+//
+// ==========================================================
+
+async function getStandaloneFinancialPage(
+req,
+res,
+next
+) {
+
+try {  
+
+    const {  
+
+        id  
+
+    } = req.params;  
+
+
+    const {  
+
+        startDate,  
+
+        endDate  
+
+    } = getDateFilters(req);  
+
+
+    const financial =  
+        await financialsService  
+            .getStandaloneFinancial(  
+                id,  
+                startDate,  
+                endDate  
+            );  
+
+
+    const liabilities =  
+        await financialsService  
+            .getLiabilities(  
+                id,  
+                startDate,  
+                endDate  
+            );  
+
+
+    res.render(  
+
+        "financials/standalone",  
+
+        {  
+
+            title:  
+                `${financial.name || "Standalone Asset"} - Financials`,  
+
+            user:  
+                req.user,  
+
+            standalone:  
+                financial,  
+
+            liabilities,  
+
+            filters: {  
+
+                startDate,  
+
+                endDate  
+
+            }  
+
+        }  
+
+    );  
+
+} catch (error) {  
+
+    next(error);  
+
+}
+
+}
+
+// ==========================================================
+// API: GET DAIRY FINANCIAL DATA
+// ==========================================================
+//
+// CURRENT:
+//
+//     currentWorth
+//     sellingPrice
+//     buyingPrice
+//
+// FILTERED:
+//
+//     revenue
+//     liabilities
+//
+// CALCULATED:
+//
+//     profit
+//
 // ==========================================================
 
 async function getDairyFinancialApi(
-    req,
-    res,
-    next
+req,
+res,
+next
 ) {
 
-    try {
+try {  
 
-        const {
-            id
-        } = req.params;
+    const {  
 
+        id  
 
-        const {
-
-            startDate,
-
-            endDate
-
-        } = getDateFilters(req);
+    } = req.params;  
 
 
-        const financial =
-            await financialsService
-                .getDairyFinancial(
-                    id,
-                    startDate,
-                    endDate
-                );
+    const {  
+
+        startDate,  
+
+        endDate  
+
+    } = getDateFilters(req);  
 
 
-        res.json({
+    const financial =  
+        await financialsService  
+            .getDairyFinancial(  
+                id,  
+                startDate,  
+                endDate  
+            );  
 
-            success:
-                true,
 
-            data:
-                financial,
+    res.json({  
 
-            filters: {
+        success:  
+            true,  
 
-                startDate,
+        data:  
+            financial,  
 
-                endDate
+        filters: {  
 
-            }
+            startDate,  
 
-        });
+            endDate  
 
-    } catch (error) {
+        }  
 
-        next(error);
+    });  
 
-    }
+} catch (error) {  
+
+    next(error);  
 
 }
 
+}
 
 // ==========================================================
-// API: INDIVIDUAL FARM
+// API: GET FARM FINANCIAL DATA
+// ==========================================================
+//
+// CURRENT:
+//
+//     currentWorth
+//     sellingPrice
+//     buyingPrice
+//
+// FILTERED:
+//
+//     revenue
+//     liabilities
+//
+// CALCULATED:
+//
+//     profit
+//
+// FARM TOTALS INCLUDE:
+//
+//     farm itself
+//     +
+//     all farm assets
+//
 // ==========================================================
 
 async function getFarmFinancialApi(
-    req,
-    res,
-    next
+req,
+res,
+next
 ) {
 
-    try {
+try {  
 
-        const {
-            id
-        } = req.params;
+    const {  
 
+        id  
 
-        const {
-
-            startDate,
-
-            endDate
-
-        } = getDateFilters(req);
+    } = req.params;  
 
 
-        const dairies =
-            await financialsService
-                .getAllDairies();
+    const {  
+
+        startDate,  
+
+        endDate  
+
+    } = getDateFilters(req);  
 
 
-        const farm =
-            dairies.find(
-
-                dairy =>
-
-                    String(
-                        dairy._id
-                    ) ===
-                    String(
-                        id
-                    )
-
-            );
+    const financial =  
+        await financialsService  
+            .getFarmFinancialPage(  
+                id,  
+                startDate,  
+                endDate  
+            );  
 
 
-        if (!farm) {
+    res.json({  
 
-            throw new Error(
-                "Dairy farm not found."
-            );
+        success:  
+            true,  
 
-        }
+        data:  
+            financial,  
 
+        filters: {  
 
-        if (
+            startDate,  
 
-            farm.code === null ||
+            endDate  
 
-            farm.code === undefined ||
+        }  
 
-            Number(
-                farm.code
-            ) >= 0
+    });  
 
-        ) {
+} catch (error) {  
 
-            throw new Error(
-                "The selected record is not a dairy farm."
-            );
-
-        }
-
-
-        const financial =
-            await financialsService
-                .getFarmFinancialTotals(
-
-                    farm,
-
-                    dairies,
-
-                    startDate,
-
-                    endDate
-
-                );
-
-
-        res.json({
-
-            success:
-                true,
-
-            data:
-                financial,
-
-            filters: {
-
-                startDate,
-
-                endDate
-
-            }
-
-        });
-
-    } catch (error) {
-
-        next(error);
-
-    }
+    next(error);  
 
 }
 
+}
 
 // ==========================================================
-// API: FINANCIAL SUMMARY
+// API: GET STANDALONE FINANCIAL DATA
+// ==========================================================
+//
+// CURRENT:
+//
+//     currentWorth
+//     sellingPrice
+//     buyingPrice
+//
+// FILTERED:
+//
+//     revenue
+//     liabilities
+//
+// CALCULATED:
+//
+//     profit
+//
+// ==========================================================
+
+async function getStandaloneFinancialApi(
+req,
+res,
+next
+) {
+
+try {  
+
+    const {  
+
+        id  
+
+    } = req.params;  
+
+
+    const {  
+
+        startDate,  
+
+        endDate  
+
+    } = getDateFilters(req);  
+
+
+    const financial =  
+        await financialsService  
+            .getStandaloneFinancial(  
+                id,  
+                startDate,  
+                endDate  
+            );  
+
+
+    res.json({  
+
+        success:  
+            true,  
+
+        data:  
+            financial,  
+
+        filters: {  
+
+            startDate,  
+
+            endDate  
+
+        }  
+
+    });  
+
+} catch (error) {  
+
+    next(error);  
+
+}
+
+}
+
+// ==========================================================
+// API: GET FINANCIAL SUMMARY
+// ==========================================================
+//
+// SAME RULES AS SUMMARY PAGE.
+//
+// CURRENT:
+//
+//     currentWorth
+//     sellingPrice
+//     buyingPrice
+//
+// FILTERED:
+//
+//     liabilities
+//     revenue
+//
+// PROFIT:
+//
+//     SOLD:
+//
+//         sellingPrice
+//         - buyingPrice
+//         - filteredLiabilities
+//         + filteredRevenue
+//
+//     UNSOLD:
+//
+//         - filteredLiabilities
+//         + filteredRevenue
+//
+// FARM TOTALS:
+//
+//     farm itself
+//     +
+//     all farm assets
+//
 // ==========================================================
 
 async function getFinancialSummaryApi(
-    req,
-    res,
-    next
+req,
+res,
+next
 ) {
 
-    try {
+try {  
 
-        const {
+    const {  
 
-            startDate,
+        startDate,  
 
-            endDate
+        endDate  
 
-        } = getDateFilters(req);
-
-
-        const summary =
-            await financialsService
-                .getFinancialSummary(
-                    startDate,
-                    endDate
-                );
+    } = getDateFilters(req);  
 
 
-        res.json({
+    const summary =  
+        await financialsService  
+            .getFinancialSummary(  
+                startDate,  
+                endDate  
+            );  
 
-            success:
-                true,
 
-            data:
-                summary,
+    res.json({  
 
-            filters: {
+        success:  
+            true,  
 
-                startDate,
+        data:  
+            summary,  
 
-                endDate
+        filters: {  
 
-            }
+            startDate,  
 
-        });
+            endDate  
 
-    } catch (error) {
+        }  
 
-        next(error);
+    });  
 
-    }
+} catch (error) {  
+
+    next(error);  
 
 }
 
+}
 
 // ==========================================================
-// EXPORTS
+// EXPORT
 // ==========================================================
 
 module.exports = {
 
-    getLiabilityEntryPage,
+getLiabilityEntryPage,  
 
-    recordLiability,
+recordLiability,  
 
-    getLiabilityHistoryPage,
+getLiabilityHistoryPage,  
 
-    getFinancialSummaryPage,
+getFinancialSummaryPage,  
 
-    getDairyFinancialPage,
+getDairyFinancialPage,  
 
-    getFarmFinancialPage,
+getFarmFinancialPage,  
 
-    getDairyFinancialApi,
+getStandaloneFinancialPage,  
 
-    getFarmFinancialApi,
+getDairyFinancialApi,  
 
-    getFinancialSummaryApi
+getFarmFinancialApi,  
+
+getStandaloneFinancialApi,  
+
+getFinancialSummaryApi
 
 };
