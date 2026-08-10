@@ -156,6 +156,8 @@ router.get(
 //
 //     ?startDate=YYYY-MM-DD
 //     ?endDate=YYYY-MM-DD
+//
+// This handles individual Dairy records.
 // ==========================================================
 
 router.get(
@@ -186,6 +188,11 @@ router.get(
 //
 //     ?startDate=YYYY-MM-DD
 //     ?endDate=YYYY-MM-DD
+//
+// The farm financial page includes:
+//
+//     - the farm itself
+//     - all assets belonging to the farm
 // ==========================================================
 
 router.get(
@@ -217,27 +224,25 @@ router.get(
 //     ?startDate=YYYY-MM-DD
 //     ?endDate=YYYY-MM-DD
 //
-// IMPORTANT:
+// IMPORTANT
 //
-// This page is handled by a dedicated controller:
+// Standalone assets are handled by a dedicated controller.
 //
-//     standaloneController
+// A standalone asset is a Dairy record with:
 //
-// The page displays ALL Dairy records that qualify as
-// standalone assets.
+//     no code
+//     no assetCode
 //
-// A standalone asset is:
+// This is a COLLECTION page.
 //
-//     code      -> empty
-//     assetCode -> empty
+// There is intentionally NO:
 //
-// The page is therefore NOT an individual asset detail
-// page and does NOT use:
+//     /financials/standalone/:id
 //
-//     /standalone/:id
+// route.
 //
-// The controller is responsible for obtaining the complete
-// standalone financial dataset required by standalone.ejs.
+// The standaloneController is responsible for obtaining
+// all standalone assets and their financial information.
 // ==========================================================
 
 router.get(
@@ -331,7 +336,7 @@ router.get(
 
 
 // ==========================================================
-// API: ALL STANDALONE ASSETS
+// API: STANDALONE ASSETS
 // ==========================================================
 //
 // URL:
@@ -343,10 +348,11 @@ router.get(
 //     ?startDate=YYYY-MM-DD
 //     ?endDate=YYYY-MM-DD
 //
-// This API remains on financialsController for now.
+// The standalone API is also handled by the dedicated
+// standalone controller.
 //
-// We can move it to standaloneController later if the
-// standalone page requires a dedicated API.
+// This keeps ALL standalone logic outside
+// financialsController.
 // ==========================================================
 
 router.get(
@@ -355,8 +361,8 @@ router.get(
 
     auth,
 
-    financialsController
-        .getStandaloneFinancialApi
+    standaloneController
+        .getStandaloneApi
 
 );
 
