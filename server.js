@@ -1,6 +1,6 @@
 // ==========================================================
 // server.js
-// =============================.=============================
+// ==========================================================
 
 const express =
   require("express");
@@ -296,6 +296,54 @@ try {
 
   console.warn(
     "Warning: failed to load networth routes:",
+    err.message
+  );
+
+}
+
+
+// ==========================================================
+// FINANCIALS
+// ==========================================================
+//
+// Liability recording
+// Liability history
+// Financial summaries
+// Individual dairy financials
+//
+// Mounted at:
+//
+//     /financials
+//
+// Examples:
+//
+//     GET  /financials
+//
+//     GET  /financials/liability
+//
+//     POST /financials/liability
+//
+//     GET  /financials/history
+//
+//     GET  /financials/dairy/:id
+//
+//     GET  /financials/api/dairy/:id
+//
+//     GET  /financials/api/summary
+//
+// ==========================================================
+
+let financialsRoutes;
+
+try {
+
+  financialsRoutes =
+    require("./routes/financials");
+
+} catch (err) {
+
+  console.warn(
+    "Warning: failed to load financials routes:",
     err.message
   );
 
@@ -866,13 +914,6 @@ app.use(
 
 // ==========================================================
 // UPLOADS
-//
-// Files uploaded by middleware/uploadMidleware.js
-// are stored in:
-//     public/uploads
-//
-// They are accessible in the browser through:
-//     /uploads/filename.ext
 // ==========================================================
 
 app.use(
@@ -1002,16 +1043,6 @@ if (updateRoutes) {
 
 // ----------------------------------------------------------
 // ADD DAIRY / ASSET
-//
-// routes/add.js:
-//
-//     router.get("/")
-//     router.post("/")
-//
-// Therefore:
-//
-//     GET  /add
-//     POST /add
 // ----------------------------------------------------------
 
 if (addRoutes) {
@@ -1089,6 +1120,23 @@ if (networthRoutes) {
     "/networth",
 
     networthRoutes
+
+  );
+
+}
+
+
+// ==========================================================
+// FINANCIALS
+// ==========================================================
+
+if (financialsRoutes) {
+
+  app.use(
+
+    "/financials",
+
+    financialsRoutes
 
   );
 
@@ -1256,7 +1304,7 @@ app.use(
     );
 
 
-    const statusCode =
+    let statusCode =
       Number(
 
         err.statusCode ||
@@ -1282,7 +1330,7 @@ app.use(
         "LIMIT_FILE_SIZE"
       ) {
 
-        err.statusCode =
+        statusCode =
           400;
 
         err.message =
