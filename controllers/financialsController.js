@@ -30,20 +30,6 @@ function getUserId(req) {
 // HELPER
 // NORMALIZE DATE FILTERS
 // ==========================================================
-//
-// Date filters affect:
-//
-//     liabilities
-//     revenue
-//     profit
-//
-// Current values remain current:
-//
-//     currentWorth
-//     buyingPrice
-//     sellingPrice
-//
-// ==========================================================
 
 function getDateFilters(req) {
 
@@ -79,12 +65,9 @@ function getDateFilters(req) {
 // ==========================================================
 // HELPER
 // VALIDATE FARM
-// ==========================================================
 //
-// A Dairy Farm is identified by:
-//
+// Dairy Farm:
 //     code < 0
-//
 // ==========================================================
 
 function isFarm(dairy) {
@@ -118,6 +101,243 @@ function isFarm(dairy) {
         ) < 0
 
     );
+
+}
+
+
+// ==========================================================
+// HELPER
+// IDENTIFY STANDALONE ASSET
+//
+// Standalone asset:
+//
+//     code === null
+//     assetCode === null
+//
+// This follows the current Dairy model.
+// ==========================================================
+
+function isStandaloneAsset(dairy) {
+
+    if (!dairy) {
+
+        return false;
+
+    }
+
+
+    const codeIsNull =
+
+        dairy.code === null ||
+
+        dairy.code === undefined;
+
+
+    const assetCodeIsNull =
+
+        dairy.assetCode === null ||
+
+        dairy.assetCode === undefined;
+
+
+    return (
+
+        codeIsNull &&
+
+        assetCodeIsNull
+
+    );
+
+}
+
+
+// ==========================================================
+// HELPER
+// NORMALIZE NUMBER
+// ==========================================================
+
+function number(value) {
+
+    const result =
+        Number(value);
+
+
+    return Number.isFinite(result)
+
+        ? result
+
+        : 0;
+
+}
+
+
+// ==========================================================
+// HELPER
+// NORMALIZE STANDALONE FINANCIAL RECORD
+//
+// Converts the financial service response into the
+// structure expected by standalone.ejs.
+//
+// EJS expects:
+//
+//     currentWorth
+//     buyingPrice
+//     sellingPrice
+//     revenue
+//     liabilities
+//     profit
+// ==========================================================
+
+function normalizeStandaloneFinancial(
+    dairy,
+    financial
+) {
+
+    const source =
+        financial || {};
+
+
+    const currentWorth =
+
+        number(
+
+            source.currentWorth !== undefined
+
+                ? source.currentWorth
+
+                : dairy?.currentWorth
+
+        );
+
+
+    const buyingPrice =
+
+        number(
+
+            source.buyingPrice !== undefined
+
+                ? source.buyingPrice
+
+                : dairy?.buyingPrice
+
+        );
+
+
+    /*
+     * New field:
+     *
+     *     sellingPrice
+     *
+     * Backwards compatibility:
+     *
+     *     salesAmount
+     */
+
+    const sellingPrice =
+
+        number(
+
+            source.sellingPrice !== undefined
+
+                ? source.sellingPrice
+
+                : (
+
+                    source.salesAmount !== undefined
+
+                        ? source.salesAmount
+
+                        : dairy?.sellingPrice
+
+                )
+
+        );
+
+
+    const revenue =
+
+        number(
+
+            source.revenue
+
+        );
+
+
+    /*
+     * Different financial service versions may expose
+     * liabilities under different names.
+     */
+
+    const liabilities =
+
+        number(
+
+            source.liabilities !== undefined
+
+                ? source.liabilities
+
+                : (
+
+                    source.totalLiabilities !== undefined
+
+                        ? source.totalLiabilities
+
+                        : 0
+
+                )
+
+        );
+
+
+    /*
+     * The EJS expects profit to follow:
+     *
+     * sellingPrice
+     * - buyingPrice
+     * - liabilities
+     * + revenue
+     */
+
+    const profit =
+
+        number(
+
+            source.profit !== undefined
+
+                ? source.profit
+
+                : (
+
+                    sellingPrice
+                    -
+                    buyingPrice
+                    -
+                    liabilities
+                    +
+                    revenue
+
+                )
+
+        );
+
+
+    return {
+
+        ...dairy,
+
+        currentWorth,
+
+        buyingPrice,
+
+        sellingPrice,
+
+        revenue,
+
+        liabilities,
+
+        profit
+
+    };
 
 }
 
@@ -272,13 +492,6 @@ async function recordLiability(
 // ==========================================================
 // LIABILITY HISTORY PAGE
 // ==========================================================
-//
-// Supports:
-//
-//     ?startDate=YYYY-MM-DD
-//     ?endDate=YYYY-MM-DD
-//
-// ==========================================================
 
 async function getLiabilityHistoryPage(
     req,
@@ -351,18 +564,6 @@ async function getLiabilityHistoryPage(
 // ==========================================================
 // FINANCIAL SUMMARY PAGE
 // ==========================================================
-//
-// Service:
-//
-//     getFinancialSummary()
-//
-// Returns:
-//
-//     totals
-//     farms
-//     standalone
-//
-// ==========================================================
 
 async function getFinancialSummaryPage(
     req,
@@ -430,24 +631,6 @@ async function getFinancialSummaryPage(
 
 // ==========================================================
 // INDIVIDUAL DAIRY / ASSET FINANCIAL PAGE
-// ==========================================================
-//
-// URL:
-//
-//     /financials/dairy/:id
-//
-// Service:
-//
-//     getDairyFinancial()
-//
-// Includes:
-//
-//     currentWorth
-//     salesAmount
-//     revenue
-//     totalLiabilities
-//     profit
-//
 // ==========================================================
 
 async function getDairyFinancialPage(
@@ -543,32 +726,6 @@ async function getDairyFinancialPage(
 // ==========================================================
 // INDIVIDUAL FARM FINANCIAL PAGE
 // ==========================================================
-//
-// URL:
-//
-//     /financials/farm/:id
-//
-// IMPORTANT:
-//
-// The service does NOT expose:
-//
-//     getFarmFinancialPage()
-//
-// Therefore this controller:
-//
-//     1. Gets all dairies
-//     2. Finds the requested farm
-//     3. Verifies code < 0
-//     4. Passes the farm and all dairies to
-//        getFarmFinancialTotals()
-//
-// Farm totals include:
-//
-//     farm itself
-//     +
-//     all farm assets
-//
-// ==========================================================
 
 async function getFarmFinancialPage(
     req,
@@ -635,9 +792,7 @@ async function getFarmFinancialPage(
         // VERIFY FARM
         // ==================================================
 
-        if (
-            !isFarm(farm)
-        ) {
+        if (!isFarm(farm)) {
 
             throw new Error(
                 "Requested Dairy record is not a Dairy Farm."
@@ -667,19 +822,7 @@ async function getFarmFinancialPage(
 
 
         // ==================================================
-        // GET FARM'S OWN LIABILITY RECORDS
-        // ==================================================
-        //
-        // The totals returned above include:
-        //
-        //     farm liabilities
-        //     +
-        //     asset liabilities
-        //
-        // This separate query supplies the liability
-        // records belonging directly to the farm for the
-        // detailed history section.
-        //
+        // GET FARM LIABILITY RECORDS
         // ==================================================
 
         const liabilities =
@@ -739,28 +882,57 @@ async function getFarmFinancialPage(
 
 
 // ==========================================================
-// INDIVIDUAL STANDALONE ASSET FINANCIAL PAGE
+// STANDALONE ASSETS FINANCIAL PAGE
 // ==========================================================
 //
 // URL:
 //
-//     /financials/standalone?id=<DAIRY_ID>
+//     GET /financials/standalone
 //
 // IMPORTANT:
 //
-// The standalone route has NO :id parameter.
+// This is a COLLECTION page.
 //
-// Therefore:
+// There is NO:
 //
-//     req.query.id
+//     /financials/standalone/:id
 //
-// is used instead of:
+// and no:
 //
-//     req.params.id
+//     ?id=...
 //
-// The service itself verifies that the requested record
-// is actually a standalone asset.
+// is required.
 //
+// Standalone assets are:
+//
+//     code === null
+//     assetCode === null
+//
+// Each standalone asset is financially evaluated and then
+// returned inside:
+//
+//     standalone.assets
+//
+// The EJS also receives collection totals:
+//
+//     standalone.currentWorth
+//     standalone.buyingPrice
+//     standalone.sellingPrice
+//     standalone.revenue
+//     standalone.liabilities
+//     standalone.profit
+//
+// Current values:
+//
+//     currentWorth
+//     buyingPrice
+//     sellingPrice
+//
+// remain current.
+//
+// Revenue and liabilities:
+//
+//     are calculated using the selected date filters.
 // ==========================================================
 
 async function getStandaloneFinancialPage(
@@ -771,24 +943,6 @@ async function getStandaloneFinancialPage(
 
     try {
 
-        const id =
-
-            typeof req.query?.id === "string"
-
-                ? req.query.id.trim()
-
-                : "";
-
-
-        if (!id) {
-
-            throw new Error(
-                "Standalone asset ID is required."
-            );
-
-        }
-
-
         const {
 
             startDate,
@@ -798,33 +952,165 @@ async function getStandaloneFinancialPage(
         } = getDateFilters(req);
 
 
-        const financial =
+        // ==================================================
+        // GET ALL DAIRY RECORDS
+        // ==================================================
+
+        const dairies =
 
             await financialsService
-                .getStandaloneFinancial(
-
-                    id,
-
-                    startDate,
-
-                    endDate
-
-                );
+                .getAllDairies();
 
 
-        const liabilities =
+        // ==================================================
+        // FIND STANDALONE ASSETS
+        // ==================================================
 
-            await financialsService
-                .getLiabilities(
+        const standaloneDairies =
 
-                    id,
+            dairies.filter(
 
-                    startDate,
+                dairy =>
+                    isStandaloneAsset(dairy)
 
-                    endDate
+            );
 
-                );
 
+        // ==================================================
+        // GET FINANCIAL DATA FOR EACH ASSET
+        // ==================================================
+        //
+        // getDairyFinancial() is used here because each
+        // standalone asset is still a Dairy model record.
+        //
+        // The collection page then combines those individual
+        // financial records.
+        // ==================================================
+
+        const assets =
+
+            await Promise.all(
+
+                standaloneDairies.map(
+
+                    async function(dairy) {
+
+                        const financial =
+
+                            await financialsService
+                                .getDairyFinancial(
+
+                                    dairy._id,
+
+                                    startDate,
+
+                                    endDate
+
+                                );
+
+
+                        return normalizeStandaloneFinancial(
+
+                            dairy,
+
+                            financial
+
+                        );
+
+                    }
+
+                )
+
+            );
+
+
+        // ==================================================
+        // CALCULATE COLLECTION TOTALS
+        // ==================================================
+
+        let currentWorth = 0;
+
+        let buyingPrice = 0;
+
+        let sellingPrice = 0;
+
+        let revenue = 0;
+
+        let liabilities = 0;
+
+        let profit = 0;
+
+
+        assets.forEach(
+
+            function(asset) {
+
+                currentWorth +=
+                    number(
+                        asset.currentWorth
+                    );
+
+
+                buyingPrice +=
+                    number(
+                        asset.buyingPrice
+                    );
+
+
+                sellingPrice +=
+                    number(
+                        asset.sellingPrice
+                    );
+
+
+                revenue +=
+                    number(
+                        asset.revenue
+                    );
+
+
+                liabilities +=
+                    number(
+                        asset.liabilities
+                    );
+
+
+                profit +=
+                    number(
+                        asset.profit
+                    );
+
+            }
+
+        );
+
+
+        // ==================================================
+        // STANDALONE COLLECTION
+        // ==================================================
+
+        const standalone = {
+
+            assets,
+
+            currentWorth,
+
+            buyingPrice,
+
+            sellingPrice,
+
+            revenue,
+
+            liabilities,
+
+            profit
+
+        };
+
+
+        // ==================================================
+        // RENDER
+        // ==================================================
 
         res.render(
 
@@ -833,15 +1119,12 @@ async function getStandaloneFinancialPage(
             {
 
                 title:
-                    `${financial.name || "Standalone Asset"} - Financials`,
+                    "Standalone Assets - Financials",
 
                 user:
                     req.user,
 
-                standalone:
-                    financial,
-
-                liabilities,
+                standalone,
 
                 filters: {
 
@@ -867,12 +1150,6 @@ async function getStandaloneFinancialPage(
 // ==========================================================
 // API
 // GET INDIVIDUAL DAIRY FINANCIAL DATA
-// ==========================================================
-//
-// URL:
-//
-//     /financials/api/dairy/:id
-//
 // ==========================================================
 
 async function getDairyFinancialApi(
@@ -944,12 +1221,6 @@ async function getDairyFinancialApi(
 // API
 // GET FARM FINANCIAL DATA
 // ==========================================================
-//
-// URL:
-//
-//     /financials/api/farm/:id
-//
-// ==========================================================
 
 async function getFarmFinancialApi(
     req,
@@ -1016,9 +1287,7 @@ async function getFarmFinancialApi(
         // VERIFY FARM
         // ==================================================
 
-        if (
-            !isFarm(farm)
-        ) {
+        if (!isFarm(farm)) {
 
             throw new Error(
                 "Requested Dairy record is not a Dairy Farm."
@@ -1076,13 +1345,28 @@ async function getFarmFinancialApi(
 
 // ==========================================================
 // API
-// GET STANDALONE FINANCIAL DATA
+// GET ALL STANDALONE ASSET FINANCIAL DATA
 // ==========================================================
 //
 // URL:
 //
-//     /financials/api/standalone?id=<DAIRY_ID>
+//     GET /financials/api/standalone
 //
+// IMPORTANT:
+//
+// This is a COLLECTION endpoint.
+//
+// It does NOT require:
+//
+//     ?id=...
+//
+// It returns:
+//
+//     assets
+//     current values
+//     filtered revenue
+//     filtered liabilities
+//     profit/loss
 // ==========================================================
 
 async function getStandaloneFinancialApi(
@@ -1093,24 +1377,6 @@ async function getStandaloneFinancialApi(
 
     try {
 
-        const id =
-
-            typeof req.query?.id === "string"
-
-                ? req.query.id.trim()
-
-                : "";
-
-
-        if (!id) {
-
-            throw new Error(
-                "Standalone asset ID is required."
-            );
-
-        }
-
-
         const {
 
             startDate,
@@ -1120,18 +1386,130 @@ async function getStandaloneFinancialApi(
         } = getDateFilters(req);
 
 
-        const financial =
+        // ==================================================
+        // GET ALL DAIRY RECORDS
+        // ==================================================
+
+        const dairies =
 
             await financialsService
-                .getStandaloneFinancial(
+                .getAllDairies();
 
-                    id,
 
-                    startDate,
+        // ==================================================
+        // FIND STANDALONE ASSETS
+        // ==================================================
 
-                    endDate
+        const standaloneDairies =
 
-                );
+            dairies.filter(
+
+                dairy =>
+                    isStandaloneAsset(dairy)
+
+            );
+
+
+        // ==================================================
+        // GET FINANCIAL DATA
+        // ==================================================
+
+        const assets =
+
+            await Promise.all(
+
+                standaloneDairies.map(
+
+                    async function(dairy) {
+
+                        const financial =
+
+                            await financialsService
+                                .getDairyFinancial(
+
+                                    dairy._id,
+
+                                    startDate,
+
+                                    endDate
+
+                                );
+
+
+                        return normalizeStandaloneFinancial(
+
+                            dairy,
+
+                            financial
+
+                        );
+
+                    }
+
+                )
+
+            );
+
+
+        // ==================================================
+        // CALCULATE TOTALS
+        // ==================================================
+
+        let currentWorth = 0;
+
+        let buyingPrice = 0;
+
+        let sellingPrice = 0;
+
+        let revenue = 0;
+
+        let liabilities = 0;
+
+        let profit = 0;
+
+
+        assets.forEach(
+
+            function(asset) {
+
+                currentWorth +=
+                    number(
+                        asset.currentWorth
+                    );
+
+
+                buyingPrice +=
+                    number(
+                        asset.buyingPrice
+                    );
+
+
+                sellingPrice +=
+                    number(
+                        asset.sellingPrice
+                    );
+
+
+                revenue +=
+                    number(
+                        asset.revenue
+                    );
+
+
+                liabilities +=
+                    number(
+                        asset.liabilities
+                    );
+
+
+                profit +=
+                    number(
+                        asset.profit
+                    );
+
+            }
+
+        );
 
 
         res.json({
@@ -1139,8 +1517,23 @@ async function getStandaloneFinancialApi(
             success:
                 true,
 
-            data:
-                financial,
+            data: {
+
+                assets,
+
+                currentWorth,
+
+                buyingPrice,
+
+                sellingPrice,
+
+                revenue,
+
+                liabilities,
+
+                profit
+
+            },
 
             filters: {
 
@@ -1164,12 +1557,6 @@ async function getStandaloneFinancialApi(
 // ==========================================================
 // API
 // GET FINANCIAL SUMMARY
-// ==========================================================
-//
-// URL:
-//
-//     /financials/api/summary
-//
 // ==========================================================
 
 async function getFinancialSummaryApi(
