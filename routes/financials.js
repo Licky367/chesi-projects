@@ -1,4 +1,4 @@
-// ==========================================================
+ // ==========================================================
 // routes/financials.js
 // ==========================================================
 
@@ -16,59 +16,34 @@ const financialsController =
 // ==========================================================
 // AUTHENTICATION
 // ==========================================================
-//
-// All financial routes require server-side authentication.
-//
-// Client-side JavaScript must NOT be relied upon for
-// financial authorization.
-//
-// Change this path only if your project uses a different
-// authentication middleware.
-// ==========================================================
 
 const auth =
     require("../middleware/auth");
 
 
 // ==========================================================
-// FINANCIAL SUMMARY PAGE
+// FINANCIAL SUMMARY
 // ==========================================================
+//
+// GET:
+//
+//     /financials/summary
 //
 // View:
 //
 //     views/financials/summary.ejs
 //
-// URL:
-//
-//     GET /financials/summary
-//
-// Supports:
-//
-//     ?startDate=YYYY-MM-DD
-//     ?endDate=YYYY-MM-DD
-//
-// Displays:
-//
-//     - total current worth
-//     - total selling value
-//     - total revenue
-//     - total liabilities
-//     - total profit/loss
-//     - farms
-//     - farm assets
-//     - standalone assets
-//
-// Current values:
-//
-//     currentWorth
-//     buyingPrice
-//     sellingPrice
-//
-// Period values:
+// FILTERED:
 //
 //     revenue
 //     liabilities
 //     profit/loss
+//
+// CURRENT:
+//
+//     currentWorth
+//     buyingPrice
+//     sellingPrice
 // ==========================================================
 
 router.get(
@@ -84,24 +59,16 @@ router.get(
 
 
 // ==========================================================
-// LIABILITY ENTRY PAGE
+// LIABILITY ENTRY
 // ==========================================================
+//
+// GET:
+//
+//     /financials/liability
 //
 // View:
 //
 //     views/financials/liability.ejs
-//
-// URL:
-//
-//     GET /financials/liability
-//
-// Used to:
-//
-//     - display liability form
-//     - select a farm
-//     - select a farm asset
-//     - select a standalone asset
-//     - record a liability
 // ==========================================================
 
 router.get(
@@ -120,14 +87,9 @@ router.get(
 // RECORD LIABILITY
 // ==========================================================
 //
-// URL:
+// POST:
 //
-//     POST /financials/liability
-//
-// Creates a liability transaction.
-//
-// The transaction belongs directly to the selected
-// Dairy record.
+//     /financials/liability
 // ==========================================================
 
 router.post(
@@ -143,32 +105,21 @@ router.post(
 
 
 // ==========================================================
-// LIABILITY HISTORY PAGE
+// LIABILITY HISTORY
 // ==========================================================
+//
+// GET:
+//
+//     /financials/history
 //
 // View:
 //
 //     views/financials/history.ejs
 //
-// URL:
-//
-//     GET /financials/history
-//
-// Supports:
+// FILTER:
 //
 //     ?startDate=YYYY-MM-DD
 //     ?endDate=YYYY-MM-DD
-//
-// Displays:
-//
-//     - standalone liabilities
-//     - farm liabilities
-//     - farm asset liabilities
-//
-// IMPORTANT:
-//
-// Farm-owned liabilities remain visible in history even
-// when they are excluded from farm asset totals.
 // ==========================================================
 
 router.get(
@@ -184,39 +135,90 @@ router.get(
 
 
 // ==========================================================
-// INDIVIDUAL DAIRY / ASSET FINANCIAL PAGE
+// STANDALONE ASSETS
 // ==========================================================
+//
+// GET:
+//
+//     /financials/standalone
 //
 // View:
 //
-//     views/financials/dairy.ejs
+//     views/financials/standalone.ejs
 //
-// URL:
+// IMPORTANT:
 //
-//     GET /financials/dairy/:id
+// This is a LIST PAGE.
+//
+// There is NO individual standalone asset page.
+//
+// Tapping "Standalone Assets" from the financial summary
+// opens this page.
+//
+// The page displays a table containing ALL standalone
+// assets.
+//
+// FILTERED:
+//
+//     revenue
+//     liabilities
+//     profit/loss
+//
+// CURRENT:
+//
+//     currentWorth
+//     buyingPrice
+//     sellingPrice
 //
 // Supports:
 //
 //     ?startDate=YYYY-MM-DD
 //     ?endDate=YYYY-MM-DD
+// ==========================================================
+
+router.get(
+
+    "/standalone",
+
+    auth,
+
+    financialsController
+        .getStandaloneAssetsPage
+
+);
+
+
+// ==========================================================
+// INDIVIDUAL DAIRY / ASSET
+// ==========================================================
 //
-// Intended for an individual Dairy record.
+// GET:
 //
-// Depending on the record:
+//     /financials/dairy/:id
+//
+// View:
+//
+//     views/financials/dairy.ejs
+//
+// Used for an individual Dairy record.
+//
+// This can represent:
 //
 //     - animal
 //     - farm asset
-//     - other identified Dairy record
+//     - identified Dairy record
 //
-// Displays:
+// FILTERED:
 //
-//     - current worth
-//     - buying price
-//     - selling price
-//     - filtered revenue
-//     - filtered liabilities
-//     - filtered profit/loss
-//     - liability history
+//     revenue
+//     liabilities
+//     profit/loss
+//
+// CURRENT:
+//
+//     currentWorth
+//     buyingPrice
+//     sellingPrice
 // ==========================================================
 
 router.get(
@@ -232,49 +234,35 @@ router.get(
 
 
 // ==========================================================
-// INDIVIDUAL FARM FINANCIAL PAGE
+// FARM FINANCIAL PAGE
 // ==========================================================
+//
+// GET:
+//
+//     /financials/farm/:id
 //
 // View:
 //
 //     views/financials/dairy.ejs
 //
-// URL:
-//
-//     GET /financials/farm/:id
-//
-// Supports:
-//
-//     ?startDate=YYYY-MM-DD
-//     ?endDate=YYYY-MM-DD
-//
-// Opened when a FARM name is selected.
+// Opened when a FARM is selected.
 //
 // Displays:
 //
-//     FARM
-//         - current worth
-//         - buying price
-//         - selling price
-//         - revenue
-//         - liabilities
-//         - profit/loss
+//     Farm
+//     + all assets belonging to the farm
 //
-//     FARM ASSETS
-//         - individual financial values
-//
-// Farm totals represent:
-//
-//     farm itself
-//     + assets belonging to that farm
-//
-// Date filtering applies to:
+// FILTERED:
 //
 //     revenue
 //     liabilities
 //     profit/loss
 //
-// Current values remain current.
+// CURRENT:
+//
+//     currentWorth
+//     buyingPrice
+//     sellingPrice
 // ==========================================================
 
 router.get(
@@ -290,73 +278,24 @@ router.get(
 
 
 // ==========================================================
-// INDIVIDUAL STANDALONE ASSET PAGE
-// ==========================================================
-//
-// View:
-//
-//     views/financials/standalone.ejs
-//
-// URL:
-//
-//     GET /financials/standalone/:id
-//
-// Supports:
-//
-//     ?startDate=YYYY-MM-DD
-//     ?endDate=YYYY-MM-DD
-//
-// Opened when a standalone asset name is selected.
-//
-// Displays:
-//
-//     - current worth
-//     - buying price
-//     - selling price
-//     - filtered revenue
-//     - filtered liabilities
-//     - filtered profit/loss
-//     - liability history
-// ==========================================================
-
-router.get(
-
-    "/standalone/:id",
-
-    auth,
-
-    financialsController
-        .getStandaloneFinancialPage
-
-);
-
-
-// ==========================================================
 // API: FINANCIAL SUMMARY
 // ==========================================================
 //
-// URL:
+// GET:
 //
-//     GET /financials/api/summary
-//
-// Supports:
-//
-//     ?startDate=YYYY-MM-DD
-//     ?endDate=YYYY-MM-DD
-//
-// Returns JSON.
-//
-// CURRENT:
-//
-//     currentWorth
-//     buyingPrice
-//     sellingPrice
+//     /financials/api/summary
 //
 // FILTERED:
 //
 //     revenue
 //     liabilities
 //     profit/loss
+//
+// CURRENT:
+//
+//     currentWorth
+//     buyingPrice
+//     sellingPrice
 // ==========================================================
 
 router.get(
@@ -375,16 +314,21 @@ router.get(
 // API: INDIVIDUAL DAIRY / ASSET
 // ==========================================================
 //
-// URL:
+// GET:
 //
-//     GET /financials/api/dairy/:id
+//     /financials/api/dairy/:id
 //
-// Supports:
+// FILTERED:
 //
-//     ?startDate=YYYY-MM-DD
-//     ?endDate=YYYY-MM-DD
+//     revenue
+//     liabilities
+//     profit/loss
 //
-// Returns financial information for one Dairy record.
+// CURRENT:
+//
+//     currentWorth
+//     buyingPrice
+//     sellingPrice
 // ==========================================================
 
 router.get(
@@ -400,26 +344,24 @@ router.get(
 
 
 // ==========================================================
-// API: INDIVIDUAL FARM
+// API: FARM
 // ==========================================================
 //
-// URL:
+// GET:
 //
-//     GET /financials/api/farm/:id
+//     /financials/api/farm/:id
 //
-// Supports:
+// FILTERED:
 //
-//     ?startDate=YYYY-MM-DD
-//     ?endDate=YYYY-MM-DD
+//     revenue
+//     liabilities
+//     profit/loss
 //
-// Returns:
+// CURRENT:
 //
-//     farm
-//     assets
-//     current values
-//     filtered revenue
-//     filtered liabilities
-//     filtered profit/loss
+//     currentWorth
+//     buyingPrice
+//     sellingPrice
 // ==========================================================
 
 router.get(
@@ -435,41 +377,7 @@ router.get(
 
 
 // ==========================================================
-// API: INDIVIDUAL STANDALONE ASSET
-// ==========================================================
-//
-// URL:
-//
-//     GET /financials/api/standalone/:id
-//
-// Supports:
-//
-//     ?startDate=YYYY-MM-DD
-//     ?endDate=YYYY-MM-DD
-//
-// Returns:
-//
-//     standalone asset
-//     current values
-//     filtered revenue
-//     filtered liabilities
-//     filtered profit/loss
-// ==========================================================
-
-router.get(
-
-    "/api/standalone/:id",
-
-    auth,
-
-    financialsController
-        .getStandaloneFinancialApi
-
-);
-
-
-// ==========================================================
-// EXPORT ROUTER
+// EXPORT
 // ==========================================================
 
 module.exports =
