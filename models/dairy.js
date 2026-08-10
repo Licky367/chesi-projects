@@ -563,6 +563,25 @@ const dairySchema = new mongoose.Schema(
 
         },
 
+// ==========================================================
+// SELLING PRICE
+//
+// The amount received when the Dairy / Asset is sold.
+//
+// This is kept at 0 for assets that have not yet been sold.
+// ==========================================================
+
+sellingPrice: {
+
+    type: Number,
+
+    min: 0,
+
+    default: 0
+
+},
+
+
 
         // ==================================================
         // CURRENT WORTH
