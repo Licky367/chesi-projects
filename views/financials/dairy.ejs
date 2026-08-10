@@ -1,941 +1,505 @@
+<% /* ==========================================================
+   FINANCIAL / DAIRY DETAILS PAGE
+
+   BACKEND DATA
+
+   Current controller provides:
+
+       dairy
+       liabilities
+       filters
+
+   The updated service should provide:
+
+       dairy: {
+           _id,
+           name,
+           code,
+           currentWorth,
+           salesAmount,
+           revenue,
+           profit,
+           assets: []
+       }
+
+       Each asset may contain:
+
+           _id
+           name
+           code
+           type
+           currentWorth
+           buyingPrice
+           sellingPrice
+           revenue
+           liabilities
+           profit
+
+       filters: {
+           startDate,
+           endDate
+       }
+
+   PROFIT RULE:
+
+       sellingPrice
+       - buyingPrice
+       - liabilities
+       + revenue
+
+   ========================================================== */ %>
+
+
 <%
-// ==========================================================
-// views/financials/dairy.ejs
-// ==========================================================
-//
-// INDIVIDUAL DAIRY / ASSET FINANCIAL DETAILS
-//
-// Controller supplies:
-//
-//     dairy
-//     liabilities
-//     filters
-//     user
-//
-// Financial rules:
-//
-//     currentWorth
-//         -> always current
-//
-//     totalLiabilities
-//         -> respects date filter
-//
-//     profit
-//         -> respects date filter
-//
-// Shared layout:
-//     This view is rendered inside the application's
-//     shared layout.
-//
-// ==========================================================
+/* ==========================================================
+   HELPERS
+   ========================================================== */
+
+function number(value) {
+
+    const result = Number(value);
+
+    return Number.isFinite(result)
+        ? result
+        : 0;
+
+}
+
+
+function formatMoney(value) {
+
+    const amount = Number(value);
+
+    if (!Number.isFinite(amount)) {
+
+        return "—";
+
+    }
+
+    return amount.toLocaleString(
+
+        "en-KE",
+
+        {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }
+
+    );
+
+}
+
+
+function profitClass(value) {
+
+    return number(value) < 0
+        ? "financial-negative"
+        : "financial-positive";
+
+}
+
+
+function profitText(value) {
+
+    const amount = number(value);
+
+    return (
+        amount < 0
+            ? "-KSh " + formatMoney(Math.abs(amount))
+            : "KSh " + formatMoney(amount)
+    );
+
+}
+
+
+/* ==========================================================
+   SAFE DATA
+   ========================================================== */
+
+const farm =
+    dairy || {};
+
+
+const assets =
+    Array.isArray(farm.assets)
+        ? farm.assets
+        : [];
+
+
+const filterStart =
+    filters?.startDate || "";
+
+
+const filterEnd =
+    filters?.endDate || "";
+
+
+const hasFilter =
+    Boolean(
+        filterStart ||
+        filterEnd
+    );
+
+
+/* ==========================================================
+   FARM TOTALS
+   ========================================================== */
+
+let totalCurrentWorth = 0;
+
+let totalSalesAmount = 0;
+
+let totalBuyingPrice = 0;
+
+let totalRevenue = 0;
+
+let totalLiabilities = 0;
+
+let totalProfit = 0;
+
+
+/* ==========================================================
+   CALCULATE ASSET TOTALS
+
+   The service should preferably supply these values.
+
+   We calculate them here as a safe presentation fallback.
+   ========================================================== */
+
+assets.forEach(function(asset) {
+
+    const currentWorth =
+        number(
+            asset?.currentWorth
+        );
+
+
+    const buyingPrice =
+        number(
+            asset?.buyingPrice
+        );
+
+
+    const sellingPrice =
+        number(
+            asset?.sellingPrice
+        );
+
+
+    const revenue =
+        number(
+            asset?.revenue
+        );
+
+
+    const liabilitiesValue =
+        number(
+            asset?.liabilities
+        );
+
+
+    const calculatedProfit =
+        sellingPrice
+        - buyingPrice
+        - liabilitiesValue
+        + revenue;
+
+
+    totalCurrentWorth +=
+        currentWorth;
+
+
+    totalSalesAmount +=
+        sellingPrice;
+
+
+    totalBuyingPrice +=
+        buyingPrice;
+
+
+    totalRevenue +=
+        revenue;
+
+
+    totalLiabilities +=
+        liabilitiesValue;
+
+
+    totalProfit +=
+        calculatedProfit;
+
+});
+
+
+/* ==========================================================
+   PREFER SERVICE-SUPPLIED FARM TOTALS
+
+   These values will be supplied by the updated service.
+
+   Fall back to asset calculations where necessary.
+   ========================================================== */
+
+if (
+    farm.currentWorth !== undefined &&
+    farm.currentWorth !== null
+) {
+
+    totalCurrentWorth =
+        number(farm.currentWorth);
+
+}
+
+
+if (
+    farm.salesAmount !== undefined &&
+    farm.salesAmount !== null
+) {
+
+    totalSalesAmount =
+        number(farm.salesAmount);
+
+}
+
+
+if (
+    farm.revenue !== undefined &&
+    farm.revenue !== null
+) {
+
+    totalRevenue =
+        number(farm.revenue);
+
+}
+
+
+if (
+    farm.liabilities !== undefined &&
+    farm.liabilities !== null
+) {
+
+    totalLiabilities =
+        number(farm.liabilities);
+
+}
+
+
+if (
+    farm.profit !== undefined &&
+    farm.profit !== null
+) {
+
+    totalProfit =
+        number(farm.profit);
+
+}
+
+
+/* ==========================================================
+   SORT ASSETS
+
+   Highest profit first.
+
+   If profit is tied:
+       highest currentWorth first.
+   ========================================================== */
+
+assets.sort(function(a, b) {
+
+    const profitA =
+        number(a?.profit);
+
+
+    const profitB =
+        number(b?.profit);
+
+
+    if (profitA !== profitB) {
+
+        return profitB - profitA;
+
+    }
+
+
+    return (
+        number(b?.currentWorth)
+        -
+        number(a?.currentWorth)
+    );
+
+});
+
 %>
 
 
-<style>
+<div class="financial-page dairy-financial-page">
 
-/* ==========================================================
-   FINANCIAL PAGE
-========================================================== */
 
-.financial-page {
-
-    max-width: 1100px;
-
-    margin: 0 auto;
-
-    padding: 24px 16px 50px;
-
-}
-
-
-/* ==========================================================
-   HEADER
-========================================================== */
-
-.financial-header {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 16px;
-
-    margin-bottom: 24px;
-
-    flex-wrap: wrap;
-
-}
-
-
-.financial-header-left {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 14px;
-
-}
-
-
-.back-button {
-
-    width: 42px;
-
-    height: 42px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 12px;
-
-    background: #f1f8f3;
-
-    color: #198754;
-
-    text-decoration: none;
-
-    font-size: 20px;
-
-    transition:
-        background .2s ease,
-        color .2s ease,
-        transform .2s ease;
-
-}
-
-
-.back-button:hover {
-
-    background: #dff1e5;
-
-    color: #146c43;
-
-    transform: translateX(-2px);
-
-}
-
-
-.financial-title {
-
-    margin: 0;
-
-    font-size: 24px;
-
-    font-weight: 700;
-
-    color: #1f2937;
-
-}
-
-
-.financial-subtitle {
-
-    margin: 4px 0 0;
-
-    color: #6b7280;
-
-    font-size: 14px;
-
-}
-
-
-/* ==========================================================
-   FILTER CARD
-========================================================== */
-
-.filter-card {
-
-    background: #ffffff;
-
-    border: 1px solid #e5e7eb;
-
-    border-radius: 16px;
-
-    padding: 18px;
-
-    margin-bottom: 22px;
-
-    box-shadow:
-        0 3px 12px rgba(0, 0, 0, .05);
-
-}
-
-
-.filter-title {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    margin-bottom: 14px;
-
-    font-size: 15px;
-
-    font-weight: 700;
-
-    color: #374151;
-
-}
-
-
-.filter-title i {
-
-    color: #198754;
-
-}
-
-
-.filter-grid {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap: 14px;
-
-}
-
-
-.filter-field {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 6px;
-
-}
-
-
-.filter-label {
-
-    font-size: 13px;
-
-    font-weight: 600;
-
-    color: #4b5563;
-
-}
-
-
-.filter-input {
-
-    width: 100%;
-
-    box-sizing: border-box;
-
-    padding: 11px 12px;
-
-    border: 1px solid #d1d5db;
-
-    border-radius: 10px;
-
-    font-size: 14px;
-
-    background: #ffffff;
-
-    color: #1f2937;
-
-}
-
-
-.filter-input:focus {
-
-    outline: none;
-
-    border-color: #198754;
-
-    box-shadow:
-        0 0 0 3px rgba(25, 135, 84, .12);
-
-}
-
-
-.filter-actions {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-    margin-top: 15px;
-
-    flex-wrap: wrap;
-
-}
-
-
-.filter-button {
-
-    border: none;
-
-    border-radius: 10px;
-
-    padding: 10px 16px;
-
-    background: #198754;
-
-    color: #ffffff;
-
-    font-size: 14px;
-
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition:
-        background .2s ease,
-        transform .2s ease;
-
-}
-
-
-.filter-button:hover {
-
-    background: #157347;
-
-    transform: translateY(-1px);
-
-}
-
-
-.clear-button {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    padding: 10px 16px;
-
-    border-radius: 10px;
-
-    background: #f3f4f6;
-
-    color: #374151;
-
-    text-decoration: none;
-
-    font-size: 14px;
-
-    font-weight: 600;
-
-}
-
-
-.clear-button:hover {
-
-    background: #e5e7eb;
-
-}
-
-
-/* ==========================================================
-   FINANCIAL CARDS
-========================================================== */
-
-.financial-grid {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-
-    gap: 16px;
-
-    margin-bottom: 24px;
-
-}
-
-
-.financial-card {
-
-    background: #ffffff;
-
-    border: 1px solid #e5e7eb;
-
-    border-radius: 16px;
-
-    padding: 20px;
-
-    box-shadow:
-        0 3px 12px rgba(0, 0, 0, .05);
-
-}
-
-
-.financial-card-label {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    color: #6b7280;
-
-    font-size: 13px;
-
-    font-weight: 600;
-
-    margin-bottom: 10px;
-
-}
-
-
-.financial-card-label i {
-
-    color: #198754;
-
-}
-
-
-.financial-card-value {
-
-    font-size: 24px;
-
-    font-weight: 750;
-
-    color: #1f2937;
-
-    word-break: break-word;
-
-}
-
-
-.financial-card-note {
-
-    margin-top: 6px;
-
-    font-size: 12px;
-
-    color: #9ca3af;
-
-}
-
-
-/* ==========================================================
-   PROFIT / LOSS VALUE
-========================================================== */
-
-.profit-positive {
-
-    color: #198754;
-
-}
-
-
-.profit-negative {
-
-    color: #dc3545;
-
-}
-
-
-/* ==========================================================
-   DETAILS CARD
-========================================================== */
-
-.details-card {
-
-    background: #ffffff;
-
-    border: 1px solid #e5e7eb;
-
-    border-radius: 16px;
-
-    padding: 20px;
-
-    margin-bottom: 24px;
-
-    box-shadow:
-        0 3px 12px rgba(0, 0, 0, .05);
-
-}
-
-
-.section-title {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-
-    margin: 0 0 18px;
-
-    font-size: 17px;
-
-    font-weight: 700;
-
-    color: #1f2937;
-
-}
-
-
-.section-title i {
-
-    color: #198754;
-
-}
-
-
-.details-grid {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap: 14px 24px;
-
-}
-
-
-.detail-item {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 4px;
-
-    padding-bottom: 12px;
-
-    border-bottom: 1px solid #f0f0f0;
-
-}
-
-
-.detail-label {
-
-    font-size: 12px;
-
-    color: #6b7280;
-
-    font-weight: 600;
-
-}
-
-
-.detail-value {
-
-    font-size: 15px;
-
-    color: #1f2937;
-
-    font-weight: 600;
-
-    word-break: break-word;
-
-}
-
-
-/* ==========================================================
-   LIABILITY HISTORY
-========================================================== */
-
-.liability-card {
-
-    background: #ffffff;
-
-    border: 1px solid #e5e7eb;
-
-    border-radius: 16px;
-
-    overflow: hidden;
-
-    box-shadow:
-        0 3px 12px rgba(0, 0, 0, .05);
-
-}
-
-
-.liability-header {
-
-    padding: 18px 20px;
-
-    border-bottom: 1px solid #e5e7eb;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 12px;
-
-    flex-wrap: wrap;
-
-}
-
-
-.liability-header-title {
-
-    margin: 0;
-
-    font-size: 17px;
-
-    font-weight: 700;
-
-    color: #1f2937;
-
-}
-
-
-.liability-count {
-
-    padding: 5px 9px;
-
-    border-radius: 20px;
-
-    background: #e9f7ef;
-
-    color: #198754;
-
-    font-size: 12px;
-
-    font-weight: 700;
-
-}
-
-
-.liability-list {
-
-    display: flex;
-
-    flex-direction: column;
-
-}
-
-
-.liability-row {
-
-    padding: 17px 20px;
-
-    border-bottom: 1px solid #f0f0f0;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 16px;
-
-}
-
-
-.liability-row:last-child {
-
-    border-bottom: none;
-
-}
-
-
-.liability-description {
-
-    font-size: 14px;
-
-    font-weight: 600;
-
-    color: #1f2937;
-
-}
-
-
-.liability-date {
-
-    margin-top: 4px;
-
-    font-size: 12px;
-
-    color: #9ca3af;
-
-}
-
-
-.liability-recorded {
-
-    margin-top: 3px;
-
-    font-size: 12px;
-
-    color: #6b7280;
-
-}
-
-
-.liability-amount {
-
-    white-space: nowrap;
-
-    font-size: 15px;
-
-    font-weight: 700;
-
-    color: #dc3545;
-
-}
-
-
-/* ==========================================================
-   EMPTY STATE
-========================================================== */
-
-.empty-state {
-
-    padding: 40px 20px;
-
-    text-align: center;
-
-    color: #6b7280;
-
-}
-
-
-.empty-state-icon {
-
-    font-size: 32px;
-
-    margin-bottom: 10px;
-
-    color: #9ca3af;
-
-}
-
-
-.empty-state-title {
-
-    margin-bottom: 4px;
-
-    font-weight: 700;
-
-    color: #4b5563;
-
-}
-
-
-.empty-state-text {
-
-    font-size: 13px;
-
-}
-
-
-/* ==========================================================
-   RESPONSIVE
-========================================================== */
-
-@media (max-width: 800px) {
-
-    .financial-grid {
-
-        grid-template-columns: 1fr;
-
-    }
-
-}
-
-
-@media (max-width: 600px) {
-
-    .financial-page {
-
-        padding:
-            18px 12px 40px;
-
-    }
-
-
-    .financial-title {
-
-        font-size: 21px;
-
-    }
-
-
-    .filter-grid {
-
-        grid-template-columns: 1fr;
-
-    }
-
-
-    .details-grid {
-
-        grid-template-columns: 1fr;
-
-    }
-
-
-    .liability-row {
-
-        align-items: flex-start;
-
-        flex-direction: column;
-
-    }
-
-
-    .liability-amount {
-
-        align-self: flex-start;
-
-    }
-
-}
-
-</style>
-
-
-<div class="financial-page">
-
-
-    <!-- ==================================================
+    <!-- ======================================================
          HEADER
-    ================================================== -->
+         ====================================================== -->
 
-    <header class="financial-header">
+    <div class="financial-page-header">
 
-        <div class="financial-header-left">
+        <div>
 
-            <a
-                href="/financials/summary"
-                class="back-button"
-                aria-label="Back to Financial Summary"
-            >
+            <span class="financial-eyebrow">
 
-                <i class="bi bi-arrow-left"></i>
+                DAIRY FARM FINANCIALS
 
-            </a>
+            </span>
 
 
-            <div>
+            <h1 class="financial-title">
 
-                <h1 class="financial-title">
+                <%= farm.name || "Dairy Farm" %>
 
-                    <%= dairy?.name || "Financial Details" %>
-
-                </h1>
+            </h1>
 
 
-                <p class="financial-subtitle">
+            <p class="financial-subtitle">
 
-                    Individual financial record
+                <% if (farm.code !== undefined && farm.code !== null) { %>
 
-                </p>
+                    Farm Code:
+                    <strong>
+                        <%= farm.code %>
+                    </strong>
 
-            </div>
+                <% } else { %>
+
+                    Financial performance and asset breakdown.
+
+                <% } %>
+
+            </p>
 
         </div>
 
-    </header>
+
+        <a
+            href="/financials/summary"
+            class="financial-button financial-button-secondary"
+        >
+
+            <i class="bi bi-arrow-left"></i>
+
+            Summary
+
+        </a>
+
+    </div>
 
 
-    <!-- ==================================================
+    <!-- ======================================================
+         CURRENT NET WORTH
+         ====================================================== -->
+
+    <section class="financial-worth-card">
+
+        <div class="financial-worth-icon">
+
+            <i class="bi bi-wallet2"></i>
+
+        </div>
+
+
+        <div>
+
+            <span>
+
+                Current Net Worth
+
+            </span>
+
+
+            <strong>
+
+                KSh
+                <%= formatMoney(totalCurrentWorth) %>
+
+            </strong>
+
+
+            <small>
+
+                Current value — independent of date filter
+
+            </small>
+
+        </div>
+
+    </section>
+
+
+    <!-- ======================================================
          DATE FILTER
-    ================================================== -->
+         ====================================================== -->
 
-    <section class="filter-card">
-
-        <div class="filter-title">
-
-            <i class="bi bi-calendar3"></i>
-
-            Financial Period
-
-        </div>
+    <section class="financial-filter-card">
 
 
         <form
             method="GET"
-            action="/financials/dairy/<%= dairy?._id %>"
+            action="/financials/dairy/<%= farm._id %>"
+            class="financial-filter-form"
         >
 
-            <div class="filter-grid">
+
+            <div class="financial-filter-group">
+
+                <label for="startDate">
+
+                    From
+
+                </label>
 
 
-                <!-- START DATE -->
-
-                <div class="filter-field">
-
-                    <label
-                        class="filter-label"
-                        for="startDate"
-                    >
-
-                        Start date
-
-                    </label>
-
-
-                    <input
-                        type="date"
-                        id="startDate"
-                        name="startDate"
-                        class="filter-input"
-                        value="<%= filters?.startDate || '' %>"
-                    >
-
-                </div>
-
-
-                <!-- END DATE -->
-
-                <div class="filter-field">
-
-                    <label
-                        class="filter-label"
-                        for="endDate"
-                    >
-
-                        End date
-
-                    </label>
-
-
-                    <input
-                        type="date"
-                        id="endDate"
-                        name="endDate"
-                        class="filter-input"
-                        value="<%= filters?.endDate || '' %>"
-                    >
-
-                </div>
+                <input
+                    type="date"
+                    id="startDate"
+                    name="startDate"
+                    value="<%= filterStart %>"
+                >
 
             </div>
 
 
-            <div class="filter-actions">
+            <div class="financial-filter-group">
 
-                <button
-                    type="submit"
-                    class="filter-button"
+                <label for="endDate">
+
+                    To
+
+                </label>
+
+
+                <input
+                    type="date"
+                    id="endDate"
+                    name="endDate"
+                    value="<%= filterEnd %>"
                 >
 
-                    <i class="bi bi-funnel"></i>
+            </div>
 
-                    Apply Filter
 
-                </button>
+            <button
+                type="submit"
+                class="financial-button financial-button-primary"
+            >
 
+                <i class="bi bi-funnel"></i>
+
+                Apply
+
+            </button>
+
+
+            <% if (hasFilter) { %>
 
                 <a
-                    href="/financials/dairy/<%= dairy?._id %>"
-                    class="clear-button"
+                    href="/financials/dairy/<%= farm._id %>"
+                    class="financial-clear-filter"
                 >
 
                     <i class="bi bi-x-circle"></i>
@@ -944,511 +508,1053 @@
 
                 </a>
 
-            </div>
+            <% } %>
+
 
         </form>
 
     </section>
 
 
-    <!-- ==================================================
-         FINANCIAL SUMMARY
-    ================================================== -->
+    <!-- ======================================================
+         FARM FINANCIAL TABLE
+         ====================================================== -->
 
-    <section class="financial-grid">
+    <section class="financial-section">
 
 
-        <!-- CURRENT WORTH -->
+        <div class="financial-section-header">
 
-        <article class="financial-card">
+            <span class="financial-eyebrow">
 
-            <div class="financial-card-label">
+                ASSET BREAKDOWN
 
-                <i class="bi bi-wallet2"></i>
+            </span>
 
-                Current Worth
 
-            </div>
+            <h2>
 
+                Farm Assets
 
-            <div class="financial-card-value">
+            </h2>
 
-                KSh
 
-                <%= Number(
-                    dairy?.currentWorth || 0
-                ).toLocaleString("en-KE") %>
+            <p>
 
-            </div>
+                Assets are ranked by profit/loss, with current
+                worth used to break ties.
 
+            </p>
 
-            <div class="financial-card-note">
+        </div>
 
-                Current value — not date filtered
 
-            </div>
+        <div class="financial-table-wrapper">
 
-        </article>
 
+            <table class="financial-table">
 
-        <!-- LIABILITIES -->
 
-        <article class="financial-card">
+                <thead>
 
-            <div class="financial-card-label">
+                    <tr>
 
-                <i class="bi bi-credit-card"></i>
+                        <th>
 
-                Liabilities
+                            Asset
 
-            </div>
+                        </th>
 
+                        <th>
 
-            <div class="financial-card-value">
+                            Current Worth
 
-                KSh
+                        </th>
 
-                <%= Number(
-                    dairy?.totalLiabilities || 0
-                ).toLocaleString("en-KE") %>
+                        <th>
 
-            </div>
+                            Sales Amount
 
+                        </th>
 
-            <div class="financial-card-note">
+                        <th>
 
-                Selected financial period
+                            Revenue
 
-            </div>
+                        </th>
 
-        </article>
+                        <th>
 
+                            Profit / Loss
 
-        <!-- PROFIT / LOSS -->
+                        </th>
 
-        <article class="financial-card">
+                    </tr>
 
-            <div class="financial-card-label">
+                </thead>
 
-                <i class="bi bi-graph-up-arrow"></i>
 
-                Profit / Loss
+                <tbody>
 
-            </div>
 
+                    <% if (assets.length) { %>
 
-            <div class="financial-card-value
-                <%= Number(dairy?.profit || 0) >= 0
-                    ? 'profit-positive'
-                    : 'profit-negative'
-                %>"
-            >
 
-                KSh
+                        <% assets.forEach(function(asset) { %>
 
-                <%= Number(
-                    dairy?.profit || 0
-                ).toLocaleString("en-KE") %>
+                            <%
+                                const assetProfit =
+                                    asset?.profit !== undefined &&
+                                    asset?.profit !== null
 
-            </div>
+                                        ? number(asset.profit)
 
+                                        : (
+                                            number(asset?.sellingPrice)
+                                            -
+                                            number(asset?.buyingPrice)
+                                            -
+                                            number(asset?.liabilities)
+                                            +
+                                            number(asset?.revenue)
+                                        );
+                            %>
 
-            <div class="financial-card-note">
 
-                Selected financial period
+                            <tr>
 
-            </div>
 
-        </article>
+                                <td>
 
+                                    <a
+                                        href="/financials/dairy/<%= asset._id %>"
+                                        class="financial-table-name"
+                                    >
 
-    </section>
+                                        <strong>
 
+                                            <%= asset.name ||
+                                                "Unnamed Asset"
+                                            %>
 
-    <!-- ==================================================
-         ASSET DETAILS
-    ================================================== -->
+                                        </strong>
 
-    <section class="details-card">
 
-        <h2 class="section-title">
+                                        <% if (asset.type) { %>
 
-            <i class="bi bi-info-circle"></i>
+                                            <small>
 
-            Asset Details
+                                                <%= asset.type %>
 
-        </h2>
+                                            </small>
 
+                                        <% } %>
 
-        <div class="details-grid">
 
+                                        <% if (
+                                            asset.code !== undefined &&
+                                            asset.code !== null
+                                        ) { %>
 
-            <!-- NAME -->
+                                            <small>
 
-            <div class="detail-item">
+                                                Code:
+                                                <%= asset.code %>
 
-                <span class="detail-label">
+                                            </small>
 
-                    Name
+                                        <% } %>
 
-                </span>
+                                    </a>
 
+                                </td>
 
-                <span class="detail-value">
 
-                    <%= dairy?.name || "—" %>
+                                <td>
 
-                </span>
+                                    KSh
+                                    <%= formatMoney(
+                                        asset.currentWorth
+                                    ) %>
 
-            </div>
+                                </td>
 
 
-            <!-- CODE -->
+                                <td>
 
-            <div class="detail-item">
+                                    KSh
+                                    <%= formatMoney(
+                                        asset.sellingPrice
+                                    ) %>
 
-                <span class="detail-label">
+                                </td>
 
-                    Code
 
-                </span>
+                                <td>
 
+                                    KSh
+                                    <%= formatMoney(
+                                        asset.revenue
+                                    ) %>
 
-                <span class="detail-value">
+                                </td>
 
-                    <%= (
 
-                        dairy?.code !== null &&
+                                <td>
 
-                        dairy?.code !== undefined &&
+                                    <strong
+                                        class="<%= profitClass(
+                                            assetProfit
+                                        ) %>"
+                                    >
 
-                        dairy?.code !== ""
+                                        <%= profitText(
+                                            assetProfit
+                                        ) %>
 
-                    )
+                                    </strong>
 
-                        ? dairy.code
+                                </td>
 
-                        : "—"
 
-                    %>
+                            </tr>
 
-                </span>
 
-            </div>
+                        <% }); %>
 
 
-            <!-- ASSET CODE -->
+                    <% } else { %>
 
-            <div class="detail-item">
 
-                <span class="detail-label">
+                        <tr>
 
-                    Asset Code
+                            <td
+                                colspan="5"
+                                class="financial-table-empty"
+                            >
 
-                </span>
+                                <i class="bi bi-box-seam"></i>
 
 
-                <span class="detail-value">
+                                <strong>
 
-                    <%= (
+                                    No assets found
 
-                        dairy?.assetCode !== null &&
+                                </strong>
 
-                        dairy?.assetCode !== undefined &&
 
-                        dairy?.assetCode !== ""
+                                <span>
 
-                    )
+                                    This farm currently has no
+                                    assets available for financial
+                                    analysis.
 
-                        ? dairy.assetCode
+                                </span>
 
-                        : "—"
+                            </td>
 
-                    %>
+                        </tr>
 
-                </span>
 
-            </div>
+                    <% } %>
 
 
-            <!-- TYPE -->
+                </tbody>
 
-            <div class="detail-item">
 
-                <span class="detail-label">
+                <!-- ==================================================
+                     TOTAL
+                     ================================================== -->
 
-                    Type
+                <tfoot>
 
-                </span>
+                    <tr>
 
+                        <th>
 
-                <span class="detail-value">
+                            Total
 
-                    <%= dairy?.type || "—" %>
+                        </th>
 
-                </span>
 
-            </div>
+                        <th>
 
+                            KSh
+                            <%= formatMoney(
+                                totalCurrentWorth
+                            ) %>
 
-            <!-- STATUS -->
+                        </th>
 
-            <div class="detail-item">
 
-                <span class="detail-label">
+                        <th>
 
-                    Status
+                            KSh
+                            <%= formatMoney(
+                                totalSalesAmount
+                            ) %>
 
-                </span>
+                        </th>
 
 
-                <span class="detail-value">
+                        <th>
 
-                    <%= dairy?.status || "—" %>
+                            KSh
+                            <%= formatMoney(
+                                totalRevenue
+                            ) %>
 
-                </span>
+                        </th>
 
-            </div>
 
+                        <th>
 
-            <!-- BUYING PRICE -->
+                            <strong
+                                class="<%= profitClass(
+                                    totalProfit
+                                ) %>"
+                            >
 
-            <div class="detail-item">
+                                <%= profitText(
+                                    totalProfit
+                                ) %>
 
-                <span class="detail-label">
+                            </strong>
 
-                    Buying Price
+                        </th>
 
-                </span>
+                    </tr>
 
+                </tfoot>
 
-                <span class="detail-value">
 
-                    KSh
-
-                    <%= Number(
-                        dairy?.buyingPrice || 0
-                    ).toLocaleString("en-KE") %>
-
-                </span>
-
-            </div>
-
-
-            <!-- SELLING PRICE -->
-
-            <div class="detail-item">
-
-                <span class="detail-label">
-
-                    Selling Price
-
-                </span>
-
-
-                <span class="detail-value">
-
-                    <%= (
-
-                        dairy?.sellingPrice !== null &&
-
-                        dairy?.sellingPrice !== undefined
-
-                    )
-
-                        ? `KSh ${Number(
-                            dairy.sellingPrice
-                        ).toLocaleString("en-KE")}`
-
-                        : "—"
-
-                    %>
-
-                </span>
-
-            </div>
-
+            </table>
 
         </div>
 
     </section>
 
 
-    <!-- ==================================================
-         LIABILITY HISTORY
-    ================================================== -->
+    <!-- ======================================================
+         FINANCIAL FORMULA
+         ====================================================== -->
 
-    <section class="liability-card">
+    <section class="financial-formula-note">
 
-
-        <div class="liability-header">
-
-            <h2 class="liability-header-title">
-
-                Liability History
-
-            </h2>
+        <i class="bi bi-calculator"></i>
 
 
-            <span class="liability-count">
+        <div>
 
-                <%= Array.isArray(liabilities)
-                    ? liabilities.length
-                    : 0
-                %>
+            <strong>
 
-                record<%= (
+                Profit / Loss calculation
 
-                    Array.isArray(liabilities) &&
+            </strong>
 
-                    liabilities.length === 1
 
-                )
+            <span>
 
-                    ? ""
-
-                    : "s"
-
-                %>
+                Selling Price − Buying Price − Liabilities
+                + Revenue
 
             </span>
 
         </div>
 
-
-        <% if (
-
-            Array.isArray(liabilities) &&
-
-            liabilities.length
-
-        ) { %>
-
-
-            <div class="liability-list">
-
-
-                <% liabilities.forEach(
-                    liability => {
-                %>
-
-
-                    <article class="liability-row">
-
-
-                        <div>
-
-
-                            <div class="liability-description">
-
-                                <%= liability?.description ||
-                                    "Liability"
-                                %>
-
-                            </div>
-
-
-                            <div class="liability-date">
-
-                                <%= liability?.createdAt
-
-                                    ? new Date(
-                                        liability.createdAt
-                                    ).toLocaleDateString(
-                                        "en-KE",
-                                        {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric"
-                                        }
-                                    )
-
-                                    : "Date unavailable"
-
-                                %>
-
-                            </div>
-
-
-                            <% if (
-                                liability?.recordedBy
-                            ) { %>
-
-
-                                <div class="liability-recorded">
-
-                                    Recorded by:
-
-                                    <%= liability.recordedBy.name ||
-
-                                        liability.recordedBy.email ||
-
-                                        "Unknown"
-
-                                    %>
-
-                                </div>
-
-
-                            <% } %>
-
-
-                        </div>
-
-
-                        <div class="liability-amount">
-
-                            KSh
-
-                            <%= Number(
-                                liability?.amount || 0
-                            ).toLocaleString("en-KE") %>
-
-                        </div>
-
-
-                    </article>
-
-
-                <% }) %>
-
-
-            </div>
-
-
-        <% } else { %>
-
-
-            <div class="empty-state">
-
-                <div class="empty-state-icon">
-
-                    <i class="bi bi-receipt"></i>
-
-                </div>
-
-
-                <div class="empty-state-title">
-
-                    No liabilities found
-
-                </div>
-
-
-                <div class="empty-state-text">
-
-                    There are no liability records for the
-                    selected financial period.
-
-                </div>
-
-            </div>
-
-
-        <% } %>
-
-
     </section>
 
 
 </div>
+
+
+<style>
+
+/* ==========================================================
+   PAGE
+   ========================================================== */
+
+.dairy-financial-page{
+
+    --financial-green:#2f7d4a;
+    --financial-green-dark:#236238;
+    --financial-green-light:#eaf6ee;
+    --financial-green-soft:#f4faf6;
+
+    --financial-red:#c0392b;
+    --financial-text:#243329;
+    --financial-muted:#718078;
+
+    padding:24px;
+
+    max-width:1400px;
+
+    margin:0 auto;
+
+}
+
+
+/* ==========================================================
+   HEADER
+   ========================================================== */
+
+.dairy-financial-page .financial-page-header{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:20px;
+
+    margin-bottom:20px;
+
+}
+
+
+.dairy-financial-page .financial-eyebrow{
+
+    display:block;
+
+    color:var(--financial-green);
+
+    font-size:.72rem;
+
+    font-weight:800;
+
+    letter-spacing:.12em;
+
+    margin-bottom:5px;
+
+}
+
+
+.dairy-financial-page .financial-title{
+
+    margin:0;
+
+    color:var(--financial-text);
+
+    font-size:clamp(1.5rem,4vw,2.2rem);
+
+}
+
+
+.dairy-financial-page .financial-subtitle{
+
+    margin:6px 0 0;
+
+    color:var(--financial-muted);
+
+    font-size:.85rem;
+
+}
+
+
+/* ==========================================================
+   BUTTONS
+   ========================================================== */
+
+.dairy-financial-page .financial-button{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:8px;
+
+    padding:11px 16px;
+
+    border:0;
+
+    border-radius:10px;
+
+    text-decoration:none;
+
+    font:inherit;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+}
+
+
+.dairy-financial-page
+.financial-button-primary{
+
+    background:var(--financial-green);
+
+    color:#fff;
+
+}
+
+
+.dairy-financial-page
+.financial-button-secondary{
+
+    background:var(--financial-green-light);
+
+    color:var(--financial-green-dark);
+
+}
+
+
+/* ==========================================================
+   CURRENT WORTH
+   ========================================================== */
+
+.financial-worth-card{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:20px;
+
+    margin-bottom:16px;
+
+    background:#fff;
+
+    border-radius:17px;
+
+    border-left:4px solid
+        var(--financial-green);
+
+    box-shadow:
+        0 3px 16px
+        rgba(0,0,0,.06);
+
+}
+
+
+.financial-worth-icon{
+
+    width:48px;
+
+    height:48px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:13px;
+
+    background:var(--financial-green-light);
+
+    color:var(--financial-green);
+
+    font-size:1.25rem;
+
+    flex-shrink:0;
+
+}
+
+
+.financial-worth-card span{
+
+    display:block;
+
+    color:var(--financial-muted);
+
+    font-size:.78rem;
+
+}
+
+
+.financial-worth-card strong{
+
+    display:block;
+
+    margin-top:2px;
+
+    color:var(--financial-green-dark);
+
+    font-size:1.35rem;
+
+}
+
+
+.financial-worth-card small{
+
+    display:block;
+
+    margin-top:3px;
+
+    color:var(--financial-muted);
+
+    font-size:.68rem;
+
+}
+
+
+/* ==========================================================
+   FILTER
+   ========================================================== */
+
+.dairy-financial-page .financial-filter-card{
+
+    padding:12px 15px;
+
+    margin-bottom:28px;
+
+    background:#fff;
+
+    border-radius:14px;
+
+    box-shadow:
+        0 2px 12px
+        rgba(0,0,0,.05);
+
+}
+
+
+.financial-filter-form{
+
+    display:flex;
+
+    align-items:flex-end;
+
+    gap:10px;
+
+}
+
+
+.financial-filter-group{
+
+    flex:1;
+
+}
+
+
+.financial-filter-group label{
+
+    display:block;
+
+    margin-bottom:5px;
+
+    color:var(--financial-muted);
+
+    font-size:.72rem;
+
+    font-weight:600;
+
+}
+
+
+.financial-filter-group input{
+
+    width:100%;
+
+    box-sizing:border-box;
+
+    padding:9px 10px;
+
+    border:1px solid #dce5df;
+
+    border-radius:9px;
+
+    outline:none;
+
+    background:#fff;
+
+    color:var(--financial-text);
+
+    font:inherit;
+
+}
+
+
+.financial-filter-group input:focus{
+
+    border-color:var(--financial-green);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(47,125,74,.1);
+
+}
+
+
+.financial-clear-filter{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:5px;
+
+    padding:9px 4px;
+
+    color:var(--financial-green);
+
+    text-decoration:none;
+
+    font-size:.8rem;
+
+    font-weight:600;
+
+}
+
+
+/* ==========================================================
+   SECTION
+   ========================================================== */
+
+.dairy-financial-page .financial-section{
+
+    margin-bottom:20px;
+
+}
+
+
+.dairy-financial-page
+.financial-section-header{
+
+    margin-bottom:12px;
+
+}
+
+
+.dairy-financial-page
+.financial-section-header h2{
+
+    margin:0;
+
+    color:var(--financial-text);
+
+    font-size:1.25rem;
+
+}
+
+
+.dairy-financial-page
+.financial-section-header p{
+
+    margin:4px 0 0;
+
+    color:var(--financial-muted);
+
+    font-size:.8rem;
+
+}
+
+
+/* ==========================================================
+   TABLE
+   ========================================================== */
+
+.financial-table-wrapper{
+
+    width:100%;
+
+    overflow-x:auto;
+
+    background:#fff;
+
+    border-radius:15px;
+
+    box-shadow:
+        0 3px 16px
+        rgba(0,0,0,.06);
+
+}
+
+
+.financial-table{
+
+    width:100%;
+
+    min-width:760px;
+
+    border-collapse:collapse;
+
+}
+
+
+.financial-table th,
+.financial-table td{
+
+    padding:14px 15px;
+
+    border-bottom:1px solid #edf1ee;
+
+    text-align:right;
+
+    white-space:nowrap;
+
+    color:var(--financial-text);
+
+    font-size:.82rem;
+
+}
+
+
+.financial-table th:first-child,
+.financial-table td:first-child{
+
+    text-align:left;
+
+}
+
+
+.financial-table thead th{
+
+    background:#f8faf9;
+
+    color:var(--financial-muted);
+
+    font-size:.7rem;
+
+    font-weight:800;
+
+    text-transform:uppercase;
+
+    letter-spacing:.05em;
+
+}
+
+
+.financial-table tbody tr:hover{
+
+    background:var(--financial-green-soft);
+
+}
+
+
+.financial-table-name{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:2px;
+
+    color:var(--financial-text);
+
+    text-decoration:none;
+
+}
+
+
+.financial-table-name:hover strong{
+
+    color:var(--financial-green);
+
+}
+
+
+.financial-table-name small{
+
+    color:var(--financial-muted);
+
+    font-size:.68rem;
+
+}
+
+
+.financial-table tfoot th,
+.financial-table tfoot td{
+
+    background:#f4faf6;
+
+    border-bottom:0;
+
+    color:var(--financial-green-dark);
+
+    font-weight:800;
+
+}
+
+
+.financial-table-empty{
+
+    height:140px;
+
+    text-align:center !important;
+
+}
+
+
+.financial-table-empty i{
+
+    display:block;
+
+    margin-bottom:7px;
+
+    color:var(--financial-green);
+
+    font-size:1.4rem;
+
+}
+
+
+.financial-table-empty strong{
+
+    display:block;
+
+}
+
+
+.financial-table-empty span{
+
+    display:block;
+
+    margin-top:3px;
+
+    color:var(--financial-muted);
+
+    font-size:.75rem;
+
+}
+
+
+/* ==========================================================
+   PROFIT COLORS
+   ========================================================== */
+
+.financial-positive{
+
+    color:var(--financial-green-dark) !important;
+
+}
+
+
+.financial-negative{
+
+    color:var(--financial-red) !important;
+
+}
+
+
+/* ==========================================================
+   FORMULA NOTE
+   ========================================================== */
+
+.financial-formula-note{
+
+    display:flex;
+
+    align-items:flex-start;
+
+    gap:10px;
+
+    padding:13px 15px;
+
+    border-radius:12px;
+
+    background:var(--financial-green-soft);
+
+    color:var(--financial-muted);
+
+}
+
+
+.financial-formula-note i{
+
+    color:var(--financial-green);
+
+    margin-top:2px;
+
+}
+
+
+.financial-formula-note strong{
+
+    display:block;
+
+    margin-bottom:2px;
+
+    color:var(--financial-text);
+
+    font-size:.78rem;
+
+}
+
+
+.financial-formula-note span{
+
+    font-size:.75rem;
+
+}
+
+
+/* ==========================================================
+   MOBILE
+   ========================================================== */
+
+@media(max-width:650px){
+
+    .dairy-financial-page{
+
+        padding:16px;
+
+    }
+
+
+    .dairy-financial-page
+    .financial-page-header{
+
+        align-items:flex-start;
+
+        flex-direction:column;
+
+    }
+
+
+    .dairy-financial-page
+    .financial-page-header
+    .financial-button{
+
+        width:100%;
+
+    }
+
+
+    .financial-filter-form{
+
+        flex-wrap:wrap;
+
+    }
+
+
+    .financial-filter-group{
+
+        min-width:calc(50% - 5px);
+
+    }
+
+
+    .financial-filter-form
+    .financial-button{
+
+        flex:1;
+
+    }
+
+
+    .financial-clear-filter{
+
+        width:100%;
+
+        padding-left:0;
+
+    }
+
+
+    .financial-worth-card{
+
+        padding:17px;
+
+    }
+
+}
+
+</style>
