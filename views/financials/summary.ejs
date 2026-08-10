@@ -1,0 +1,1713 @@
+<% /* ==========================================================
+   FINANCIAL SUMMARY PAGE
+   ==========================================================
+
+   EXPECTED BACKEND DATA
+
+   summary:
+
+       {
+           totalCurrentWorth,
+           totalLiabilities,
+           totalProfit
+       }
+
+   standalone:
+
+       {
+           currentWorth,
+           liabilities,
+           profit
+       }
+
+   farms:
+
+       [
+           {
+               farm,
+               currentWorth,
+               liabilities,
+               profit
+           }
+       ]
+
+   filters:
+
+       {
+           from,
+           to
+       }
+
+   lifetime:
+       true / false
+
+   IMPORTANT PROFIT RULE
+
+   Profit is only displayed when the Dairy's status is
+   "sold".
+
+   Otherwise profit is null.
+
+   Negative profit receives the CSS class:
+
+       financial-negative
+
+   ========================================================== */ %>
+
+
+<%
+    function formatMoney(value) {
+
+        if (
+            value === null ||
+            value === undefined ||
+            Number.isNaN(Number(value))
+        ) {
+
+            return "—";
+
+        }
+
+        return Number(value).toLocaleString(
+
+            "en-KE",
+
+            {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }
+
+        );
+
+    }
+
+
+    function profitClass(value) {
+
+        if (
+            value !== null &&
+            value !== undefined &&
+            Number(value) < 0
+        ) {
+
+            return "financial-negative";
+
+        }
+
+        return "financial-positive";
+
+    }
+
+
+    function profitText(value) {
+
+        if (
+            value === null ||
+            value === undefined
+        ) {
+
+            return "—";
+
+        }
+
+        return "KSh " + formatMoney(value);
+
+    }
+%>
+
+
+<div class="financial-page summary-page">
+
+
+    <!-- ======================================================
+         HEADER
+         ====================================================== -->
+
+    <div class="financial-page-header">
+
+        <div>
+
+            <span class="financial-eyebrow">
+
+                FINANCIALS
+
+            </span>
+
+            <h1 class="financial-title">
+
+                Financial Summary
+
+            </h1>
+
+            <p class="financial-subtitle">
+
+                Overview of current worth, liabilities,
+                and realized profit.
+
+            </p>
+
+        </div>
+
+
+        <div>
+
+            <a
+                href="/financial/liabilities/new"
+                class="financial-button financial-button-primary"
+            >
+
+                <i class="bi bi-plus-circle"></i>
+
+                Record Liability
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- ======================================================
+         DATE FILTER
+         ====================================================== -->
+
+    <section class="financial-filter-card">
+
+
+        <div class="financial-filter-header">
+
+            <div>
+
+                <h2>
+
+                    Analysis Period
+
+                </h2>
+
+                <p>
+
+                    Leave the dates empty for lifetime analysis.
+
+                </p>
+
+            </div>
+
+
+            <i class="bi bi-calendar3"></i>
+
+        </div>
+
+
+        <form
+            method="GET"
+            action="/financial/summary"
+            class="financial-filter-form"
+        >
+
+
+            <div class="financial-filter-group">
+
+                <label for="from">
+
+                    From
+
+                </label>
+
+                <input
+                    type="date"
+                    id="from"
+                    name="from"
+                    value="<%= filters?.from || '' %>"
+                >
+
+            </div>
+
+
+            <div class="financial-filter-group">
+
+                <label for="to">
+
+                    To
+
+                </label>
+
+                <input
+                    type="date"
+                    id="to"
+                    name="to"
+                    value="<%= filters?.to || '' %>"
+                >
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="financial-button financial-button-primary"
+            >
+
+                <i class="bi bi-funnel"></i>
+
+                Apply Filter
+
+            </button>
+
+
+            <% if (
+                filters?.from ||
+                filters?.to
+            ) { %>
+
+                <a
+                    href="/financial/summary"
+                    class="financial-clear-filter"
+                >
+
+                    Clear
+
+                </a>
+
+            <% } %>
+
+
+        </form>
+
+
+        <div class="financial-period">
+
+            <i class="bi bi-clock-history"></i>
+
+            <% if (
+                filters?.from ||
+                filters?.to
+            ) { %>
+
+                Filtered analysis
+
+                <% if (filters?.from) { %>
+
+                    from
+                    <strong>
+                        <%= filters.from %>
+                    </strong>
+
+                <% } %>
+
+                <% if (filters?.to) { %>
+
+                    to
+                    <strong>
+                        <%= filters.to %>
+                    </strong>
+
+                <% } %>
+
+            <% } else { %>
+
+                Lifetime analysis
+
+            <% } %>
+
+        </div>
+
+
+    </section>
+
+
+    <!-- ======================================================
+         TOP-LEVEL SUMMARY
+         ====================================================== -->
+
+    <section class="financial-summary-grid">
+
+
+        <!-- ==================================================
+             CURRENT WORTH
+             ================================================== -->
+
+        <article class="financial-summary-card">
+
+            <div class="financial-summary-icon">
+
+                <i class="bi bi-building"></i>
+
+            </div>
+
+            <div>
+
+                <span class="financial-summary-label">
+
+                    Total Current Worth
+
+                </span>
+
+                <strong class="financial-summary-value">
+
+                    KSh
+                    <%= formatMoney(
+                        summary?.totalCurrentWorth
+                    ) %>
+
+                </strong>
+
+            </div>
+
+        </article>
+
+
+        <!-- ==================================================
+             LIABILITIES
+             ================================================== -->
+
+        <article class="financial-summary-card">
+
+            <div class="financial-summary-icon">
+
+                <i class="bi bi-receipt"></i>
+
+            </div>
+
+            <div>
+
+                <span class="financial-summary-label">
+
+                    Total Liabilities
+
+                </span>
+
+                <strong class="financial-summary-value">
+
+                    KSh
+                    <%= formatMoney(
+                        summary?.totalLiabilities
+                    ) %>
+
+                </strong>
+
+            </div>
+
+        </article>
+
+
+        <!-- ==================================================
+             PROFIT
+             ================================================== -->
+
+        <article
+            class="financial-summary-card
+            <%= summary?.totalProfit !== null &&
+                summary?.totalProfit !== undefined &&
+                Number(summary.totalProfit) < 0
+                    ? 'financial-profit-negative'
+                    : ''
+            %>"
+        >
+
+            <div class="financial-summary-icon">
+
+                <i class="bi bi-graph-up-arrow"></i>
+
+            </div>
+
+            <div>
+
+                <span class="financial-summary-label">
+
+                    Total Profit
+
+                </span>
+
+                <strong
+                    class="
+                        financial-summary-value
+                        <%= profitClass(
+                            summary?.totalProfit
+                        ) %>
+                    "
+                >
+
+                    <%= profitText(
+                        summary?.totalProfit
+                    ) %>
+
+                </strong>
+
+            </div>
+
+        </article>
+
+
+    </section>
+
+
+    <!-- ======================================================
+         CATEGORY SUMMARY
+         ====================================================== -->
+
+    <section class="financial-section">
+
+
+        <div class="financial-section-header">
+
+            <span class="financial-eyebrow">
+
+                BREAKDOWN
+
+            </span>
+
+            <h2>
+
+                Assets & Dairy Farms
+
+            </h2>
+
+            <p>
+
+                Financial position grouped by asset category.
+
+            </p>
+
+        </div>
+
+
+        <div class="financial-category-grid">
+
+
+            <!-- ==================================================
+                 STANDALONE
+                 ================================================== -->
+
+            <article class="financial-category-card">
+
+
+                <div class="financial-category-header">
+
+                    <div>
+
+                        <span class="financial-category-label">
+
+                            STANDALONE ASSETS
+
+                        </span>
+
+                        <h3>
+
+                            Standalone Assets
+
+                        </h3>
+
+                    </div>
+
+                    <i class="bi bi-box"></i>
+
+                </div>
+
+
+                <div class="financial-metric-list">
+
+
+                    <div class="financial-metric">
+
+                        <span>
+
+                            Current Worth
+
+                        </span>
+
+                        <strong>
+
+                            KSh
+                            <%= formatMoney(
+                                standalone?.currentWorth
+                            ) %>
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="financial-metric">
+
+                        <span>
+
+                            Total Liabilities
+
+                        </span>
+
+                        <strong class="financial-liability-text">
+
+                            KSh
+                            <%= formatMoney(
+                                standalone?.liabilities
+                            ) %>
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="financial-metric">
+
+                        <span>
+
+                            Total Profit
+
+                        </span>
+
+                        <strong
+                            class="<%= profitClass(
+                                standalone?.profit
+                            ) %>"
+                        >
+
+                            <%= profitText(
+                                standalone?.profit
+                            ) %>
+
+                        </strong>
+
+                    </div>
+
+
+                </div>
+
+
+            </article>
+
+
+            <!-- ==================================================
+                 DAIRY FARMS
+                 ================================================== -->
+
+            <article class="financial-category-card">
+
+
+                <div class="financial-category-header">
+
+                    <div>
+
+                        <span class="financial-category-label">
+
+                            FARMS
+
+                        </span>
+
+                        <h3>
+
+                            Dairy Farms
+
+                        </h3>
+
+                    </div>
+
+                    <i class="bi bi-diagram-3"></i>
+
+                </div>
+
+
+                <div class="financial-metric-list">
+
+
+                    <div class="financial-metric">
+
+                        <span>
+
+                            Current Worth
+
+                        </span>
+
+                        <strong>
+
+                            KSh
+                            <%= formatMoney(
+                                summary?.farmCurrentWorth
+                            ) %>
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="financial-metric">
+
+                        <span>
+
+                            Total Liabilities
+
+                        </span>
+
+                        <strong class="financial-liability-text">
+
+                            KSh
+                            <%= formatMoney(
+                                summary?.farmLiabilities
+                            ) %>
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="financial-metric">
+
+                        <span>
+
+                            Total Profit
+
+                        </span>
+
+                        <strong
+                            class="<%= profitClass(
+                                summary?.farmProfit
+                            ) %>"
+                        >
+
+                            <%= profitText(
+                                summary?.farmProfit
+                            ) %>
+
+                        </strong>
+
+                    </div>
+
+
+                </div>
+
+
+            </article>
+
+
+        </div>
+
+    </section>
+
+
+    <!-- ======================================================
+         INDIVIDUAL FARM ANALYTICS
+         ====================================================== -->
+
+    <section class="financial-section">
+
+
+        <div class="financial-section-header">
+
+            <span class="financial-eyebrow">
+
+                FARM ANALYTICS
+
+            </span>
+
+            <h2>
+
+                Dairy Farm Financials
+
+            </h2>
+
+            <p>
+
+                Each farm includes its own financial records
+                and the financial records of its assets.
+
+            </p>
+
+        </div>
+
+
+        <% if (
+            Array.isArray(farms) &&
+            farms.length
+        ) { %>
+
+
+            <div class="financial-farm-summary-grid">
+
+
+                <% farms.forEach(
+                    function(item)
+                { %>
+
+
+                    <article class="financial-farm-summary-card">
+
+
+                        <div class="financial-farm-summary-header">
+
+                            <div>
+
+                                <span>
+
+                                    Farm Code:
+                                    <%= item.farm.code %>
+
+                                </span>
+
+                                <h3>
+
+                                    <%= item.farm.name %>
+
+                                </h3>
+
+                            </div>
+
+
+                            <i class="bi bi-building"></i>
+
+                        </div>
+
+
+                        <div class="financial-farm-metrics">
+
+
+                            <!-- ==================================
+                                 CURRENT WORTH
+                                 ================================== -->
+
+                            <div>
+
+                                <span>
+
+                                    Current Worth
+
+                                </span>
+
+                                <strong>
+
+                                    KSh
+                                    <%= formatMoney(
+                                        item.currentWorth
+                                    ) %>
+
+                                </strong>
+
+                            </div>
+
+
+                            <!-- ==================================
+                                 LIABILITIES
+                                 ================================== -->
+
+                            <div>
+
+                                <span>
+
+                                    Liabilities
+
+                                </span>
+
+                                <strong class="financial-liability-text">
+
+                                    KSh
+                                    <%= formatMoney(
+                                        item.liabilities
+                                    ) %>
+
+                                </strong>
+
+                            </div>
+
+
+                            <!-- ==================================
+                                 PROFIT
+                                 ================================== -->
+
+                            <div>
+
+                                <span>
+
+                                    Profit
+
+                                </span>
+
+                                <strong
+                                    class="<%= profitClass(
+                                        item.profit
+                                    ) %>"
+                                >
+
+                                    <%= profitText(
+                                        item.profit
+                                    ) %>
+
+                                </strong>
+
+                            </div>
+
+
+                        </div>
+
+
+                        <div class="financial-farm-note">
+
+                            <i class="bi bi-info-circle"></i>
+
+                            Includes the farm's own financial
+                            records and those of its assets.
+
+                        </div>
+
+
+                    </article>
+
+
+                <% }); %>
+
+
+            </div>
+
+
+        <% } else { %>
+
+
+            <div class="financial-empty">
+
+                <i class="bi bi-building"></i>
+
+                <strong>
+
+                    No dairy farms found
+
+                </strong>
+
+                <span>
+
+                    There are currently no dairy farms
+                    available for financial analysis.
+
+                </span>
+
+            </div>
+
+
+        <% } %>
+
+
+    </section>
+
+
+</div>
+
+
+<style>
+
+    .financial-page{
+
+        --financial-green:#2f7d4a;
+        --financial-green-dark:#236238;
+        --financial-green-light:#eaf6ee;
+        --financial-green-soft:#f4faf6;
+
+        --financial-red:#c0392b;
+        --financial-red-light:#fceceb;
+
+        --financial-text:#243329;
+        --financial-muted:#718078;
+
+        padding:24px;
+
+        max-width:1400px;
+
+        margin:0 auto;
+
+    }
+
+
+    .financial-page-header{
+
+        display:flex;
+
+        justify-content:space-between;
+
+        align-items:center;
+
+        gap:20px;
+
+        margin-bottom:25px;
+
+    }
+
+
+    .financial-eyebrow{
+
+        display:block;
+
+        color:var(--financial-green);
+
+        font-size:.72rem;
+
+        font-weight:800;
+
+        letter-spacing:.12em;
+
+        margin-bottom:5px;
+
+    }
+
+
+    .financial-title{
+
+        margin:0;
+
+        color:var(--financial-text);
+
+        font-size:clamp(1.6rem,4vw,2.2rem);
+
+    }
+
+
+    .financial-subtitle{
+
+        margin:7px 0 0;
+
+        color:var(--financial-muted);
+
+    }
+
+
+    .financial-button{
+
+        display:inline-flex;
+
+        align-items:center;
+
+        justify-content:center;
+
+        gap:8px;
+
+        padding:11px 16px;
+
+        border:0;
+
+        border-radius:10px;
+
+        text-decoration:none;
+
+        font:inherit;
+
+        font-weight:600;
+
+        cursor:pointer;
+
+    }
+
+
+    .financial-button-primary{
+
+        background:var(--financial-green);
+
+        color:#fff;
+
+    }
+
+
+    .financial-filter-card{
+
+        background:#fff;
+
+        padding:20px;
+
+        border-radius:17px;
+
+        box-shadow:0 3px 16px rgba(0,0,0,.06);
+
+        margin-bottom:28px;
+
+    }
+
+
+    .financial-filter-header{
+
+        display:flex;
+
+        justify-content:space-between;
+
+        align-items:flex-start;
+
+        gap:15px;
+
+        margin-bottom:18px;
+
+    }
+
+
+    .financial-filter-header h2{
+
+        margin:0;
+
+        font-size:1.05rem;
+
+        color:var(--financial-text);
+
+    }
+
+
+    .financial-filter-header p{
+
+        margin:4px 0 0;
+
+        color:var(--financial-muted);
+
+        font-size:.82rem;
+
+    }
+
+
+    .financial-filter-header > i{
+
+        color:var(--financial-green);
+
+        font-size:1.2rem;
+
+    }
+
+
+    .financial-filter-form{
+
+        display:flex;
+
+        align-items:flex-end;
+
+        gap:12px;
+
+        flex-wrap:wrap;
+
+    }
+
+
+    .financial-filter-group{
+
+        min-width:190px;
+
+        flex:1;
+
+    }
+
+
+    .financial-filter-group label{
+
+        display:block;
+
+        margin-bottom:6px;
+
+        color:var(--financial-text);
+
+        font-size:.8rem;
+
+        font-weight:600;
+
+    }
+
+
+    .financial-filter-group input{
+
+        width:100%;
+
+        box-sizing:border-box;
+
+        padding:11px 12px;
+
+        border:1px solid #dce5df;
+
+        border-radius:10px;
+
+        outline:none;
+
+        font:inherit;
+
+    }
+
+
+    .financial-filter-group input:focus{
+
+        border-color:var(--financial-green);
+
+        box-shadow:0 0 0 3px rgba(47,125,74,.1);
+
+    }
+
+
+    .financial-clear-filter{
+
+        color:var(--financial-green);
+
+        text-decoration:none;
+
+        padding:11px 5px;
+
+        font-weight:600;
+
+        font-size:.85rem;
+
+    }
+
+
+    .financial-period{
+
+        display:flex;
+
+        align-items:center;
+
+        gap:7px;
+
+        margin-top:15px;
+
+        padding-top:13px;
+
+        border-top:1px solid #edf1ee;
+
+        color:var(--financial-muted);
+
+        font-size:.8rem;
+
+    }
+
+
+    .financial-period i{
+
+        color:var(--financial-green);
+
+    }
+
+
+    .financial-summary-grid{
+
+        display:grid;
+
+        grid-template-columns:
+            repeat(3,minmax(0,1fr));
+
+        gap:16px;
+
+        margin-bottom:36px;
+
+    }
+
+
+    .financial-summary-card{
+
+        display:flex;
+
+        align-items:center;
+
+        gap:15px;
+
+        padding:20px;
+
+        background:#fff;
+
+        border-radius:17px;
+
+        box-shadow:0 3px 16px rgba(0,0,0,.06);
+
+        border-left:4px solid var(--financial-green);
+
+    }
+
+
+    .financial-summary-icon{
+
+        width:46px;
+
+        height:46px;
+
+        display:flex;
+
+        align-items:center;
+
+        justify-content:center;
+
+        border-radius:13px;
+
+        background:var(--financial-green-light);
+
+        color:var(--financial-green);
+
+        font-size:1.2rem;
+
+        flex-shrink:0;
+
+    }
+
+
+    .financial-summary-label{
+
+        display:block;
+
+        color:var(--financial-muted);
+
+        font-size:.78rem;
+
+        margin-bottom:4px;
+
+    }
+
+
+    .financial-summary-value{
+
+        display:block;
+
+        color:var(--financial-green-dark);
+
+        font-size:1.25rem;
+
+    }
+
+
+    .financial-profit-negative{
+
+        border-left-color:var(--financial-red);
+
+        background:var(--financial-red-light);
+
+    }
+
+
+    .financial-section{
+
+        margin-bottom:38px;
+
+    }
+
+
+    .financial-section-header{
+
+        margin-bottom:16px;
+
+    }
+
+
+    .financial-section-header h2{
+
+        margin:0;
+
+        color:var(--financial-text);
+
+        font-size:1.35rem;
+
+    }
+
+
+    .financial-section-header p{
+
+        margin:5px 0 0;
+
+        color:var(--financial-muted);
+
+        font-size:.87rem;
+
+    }
+
+
+    .financial-category-grid{
+
+        display:grid;
+
+        grid-template-columns:
+            repeat(2,minmax(0,1fr));
+
+        gap:18px;
+
+    }
+
+
+    .financial-category-card{
+
+        background:#fff;
+
+        border-radius:17px;
+
+        padding:20px;
+
+        box-shadow:0 3px 16px rgba(0,0,0,.06);
+
+    }
+
+
+    .financial-category-header{
+
+        display:flex;
+
+        align-items:center;
+
+        justify-content:space-between;
+
+        padding-bottom:15px;
+
+        border-bottom:1px solid #edf1ee;
+
+    }
+
+
+    .financial-category-label{
+
+        display:block;
+
+        color:var(--financial-green);
+
+        font-size:.68rem;
+
+        font-weight:800;
+
+        letter-spacing:.08em;
+
+    }
+
+
+    .financial-category-header h3{
+
+        margin:4px 0 0;
+
+        color:var(--financial-text);
+
+        font-size:1.05rem;
+
+    }
+
+
+    .financial-category-header > i{
+
+        color:var(--financial-green);
+
+        font-size:1.25rem;
+
+    }
+
+
+    .financial-metric-list{
+
+        display:flex;
+
+        flex-direction:column;
+
+    }
+
+
+    .financial-metric{
+
+        display:flex;
+
+        justify-content:space-between;
+
+        align-items:center;
+
+        gap:15px;
+
+        padding:13px 0;
+
+        border-bottom:1px solid #f0f3f1;
+
+    }
+
+
+    .financial-metric:last-child{
+
+        border-bottom:0;
+
+        padding-bottom:0;
+
+    }
+
+
+    .financial-metric span{
+
+        color:var(--financial-muted);
+
+        font-size:.85rem;
+
+    }
+
+
+    .financial-metric strong{
+
+        color:var(--financial-text);
+
+        text-align:right;
+
+    }
+
+
+    .financial-liability-text{
+
+        color:var(--financial-green-dark) !important;
+
+    }
+
+
+    .financial-positive{
+
+        color:var(--financial-green-dark) !important;
+
+    }
+
+
+    .financial-negative{
+
+        color:var(--financial-red) !important;
+
+    }
+
+
+    .financial-farm-summary-grid{
+
+        display:grid;
+
+        grid-template-columns:
+            repeat(2,minmax(0,1fr));
+
+        gap:18px;
+
+    }
+
+
+    .financial-farm-summary-card{
+
+        background:#fff;
+
+        border-radius:17px;
+
+        padding:20px;
+
+        box-shadow:0 3px 16px rgba(0,0,0,.06);
+
+    }
+
+
+    .financial-farm-summary-header{
+
+        display:flex;
+
+        justify-content:space-between;
+
+        align-items:flex-start;
+
+        gap:15px;
+
+        padding-bottom:15px;
+
+        border-bottom:1px solid #edf1ee;
+
+    }
+
+
+    .financial-farm-summary-header span{
+
+        color:var(--financial-muted);
+
+        font-size:.72rem;
+
+    }
+
+
+    .financial-farm-summary-header h3{
+
+        margin:4px 0 0;
+
+        color:var(--financial-text);
+
+        font-size:1.1rem;
+
+    }
+
+
+    .financial-farm-summary-header > i{
+
+        color:var(--financial-green);
+
+        font-size:1.25rem;
+
+    }
+
+
+    .financial-farm-metrics{
+
+        display:grid;
+
+        grid-template-columns:
+            repeat(3,minmax(0,1fr));
+
+        gap:12px;
+
+        padding:18px 0;
+
+    }
+
+
+    .financial-farm-metrics span{
+
+        display:block;
+
+        color:var(--financial-muted);
+
+        font-size:.73rem;
+
+        margin-bottom:5px;
+
+    }
+
+
+    .financial-farm-metrics strong{
+
+        display:block;
+
+        color:var(--financial-text);
+
+        font-size:.92rem;
+
+    }
+
+
+    .financial-farm-note{
+
+        display:flex;
+
+        gap:7px;
+
+        align-items:flex-start;
+
+        padding:10px;
+
+        border-radius:9px;
+
+        background:var(--financial-green-soft);
+
+        color:var(--financial-muted);
+
+        font-size:.73rem;
+
+        line-height:1.4;
+
+    }
+
+
+    .financial-farm-note i{
+
+        color:var(--financial-green);
+
+    }
+
+
+    .financial-empty{
+
+        display:flex;
+
+        flex-direction:column;
+
+        align-items:center;
+
+        justify-content:center;
+
+        gap:6px;
+
+        min-height:150px;
+
+        padding:25px;
+
+        background:#fff;
+
+        border-radius:16px;
+
+        color:var(--financial-muted);
+
+        text-align:center;
+
+    }
+
+
+    .financial-empty i{
+
+        color:var(--financial-green);
+
+        font-size:1.5rem;
+
+    }
+
+
+    .financial-empty strong{
+
+        color:var(--financial-text);
+
+    }
+
+
+    @media(max-width:900px){
+
+        .financial-summary-grid{
+
+            grid-template-columns:1fr;
+
+        }
+
+
+        .financial-category-grid,
+        .financial-farm-summary-grid{
+
+            grid-template-columns:1fr;
+
+        }
+
+    }
+
+
+    @media(max-width:650px){
+
+        .financial-page{
+
+            padding:16px;
+
+        }
+
+
+        .financial-page-header{
+
+            align-items:flex-start;
+
+            flex-direction:column;
+
+        }
+
+
+        .financial-page-header > div:last-child{
+
+            width:100%;
+
+        }
+
+
+        .financial-page-header .financial-button{
+
+            width:100%;
+
+        }
+
+
+        .financial-filter-form{
+
+            flex-direction:column;
+
+            align-items:stretch;
+
+        }
+
+
+        .financial-filter-group{
+
+            min-width:0;
+
+        }
+
+
+        .financial-filter-form .financial-button{
+
+            width:100%;
+
+        }
+
+
+        .financial-farm-metrics{
+
+            grid-template-columns:1fr;
+
+        }
+
+    }
+
+</style>
