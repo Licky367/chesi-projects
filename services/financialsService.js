@@ -13,18 +13,12 @@ const Financials =
 // DATE HELPERS
 // ==========================================================
 //
-// Date filtering applies ONLY to:
-//
-//     - liabilities
-//     - profit/loss
-//
-// Current worth, sales amount and revenue are current
-// values supplied by the Dairy records.
+// Date filtering applies to liability records.
 //
 // Supported:
 //
 //     no dates
-//         -> lifetime
+//         -> all liability records
 //
 //     start only
 //         -> from start date onward
@@ -150,7 +144,8 @@ function isSold(
             dairy?.status || ""
         )
         .trim()
-        .toLowerCase() === "sold"
+        .toLowerCase() ===
+        "sold"
 
     );
 
@@ -294,7 +289,8 @@ async function getLiabilities(
             "buyingPrice",
             "currentWorth",
             "sellingPrice",
-            "revenue"
+            "revenue",
+            "description"
         ].join(" ")
     )
 
@@ -361,7 +357,8 @@ async function getAllLiabilities(
             "buyingPrice",
             "currentWorth",
             "sellingPrice",
-            "revenue"
+            "revenue",
+            "description"
         ].join(" ")
     )
 
@@ -492,7 +489,20 @@ async function recordLiability({
 // GET ALL DAIRIES
 // ==========================================================
 //
-// "disposed" records are excluded from financial analysis.
+// Disposed records are excluded.
+//
+// A farm is:
+//
+//     code < 0
+//
+// A farm asset is:
+//
+//     assetCode exists
+//
+// A standalone asset is:
+//
+//     no code
+//     no assetCode
 // ==========================================================
 
 async function getAllDairies() {
@@ -542,29 +552,37 @@ async function getAllDairies() {
 // IDENTIFY FARM
 // ==========================================================
 //
-// A farm is a Dairy record with a negative code.
-//
-// Example:
-//
-//     code: -101
+// A dairy farm is a Dairy record with a NEGATIVE code.
 // ==========================================================
 
 function isFarm(
     dairy
 ) {
 
+    if (
+        !dairy
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        dairy.code === null ||
+        dairy.code === undefined ||
+        dairy.code === ""
+    ) {
+
+        return false;
+
+    }
+
+
     return (
-
-        dairy?.code !== null &&
-
-        dairy?.code !== undefined &&
-
-        dairy?.code !== "" &&
-
         Number(
             dairy.code
         ) < 0
-
     );
 
 }
@@ -574,51 +592,48 @@ function isFarm(
 // IDENTIFY STANDALONE ASSET
 // ==========================================================
 //
-// A standalone asset is a Dairy record that:
+// A standalone asset:
 //
-//     has NO code
+//     has no farm code
+//     has no assetCode
 //
-// AND:
-//
-//     has NO assetCode
-//
-// This is intentionally different from a farm asset.
-//
-// A farm asset has an assetCode that identifies its farm.
+// It therefore does not belong to a farm.
 // ==========================================================
 
 function isStandaloneAsset(
     dairy
 ) {
 
+    if (
+        !dairy
+    ) {
+
+        return false;
+
+    }
+
+
     const noCode = (
 
-        dairy?.code === null ||
-
-        dairy?.code === undefined ||
-
-        dairy?.code === ""
+        dairy.code === null ||
+        dairy.code === undefined ||
+        dairy.code === ""
 
     );
 
 
     const noAssetCode = (
 
-        dairy?.assetCode === null ||
-
-        dairy?.assetCode === undefined ||
-
-        dairy?.assetCode === ""
+        dairy.assetCode === null ||
+        dairy.assetCode === undefined ||
+        dairy.assetCode === ""
 
     );
 
 
     return (
-
         noCode &&
-
         noAssetCode
-
     );
 
 }
@@ -628,31 +643,31 @@ function isStandaloneAsset(
 // IDENTIFY FARM ASSET
 // ==========================================================
 //
-// A farm asset has an assetCode.
+// An asset belongs to a farm when assetCode exists.
 //
-// The assetCode is matched against the farm's negative
-// code.
-//
-// Example:
-//
-//     Farm:
-//         code = -101
-//
-//     Asset:
-//         assetCode = -101
+// The value of assetCode identifies the farm code.
 // ==========================================================
 
 function isFarmAsset(
     dairy
 ) {
 
+    if (
+        !dairy
+    ) {
+
+        return false;
+
+    }
+
+
     return (
 
-        dairy?.assetCode !== null &&
+        dairy.assetCode !== null &&
 
-        dairy?.assetCode !== undefined &&
+        dairy.assetCode !== undefined &&
 
-        dairy?.assetCode !== ""
+        dairy.assetCode !== ""
 
     );
 
@@ -661,21 +676,6 @@ function isFarmAsset(
 
 // ==========================================================
 // GET FINANCIAL STRUCTURE
-// ==========================================================
-//
-// Returns:
-//
-//     farms[]
-//
-//         farm
-//         assets[]
-//
-//     standaloneAssets[]
-//
-// Standalone assets are records with:
-//
-//     no code
-//     no assetCode
 // ==========================================================
 
 async function getFinancialStructure() {
@@ -698,7 +698,6 @@ async function getFinancialStructure() {
 
     const farmAssets =
         farms.map(
-
             farm => ({
 
                 ...farm,
@@ -722,7 +721,6 @@ async function getFinancialStructure() {
                     )
 
             })
-
         );
 
 
@@ -739,30 +737,20 @@ async function getFinancialStructure() {
 
 
 // ==========================================================
-// CALCULATE INDIVIDUAL PROFIT / LOSS
+// CALCULATE PROFIT / LOSS
 // ==========================================================
 //
-// FINANCIAL RULE:
-//
-// SOLD
+// SOLD:
 //
 //     sellingPrice
 //     - buyingPrice
 //     - liabilities
 //     + revenue
 //
-// NOT SOLD
+// NOT SOLD:
 //
 //     - liabilities
 //     + revenue
-//
-// Therefore:
-//
-// SOLD:
-//     profit = selling - buying - liabilities + revenue
-//
-// UNSOLD:
-//     profit = -liabilities + revenue
 // ==========================================================
 
 function calculateProfit(
@@ -837,11 +825,6 @@ function calculateProfit(
 // ==========================================================
 // GET SALES AMOUNT
 // ==========================================================
-//
-// Sales amount represents the selling price.
-//
-// Only sold records contribute to sales.
-// ==========================================================
 
 function getSalesAmount(
     dairy
@@ -866,35 +849,31 @@ function getSalesAmount(
 
 
 // ==========================================================
-// BUILD FINANCIAL RECORD
+// BUILD FINANCIAL DATA
 // ==========================================================
 //
-// This helper keeps the financial representation consistent
-// across:
+// This helper creates the financial object used by:
 //
-//     - individual dairy records
-//     - farm assets
-//
-// currentWorth remains the CURRENT WORTH stored on the Dairy
-// record.
-//
-// liabilities are reported separately.
+//     farms
+//     farm assets
+//     standalone assets
 // ==========================================================
 
-function buildFinancialRecord(
+async function buildFinancialData(
     dairy,
-    liabilities
+    startDate,
+    endDate
 ) {
 
-    const currentWorth =
-        number(
-            dairy?.currentWorth
-        );
+    const liabilities =
+        await getLiabilityTotal(
 
+            dairy._id,
 
-    const totalLiabilities =
-        number(
-            liabilities
+            startDate,
+
+            endDate
+
         );
 
 
@@ -906,14 +885,23 @@ function buildFinancialRecord(
 
     const revenue =
         number(
-            dairy?.revenue
+            dairy.revenue
         );
 
 
     const profit =
         calculateProfit(
+
             dairy,
-            totalLiabilities
+
+            liabilities
+
+        );
+
+
+    const currentWorth =
+        number(
+            dairy.currentWorth
         );
 
 
@@ -927,7 +915,8 @@ function buildFinancialRecord(
 
         revenue,
 
-        totalLiabilities,
+        totalLiabilities:
+            liabilities,
 
         profit
 
@@ -937,7 +926,7 @@ function buildFinancialRecord(
 
 
 // ==========================================================
-// GET INDIVIDUAL DAIRY FINANCIAL RECORD
+// GET INDIVIDUAL DAIRY FINANCIAL
 // ==========================================================
 
 async function getDairyFinancial(
@@ -978,17 +967,108 @@ async function getDairyFinancial(
     }
 
 
-    const liabilities =
-        await getLiabilityTotal(
-            dairyId,
-            startDate,
-            endDate
+    return buildFinancialData(
+
+        dairy,
+
+        startDate,
+
+        endDate
+
+    );
+
+}
+
+
+// ==========================================================
+// GET STANDALONE FINANCIAL
+// ==========================================================
+//
+// THIS METHOD IS REQUIRED BY standalone.ejs.
+//
+// A standalone asset:
+//
+//     code     -> null / undefined / empty
+//     assetCode -> null / undefined / empty
+//
+// The method deliberately verifies that the requested
+// record is actually standalone.
+//
+// This prevents a farm or farm-owned asset from being
+// opened through the standalone page.
+// ==========================================================
+
+async function getStandaloneFinancial(
+    dairyId,
+    startDate,
+    endDate
+) {
+
+    const dairy =
+        await Dairy.findById(
+            dairyId
+        )
+
+        .select(
+            [
+                "name",
+                "code",
+                "assetCode",
+                "type",
+                "status",
+                "buyingPrice",
+                "currentWorth",
+                "sellingPrice",
+                "revenue",
+                "description"
+            ].join(" ")
+        )
+
+        .lean();
+
+
+    // ======================================================
+    // RECORD NOT FOUND
+    // ======================================================
+
+    if (!dairy) {
+
+        throw new Error(
+            "Standalone asset not found."
         );
 
+    }
 
-    return buildFinancialRecord(
+
+    // ======================================================
+    // VERIFY STANDALONE ASSET
+    // ======================================================
+
+    if (
+        !isStandaloneAsset(
+            dairy
+        )
+    ) {
+
+        throw new Error(
+            "Standalone asset not found."
+        );
+
+    }
+
+
+    // ======================================================
+    // BUILD FINANCIAL DATA
+    // ======================================================
+
+    return buildFinancialData(
+
         dairy,
-        liabilities
+
+        startDate,
+
+        endDate
+
     );
 
 }
@@ -998,41 +1078,10 @@ async function getDairyFinancial(
 // GET FARM FINANCIAL TOTALS
 // ==========================================================
 //
-// The FARM RECORD itself is financially meaningful.
+// Includes:
 //
-// Therefore:
-//
-//     farm currentWorth
-//     farm liabilities
-//     farm salesAmount
-//     farm revenue
-//     farm profit
-//
-// are included.
-//
-// Farm assets are also included.
-//
-// Thus:
-//
-//     totalCurrentWorth
-//         = farm currentWorth
-//         + all asset currentWorth
-//
-//     totalLiabilities
-//         = farm own liabilities
-//         + all asset liabilities
-//
-//     totalSalesAmount
-//         = farm sales
-//         + all asset sales
-//
-//     totalRevenue
-//         = farm revenue
-//         + all asset revenue
-//
-//     totalProfit
-//         = farm profit
-//         + all asset profit
+//     farm itself
+//     + all assets belonging to that farm
 // ==========================================================
 
 async function getFarmFinancialTotals(
@@ -1041,10 +1090,6 @@ async function getFarmFinancialTotals(
     startDate,
     endDate
 ) {
-
-    // ======================================================
-    // FIND ASSETS BELONGING TO THIS FARM
-    // ======================================================
 
     const assets =
         allDairies.filter(
@@ -1066,251 +1111,116 @@ async function getFarmFinancialTotals(
 
 
     // ======================================================
-    // FARM'S OWN LIABILITY
+    // FARM FINANCIALS
     // ======================================================
 
-    const farmLiabilities =
-        await getLiabilityTotal(
-            farm._id,
-            startDate,
-            endDate
-        );
+    const farmFinancial =
+        await buildFinancialData(
 
-
-    // ======================================================
-    // FARM'S OWN PROFIT
-    // ======================================================
-
-    const farmProfit =
-        calculateProfit(
             farm,
-            farmLiabilities
+
+            startDate,
+
+            endDate
+
         );
 
 
     // ======================================================
-    // FARM'S OWN SALES
-    // ======================================================
-
-    const farmSalesAmount =
-        getSalesAmount(
-            farm
-        );
-
-
-    // ======================================================
-    // FARM'S OWN REVENUE
-    // ======================================================
-
-    const farmRevenue =
-        number(
-            farm.revenue
-        );
-
-
-    // ======================================================
-    // START TOTALS
+    // START TOTALS WITH FARM
     // ======================================================
 
     let totalCurrentWorth =
-        number(
-            farm.currentWorth
-        );
+        farmFinancial.currentWorth;
 
 
     let totalLiabilities =
-        farmLiabilities;
+        farmFinancial.totalLiabilities;
 
 
     let totalSalesAmount =
-        farmSalesAmount;
+        farmFinancial.salesAmount;
 
 
     let totalRevenue =
-        farmRevenue;
+        farmFinancial.revenue;
 
 
     let totalProfit =
-        farmProfit;
+        farmFinancial.profit;
 
-
-    // ======================================================
-    // FARM ASSET FINANCIALS
-    // ======================================================
 
     const assetFinancials =
         [];
 
 
+    // ======================================================
+    // PROCESS FARM ASSETS
+    // ======================================================
+
     for (
         const asset of assets
     ) {
 
-        // --------------------------------------------------
-        // ASSET LIABILITY
-        // --------------------------------------------------
+        const financial =
+            await buildFinancialData(
 
-        const liabilities =
-            await getLiabilityTotal(
-                asset._id,
-                startDate,
-                endDate
-            );
-
-
-        // --------------------------------------------------
-        // ASSET PROFIT
-        // --------------------------------------------------
-
-        const profit =
-            calculateProfit(
                 asset,
-                liabilities
+
+                startDate,
+
+                endDate
+
             );
 
-
-        // --------------------------------------------------
-        // ASSET SALES
-        // --------------------------------------------------
-
-        const salesAmount =
-            getSalesAmount(
-                asset
-            );
-
-
-        // --------------------------------------------------
-        // ASSET REVENUE
-        // --------------------------------------------------
-
-        const revenue =
-            number(
-                asset.revenue
-            );
-
-
-        // --------------------------------------------------
-        // ASSET CURRENT WORTH
-        // --------------------------------------------------
-
-        const currentWorth =
-            number(
-                asset.currentWorth
-            );
-
-
-        // --------------------------------------------------
-        // ADD ASSET CURRENT WORTH
-        // --------------------------------------------------
 
         totalCurrentWorth +=
-            currentWorth;
+            financial.currentWorth;
 
-
-        // --------------------------------------------------
-        // ADD ASSET LIABILITIES
-        // --------------------------------------------------
 
         totalLiabilities +=
-            liabilities;
+            financial.totalLiabilities;
 
-
-        // --------------------------------------------------
-        // ADD ASSET SALES
-        // --------------------------------------------------
 
         totalSalesAmount +=
-            salesAmount;
+            financial.salesAmount;
 
-
-        // --------------------------------------------------
-        // ADD ASSET REVENUE
-        // --------------------------------------------------
 
         totalRevenue +=
-            revenue;
+            financial.revenue;
 
-
-        // --------------------------------------------------
-        // ADD ASSET PROFIT
-        // --------------------------------------------------
 
         totalProfit +=
-            profit;
+            financial.profit;
 
 
-        // --------------------------------------------------
-        // STORE ASSET FINANCIAL DATA
-        // --------------------------------------------------
-
-        assetFinancials.push({
-
-            ...asset,
-
-            currentWorth,
-
-            salesAmount,
-
-            revenue,
-
-            totalLiabilities:
-                liabilities,
-
-            profit
-
-        });
+        assetFinancials.push(
+            financial
+        );
 
     }
 
 
     // ======================================================
-    // RETURN FARM FINANCIALS
+    // RETURN
     // ======================================================
 
     return {
 
-        farm: {
+        farm:
+            farmFinancial,
 
-            ...farm,
+        farmLiabilities:
+            farmFinancial.totalLiabilities,
 
-            currentWorth:
-                number(
-                    farm.currentWorth
-                ),
+        farmSalesAmount:
+            farmFinancial.salesAmount,
 
-            salesAmount:
-                farmSalesAmount,
+        farmRevenue:
+            farmFinancial.revenue,
 
-            revenue:
-                farmRevenue,
-
-            totalLiabilities:
-                farmLiabilities,
-
-            profit:
-                farmProfit
-
-        },
-
-
-        // --------------------------------------------------
-        // FARM'S OWN VALUES
-        // --------------------------------------------------
-
-        farmLiabilities,
-
-        farmSalesAmount,
-
-        farmRevenue,
-
-        farmProfit,
-
-
-        // --------------------------------------------------
-        // COMPLETE FARM TOTALS
-        //
-        // Farm + its assets.
-        // --------------------------------------------------
+        farmProfit:
+            farmFinancial.profit,
 
         currentWorth:
             totalCurrentWorth,
@@ -1334,11 +1244,6 @@ async function getFarmFinancialTotals(
 
         totalProfit,
 
-
-        // --------------------------------------------------
-        // FARM ASSETS
-        // --------------------------------------------------
-
         assets:
             assetFinancials
 
@@ -1351,45 +1256,11 @@ async function getFarmFinancialTotals(
 // GET FINANCIAL SUMMARY
 // ==========================================================
 //
-// TOTALS INCLUDE:
+// Includes:
 //
-//     FARM RECORDS
-//     FARM ASSETS
-//     STANDALONE ASSETS
-//
-// Therefore:
-//
-// totalCurrentWorth
-//     = all farm currentWorth
-//     + all farm asset currentWorth
-//     + all standalone currentWorth
-//
-// totalLiabilities
-//     = all farm liabilities
-//     + all farm asset liabilities
-//     + all standalone liabilities
-//
-// totalSalesAmount
-//     = all sold farm records
-//     + all sold farm assets
-//     + all sold standalone assets
-//
-// totalRevenue
-//     = all farm revenue
-//     + all farm asset revenue
-//     + all standalone revenue
-//
-// totalProfit
-//     = all farm profit
-//     + all farm asset profit
-//     + all standalone profit
-//
-// Date filtering:
-//
-//     liabilities -> filtered
-//     profit       -> filtered
-//
-// Current worth remains current.
+//     farms
+//     farm assets
+//     standalone assets
 // ==========================================================
 
 async function getFinancialSummary(
@@ -1401,19 +1272,11 @@ async function getFinancialSummary(
         await getAllDairies();
 
 
-    // ======================================================
-    // SEPARATE FARMS
-    // ======================================================
-
     const farms =
         dairies.filter(
             isFarm
         );
 
-
-    // ======================================================
-    // SEPARATE STANDALONE ASSETS
-    // ======================================================
 
     const standaloneAssets =
         dairies.filter(
@@ -1422,7 +1285,7 @@ async function getFinancialSummary(
 
 
     // ======================================================
-    // TOP-LEVEL TOTALS
+    // TOP LEVEL TOTALS
     // ======================================================
 
     let totalCurrentWorth =
@@ -1476,41 +1339,21 @@ async function getFinancialSummary(
         );
 
 
-        // --------------------------------------------------
-        // CURRENT WORTH
-        // --------------------------------------------------
-
         totalCurrentWorth +=
             financial.totalCurrentWorth;
 
-
-        // --------------------------------------------------
-        // LIABILITIES
-        // --------------------------------------------------
 
         totalLiabilities +=
             financial.totalLiabilities;
 
 
-        // --------------------------------------------------
-        // SALES
-        // --------------------------------------------------
-
         totalSalesAmount +=
             financial.totalSalesAmount;
 
 
-        // --------------------------------------------------
-        // REVENUE
-        // --------------------------------------------------
-
         totalRevenue +=
             financial.totalRevenue;
 
-
-        // --------------------------------------------------
-        // PROFIT
-        // --------------------------------------------------
 
         totalProfit +=
             financial.totalProfit;
@@ -1520,14 +1363,6 @@ async function getFinancialSummary(
 
     // ======================================================
     // STANDALONE FINANCIALS
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // Standalone records are still included here because
-    // the financial SUMMARY depends on them.
-    //
-    // This is NOT standalone.ejs page logic.
     // ======================================================
 
     const standaloneFinancials =
@@ -1558,14 +1393,10 @@ async function getFinancialSummary(
         const asset of standaloneAssets
     ) {
 
-        // --------------------------------------------------
-        // LIABILITY
-        // --------------------------------------------------
+        const financial =
+            await buildFinancialData(
 
-        const liabilities =
-            await getLiabilityTotal(
-
-                asset._id,
+                asset,
 
                 startDate,
 
@@ -1574,94 +1405,29 @@ async function getFinancialSummary(
             );
 
 
-        // --------------------------------------------------
-        // PROFIT
-        // --------------------------------------------------
+        standaloneFinancials.push(
+            financial
+        );
 
-        const profit =
-            calculateProfit(
-
-                asset,
-
-                liabilities
-
-            );
-
-
-        // --------------------------------------------------
-        // SALES
-        // --------------------------------------------------
-
-        const salesAmount =
-            getSalesAmount(
-                asset
-            );
-
-
-        // --------------------------------------------------
-        // REVENUE
-        // --------------------------------------------------
-
-        const revenue =
-            number(
-                asset.revenue
-            );
-
-
-        // --------------------------------------------------
-        // CURRENT WORTH
-        // --------------------------------------------------
-
-        const currentWorth =
-            number(
-                asset.currentWorth
-            );
-
-
-        // --------------------------------------------------
-        // ADD STANDALONE TOTALS
-        // --------------------------------------------------
 
         standaloneCurrentWorth +=
-            currentWorth;
+            financial.currentWorth;
 
 
         standaloneLiabilities +=
-            liabilities;
+            financial.totalLiabilities;
 
 
         standaloneSalesAmount +=
-            salesAmount;
+            financial.salesAmount;
 
 
         standaloneRevenue +=
-            revenue;
+            financial.revenue;
 
 
         standaloneProfit +=
-            profit;
-
-
-        // --------------------------------------------------
-        // STORE ASSET FINANCIAL DATA
-        // --------------------------------------------------
-
-        standaloneFinancials.push({
-
-            ...asset,
-
-            currentWorth,
-
-            salesAmount,
-
-            revenue,
-
-            totalLiabilities:
-                liabilities,
-
-            profit
-
-        });
+            financial.profit;
 
     }
 
@@ -1691,14 +1457,7 @@ async function getFinancialSummary(
 
 
     // ======================================================
-    // SORT FARM RANKING
-    // ======================================================
-    //
-    // Highest profit first.
-    //
-    // If profit is tied:
-    //
-    //     highest currentWorth first.
+    // SORT FARMS
     // ======================================================
 
     farmFinancials.sort(
@@ -1707,9 +1466,13 @@ async function getFinancialSummary(
 
             const profitDifference =
 
-                number(b.profit) -
+                number(
+                    b.profit
+                ) -
 
-                number(a.profit);
+                number(
+                    a.profit
+                );
 
 
             if (
@@ -1739,7 +1502,7 @@ async function getFinancialSummary(
 
 
     // ======================================================
-    // SORT STANDALONE RANKING
+    // SORT STANDALONE ASSETS
     // ======================================================
 
     standaloneFinancials.sort(
@@ -1748,9 +1511,13 @@ async function getFinancialSummary(
 
             const profitDifference =
 
-                number(b.profit) -
+                number(
+                    b.profit
+                ) -
 
-                number(a.profit);
+                number(
+                    a.profit
+                );
 
 
             if (
@@ -1781,7 +1548,7 @@ async function getFinancialSummary(
 
     // ======================================================
     // RETURN SUMMARY
-    // ==========================================================
+    // ======================================================
 
     return {
 
@@ -1840,17 +1607,13 @@ async function getFinancialSummary(
 // GET LIABILITY HISTORY
 // ==========================================================
 //
-// Date filters apply to liability records only.
-//
-// Structure:
+// Returns:
 //
 //     standalone[]
 //
 //     farms[]
 //         farm
 //         liabilities[]
-//
-// Farm-owned liabilities remain visible in history.
 // ==========================================================
 
 async function getLiabilityHistory(
@@ -1860,8 +1623,11 @@ async function getLiabilityHistory(
 
     const records =
         await getAllLiabilities(
+
             startDate,
+
             endDate
+
         );
 
 
@@ -1891,7 +1657,7 @@ async function getLiabilityHistory(
 
 
         // ==================================================
-        // STANDALONE ASSET
+        // STANDALONE
         // ==================================================
 
         if (
@@ -2019,7 +1785,7 @@ async function getLiabilityHistory(
 
 
         // ==================================================
-        // LIABILITY RECORD
+        // ADD LIABILITY
         // ==================================================
 
         group.liabilities.push(
@@ -2062,6 +1828,8 @@ module.exports = {
     getAllLiabilities,
 
     getDairyFinancial,
+
+    getStandaloneFinancial,
 
     getFarmFinancialTotals,
 
