@@ -10,32 +10,7 @@ const Financials =
 
 
 // ==========================================================
-// NUMBER HELPER
-// ==========================================================
-
-function number(value) {
-
-    const parsed =
-        Number(value);
-
-    return Number.isFinite(parsed)
-        ? parsed
-        : 0;
-
-}
-
-
-// ==========================================================
-// DATE RANGE
-// ==========================================================
-//
-// Dates apply to financial transactions:
-//
-//     liabilities
-//     revenue
-//
-// Current asset values are NOT date filtered.
-//
+// DATE HELPERS
 // ==========================================================
 
 function getDateRange(
@@ -70,7 +45,6 @@ function getDateRange(
 
     }
 
-
     if (endDate) {
 
         const end =
@@ -96,153 +70,29 @@ function getDateRange(
 
     }
 
-
     return range;
 
 }
 
 
 // ==========================================================
-// FARM IDENTIFICATION
-// ==========================================================
-//
-// code < 0
-//     = Dairy Farm
-//
+// NUMBER HELPER
 // ==========================================================
 
-function isFarm(dairy) {
+function number(value) {
 
-    if (!dairy) {
+    const parsed =
+        Number(value);
 
-        return false;
-
-    }
-
-
-    if (
-
-        dairy.code === null ||
-
-        dairy.code === undefined ||
-
-        dairy.code === ""
-
-    ) {
-
-        return false;
-
-    }
-
-
-    return (
-        Number(dairy.code) < 0
-    );
+    return Number.isFinite(parsed)
+        ? parsed
+        : 0;
 
 }
 
 
 // ==========================================================
-// FARM ASSET IDENTIFICATION
-// ==========================================================
-//
-// assetCode < 0
-//     = belongs to a Dairy Farm
-//
-// The actual relationship is:
-//
-//     asset.assetCode === farm.code
-//
-// ==========================================================
-
-function isFarmAsset(dairy) {
-
-    if (!dairy) {
-
-        return false;
-
-    }
-
-
-    if (
-
-        dairy.assetCode === null ||
-
-        dairy.assetCode === undefined ||
-
-        dairy.assetCode === ""
-
-    ) {
-
-        return false;
-
-    }
-
-
-    return (
-        Number(
-            dairy.assetCode
-        ) < 0
-    );
-
-}
-
-
-// ==========================================================
-// STANDALONE ASSET IDENTIFICATION
-// ==========================================================
-//
-// Standalone:
-//
-//     code      === null
-//     assetCode === null
-//
-// ==========================================================
-
-function isStandaloneAsset(dairy) {
-
-    if (!dairy) {
-
-        return false;
-
-    }
-
-
-    const noCode = (
-
-        dairy.code === null ||
-
-        dairy.code === undefined ||
-
-        dairy.code === ""
-
-    );
-
-
-    const noAssetCode = (
-
-        dairy.assetCode === null ||
-
-        dairy.assetCode === undefined ||
-
-        dairy.assetCode === ""
-
-    );
-
-
-    return (
-
-        noCode &&
-
-        noAssetCode
-
-    );
-
-}
-
-
-// ==========================================================
-// SOLD STATUS
+// STATUS HELPER
 // ==========================================================
 
 function isSold(dairy) {
@@ -262,7 +112,133 @@ function isSold(dairy) {
 
 
 // ==========================================================
-// LIABILITY QUERY
+// FARM IDENTIFICATION
+// ==========================================================
+//
+// A Dairy Farm is identified by:
+//
+//     code < 0
+//
+// ==========================================================
+
+function isFarm(dairy) {
+
+    if (!dairy) {
+
+        return false;
+
+    }
+
+    if (
+
+        dairy.code === null ||
+
+        dairy.code === undefined ||
+
+        dairy.code === ""
+
+    ) {
+
+        return false;
+
+    }
+
+    return (
+        Number(dairy.code) < 0
+    );
+
+}
+
+
+// ==========================================================
+// FARM ASSET IDENTIFICATION
+// ==========================================================
+//
+// A farm asset has an assetCode.
+//
+// Example:
+//
+//     Farm:
+//         code = -100
+//
+//     Asset:
+//         assetCode = -100
+//
+// ==========================================================
+
+function isFarmAsset(dairy) {
+
+    if (!dairy) {
+
+        return false;
+
+    }
+
+    return (
+
+        dairy.assetCode !== null &&
+
+        dairy.assetCode !== undefined &&
+
+        dairy.assetCode !== ""
+
+    );
+
+}
+
+
+// ==========================================================
+// STANDALONE ASSET IDENTIFICATION
+// ==========================================================
+//
+// Standalone asset:
+//
+//     code      = null
+//     assetCode = null
+//
+// ==========================================================
+
+function isStandaloneAsset(dairy) {
+
+    if (!dairy) {
+
+        return false;
+
+    }
+
+    const noCode = (
+
+        dairy.code === null ||
+
+        dairy.code === undefined ||
+
+        dairy.code === ""
+
+    );
+
+    const noAssetCode = (
+
+        dairy.assetCode === null ||
+
+        dairy.assetCode === undefined ||
+
+        dairy.assetCode === ""
+
+    );
+
+    return (
+
+        noCode &&
+
+        noAssetCode
+
+    );
+
+}
+
+
+// ==========================================================
+// LIABILITY QUERY BUILDER
 // ==========================================================
 
 function buildLiabilityQuery(
@@ -278,13 +254,11 @@ function buildLiabilityQuery(
 
     };
 
-
     const dateRange =
         getDateRange(
             startDate,
             endDate
         );
-
 
     if (
         Object.keys(
@@ -296,7 +270,6 @@ function buildLiabilityQuery(
             dateRange;
 
     }
-
 
     return query;
 
@@ -319,7 +292,6 @@ async function getLiabilityTotal(
             startDate,
             endDate
         );
-
 
     const result =
         await Financials.aggregate([
@@ -348,13 +320,11 @@ async function getLiabilityTotal(
 
         ]);
 
-
     if (!result.length) {
 
         return 0;
 
     }
-
 
     return number(
         result[0].total
@@ -364,7 +334,7 @@ async function getLiabilityTotal(
 
 
 // ==========================================================
-// GET LIABILITY RECORDS FOR ONE DAIRY
+// GET LIABILITY RECORDS
 // ==========================================================
 
 async function getLiabilities(
@@ -379,7 +349,6 @@ async function getLiabilities(
             startDate,
             endDate
         );
-
 
     return Financials.find(
         query
@@ -407,10 +376,8 @@ async function getLiabilities(
     )
 
     .sort({
-
         createdAt:
             -1
-
     })
 
     .lean();
@@ -429,13 +396,11 @@ async function getAllLiabilities(
 
     const query = {};
 
-
     const dateRange =
         getDateRange(
             startDate,
             endDate
         );
-
 
     if (
         Object.keys(
@@ -447,7 +412,6 @@ async function getAllLiabilities(
             dateRange;
 
     }
-
 
     return Financials.find(
         query
@@ -475,10 +439,8 @@ async function getAllLiabilities(
     )
 
     .sort({
-
         createdAt:
             -1
-
     })
 
     .lean();
@@ -507,7 +469,6 @@ async function recordLiability({
             dairyId
         );
 
-
     if (!dairy) {
 
         throw new Error(
@@ -516,10 +477,8 @@ async function recordLiability({
 
     }
 
-
     const liabilityAmount =
         Number(amount);
-
 
     if (
 
@@ -537,21 +496,21 @@ async function recordLiability({
 
     }
 
+    if (
 
-    const cleanDescription =
-        String(
-            description || ""
-        ).trim();
+        !description ||
 
+        !String(
+            description
+        ).trim()
 
-    if (!cleanDescription) {
+    ) {
 
         throw new Error(
             "Liability description is required."
         );
 
     }
-
 
     return Financials.create({
 
@@ -562,7 +521,9 @@ async function recordLiability({
             liabilityAmount,
 
         description:
-            cleanDescription,
+            String(
+                description
+            ).trim(),
 
         recordedBy:
             userId || null
@@ -621,7 +582,79 @@ async function getAllDairies() {
 
 
 // ==========================================================
+// GET FINANCIAL STRUCTURE
+// ==========================================================
+//
+// Used by:
+//
+//     financialsController.getLiabilityEntryPage()
+//
+// Returns:
+//
+//     farms[]
+//
+//     standaloneAssets[]
+//
+// Each farm contains its own assets.
+//
+// ==========================================================
+
+async function getFinancialStructure() {
+
+    const dairies =
+        await getAllDairies();
+
+    const farms =
+        dairies.filter(
+            isFarm
+        );
+
+    const standaloneAssets =
+        dairies.filter(
+            isStandaloneAsset
+        );
+
+    const farmStructure =
+        farms.map(
+            farm => {
+
+                const assets =
+                    getFarmAssets(
+                        farm,
+                        dairies
+                    );
+
+                return {
+
+                    ...farm,
+
+                    assets
+
+                };
+
+            }
+        );
+
+    return {
+
+        farms:
+            farmStructure,
+
+        standaloneAssets
+
+    };
+
+}
+
+
+// ==========================================================
 // GET FARM ASSETS
+// ==========================================================
+//
+// Relationship:
+//
+//     asset.assetCode === farm.code
+//
 // ==========================================================
 
 function getFarmAssets(
@@ -637,12 +670,10 @@ function getFarmAssets(
 
     }
 
-
     const farmCode =
         Number(
             farm.code
         );
-
 
     return allDairies.filter(
 
@@ -668,37 +699,29 @@ function getFarmAssets(
 // CALCULATE PROFIT / LOSS
 // ==========================================================
 //
-// Required financial formula:
+// SOLD:
 //
 //     sellingPrice
 //     - buyingPrice
 //     - liabilities
 //     + revenue
 //
+// UNSOLD:
+//
+//     revenue
+//     - liabilities
+//
 // ==========================================================
 
 function calculateProfit(
     dairy,
-    liabilities
+    liabilityTotal
 ) {
 
-    const sellingPrice =
+    const liabilities =
         number(
-            dairy?.sellingPrice
+            liabilityTotal
         );
-
-
-    const buyingPrice =
-        number(
-            dairy?.buyingPrice
-        );
-
-
-    const liabilityTotal =
-        number(
-            liabilities
-        );
-
 
     const revenue =
         number(
@@ -706,19 +729,64 @@ function calculateProfit(
         );
 
 
+    // ======================================================
+    // UNSOLD DAIRY
+    // ======================================================
+    //
+    // For an unsold dairy, buying price and selling price
+    // are NOT included in profit/loss.
+    //
+    // Profit/Loss =
+    //
+    //     revenue - liabilities
+    //
+    // ======================================================
+
+    if (
+        !isSold(dairy)
+    ) {
+
+        return (
+
+            revenue -
+
+            liabilities
+
+        );
+
+    }
+
+
+    // ======================================================
+    // SOLD DAIRY
+    // ======================================================
+    //
+    // Profit/Loss =
+    //
+    //     sellingPrice
+    //     - buyingPrice
+    //     - liabilities
+    //     + revenue
+    //
+    // ======================================================
+
+    const sellingPrice =
+        number(
+            dairy?.sellingPrice
+        );
+
+    const buyingPrice =
+        number(
+            dairy?.buyingPrice
+        );
+
     return (
 
-        sellingPrice
+        sellingPrice -
 
-        -
+        buyingPrice -
 
-        buyingPrice
-
-        -
-
-        liabilityTotal
-
-        +
+        liabilities +
 
         revenue
 
@@ -728,27 +796,28 @@ function calculateProfit(
 
 
 // ==========================================================
-// BUILD FINANCIAL DATA
+// GET SALES AMOUNT
 // ==========================================================
-//
-// Current values:
-//
-//     currentWorth
-//     buyingPrice
-//     sellingPrice
-//
-// Filtered values:
-//
-//     liabilities
-//     revenue
-//
-// Profit:
-//
-//     sellingPrice
-//     - buyingPrice
-//     - liabilities
-//     + revenue
-//
+
+function getSalesAmount(dairy) {
+
+    if (
+        !isSold(dairy)
+    ) {
+
+        return 0;
+
+    }
+
+    return number(
+        dairy?.sellingPrice
+    );
+
+}
+
+
+// ==========================================================
+// BUILD FINANCIAL DATA
 // ==========================================================
 
 async function buildFinancialData(
@@ -768,30 +837,15 @@ async function buildFinancialData(
 
         );
 
-
-    const currentWorth =
-        number(
-            dairy?.currentWorth
+    const salesAmount =
+        getSalesAmount(
+            dairy
         );
-
-
-    const buyingPrice =
-        number(
-            dairy?.buyingPrice
-        );
-
-
-    const sellingPrice =
-        number(
-            dairy?.sellingPrice
-        );
-
 
     const revenue =
         number(
             dairy?.revenue
         );
-
 
     const profit =
         calculateProfit(
@@ -802,6 +856,10 @@ async function buildFinancialData(
 
         );
 
+    const currentWorth =
+        number(
+            dairy?.currentWorth
+        );
 
     return {
 
@@ -809,21 +867,22 @@ async function buildFinancialData(
 
         currentWorth,
 
-        buyingPrice,
+        buyingPrice:
+            number(
+                dairy?.buyingPrice
+            ),
 
-        sellingPrice,
+        sellingPrice:
+            number(
+                dairy?.sellingPrice
+            ),
+
+        salesAmount,
 
         revenue,
 
-        liabilities,
-
-        // Backwards-compatible name.
         totalLiabilities:
             liabilities,
-
-        // Backwards-compatible name.
-        salesAmount:
-            sellingPrice,
 
         profit
 
@@ -836,12 +895,23 @@ async function buildFinancialData(
 // GET INDIVIDUAL DAIRY FINANCIAL
 // ==========================================================
 //
-// Used by:
+// If selected record is:
 //
-//     /financials/dairy/:id
+//     Animal / asset
 //
-// If the selected record is a farm, its financial
-// totals include the farm and its farm-owned assets.
+// returns that record.
+//
+// If selected record is:
+//
+//     Farm
+//
+// returns:
+//
+//     farm
+//     +
+//     farm assets
+//     +
+//     totals
 //
 // ==========================================================
 
@@ -874,7 +944,6 @@ async function getDairyFinancial(
 
         .lean();
 
-
     if (!dairy) {
 
         throw new Error(
@@ -883,20 +952,13 @@ async function getDairyFinancial(
 
     }
 
-
     if (
-        isFarm(dairy)
+        !isFarm(dairy)
     ) {
 
-        const allDairies =
-            await getAllDairies();
-
-
-        return getFarmFinancialTotals(
+        return buildFinancialData(
 
             dairy,
-
-            allDairies,
 
             startDate,
 
@@ -906,10 +968,14 @@ async function getDairyFinancial(
 
     }
 
+    const allDairies =
+        await getAllDairies();
 
-    return buildFinancialData(
+    return getFarmFinancialTotals(
 
         dairy,
+
+        allDairies,
 
         startDate,
 
@@ -921,14 +987,7 @@ async function getDairyFinancial(
 
 
 // ==========================================================
-// GET INDIVIDUAL STANDALONE FINANCIAL
-// ==========================================================
-//
-// Kept for compatibility with the individual standalone
-// API if it is used elsewhere.
-//
-// The collection page does NOT use this method.
-//
+// GET STANDALONE FINANCIAL
 // ==========================================================
 
 async function getStandaloneFinancial(
@@ -960,7 +1019,6 @@ async function getStandaloneFinancial(
 
         .lean();
 
-
     if (!dairy) {
 
         throw new Error(
@@ -968,7 +1026,6 @@ async function getStandaloneFinancial(
         );
 
     }
-
 
     if (
         !isStandaloneAsset(dairy)
@@ -980,7 +1037,6 @@ async function getStandaloneFinancial(
 
     }
 
-
     return buildFinancialData(
 
         dairy,
@@ -990,222 +1046,6 @@ async function getStandaloneFinancial(
         endDate
 
     );
-
-}
-
-
-// ==========================================================
-// GET ALL STANDALONE FINANCIALS
-// ==========================================================
-//
-// THIS IS THE METHOD USED BY:
-//
-//     GET /financials/standalone
-//
-// Standalone definition:
-//
-//     code      === null
-//     assetCode === null
-//
-// Returns:
-//
-//     assets[]
-//
-//     currentWorth
-//     buyingPrice
-//     sellingPrice
-//     revenue
-//     liabilities
-//     profit
-//
-// ==========================================================
-
-async function getStandaloneFinancials(
-    startDate,
-    endDate
-) {
-
-    const dairies =
-        await getAllDairies();
-
-
-    const standaloneAssets =
-        dairies.filter(
-            isStandaloneAsset
-        );
-
-
-    const assets =
-        [];
-
-
-    let totalCurrentWorth =
-        0;
-
-
-    let totalBuyingPrice =
-        0;
-
-
-    let totalSellingPrice =
-        0;
-
-
-    let totalRevenue =
-        0;
-
-
-    let totalLiabilities =
-        0;
-
-
-    let totalProfit =
-        0;
-
-
-    for (
-        const asset of standaloneAssets
-    ) {
-
-        const financial =
-            await buildFinancialData(
-
-                asset,
-
-                startDate,
-
-                endDate
-
-            );
-
-
-        assets.push(
-            financial
-        );
-
-
-        totalCurrentWorth +=
-            number(
-                financial.currentWorth
-            );
-
-
-        totalBuyingPrice +=
-            number(
-                financial.buyingPrice
-            );
-
-
-        totalSellingPrice +=
-            number(
-                financial.sellingPrice
-            );
-
-
-        totalRevenue +=
-            number(
-                financial.revenue
-            );
-
-
-        totalLiabilities +=
-            number(
-                financial.liabilities
-            );
-
-
-        totalProfit +=
-            number(
-                financial.profit
-            );
-
-    }
-
-
-    // ======================================================
-    // SORT
-    // ======================================================
-
-    assets.sort(
-
-        (a, b) => {
-
-            const profitDifference =
-
-                number(
-                    b.profit
-                ) -
-
-                number(
-                    a.profit
-                );
-
-
-            if (
-                profitDifference !== 0
-            ) {
-
-                return profitDifference;
-
-            }
-
-
-            return (
-
-                number(
-                    b.currentWorth
-                ) -
-
-                number(
-                    a.currentWorth
-                )
-
-            );
-
-        }
-
-    );
-
-
-    return {
-
-        assets,
-
-        currentWorth:
-            totalCurrentWorth,
-
-        buyingPrice:
-            totalBuyingPrice,
-
-        sellingPrice:
-            totalSellingPrice,
-
-        revenue:
-            totalRevenue,
-
-        liabilities:
-            totalLiabilities,
-
-        profit:
-            totalProfit,
-
-        // Backwards-compatible aliases.
-        totalCurrentWorth,
-
-        totalBuyingPrice,
-
-        totalSellingPrice,
-
-        totalRevenue,
-
-        totalLiabilities,
-
-        totalProfit,
-
-        salesAmount:
-            totalSellingPrice
-
-    };
 
 }
 
@@ -1239,7 +1079,6 @@ async function getFarmFinancialTotals(
 
     }
 
-
     const assets =
         getFarmAssets(
 
@@ -1248,7 +1087,6 @@ async function getFarmFinancialTotals(
             allDairies
 
         );
-
 
     const farmFinancial =
         await buildFinancialData(
@@ -1261,34 +1099,23 @@ async function getFarmFinancialTotals(
 
         );
 
-
     let totalCurrentWorth =
         farmFinancial.currentWorth;
 
+    let totalLiabilities =
+        farmFinancial.totalLiabilities;
 
-    let totalBuyingPrice =
-        farmFinancial.buyingPrice;
-
-
-    let totalSellingPrice =
-        farmFinancial.sellingPrice;
-
+    let totalSalesAmount =
+        farmFinancial.salesAmount;
 
     let totalRevenue =
         farmFinancial.revenue;
 
-
-    let totalLiabilities =
-        farmFinancial.liabilities;
-
-
     let totalProfit =
         farmFinancial.profit;
 
-
     const assetFinancials =
         [];
-
 
     for (
         const asset of assets
@@ -1305,37 +1132,26 @@ async function getFarmFinancialTotals(
 
             );
 
+        totalCurrentWorth +=
+            financial.currentWorth;
+
+        totalLiabilities +=
+            financial.totalLiabilities;
+
+        totalSalesAmount +=
+            financial.salesAmount;
+
+        totalRevenue +=
+            financial.revenue;
+
+        totalProfit +=
+            financial.profit;
 
         assetFinancials.push(
             financial
         );
 
-
-        totalCurrentWorth +=
-            financial.currentWorth;
-
-
-        totalBuyingPrice +=
-            financial.buyingPrice;
-
-
-        totalSellingPrice +=
-            financial.sellingPrice;
-
-
-        totalRevenue +=
-            financial.revenue;
-
-
-        totalLiabilities +=
-            financial.liabilities;
-
-
-        totalProfit +=
-            financial.profit;
-
     }
-
 
     assetFinancials.sort(
 
@@ -1351,7 +1167,6 @@ async function getFarmFinancialTotals(
                     a.profit
                 );
 
-
             if (
                 profitDifference !== 0
             ) {
@@ -1359,7 +1174,6 @@ async function getFarmFinancialTotals(
                 return profitDifference;
 
             }
-
 
             return (
 
@@ -1377,7 +1191,6 @@ async function getFarmFinancialTotals(
 
     );
 
-
     return {
 
         ...farmFinancial,
@@ -1386,16 +1199,13 @@ async function getFarmFinancialTotals(
             farmFinancial,
 
         farmLiabilities:
-            farmFinancial.liabilities,
+            farmFinancial.totalLiabilities,
+
+        farmSalesAmount:
+            farmFinancial.salesAmount,
 
         farmRevenue:
             farmFinancial.revenue,
-
-        farmBuyingPrice:
-            farmFinancial.buyingPrice,
-
-        farmSellingPrice:
-            farmFinancial.sellingPrice,
 
         farmProfit:
             farmFinancial.profit,
@@ -1405,36 +1215,22 @@ async function getFarmFinancialTotals(
 
         totalCurrentWorth,
 
-        buyingPrice:
-            totalBuyingPrice,
+        totalLiabilities,
 
-        totalBuyingPrice,
+        salesAmount:
+            totalSalesAmount,
 
-        sellingPrice:
-            totalSellingPrice,
-
-        totalSellingPrice,
+        totalSalesAmount,
 
         revenue:
             totalRevenue,
 
         totalRevenue,
 
-        liabilities:
-            totalLiabilities,
-
-        totalLiabilities,
-
         profit:
             totalProfit,
 
         totalProfit,
-
-        salesAmount:
-            totalSellingPrice,
-
-        totalSalesAmount:
-            totalSellingPrice,
 
         assets:
             assetFinancials
@@ -1445,91 +1241,7 @@ async function getFarmFinancialTotals(
 
 
 // ==========================================================
-// GET FINANCIAL STRUCTURE
-// ==========================================================
-//
-// Used by the liability entry page.
-//
-// Returns:
-//
-//     farms[]
-//         assets[]
-//
-//     standaloneAssets[]
-//
-// ==========================================================
-
-async function getFinancialStructure() {
-
-    const dairies =
-        await getAllDairies();
-
-
-    const farms =
-        dairies.filter(
-            isFarm
-        );
-
-
-    const standaloneAssets =
-        dairies.filter(
-            isStandaloneAsset
-        );
-
-
-    const farmStructure =
-        farms.map(
-
-            farm => {
-
-                const assets =
-                    getFarmAssets(
-                        farm,
-                        dairies
-                    );
-
-
-                return {
-
-                    ...farm,
-
-                    assets
-
-                };
-
-            }
-
-        );
-
-
-    return {
-
-        farms:
-            farmStructure,
-
-        standaloneAssets
-
-    };
-
-}
-
-
-// ==========================================================
 // GET FINANCIAL SUMMARY
-// ==========================================================
-//
-// Current values:
-//
-//     currentWorth
-//     buyingPrice
-//     sellingPrice
-//
-// Filtered:
-//
-//     revenue
-//     liabilities
-//     profit
-//
 // ==========================================================
 
 async function getFinancialSummary(
@@ -1540,46 +1252,33 @@ async function getFinancialSummary(
     const dairies =
         await getAllDairies();
 
-
     const farms =
         dairies.filter(
             isFarm
         );
-
 
     const standaloneAssets =
         dairies.filter(
             isStandaloneAsset
         );
 
-
     let totalCurrentWorth =
         0;
-
-
-    let totalBuyingPrice =
-        0;
-
-
-    let totalSellingPrice =
-        0;
-
-
-    let totalRevenue =
-        0;
-
 
     let totalLiabilities =
         0;
 
+    let totalSalesAmount =
+        0;
+
+    let totalRevenue =
+        0;
 
     let totalProfit =
         0;
 
-
     const farmFinancials =
         [];
-
 
     for (
         const farm of farms
@@ -1598,65 +1297,44 @@ async function getFinancialSummary(
 
             );
 
-
         farmFinancials.push(
             financial
         );
 
-
         totalCurrentWorth +=
             financial.totalCurrentWorth;
-
-
-        totalBuyingPrice +=
-            financial.totalBuyingPrice;
-
-
-        totalSellingPrice +=
-            financial.totalSellingPrice;
-
-
-        totalRevenue +=
-            financial.totalRevenue;
-
 
         totalLiabilities +=
             financial.totalLiabilities;
 
+        totalSalesAmount +=
+            financial.totalSalesAmount;
+
+        totalRevenue +=
+            financial.totalRevenue;
 
         totalProfit +=
             financial.totalProfit;
 
     }
 
-
     const standaloneFinancials =
         [];
-
 
     let standaloneCurrentWorth =
         0;
 
-
-    let standaloneBuyingPrice =
+    let standaloneLiabilities =
         0;
 
-
-    let standaloneSellingPrice =
+    let standaloneSalesAmount =
         0;
-
 
     let standaloneRevenue =
         0;
 
-
-    let standaloneLiabilities =
-        0;
-
-
     let standaloneProfit =
         0;
-
 
     for (
         const asset of standaloneAssets
@@ -1673,67 +1351,47 @@ async function getFinancialSummary(
 
             );
 
-
         standaloneFinancials.push(
             financial
         );
 
-
         standaloneCurrentWorth +=
             financial.currentWorth;
 
+        standaloneLiabilities +=
+            financial.totalLiabilities;
 
-        standaloneBuyingPrice +=
-            financial.buyingPrice;
-
-
-        standaloneSellingPrice +=
-            financial.sellingPrice;
-
+        standaloneSalesAmount +=
+            financial.salesAmount;
 
         standaloneRevenue +=
             financial.revenue;
-
-
-        standaloneLiabilities +=
-            financial.liabilities;
-
 
         standaloneProfit +=
             financial.profit;
 
     }
 
-
     totalCurrentWorth +=
         standaloneCurrentWorth;
-
-
-    totalBuyingPrice +=
-        standaloneBuyingPrice;
-
-
-    totalSellingPrice +=
-        standaloneSellingPrice;
-
-
-    totalRevenue +=
-        standaloneRevenue;
-
 
     totalLiabilities +=
         standaloneLiabilities;
 
+    totalSalesAmount +=
+        standaloneSalesAmount;
+
+    totalRevenue +=
+        standaloneRevenue;
 
     totalProfit +=
         standaloneProfit;
-
 
     farmFinancials.sort(
 
         (a, b) => {
 
-            const difference =
+            const profitDifference =
 
                 number(
                     b.profit
@@ -1743,15 +1401,13 @@ async function getFinancialSummary(
                     a.profit
                 );
 
-
             if (
-                difference !== 0
+                profitDifference !== 0
             ) {
 
-                return difference;
+                return profitDifference;
 
             }
-
 
             return (
 
@@ -1768,13 +1424,12 @@ async function getFinancialSummary(
         }
 
     );
-
 
     standaloneFinancials.sort(
 
         (a, b) => {
 
-            const difference =
+            const profitDifference =
 
                 number(
                     b.profit
@@ -1784,15 +1439,13 @@ async function getFinancialSummary(
                     a.profit
                 );
 
-
             if (
-                difference !== 0
+                profitDifference !== 0
             ) {
 
-                return difference;
+                return profitDifference;
 
             }
-
 
             return (
 
@@ -1809,7 +1462,6 @@ async function getFinancialSummary(
         }
 
     );
-
 
     return {
 
@@ -1818,55 +1470,39 @@ async function getFinancialSummary(
             currentWorth:
                 totalCurrentWorth,
 
-            buyingPrice:
-                totalBuyingPrice,
+            liabilities:
+                totalLiabilities,
 
-            sellingPrice:
-                totalSellingPrice,
+            salesAmount:
+                totalSalesAmount,
 
             revenue:
                 totalRevenue,
 
-            liabilities:
-                totalLiabilities,
-
             profit:
-                totalProfit,
-
-            // Compatibility.
-            salesAmount:
-                totalSellingPrice
+                totalProfit
 
         },
 
-
         farms:
             farmFinancials,
-
 
         standalone: {
 
             currentWorth:
                 standaloneCurrentWorth,
 
-            buyingPrice:
-                standaloneBuyingPrice,
+            liabilities:
+                standaloneLiabilities,
 
-            sellingPrice:
-                standaloneSellingPrice,
+            salesAmount:
+                standaloneSalesAmount,
 
             revenue:
                 standaloneRevenue,
 
-            liabilities:
-                standaloneLiabilities,
-
             profit:
                 standaloneProfit,
-
-            // Compatibility.
-            salesAmount:
-                standaloneSellingPrice,
 
             assets:
                 standaloneFinancials
@@ -1880,19 +1516,6 @@ async function getFinancialSummary(
 
 // ==========================================================
 // GET LIABILITY HISTORY
-// ==========================================================
-//
-// Groups liabilities into:
-//
-//     standalone
-//
-//     farms
-//         farm
-//         liabilities[]
-//
-// Farm-owned asset liabilities are grouped under the
-// corresponding farm.
-//
 // ==========================================================
 
 async function getLiabilityHistory(
@@ -1909,14 +1532,11 @@ async function getLiabilityHistory(
 
         );
 
-
     const standalone =
         [];
 
-
     const farms =
         new Map();
-
 
     for (
         const record of records
@@ -1930,14 +1550,8 @@ async function getLiabilityHistory(
 
         }
 
-
         const dairy =
             record.dairy;
-
-
-        // ==================================================
-        // STANDALONE
-        // ==================================================
 
         if (
             isStandaloneAsset(
@@ -1953,13 +1567,7 @@ async function getLiabilityHistory(
 
         }
 
-
-        // ==================================================
-        // DETERMINE FARM CODE
-        // ==================================================
-
         let farmCode;
-
 
         if (
             isFarm(dairy)
@@ -1983,7 +1591,6 @@ async function getLiabilityHistory(
 
         }
 
-
         if (
 
             farmCode === undefined ||
@@ -1997,7 +1604,6 @@ async function getLiabilityHistory(
             continue;
 
         }
-
 
         if (
             !farms.has(
@@ -2023,12 +1629,10 @@ async function getLiabilityHistory(
 
         }
 
-
         const group =
             farms.get(
                 farmCode
             );
-
 
         if (
             isFarm(dairy)
@@ -2039,22 +1643,20 @@ async function getLiabilityHistory(
 
         }
 
-
         group.liabilities.push(
             record
         );
 
     }
 
-
     return {
 
         standalone,
 
         farms:
-            Array.from(
-                farms.values()
-            )
+            [
+                ...farms.values()
+            ]
 
     };
 
@@ -2082,8 +1684,6 @@ module.exports = {
     getDairyFinancial,
 
     getStandaloneFinancial,
-
-    getStandaloneFinancials,
 
     getFarmFinancialTotals,
 
