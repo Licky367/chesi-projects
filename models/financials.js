@@ -1,283 +1,316 @@
+// ==========================================================
+// models/financials.js
+// ==========================================================
+
 const mongoose = require("mongoose");
 
 
-/* =========================================================
-   LIABILITY SUB-SCHEMA
-========================================================= */
+// ==========================================================
+// CONSTANTS
+// ==========================================================
 
-const liabilitySchema = new mongoose.Schema(
-  {
+const FINANCIAL_TYPES = [
 
-    type: {
-      type: String,
-      required: true,
-      trim: true
+    "liability"
+
+];
+
+
+// ==========================================================
+// SCHEMA
+// ==========================================================
+
+const financialSchema = new mongoose.Schema(
+
+    {
+
+        // ==================================================
+        // DAIRY / ASSET
+        //
+        // The specific Dairy record to which this financial
+        // transaction belongs.
+        //
+        // This can be:
+        //
+        // Negative code:
+        //     Dairy Farm
+        //
+        // Positive code:
+        //     Animal
+        //
+        // Null code:
+        //     Structure / Facility / Equipment
+        //
+        // A farm itself can therefore have liabilities,
+        // independently from the assets inside the farm.
+        // ==================================================
+
+        dairy: {
+
+            type:
+                mongoose.Schema.Types.ObjectId,
+
+            ref: "Dairy",
+
+            required: true,
+
+            index: true
+
+        },
+
+
+        // ==================================================
+        // DAIRY CODE
+        //
+        // Snapshot of the Dairy code when the transaction
+        // was recorded.
+        //
+        // This is NOT the primary relationship.
+        //
+        // The `dairy` ObjectId above remains authoritative.
+        // ==================================================
+
+        dairyCode: {
+
+            type: Number,
+
+            default: null
+
+        },
+
+
+        // ==================================================
+        // FINANCIAL TYPE
+        //
+        // Currently only liability is supported.
+        //
+        // This leaves room for future financial transaction
+        // types without redesigning the model.
+        // ==================================================
+
+        type: {
+
+            type: String,
+
+            enum: FINANCIAL_TYPES,
+
+            default: "liability",
+
+            required: true,
+
+            index: true
+
+        },
+
+
+        // ==================================================
+        // LIABILITY AMOUNT
+        //
+        // Amount of the liability transaction.
+        // ==================================================
+
+        amount: {
+
+            type: Number,
+
+            required: true,
+
+            min: 0
+
+        },
+
+
+        // ==================================================
+        // DESCRIPTION
+        //
+        // Explanation of what the liability represents.
+        // ==================================================
+
+        description: {
+
+            type: String,
+
+            trim: true,
+
+            required: true
+
+        },
+
+
+        // ==================================================
+        // RECORDED BY
+        //
+        // User who recorded the financial transaction.
+        // ==================================================
+
+        recordedBy: {
+
+            type:
+                mongoose.Schema.Types.ObjectId,
+
+            ref: "User",
+
+            required: true,
+
+            index: true
+
+        },
+
+
+        // ==================================================
+        // RECORDED BY NAME
+        //
+        // Snapshot of the user's name at the time the
+        // liability was recorded.
+        //
+        // This allows historical records to continue showing
+        // the recorder's name even if the user's profile
+        // changes later.
+        // ==================================================
+
+        recordedByName: {
+
+            type: String,
+
+            trim: true,
+
+            default: ""
+
+        }
+
     },
 
-    amount: {
-      type: Number,
-      required: true,
-      min: 0
-    },
+    {
 
-    description: {
-      type: String,
-      required: true,
-      trim: true
-    },
+        // ==================================================
+        // TIMESTAMPS
+        //
+        // createdAt:
+        //     When the liability was recorded.
+        //
+        // updatedAt:
+        //     When the financial record was last changed.
+        // ==================================================
 
-    time: {
-      type: Date,
-      default: Date.now
+        timestamps: true,
+
+        minimize: false
+
     }
 
-  },
-  {
-    _id: true
-  }
 );
 
 
-/* =========================================================
-   FINANCIAL SCHEMA
-========================================================= */
-
-const financialSchema = new mongoose.Schema({
-
-  periodType: {
-    type: String,
-    enum: ["daily", "monthly", "yearly"],
-    required: true,
-    index: true
-  },
-
-  day: {
-    type: String,
-    index: true
-  },
-
-  month: {
-    type: String,
-    index: true
-  },
-
-  year: {
-    type: Number,
-    index: true
-  },
+// ==========================================================
+// INDEXES
+// ==========================================================
 
 
-  /* =======================================================
-     INCOME
-  ======================================================= */
+// ==========================================================
+// DAIRY + TYPE
+//
+// Useful when calculating all liabilities belonging to a
+// particular Dairy.
+// ==========================================================
 
-  milkCash: {
-    type: Number,
-    default: 0
-  },
+financialSchema.index({
 
+    dairy: 1,
 
-  /* =======================================================
-     EXPENSES
-  ======================================================= */
+    type: 1
 
-  maintenanceCost: {
-    type: Number,
-    default: 0
-  },
-
-  medicalCost: {
-    type: Number,
-    default: 0
-  },
-
-  /*
-   * Total amount of all liability entries.
-   */
-  liabilities: {
-    type: Number,
-    default: 0
-  },
-
-
-  /* =======================================================
-     INDIVIDUAL LIABILITIES
-  ======================================================= */
-
-  liability: {
-    type: [liabilitySchema],
-    default: []
-  },
-
-
-  /* =======================================================
-     TOTALS
-  ======================================================= */
-
-  totalExpenses: {
-    type: Number,
-    default: 0
-  },
-
-  profit: {
-    type: Number,
-    default: 0
-  },
-
-
-  /* =======================================================
-     LOCK STATUS
-  ======================================================= */
-
-  locked: {
-    type: Boolean,
-    default: false
-  }
-
-}, {
-  timestamps: true
 });
 
 
-/* =========================================================
-   CORE CALCULATION HELPER
-========================================================= */
+// ==========================================================
+// DAIRY + CREATED AT
+//
+// Useful for date-range financial reporting.
+// ==========================================================
 
-financialSchema.statics._calculate = function (data) {
+financialSchema.index({
 
-  const totalLiabilities =
-    (data.liability || []).reduce(
-      (total, item) => total + (Number(item.amount) || 0),
-      0
+    dairy: 1,
+
+    createdAt: -1
+
+});
+
+
+// ==========================================================
+// TYPE + CREATED AT
+//
+// Useful for lifetime and date-filtered liability reports.
+// ==========================================================
+
+financialSchema.index({
+
+    type: 1,
+
+    createdAt: -1
+
+});
+
+
+// ==========================================================
+// RECORDED BY + CREATED AT
+//
+// Useful for audit/history reporting.
+// ==========================================================
+
+financialSchema.index({
+
+    recordedBy: 1,
+
+    createdAt: -1
+
+});
+
+
+// ==========================================================
+// STATIC: GET FINANCIAL TYPES
+// ==========================================================
+
+financialSchema.statics.getFinancialTypes =
+function() {
+
+    return [
+
+        ...FINANCIAL_TYPES
+
+    ];
+
+};
+
+
+// ==========================================================
+// MODEL
+// ==========================================================
+
+const Financials =
+
+    mongoose.models.Financials ||
+
+    mongoose.model(
+
+        "Financials",
+
+        financialSchema
+
     );
 
-  const totalExpenses =
-    (data.maintenanceCost || 0) +
-    (data.medicalCost || 0) +
-    totalLiabilities;
 
-  const profit =
-    (data.milkCash || 0) - totalExpenses;
+// ==========================================================
+// CONSTANT EXPORT
+// ==========================================================
 
-  return {
-    ...data,
+Financials.FINANCIAL_TYPES =
 
-    liabilities: totalLiabilities,
-
-    totalExpenses,
-
-    profit,
-
-    locked: true
-  };
-};
+    FINANCIAL_TYPES;
 
 
-/* =========================================================
-   UNIFIED UPSERT METHOD
-========================================================= */
+// ==========================================================
+// EXPORT
+// ==========================================================
 
-financialSchema.statics.upsertFinancial = async function (
-  query,
-  data
-) {
-
-  const computed = this._calculate(data);
-
-  return this.findOneAndUpdate(
-    query,
-    {
-      $set: computed
-    },
-    {
-      upsert: true,
-      new: true
-    }
-  );
-
-};
-
-
-/* =========================================================
-   DAILY
-========================================================= */
-
-financialSchema.statics.computeDailyFinancials = async function (
-  data
-) {
-
-  return this.upsertFinancial(
-    {
-      periodType: "daily",
-      day: data.day
-    },
-    data
-  );
-
-};
-
-
-/* =========================================================
-   MONTHLY
-========================================================= */
-
-financialSchema.statics.computeMonthlyFinancials = async function (
-  data
-) {
-
-  return this.upsertFinancial(
-    {
-      periodType: "monthly",
-      month: data.month
-    },
-    data
-  );
-
-};
-
-
-/* =========================================================
-   YEARLY
-========================================================= */
-
-financialSchema.statics.computeYearlyFinancials = async function (
-  data
-) {
-
-  return this.upsertFinancial(
-    {
-      periodType: "yearly",
-      year: data.year
-    },
-    data
-  );
-
-};
-
-
-/* =========================================================
-   STRONG UNIQUE SAFETY INDEX
-========================================================= */
-
-financialSchema.index(
-  {
-    periodType: 1,
-    day: 1,
-    month: 1,
-    year: 1
-  },
-  {
-    unique: true,
-    sparse: true
-  }
-);
-
-
-/* =========================================================
-   EXPORT
-========================================================= */
-
-module.exports = mongoose.model(
-  "Financial",
-  financialSchema
-);
+module.exports = Financials;
