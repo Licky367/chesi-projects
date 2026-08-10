@@ -1,366 +1,1087 @@
-const Milk = require("../models/milk");
-const Update = require("../models/Update");
-const Financial = require("../models/financials");
+// ==========================================================
+// services/financialsService.js
+// ==========================================================
+
+const Dairy = require("../models/dairy");
+const Financials = require("../models/financials");
 
 
-/* =========================================================
-   HELPERS
-========================================================= */
+// ==========================================================
+// DATE HELPERS
+// ==========================================================
 
-/**
- * Extract expense totals
- */
-const computeExpenseTotals = (expenseAgg) => {
-  let maintenanceCost = 0;
-  let medicalCost = 0;
+function getDateRange(startDate, endDate) {
 
-  expenseAgg.forEach(e => {
-    if (e._id === "maintenance") maintenanceCost = e.total || 0;
-    if (e._id === "medical") medicalCost = e.total || 0;
-  });
+    const range = {};
 
-  return { maintenanceCost, medicalCost };
-};
+    if (startDate) {
 
+        const start = new Date(startDate);
 
-/**
- * MILK CASH
- * Priority:
- * 1. sales.cash
- * 2. dailyStats.cash (legacy fallback)
- */
-const getMilkCash = async (match) => {
+        if (!Number.isNaN(start.getTime())) {
 
-  const result = await Milk.aggregate([
-    { $match: match },
+            start.setHours(
+                0,
+                0,
+                0,
+                0
+            );
 
-    {
-      $unwind: {
-        path: "$sales",
-        preserveNullAndEmptyArrays: true
-      }
-    },
+            range.$gte = start;
 
-    {
-      $group: {
-        _id: null,
-        totalCash: {
-          $sum: {
-            $ifNull: ["$sales.cash", 0]
-          }
         }
-      }
+
     }
 
-  ]);
 
-  const cashFromSales = result[0]?.totalCash || 0;
+    if (endDate) {
 
-  if (cashFromSales > 0) {
-    return cashFromSales;
-  }
+        const end = new Date(endDate);
 
-  const fallback = await Milk.aggregate([
-    { $match: match },
-    {
-      $group: {
-        _id: null,
-        totalCash: {
-          $sum: {
-            $ifNull: ["$dailyStats.cash", 0]
-          }
+        if (!Number.isNaN(end.getTime())) {
+
+            end.setHours(
+                23,
+                59,
+                59,
+                999
+            );
+
+            range.$lte = end;
+
         }
-      }
-    }
-  ]);
 
-  return fallback[0]?.totalCash || 0;
-
-};
-
-
-/**
- * Expense aggregation helper
- */
-const getExpenseAgg = async (match) => {
-
-  return Update.aggregate([
-    { $match: match },
-
-    {
-      $group: {
-        _id: "$type",
-        total: {
-          $sum: {
-            $cond: [
-              { $eq: ["$type", "maintenance"] },
-              "$maintenance.charges",
-              "$medical.charges"
-            ]
-          }
-        }
-      }
     }
 
-  ]);
 
-};
+    return range;
 
-
-/* =========================================================
-   COMPUTE DAILY FINANCIALS
-========================================================= */
-
-exports.computeDailyFinancials = async (day) => {
-
-  const milkCash = await getMilkCash({ day });
-
-  const expenseAgg = await getExpenseAgg({});
-
-  const { maintenanceCost, medicalCost } =
-    computeExpenseTotals(expenseAgg);
-
-  return Financial.computeDailyFinancials({
-    day,
-    milkCash,
-    maintenanceCost,
-    medicalCost
-  });
-
-};
+}
 
 
-/* =========================================================
-   COMPUTE MONTHLY FINANCIALS
-========================================================= */
+// ==========================================================
+// NUMBER HELPER
+// ==========================================================
 
-exports.computeMonthlyFinancials = async (month, year) => {
+function number(value) {
 
-  const milkCash = await getMilkCash({ month });
+    return Number(value) || 0;
 
-  const expenseAgg = await Update.aggregate([
+}
 
-    {
-      $match: {
-        ...(year && {
-          $expr: {
-            $eq: [
-              { $year: "$createdAt" },
-              Number(year)
-            ]
-          }
+
+// ==========================================================
+// GET LIABILITY TOTAL
+// ==========================================================
+
+async function getLiabilityTotal(
+    dairyId,
+    startDate,
+    endDate
+) {
+
+    const query = {
+
+        dairy: dairyId
+
+    };
+
+
+    const dateRange =
+        getDateRange(
+            startDate,
+            endDate
+        );
+
+
+    if (Object.keys(dateRange).length) {
+
+        query.createdAt =
+            dateRange;
+
+    }
+
+
+    const result =
+        await Financials.aggregate([
+
+            {
+
+                $match: query
+
+            },
+
+            {
+
+                $group: {
+
+                    _id: null,
+
+                    total: {
+
+                        $sum: "$amount"
+
+                    }
+
+                }
+
+            }
+
+        ]);
+
+
+    return result.length
+
+        ? number(
+            result[0].total
+        )
+
+        : 0;
+
+}
+
+
+// ==========================================================
+// GET LIABILITY RECORDS
+// ==========================================================
+
+async function getLiabilities(
+    dairyId,
+    startDate,
+    endDate
+) {
+
+    const query = {
+
+        dairy: dairyId
+
+    };
+
+
+    const dateRange =
+        getDateRange(
+            startDate,
+            endDate
+        );
+
+
+    if (Object.keys(dateRange).length) {
+
+        query.createdAt =
+            dateRange;
+
+    }
+
+
+    return Financials.find(query)
+
+        .populate(
+            "dairy",
+            "name code status buyingPrice currentWorth"
+        )
+
+        .populate(
+            "recordedBy",
+            "name email"
+        )
+
+        .sort({
+            createdAt: -1
         })
-      }
-    },
 
-    {
-      $group: {
-        _id: "$type",
-        total: {
-          $sum: {
-            $cond: [
-              { $eq: ["$type", "maintenance"] },
-              "$maintenance.charges",
-              "$medical.charges"
-            ]
-          }
-        }
-      }
+        .lean();
+
+}
+
+
+// ==========================================================
+// GET ALL LIABILITY RECORDS
+// ==========================================================
+
+async function getAllLiabilities(
+    startDate,
+    endDate
+) {
+
+    const query = {};
+
+
+    const dateRange =
+        getDateRange(
+            startDate,
+            endDate
+        );
+
+
+    if (Object.keys(dateRange).length) {
+
+        query.createdAt =
+            dateRange;
+
     }
 
-  ]);
 
-  const { maintenanceCost, medicalCost } =
-    computeExpenseTotals(expenseAgg);
+    return Financials.find(query)
 
-  return Financial.computeMonthlyFinancials({
-    month,
-    year,
-    milkCash,
-    maintenanceCost,
-    medicalCost
-  });
+        .populate(
+            "dairy",
+            "name code status buyingPrice currentWorth"
+        )
 
-};
+        .populate(
+            "recordedBy",
+            "name email"
+        )
+
+        .sort({
+            createdAt: -1
+        })
+
+        .lean();
+
+}
 
 
-/* =========================================================
-   COMPUTE YEARLY FINANCIALS
-========================================================= */
+// ==========================================================
+// RECORD LIABILITY
+// ==========================================================
 
-exports.computeYearlyFinancials = async (year) => {
+async function recordLiability({
 
-  const milkCash = await getMilkCash({
-    $expr: {
-      $eq: [
-        { $year: "$date" },
-        Number(year)
-      ]
+    dairyId,
+
+    amount,
+
+    description,
+
+    userId
+
+}) {
+
+    const dairy =
+        await Dairy.findById(
+            dairyId
+        );
+
+
+    if (!dairy) {
+
+        throw new Error(
+            "Dairy record not found."
+        );
+
     }
-  });
 
-  const expenseAgg = await getExpenseAgg({
-    $expr: {
-      $eq: [
-        { $year: "$createdAt" },
-        Number(year)
-      ]
+
+    const liabilityAmount =
+        Number(amount);
+
+
+    if (
+
+        !Number.isFinite(
+            liabilityAmount
+        ) ||
+
+        liabilityAmount <= 0
+
+    ) {
+
+        throw new Error(
+            "Liability amount must be greater than zero."
+        );
+
     }
-  });
-
-  const { maintenanceCost, medicalCost } =
-    computeExpenseTotals(expenseAgg);
-
-  return Financial.computeYearlyFinancials({
-    year,
-    milkCash,
-    maintenanceCost,
-    medicalCost
-  });
-
-};
 
 
-/* =========================================================
-   GET STORED FINANCIAL RECORD
-========================================================= */
+    if (
+        !description ||
+        !String(description).trim()
+    ) {
 
-exports.getFinancials = async ({ day, month, year, type }) => {
+        throw new Error(
+            "Liability description is required."
+        );
 
-  const filter = {
-    periodType: type
-  };
-
-  if (day) filter.day = day;
-  if (month) filter.month = month;
-  if (year) filter.year = Number(year);
-
-  return Financial.findOne(filter);
-
-};
+    }
 
 
-/* =========================================================
-   DAILY CUSTOMERS
-========================================================= */
+    return Financials.create({
 
-exports.getDailyCustomers = async (day) => {
+        dairy: dairy._id,
 
-  const filter = {};
+        amount:
+            liabilityAmount,
 
-  if (day) {
-    filter.day = day;
-  }
+        description:
+            String(description).trim(),
 
-  const milkRecords = await Milk.find(filter).lean();
-
-  const sales = [];
-  let totalSalesCash = 0;
-
-  milkRecords.forEach(record => {
-
-    if (!Array.isArray(record.sales)) return;
-
-    record.sales.forEach(sale => {
-
-      sales.push({
-        customerName: sale.customerName,
-        liters: sale.liters,
-        cash: sale.cash,
-        createdAt: sale.createdAt
-      });
-
-      totalSalesCash += sale.cash || 0;
+        recordedBy:
+            userId || null
 
     });
 
-  });
-
-  sales.sort((a, b) =>
-    new Date(b.createdAt) - new Date(a.createdAt)
-  );
-
-  return {
-    sales,
-    totalSalesCash
-  };
-
-};
+}
 
 
-/* =========================================================
-   FINANCIAL SUMMARY
-========================================================= */
+// ==========================================================
+// GET ALL DAIRIES
+// ==========================================================
 
-exports.getFinancialSummary = async (month, year) => {
+async function getAllDairies() {
 
-  let financial = await exports.getFinancials({
-    month,
-    year,
-    type: "monthly"
-  });
+    return Dairy.find({
 
-  if (!financial) {
-    financial = await exports.computeMonthlyFinancials(month, year);
-  }
+        status: {
+            $ne: "disposed"
+        }
 
-  return financial;
+    })
 
-};
+    .select(
+        "name code assetCode type status buyingPrice currentWorth description"
+    )
 
+    .sort({
 
-/* =========================================================
-   MONTHLY EXPENSES
-========================================================= */
+        code: 1,
 
-exports.getMonthlyExpenses = async (month, year) => {
+        name: 1
 
-  const filter = {};
+    })
 
-  if (month && year) {
-
-    const start = new Date(Number(year), Number(month) - 1, 1);
-    const end = new Date(Number(year), Number(month), 1);
-
-    filter.createdAt = {
-      $gte: start,
-      $lt: end
-    };
-
-  }
-
-  const expenses = await Update.find(filter)
-    .sort({ createdAt: -1 })
     .lean();
 
-  let totalExpenses = 0;
+}
 
-  expenses.forEach(expense => {
 
-    if (expense.type === "maintenance") {
-      totalExpenses += expense.maintenance?.charges || 0;
+// ==========================================================
+// GET FARM STRUCTURE
+//
+// Returns farms and the assets belonging to each farm.
+//
+// A farm's own liability is NOT excluded.
+// It is included separately when calculating totals.
+// ==========================================================
+
+async function getFinancialStructure() {
+
+    const dairies =
+        await getAllDairies();
+
+
+    const farms =
+        dairies.filter(
+            dairy =>
+                Number(dairy.code) < 0
+        );
+
+
+    const standaloneAssets =
+        dairies.filter(
+            dairy =>
+                (
+                    dairy.code === null ||
+                    dairy.code === undefined
+                ) &&
+                (
+                    dairy.assetCode === null ||
+                    dairy.assetCode === undefined
+                )
+        );
+
+
+    const farmAssets =
+        farms.map(
+            farm => ({
+
+                ...farm,
+
+                assets:
+                    dairies.filter(
+                        dairy =>
+
+                            dairy.assetCode !== null &&
+
+                            dairy.assetCode !== undefined &&
+
+                            Number(
+                                dairy.assetCode
+                            ) === Number(
+                                farm.code
+                            )
+                    )
+
+            })
+        );
+
+
+    return {
+
+        farms:
+            farmAssets,
+
+        standaloneAssets
+
+    };
+
+}
+
+
+// ==========================================================
+// CALCULATE INDIVIDUAL PROFIT
+//
+// Profit is ONLY available for sold records.
+//
+// Formula:
+//
+// sellingPrice
+// - buyingPrice
+// - liabilities
+//
+// If not sold:
+//
+// profit = null
+// ==========================================================
+
+function calculateProfit(
+    dairy,
+    liabilityTotal
+) {
+
+    if (
+        !dairy ||
+        dairy.status !== "sold"
+    ) {
+
+        return null;
+
     }
 
-    if (expense.type === "medical") {
-      totalExpenses += expense.medical?.charges || 0;
+
+    const sellingPrice =
+        number(
+            dairy.sellingPrice
+        );
+
+
+    const buyingPrice =
+        number(
+            dairy.buyingPrice
+        );
+
+
+    return (
+
+        sellingPrice -
+
+        buyingPrice -
+
+        number(
+            liabilityTotal
+        )
+
+    );
+
+}
+
+
+// ==========================================================
+// GET INDIVIDUAL FINANCIAL RECORD
+// ==========================================================
+
+async function getDairyFinancial(
+    dairyId,
+    startDate,
+    endDate
+) {
+
+    const dairy =
+        await Dairy.findById(
+            dairyId
+        )
+
+        .select(
+            "name code assetCode type status buyingPrice currentWorth sellingPrice"
+        )
+
+        .lean();
+
+
+    if (!dairy) {
+
+        throw new Error(
+            "Dairy record not found."
+        );
+
     }
 
-  });
 
-  return {
-    expenses,
-    totalExpenses
-  };
+    const liabilities =
+        await getLiabilityTotal(
+            dairyId,
+            startDate,
+            endDate
+        );
 
-};
+
+    const profit =
+        calculateProfit(
+            dairy,
+            liabilities
+        );
 
 
-/* =========================================================
-   RAW RECORD ACCESS
-========================================================= */
+    return {
 
-exports.getRawRecord = async (query) => {
+        ...dairy,
 
-  return Financial.find(query);
+        totalLiabilities:
+            liabilities,
+
+        profit
+
+    };
+
+}
+
+
+// ==========================================================
+// GET FARM FINANCIAL TOTALS
+//
+// Includes:
+//
+// 1. Farm's own liability
+// 2. Liabilities of assets inside farm
+// 3. Farm's own profit if sold
+// 4. Profit of sold assets inside farm
+//
+// Unsold records contribute NO profit.
+// ==========================================================
+
+async function getFarmFinancialTotals(
+    farm,
+    allDairies,
+    startDate,
+    endDate
+) {
+
+    const assets =
+        allDairies.filter(
+            dairy =>
+
+                dairy.assetCode !== null &&
+
+                dairy.assetCode !== undefined &&
+
+                Number(
+                    dairy.assetCode
+                ) === Number(
+                    farm.code
+                )
+        );
+
+
+    const farmLiabilities =
+        await getLiabilityTotal(
+            farm._id,
+            startDate,
+            endDate
+        );
+
+
+    let totalLiabilities =
+        farmLiabilities;
+
+
+    let totalProfit = 0;
+
+
+    const farmProfit =
+        calculateProfit(
+            farm,
+            farmLiabilities
+        );
+
+
+    if (farmProfit !== null) {
+
+        totalProfit +=
+            farmProfit;
+
+    }
+
+
+    const assetFinancials =
+        [];
+
+
+    for (
+        const asset of assets
+    ) {
+
+        const liabilities =
+            await getLiabilityTotal(
+                asset._id,
+                startDate,
+                endDate
+            );
+
+
+        totalLiabilities +=
+            liabilities;
+
+
+        const profit =
+            calculateProfit(
+                asset,
+                liabilities
+            );
+
+
+        if (profit !== null) {
+
+            totalProfit +=
+                profit;
+
+        }
+
+
+        assetFinancials.push({
+
+            ...asset,
+
+            totalLiabilities:
+                liabilities,
+
+            profit
+
+        });
+
+    }
+
+
+    return {
+
+        farm,
+
+        farmLiabilities,
+
+        totalLiabilities,
+
+        profit:
+            totalProfit,
+
+        assets:
+            assetFinancials
+
+    };
+
+}
+
+
+// ==========================================================
+// GET FINANCIAL SUMMARY
+// ==========================================================
+
+async function getFinancialSummary(
+    startDate,
+    endDate
+) {
+
+    const dairies =
+        await getAllDairies();
+
+
+    const farms =
+        dairies.filter(
+            dairy =>
+                Number(dairy.code) < 0
+        );
+
+
+    const standaloneAssets =
+        dairies.filter(
+            dairy =>
+
+                (
+                    dairy.code === null ||
+                    dairy.code === undefined
+                ) &&
+
+                (
+                    dairy.assetCode === null ||
+                    dairy.assetCode === undefined
+                )
+
+        );
+
+
+    let totalCurrentWorth = 0;
+
+    let totalLiabilities = 0;
+
+    let totalProfit = 0;
+
+
+    // ======================================================
+    // FARM TOTALS
+    // ======================================================
+
+    const farmFinancials = [];
+
+
+    for (
+        const farm of farms
+    ) {
+
+        const financial =
+            await getFarmFinancialTotals(
+                farm,
+                dairies,
+                startDate,
+                endDate
+            );
+
+
+        farmFinancials.push(
+            financial
+        );
+
+
+        totalCurrentWorth +=
+            number(
+                farm.currentWorth
+            );
+
+
+        totalLiabilities +=
+            financial.totalLiabilities;
+
+
+        totalProfit +=
+            financial.profit;
+
+    }
+
+
+    // ======================================================
+    // STANDALONE ASSETS
+    // ======================================================
+
+    const standaloneFinancials =
+        [];
+
+
+    let standaloneCurrentWorth =
+        0;
+
+    let standaloneLiabilities =
+        0;
+
+    let standaloneProfit =
+        0;
+
+
+    for (
+        const asset of standaloneAssets
+    ) {
+
+        const liabilities =
+            await getLiabilityTotal(
+                asset._id,
+                startDate,
+                endDate
+            );
+
+
+        const profit =
+            calculateProfit(
+                asset,
+                liabilities
+            );
+
+
+        standaloneCurrentWorth +=
+            number(
+                asset.currentWorth
+            );
+
+
+        standaloneLiabilities +=
+            liabilities;
+
+
+        if (profit !== null) {
+
+            standaloneProfit +=
+                profit;
+
+        }
+
+
+        standaloneFinancials.push({
+
+            ...asset,
+
+            totalLiabilities:
+                liabilities,
+
+            profit
+
+        });
+
+    }
+
+
+    totalCurrentWorth +=
+        standaloneCurrentWorth;
+
+
+    totalLiabilities +=
+        standaloneLiabilities;
+
+
+    totalProfit +=
+        standaloneProfit;
+
+
+    return {
+
+        filters: {
+
+            startDate:
+                startDate || "",
+
+            endDate:
+                endDate || ""
+
+        },
+
+        totals: {
+
+            currentWorth:
+                totalCurrentWorth,
+
+            liabilities:
+                totalLiabilities,
+
+            profit:
+                totalProfit
+
+        },
+
+        farms:
+            farmFinancials,
+
+        standalone: {
+
+            currentWorth:
+                standaloneCurrentWorth,
+
+            liabilities:
+                standaloneLiabilities,
+
+            profit:
+                standaloneProfit,
+
+            assets:
+                standaloneFinancials
+
+        }
+
+    };
+
+}
+
+
+// ==========================================================
+// GET LIABILITY HISTORY
+//
+// Includes:
+//
+// - Standalone assets
+// - Farm's own liabilities
+// - Assets belonging to each farm
+// ==========================================================
+
+async function getLiabilityHistory(
+    startDate,
+    endDate
+) {
+
+    const records =
+        await getAllLiabilities(
+            startDate,
+            endDate
+        );
+
+
+    const standalone =
+        [];
+
+
+    const farms =
+        new Map();
+
+
+    for (
+        const record of records
+    ) {
+
+        if (!record.dairy) {
+
+            continue;
+
+        }
+
+
+        const dairy =
+            record.dairy;
+
+
+        // ==================================================
+        // STANDALONE ASSET
+        // ==================================================
+
+        if (
+
+            (
+                dairy.code === null ||
+                dairy.code === undefined
+            ) &&
+
+            (
+                dairy.assetCode === null ||
+                dairy.assetCode === undefined
+            )
+
+        ) {
+
+            standalone.push(
+                record
+            );
+
+            continue;
+
+        }
+
+
+        // ==================================================
+        // FARM OR FARM ASSET
+        // ==================================================
+
+        let farmCode;
+
+
+        if (
+            Number(dairy.code) < 0
+        ) {
+
+            farmCode =
+                Number(dairy.code);
+
+        } else if (
+            dairy.assetCode !== null &&
+            dairy.assetCode !== undefined
+        ) {
+
+            farmCode =
+                Number(
+                    dairy.assetCode
+                );
+
+        }
+
+
+        if (
+            farmCode === undefined
+        ) {
+
+            continue;
+
+        }
+
+
+        if (
+            !farms.has(
+                farmCode
+            )
+        ) {
+
+            farms.set(
+                farmCode,
+                {
+
+                    farm: null,
+
+                    liabilities: []
+
+                }
+            );
+
+        }
+
+
+        const group =
+            farms.get(
+                farmCode
+            );
+
+
+        if (
+            Number(dairy.code) < 0
+        ) {
+
+            group.farm =
+                dairy;
+
+        }
+
+
+        group.liabilities.push(
+            record
+        );
+
+    }
+
+
+    return {
+
+        standalone,
+
+        farms:
+            [...farms.values()]
+
+    };
+
+}
+
+
+// ==========================================================
+// EXPORTS
+// ==========================================================
+
+module.exports = {
+
+    getDateRange,
+
+    getAllDairies,
+
+    getFinancialStructure,
+
+    recordLiability,
+
+    getLiabilities,
+
+    getAllLiabilities,
+
+    getDairyFinancial,
+
+    getFarmFinancialTotals,
+
+    getFinancialSummary,
+
+    getLiabilityHistory
 
 };
