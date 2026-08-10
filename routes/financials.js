@@ -15,11 +15,12 @@ const financialsController =
 
 // ==========================================================
 // AUTHENTICATION
+// ==========================================================
 //
-// Replace this with your project's existing authentication
-// middleware if the middleware has a different path/name.
+// All financial routes require server-side authentication.
 //
-// Server-side authentication is required.
+// Replace this path only if your project uses a different
+// authentication middleware.
 // ==========================================================
 
 const auth =
@@ -27,12 +28,26 @@ const auth =
 
 
 // ==========================================================
-// FINANCIAL HOME / SUMMARY
+// FINANCIAL SUMMARY
+// ==========================================================
+//
+// View:
+//
+//     views/financials/summary.ejs
+//
+// URL:
+//
+//     /financials/summary
+//
+// Supports:
+//
+//     ?startDate=YYYY-MM-DD
+//     ?endDate=YYYY-MM-DD
 // ==========================================================
 
 router.get(
 
-    "/",
+    "/summary",
 
     auth,
 
@@ -43,7 +58,22 @@ router.get(
 
 
 // ==========================================================
-// LIABILITY ENTRY PAGE
+// LIABILITY ENTRY
+// ==========================================================
+//
+// View:
+//
+//     views/financials/liability.ejs
+//
+// URL:
+//
+//     /financials/liability
+//
+// Used for:
+//
+//     - displaying the liability entry form
+//     - selecting a dairy / asset
+//     - entering a liability
 // ==========================================================
 
 router.get(
@@ -61,6 +91,13 @@ router.get(
 // ==========================================================
 // RECORD LIABILITY
 // ==========================================================
+//
+// URL:
+//
+//     POST /financials/liability
+//
+// Creates a new liability record.
+// ==========================================================
 
 router.post(
 
@@ -77,6 +114,31 @@ router.post(
 // ==========================================================
 // LIABILITY HISTORY
 // ==========================================================
+//
+// View:
+//
+//     views/financials/history.ejs
+//
+// URL:
+//
+//     /financials/history
+//
+// Supports:
+//
+//     ?startDate=YYYY-MM-DD
+//     ?endDate=YYYY-MM-DD
+//
+// Displays:
+//
+//     - standalone liabilities
+//     - farm liabilities
+//     - farm asset liabilities
+//
+// IMPORTANT:
+//
+// Farm-owned liabilities remain visible here even though
+// they are excluded from farm totalLiabilities calculations.
+// ==========================================================
 
 router.get(
 
@@ -91,7 +153,29 @@ router.get(
 
 
 // ==========================================================
-// INDIVIDUAL DAIRY FINANCIALS
+// INDIVIDUAL DAIRY / ASSET FINANCIALS
+// ==========================================================
+//
+// View:
+//
+//     views/financials/dairy.ejs
+//
+// URL:
+//
+//     /financials/dairy/:id
+//
+// Supports:
+//
+//     ?startDate=YYYY-MM-DD
+//     ?endDate=YYYY-MM-DD
+//
+// Displays:
+//
+//     - current worth
+//     - period liabilities
+//     - period profit/loss
+//     - asset details
+//     - liability history
 // ==========================================================
 
 router.get(
@@ -107,7 +191,16 @@ router.get(
 
 
 // ==========================================================
-// API: INDIVIDUAL DAIRY FINANCIALS
+// API: INDIVIDUAL DAIRY / ASSET FINANCIALS
+// ==========================================================
+//
+// URL:
+//
+//     /financials/api/dairy/:id
+//
+// Returns financial data for a single dairy / asset.
+//
+// This is kept separate from the EJS page route.
 // ==========================================================
 
 router.get(
@@ -125,6 +218,18 @@ router.get(
 // ==========================================================
 // API: FINANCIAL SUMMARY
 // ==========================================================
+//
+// URL:
+//
+//     /financials/api/summary
+//
+// Supports:
+//
+//     ?startDate=YYYY-MM-DD
+//     ?endDate=YYYY-MM-DD
+//
+// Returns the financial summary as JSON.
+// ==========================================================
 
 router.get(
 
@@ -139,7 +244,7 @@ router.get(
 
 
 // ==========================================================
-// EXPORT
+// EXPORT ROUTER
 // ==========================================================
 
 module.exports =
