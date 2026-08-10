@@ -37,7 +37,7 @@ function getUserId(req) {
 //     revenue
 //     profit
 //
-// Current asset values remain:
+// Current values remain current:
 //
 //     currentWorth
 //     buyingPrice
@@ -72,6 +72,52 @@ function getDateFilters(req) {
         endDate
 
     };
+
+}
+
+
+// ==========================================================
+// HELPER
+// VALIDATE FARM
+// ==========================================================
+//
+// A Dairy Farm is identified by:
+//
+//     code < 0
+//
+// ==========================================================
+
+function isFarm(dairy) {
+
+    if (!dairy) {
+
+        return false;
+
+    }
+
+
+    if (
+
+        dairy.code === null ||
+
+        dairy.code === undefined ||
+
+        dairy.code === ""
+
+    ) {
+
+        return false;
+
+    }
+
+
+    return (
+
+        Number(
+            dairy.code
+        ) < 0
+
+    );
 
 }
 
@@ -169,7 +215,9 @@ async function recordLiability(
 
 
         res.redirect(
+
             "/financials/liability?success=1"
+
         );
 
     } catch (error) {
@@ -224,6 +272,13 @@ async function recordLiability(
 // ==========================================================
 // LIABILITY HISTORY PAGE
 // ==========================================================
+//
+// Supports:
+//
+//     ?startDate=YYYY-MM-DD
+//     ?endDate=YYYY-MM-DD
+//
+// ==========================================================
 
 async function getLiabilityHistoryPage(
     req,
@@ -246,8 +301,11 @@ async function getLiabilityHistoryPage(
 
             await financialsService
                 .getLiabilityHistory(
+
                     startDate,
+
                     endDate
+
                 );
 
 
@@ -293,6 +351,18 @@ async function getLiabilityHistoryPage(
 // ==========================================================
 // FINANCIAL SUMMARY PAGE
 // ==========================================================
+//
+// Service:
+//
+//     getFinancialSummary()
+//
+// Returns:
+//
+//     totals
+//     farms
+//     standalone
+//
+// ==========================================================
 
 async function getFinancialSummaryPage(
     req,
@@ -315,8 +385,11 @@ async function getFinancialSummaryPage(
 
             await financialsService
                 .getFinancialSummary(
+
                     startDate,
+
                     endDate
+
                 );
 
 
@@ -359,14 +432,15 @@ async function getFinancialSummaryPage(
 // INDIVIDUAL DAIRY / ASSET FINANCIAL PAGE
 // ==========================================================
 //
-// Used for an individual Dairy record.
+// URL:
 //
-// This can represent:
+//     /financials/dairy/:id
 //
-//     Animal
-//     Farm asset
+// Service:
 //
-// The service calculates:
+//     getDairyFinancial()
+//
+// Includes:
 //
 //     currentWorth
 //     salesAmount
@@ -435,7 +509,7 @@ async function getDairyFinancialPage(
             {
 
                 title:
-                    `${financial.name} - Financials`,
+                    `${financial.name || "Dairy"} - Financials`,
 
                 user:
                     req.user,
@@ -470,28 +544,29 @@ async function getDairyFinancialPage(
 // INDIVIDUAL FARM FINANCIAL PAGE
 // ==========================================================
 //
+// URL:
+//
+//     /financials/farm/:id
+//
 // IMPORTANT:
 //
-// A Dairy Farm is simply:
+// The service does NOT expose:
 //
-//     Dairy.code < 0
+//     getFarmFinancialPage()
+//
+// Therefore this controller:
+//
+//     1. Gets all dairies
+//     2. Finds the requested farm
+//     3. Verifies code < 0
+//     4. Passes the farm and all dairies to
+//        getFarmFinancialTotals()
 //
 // Farm totals include:
 //
-//     FARM ITSELF
-//
+//     farm itself
 //     +
-//     
-//     ALL DAIRY ASSETS WHOSE assetCode
-//     MATCHES THE FARM code
-//
-// The generated service exposes:
-//
-//     getFarmFinancialTotals()
-//
-// NOT:
-//
-//     getFarmFinancialPage()
+//     all farm assets
 //
 // ==========================================================
 
@@ -520,7 +595,7 @@ async function getFarmFinancialPage(
 
 
         // ==================================================
-        // GET ALL DAIRY RECORDS
+        // GET ALL DAIRIES
         // ==================================================
 
         const dairies =
@@ -530,9 +605,7 @@ async function getFarmFinancialPage(
 
 
         // ==================================================
-        // FIND REQUESTED FARM
-        //
-        // A farm MUST have code < 0.
+        // FIND FARM
         // ==================================================
 
         const farm =
@@ -558,16 +631,12 @@ async function getFarmFinancialPage(
         }
 
 
+        // ==================================================
+        // VERIFY FARM
+        // ==================================================
+
         if (
-
-            farm.code === null ||
-
-            farm.code === undefined ||
-
-            Number(
-                farm.code
-            ) >= 0
-
+            !isFarm(farm)
         ) {
 
             throw new Error(
@@ -578,23 +647,7 @@ async function getFarmFinancialPage(
 
 
         // ==================================================
-        // BUILD FARM FINANCIAL TOTALS
-        // ==================================================
-        //
-        // The service handles:
-        //
-        //     farm
-        //     +
-        //     farm assets
-        //
-        // and calculates:
-        //
-        //     currentWorth
-        //     liabilities
-        //     sales
-        //     revenue
-        //     profit
-        //
+        // GET FARM FINANCIAL TOTALS
         // ==================================================
 
         const financial =
@@ -617,11 +670,15 @@ async function getFarmFinancialPage(
         // GET FARM'S OWN LIABILITY RECORDS
         // ==================================================
         //
-        // The totals above already include liabilities
-        // belonging to the farm AND its assets.
+        // The totals returned above include:
         //
-        // This query is for the detailed liability records
-        // belonging directly to the farm.
+        //     farm liabilities
+        //     +
+        //     asset liabilities
+        //
+        // This separate query supplies the liability
+        // records belonging directly to the farm for the
+        // detailed history section.
         //
         // ==================================================
 
@@ -650,7 +707,7 @@ async function getFarmFinancialPage(
             {
 
                 title:
-                    `${farm.name} - Financials`,
+                    `${farm.name || "Farm"} - Financials`,
 
                 user:
                     req.user,
@@ -685,10 +742,24 @@ async function getFarmFinancialPage(
 // INDIVIDUAL STANDALONE ASSET FINANCIAL PAGE
 // ==========================================================
 //
-// A standalone asset:
+// URL:
 //
-//     code      -> null
-//     assetCode -> null
+//     /financials/standalone?id=<DAIRY_ID>
+//
+// IMPORTANT:
+//
+// The standalone route has NO :id parameter.
+//
+// Therefore:
+//
+//     req.query.id
+//
+// is used instead of:
+//
+//     req.params.id
+//
+// The service itself verifies that the requested record
+// is actually a standalone asset.
 //
 // ==========================================================
 
@@ -700,11 +771,22 @@ async function getStandaloneFinancialPage(
 
     try {
 
-        const {
+        const id =
 
-            id
+            typeof req.query?.id === "string"
 
-        } = req.params;
+                ? req.query.id.trim()
+
+                : "";
+
+
+        if (!id) {
+
+            throw new Error(
+                "Standalone asset ID is required."
+            );
+
+        }
 
 
         const {
@@ -786,6 +868,12 @@ async function getStandaloneFinancialPage(
 // API
 // GET INDIVIDUAL DAIRY FINANCIAL DATA
 // ==========================================================
+//
+// URL:
+//
+//     /financials/api/dairy/:id
+//
+// ==========================================================
 
 async function getDairyFinancialApi(
     req,
@@ -856,6 +944,12 @@ async function getDairyFinancialApi(
 // API
 // GET FARM FINANCIAL DATA
 // ==========================================================
+//
+// URL:
+//
+//     /financials/api/farm/:id
+//
+// ==========================================================
 
 async function getFarmFinancialApi(
     req,
@@ -923,15 +1017,7 @@ async function getFarmFinancialApi(
         // ==================================================
 
         if (
-
-            farm.code === null ||
-
-            farm.code === undefined ||
-
-            Number(
-                farm.code
-            ) >= 0
-
+            !isFarm(farm)
         ) {
 
             throw new Error(
@@ -942,7 +1028,7 @@ async function getFarmFinancialApi(
 
 
         // ==================================================
-        // GET FINANCIAL TOTALS
+        // GET FARM FINANCIAL TOTALS
         // ==================================================
 
         const financial =
@@ -992,6 +1078,12 @@ async function getFarmFinancialApi(
 // API
 // GET STANDALONE FINANCIAL DATA
 // ==========================================================
+//
+// URL:
+//
+//     /financials/api/standalone?id=<DAIRY_ID>
+//
+// ==========================================================
 
 async function getStandaloneFinancialApi(
     req,
@@ -1001,11 +1093,22 @@ async function getStandaloneFinancialApi(
 
     try {
 
-        const {
+        const id =
 
-            id
+            typeof req.query?.id === "string"
 
-        } = req.params;
+                ? req.query.id.trim()
+
+                : "";
+
+
+        if (!id) {
+
+            throw new Error(
+                "Standalone asset ID is required."
+            );
+
+        }
 
 
         const {
@@ -1061,6 +1164,12 @@ async function getStandaloneFinancialApi(
 // ==========================================================
 // API
 // GET FINANCIAL SUMMARY
+// ==========================================================
+//
+// URL:
+//
+//     /financials/api/summary
+//
 // ==========================================================
 
 async function getFinancialSummaryApi(
@@ -1120,7 +1229,7 @@ async function getFinancialSummaryApi(
 
 
 // ==========================================================
-// EXPORT
+// EXPORTS
 // ==========================================================
 
 module.exports = {
