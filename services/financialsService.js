@@ -117,7 +117,9 @@ function getDateRange(
 // NUMBER HELPER
 // ==========================================================
 
-function number(value) {
+function number(
+    value
+) {
 
     const parsed =
         Number(value);
@@ -539,6 +541,13 @@ async function getAllDairies() {
 // ==========================================================
 // IDENTIFY FARM
 // ==========================================================
+//
+// A farm is a Dairy record with a negative code.
+//
+// Example:
+//
+//     code: -101
+// ==========================================================
 
 function isFarm(
     dairy
@@ -565,31 +574,50 @@ function isFarm(
 // IDENTIFY STANDALONE ASSET
 // ==========================================================
 //
-// A standalone asset has:
+// A standalone asset is a Dairy record that:
 //
-//     no code
-//     no assetCode
+//     has NO code
+//
+// AND:
+//
+//     has NO assetCode
+//
+// This is intentionally different from a farm asset.
+//
+// A farm asset has an assetCode that identifies its farm.
 // ==========================================================
 
 function isStandaloneAsset(
     dairy
 ) {
 
+    const noCode = (
+
+        dairy?.code === null ||
+
+        dairy?.code === undefined ||
+
+        dairy?.code === ""
+
+    );
+
+
+    const noAssetCode = (
+
+        dairy?.assetCode === null ||
+
+        dairy?.assetCode === undefined ||
+
+        dairy?.assetCode === ""
+
+    );
+
+
     return (
 
-        (
-            dairy?.code === null ||
-            dairy?.code === undefined ||
-            dairy?.code === ""
-        )
+        noCode &&
 
-        &&
-
-        (
-            dairy?.assetCode === null ||
-            dairy?.assetCode === undefined ||
-            dairy?.assetCode === ""
-        )
+        noAssetCode
 
     );
 
@@ -598,6 +626,20 @@ function isStandaloneAsset(
 
 // ==========================================================
 // IDENTIFY FARM ASSET
+// ==========================================================
+//
+// A farm asset has an assetCode.
+//
+// The assetCode is matched against the farm's negative
+// code.
+//
+// Example:
+//
+//     Farm:
+//         code = -101
+//
+//     Asset:
+//         assetCode = -101
 // ==========================================================
 
 function isFarmAsset(
@@ -620,6 +662,21 @@ function isFarmAsset(
 // ==========================================================
 // GET FINANCIAL STRUCTURE
 // ==========================================================
+//
+// Returns:
+//
+//     farms[]
+//
+//         farm
+//         assets[]
+//
+//     standaloneAssets[]
+//
+// Standalone assets are records with:
+//
+//     no code
+//     no assetCode
+// ==========================================================
 
 async function getFinancialStructure() {
 
@@ -641,12 +698,14 @@ async function getFinancialStructure() {
 
     const farmAssets =
         farms.map(
+
             farm => ({
 
                 ...farm,
 
                 assets:
                     dairies.filter(
+
                         dairy =>
 
                             isFarmAsset(
@@ -659,9 +718,11 @@ async function getFinancialStructure() {
                             Number(
                                 farm.code
                             )
+
                     )
 
             })
+
         );
 
 
@@ -805,6 +866,78 @@ function getSalesAmount(
 
 
 // ==========================================================
+// BUILD FINANCIAL RECORD
+// ==========================================================
+//
+// This helper keeps the financial representation consistent
+// across:
+//
+//     - individual dairy records
+//     - standalone assets
+//     - farm assets
+//
+// currentWorth remains the CURRENT WORTH stored on the Dairy
+// record.
+//
+// liabilities are reported separately.
+// ==========================================================
+
+function buildFinancialRecord(
+    dairy,
+    liabilities
+) {
+
+    const currentWorth =
+        number(
+            dairy?.currentWorth
+        );
+
+
+    const totalLiabilities =
+        number(
+            liabilities
+        );
+
+
+    const salesAmount =
+        getSalesAmount(
+            dairy
+        );
+
+
+    const revenue =
+        number(
+            dairy?.revenue
+        );
+
+
+    const profit =
+        calculateProfit(
+            dairy,
+            totalLiabilities
+        );
+
+
+    return {
+
+        ...dairy,
+
+        currentWorth,
+
+        salesAmount,
+
+        revenue,
+
+        totalLiabilities,
+
+        profit
+
+    };
+
+}
+
+
+// ==========================================================
 // GET INDIVIDUAL DAIRY FINANCIAL RECORD
 // ==========================================================
 
@@ -829,7 +962,8 @@ async function getDairyFinancial(
                 "buyingPrice",
                 "currentWorth",
                 "sellingPrice",
-                "revenue"
+                "revenue",
+                "description"
             ].join(" ")
         )
 
@@ -853,44 +987,103 @@ async function getDairyFinancial(
         );
 
 
-    const profit =
-        calculateProfit(
-            dairy,
-            liabilities
+    return buildFinancialRecord(
+        dairy,
+        liabilities
+    );
+
+}
+
+
+// ==========================================================
+// GET STANDALONE FINANCIAL
+// ==========================================================
+//
+// This method exists specifically for standalone.ejs.
+//
+// A standalone asset is:
+//
+//     code      -> empty
+//     assetCode -> empty
+//
+// The method validates that the selected Dairy record is
+// actually standalone before returning its financial data.
+//
+// Returned structure:
+//
+//     {
+//         ...asset,
+//         currentWorth,
+//         salesAmount,
+//         revenue,
+//         totalLiabilities,
+//         profit
+//     }
+// ==========================================================
+
+async function getStandaloneFinancial(
+    dairyId,
+    startDate,
+    endDate
+) {
+
+    const dairy =
+        await Dairy.findById(
+            dairyId
+        )
+
+        .select(
+            [
+                "name",
+                "code",
+                "assetCode",
+                "type",
+                "status",
+                "buyingPrice",
+                "currentWorth",
+                "sellingPrice",
+                "revenue",
+                "description"
+            ].join(" ")
+        )
+
+        .lean();
+
+
+    if (!dairy) {
+
+        throw new Error(
+            "Standalone asset not found."
         );
 
+    }
 
-    const salesAmount =
-        getSalesAmount(
+
+    if (
+        !isStandaloneAsset(
             dairy
+        )
+    ) {
+
+        throw new Error(
+            "The selected record is not a standalone asset."
+        );
+
+    }
+
+
+    const liabilities =
+        await getLiabilityTotal(
+            dairyId,
+            startDate,
+            endDate
         );
 
 
-    const revenue =
-        number(
-            dairy.revenue
-        );
-
-
-    return {
-
-        ...dairy,
-
-        currentWorth:
-            number(
-                dairy.currentWorth
-            ),
-
-        salesAmount,
-
-        revenue,
-
-        totalLiabilities:
-            liabilities,
-
-        profit
-
-    };
+    return buildFinancialRecord(
+        dairy,
+        liabilities
+    );
 
 }
 
@@ -898,8 +1091,6 @@ async function getDairyFinancial(
 // ==========================================================
 // GET FARM FINANCIAL TOTALS
 // ==========================================================
-//
-// IMPORTANT:
 //
 // The FARM RECORD itself is financially meaningful.
 //
@@ -911,7 +1102,7 @@ async function getDairyFinancial(
 //     farm revenue
 //     farm profit
 //
-// ARE included.
+// are included.
 //
 // Farm assets are also included.
 //
@@ -1093,13 +1284,21 @@ async function getFarmFinancialTotals(
 
 
         // --------------------------------------------------
+        // ASSET CURRENT WORTH
+        // --------------------------------------------------
+
+        const currentWorth =
+            number(
+                asset.currentWorth
+            );
+
+
+        // --------------------------------------------------
         // ADD ASSET CURRENT WORTH
         // --------------------------------------------------
 
         totalCurrentWorth +=
-            number(
-                asset.currentWorth
-            );
+            currentWorth;
 
 
         // --------------------------------------------------
@@ -1142,10 +1341,7 @@ async function getFarmFinancialTotals(
 
             ...asset,
 
-            currentWorth:
-                number(
-                    asset.currentWorth
-                ),
+            currentWorth,
 
             salesAmount,
 
@@ -1952,6 +2148,8 @@ module.exports = {
     getAllLiabilities,
 
     getDairyFinancial,
+
+    getStandaloneFinancial,
 
     getFarmFinancialTotals,
 
