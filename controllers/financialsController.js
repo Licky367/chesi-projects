@@ -26,6 +26,66 @@ function getUserId(req) {
 
 
 // ==========================================================
+// HELPER
+// NORMALIZE DATE FILTERS
+//
+// The summary.ejs expects:
+//
+// filters: {
+//     startDate,
+//     endDate
+// }
+//
+// Empty values become "".
+//
+// The service receives the same values so that:
+//
+// no dates
+//     -> lifetime
+//
+// start only
+//     -> from start date onward
+//
+// end only
+//     -> up to end date
+//
+// both
+//     -> selected date range
+//
+// IMPORTANT:
+// These filters are intended to affect ONLY:
+//     - liabilities
+//     - profit/loss
+//
+// Current net worth must remain current.
+// ==========================================================
+
+function getDateFilters(req) {
+
+    const startDate =
+        typeof req.query?.startDate === "string"
+            ? req.query.startDate.trim()
+            : "";
+
+
+    const endDate =
+        typeof req.query?.endDate === "string"
+            ? req.query.endDate.trim()
+            : "";
+
+
+    return {
+
+        startDate,
+
+        endDate
+
+    };
+
+}
+
+
+// ==========================================================
 // LIABILITY ENTRY PAGE
 // ==========================================================
 
@@ -43,7 +103,9 @@ async function getLiabilityEntryPage(
 
 
         res.render(
+
             "financials/liability",
+
             {
 
                 title:
@@ -65,6 +127,7 @@ async function getLiabilityEntryPage(
                     req.query.success === "1"
 
             }
+
         );
 
     } catch (error) {
@@ -183,7 +246,7 @@ async function getLiabilityHistoryPage(
 
             endDate
 
-        } = req.query;
+        } = getDateFilters(req);
 
 
         const history =
@@ -214,11 +277,9 @@ async function getLiabilityHistoryPage(
 
                 filters: {
 
-                    startDate:
-                        startDate || "",
+                    startDate,
 
-                    endDate:
-                        endDate || ""
+                    endDate
 
                 }
 
@@ -237,6 +298,24 @@ async function getLiabilityHistoryPage(
 
 // ==========================================================
 // FINANCIAL SUMMARY PAGE
+//
+// summary.ejs expects:
+//
+//     summary
+//
+// AND:
+//
+//     filters
+//
+// The date filter applies ONLY to:
+//
+//     1. liabilities
+//     2. profit/loss
+//
+// Current net worth is NOT date filtered.
+//
+// The service is responsible for enforcing those
+// financial rules.
 // ==========================================================
 
 async function getFinancialSummaryPage(
@@ -247,14 +326,62 @@ async function getFinancialSummaryPage(
 
     try {
 
+        // ----------------------------------------------------
+        // GET FILTERS
+        // ----------------------------------------------------
+
         const {
 
             startDate,
 
             endDate
 
-        } = req.query;
+        } = getDateFilters(req);
 
+
+        // ----------------------------------------------------
+        // GET FINANCIAL SUMMARY
+        //
+        // The service receives the selected period.
+        //
+        // It must return:
+        //
+        // summary: {
+        //
+        //     totals: {
+        //         currentWorth,
+        //         liabilities,
+        //         profit
+        //     },
+        //
+        //     farms: [
+        //
+        //         {
+        //             farm,
+        //             farmLiabilities,
+        //             totalLiabilities,
+        //             profit,
+        //             assets
+        //         }
+        //
+        //     ],
+        //
+        //     standalone: {
+        //         currentWorth,
+        //         liabilities,
+        //         profit,
+        //         assets
+        //     }
+        //
+        // }
+        //
+        // IMPORTANT:
+        //
+        // currentWorth must remain current.
+        //
+        // liabilities and profit must respect
+        // startDate/endDate.
+        // ----------------------------------------------------
 
         const summary =
             await financialsService
@@ -263,6 +390,10 @@ async function getFinancialSummaryPage(
                     endDate
                 );
 
+
+        // ----------------------------------------------------
+        // RENDER SUMMARY PAGE
+        // ----------------------------------------------------
 
         res.render(
 
@@ -276,7 +407,26 @@ async function getFinancialSummaryPage(
                 user:
                     req.user,
 
-                summary
+                summary,
+
+                // ------------------------------------------------
+                // IMPORTANT:
+                //
+                // summary.ejs reads:
+                //
+                // filters?.startDate
+                // filters?.endDate
+                //
+                // Therefore filters MUST be passed separately.
+                // ------------------------------------------------
+
+                filters: {
+
+                    startDate,
+
+                    endDate
+
+                }
 
             }
 
@@ -316,7 +466,7 @@ async function getDairyFinancialPage(
 
             endDate
 
-        } = req.query;
+        } = getDateFilters(req);
 
 
         const financial =
@@ -356,11 +506,9 @@ async function getDairyFinancialPage(
 
                 filters: {
 
-                    startDate:
-                        startDate || "",
+                    startDate,
 
-                    endDate:
-                        endDate || ""
+                    endDate
 
                 }
 
@@ -402,7 +550,7 @@ async function getDairyFinancialApi(
 
             endDate
 
-        } = req.query;
+        } = getDateFilters(req);
 
 
         const financial =
@@ -436,6 +584,22 @@ async function getDairyFinancialApi(
 // ==========================================================
 // API: GET FINANCIAL SUMMARY
 // ==========================================================
+//
+// The API uses exactly the same filter contract as the
+// summary page.
+//
+// The service receives:
+//
+//     startDate
+//     endDate
+//
+// and is responsible for:
+//
+//     - current net worth -> always current
+//     - liabilities       -> filtered
+//     - profit/loss       -> filtered
+//
+// ==========================================================
 
 async function getFinancialSummaryApi(
     req,
@@ -451,7 +615,7 @@ async function getFinancialSummaryApi(
 
             endDate
 
-        } = req.query;
+        } = getDateFilters(req);
 
 
         const summary =
@@ -468,7 +632,15 @@ async function getFinancialSummaryApi(
                 true,
 
             data:
-                summary
+                summary,
+
+            filters: {
+
+                startDate,
+
+                endDate
+
+            }
 
         });
 
