@@ -1,1128 +1,1405 @@
 <% /* ==========================================================
-   FINANCIAL SUMMARY PAGE
-   ==========================================================
+FINANCIAL SUMMARY PAGE
 
-   BACKEND DATA PROVIDED BY:
+BACKEND DATA PROVIDED BY:
 
-       controllers/financialsController.js
+   controllers/financialsController.js
 
-   EXPECTED:
+FINANCIAL RULES
 
-       summary:
+1. DATE FILTER
+   
+   The selected date range applies ONLY to:
+   
+   - Liabilities
+- Profit
+   
+   It does NOT affect current net worth.
+   
+   When no startDate or endDate is supplied:
+   
+   -> Lifetime analysis
 
-           {
-               filters: {
-                   startDate,
-                   endDate
-               },
+2. CURRENT NET WORTH
+   
+   Current net worth is always the CURRENT value.
+   
+   It is NOT calculated for the selected date range.
+   
+   Historical net-worth graphing will be handled separately.
 
-               totals: {
-                   currentWorth,
-                   liabilities,
-                   profit
-               },
+3. PROFIT
+   
+   For a dairy / asset:
+   
+   status === "sold"
+    -> actual realized profit/loss
 
-               farms: [
-                   {
-                       farm,
-                       farmLiabilities,
-                       totalLiabilities,
-                       profit,
-                       assets: []
-                   }
-               ],
+status !== "sold"
+    -> profit = negative liabilities
+   
+   Therefore an unsold item carrying:
+   
+   KSh 50,000 liabilities
+   
+   contributes:
+   
+   -KSh 50,000
+   
+   to the financial position.
+   
+   The controller/service is responsible for supplying
+   the correct profit values.
 
-               standalone: {
-                   currentWorth,
-                   liabilities,
+EXPECTED DATA:
+
+   summary:
+
+       {
+           totals: {
+               currentWorth,
+               liabilities,
+               profit
+           },
+
+           farms: [
+               {
+                   farm,
+                   farmLiabilities,
+                   totalLiabilities,
                    profit,
                    assets: []
                }
+           ],
+
+           standalone: {
+               currentWorth,
+               liabilities,
+               profit,
+               assets: []
            }
+       }
 
-       filters:
 
-           {
-               startDate,
-               endDate
-           }
+   filters:
 
-   IMPORTANT PROFIT RULE
+       {
+           startDate,
+           endDate
+       }
 
-   Profit is only calculated/displayed when the dairy/asset
-   status is "sold".
-
-   Otherwise:
-
-       profit = null
-
-   Negative profit receives:
-
-       financial-negative
-
-   ========================================================== */ %>
-
+========================================================== */ %>
 
 <%
-    // ========================================================
-    // MONEY FORMATTER
-    // ========================================================
+// ========================================================
+// MONEY FORMATTER
+// ========================================================
 
-    function formatMoney(value) {
+function formatMoney(value) {
 
-        if (
-            value === null ||
-            value === undefined ||
-            Number.isNaN(Number(value))
-        ) {
+    if (
+        value === null ||
+        value === undefined ||
+        value === "" ||
+        Number.isNaN(Number(value))
+    ) {
 
-            return "—";
-
-        }
-
-        return Number(value).toLocaleString(
-
-            "en-KE",
-
-            {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }
-
-        );
+        return "—";
 
     }
 
+    return Number(value).toLocaleString(
 
-    // ========================================================
-    // PROFIT CLASS
-    // ========================================================
+        "en-KE",
 
-    function profitClass(value) {
-
-        if (
-            value !== null &&
-            value !== undefined &&
-            Number(value) < 0
-        ) {
-
-            return "financial-negative";
-
+        {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         }
 
-        return "financial-positive";
-
-    }
-
-
-    // ========================================================
-    // PROFIT TEXT
-    // ========================================================
-
-    function profitText(value) {
-
-        if (
-            value === null ||
-            value === undefined
-        ) {
-
-            return "—";
-
-        }
-
-        return "KSh " + formatMoney(value);
-
-    }
-
-
-    // ========================================================
-    // SAFE SUMMARY VALUES
-    // ========================================================
-
-    const totals =
-        summary?.totals || {};
-
-
-    const standalone =
-        summary?.standalone || {};
-
-
-    const farms =
-        Array.isArray(summary?.farms)
-
-            ? summary.farms
-
-            : [];
-
-
-    // ========================================================
-    // FARM TOTALS
-    //
-    // Farm current worth is based on the farm record itself.
-    //
-    // Farm liabilities include:
-    //
-    //     1. Farm's own liability
-    //     2. Liabilities belonging to farm assets
-    //
-    // The service provides:
-    //
-    //     farmLiabilities
-    //     totalLiabilities
-    // ========================================================
-
-    let farmCurrentWorth = 0;
-
-    let farmLiabilities = 0;
-
-    let farmProfit = 0;
-
-
-    farms.forEach(
-        function(item) {
-
-            farmCurrentWorth +=
-                Number(
-                    item?.farm?.currentWorth
-                ) || 0;
-
-
-            farmLiabilities +=
-                Number(
-                    item?.totalLiabilities
-                ) || 0;
-
-
-            if (
-                item?.profit !== null &&
-                item?.profit !== undefined
-            ) {
-
-                farmProfit +=
-                    Number(
-                        item.profit
-                    ) || 0;
-
-            }
-
-        }
     );
+
+}
+
+
+// ========================================================
+// PROFIT CLASS
+// ========================================================
+
+function profitClass(value) {
+
+    if (
+        value !== null &&
+        value !== undefined &&
+        value !== "" &&
+        Number(value) < 0
+    ) {
+
+        return "financial-negative";
+
+    }
+
+    return "financial-positive";
+
+}
+
+
+// ========================================================
+// PROFIT TEXT
+// ========================================================
+
+function profitText(value) {
+
+    if (
+        value === null ||
+        value === undefined ||
+        value === ""
+    ) {
+
+        return "—";
+
+    }
+
+    return "KSh " + formatMoney(value);
+
+}
+
+
+// ========================================================
+// SAFE SUMMARY VALUES
+// ========================================================
+
+const totals =
+    summary?.totals || {};
+
+
+const standalone =
+    summary?.standalone || {};
+
+
+const farms =
+    Array.isArray(summary?.farms)
+
+        ? summary.farms
+
+        : [];
+
+
+// ========================================================
+// FILTER STATE
+// ========================================================
+
+const startDate =
+    filters?.startDate || "";
+
+
+const endDate =
+    filters?.endDate || "";
+
+
+const hasDateFilter =
+    Boolean(
+        startDate ||
+        endDate
+    );
+
+
+// ========================================================
+// FARM TOTALS
+//
+// IMPORTANT:
+//
+// farmCurrentWorth is ALWAYS the current value.
+//
+// It is NOT affected by the date filter.
+//
+// farmLiabilities and farmProfit are supplied by the
+// backend and are expected to respect the selected
+// liability/profit date range.
+// ========================================================
+
+let farmCurrentWorth = 0;
+
+let farmLiabilities = 0;
+
+let farmProfit = 0;
+
+
+farms.forEach(
+    function(item) {
+
+        // ------------------------------------------------
+        // CURRENT NET WORTH
+        //
+        // Always current.
+        // Never date-filtered.
+        // ------------------------------------------------
+
+        farmCurrentWorth +=
+            Number(
+                item?.farm?.currentWorth
+            ) || 0;
+
+
+        // ------------------------------------------------
+        // LIABILITIES
+        //
+        // Backend supplies the filtered value.
+        // ------------------------------------------------
+
+        farmLiabilities +=
+            Number(
+                item?.totalLiabilities
+            ) || 0;
+
+
+        // ------------------------------------------------
+        // PROFIT
+        //
+        // Backend supplies:
+        //
+        // SOLD:
+        //     realized profit/loss
+        //
+        // NOT SOLD:
+        //     negative liabilities
+        // ------------------------------------------------
+
+        if (
+            item?.profit !== null &&
+            item?.profit !== undefined &&
+            item?.profit !== ""
+        ) {
+
+            farmProfit +=
+                Number(
+                    item.profit
+                ) || 0;
+
+        }
+
+    }
+);
+
 %>
 
+<div class="financial-page summary-page"><!-- ======================================================
+     HEADER
+     ====================================================== -->
 
-<div class="financial-page summary-page">
+<div class="financial-page-header">
 
+    <div>
 
-    <!-- ======================================================
-         HEADER
-         ====================================================== -->
+        <span class="financial-eyebrow">
 
-    <div class="financial-page-header">
+            FINANCIALS
 
-        <div>
-
-            <span class="financial-eyebrow">
-
-                FINANCIALS
-
-            </span>
-
-            <h1 class="financial-title">
-
-                Financial Summary
-
-            </h1>
-
-            <p class="financial-subtitle">
-
-                Overview of current worth, liabilities,
-                and realized profit.
-
-            </p>
-
-        </div>
+        </span>
 
 
-        <div>
+        <h1 class="financial-title">
 
-            <a
-                href="/financials/liability"
-                class="financial-button financial-button-primary"
-            >
+            Financial Summary
 
-                <i class="bi bi-plus-circle"></i>
+        </h1>
 
-                Record Liability
 
-            </a>
+        <p class="financial-subtitle">
 
-        </div>
+            Current net worth, liabilities, and realized
+            financial performance.
+
+        </p>
 
     </div>
 
 
-    <!-- ======================================================
-         DATE FILTER
-         ====================================================== -->
+    <div>
 
-    <section class="financial-filter-card">
+        <a
+            href="/financials/liability"
+            class="financial-button financial-button-primary"
+        >
 
+            <i class="bi bi-plus-circle"></i>
 
-        <div class="financial-filter-header">
+            Record Liability
 
-            <div>
+        </a>
 
-                <h2>
+    </div>
 
-                    Analysis Period
-
-                </h2>
-
-                <p>
-
-                    Leave the dates empty for lifetime analysis.
-
-                </p>
-
-            </div>
+</div>
 
 
-            <i class="bi bi-calendar3"></i>
+<!-- ======================================================
+     DATE FILTER
+     ====================================================== -->
+
+<section class="financial-filter-card">
+
+
+    <div class="financial-filter-header">
+
+        <div>
+
+            <h2>
+
+                Liability & Profit Period
+
+            </h2>
+
+
+            <p>
+
+                The date range applies only to liabilities
+                and profit. Current net worth is always
+                shown as the current value.
+
+            </p>
 
         </div>
 
 
-        <form
-            method="GET"
-            action="/financials"
-            class="financial-filter-form"
-        >
+        <i class="bi bi-calendar3"></i>
+
+    </div>
 
 
-            <div class="financial-filter-group">
-
-                <label for="startDate">
-
-                    From
-
-                </label>
-
-                <input
-                    type="date"
-                    id="startDate"
-                    name="startDate"
-                    value="<%= filters?.startDate || '' %>"
-                >
-
-            </div>
+    <form
+        method="GET"
+        action="/financials"
+        class="financial-filter-form"
+    >
 
 
-            <div class="financial-filter-group">
+        <!-- ==================================================
+             START DATE
+             ================================================== -->
 
-                <label for="endDate">
+        <div class="financial-filter-group">
 
-                    To
+            <label for="startDate">
 
-                </label>
+                From
 
-                <input
-                    type="date"
-                    id="endDate"
-                    name="endDate"
-                    value="<%= filters?.endDate || '' %>"
-                >
-
-            </div>
+            </label>
 
 
-            <button
-                type="submit"
-                class="financial-button financial-button-primary"
+            <input
+                type="date"
+                id="startDate"
+                name="startDate"
+                value="<%= startDate %>"
             >
 
-                <i class="bi bi-funnel"></i>
-
-                Apply Filter
-
-            </button>
+        </div>
 
 
-            <% if (
-                filters?.startDate ||
-                filters?.endDate
-            ) { %>
+        <!-- ==================================================
+             END DATE
+             ================================================== -->
 
-                <a
-                    href="/financials"
-                    class="financial-clear-filter"
-                >
+        <div class="financial-filter-group">
 
-                    Clear
+            <label for="endDate">
 
-                </a>
+                To
+
+            </label>
+
+
+            <input
+                type="date"
+                id="endDate"
+                name="endDate"
+                value="<%= endDate %>"
+            >
+
+        </div>
+
+
+        <!-- ==================================================
+             APPLY
+             ================================================== -->
+
+        <button
+            type="submit"
+            class="financial-button financial-button-primary"
+        >
+
+            <i class="bi bi-funnel"></i>
+
+            Apply Filter
+
+        </button>
+
+
+        <!-- ==================================================
+             CLEAR
+             ================================================== -->
+
+        <% if (hasDateFilter) { %>
+
+            <a
+                href="/financials"
+                class="financial-clear-filter"
+            >
+
+                <i class="bi bi-x-circle"></i>
+
+                Clear
+
+            </a>
+
+        <% } %>
+
+
+    </form>
+
+
+    <!-- ==================================================
+         PERIOD STATUS
+         ================================================== -->
+
+    <div class="financial-period">
+
+        <i class="bi bi-clock-history"></i>
+
+
+        <% if (hasDateFilter) { %>
+
+
+            <span>
+
+                Liability & profit analysis:
+
+            </span>
+
+
+            <% if (startDate) { %>
+
+                <strong>
+
+                    <%= startDate %>
+
+                </strong>
 
             <% } %>
 
 
-        </form>
+            <% if (startDate && endDate) { %>
 
-
-        <div class="financial-period">
-
-            <i class="bi bi-clock-history"></i>
-
-
-            <% if (
-                filters?.startDate ||
-                filters?.endDate
-            ) { %>
-
-                Filtered analysis
-
-
-                <% if (filters?.startDate) { %>
-
-                    from
-
-                    <strong>
-
-                        <%= filters.startDate %>
-
-                    </strong>
-
-                <% } %>
-
-
-                <% if (filters?.endDate) { %>
+                <span>
 
                     to
 
-                    <strong>
-
-                        <%= filters.endDate %>
-
-                    </strong>
-
-                <% } %>
-
-
-            <% } else { %>
-
-                Lifetime analysis
+                </span>
 
             <% } %>
 
-        </div>
 
+            <% if (endDate) { %>
 
-    </section>
+                <strong>
 
-
-    <!-- ======================================================
-         TOP LEVEL SUMMARY
-         ====================================================== -->
-
-    <section class="financial-summary-grid">
-
-
-        <!-- ==================================================
-             CURRENT WORTH
-             ================================================== -->
-
-        <article class="financial-summary-card">
-
-            <div class="financial-summary-icon">
-
-                <i class="bi bi-building"></i>
-
-            </div>
-
-
-            <div>
-
-                <span class="financial-summary-label">
-
-                    Total Current Worth
-
-                </span>
-
-
-                <strong class="financial-summary-value">
-
-                    KSh
-                    <%= formatMoney(
-                        totals.currentWorth
-                    ) %>
+                    <%= endDate %>
 
                 </strong>
 
-            </div>
-
-        </article>
-
-
-        <!-- ==================================================
-             LIABILITIES
-             ================================================== -->
-
-        <article class="financial-summary-card">
-
-            <div class="financial-summary-icon">
-
-                <i class="bi bi-receipt"></i>
-
-            </div>
-
-
-            <div>
-
-                <span class="financial-summary-label">
-
-                    Total Liabilities
-
-                </span>
-
-
-                <strong class="financial-summary-value">
-
-                    KSh
-                    <%= formatMoney(
-                        totals.liabilities
-                    ) %>
-
-                </strong>
-
-            </div>
-
-        </article>
-
-
-        <!-- ==================================================
-             PROFIT
-             ================================================== -->
-
-        <article
-            class="
-                financial-summary-card
-
-                <%= totals.profit !== null &&
-                    totals.profit !== undefined &&
-                    Number(totals.profit) < 0
-
-                        ? 'financial-profit-negative'
-
-                        : ''
-                %>
-            "
-        >
-
-            <div class="financial-summary-icon">
-
-                <i class="bi bi-graph-up-arrow"></i>
-
-            </div>
-
-
-            <div>
-
-                <span class="financial-summary-label">
-
-                    Total Profit
-
-                </span>
-
-
-                <strong
-                    class="
-                        financial-summary-value
-                        <%= profitClass(
-                            totals.profit
-                        ) %>
-                    "
-                >
-
-                    <%= profitText(
-                        totals.profit
-                    ) %>
-
-                </strong>
-
-            </div>
-
-        </article>
-
-
-    </section>
-
-
-    <!-- ======================================================
-         CATEGORY SUMMARY
-         ====================================================== -->
-
-    <section class="financial-section">
-
-
-        <div class="financial-section-header">
-
-            <span class="financial-eyebrow">
-
-                BREAKDOWN
-
-            </span>
-
-
-            <h2>
-
-                Assets & Dairy Farms
-
-            </h2>
-
-
-            <p>
-
-                Financial position grouped by asset category.
-
-            </p>
-
-        </div>
-
-
-        <div class="financial-category-grid">
-
-
-            <!-- ==================================================
-                 STANDALONE ASSETS
-                 ================================================== -->
-
-            <article class="financial-category-card">
-
-
-                <div class="financial-category-header">
-
-                    <div>
-
-                        <span class="financial-category-label">
-
-                            STANDALONE ASSETS
-
-                        </span>
-
-
-                        <h3>
-
-                            Standalone Assets
-
-                        </h3>
-
-                    </div>
-
-
-                    <i class="bi bi-box"></i>
-
-                </div>
-
-
-                <div class="financial-metric-list">
-
-
-                    <!-- CURRENT WORTH -->
-
-                    <div class="financial-metric">
-
-                        <span>
-
-                            Current Worth
-
-                        </span>
-
-
-                        <strong>
-
-                            KSh
-                            <%= formatMoney(
-                                standalone.currentWorth
-                            ) %>
-
-                        </strong>
-
-                    </div>
-
-
-                    <!-- LIABILITIES -->
-
-                    <div class="financial-metric">
-
-                        <span>
-
-                            Total Liabilities
-
-                        </span>
-
-
-                        <strong class="financial-liability-text">
-
-                            KSh
-                            <%= formatMoney(
-                                standalone.liabilities
-                            ) %>
-
-                        </strong>
-
-                    </div>
-
-
-                    <!-- PROFIT -->
-
-                    <div class="financial-metric">
-
-                        <span>
-
-                            Total Profit
-
-                        </span>
-
-
-                        <strong
-                            class="<%= profitClass(
-                                standalone.profit
-                            ) %>"
-                        >
-
-                            <%= profitText(
-                                standalone.profit
-                            ) %>
-
-                        </strong>
-
-                    </div>
-
-
-                </div>
-
-
-            </article>
-
-
-            <!-- ==================================================
-                 DAIRY FARMS
-                 ================================================== -->
-
-            <article class="financial-category-card">
-
-
-                <div class="financial-category-header">
-
-                    <div>
-
-                        <span class="financial-category-label">
-
-                            FARMS
-
-                        </span>
-
-
-                        <h3>
-
-                            Dairy Farms
-
-                        </h3>
-
-                    </div>
-
-
-                    <i class="bi bi-diagram-3"></i>
-
-                </div>
-
-
-                <div class="financial-metric-list">
-
-
-                    <!-- CURRENT WORTH -->
-
-                    <div class="financial-metric">
-
-                        <span>
-
-                            Current Worth
-
-                        </span>
-
-
-                        <strong>
-
-                            KSh
-                            <%= formatMoney(
-                                farmCurrentWorth
-                            ) %>
-
-                        </strong>
-
-                    </div>
-
-
-                    <!-- LIABILITIES -->
-
-                    <div class="financial-metric">
-
-                        <span>
-
-                            Total Liabilities
-
-                        </span>
-
-
-                        <strong class="financial-liability-text">
-
-                            KSh
-                            <%= formatMoney(
-                                farmLiabilities
-                            ) %>
-
-                        </strong>
-
-                    </div>
-
-
-                    <!-- PROFIT -->
-
-                    <div class="financial-metric">
-
-                        <span>
-
-                            Total Profit
-
-                        </span>
-
-
-                        <strong
-                            class="<%= profitClass(
-                                farmProfit
-                            ) %>"
-                        >
-
-                            <%= profitText(
-                                farmProfit
-                            ) %>
-
-                        </strong>
-
-                    </div>
-
-
-                </div>
-
-
-            </article>
-
-
-        </div>
-
-    </section>
-
-
-    <!-- ======================================================
-         INDIVIDUAL FARM ANALYTICS
-         ====================================================== -->
-
-    <section class="financial-section">
-
-
-        <div class="financial-section-header">
-
-            <span class="financial-eyebrow">
-
-                FARM ANALYTICS
-
-            </span>
-
-
-            <h2>
-
-                Dairy Farm Financials
-
-            </h2>
-
-
-            <p>
-
-                Each farm includes its own financial records
-                and the financial records of its assets.
-
-            </p>
-
-        </div>
-
-
-        <% if (
-            farms.length
-        ) { %>
-
-
-            <div class="financial-farm-summary-grid">
-
-
-                <% farms.forEach(
-                    function(item)
-                { %>
-
-
-                    <%
-                        const farm =
-                            item?.farm || {};
-
-                        const farmProfitValue =
-                            item?.profit;
-                    %>
-
-
-                    <article
-                        class="
-                            financial-farm-summary-card
-
-                            <%= farmProfitValue !== null &&
-                                farmProfitValue !== undefined &&
-                                Number(farmProfitValue) < 0
-
-                                    ? 'financial-farm-negative'
-
-                                    : ''
-                            %>
-                        "
-                    >
-
-
-                        <!-- ==================================
-                             FARM HEADER
-                             ================================== -->
-
-                        <div class="financial-farm-summary-header">
-
-                            <div>
-
-                                <span>
-
-                                    Farm Code:
-
-                                    <%= farm.code ?? "—" %>
-
-                                </span>
-
-
-                                <h3>
-
-                                    <%= farm.name || "Unnamed Farm" %>
-
-                                </h3>
-
-                            </div>
-
-
-                            <i class="bi bi-building"></i>
-
-                        </div>
-
-
-                        <!-- ==================================
-                             FARM METRICS
-                             ================================== -->
-
-                        <div class="financial-farm-metrics">
-
-
-                            <!-- CURRENT WORTH -->
-
-                            <div>
-
-                                <span>
-
-                                    Current Worth
-
-                                </span>
-
-
-                                <strong>
-
-                                    KSh
-                                    <%= formatMoney(
-                                        farm.currentWorth
-                                    ) %>
-
-                                </strong>
-
-                            </div>
-
-
-                            <!-- LIABILITIES -->
-
-                            <div>
-
-                                <span>
-
-                                    Liabilities
-
-                                </span>
-
-
-                                <strong
-                                    class="financial-liability-text"
-                                >
-
-                                    KSh
-                                    <%= formatMoney(
-                                        item.totalLiabilities
-                                    ) %>
-
-                                </strong>
-
-                            </div>
-
-
-                            <!-- PROFIT -->
-
-                            <div>
-
-                                <span>
-
-                                    Profit
-
-                                </span>
-
-
-                                <strong
-                                    class="<%= profitClass(
-                                        farmProfitValue
-                                    ) %>"
-                                >
-
-                                    <%= profitText(
-                                        farmProfitValue
-                                    ) %>
-
-                                </strong>
-
-                            </div>
-
-
-                        </div>
-
-
-                        <!-- ==================================
-                             LIABILITY BREAKDOWN
-                             ================================== -->
-
-                        <div class="financial-farm-liability-breakdown">
-
-
-                            <div>
-
-                                <span>
-
-                                    Farm's Own Liabilities
-
-                                </span>
-
-
-                                <strong>
-
-                                    KSh
-                                    <%= formatMoney(
-                                        item.farmLiabilities
-                                    ) %>
-
-                                </strong>
-
-                            </div>
-
-
-                            <div>
-
-                                <span>
-
-                                    Farm Assets
-
-                                </span>
-
-
-                                <strong>
-
-                                    <%= Array.isArray(item.assets)
-                                        ? item.assets.length
-                                        : 0
-                                    %>
-
-                                </strong>
-
-                            </div>
-
-
-                        </div>
-
-
-                        <!-- ==================================
-                             NOTE
-                             ================================== -->
-
-                        <div class="financial-farm-note">
-
-                            <i class="bi bi-info-circle"></i>
-
-
-                            <span>
-
-                                Total liabilities include the
-                                farm's own liability and the
-                                liabilities of its assets.
-
-                            </span>
-
-                        </div>
-
-
-                    </article>
-
-
-                <% }); %>
-
-
-            </div>
+            <% } %>
 
 
         <% } else { %>
 
 
-            <div class="financial-empty">
+            <span>
 
-                <i class="bi bi-building"></i>
+                Lifetime liability & profit analysis
 
-
-                <strong>
-
-                    No dairy farms found
-
-                </strong>
-
-
-                <span>
-
-                    There are currently no dairy farms
-                    available for financial analysis.
-
-                </span>
-
-            </div>
+            </span>
 
 
         <% } %>
 
 
-    </section>
+    </div>
 
 
-</div>
+</section>
 
 
-<style>
+<!-- ======================================================
+     TOP LEVEL SUMMARY
+     ====================================================== -->
+
+<section class="financial-summary-grid">
+
+
+    <!-- ==================================================
+         CURRENT NET WORTH
+         ================================================== -->
+
+    <article class="financial-summary-card">
+
+
+        <div class="financial-summary-icon">
+
+            <i class="bi bi-wallet2"></i>
+
+        </div>
+
+
+        <div>
+
+            <span class="financial-summary-label">
+
+                Current Net Worth
+
+            </span>
+
+
+            <strong class="financial-summary-value">
+
+                KSh
+                <%= formatMoney(
+                    totals.currentWorth
+                ) %>
+
+            </strong>
+
+
+            <small class="financial-summary-hint">
+
+                Current value — not date filtered
+
+            </small>
+
+        </div>
+
+
+    </article>
+
+
+    <!-- ==================================================
+         LIABILITIES
+         ================================================== -->
+
+    <article class="financial-summary-card">
+
+
+        <div class="financial-summary-icon">
+
+            <i class="bi bi-receipt"></i>
+
+        </div>
+
+
+        <div>
+
+            <span class="financial-summary-label">
+
+                Total Liabilities
+
+            </span>
+
+
+            <strong class="financial-summary-value">
+
+                KSh
+                <%= formatMoney(
+                    totals.liabilities
+                ) %>
+
+            </strong>
+
+
+            <small class="financial-summary-hint">
+
+                <% if (hasDateFilter) { %>
+
+                    Selected period
+
+                <% } else { %>
+
+                    Lifetime
+
+                <% } %>
+
+            </small>
+
+        </div>
+
+
+    </article>
+
+
+    <!-- ==================================================
+         PROFIT
+         ================================================== -->
+
+    <article
+        class="
+            financial-summary-card
+
+            <%= totals.profit !== null &&
+                totals.profit !== undefined &&
+                Number(totals.profit) < 0
+
+                    ? 'financial-profit-negative'
+
+                    : ''
+            %>
+        "
+    >
+
+
+        <div class="financial-summary-icon">
+
+            <i class="bi bi-graph-up-arrow"></i>
+
+        </div>
+
+
+        <div>
+
+            <span class="financial-summary-label">
+
+                Financial Profit / Loss
+
+            </span>
+
+
+            <strong
+                class="
+                    financial-summary-value
+
+                    <%= profitClass(
+                        totals.profit
+                    ) %>
+                "
+            >
+
+                <%= profitText(
+                    totals.profit
+                ) %>
+
+            </strong>
+
+
+            <small class="financial-summary-hint">
+
+                <% if (hasDateFilter) { %>
+
+                    Selected period
+
+                <% } else { %>
+
+                    Lifetime
+
+                <% } %>
+
+            </small>
+
+        </div>
+
+
+    </article>
+
+
+</section>
+
+
+<!-- ======================================================
+     CATEGORY SUMMARY
+     ====================================================== -->
+
+<section class="financial-section">
+
+
+    <div class="financial-section-header">
+
+        <span class="financial-eyebrow">
+
+            BREAKDOWN
+
+        </span>
+
+
+        <h2>
+
+            Assets & Dairy Farms
+
+        </h2>
+
+
+        <p>
+
+            Current net worth is shown separately from
+            date-filtered liabilities and profit.
+
+        </p>
+
+    </div>
+
+
+    <div class="financial-category-grid">
+
+
+        <!-- ==================================================
+             STANDALONE ASSETS
+             ================================================== -->
+
+        <article class="financial-category-card">
+
+
+            <div class="financial-category-header">
+
+                <div>
+
+                    <span class="financial-category-label">
+
+                        STANDALONE ASSETS
+
+                    </span>
+
+
+                    <h3>
+
+                        Standalone Assets
+
+                    </h3>
+
+                </div>
+
+
+                <i class="bi bi-box"></i>
+
+            </div>
+
+
+            <div class="financial-metric-list">
+
+
+                <!-- ==================================================
+                     CURRENT NET WORTH
+                     ================================================== -->
+
+                <div class="financial-metric">
+
+                    <span>
+
+                        Current Net Worth
+
+                    </span>
+
+
+                    <strong>
+
+                        KSh
+                        <%= formatMoney(
+                            standalone.currentWorth
+                        ) %>
+
+                    </strong>
+
+                </div>
+
+
+                <!-- ==================================================
+                     LIABILITIES
+                     ================================================== -->
+
+                <div class="financial-metric">
+
+                    <span>
+
+                        Total Liabilities
+
+                        <% if (hasDateFilter) { %>
+
+                            <small>
+
+                                Filtered
+
+                            </small>
+
+                        <% } %>
+
+                    </span>
+
+
+                    <strong
+                        class="financial-liability-text"
+                    >
+
+                        KSh
+                        <%= formatMoney(
+                            standalone.liabilities
+                        ) %>
+
+                    </strong>
+
+                </div>
+
+
+                <!-- ==================================================
+                     PROFIT
+                     ================================================== -->
+
+                <div class="financial-metric">
+
+                    <span>
+
+                        Profit / Loss
+
+                        <% if (hasDateFilter) { %>
+
+                            <small>
+
+                                Filtered
+
+                            </small>
+
+                        <% } %>
+
+                    </span>
+
+
+                    <strong
+                        class="<%= profitClass(
+                            standalone.profit
+                        ) %>"
+                    >
+
+                        <%= profitText(
+                            standalone.profit
+                        ) %>
+
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+        </article>
+
+
+        <!-- ==================================================
+             DAIRY FARMS
+             ================================================== -->
+
+        <article class="financial-category-card">
+
+
+            <div class="financial-category-header">
+
+                <div>
+
+                    <span class="financial-category-label">
+
+                        FARMS
+
+                    </span>
+
+
+                    <h3>
+
+                        Dairy Farms
+
+                    </h3>
+
+                </div>
+
+
+                <i class="bi bi-diagram-3"></i>
+
+            </div>
+
+
+            <div class="financial-metric-list">
+
+
+                <!-- ==================================================
+                     CURRENT NET WORTH
+                     ================================================== -->
+
+                <div class="financial-metric">
+
+                    <span>
+
+                        Current Net Worth
+
+                    </span>
+
+
+                    <strong>
+
+                        KSh
+                        <%= formatMoney(
+                            farmCurrentWorth
+                        ) %>
+
+                    </strong>
+
+                </div>
+
+
+                <!-- ==================================================
+                     LIABILITIES
+                     ================================================== -->
+
+                <div class="financial-metric">
+
+                    <span>
+
+                        Total Liabilities
+
+                        <% if (hasDateFilter) { %>
+
+                            <small>
+
+                                Filtered
+
+                            </small>
+
+                        <% } %>
+
+                    </span>
+
+
+                    <strong
+                        class="financial-liability-text"
+                    >
+
+                        KSh
+                        <%= formatMoney(
+                            farmLiabilities
+                        ) %>
+
+                    </strong>
+
+                </div>
+
+
+                <!-- ==================================================
+                     PROFIT
+                     ================================================== -->
+
+                <div class="financial-metric">
+
+                    <span>
+
+                        Profit / Loss
+
+                        <% if (hasDateFilter) { %>
+
+                            <small>
+
+                                Filtered
+
+                            </small>
+
+                        <% } %>
+
+                    </span>
+
+
+                    <strong
+                        class="<%= profitClass(
+                            farmProfit
+                        ) %>"
+                    >
+
+                        <%= profitText(
+                            farmProfit
+                        ) %>
+
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+
+        </article>
+
+
+    </div>
+
+
+</section>
+
+
+<!-- ======================================================
+     INDIVIDUAL FARM ANALYTICS
+     ====================================================== -->
+
+<section class="financial-section">
+
+
+    <div class="financial-section-header">
+
+        <span class="financial-eyebrow">
+
+            FARM ANALYTICS
+
+        </span>
+
+
+        <h2>
+
+            Dairy Farm Financials
+
+        </h2>
+
+
+        <p>
+
+            Current farm net worth is shown independently
+            from the selected liability and profit period.
+
+        </p>
+
+    </div>
+
+
+    <% if (farms.length) { %>
+
+
+        <div class="financial-farm-summary-grid">
+
+
+            <% farms.forEach(
+                function(item)
+            { %>
+
+
+                <%
+                    const farm =
+                        item?.farm || {};
+
+
+                    const farmProfitValue =
+                        item?.profit;
+
+
+                    const farmIsNegative =
+                        farmProfitValue !== null &&
+                        farmProfitValue !== undefined &&
+                        farmProfitValue !== "" &&
+                        Number(farmProfitValue) < 0;
+                %>
+
+
+                <article
+                    class="
+                        financial-farm-summary-card
+
+                        <%= farmIsNegative
+                            ? 'financial-farm-negative'
+                            : ''
+                        %>
+                    "
+                >
+
+
+                    <!-- ==================================
+                         FARM HEADER
+                         ================================== -->
+
+                    <div class="financial-farm-summary-header">
+
+
+                        <div>
+
+                            <span>
+
+                                Farm Code:
+
+                                <%= farm.code ?? "—" %>
+
+                            </span>
+
+
+                            <h3>
+
+                                <%= farm.name ||
+                                    "Unnamed Farm"
+                                %>
+
+                            </h3>
+
+                        </div>
+
+
+                        <i class="bi bi-building"></i>
+
+                    </div>
+
+
+                    <!-- ==================================
+                         FARM METRICS
+                         ================================== -->
+
+                    <div class="financial-farm-metrics">
+
+
+                        <!-- ==================================
+                             CURRENT NET WORTH
+                             ================================== -->
+
+                        <div>
+
+                            <span>
+
+                                Current Net Worth
+
+                            </span>
+
+
+                            <strong>
+
+                                KSh
+                                <%= formatMoney(
+                                    farm.currentWorth
+                                ) %>
+
+                            </strong>
+
+
+                            <small>
+
+                                Current value
+
+                            </small>
+
+                        </div>
+
+
+                        <!-- ==================================
+                             LIABILITIES
+                             ================================== -->
+
+                        <div>
+
+                            <span>
+
+                                Liabilities
+
+                            </span>
+
+
+                            <strong
+                                class="financial-liability-text"
+                            >
+
+                                KSh
+                                <%= formatMoney(
+                                    item.totalLiabilities
+                                ) %>
+
+                            </strong>
+
+
+                            <small>
+
+                                <% if (hasDateFilter) { %>
+
+                                    Selected period
+
+                                <% } else { %>
+
+                                    Lifetime
+
+                                <% } %>
+
+                            </small>
+
+                        </div>
+
+
+                        <!-- ==================================
+                             PROFIT
+                             ================================== -->
+
+                        <div>
+
+                            <span>
+
+                                Profit / Loss
+
+                            </span>
+
+
+                            <strong
+                                class="<%= profitClass(
+                                    farmProfitValue
+                                ) %>"
+                            >
+
+                                <%= profitText(
+                                    farmProfitValue
+                                ) %>
+
+                            </strong>
+
+
+                            <small>
+
+                                <% if (hasDateFilter) { %>
+
+                                    Selected period
+
+                                <% } else { %>
+
+                                    Lifetime
+
+                                <% } %>
+
+                            </small>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- ==================================
+                         LIABILITY BREAKDOWN
+                         ================================== -->
+
+                    <div
+                        class="
+                            financial-farm-liability-breakdown
+                        "
+                    >
+
+
+                        <div>
+
+                            <span>
+
+                                Farm's Own Liabilities
+
+                            </span>
+
+
+                            <strong>
+
+                                KSh
+                                <%= formatMoney(
+                                    item.farmLiabilities
+                                ) %>
+
+                            </strong>
+
+                        </div>
+
+
+                        <div>
+
+                            <span>
+
+                                Farm Assets
+
+                            </span>
+
+
+                            <strong>
+
+                                <%= Array.isArray(
+                                    item.assets
+                                )
+                                    ? item.assets.length
+                                    : 0
+                                %>
+
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <!-- ==================================
+                         FINANCIAL RULE NOTE
+                         ================================== -->
+
+                    <div class="financial-farm-note">
+
+
+                        <i class="bi bi-info-circle"></i>
+
+
+                        <span>
+
+                            Current net worth is always the
+                            farm's current value. Liabilities
+                            and profit follow the selected
+                            period. Unsold assets contribute
+                            their liabilities as a negative
+                            financial position; sold assets
+                            contribute their realized
+                            profit or loss.
+
+                        </span>
+
+
+                    </div>
+
+
+                </article>
+
+
+            <% }); %>
+
+
+        </div>
+
+
+    <% } else { %>
+
+
+        <!-- ==============================================
+             EMPTY STATE
+             ============================================== -->
+
+        <div class="financial-empty">
+
+
+            <i class="bi bi-building"></i>
+
+
+            <strong>
+
+                No dairy farms found
+
+            </strong>
+
+
+            <span>
+
+                There are currently no dairy farms
+                available for financial analysis.
+
+            </span>
+
+
+        </div>
+
+
+    <% } %>
+
+
+</section>
+
+</div><style>
 
 /* ==========================================================
    FINANCIAL SUMMARY PAGE
@@ -1265,7 +1542,9 @@
 
     border-radius:17px;
 
-    box-shadow:0 3px 16px rgba(0,0,0,.06);
+    box-shadow:
+        0 3px 16px
+        rgba(0,0,0,.06);
 
     margin-bottom:28px;
 
@@ -1300,11 +1579,15 @@
 
 .financial-filter-header p{
 
-    margin:4px 0 0;
+    margin:5px 0 0;
+
+    max-width:760px;
 
     color:var(--financial-muted);
 
     font-size:.82rem;
+
+    line-height:1.5;
 
 }
 
@@ -1317,6 +1600,10 @@
 
 }
 
+
+/* ==========================================================
+   FILTER FORM
+   ========================================================== */
 
 .financial-filter-form{
 
@@ -1371,6 +1658,10 @@
 
     font:inherit;
 
+    background:#fff;
+
+    color:var(--financial-text);
+
 }
 
 
@@ -1387,6 +1678,14 @@
 
 .financial-clear-filter{
 
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:5px;
+
     color:var(--financial-green);
 
     text-decoration:none;
@@ -1400,11 +1699,24 @@
 }
 
 
+.financial-clear-filter:hover{
+
+    color:var(--financial-green-dark);
+
+}
+
+
+/* ==========================================================
+   PERIOD INDICATOR
+   ========================================================== */
+
 .financial-period{
 
     display:flex;
 
     align-items:center;
+
+    flex-wrap:wrap;
 
     gap:7px;
 
@@ -1424,6 +1736,15 @@
 .financial-period i{
 
     color:var(--financial-green);
+
+}
+
+
+.financial-period strong{
+
+    color:var(--financial-text);
+
+    font-weight:700;
 
 }
 
@@ -1520,6 +1841,19 @@
 }
 
 
+.financial-summary-hint{
+
+    display:block;
+
+    margin-top:4px;
+
+    color:var(--financial-muted);
+
+    font-size:.68rem;
+
+}
+
+
 .financial-profit-negative{
 
     border-left-color:
@@ -1567,6 +1901,8 @@
     color:var(--financial-muted);
 
     font-size:.87rem;
+
+    line-height:1.5;
 
 }
 
@@ -1696,6 +2032,21 @@
     color:var(--financial-muted);
 
     font-size:.85rem;
+
+}
+
+
+.financial-metric span small{
+
+    display:inline-block;
+
+    margin-left:5px;
+
+    color:var(--financial-green);
+
+    font-size:.65rem;
+
+    font-weight:700;
 
 }
 
@@ -1864,6 +2215,19 @@
 }
 
 
+.financial-farm-metrics small{
+
+    display:block;
+
+    margin-top:4px;
+
+    color:var(--financial-muted);
+
+    font-size:.65rem;
+
+}
+
+
 /* ==========================================================
    FARM LIABILITY BREAKDOWN
    ========================================================== */
@@ -1877,11 +2241,7 @@
 
     gap:10px;
 
-    padding:
-
-        12px
-
-        0;
+    padding:12px 0;
 
     border-top:
         1px solid #edf1ee;
@@ -1946,7 +2306,7 @@
 
     font-size:.73rem;
 
-    line-height:1.4;
+    line-height:1.45;
 
 }
 
@@ -2075,12 +2435,21 @@
 
         min-width:0;
 
+        width:100%;
+
     }
 
 
     .financial-filter-form .financial-button{
 
         width:100%;
+
+    }
+
+
+    .financial-clear-filter{
+
+        align-self:flex-start;
 
     }
 
@@ -2095,6 +2464,13 @@
     .financial-farm-liability-breakdown{
 
         grid-template-columns:1fr;
+
+    }
+
+
+    .financial-period{
+
+        align-items:flex-start;
 
     }
 
