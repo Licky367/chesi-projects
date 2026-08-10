@@ -1,35 +1,41 @@
 <% /* ==========================================================
    DAIRY FARM FINANCIAL PAGE
 
-   SERVICE DATA
-
-   The controller should provide:
+   CONTROLLER DATA:
 
        dairy
 
-   For a Dairy Farm, dairy has:
+   SERVICE RESPONSE FOR FARM:
 
        dairy.farm
        dairy.assets
-       dairy.currentWorth
-       dairy.salesAmount
-       dairy.revenue
-       dairy.liabilities
-       dairy.profit
 
-   FARM IDENTIFICATION
+       dairy.currentWorth
+       dairy.totalCurrentWorth
+
+       dairy.salesAmount
+       dairy.totalSalesAmount
+
+       dairy.revenue
+       dairy.totalRevenue
+
+       dairy.totalLiabilities
+
+       dairy.profit
+       dairy.totalProfit
+
+   FARM IDENTIFICATION:
 
        farm.code < 0
 
-   FARM ASSET IDENTIFICATION
+   FARM ASSET IDENTIFICATION:
 
        asset.assetCode === farm.code
 
-   IMPORTANT
+   The service is responsible for finding and calculating
+   farm assets.
 
-   The service is responsible for finding the assets.
-
-   This template only displays the data supplied by the service.
+   This template only displays the supplied data.
 
    ========================================================== */ %>
 
@@ -136,17 +142,28 @@ const assets =
 
 
 const farmId =
-    farm._id || "";
+    farm._id || financial._id || "";
 
 
 const farmName =
     farm.name ||
+    financial.name ||
     "Dairy Farm";
 
 
 const farmCode =
     farm.code;
 
+
+/* ==========================================================
+   FARM TOTALS
+
+   These include:
+
+       farm itself
+       +
+       all farm assets
+   ========================================================== */
 
 const totalCurrentWorth =
     number(
@@ -171,8 +188,7 @@ const totalRevenue =
 
 const totalLiabilities =
     number(
-        financial.totalLiabilities ??
-        financial.liabilities
+        financial.totalLiabilities
     );
 
 
@@ -182,6 +198,10 @@ const totalProfit =
         financial.profit
     );
 
+
+/* ==========================================================
+   DATE FILTERS
+   ========================================================== */
 
 const filterStart =
     filters?.startDate || "";
@@ -200,6 +220,9 @@ const hasFilter =
 
 /* ==========================================================
    SORT ASSETS
+
+   The service already sorts assets, but sorting here again
+   keeps the display deterministic if the response changes.
    ========================================================== */
 
 assets.sort(
@@ -281,7 +304,8 @@ assets.sort(
 
                 <% if (
                     farmCode !== undefined &&
-                    farmCode !== null
+                    farmCode !== null &&
+                    farmCode !== ""
                 ) { %>
 
                     Farm Code:
@@ -370,7 +394,7 @@ assets.sort(
 
         <form
             method="GET"
-            action="/financials/dairy/<%= farmId %>"
+            action="/financials/farm/<%= farmId %>"
             class="financial-filter-form"
         >
 
@@ -379,7 +403,9 @@ assets.sort(
 
 
                 <label for="startDate">
+
                     From
+
                 </label>
 
 
@@ -398,7 +424,9 @@ assets.sort(
 
 
                 <label for="endDate">
+
                     To
+
                 </label>
 
 
@@ -428,7 +456,7 @@ assets.sort(
             <% if (hasFilter) { %>
 
                 <a
-                    href="/financials/dairy/<%= farmId %>"
+                    href="/financials/farm/<%= farmId %>"
                     class="financial-clear-filter"
                 >
 
@@ -534,12 +562,14 @@ assets.sort(
                 <tbody>
 
 
-                    <% if (assets.length > 0) { %>
+                    <% if (
+                        assets.length > 0
+                    ) { %>
 
 
                         <% assets.forEach(
                             function(asset) {
-                        { %>
+                        %>
 
 
                             <tr>
@@ -569,8 +599,10 @@ assets.sort(
 
                                         <% if (
                                             asset.code !== undefined &&
-                                            asset.code !== null
+                                            asset.code !== null &&
+                                            asset.code !== ""
                                         ) { %>
+
 
                                             <small>
 
@@ -579,13 +611,16 @@ assets.sort(
 
                                             </small>
 
+
                                         <% } %>
 
 
                                         <% if (
                                             asset.assetCode !== undefined &&
-                                            asset.assetCode !== null
+                                            asset.assetCode !== null &&
+                                            asset.assetCode !== ""
                                         ) { %>
+
 
                                             <small>
 
@@ -593,6 +628,7 @@ assets.sort(
                                                 <%= asset.assetCode %>
 
                                             </small>
+
 
                                         <% } %>
 
@@ -666,15 +702,14 @@ assets.sort(
 
                                     KSh
                                     <%= formatMoney(
-                                        asset.totalLiabilities ??
-                                        asset.liabilities
+                                        asset.totalLiabilities
                                     ) %>
 
                                 </td>
 
 
                                 <!-- ==================================
-                                     PROFIT
+                                     PROFIT / LOSS
                                      ================================== -->
 
                                 <td>
@@ -746,7 +781,7 @@ assets.sort(
 
 
                 <!-- ==================================================
-                     TOTAL
+                     FARM TOTAL
                      ================================================== -->
 
                 <tfoot>
