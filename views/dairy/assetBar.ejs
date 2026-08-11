@@ -1,4 +1,4 @@
-<!-- =========================================================
+<% /* =========================================================
      ASSET BAR
 
      FILE:
@@ -7,6 +7,24 @@
      PURPOSE:
      Display properties belonging ONLY to the currently
      viewed Dairy Farm.
+
+     IMPORTANT:
+     ----------------------------------------------------------
+     The "View Property" trigger button is NOT inside this
+     partial.
+
+     The parent page owns the button:
+
+         #viewPropertyButton
+
+     This partial contains:
+
+         1. Sidebar overlay
+         2. Property sidebar
+         3. Farm information
+         4. Animals
+         5. Structures / Machines / Tools
+         6. Asset Bar JavaScript
 
      DATA EXPECTED:
 
@@ -27,37 +45,70 @@
 
      Dairy Farms and unrelated assets have already been
      excluded by pageService.
-========================================================= -->
+========================================================= */ %>
 
 
-<!-- =========================================================
-     VIEW PROPERTY BUTTON
-========================================================= -->
+<%
+/* =========================================================
+   PREPARE ASSET DATA
+========================================================= */
 
-<button
-    type="button"
-    id="viewPropertyButton"
-    class="asset-bar-trigger"
-    aria-controls="assetBar"
-    aria-expanded="false"
->
+const availableAssets =
+    Array.isArray(assetDairies)
+        ? assetDairies.filter(asset => !!asset)
+        : [];
 
-    <span
-        class="asset-bar-trigger-icon"
-        aria-hidden="true"
-    >
-        ◉
-    </span>
 
-    <span class="asset-bar-trigger-text">
-        View Property
-    </span>
+/* =========================================================
+   ANIMALS
 
-</button>
+   code > 0
+========================================================= */
+
+const animalDairies =
+    availableAssets.filter(asset => {
+
+        return (
+
+            asset.code !== null &&
+
+            asset.code !== undefined &&
+
+            Number(asset.code) > 0
+
+        );
+
+    });
+
+
+/* =========================================================
+   STRUCTURES / MACHINES / TOOLS
+
+   code === null / undefined
+========================================================= */
+
+const structureDairies =
+    availableAssets.filter(asset => {
+
+        return (
+
+            asset.code === null ||
+
+            asset.code === undefined
+
+        );
+
+    });
+
+%>
 
 
 <!-- =========================================================
      SIDEBAR OVERLAY
+
+     Hidden by default.
+
+     Clicking the overlay closes the sidebar.
 ========================================================= -->
 
 <div
@@ -88,13 +139,16 @@
 
         <div class="asset-bar-heading">
 
+
             <span class="asset-bar-heading-label">
                 PROPERTY
             </span>
 
+
             <h2>
                 Your Assets
             </h2>
+
 
         </div>
 
@@ -134,62 +188,26 @@
 
         <div class="asset-bar-farm">
 
+
             <span class="asset-bar-farm-label">
                 FARM
             </span>
+
 
             <span class="asset-bar-farm-name">
                 <%= dairy.name %>
             </span>
 
+
             <span class="asset-bar-farm-code">
                 Farm #<%= dairy.code %>
             </span>
+
 
         </div>
 
 
     <% } %>
-
-
-    <!-- =====================================================
-         PREPARE ASSET CATEGORIES
-
-         assetDairies has already been restricted by the
-         backend to this Dairy Farm.
-    ====================================================== -->
-
-    <%
-
-        const availableAssets =
-            Array.isArray(assetDairies)
-                ? assetDairies.filter(asset => !!asset)
-                : [];
-
-
-        const animalDairies =
-            availableAssets.filter(asset => {
-
-                return (
-                    asset.code !== null &&
-                    asset.code !== undefined &&
-                    Number(asset.code) > 0
-                );
-
-            });
-
-
-        const structureDairies =
-            availableAssets.filter(asset => {
-
-                return (
-                    asset.code === null ||
-                    asset.code === undefined
-                );
-
-            });
-
-    %>
 
 
     <!-- =====================================================
@@ -242,9 +260,11 @@
                 Structures
             </span>
 
+
             <span class="asset-bar-tab-subtitle">
                 Machines &amp; Tools
             </span>
+
 
         </button>
 
@@ -260,7 +280,7 @@
 
 
         <!-- =================================================
-             ANIMALS
+             ANIMALS SECTION
         ================================================== -->
 
         <section
@@ -272,26 +292,40 @@
         >
 
 
+            <!-- =============================================
+                 SECTION HEADER
+            ============================================== -->
+
             <div class="asset-bar-section-header">
 
+
                 <div>
+
 
                     <span class="asset-bar-section-label">
                         LIVESTOCK
                     </span>
 
+
                     <h3>
                         Animals
                     </h3>
 
+
                 </div>
+
 
                 <span class="asset-bar-count">
                     <%= animalDairies.length %>
                 </span>
 
+
             </div>
 
+
+            <!-- =============================================
+                 ANIMAL LIST
+            ============================================== -->
 
             <div class="asset-bar-list">
 
@@ -305,12 +339,20 @@
                         <button
                             type="button"
                             class="asset-bar-item asset-bar-animal"
+
                             data-asset-id="<%= animal._id %>"
+
                             data-asset-code="<%= animal.code %>"
-                            data-asset-parent-code="<%= animal.assetCode %>"
+
+                            data-asset-parent-code="<%= animal.assetCode || '' %>"
+
                             data-asset-type="animal"
                         >
 
+
+                            <!-- =================================
+                                 IMAGE
+                            ================================== -->
 
                             <span
                                 class="asset-bar-item-image"
@@ -325,15 +367,21 @@
                             </span>
 
 
+                            <!-- =================================
+                                 INFORMATION
+                            ================================== -->
+
                             <span
                                 class="asset-bar-item-details"
                             >
+
 
                                 <span
                                     class="asset-bar-item-name"
                                 >
                                     <%= animal.name %>
                                 </span>
+
 
                                 <span
                                     class="asset-bar-item-code"
@@ -363,8 +411,13 @@
 
                                 <% } %>
 
+
                             </span>
 
+
+                            <!-- =================================
+                                 ARROW
+                            ================================== -->
 
                             <span
                                 class="asset-bar-item-arrow"
@@ -385,6 +438,7 @@
 
                     <div class="asset-bar-empty">
 
+
                         <span
                             class="asset-bar-empty-icon"
                             aria-hidden="true"
@@ -392,9 +446,11 @@
                             —
                         </span>
 
+
                         <span>
                             No animals found for this dairy farm.
                         </span>
+
 
                     </div>
 
@@ -409,7 +465,7 @@
 
 
         <!-- =================================================
-             STRUCTURES / MACHINES / TOOLS
+             STRUCTURES / MACHINES / TOOLS SECTION
         ================================================== -->
 
         <section
@@ -422,26 +478,40 @@
         >
 
 
+            <!-- =============================================
+                 SECTION HEADER
+            ============================================== -->
+
             <div class="asset-bar-section-header">
 
+
                 <div>
+
 
                     <span class="asset-bar-section-label">
                         FARM PROPERTY
                     </span>
 
+
                     <h3>
                         Structures &amp; Equipment
                     </h3>
 
+
                 </div>
+
 
                 <span class="asset-bar-count">
                     <%= structureDairies.length %>
                 </span>
 
+
             </div>
 
+
+            <!-- =============================================
+                 STRUCTURE LIST
+            ============================================== -->
 
             <div class="asset-bar-list">
 
@@ -455,11 +525,18 @@
                         <button
                             type="button"
                             class="asset-bar-item asset-bar-structure"
+
                             data-asset-id="<%= asset._id %>"
-                            data-asset-parent-code="<%= asset.assetCode %>"
+
+                            data-asset-parent-code="<%= asset.assetCode || '' %>"
+
                             data-asset-type="structure"
                         >
 
+
+                            <!-- =================================
+                                 IMAGE
+                            ================================== -->
 
                             <span
                                 class="asset-bar-item-image"
@@ -474,9 +551,14 @@
                             </span>
 
 
+                            <!-- =================================
+                                 INFORMATION
+                            ================================== -->
+
                             <span
                                 class="asset-bar-item-details"
                             >
+
 
                                 <span
                                     class="asset-bar-item-name"
@@ -506,8 +588,13 @@
 
                                 <% } %>
 
+
                             </span>
 
+
+                            <!-- =================================
+                                 ARROW
+                            ================================== -->
 
                             <span
                                 class="asset-bar-item-arrow"
@@ -528,6 +615,7 @@
 
                     <div class="asset-bar-empty">
 
+
                         <span
                             class="asset-bar-empty-icon"
                             aria-hidden="true"
@@ -535,10 +623,12 @@
                             —
                         </span>
 
+
                         <span>
                             No structures, machines or tools
                             found for this dairy farm.
                         </span>
+
 
                     </div>
 
@@ -561,11 +651,604 @@
 
     <div class="asset-bar-footer">
 
+
         <span>
             Select a property to view its details.
         </span>
+
 
     </div>
 
 
 </aside>
+
+
+<!-- =========================================================
+     ASSET BAR JAVASCRIPT
+
+     The parent page MUST contain:
+
+         #viewPropertyButton
+
+     This script controls that button and this sidebar.
+
+     No separate assetBar.js file is required when this
+     inline script is used.
+========================================================= -->
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+
+        /* =================================================
+           ELEMENTS
+        ================================================= */
+
+        const assetBar =
+            document.getElementById(
+                "assetBar"
+            );
+
+
+        const overlay =
+            document.getElementById(
+                "assetBarOverlay"
+            );
+
+
+        const openButton =
+            document.getElementById(
+                "viewPropertyButton"
+            );
+
+
+        const closeButton =
+            document.getElementById(
+                "closeAssetBar"
+            );
+
+
+        const tabs =
+            document.querySelectorAll(
+                ".asset-bar-tab"
+            );
+
+
+        const sections =
+            document.querySelectorAll(
+                ".asset-bar-section"
+            );
+
+
+        const propertyItems =
+            document.querySelectorAll(
+                ".asset-bar-item"
+            );
+
+
+        /* =================================================
+           SAFETY CHECK
+        ================================================= */
+
+        if (!assetBar) {
+
+            console.warn(
+                "Asset Bar: #assetBar was not found."
+            );
+
+            return;
+
+        }
+
+
+        if (!openButton) {
+
+            console.warn(
+                "Asset Bar: #viewPropertyButton was not found."
+            );
+
+            return;
+
+        }
+
+
+        /* =================================================
+           SET CATEGORY
+        =================================================
+
+           This function controls BOTH:
+
+           - the active tab
+           - the visible section
+
+           Therefore Animals and Structures can never
+           become visible at the same time.
+        ================================================= */
+
+        function setCategory(category) {
+
+
+            if (!category) {
+
+                return;
+
+            }
+
+
+            /* =============================================
+               UPDATE TABS
+            ============================================== */
+
+            tabs.forEach(
+                function(tab) {
+
+
+                    const tabCategory =
+                        tab.dataset.assetCategory;
+
+
+                    const isActive =
+                        tabCategory === category;
+
+
+                    tab.classList.toggle(
+                        "active",
+                        isActive
+                    );
+
+
+                    tab.setAttribute(
+                        "aria-selected",
+                        String(
+                            isActive
+                        )
+                    );
+
+
+                }
+            );
+
+
+            /* =============================================
+               UPDATE SECTIONS
+            ============================================== */
+
+            sections.forEach(
+                function(section) {
+
+
+                    const sectionCategory =
+                        section.dataset.assetSection;
+
+
+                    const isActive =
+                        sectionCategory === category;
+
+
+                    section.classList.toggle(
+                        "active",
+                        isActive
+                    );
+
+
+                    section.hidden =
+                        !isActive;
+
+
+                }
+            );
+
+
+        }
+
+
+        /* =================================================
+           RESET CATEGORY
+           
+           Every time the sidebar opens, Animals is shown
+           first.
+        ================================================= */
+
+        function resetCategory() {
+
+            setCategory(
+                "animals"
+            );
+
+        }
+
+
+        /* =================================================
+           OPEN ASSET BAR
+        ================================================= */
+
+        function openAssetBar() {
+
+
+            /*
+             * Start with Animals.
+             */
+
+            resetCategory();
+
+
+            /*
+             * Show sidebar.
+             */
+
+            assetBar.classList.add(
+                "active"
+            );
+
+
+            /*
+             * Show overlay.
+             */
+
+            if (overlay) {
+
+                overlay.classList.add(
+                    "active"
+                );
+
+            }
+
+
+            /*
+             * Accessibility state.
+             */
+
+            assetBar.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+
+            openButton.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+
+            if (overlay) {
+
+                overlay.setAttribute(
+                    "aria-hidden",
+                    "false"
+                );
+
+            }
+
+
+            /*
+             * Prevent background scrolling.
+             */
+
+            document.body.classList.add(
+                "asset-bar-open"
+            );
+
+
+            /*
+             * Move keyboard focus to close button.
+             */
+
+            if (closeButton) {
+
+                setTimeout(
+                    function() {
+
+                        closeButton.focus();
+
+                    },
+                    50
+                );
+
+            }
+
+
+        }
+
+
+        /* =================================================
+           CLOSE ASSET BAR
+        ================================================= */
+
+        function closeAssetBar() {
+
+
+            /*
+             * Hide sidebar.
+             */
+
+            assetBar.classList.remove(
+                "active"
+            );
+
+
+            /*
+             * Hide overlay.
+             */
+
+            if (overlay) {
+
+                overlay.classList.remove(
+                    "active"
+                );
+
+            }
+
+
+            /*
+             * Accessibility state.
+             */
+
+            assetBar.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+
+            openButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+
+            if (overlay) {
+
+                overlay.setAttribute(
+                    "aria-hidden",
+                    "true"
+                );
+
+            }
+
+
+            /*
+             * Restore background scrolling.
+             */
+
+            document.body.classList.remove(
+                "asset-bar-open"
+            );
+
+
+            /*
+             * Return focus to View Property.
+             */
+
+            openButton.focus();
+
+
+        }
+
+
+        /* =================================================
+           TOGGLE SIDEBAR
+        ================================================= */
+
+        function toggleAssetBar() {
+
+
+            if (
+                assetBar.classList.contains(
+                    "active"
+                )
+            ) {
+
+                closeAssetBar();
+
+            } else {
+
+                openAssetBar();
+
+            }
+
+
+        }
+
+
+        /* =================================================
+           VIEW PROPERTY BUTTON
+        ================================================= */
+
+        openButton.addEventListener(
+            "click",
+            function(event) {
+
+
+                event.preventDefault();
+
+
+                toggleAssetBar();
+
+
+            }
+        );
+
+
+        /* =================================================
+           CLOSE BUTTON
+        ================================================= */
+
+        if (closeButton) {
+
+
+            closeButton.addEventListener(
+                "click",
+                function(event) {
+
+
+                    event.preventDefault();
+
+
+                    closeAssetBar();
+
+
+                }
+            );
+
+
+        }
+
+
+        /* =================================================
+           OVERLAY
+        ================================================= */
+
+        if (overlay) {
+
+
+            overlay.addEventListener(
+                "click",
+                function() {
+
+
+                    closeAssetBar();
+
+
+                }
+            );
+
+
+        }
+
+
+        /* =================================================
+           ESCAPE KEY
+        ================================================= */
+
+        document.addEventListener(
+            "keydown",
+            function(event) {
+
+
+                if (
+                    event.key === "Escape" &&
+                    assetBar.classList.contains(
+                        "active"
+                    )
+                ) {
+
+
+                    closeAssetBar();
+
+
+                }
+
+
+            }
+        );
+
+
+        /* =================================================
+           CATEGORY SWITCHING
+        ================================================= */
+
+        tabs.forEach(
+            function(tab) {
+
+
+                tab.addEventListener(
+                    "click",
+                    function(event) {
+
+
+                        event.preventDefault();
+
+
+                        const category =
+                            tab.dataset.assetCategory;
+
+
+                        if (!category) {
+
+                            return;
+
+                        }
+
+
+                        setCategory(
+                            category
+                        );
+
+
+                    }
+                );
+
+
+            }
+        );
+
+
+        /* =================================================
+           PROPERTY ITEM HANDLING
+
+           No navigation is performed yet.
+
+           The selected property information is stored on
+           the sidebar for future use.
+        ================================================= */
+
+        propertyItems.forEach(
+            function(item) {
+
+
+                item.addEventListener(
+                    "click",
+                    function() {
+
+
+                        const assetId =
+                            item.dataset.assetId ||
+                            "";
+
+
+                        const assetCode =
+                            item.dataset.assetCode ||
+                            "";
+
+
+                        const assetType =
+                            item.dataset.assetType ||
+                            "";
+
+
+                        const assetParentCode =
+                            item.dataset.assetParentCode ||
+                            "";
+
+
+                        assetBar.dataset.selectedId =
+                            assetId;
+
+
+                        assetBar.dataset.selectedCode =
+                            assetCode;
+
+
+                        assetBar.dataset.selectedType =
+                            assetType;
+
+
+                        assetBar.dataset.selectedParentCode =
+                            assetParentCode;
+
+
+                    }
+                );
+
+
+            }
+        );
+
+
+    }
+
+);
+
+</script>
