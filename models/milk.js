@@ -18,12 +18,27 @@ const milkSchema = new mongoose.Schema(
       index: true
     },
 
+    // =========================
+    // WHO RECORDED IT
+    // =========================
+
     recordedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
       index: true
     },
+
+    recordedByType: {
+      type: String,
+      enum: ["user", "system"],
+      default: "user",
+      index: true
+    },
+
+    // =========================
+    // MILK DATA
+    // =========================
 
     liters: {
       type: Number,
@@ -36,6 +51,10 @@ const milkSchema = new mongoose.Schema(
       default: "",
       trim: true
     },
+
+    // =========================
+    // DATE
+    // =========================
 
     date: {
       type: Date,
@@ -51,6 +70,17 @@ const milkSchema = new mongoose.Schema(
     month: {
       type: String,
       index: true
+    },
+
+    // =========================
+    // MILKING SESSION
+    // =========================
+
+    session: {
+      type: String,
+      enum: ["morning", "evening"],
+      required: true,
+      index: true
     }
 
   },
@@ -62,17 +92,31 @@ const milkSchema = new mongoose.Schema(
 
 // ==================================================
 // NORMALIZE DATE KEYS
+// USING AFRICA/NAIROBI / EAT
 // ==================================================
 
 milkSchema.pre("save", function(next) {
 
   const d = new Date(this.date);
 
-  this.day =
-    d.toISOString().split("T")[0];
+  const formatter =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone: "Africa/Nairobi",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }
+    );
+
+  const day =
+    formatter.format(d);
+
+  this.day = day;
 
   this.month =
-    this.day.slice(0, 7);
+    day.slice(0, 7);
 
   next();
 
@@ -185,6 +229,7 @@ milkSchema.statics.getMonthlyReport = async function(month) {
           }
 
         }
+
       }
 
     ]);
@@ -201,13 +246,21 @@ milkSchema.statics.getMonthlyReport = async function(month) {
 // INDEXES
 // ==================================================
 
-milkSchema.index({
+// One morning record and one evening record
+// per animal per day.
 
-  dairy: 1,
+milkSchema.index(
+  {
+    dairy: 1,
+    day: 1,
+    session: 1
+  },
+  {
+    unique: true
+  }
+);
 
-  day: 1
-
-});
+// ==================================================
 
 milkSchema.index({
 
@@ -216,6 +269,8 @@ milkSchema.index({
   month: 1
 
 });
+
+// ==================================================
 
 milkSchema.index({
 
@@ -227,10 +282,8 @@ milkSchema.index({
 // EXPORT
 // ==================================================
 
-module.exports = mongoose.model(
-
-  "Milk",
-
-  milkSchema
-
-);
+module.exports =
+  mongoose.model(
+    "Milk",
+    milkSchema
+  );
