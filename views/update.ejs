@@ -1,60 +1,118 @@
 <!-- =====================================================
      UPDATE PAGE ASSETS
-===================================================== --><link
+===================================================== -->
+
+<link
     rel="stylesheet"
     href="/css/update/update.css"
-><script src="/socket.io/socket.io.js"></script><!-- =====================================================
+>
+
+<script src="/socket.io/socket.io.js"></script>
+
+
+<!-- =====================================================
      UPDATE PAGE
-===================================================== --><div class="dairy-page"><!-- PROFILE -->
+===================================================== -->
 
-<%- include("update/profile-card", {
-    dairy: dairy,
-    user: user
-}) %>
+<div class="dairy-page">
 
 
-<!-- CREATE POST -->
+    <!-- =================================================
+         PROFILE
+    ================================================== -->
 
-<% if (user) { %>
-
-    <%- include("update/create-post", {
+    <%- include("update/profile-card", {
+        dairy: dairy,
         user: user
     }) %>
 
-<% } %>
+
+    <!-- =================================================
+         CREATE POST
+    ================================================== -->
+
+    <% if (user) { %>
+
+        <%- include("update/create-post", {
+            user: user
+        }) %>
+
+    <% } %>
 
 
-<!-- =================================================
-     ASSET BAR
+    <!-- =================================================
+         PROPERTY ACTION
+         
+         This is intentionally on the parent page.
+         It can therefore be positioned at the top-right
+         of the page/header area.
+    ================================================== -->
 
-     FILE:
-     views/dairy/assetBar.ejs
+    <div class="dairy-property-action">
 
-     DATA:
-     dairy
-         = Current Dairy Farm
+        <button
+            type="button"
+            id="viewPropertyButton"
+            class="asset-bar-trigger"
+            aria-controls="assetBar"
+            aria-expanded="false"
+        >
 
-     assetDairies
-         = Properties belonging to the
-           current Dairy Farm
-================================================== -->
+            <span
+                class="asset-bar-trigger-icon"
+                aria-hidden="true"
+            >
+                ◉
+            </span>
 
-<%- include("dairy/assetBar", {
-    dairy: dairy,
-    assetDairies: assetDairies || []
-}) %>
+            <span class="asset-bar-trigger-text">
+                View Property
+            </span>
+
+        </button>
+
+    </div>
 
 
-<!-- FEED -->
+    <!-- =================================================
+         ASSET BAR
 
-<%- include("update/feed", {
-    feed: feed,
-    user: user
-}) %>
+         The assetBar partial now contains ONLY the
+         overlay and right-side sidebar.
 
-</div><!-- =====================================================
+         The View Property button is intentionally kept
+         on this parent page.
+    ================================================== -->
+
+    <%- include("dairy/assetBar", {
+        dairy: dairy,
+        assetDairies: assetDairies || []
+    }) %>
+
+
+    <!-- =================================================
+         FEED
+    ================================================== -->
+
+    <%- include("update/feed", {
+        feed: feed,
+        user: user
+    }) %>
+
+
+</div>
+
+
+<!-- =====================================================
      UPDATE PAGE JAVASCRIPT
-===================================================== --><script
+===================================================== -->
+
+<script
     src="/js/update/index.js"
+    defer
+></script>
+
+<script
+    src="/js/assetBar.js"
     defer
 ></script>
