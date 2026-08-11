@@ -1,13 +1,13 @@
-/*=========================================================
-  UPDATE PAGE
-  POST MODAL
-=========================================================*/
+/* =========================================================
+   UPDATE PAGE
+   POST MODAL
+========================================================= */
 
 function initializePostModal() {
 
-    /*=====================================================
-      ELEMENTS
-    =====================================================*/
+    /* =====================================================
+       PREVENT DUPLICATE INITIALIZATION
+    ===================================================== */
 
     const modal =
         document.getElementById("postModal");
@@ -33,15 +33,29 @@ function initializePostModal() {
     const form =
         document.getElementById("postForm");
 
+    const imagePreviewContainer =
+        document.getElementById("imagePreviewContainer");
 
-    /*=====================================================
-      REQUIRED ELEMENT CHECK
-    =====================================================*/
+    const imagePreview =
+        document.getElementById("imagePreview");
+
+    const removeImage =
+        document.getElementById("removeImage");
+
+    const selectedImageName =
+        document.getElementById("selectedImageName");
+
+    const characterCounter =
+        document.getElementById("characterCounter");
+
+
+    /* =====================================================
+       REQUIRED ELEMENT CHECK
+    ===================================================== */
 
     if (
         !modal ||
         !openComposer ||
-        !openImage ||
         !closeButton ||
         !textarea ||
         !imageInput ||
@@ -50,7 +64,7 @@ function initializePostModal() {
     ) {
 
         console.warn(
-            "Post modal not initialized. Required element missing."
+            "Post modal not initialized: required element missing."
         );
 
         return;
@@ -58,53 +72,69 @@ function initializePostModal() {
     }
 
 
-    /*=====================================================
-      SEND BUTTON STATE
-    =====================================================*/
+    /*
+     * Prevent this function from attaching the same
+     * listeners more than once.
+     */
 
-    function updateSendButton() {
+    if (
+        modal.dataset.postModalInitialized === "true"
+    ) {
 
-        const hasText =
-            textarea.value.trim().length > 0;
-
-        const hasImage =
-            imageInput.files.length > 0;
-
-        sendButton.disabled =
-            !(hasText || hasImage);
+        return;
 
     }
 
+    modal.dataset.postModalInitialized =
+        "true";
 
-    /*=====================================================
-      OPEN MODAL
-    =====================================================*/
+
+    /* =====================================================
+       OPEN MODAL
+    ===================================================== */
 
     function openModal() {
 
         modal.classList.add("active");
 
+        modal.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
         document.body.style.overflow =
             "hidden";
 
+
         updateSendButton();
 
-        setTimeout(() => {
+
+        /*
+         * Focus the text area after the modal
+         * has become visible.
+         */
+
+        setTimeout(function () {
 
             textarea.focus();
 
-        }, 150);
+        }, 100);
 
     }
 
 
-    /*=====================================================
-      CLOSE MODAL
-    =====================================================*/
+    /* =====================================================
+       CLOSE MODAL
+    ===================================================== */
 
     function closeModal() {
 
         modal.classList.remove("active");
+
+        modal.setAttribute(
+            "aria-hidden",
+            "true"
+        );
 
         document.body.style.overflow =
             "";
@@ -112,23 +142,94 @@ function initializePostModal() {
     }
 
 
-    /*=====================================================
-      CLICK COMPOSER
-    =====================================================*/
+    /* =====================================================
+       SEND BUTTON STATE
+    ===================================================== */
+
+    function updateSendButton() {
+
+        const hasText =
+            textarea.value.trim().length > 0;
+
+        const hasImage =
+            imageInput.files &&
+            imageInput.files.length > 0;
+
+
+        /*
+         * Your controller allows:
+         *
+         * text
+         * OR
+         * image
+         *
+         * Therefore the button is enabled when
+         * either one exists.
+         */
+
+        sendButton.disabled =
+            !(hasText || hasImage);
+
+    }
+
+
+    /* =====================================================
+       CHARACTER COUNTER
+    ===================================================== */
+
+    function updateCharacterCounter() {
+
+        if (!characterCounter) {
+            return;
+        }
+
+
+        const length =
+            textarea.value.length;
+
+
+        characterCounter.textContent =
+            `${length} / 1000`;
+
+    }
+
+
+    /* =====================================================
+       OPEN COMPOSER
+    ===================================================== */
 
     openComposer.addEventListener(
         "click",
-        openModal
+        function (event) {
+
+            /*
+             * If the image button itself was clicked,
+             * its own handler will deal with it.
+             */
+
+            if (
+                openImage &&
+                event.target.closest("#openImagePicker")
+            ) {
+
+                return;
+
+            }
+
+
+            openModal();
+
+        }
     );
 
 
-    /*=====================================================
-      KEYBOARD ACCESSIBILITY
-    =====================================================*/
+    /* =====================================================
+       KEYBOARD ACCESSIBILITY
+    ===================================================== */
 
     openComposer.addEventListener(
         "keydown",
-        (event) => {
+        function (event) {
 
             if (
                 event.key === "Enter" ||
@@ -145,47 +246,74 @@ function initializePostModal() {
     );
 
 
-    /*=====================================================
-      IMAGE ICON
-    =====================================================*/
+    /* =====================================================
+       IMAGE BUTTON
+    ===================================================== */
 
-    openImage.addEventListener(
+    if (openImage) {
+
+        openImage.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                /*
+                 * Open the modal first.
+                 */
+
+                openModal();
+
+
+                /*
+                 * Then open the native image
+                 * selector.
+                 */
+
+                setTimeout(function () {
+
+                    imageInput.click();
+
+                }, 150);
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       CLOSE BUTTON
+    ===================================================== */
+
+    closeButton.addEventListener(
         "click",
-        (event) => {
+        function () {
 
-            event.preventDefault();
-
-            event.stopPropagation();
-
-            openModal();
-
-            setTimeout(() => {
-
-                imageInput.click();
-
-            }, 100);
+            closeModal();
 
         }
     );
 
 
-    /*=====================================================
-      CLOSE BUTTON
-    =====================================================*/
-
-    closeButton.addEventListener(
-        "click",
-        closeModal
-    );
-
-
-    /*=====================================================
-      CLICK OUTSIDE MODAL
-    =====================================================*/
+    /* =====================================================
+       CLICK MODAL BACKDROP
+    ===================================================== */
 
     modal.addEventListener(
         "click",
-        (event) => {
+        function (event) {
+
+            /*
+             * Only close when the outer modal
+             * itself is clicked.
+             *
+             * Clicking inside .post-modal-content
+             * will not close it.
+             */
 
             if (
                 event.target === modal
@@ -199,13 +327,13 @@ function initializePostModal() {
     );
 
 
-    /*=====================================================
-      ESC KEY
-    =====================================================*/
+    /* =====================================================
+       ESCAPE KEY
+    ===================================================== */
 
     document.addEventListener(
         "keydown",
-        (event) => {
+        function (event) {
 
             if (
                 event.key === "Escape" &&
@@ -220,47 +348,224 @@ function initializePostModal() {
     );
 
 
-    /*=====================================================
-      TEXT INPUT
-    =====================================================*/
+    /* =====================================================
+       TEXT INPUT
+    ===================================================== */
 
     textarea.addEventListener(
         "input",
-        updateSendButton
-    );
+        function () {
 
+            updateSendButton();
 
-    /*=====================================================
-      IMAGE INPUT
-    =====================================================*/
-
-    imageInput.addEventListener(
-        "change",
-        updateSendButton
-    );
-
-
-    /*=====================================================
-      FORM SUBMIT
-    =====================================================*/
-
-    form.addEventListener(
-        "submit",
-        () => {
-
-            sendButton.disabled = true;
-
-            sendButton.innerHTML =
-                '<i class="bi bi-hourglass-split"></i>';
+            updateCharacterCounter();
 
         }
     );
 
 
-    /*=====================================================
-      INITIAL STATE
-    =====================================================*/
+    /* =====================================================
+       IMAGE INPUT
+    ===================================================== */
+
+    imageInput.addEventListener(
+        "change",
+        function () {
+
+            const file =
+                imageInput.files &&
+                imageInput.files[0];
+
+
+            if (!file) {
+
+                clearImage();
+
+                updateSendButton();
+
+                return;
+
+            }
+
+
+            /* =============================================
+               SHOW FILE NAME
+            ============================================= */
+
+            if (selectedImageName) {
+
+                selectedImageName.textContent =
+                    file.name;
+
+            }
+
+
+            /* =============================================
+               IMAGE PREVIEW
+            ============================================= */
+
+            if (
+                imagePreview &&
+                imagePreviewContainer
+            ) {
+
+                const reader =
+                    new FileReader();
+
+
+                reader.onload =
+                    function (event) {
+
+                        imagePreview.src =
+                            event.target.result;
+
+                        imagePreviewContainer.style.display =
+                            "block";
+
+                    };
+
+
+                reader.readAsDataURL(file);
+
+            }
+
+
+            updateSendButton();
+
+        }
+    );
+
+
+    /* =====================================================
+       REMOVE IMAGE
+    ===================================================== */
+
+    if (removeImage) {
+
+        removeImage.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                clearImage();
+
+                updateSendButton();
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       CLEAR IMAGE
+    ===================================================== */
+
+    function clearImage() {
+
+        imageInput.value = "";
+
+
+        if (selectedImageName) {
+
+            selectedImageName.textContent =
+                "";
+
+        }
+
+
+        if (imagePreview) {
+
+            imagePreview.src =
+                "";
+
+        }
+
+
+        if (imagePreviewContainer) {
+
+            imagePreviewContainer.style.display =
+                "none";
+
+        }
+
+    }
+
+
+    /* =====================================================
+       FORM SUBMISSION
+    ===================================================== */
+
+    form.addEventListener(
+        "submit",
+        function (event) {
+
+            /*
+             * Let the browser perform its normal
+             * HTML validation first.
+             */
+
+            if (
+                !form.checkValidity()
+            ) {
+
+                return;
+
+            }
+
+
+            /*
+             * Prevent accidental double submission.
+             */
+
+            sendButton.disabled =
+                true;
+
+
+            sendButton.innerHTML =
+                '<i class="bi bi-hourglass-split"></i>';
+
+
+        }
+    );
+
+
+    /* =====================================================
+       INITIAL STATE
+    ===================================================== */
 
     updateSendButton();
+
+    updateCharacterCounter();
+
+
+    /* =====================================================
+       INITIALIZED
+    ===================================================== */
+
+    console.log(
+        "Post modal initialized successfully."
+    );
+
+}
+
+
+/* =========================================================
+   AUTOMATIC INITIALIZATION
+========================================================= */
+
+if (
+    document.readyState === "loading"
+) {
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        initializePostModal
+    );
+
+} else {
+
+    initializePostModal();
 
 }
