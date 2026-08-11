@@ -1,0 +1,515 @@
+<!-- =========================================================
+     ASSET BAR
+     
+     FILE:
+     views/dairy/assetBar.ejs
+
+     DATA EXPECTED:
+     dairies
+
+     CLASSIFICATION:
+
+     code < 0
+         = Dairy Farm
+         = excluded from this sidebar
+
+     code > 0
+         = Animal
+
+     code === null / undefined
+         = Structure / Machine / Tool
+========================================================= --><!-- =========================================================
+     VIEW PROPERTY BUTTON
+========================================================= --><button
+type="button"
+id="viewPropertyButton"
+class="asset-bar-trigger"
+aria-controls="assetBar"
+aria-expanded="false"
+
+«»
+
+<span class="asset-bar-trigger-icon" aria-hidden="true">
+    ◉
+</span>
+
+<span class="asset-bar-trigger-text">
+    View Property
+</span>
+
+</button><!-- =========================================================
+     SIDEBAR OVERLAY
+     
+     Hidden by default.
+     
+     Clicking this area closes the sidebar.
+========================================================= --><div
+    id="assetBarOverlay"
+    class="asset-bar-overlay"
+    aria-hidden="true"
+></div><!-- =========================================================
+     ASSET SIDEBAR
+========================================================= --><aside
+    id="assetBar"
+    class="asset-bar"
+    aria-label="Property"
+    aria-hidden="true"
+><!-- =====================================================
+     SIDEBAR HEADER
+====================================================== -->
+
+<div class="asset-bar-header">
+
+
+    <div class="asset-bar-heading">
+
+        <span class="asset-bar-heading-label">
+            Property
+        </span>
+
+        <h2>
+            Your Assets
+        </h2>
+
+    </div>
+
+
+    <!-- =================================================
+         CLOSE BUTTON
+    ================================================== -->
+
+    <button
+        type="button"
+        id="closeAssetBar"
+        class="asset-bar-close"
+        aria-label="Close Property"
+    >
+        <span aria-hidden="true">
+            ×
+        </span>
+    </button>
+
+
+</div>
+
+
+<!-- =====================================================
+     CATEGORY SWITCHER
+====================================================== -->
+
+<div
+    class="asset-bar-tabs"
+    role="tablist"
+    aria-label="Property categories"
+>
+
+
+    <!-- =================================================
+         ANIMALS TAB
+    ================================================== -->
+
+    <button
+        type="button"
+        class="asset-bar-tab active"
+        data-asset-category="animals"
+        role="tab"
+        aria-selected="true"
+        aria-controls="assetAnimals"
+    >
+        <span class="asset-bar-tab-title">
+            Animals
+        </span>
+    </button>
+
+
+    <!-- =================================================
+         STRUCTURES TAB
+    ================================================== -->
+
+    <button
+        type="button"
+        class="asset-bar-tab"
+        data-asset-category="structures"
+        role="tab"
+        aria-selected="false"
+        aria-controls="assetStructures"
+    >
+        <span class="asset-bar-tab-title">
+            Structures
+        </span>
+
+        <span class="asset-bar-tab-subtitle">
+            Machines &amp; Tools
+        </span>
+    </button>
+
+
+</div>
+
+
+<!-- =====================================================
+     SIDEBAR CONTENT
+====================================================== -->
+
+<div class="asset-bar-content">
+
+
+    <!-- =================================================
+         ANIMALS
+    ================================================== -->
+
+    <section
+        id="assetAnimals"
+        class="asset-bar-section active"
+        data-asset-section="animals"
+        role="tabpanel"
+        aria-label="Animals"
+    >
+
+
+        <div class="asset-bar-section-header">
+
+            <div>
+
+                <span class="asset-bar-section-label">
+                    LIVESTOCK
+                </span>
+
+                <h3>
+                    Animals
+                </h3>
+
+            </div>
+
+            <span class="asset-bar-count">
+
+                <%
+                    const animalDairies =
+                        Array.isArray(dairies)
+
+                            ? dairies.filter(dairy => {
+
+                                return (
+
+                                    dairy.code !== null &&
+
+                                    dairy.code !== undefined &&
+
+                                    Number(dairy.code) > 0
+
+                                );
+
+                            })
+
+                            : [];
+                %>
+
+                <%= animalDairies.length %>
+
+            </span>
+
+        </div>
+
+
+        <div class="asset-bar-list">
+
+
+            <% if (animalDairies.length) { %>
+
+
+                <% animalDairies.forEach(dairy => { %>
+
+
+                    <!-- =================================
+                         ANIMAL ITEM
+                    ================================== -->
+
+                    <button
+                        type="button"
+                        class="asset-bar-item asset-bar-animal"
+                        data-asset-id="<%= dairy._id %>"
+                        data-asset-code="<%= dairy.code %>"
+                        data-asset-type="animal"
+                    >
+
+
+                        <!-- =============================
+                             IMAGE
+                        ============================== -->
+
+                        <span class="asset-bar-item-image">
+
+                            <img
+                                src="<%= dairy.displayImage %>"
+                                alt="<%= dairy.name %>"
+                                loading="lazy"
+                            >
+
+                        </span>
+
+
+                        <!-- =============================
+                             INFORMATION
+                        ============================== -->
+
+                        <span class="asset-bar-item-details">
+
+
+                            <span class="asset-bar-item-name">
+                                <%= dairy.name %>
+                            </span>
+
+
+                            <span class="asset-bar-item-code">
+                                Animal #<%= dairy.code %>
+                            </span>
+
+
+                            <% if (dairy.type) { %>
+
+                                <span class="asset-bar-item-meta">
+                                    <%= dairy.type %>
+                                </span>
+
+                            <% } %>
+
+
+                            <% if (dairy.gender) { %>
+
+                                <span class="asset-bar-item-meta">
+                                    <%= dairy.gender %>
+                                </span>
+
+                            <% } %>
+
+
+                        </span>
+
+
+                        <!-- =============================
+                             ARROW
+                        ============================== -->
+
+                        <span
+                            class="asset-bar-item-arrow"
+                            aria-hidden="true"
+                        >
+                            ›
+                        </span>
+
+
+                    </button>
+
+
+                <% }); %>
+
+
+            <% } else { %>
+
+
+                <div class="asset-bar-empty">
+
+                    <span class="asset-bar-empty-icon">
+                        —
+                    </span>
+
+                    <span>
+                        No animals found.
+                    </span>
+
+                </div>
+
+
+            <% } %>
+
+
+        </div>
+
+
+    </section>
+
+
+    <!-- =================================================
+         STRUCTURES / MACHINES / TOOLS
+    ================================================== -->
+
+    <section
+        id="assetStructures"
+        class="asset-bar-section"
+        data-asset-section="structures"
+        role="tabpanel"
+        aria-label="Structures, Machines and Tools"
+        hidden
+    >
+
+
+        <div class="asset-bar-section-header">
+
+            <div>
+
+                <span class="asset-bar-section-label">
+                    FARM PROPERTY
+                </span>
+
+                <h3>
+                    Structures &amp; Equipment
+                </h3>
+
+            </div>
+
+            <span class="asset-bar-count">
+
+                <%
+                    const structureDairies =
+                        Array.isArray(dairies)
+
+                            ? dairies.filter(dairy => {
+
+                                return (
+
+                                    dairy.code === null ||
+
+                                    dairy.code === undefined
+
+                                );
+
+                            })
+
+                            : [];
+                %>
+
+                <%= structureDairies.length %>
+
+            </span>
+
+        </div>
+
+
+        <div class="asset-bar-list">
+
+
+            <% if (structureDairies.length) { %>
+
+
+                <% structureDairies.forEach(dairy => { %>
+
+
+                    <!-- =================================
+                         STRUCTURE / MACHINE / TOOL
+                    ================================== -->
+
+                    <button
+                        type="button"
+                        class="asset-bar-item asset-bar-structure"
+                        data-asset-id="<%= dairy._id %>"
+                        data-asset-type="structure"
+                    >
+
+
+                        <!-- =============================
+                             IMAGE
+                        ============================== -->
+
+                        <span class="asset-bar-item-image">
+
+                            <img
+                                src="<%= dairy.displayImage %>"
+                                alt="<%= dairy.name %>"
+                                loading="lazy"
+                            >
+
+                        </span>
+
+
+                        <!-- =============================
+                             INFORMATION
+                        ============================== -->
+
+                        <span class="asset-bar-item-details">
+
+
+                            <span class="asset-bar-item-name">
+                                <%= dairy.name %>
+                            </span>
+
+
+                            <% if (dairy.type) { %>
+
+                                <span class="asset-bar-item-meta">
+                                    <%= dairy.type %>
+                                </span>
+
+                            <% } %>
+
+
+                            <% if (dairy.location) { %>
+
+                                <span class="asset-bar-item-meta">
+                                    <%= dairy.location %>
+                                </span>
+
+                            <% } %>
+
+
+                        </span>
+
+
+                        <!-- =============================
+                             ARROW
+                        ============================== -->
+
+                        <span
+                            class="asset-bar-item-arrow"
+                            aria-hidden="true"
+                        >
+                            ›
+                        </span>
+
+
+                    </button>
+
+
+                <% }); %>
+
+
+            <% } else { %>
+
+
+                <div class="asset-bar-empty">
+
+                    <span class="asset-bar-empty-icon">
+                        —
+                    </span>
+
+                    <span>
+                        No structures, machines or tools found.
+                    </span>
+
+                </div>
+
+
+            <% } %>
+
+
+        </div>
+
+
+    </section>
+
+
+</div>
+
+
+<!-- =====================================================
+     SIDEBAR FOOTER
+====================================================== -->
+
+<div class="asset-bar-footer">
+
+    <span>
+        Select a property to view its details.
+    </span>
+
+</div>
+
+</aside>
