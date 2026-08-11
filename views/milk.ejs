@@ -21,7 +21,6 @@
        • Admins can edit existing records.
        • Admins can edit morning records during the
          10:00 AM - 4:00 PM closed period.
-       • No separate edit form is displayed here.
        • Admin editing is triggered by tapping the existing
          record and calling openEditModal(...).
 ========================================================== */
@@ -72,7 +71,7 @@ const milkDairies =
 
 
     <!-- ======================================================
-         PAGE HEADER
+         HEADER
     ======================================================= -->
 
     <header class="milk-header">
@@ -95,7 +94,7 @@ const milkDairies =
 
                 <p>
                     Record today's milk production for each
-                    milking animal.
+                    dairy animal.
                 </p>
 
             </div>
@@ -105,13 +104,14 @@ const milkDairies =
 
         <!-- SESSION BADGE -->
 
-        <div class="milk-session-badge
-            <%= currentSession === "morning"
-                ? "session-morning"
-                : currentSession === "evening"
-                    ? "session-evening"
-                    : "session-closed"
-            %>"
+        <div
+            class="milk-session-badge
+                <%= currentSession === "morning"
+                    ? "session-morning"
+                    : currentSession === "evening"
+                        ? "session-evening"
+                        : "session-closed"
+                %>"
         >
 
             <span class="session-dot"></span>
@@ -141,7 +141,7 @@ const milkDairies =
 
 
     <!-- ======================================================
-         ALERTS
+         ERROR
     ======================================================= -->
 
     <% if (pageError) { %>
@@ -153,11 +153,15 @@ const milkDairies =
             </div>
 
             <div>
-                <strong>Unable to save records</strong>
+
+                <strong>
+                    Unable to save records
+                </strong>
 
                 <p>
                     <%= pageError %>
                 </p>
+
             </div>
 
         </div>
@@ -165,6 +169,10 @@ const milkDairies =
     <% } %>
 
 
+
+    <!-- ======================================================
+         SUCCESS
+    ======================================================= -->
 
     <% if (pageSuccess) { %>
 
@@ -175,11 +183,15 @@ const milkDairies =
             </div>
 
             <div>
-                <strong>Milk records saved</strong>
+
+                <strong>
+                    Milk records saved
+                </strong>
 
                 <p>
                     The collection records were saved successfully.
                 </p>
+
             </div>
 
         </div>
@@ -189,7 +201,7 @@ const milkDairies =
 
 
     <!-- ======================================================
-         SESSION INFORMATION
+         SESSION STATUS
     ======================================================= -->
 
     <% if (currentSession === "morning") { %>
@@ -207,25 +219,28 @@ const milkDairies =
                 </div>
 
                 <div class="session-card-description">
-
-                    Record one milk entry for each cow
-                    before <strong>10:00 AM</strong>.
-
+                    Record one milk entry for each cow before
+                    <strong>10:00 AM</strong>.
                 </div>
 
             </div>
 
             <div class="session-time">
 
-                <span>Closes</span>
-                <strong>10:00 AM</strong>
+                <span>
+                    Closes
+                </span>
+
+                <strong>
+                    10:00 AM
+                </strong>
 
             </div>
 
         </div>
 
 
-    <% } else if (currentSession === "closed") %>
+    <% } else if (currentSession === "closed") { %>
 
         <div class="milk-session-card session-card-closed">
 
@@ -267,15 +282,20 @@ const milkDairies =
 
             <div class="session-time">
 
-                <span>Opens</span>
-                <strong>4:00 PM</strong>
+                <span>
+                    Opens
+                </span>
+
+                <strong>
+                    4:00 PM
+                </strong>
 
             </div>
 
         </div>
 
 
-    <% } else if (currentSession === "evening") %>
+    <% } else if (currentSession === "evening") { %>
 
         <div class="milk-session-card session-card-evening">
 
@@ -290,18 +310,21 @@ const milkDairies =
                 </div>
 
                 <div class="session-card-description">
-
-                    Record one milk entry for each cow
-                    before <strong>midnight</strong>.
-
+                    Record one milk entry for each cow before
+                    <strong>midnight</strong>.
                 </div>
 
             </div>
 
             <div class="session-time">
 
-                <span>Closes</span>
-                <strong>Midnight</strong>
+                <span>
+                    Closes
+                </span>
+
+                <strong>
+                    Midnight
+                </strong>
 
             </div>
 
@@ -335,7 +358,7 @@ const milkDairies =
 
 
     <!-- ======================================================
-         EMPTY STATE
+         NO ANIMALS
     ======================================================= -->
 
     <% if (milkDairies.length === 0) { %>
@@ -347,7 +370,7 @@ const milkDairies =
             </div>
 
             <h2>
-                No animals being milked
+                No Animals Currently Being Milked
             </h2>
 
             <p>
@@ -361,9 +384,8 @@ const milkDairies =
     <% } else { %>
 
 
-
         <!-- ==================================================
-             COLLECTION FORM
+             MILK FORM
         =================================================== -->
 
         <form
@@ -374,16 +396,16 @@ const milkDairies =
         >
 
 
-            <!-- ==============================================
+            <!-- ==================================================
                  COLLECTION CARD
-            =============================================== -->
+            =================================================== -->
 
             <section class="collection-card">
 
 
-                <!-- ==========================================
-                     COLLECTION CARD HEADER
-                =========================================== -->
+                <!-- ==============================================
+                     COLLECTION HEADER
+                =============================================== -->
 
                 <div class="collection-card-header">
 
@@ -394,11 +416,14 @@ const milkDairies =
                         </div>
 
                         <div class="collection-subtitle">
+
                             <%= milkDairies.length %>
+
                             <%= milkDairies.length === 1
                                 ? "animal"
                                 : "animals"
                             %>
+
                         </div>
 
                     </div>
@@ -410,8 +435,11 @@ const milkDairies =
                     ) { %>
 
                         <div class="collection-status">
+
                             <span class="status-dot"></span>
+
                             Ready for entry
+
                         </div>
 
                     <% } else { %>
@@ -426,9 +454,9 @@ const milkDairies =
 
 
 
-                <!-- ==========================================
-                     DESKTOP TABLE
-                =========================================== -->
+                <!-- ==============================================
+                     TABLE
+                =============================================== -->
 
                 <div class="milk-table-wrapper">
 
@@ -465,13 +493,11 @@ const milkDairies =
 
                             <% milkDairies.forEach((dairy, index) => {
 
-
                                 /* ==================================================
-                                   DETERMINE THE RECORD TO DISPLAY
+                                   DETERMINE RECORD TO DISPLAY
                                 ================================================== */
 
                                 let record = null;
-
 
                                 if (
                                     currentSession === "morning"
@@ -499,6 +525,10 @@ const milkDairies =
                             %>
 
 
+                                <!-- ==================================================
+                                     ANIMAL ROW
+                                =================================================== -->
+
                                 <tr
                                     class="<%= record
                                         ? "has-record"
@@ -507,9 +537,9 @@ const milkDairies =
                                 >
 
 
-                                    <!-- ======================================
+                                    <!-- ==========================================
                                          ANIMAL
-                                    ======================================= -->
+                                    =========================================== -->
 
                                     <td>
 
@@ -537,9 +567,9 @@ const milkDairies =
 
 
 
-                                    <!-- ======================================
+                                    <!-- ==========================================
                                          CODE
-                                    ======================================= -->
+                                    =========================================== -->
 
                                     <td>
 
@@ -551,9 +581,9 @@ const milkDairies =
 
 
 
-                                    <!-- ======================================
+                                    <!-- ==========================================
                                          MILK
-                                    ======================================= -->
+                                    =========================================== -->
 
                                     <td>
 
@@ -574,7 +604,7 @@ const milkDairies =
 
                                                     tabindex="0"
 
-                                                    title="Tap to edit this milk record"
+                                                    title="Tap to edit this record"
 
                                                     onclick="openEditModal(
                                                         '<%= record._id %>',
@@ -589,14 +619,15 @@ const milkDairies =
                                                 <% } %>
                                             >
 
-
                                                 <div class="milk-value-display">
 
                                                     <span>
                                                         <%= Number(record.liters || 0).toFixed(1) %>
                                                     </span>
 
-                                                    <small>L</small>
+                                                    <small>
+                                                        L
+                                                    </small>
 
                                                 </div>
 
@@ -657,7 +688,9 @@ const milkDairies =
 
                                             <div class="locked-input">
 
-                                                <span>—</span>
+                                                <span>
+                                                    —
+                                                </span>
 
                                                 <small>
                                                     Closed
@@ -665,19 +698,29 @@ const milkDairies =
 
                                             </div>
 
+
                                         <% } %>
 
                                     </td>
 
 
 
-                                    <!-- ======================================
+                                    <!-- ==========================================
                                          REMARKS
-                                    ======================================= -->
+                                    =========================================== -->
 
                                     <td>
 
                                         <% if (record) { %>
+
+
+                                            <%
+                                                const displayRemarks =
+                                                    record.remarks &&
+                                                    String(record.remarks).trim()
+                                                        ? record.remarks
+                                                        : "No remarks";
+                                            %>
 
 
                                             <!-- EXISTING RECORD -->
@@ -709,19 +752,8 @@ const milkDairies =
                                                 <% } %>
                                             >
 
-
                                                 <div class="remarks-text">
-
-                                                    <%
-                                                        const displayRemarks =
-                                                            record.remarks &&
-                                                            record.remarks.trim()
-                                                                ? record.remarks
-                                                                : "No remarks";
-                                                    %>
-
                                                     <%= displayRemarks %>
-
                                                 </div>
 
 
@@ -732,7 +764,9 @@ const milkDairies =
 
                                                     <div class="record-badge system-record">
 
-                                                        <span>⚙️</span>
+                                                        <span>
+                                                            ⚙️
+                                                        </span>
 
                                                         Automatically recorded
                                                         as Not Milked.
@@ -744,7 +778,9 @@ const milkDairies =
 
                                                     <div class="record-badge">
 
-                                                        <span>✓</span>
+                                                        <span>
+                                                            ✓
+                                                        </span>
 
                                                         Already recorded
 
@@ -793,7 +829,9 @@ const milkDairies =
 
                                             <div class="closed-remarks">
 
-                                                <span>🔒</span>
+                                                <span>
+                                                    🔒
+                                                </span>
 
                                                 No new records during
                                                 this period.
@@ -822,7 +860,7 @@ const milkDairies =
 
 
             <!-- ==================================================
-                 SUBMISSION FOOTER
+                 SUBMIT SECTION
             =================================================== -->
 
             <div class="milk-submit-card">
@@ -954,13 +992,12 @@ const milkDairies =
 
     <% } %>
 
-
 </div>
 
 
 
 <!-- ==========================================================
-     MILK PAGE STYLES
+     STYLES
 ========================================================== -->
 
 <style>
@@ -987,7 +1024,6 @@ const milkDairies =
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-
     margin-bottom: 24px;
 }
 
@@ -1096,11 +1132,9 @@ const milkDairies =
     gap: 13px;
 
     padding: 15px 17px;
-
     margin-bottom: 18px;
 
     border-radius: 14px;
-
     border: 1px solid;
 }
 
@@ -1121,7 +1155,6 @@ const milkDairies =
 
 .milk-alert strong {
     display: block;
-
     margin-bottom: 2px;
 
     font-size: 14px;
@@ -1160,7 +1193,6 @@ const milkDairies =
     padding: 17px 19px;
 
     border-radius: 17px;
-
     border: 1px solid;
 
     box-shadow:
@@ -1320,7 +1352,6 @@ const milkDairies =
     background: #ffffff;
 
     border: 1px solid #e5eae6;
-
     border-radius: 19px;
 
     box-shadow:
@@ -1433,8 +1464,7 @@ const milkDairies =
 }
 
 .milk-table tbody tr {
-    transition:
-        background .15s ease;
+    transition: background .15s ease;
 }
 
 .milk-table tbody tr:hover {
@@ -1442,7 +1472,9 @@ const milkDairies =
 }
 
 
-/* COLUMN WIDTHS */
+/* ==========================================================
+   COLUMN WIDTHS
+========================================================== */
 
 .col-animal {
     width: 28%;
@@ -1644,14 +1676,6 @@ const milkDairies =
 
 .admin-edit-record {
     cursor: pointer;
-}
-
-.admin-edit-record .milk-value-display,
-.admin-edit-record .remarks-wrapper {
-    transition:
-        background .15s ease,
-        border-color .15s ease,
-        transform .15s ease;
 }
 
 .admin-edit-record:hover .milk-value-display {
@@ -1930,7 +1954,7 @@ const milkDairies =
 
 
 /* ==========================================================
-   MOBILE
+   TABLET / MOBILE
 ========================================================== */
 
 @media (max-width: 800px) {
