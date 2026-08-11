@@ -1,29 +1,17 @@
 <style>
 
-  /* =========================
-     PAGE
-  ========================= */
-
   .milk-page {
     max-width: 1100px;
     margin: 0 auto;
     padding: 20px 0 40px;
   }
 
-  /* =========================
-     CARD
-  ========================= */
-
   .milk-card {
     overflow: hidden;
     border-radius: 18px;
-    background: #ffffff;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
+    background: #fff;
+    box-shadow: 0 8px 25px rgba(0,0,0,.07);
   }
-
-  /* =========================
-     HEADER
-  ========================= */
 
   .milk-header {
     display: flex;
@@ -38,7 +26,6 @@
     margin: 0 0 7px;
     color: #166534;
     font-size: 26px;
-    font-weight: 700;
   }
 
   .milk-header p {
@@ -47,70 +34,65 @@
     font-size: 14px;
   }
 
-  /* =========================
-     HEADER ICON
-  ========================= */
-
   .milk-icon {
     width: 58px;
     height: 58px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
     border-radius: 16px;
     background: #dcfce7;
     font-size: 28px;
   }
 
-  /* =========================
-     STATUS BAR
-  ========================= */
-
-  .milk-session-info {
-    padding: 14px 25px;
-    background: #f0fdf4;
-    border-bottom: 1px solid #dcfce7;
-    color: #166534;
-    font-size: 13px;
-  }
-
-  .milk-session-info strong {
-    font-weight: 700;
-  }
-
-  /* =========================
-     ALERT
-  ========================= */
-
-  .milk-alert {
-    margin: 18px 25px;
+  .milk-status {
+    margin: 20px 25px;
     padding: 14px 16px;
     border-radius: 10px;
-    background: #fff7ed;
-    border: 1px solid #fed7aa;
-    color: #9a3412;
+    background: #f0fdf4;
+    color: #166534;
     font-size: 14px;
-    line-height: 1.5;
+    font-weight: 600;
   }
 
-  /* =========================
-     TABLE WRAPPER
-  ========================= */
+  .milk-status.warning {
+    background: #fff7ed;
+    color: #9a3412;
+  }
+
+  .milk-status.closed {
+    background: #f3f4f6;
+    color: #4b5563;
+  }
+
+  .milk-error {
+    margin: 20px 25px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #fef2f2;
+    color: #b91c1c;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .milk-success {
+    margin: 20px 25px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    color: #166534;
+    font-size: 14px;
+    font-weight: 600;
+  }
 
   .milk-table-wrapper {
     overflow-x: auto;
     padding: 0 25px;
   }
 
-  /* =========================
-     TABLE
-  ========================= */
-
   .milk-table {
     width: 100%;
     border-collapse: collapse;
-    table-layout: fixed;
   }
 
   .milk-table th {
@@ -132,25 +114,8 @@
     vertical-align: middle;
   }
 
-  .milk-table tbody tr {
-    transition: background .2s ease;
-  }
-
-  .milk-table tbody tr:hover {
-    background: #fafffb;
-  }
-
-  .milk-table tbody tr:last-child td {
-    border-bottom: none;
-  }
-
-  /* =========================
-     CODE BADGE
-  ========================= */
-
   .code-badge {
     display: inline-flex;
-    align-items: center;
     padding: 6px 10px;
     border-radius: 8px;
     background: #f0fdf4;
@@ -159,18 +124,10 @@
     font-weight: 700;
   }
 
-  /* =========================
-     NAME
-  ========================= */
-
   .animal-name {
     color: #111827;
     font-weight: 600;
   }
-
-  /* =========================
-     INPUTS
-  ========================= */
 
   .milk-input,
   .remarks-input {
@@ -184,22 +141,13 @@
     color: #111827;
     font-family: inherit;
     font-size: 14px;
-    transition: all .25s ease;
   }
 
   .milk-input:focus,
   .remarks-input:focus {
     border-color: #16a34a;
-    background: #ffffff;
+    background: #fff;
     box-shadow: 0 0 0 4px rgba(22,163,74,.1);
-  }
-
-  .milk-input[readonly],
-  .remarks-input[readonly] {
-    background: #f3f4f6;
-    color: #6b7280;
-    cursor: not-allowed;
-    border-color: #e5e7eb;
   }
 
   .remarks-input {
@@ -207,44 +155,44 @@
     resize: vertical;
   }
 
-  /* =========================
-     LOCKED ROW
-  ========================= */
-
-  .milk-row-locked {
-    background: #fafafa;
+  .recorded {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 13px;
   }
 
-  .milk-row-locked:hover {
-    background: #fafafa !important;
+  .recorded strong {
+    display: block;
+    color: #111827;
+    margin-bottom: 3px;
   }
 
-  /* =========================
-     STATUS
-  ========================= */
-
-  .milk-status {
-    display: inline-block;
-    margin-top: 6px;
-    font-size: 11px;
-    line-height: 1.4;
-  }
-
-  .milk-status.recorded {
-    color: #166534;
-  }
-
-  .milk-status.locked {
+  .system-record {
     color: #9a3412;
   }
 
-  .milk-status.system {
-    color: #6b7280;
+  .readonly-input {
+    background: #f3f4f6 !important;
+    color: #6b7280 !important;
+    cursor: not-allowed;
   }
 
-  /* =========================
-     SUBMIT SECTION
-  ========================= */
+  .admin-edit {
+    margin-top: 8px;
+  }
+
+  .admin-edit button {
+    border: none;
+    border-radius: 7px;
+    padding: 8px 12px;
+    background: #166534;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+  }
 
   .submit-section {
     display: flex;
@@ -268,22 +216,23 @@
     padding: 13px 22px;
     border: none;
     border-radius: 10px;
-    background: linear-gradient(135deg,#16a34a,#15803d);
-    color: #fff;
+    background: linear-gradient(
+      135deg,
+      #16a34a,
+      #15803d
+    );
+    color: white;
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
-    transition: all .25s ease;
   }
 
-  .submit-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(22,163,74,.25);
+  .submit-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
   }
-
-  /* =========================
-     EMPTY STATE
-  ========================= */
 
   .empty-state {
     padding: 60px 25px;
@@ -299,193 +248,67 @@
   .empty-state h3 {
     margin: 0 0 8px;
     color: #374151;
-    font-size: 19px;
   }
 
-  .empty-state p {
-    margin: 0;
-    font-size: 14px;
-  }
+  /* ==================================================
+     MODAL
+  ================================================== */
 
-  /* =========================
-     SUCCESS MODAL
-  ========================= */
-
-  .success-overlay {
+  .milk-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,.45);
+    inset: 0;
     display: none;
     align-items: center;
     justify-content: center;
+    background: rgba(0,0,0,.45);
     z-index: 9999;
-    animation: fadeIn .25s ease;
+    padding: 20px;
   }
 
-  .success-modal {
-    width: 90%;
-    max-width: 420px;
-    background: #fff;
-    border-radius: 18px;
-    overflow: hidden;
-    text-align: center;
-    box-shadow: 0 20px 50px rgba(0,0,0,.25);
-    animation: popUp .25s ease;
+  .milk-modal.show {
+    display: flex;
   }
 
-  .success-top {
-    background: linear-gradient(135deg,#16a34a,#15803d);
-    padding: 28px 20px;
-    color: #fff;
-  }
-
-  .success-top .icon {
-    font-size: 56px;
-    margin-bottom: 10px;
-  }
-
-  .success-body {
-    padding: 28px 24px;
-  }
-
-  .success-body h3 {
-    margin: 0 0 12px;
-    color: #166534;
-    font-size: 24px;
-  }
-
-  .success-body p {
-    margin: 0;
-    color: #6b7280;
-    font-size: 15px;
-    line-height: 1.6;
-  }
-
-  .success-footer {
-    padding: 20px 24px 28px;
-  }
-
-  .success-btn {
+  .milk-modal-box {
     width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 10px;
-    background: #16a34a;
-    color: #fff;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: .2s;
-  }
-
-  .success-btn:hover {
-    background: #15803d;
-  }
-
-  /* =========================
-     ERROR MODAL
-  ========================= */
-
-  .error-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,.45);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-  }
-
-  .error-modal {
-    width: 90%;
     max-width: 430px;
-    background: #fff;
-    border-radius: 18px;
-    overflow: hidden;
-    text-align: center;
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
     box-shadow: 0 20px 50px rgba(0,0,0,.25);
   }
 
-  .error-top {
-    background: #fff7ed;
-    padding: 25px;
-    color: #9a3412;
+  .milk-modal-box h3 {
+    margin-top: 0;
+    color: #166534;
   }
 
-  .error-top .icon {
-    font-size: 48px;
-  }
-
-  .error-body {
-    padding: 25px;
-  }
-
-  .error-body h3 {
-    margin: 0 0 10px;
-    color: #9a3412;
-    font-size: 21px;
-  }
-
-  .error-body p {
-    margin: 0;
+  .milk-modal-box p {
     color: #6b7280;
-    font-size: 14px;
     line-height: 1.6;
   }
 
-  .error-footer {
-    padding: 0 25px 25px;
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
   }
 
-  .error-btn {
-    width: 100%;
-    padding: 13px;
+  .modal-actions button {
+    flex: 1;
+    padding: 12px;
     border: none;
-    border-radius: 10px;
-    background: #ea580c;
-    color: #fff;
-    font-size: 15px;
-    font-weight: 700;
+    border-radius: 9px;
     cursor: pointer;
+    font-weight: 700;
   }
 
-  /* =========================
-     ANIMATIONS
-  ========================= */
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
-    }
+  .modal-ok {
+    background: #166534;
+    color: white;
   }
 
-  @keyframes popUp {
-    from {
-      opacity: 0;
-      transform: scale(.85);
-    }
-
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  /* =========================
-     RESPONSIVE
-  ========================= */
-
-  @media (max-width:650px) {
+  @media(max-width:650px) {
 
     .milk-header {
       align-items: flex-start;
@@ -503,19 +326,12 @@
 
     .milk-table-wrapper {
       padding: 0 10px;
-      overflow-x: visible;
     }
 
     .milk-table th,
     .milk-table td {
       padding: 8px 4px;
       font-size: 12px;
-      word-break: break-word;
-    }
-
-    .code-badge {
-      padding: 4px 6px;
-      font-size: 10px;
     }
 
     .milk-input,
@@ -556,7 +372,7 @@
         </h2>
 
         <p>
-          Record the daily milk production from each dairy animal.
+          Record milk production for each dairy animal.
         </p>
 
       </div>
@@ -566,6 +382,77 @@
       </div>
 
     </div>
+
+
+    <!-- ==================================================
+         ERROR
+    ================================================== -->
+
+    <% if (error) { %>
+
+      <div class="milk-error">
+
+        ⚠️ <%= error %>
+
+      </div>
+
+    <% } %>
+
+
+    <!-- ==================================================
+         SUCCESS
+    ================================================== -->
+
+    <% if (success) { %>
+
+      <div class="milk-success">
+
+        ✓ Milk record saved successfully.
+
+      </div>
+
+    <% } %>
+
+
+    <!-- ==================================================
+         SESSION STATUS
+    ================================================== -->
+
+    <% if (session === "morning") { %>
+
+      <div class="milk-status">
+
+        🌅 <strong>Morning session is open.</strong>
+        Submit one record per animal before 10:00 AM.
+
+      </div>
+
+    <% } else if (session === "evening") { %>
+
+      <div class="milk-status">
+
+        🌆 <strong>Evening session is open.</strong>
+        Submit one record per animal after 4:00 PM.
+
+      </div>
+
+    <% } else { %>
+
+      <div class="milk-status warning">
+
+        ⏰ Milk collection is currently between sessions.
+        Morning collection has closed and evening collection
+        starts at 4:00 PM.
+
+        <% if (!isAdmin) { %>
+
+          Contact an administrator if a correction is required.
+
+        <% } %>
+
+      </div>
+
+    <% } %>
 
 
     <% if (!dairies || dairies.length === 0) { %>
@@ -581,7 +468,7 @@
         </h3>
 
         <p>
-          There are no active dairy animals available for milk collection.
+          There are no active dairy animals available.
         </p>
 
       </div>
@@ -590,59 +477,7 @@
 
 
       <!-- ==================================================
-           SESSION INFORMATION
-      ================================================== -->
-
-      <% const currentDairy = dairies[0]; %>
-
-      <div class="milk-session-info">
-
-        <% if (currentDairy.milkSession === "morning") { %>
-
-          <% if (currentDairy.isAdminCorrectionWindow) { %>
-
-            <strong>Morning correction period:</strong>
-            Normal submissions are closed.
-            Administrators can edit morning records until 4:00 PM.
-
-          <% } else { %>
-
-            <strong>Morning collection:</strong>
-            Submit once per animal before 10:00 AM.
-
-          <% } %>
-
-        <% } else { %>
-
-          <strong>Evening collection:</strong>
-          Submit once per animal from 4:00 PM until midnight.
-
-        <% } %>
-
-      </div>
-
-
-      <!-- ==================================================
-           ERROR
-      ================================================== -->
-
-      <% if (typeof error !== "undefined" && error) { %>
-
-        <div
-          class="milk-alert"
-          role="alert"
-        >
-
-          ⚠️
-          <%= error %>
-
-        </div>
-
-      <% } %>
-
-
-      <!-- ==================================================
-           MILK FORM
+           FORM
       ================================================== -->
 
       <form
@@ -668,7 +503,7 @@
                 </th>
 
                 <th>
-                  Milk (Liters)
+                  Milk (L)
                 </th>
 
                 <th>
@@ -681,43 +516,18 @@
 
             <tbody>
 
-              <% dairies.forEach((dairy, index) => { %>
+              <% dairies.forEach((dairy, index) => {
 
-                <%
-                  const record =
-                    dairy.milkRecord;
+                const record =
+                  session === "morning"
+                    ? dairy.morning
+                    : session === "evening"
+                      ? dairy.evening
+                      : dairy.morning || dairy.evening;
 
-                  const isAdmin =
-                    user &&
-                    user.role === "admin";
+              %>
 
-                  const isRecorded =
-                    !!record;
-
-                  const adminCorrection =
-                    isAdmin &&
-                    dairy.isAdminCorrectionWindow &&
-                    isRecorded;
-
-                  const canEdit =
-                    adminCorrection ||
-                    (
-                      dairy.milkState === "open" &&
-                      !isRecorded
-                    );
-
-                  const rowLocked =
-                    !canEdit;
-                %>
-
-
-                <tr
-                  class="<%= rowLocked ? 'milk-row-locked' : '' %>"
-                >
-
-                  <!-- ==================================================
-                       CODE
-                  ================================================== -->
+                <tr>
 
                   <td>
 
@@ -727,18 +537,8 @@
 
                     </span>
 
-                    <input
-                      type="hidden"
-                      name="records[<%= index %>][dairy]"
-                      value="<%= dairy._id %>"
-                    >
-
                   </td>
 
-
-                  <!-- ==================================================
-                       NAME
-                  ================================================== -->
 
                   <td>
 
@@ -748,83 +548,124 @@
 
                     </span>
 
+                  </td>
+
+
+                  <td>
+
                     <% if (record) { %>
 
-                      <% if (
-                        record.remarks === "Not Milked" &&
-                        record.liters === 0
-                      ) { %>
+                      <input
+                        class="milk-input readonly-input"
+                        type="number"
+                        value="<%= record.liters %>"
+                        readonly
+                      >
 
-                        <div class="milk-status system">
+                    <% } else if (session) { %>
 
-                          System record:
-                          Not Milked
+                      <input
+                        class="milk-input"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        name="records[<%= index %>][liters]"
+                        placeholder="0.0"
+                        required
+                      >
 
-                        </div>
+                      <input
+                        type="hidden"
+                        name="records[<%= index %>][dairy]"
+                        value="<%= dairy._id %>"
+                      >
 
-                      <% } else { %>
+                    <% } else { %>
 
-                        <div class="milk-status recorded">
-
-                          ✓ Record submitted
-
-                          <% if (adminCorrection) { %>
-
-                            — Admin can edit
-
-                          <% } %>
-
-                        </div>
-
-                      <% } %>
-
-                    <% } else if (!canEdit) { %>
-
-                      <div class="milk-status locked">
-
-                        🔒
-                        <%= dairy.milkMessage ||
-                            "This entry is closed." %>
-
-                      </div>
+                      <input
+                        class="milk-input readonly-input"
+                        type="number"
+                        value="0"
+                        readonly
+                      >
 
                     <% } %>
 
                   </td>
 
 
-                  <!-- ==================================================
-                       LITERS
-                  ================================================== -->
-
                   <td>
 
-                    <input
-                      class="milk-input"
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      name="records[<%= index %>][liters]"
-                      placeholder="0.0"
-                      value="<%= record ? record.liters : '' %>"
-                      <%= canEdit ? '' : 'readonly' %>
-                    >
+                    <% if (record) { %>
 
-                  </td>
+                      <textarea
+                        class="remarks-input readonly-input"
+                        readonly
+                      ><%= record.remarks %></textarea>
+
+                      <div class="recorded">
+
+                        <% if (
+                          record.recordedByType === "system"
+                        ) { %>
+
+                          <strong class="system-record">
+                            System
+                          </strong>
+
+                          Automatically recorded as
+                          Not Milked.
+
+                        <% } else { %>
+
+                          <strong>
+                            Recorded
+                          </strong>
+
+                          This animal has already been
+                          recorded for this session.
+
+                        <% } %>
+
+                      </div>
 
 
-                  <!-- ==================================================
-                       REMARKS
-                  ================================================== -->
+                      <% if (isAdmin) { %>
 
-                  <td>
+                        <div class="admin-edit">
 
-                    <textarea
-                      class="remarks-input"
-                      name="records[<%= index %>][remarks]"
-                      placeholder="Optional remarks..."
-                      <%= canEdit ? '' : 'readonly' %>
-                    ><%= record ? record.remarks : '' %></textarea>
+                          <button
+                            type="button"
+                            onclick="openEditModal(
+                              '<%= record._id %>',
+                              '<%= record.liters %>',
+                              '<%= (record.remarks || '').replace(/'/g, '&#39;') %>'
+                            )"
+                          >
+                            ✏️ Edit Record
+                          </button>
+
+                        </div>
+
+                      <% } %>
+
+
+                    <% } else if (session) { %>
+
+                      <textarea
+                        class="remarks-input"
+                        name="records[<%= index %>][remarks]"
+                        placeholder="Optional remarks..."
+                      ></textarea>
+
+                    <% } else { %>
+
+                      <textarea
+                        class="remarks-input readonly-input"
+                        readonly
+                      >Collection closed.</textarea>
+
+                    <% } %>
 
                   </td>
 
@@ -847,48 +688,34 @@
 
           <div class="submit-hint">
 
-            <% if (
-              user &&
-              user.role === "admin" &&
-              currentDairy.isAdminCorrectionWindow
-            ) { %>
+            <% if (session === "morning") { %>
 
-              🛠️ Administrators can correct morning records until 4:00 PM.
+              🌅 Morning records must be submitted before
+              10:00 AM.
 
-            <% } else if (
-              currentDairy.milkSession === "morning"
-            ) { %>
+            <% } else if (session === "evening") { %>
 
-              💡 Morning milk must be submitted before 10:00 AM.
+              🌆 Evening records must be submitted from
+              4:00 PM until midnight.
 
             <% } else { %>
 
-              💡 Evening milk can be submitted from 4:00 PM until midnight.
+              🔒 The current collection window is closed.
 
             <% } %>
 
           </div>
 
+
           <button
             type="submit"
             class="submit-btn"
+            <% if (!session) { %>
+              disabled
+            <% } %>
           >
 
-            ✓
-
-            <% if (
-              user &&
-              user.role === "admin" &&
-              currentDairy.isAdminCorrectionWindow
-            ) { %>
-
-              Save Corrections
-
-            <% } else { %>
-
-              Submit Milk Records
-
-            <% } %>
+            ✓ Submit Milk Records
 
           </button>
 
@@ -898,109 +725,81 @@
 
     <% } %>
 
+  </div>
 
-    <!-- ==================================================
-         SUCCESS POPUP
-    ================================================== -->
+</div>
 
-    <div
-      id="successOverlay"
-      class="success-overlay"
+
+<!-- ==================================================
+     ADMIN EDIT MODAL
+================================================== -->
+
+<div
+  id="editMilkModal"
+  class="milk-modal"
+>
+
+  <div class="milk-modal-box">
+
+    <h3>
+      ✏️ Edit Milk Record
+    </h3>
+
+    <p>
+      You are editing an existing milk record.
+      Changes will be recorded under your administrator account.
+    </p>
+
+    <form
+      id="editMilkForm"
+      method="POST"
     >
 
-      <div class="success-modal">
+      <label>
+        Milk (Liters)
+      </label>
 
-        <div class="success-top">
-
-          <div class="icon">
-            ✅
-          </div>
-
-        </div>
-
-        <div class="success-body">
-
-          <h3>
-            Success
-          </h3>
-
-          <p>
-            Milk record submitted successfully.
-          </p>
-
-        </div>
-
-        <div class="success-footer">
-
-          <button
-            type="button"
-            id="successOkBtn"
-            class="success-btn"
-          >
-            OK
-          </button>
-
-        </div>
-
-      </div>
-
-    </div>
-
-
-    <!-- ==================================================
-         ERROR POPUP
-    ================================================== -->
-
-    <% if (
-      typeof error !== "undefined" &&
-      error
-    ) { %>
-
-      <div
-        id="errorOverlay"
-        class="error-overlay"
-        style="display:flex;"
+      <input
+        id="editLiters"
+        class="milk-input"
+        type="number"
+        step="0.1"
+        min="0"
+        name="liters"
+        required
       >
 
-        <div class="error-modal">
+      <br>
 
-          <div class="error-top">
+      <label>
+        Remarks
+      </label>
 
-            <div class="icon">
-              ⚠️
-            </div>
+      <textarea
+        id="editRemarks"
+        class="remarks-input"
+        name="remarks"
+      ></textarea>
 
-          </div>
+      <div class="modal-actions">
 
-          <div class="error-body">
+        <button
+          type="button"
+          onclick="closeEditModal()"
+        >
+          Cancel
+        </button>
 
-            <h3>
-              Milk Record Not Saved
-            </h3>
-
-            <p>
-              <%= error %>
-            </p>
-
-          </div>
-
-          <div class="error-footer">
-
-            <button
-              type="button"
-              id="errorOkBtn"
-              class="error-btn"
-            >
-              OK
-            </button>
-
-          </div>
-
-        </div>
+        <button
+          type="submit"
+          class="modal-ok"
+        >
+          Save Changes
+        </button>
 
       </div>
 
-    <% } %>
+    </form>
 
   </div>
 
@@ -1010,100 +809,96 @@
 <script>
 
   // ==================================================
-  // SUCCESS
+  // ADMIN EDIT MODAL
   // ==================================================
 
-  const successOverlay =
-    document.getElementById(
-      "successOverlay"
-    );
+  function openEditModal(
+    id,
+    liters,
+    remarks
+  ) {
 
-  const successOkBtn =
-    document.getElementById(
-      "successOkBtn"
-    );
+    const modal =
+      document.getElementById(
+        "editMilkModal"
+      );
 
-  <% if (
-    typeof success !== "undefined" &&
-    success
-  ) { %>
+    const form =
+      document.getElementById(
+        "editMilkForm"
+      );
 
-    window.addEventListener(
-      "load",
-      function () {
+    const litersInput =
+      document.getElementById(
+        "editLiters"
+      );
 
-        if (successOverlay) {
+    const remarksInput =
+      document.getElementById(
+        "editRemarks"
+      );
 
-          successOverlay.style.display =
-            "flex";
+    if (!modal || !form) {
 
-        }
+      return;
 
-      }
-    );
+    }
 
-  <% } %>
+    form.action =
+      "/milk/edit/" + id;
 
+    litersInput.value =
+      liters;
 
-  if (successOkBtn) {
+    remarksInput.value =
+      remarks || "";
 
-    successOkBtn.addEventListener(
-      "click",
-      function () {
-
-        if (successOverlay) {
-
-          successOverlay.style.display =
-            "none";
-
-        }
-
-        window.location.replace(
-          "/milk"
-        );
-
-      }
+    modal.classList.add(
+      "show"
     );
 
   }
 
-
-  // ==================================================
-  // ERROR
   // ==================================================
 
-  const errorOverlay =
-    document.getElementById(
-      "errorOverlay"
-    );
+  function closeEditModal() {
 
-  const errorOkBtn =
-    document.getElementById(
-      "errorOkBtn"
-    );
+    const modal =
+      document.getElementById(
+        "editMilkModal"
+      );
 
-  if (errorOkBtn) {
+    if (modal) {
 
-    errorOkBtn.addEventListener(
+      modal.classList.remove(
+        "show"
+      );
+
+    }
+
+  }
+
+  // ==================================================
+  // OUTSIDE CLICK
+  // ==================================================
+
+  document
+    .getElementById(
+      "editMilkModal"
+    )
+    ?.addEventListener(
       "click",
-      function () {
+      function(event) {
 
-        if (errorOverlay) {
+        if (
+          event.target === this
+        ) {
 
-          errorOverlay.style.display =
-            "none";
+          closeEditModal();
 
         }
 
-        window.history.replaceState(
-          {},
-          document.title,
-          "/milk"
-        );
-
       }
     );
-
-  }
 
 </script>
