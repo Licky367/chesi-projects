@@ -1,191 +1,99 @@
-<!-- =====================================================
-     FLOATING VIEW ASSETS ACTION
-===================================================== --><div class="floating-assets-action"><button
-    type="button"
-    id="viewPropertyButton"
-    class="asset-bar-trigger"
-    aria-controls="assetBar"
-    aria-expanded="false"
-    title="View Assets"
->
+Let's modify the view assets icon, make it a floating icon instead of being that it also scrolls up and down.
 
-    <span
-        class="asset-bar-trigger-icon"
-        aria-hidden="true"
-    >
-        ◉
-    </span>
+<!-- =====================================================  
+     UPDATE PAGE ASSETS  
+===================================================== -->  <link  
+    rel="stylesheet"  
+    href="/css/update/update.css"  
+>  <script src="/socket.io/socket.io.js"></script>  <!-- =====================================================  
+     UPDATE PAGE  
+===================================================== -->  <div class="dairy-page">  <!-- =================================================  
+     TOP-RIGHT PAGE ACTION  
+================================================== -->  
 
+<div class="dairy-page-actions">  
 
-    <span class="asset-bar-trigger-text">
-        View Assets
-    </span>
 
+    <button  
+        type="button"  
+        id="viewPropertyButton"  
+        class="asset-bar-trigger"  
+        aria-controls="assetBar"  
+        aria-expanded="false"  
+    >  
 
-</button>
+        <span  
+            class="asset-bar-trigger-icon"  
+            aria-hidden="true"  
+        >  
+            ◉  
+        </span>  
 
-</div><!-- =====================================================
-     FLOATING ASSETS BUTTON STYLES
-===================================================== --><style>
 
-/* =========================================================
-   FLOATING ASSETS ACTION
-========================================================= */
+        <span class="asset-bar-trigger-text">  
+            View Assets  
+        </span>  
 
-.floating-assets-action{
 
-    position:fixed;
+    </button>  
 
-    right:20px;
 
-    bottom:75px;
+</div>  
 
-    z-index:1002;
 
-}
+<!-- =================================================  
+     PROFILE  
+================================================== -->  
 
+<%- include("update/h1", {  
+    dairy: dairy,  
+    user: user  
+}) %>  
 
-/* =========================================================
-   VIEW ASSETS BUTTON
-========================================================= */
 
-.floating-assets-action .asset-bar-trigger{
+<!-- =================================================  
+     CREATE POST  
+================================================== -->  
 
-    display:flex;
+<% if (user) { %>  
 
-    align-items:center;
+    <%- include("update/create-post", {  
+        user: user  
+    }) %>  
 
-    justify-content:center;
+<% } %>  
 
-    gap:8px;
 
-    min-height:46px;
+<!-- =================================================  
+     ASSET SIDEBAR  
+       
+     The partial contains:  
+       
+     • Overlay  
+     • Sidebar  
+     • Animals  
+     • Structures  
+     • Sidebar JavaScript  
+================================================== -->  
 
-    padding:0 16px;
+<%- include("dairy/assetBar", {  
+    dairy: dairy,  
+    assetDairies: assetDairies || []  
+}) %>  
 
-    border:none;
 
-    border-radius:24px;
+<!-- =================================================  
+     FEED  
+================================================== -->  
 
-    background:#0b5d1e;
+<%- include("update/feed", {  
+    feed: feed,  
+    user: user  
+}) %>
 
-    color:#fff;
-
-    box-shadow:
-        0 5px 18px rgba(0,0,0,.22);
-
-    cursor:pointer;
-
-    font-size:13px;
-
-    font-weight:700;
-
-    transition:
-        transform .2s ease,
-        background .2s ease,
-        box-shadow .2s ease;
-
-}
-
-
-.floating-assets-action .asset-bar-trigger:hover{
-
-    background:#084a18;
-
-    transform:translateY(-2px);
-
-    box-shadow:
-        0 8px 22px rgba(0,0,0,.26);
-
-}
-
-
-.floating-assets-action .asset-bar-trigger:active{
-
-    transform:translateY(0);
-
-}
-
-
-.floating-assets-action .asset-bar-trigger:focus-visible{
-
-    outline:3px solid rgba(11,93,30,.28);
-
-    outline-offset:3px;
-
-}
-
-
-/* =========================================================
-   ICON
-========================================================= */
-
-.floating-assets-action .asset-bar-trigger-icon{
-
-    width:24px;
-
-    height:24px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    font-size:18px;
-
-    line-height:1;
-
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media(max-width:600px){
-
-    .floating-assets-action{
-
-        right:14px;
-
-        bottom:65px;
-
-    }
-
-
-    .floating-assets-action .asset-bar-trigger{
-
-        width:48px;
-
-        height:48px;
-
-        min-height:48px;
-
-        padding:0;
-
-        border-radius:50%;
-
-    }
-
-
-    .floating-assets-action .asset-bar-trigger-text{
-
-        display:none;
-
-    }
-
-
-    .floating-assets-action .asset-bar-trigger-icon{
-
-        width:auto;
-
-        height:auto;
-
-        font-size:20px;
-
-    }
-
-}
-
-</style>
+</div>  <!-- =====================================================  
+     UPDATE PAGE JAVASCRIPT  
+===================================================== -->  <script  
+    src="/js/update/index.js"  
+    defer  
+></script>
