@@ -1,27 +1,17 @@
 /*=========================================================
-UPDATE PAGE STYLESHEET
-Main entry file
+  UPDATE PAGE STYLESHEET
 
-Import order matters:
+  Main entry file
 
-1. Variables
+  Import order matters:
 
-
-2. Reset
-
-
-3. Layout
-
-
-4. Components
-
-
-5. Utilities
-
-
-6. Responsive
+  1. Variables
+  2. Reset
+  3. Layout
+  4. Components
+  5. Utilities
+  6. Responsive
 =========================================================*/
-
 
 
 @import url("./variables.css");
@@ -36,3 +26,996 @@ Import order matters:
 @import url("./animations.css");
 @import url("./scrollbar.css");
 @import url("./responsive.css");
+
+
+/*=========================================================
+  PROPERTY ACTION
+=========================================================*/
+
+
+.dairy-page-actions {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    box-sizing: border-box;
+
+    margin: 0 0 14px;
+
+}
+
+
+/*=========================================================
+  VIEW ASSETS BUTTON
+=========================================================*/
+
+
+.dairy-page-actions .asset-bar-trigger {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    min-height: 42px;
+
+    padding: 10px 16px;
+
+    border: 0;
+
+    border-radius: 10px;
+
+    background: #2e7d32;
+
+    color: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    box-sizing: border-box;
+
+    transition:
+        background-color .2s ease,
+        transform .15s ease,
+        box-shadow .2s ease;
+
+}
+
+
+.dairy-page-actions .asset-bar-trigger:hover {
+
+    background: #256b2a;
+
+    box-shadow:
+        0 3px 10px rgba(0, 0, 0, .12);
+
+}
+
+
+.dairy-page-actions .asset-bar-trigger:active {
+
+    transform: translateY(1px);
+
+}
+
+
+.dairy-page-actions .asset-bar-trigger:focus-visible {
+
+    outline: 3px solid rgba(46, 125, 50, .25);
+
+    outline-offset: 2px;
+
+}
+
+
+.asset-bar-trigger-icon {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    line-height: 1;
+
+}
+
+
+.asset-bar-trigger-text {
+
+    white-space: nowrap;
+
+}
+
+
+/*=========================================================
+  ASSET BAR OVERLAY
+
+  IMPORTANT:
+
+  Hidden by default.
+
+  It becomes visible ONLY when JavaScript adds
+  the "active" class.
+=========================================================*/
+
+
+.asset-bar-overlay {
+
+    position: fixed;
+
+    inset: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    background: rgba(0, 0, 0, .38);
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    pointer-events: none;
+
+    z-index: 9998;
+
+    transition:
+        opacity .25s ease,
+        visibility .25s ease;
+
+}
+
+
+.asset-bar-overlay.active {
+
+    opacity: 1;
+
+    visibility: visible;
+
+    pointer-events: auto;
+
+}
+
+
+/*=========================================================
+  ASSET BAR
+
+  IMPORTANT:
+
+  The sidebar is completely OFF SCREEN by default.
+
+  It is NOT displayed when update.ejs loads.
+
+  JavaScript adds .active after View Assets is clicked.
+=========================================================*/
+
+
+.asset-bar {
+
+    position: fixed;
+
+    top: 0;
+
+    right: 0;
+
+    width: min(390px, 92vw);
+
+    height: 100vh;
+
+    height: 100dvh;
+
+    display: flex;
+
+    flex-direction: column;
+
+    box-sizing: border-box;
+
+    background: #ffffff;
+
+    box-shadow:
+        -8px 0 30px rgba(0, 0, 0, .16);
+
+    z-index: 9999;
+
+    overflow: hidden;
+
+    /*
+     * CLOSED STATE
+     *
+     * The entire sidebar is positioned outside
+     * the right edge of the screen.
+     */
+
+    transform: translateX(100%);
+
+    visibility: hidden;
+
+    pointer-events: none;
+
+    transition:
+        transform .3s ease,
+        visibility .3s ease;
+
+}
+
+
+/*=========================================================
+  OPEN STATE
+=========================================================*/
+
+
+.asset-bar.active {
+
+    transform: translateX(0);
+
+    visibility: visible;
+
+    pointer-events: auto;
+
+}
+
+
+/*=========================================================
+  PREVENT BACKGROUND SCROLLING
+=========================================================*/
+
+
+body.asset-bar-open {
+
+    overflow: hidden;
+
+}
+
+
+/*=========================================================
+  SIDEBAR HEADER
+=========================================================*/
+
+
+.asset-bar-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    padding: 18px;
+
+    border-bottom: 1px solid #e8e8e8;
+
+    flex-shrink: 0;
+
+}
+
+
+.asset-bar-heading {
+
+    min-width: 0;
+
+}
+
+
+.asset-bar-heading-label {
+
+    display: block;
+
+    margin-bottom: 4px;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    letter-spacing: .08em;
+
+    color: #2e7d32;
+
+}
+
+
+.asset-bar-heading h2 {
+
+    margin: 0;
+
+    font-size: 21px;
+
+    font-weight: 700;
+
+    color: #222222;
+
+}
+
+
+/*=========================================================
+  CLOSE BUTTON
+=========================================================*/
+
+
+.asset-bar-close {
+
+    width: 38px;
+
+    height: 38px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: #f2f2f2;
+
+    color: #333333;
+
+    font-family: inherit;
+
+    font-size: 26px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+}
+
+
+.asset-bar-close:hover {
+
+    background: #e7e7e7;
+
+}
+
+
+.asset-bar-close:focus-visible {
+
+    outline: 2px solid #2e7d32;
+
+    outline-offset: 2px;
+
+}
+
+
+/*=========================================================
+  FARM INFORMATION
+=========================================================*/
+
+
+.asset-bar-farm {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+
+    padding: 14px 18px;
+
+    background: #f5faf5;
+
+    border-bottom: 1px solid #e3eee3;
+
+    flex-shrink: 0;
+
+}
+
+
+.asset-bar-farm-label {
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    letter-spacing: .08em;
+
+    color: #2e7d32;
+
+}
+
+
+.asset-bar-farm-name {
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+    color: #222222;
+
+}
+
+
+.asset-bar-farm-code {
+
+    font-size: 12px;
+
+    color: #707070;
+
+}
+
+
+/*=========================================================
+  CATEGORY TABS
+=========================================================*/
+
+
+.asset-bar-tabs {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 0;
+
+    border-bottom: 1px solid #dddddd;
+
+    background: #ffffff;
+
+    flex-shrink: 0;
+
+}
+
+
+.asset-bar-tab {
+
+    position: relative;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 2px;
+
+    min-height: 58px;
+
+    padding: 9px 10px;
+
+    border: 0;
+
+    border-bottom: 3px solid transparent;
+
+    background: transparent;
+
+    color: #777777;
+
+    font-family: inherit;
+
+    cursor: pointer;
+
+}
+
+
+.asset-bar-tab-title {
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+}
+
+
+.asset-bar-tab-subtitle {
+
+    font-size: 10px;
+
+    color: #999999;
+
+}
+
+
+.asset-bar-tab:hover {
+
+    background: #f7faf7;
+
+    color: #2e7d32;
+
+}
+
+
+.asset-bar-tab.active {
+
+    color: #2e7d32;
+
+    border-bottom-color: #2e7d32;
+
+    background: #f8fbf8;
+
+}
+
+
+.asset-bar-tab.active
+.asset-bar-tab-subtitle {
+
+    color: #5f8f62;
+
+}
+
+
+.asset-bar-tab:focus-visible {
+
+    outline: 2px solid #2e7d32;
+
+    outline-offset: -2px;
+
+}
+
+
+/*=========================================================
+  SIDEBAR CONTENT
+=========================================================*/
+
+
+.asset-bar-content {
+
+    flex: 1;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    overflow-x: hidden;
+
+}
+
+
+/*=========================================================
+  CATEGORY SECTION
+=========================================================*/
+
+
+.asset-bar-section {
+
+    display: block;
+
+}
+
+
+.asset-bar-section[hidden] {
+
+    display: none;
+
+}
+
+
+/*=========================================================
+  SECTION HEADER
+=========================================================*/
+
+
+.asset-bar-section-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 18px;
+
+    border-bottom: 1px solid #eeeeee;
+
+}
+
+
+.asset-bar-section-label {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+    letter-spacing: .08em;
+
+    color: #2e7d32;
+
+}
+
+
+.asset-bar-section-header h3 {
+
+    margin: 0;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+    color: #222222;
+
+}
+
+
+.asset-bar-count {
+
+    min-width: 30px;
+
+    height: 30px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 0 8px;
+
+    box-sizing: border-box;
+
+    border-radius: 15px;
+
+    background: #edf6ed;
+
+    color: #2e7d32;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+}
+
+
+/*=========================================================
+  ASSET LIST
+=========================================================*/
+
+
+.asset-bar-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+/*=========================================================
+  ASSET ITEM
+=========================================================*/
+
+
+.asset-bar-item {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 13px 18px;
+
+    border: 0;
+
+    border-bottom: 1px solid #eeeeee;
+
+    background: #ffffff;
+
+    color: inherit;
+
+    font-family: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    box-sizing: border-box;
+
+    transition:
+        background-color .15s ease;
+
+}
+
+
+.asset-bar-item:hover {
+
+    background: #f7faf7;
+
+}
+
+
+.asset-bar-item:focus-visible {
+
+    outline: 2px solid #2e7d32;
+
+    outline-offset: -2px;
+
+}
+
+
+/*=========================================================
+  ASSET IMAGE
+=========================================================*/
+
+
+.asset-bar-item-image {
+
+    width: 52px;
+
+    height: 52px;
+
+    flex: 0 0 52px;
+
+    display: block;
+
+    overflow: hidden;
+
+    border-radius: 10px;
+
+    background: #eeeeee;
+
+}
+
+
+.asset-bar-item-image img {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+/*=========================================================
+  ASSET DETAILS
+=========================================================*/
+
+
+.asset-bar-item-details {
+
+    min-width: 0;
+
+    flex: 1;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+
+}
+
+
+.asset-bar-item-name {
+
+    overflow: hidden;
+
+    color: #222222;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    line-height: 1.25;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+
+.asset-bar-item-code {
+
+    color: #707070;
+
+    font-size: 11px;
+
+    line-height: 1.3;
+
+}
+
+
+.asset-bar-item-meta {
+
+    overflow: hidden;
+
+    color: #858585;
+
+    font-size: 11px;
+
+    line-height: 1.3;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+
+/*=========================================================
+  ASSET ARROW
+=========================================================*/
+
+
+.asset-bar-item-arrow {
+
+    flex: 0 0 auto;
+
+    color: #999999;
+
+    font-size: 24px;
+
+    line-height: 1;
+
+}
+
+
+/*=========================================================
+  EMPTY STATE
+=========================================================*/
+
+
+.asset-bar-empty {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    min-height: 180px;
+
+    padding: 25px 18px;
+
+    box-sizing: border-box;
+
+    color: #777777;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+
+    text-align: center;
+
+}
+
+
+.asset-bar-empty-icon {
+
+    font-size: 24px;
+
+    color: #aaaaaa;
+
+}
+
+
+/*=========================================================
+  SIDEBAR FOOTER
+=========================================================*/
+
+
+.asset-bar-footer {
+
+    flex-shrink: 0;
+
+    padding: 13px 18px;
+
+    border-top: 1px solid #eeeeee;
+
+    background: #fafafa;
+
+    color: #777777;
+
+    font-size: 11px;
+
+    line-height: 1.4;
+
+    text-align: center;
+
+}
+
+
+/*=========================================================
+  RESPONSIVE ASSET BAR
+=========================================================*/
+
+
+@media (max-width: 600px) {
+
+
+    .dairy-page-actions {
+
+        margin-bottom: 12px;
+
+    }
+
+
+    .dairy-page-actions .asset-bar-trigger {
+
+        min-height: 40px;
+
+        padding: 9px 13px;
+
+        font-size: 13px;
+
+    }
+
+
+    .asset-bar {
+
+        width: min(360px, 94vw);
+
+    }
+
+
+    .asset-bar-header {
+
+        padding: 16px;
+
+    }
+
+
+    .asset-bar-section-header {
+
+        padding: 16px;
+
+    }
+
+
+    .asset-bar-item {
+
+        padding: 12px 16px;
+
+    }
+
+
+}
+
+
+/*=========================================================
+  REDUCED MOTION
+=========================================================*/
+
+
+@media (prefers-reduced-motion: reduce) {
+
+
+    .asset-bar,
+
+    .asset-bar-overlay,
+
+    .dairy-page-actions .asset-bar-trigger {
+
+        transition: none;
+
+    }
+
+}
