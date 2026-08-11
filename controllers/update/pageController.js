@@ -53,7 +53,7 @@ const isDairyFarm =
 const view =
     isDairyFarm
         ? "update"
-        : "dairy/dairySet";
+        : "dairySet";
 
 
 /* =================================================
