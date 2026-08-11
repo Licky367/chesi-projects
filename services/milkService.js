@@ -23,19 +23,15 @@ function getKenyaDateParts() {
     "en-GB",
     {
       timeZone: TIME_ZONE,
-
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
-
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-
       hourCycle: "h23"
     }
   ).formatToParts(new Date());
-
 
   const get = (name) =>
     Number(
@@ -44,22 +40,18 @@ function getKenyaDateParts() {
       )?.value || 0
     );
 
-
   const year = get("year");
   const month = get("month");
   const day = get("day");
-
   const hour = get("hour");
   const minute = get("minute");
   const second = get("second");
-
 
   return {
 
     year,
     month,
     day,
-
     hour,
     minute,
     second,
@@ -79,44 +71,6 @@ function getKenyaDateParts() {
 
 
 // ==================================================
-// GET PREVIOUS KENYA DATE
-// ==================================================
-
-function getPreviousKenyaDate() {
-
-  const now =
-    getKenyaDateParts();
-
-  const date =
-    new Date(
-      `${now.date}T00:00:00+03:00`
-    );
-
-  date.setDate(
-    date.getDate() - 1
-  );
-
-
-  const year =
-    date.getFullYear();
-
-  const month =
-    String(
-      date.getMonth() + 1
-    ).padStart(2, "0");
-
-  const day =
-    String(
-      date.getDate()
-    ).padStart(2, "0");
-
-
-  return `${year}-${month}-${day}`;
-
-}
-
-
-// ==================================================
 // MILK SESSION
 //
 // 00:00 - 09:59 = MORNING
@@ -126,68 +80,45 @@ function getPreviousKenyaDate() {
 
 function getMilkSession() {
 
-  const now =
-    getKenyaDateParts();
+  const now = getKenyaDateParts();
 
-
-  if (
-    now.timeMinutes < 600
-  ) {
+  if (now.timeMinutes < 600) {
 
     return {
 
       name: "morning",
-
       label: "Morning",
-
       day: now.date,
-
       month: now.monthKey,
-
       open: true,
-
       canSubmit: true
 
     };
 
   }
 
-
-  if (
-    now.timeMinutes >= 960
-  ) {
+  if (now.timeMinutes >= 960) {
 
     return {
 
       name: "evening",
-
       label: "Evening",
-
       day: now.date,
-
       month: now.monthKey,
-
       open: true,
-
       canSubmit: true
 
     };
 
   }
 
-
   return {
 
     name: "closed",
-
     label: "Closed",
-
     day: now.date,
-
     month: now.monthKey,
-
     open: false,
-
     canSubmit: false
 
   };
@@ -199,24 +130,17 @@ function getMilkSession() {
 // SESSION DEADLINE
 // ==================================================
 
-function getSessionDeadline(
-  sessionName
-) {
+function getSessionDeadline(sessionName) {
 
-  const now =
-    getKenyaDateParts();
+  const now = getKenyaDateParts();
 
-
-  if (
-    sessionName === "morning"
-  ) {
+  if (sessionName === "morning") {
 
     return {
 
       year: now.year,
       month: now.month,
       day: now.day,
-
       hour: 10,
       minute: 0
 
@@ -224,24 +148,19 @@ function getSessionDeadline(
 
   }
 
-
-  if (
-    sessionName === "evening"
-  ) {
+  if (sessionName === "evening") {
 
     return {
 
       year: now.year,
       month: now.month,
       day: now.day,
-
       hour: 24,
       minute: 0
 
     };
 
   }
-
 
   return null;
 
@@ -252,35 +171,21 @@ function getSessionDeadline(
 // CHECK NORMAL SUBMISSION
 // ==================================================
 
-function canSubmitSession(
-  sessionName
-) {
+function canSubmitSession(sessionName) {
 
-  const now =
-    getKenyaDateParts();
+  const now = getKenyaDateParts();
 
+  if (sessionName === "morning") {
 
-  if (
-    sessionName === "morning"
-  ) {
-
-    return (
-      now.timeMinutes < 600
-    );
+    return now.timeMinutes < 600;
 
   }
 
+  if (sessionName === "evening") {
 
-  if (
-    sessionName === "evening"
-  ) {
-
-    return (
-      now.timeMinutes >= 960
-    );
+    return now.timeMinutes >= 960;
 
   }
-
 
   return false;
 
@@ -288,57 +193,32 @@ function canSubmitSession(
 
 
 // ==================================================
-// CHECK ADMIN EDIT
+// CHECK ADMIN EDIT PERMISSION
 // ==================================================
 
-function canAdminEditRecord(
-  record
-) {
+function canAdminEditRecord(record) {
 
-  if (
-    !record ||
-    !record.session
-  ) {
+  const now = getKenyaDateParts();
 
+  if (!record || !record.session) {
     return false;
-
   }
 
-
-  const now =
-    getKenyaDateParts();
-
-
-  if (
-    record.day !== now.date
-  ) {
-
+  if (record.day !== now.date) {
     return false;
+  }
+
+  if (record.session === "morning") {
+
+    return now.timeMinutes < 960;
 
   }
 
+  if (record.session === "evening") {
 
-  if (
-    record.session === "morning"
-  ) {
-
-    return (
-      now.timeMinutes < 960
-    );
+    return now.timeMinutes >= 960;
 
   }
-
-
-  if (
-    record.session === "evening"
-  ) {
-
-    return (
-      now.timeMinutes >= 960
-    );
-
-  }
-
 
   return false;
 
@@ -349,128 +229,13 @@ function canAdminEditRecord(
 // BUSINESS ERROR
 // ==================================================
 
-function milkError(
-  code,
-  message
-) {
+function milkError(code, message) {
 
-  const error =
-    new Error(message);
+  const error = new Error(message);
 
-  error.code =
-    code;
+  error.code = code;
 
   return error;
-
-}
-
-
-// ==================================================
-// NORMALIZE SUBMITTED RECORDS
-//
-// Supports:
-//
-// 1. Array:
-//
-// [
-//   {
-//     dairy: "...",
-//     liters: "5"
-//   }
-// ]
-//
-// 2. EJS object:
-//
-// records[dairyId][liters]
-//
-// 3. JSON string
-// ==================================================
-
-function normalizeMilkRecords(
-  records
-) {
-
-  if (
-    typeof records === "string"
-  ) {
-
-    try {
-
-      records =
-        JSON.parse(records);
-
-    } catch (error) {
-
-      return [];
-
-    }
-
-  }
-
-
-  if (
-    Array.isArray(records)
-  ) {
-
-    return records;
-
-  }
-
-
-  if (
-    records &&
-    typeof records === "object"
-  ) {
-
-    return Object.entries(
-      records
-    ).map(
-      ([dairyId, value]) => {
-
-        if (
-          value &&
-          typeof value === "object" &&
-          !Array.isArray(value)
-        ) {
-
-          return {
-
-            dairy:
-              value.dairy ||
-              dairyId,
-
-            liters:
-              value.liters,
-
-            remarks:
-              value.remarks ||
-              ""
-
-          };
-
-        }
-
-
-        return {
-
-          dairy:
-            dairyId,
-
-          liters:
-            value,
-
-          remarks:
-            ""
-
-        };
-
-      }
-    );
-
-  }
-
-
-  return [];
 
 }
 
@@ -479,894 +244,776 @@ function normalizeMilkRecords(
 // GET MILKING ANIMALS
 // ==================================================
 
-exports.getMilkingAnimals =
-  async () => {
+exports.getMilkingAnimals = async () => {
 
-    return Dairy.find({
+  return Dairy.find({
 
-      isMilking: true,
+    isMilking: true,
 
-      code: {
+    code: {
+      $gte: 0,
+      $mod: [2, 0]
+    }
 
-        $gte: 0,
-
-        $mod: [2, 0]
-
-      }
-
+  })
+    .sort({
+      code: 1
     })
-      .sort({
-        code: 1
-      })
-      .lean();
+    .lean();
 
-  };
+};
 
 
 // ==================================================
 // FINALIZE ONE EXPIRED SESSION
-//
-// Every milking animal without a record gets
-// a system "Not Milked" record.
 // ==================================================
 
-exports.finalizeExpiredMilkSession =
-  async (
-    sessionName,
-    day
-  ) => {
+exports.finalizeExpiredMilkSession = async (
+  sessionName,
+  day
+) => {
 
-    if (
-      !sessionName ||
-      !day
-    ) {
+  if (!sessionName || !day) {
+    return [];
+  }
 
-      return [];
+  const dairies =
+    await exports.getMilkingAnimals();
 
+  if (!dairies.length) {
+    return [];
+  }
+
+  const existing =
+    await Milk.find({
+      day,
+      session: sessionName
+    })
+      .select("dairy")
+      .lean();
+
+  const recorded =
+    new Set(
+      existing.map(
+        record =>
+          record.dairy.toString()
+      )
+    );
+
+  const docs = [];
+
+  for (const dairy of dairies) {
+
+    const dairyId =
+      dairy._id.toString();
+
+    if (recorded.has(dairyId)) {
+      continue;
     }
 
+    docs.push({
 
-    const dairies =
-      await exports.getMilkingAnimals();
+      dairy: dairy._id,
 
+      liters: 0,
 
-    if (
-      !dairies.length
-    ) {
+      remarks: "Not Milked",
 
-      return [];
+      recordedBy: null,
 
-    }
+      recordedBySystem: true,
 
+      session: sessionName,
 
-    const existing =
-      await Milk.find({
+      date: new Date(),
 
-        day,
+      day,
 
-        session:
-          sessionName
+      month: day.slice(0, 7)
 
-      })
-        .select("dairy")
-        .lean();
+    });
 
+  }
 
-    const recorded =
-      new Set(
-        existing.map(
-          record =>
-            record.dairy.toString()
-        )
-      );
+  if (!docs.length) {
+    return [];
+  }
 
+  try {
 
-    const docs = [];
-
-
-    for (
-      const dairy of dairies
-    ) {
-
-      const dairyId =
-        dairy._id.toString();
-
-
-      if (
-        recorded.has(dairyId)
-      ) {
-
-        continue;
-
+    return await Milk.insertMany(
+      docs,
+      {
+        ordered: false
       }
+    );
 
+  } catch (error) {
 
-      docs.push({
+    /*
+     * Duplicate-key errors can happen if two requests
+     * try to finalize the same session at the same time.
+     *
+     * Existing records are harmless here.
+     */
 
-        dairy:
-          dairy._id,
-
-        liters:
-          0,
-
-        remarks:
-          "Not Milked",
-
-        recordedBy:
-          null,
-
-        recordedBySystem:
-          true,
-
-        session:
-          sessionName,
-
-        date:
-          new Date(),
-
-        day,
-
-        month:
-          day.slice(0, 7)
-
-      });
-
-    }
-
-
-    if (
-      !docs.length
-    ) {
-
+    if (error?.code === 11000) {
       return [];
-
     }
 
+    throw error;
 
-    try {
+  }
 
-      return await Milk.insertMany(
-        docs,
-        {
-          ordered: false
-        }
-      );
-
-    } catch (error) {
-
-      /*
-       * If another request finalized the same
-       * animals at the same time, ignore duplicate
-       * records and allow the page to continue.
-       */
-
-      if (
-        error?.code === 11000 ||
-        error?.writeErrors?.some(
-          item =>
-            item.code === 11000
-        )
-      ) {
-
-        return [];
-
-      }
-
-      throw error;
-
-    }
-
-  };
+};
 
 
 // ==================================================
 // FINALIZE EXPIRED SESSIONS
 // ==================================================
 
-exports.finalizeExpiredMilkSessions =
-  async () => {
+exports.finalizeExpiredMilkSessions = async () => {
 
-    const now =
-      getKenyaDateParts();
+  const now = getKenyaDateParts();
 
+  const results = [];
 
-    const results = [];
+  // ------------------------------------------------
+  // MORNING
+  // ------------------------------------------------
 
+  if (now.timeMinutes >= 600) {
 
-    // ----------------------------------------------
-    // MORNING
-    // ----------------------------------------------
+    results.push(
+      await exports.finalizeExpiredMilkSession(
+        "morning",
+        now.date
+      )
+    );
 
-    if (
-      now.timeMinutes >= 600
-    ) {
+  }
 
-      results.push(
-        await exports.finalizeExpiredMilkSession(
-          "morning",
-          now.date
-        )
+  // ------------------------------------------------
+  // PREVIOUS EVENING
+  // ------------------------------------------------
+
+  if (now.timeMinutes < 600) {
+
+    const previousDay =
+      new Date(
+        `${now.date}T00:00:00+03:00`
       );
 
-    }
+    previousDay.setDate(
+      previousDay.getDate() - 1
+    );
 
+    const previousYear =
+      previousDay.getFullYear();
 
-    // ----------------------------------------------
-    // PREVIOUS EVENING
-    //
-    // Between midnight and 09:59 AM, the previous
-    // day's evening session has expired.
-    // ----------------------------------------------
+    const previousMonth =
+      String(
+        previousDay.getMonth() + 1
+      ).padStart(2, "0");
 
-    if (
-      now.timeMinutes < 600
-    ) {
+    const previousDate =
+      String(
+        previousDay.getDate()
+      ).padStart(2, "0");
 
-      results.push(
-        await exports.finalizeExpiredMilkSession(
-          "evening",
-          getPreviousKenyaDate()
-        )
-      );
+    const previousDayString =
+      `${previousYear}-${previousMonth}-${previousDate}`;
 
-    }
+    results.push(
+      await exports.finalizeExpiredMilkSession(
+        "evening",
+        previousDayString
+      )
+    );
 
+  }
 
-    return results.flat();
+  return results.flat();
 
-  };
+};
 
 
 // ==================================================
 // GET MILK PAGE DATA
+//
+// IMPORTANT:
+//
+// Each dairy receives:
+//
+// morning: saved morning record or null
+// evening: saved evening record or null
+//
+// This allows the EJS to display the actual
+// recorded value after saving.
+//
+// Non-admin users can simply display the value.
+// Admin users can display the edit control.
 // ==================================================
 
-exports.getMilkPageData =
-  async () => {
+exports.getMilkPageData = async () => {
+
+  /*
+   * Finalize sessions that have expired before
+   * loading the page.
+   */
+
+  await exports.finalizeExpiredMilkSessions();
+
+  const dairies =
+    await exports.getMilkingAnimals();
+
+  const current =
+    getMilkSession();
+
+  const today =
+    current.day;
+
+  // ------------------------------------------------
+  // GET TODAY'S MORNING RECORDS
+  // ------------------------------------------------
+
+  const morningRecords =
+    await Milk.find({
+      day: today,
+      session: "morning"
+    })
+      .populate(
+        "recordedBy",
+        "name"
+      )
+      .lean();
+
+  // ------------------------------------------------
+  // GET TODAY'S EVENING RECORDS
+  // ------------------------------------------------
+
+  const eveningRecords =
+    await Milk.find({
+      day: today,
+      session: "evening"
+    })
+      .populate(
+        "recordedBy",
+        "name"
+      )
+      .lean();
+
+  // ------------------------------------------------
+  // CREATE MAPS
+  // ------------------------------------------------
+
+  const morningMap =
+    new Map();
+
+  for (const record of morningRecords) {
+
+    if (!record.dairy) {
+      continue;
+    }
+
+    morningMap.set(
+      record.dairy.toString(),
+      record
+    );
+
+  }
+
+  const eveningMap =
+    new Map();
+
+  for (const record of eveningRecords) {
+
+    if (!record.dairy) {
+      continue;
+    }
+
+    eveningMap.set(
+      record.dairy.toString(),
+      record
+    );
+
+  }
+
+  // ------------------------------------------------
+  // ATTACH RECORDS TO EACH ANIMAL
+  // ------------------------------------------------
+
+  const dairiesWithRecords =
+    dairies.map(dairy => {
+
+      const dairyId =
+        dairy._id.toString();
+
+      const morning =
+        morningMap.get(
+          dairyId
+        ) || null;
+
+      const evening =
+        eveningMap.get(
+          dairyId
+        ) || null;
+
+      return {
+
+        ...dairy,
+
+        morning,
+
+        evening,
+
+        /*
+         * Convenience properties for EJS.
+         */
+
+        morningRecorded:
+          !!morning,
+
+        eveningRecorded:
+          !!evening,
+
+        morningLiters:
+          morning
+            ? Number(morning.liters || 0)
+            : null,
+
+        eveningLiters:
+          evening
+            ? Number(evening.liters || 0)
+            : null
+
+      };
+
+    });
+
+  // ------------------------------------------------
+  // CURRENT DISPLAY RECORDS
+  // ------------------------------------------------
+
+  let displayRecords = [];
+
+  if (current.name === "morning") {
+
+    displayRecords =
+      morningRecords;
+
+  }
+
+  else if (current.name === "closed") {
 
     /*
-     * Finalize sessions which have expired.
+     * During 10:00 - 15:59 the morning
+     * collection remains visible.
      */
 
-    await exports.finalizeExpiredMilkSessions();
+    displayRecords =
+      morningRecords;
 
+  }
 
-    const dairies =
-      await exports.getMilkingAnimals();
+  else if (current.name === "evening") {
 
+    displayRecords =
+      eveningRecords;
 
-    const current =
-      getMilkSession();
+  }
 
+  return {
 
-    const today =
-      current.day;
+    dairies:
+      dairiesWithRecords,
 
+    milkRecords:
+      displayRecords,
 
-    // ==================================================
-    // GET TODAY'S MORNING RECORDS
-    // ==================================================
+    morningRecords,
 
-    const morningRecords =
-      await Milk.find({
+    eveningRecords,
 
-        day:
-          today,
+    session:
+      current.name,
 
-        session:
-          "morning"
+    sessionInfo:
+      current,
 
-      })
-        .sort({
-          date: 1
-        })
-        .lean();
+    canSubmit:
+      current.canSubmit,
 
+    canEditMorning:
+      current.name === "morning" ||
+      current.name === "closed",
 
-    // ==================================================
-    // GET TODAY'S EVENING RECORDS
-    // ==================================================
-
-    const eveningRecords =
-      await Milk.find({
-
-        day:
-          today,
-
-        session:
-          "evening"
-
-      })
-        .sort({
-          date: 1
-        })
-        .lean();
-
-
-    // ==================================================
-    // CREATE RECORD MAPS
-    // ==================================================
-
-    const morningMap =
-      new Map();
-
-
-    for (
-      const record of morningRecords
-    ) {
-
-      morningMap.set(
-        record.dairy.toString(),
-        record
-      );
-
-    }
-
-
-    const eveningMap =
-      new Map();
-
-
-    for (
-      const record of eveningRecords
-    ) {
-
-      eveningMap.set(
-        record.dairy.toString(),
-        record
-      );
-
-    }
-
-
-    // ==================================================
-    // ATTACH RECORDS TO EACH ANIMAL
-    //
-    // IMPORTANT:
-    //
-    // The EJS now receives:
-    //
-    // dairy.morning
-    // dairy.evening
-    // dairy.record
-    // dairy.recorded
-    // dairy.canEdit
-    // ==================================================
-
-    const dairiesWithRecords =
-      dairies.map(
-        dairy => {
-
-          const dairyId =
-            dairy._id.toString();
-
-
-          const morning =
-            morningMap.get(
-              dairyId
-            ) || null;
-
-
-          const evening =
-            eveningMap.get(
-              dairyId
-            ) || null;
-
-
-          let activeRecord =
-            null;
-
-
-          if (
-            current.name === "morning" ||
-            current.name === "closed"
-          ) {
-
-            activeRecord =
-              morning;
-
-          }
-
-
-          if (
-            current.name === "evening"
-          ) {
-
-            activeRecord =
-              evening;
-
-          }
-
-
-          const recorded =
-            !!activeRecord;
-
-
-          const canEdit =
-            !!activeRecord &&
-            canAdminEditRecord(
-              activeRecord
-            );
-
-
-          return {
-
-            ...dairy,
-
-            morning,
-
-            evening,
-
-            /*
-             * Record belonging to the currently
-             * displayed session.
-             */
-
-            record:
-              activeRecord,
-
-            /*
-             * Easy EJS boolean.
-             */
-
-            recorded,
-
-            /*
-             * Admin may edit only when the service
-             * says the existing record is editable.
-             */
-
-            canEdit,
-
-            /*
-             * Non-admin users should treat an existing
-             * record as read-only.
-             */
-
-            readOnly:
-              recorded &&
-              !canEdit
-
-          };
-
-        }
-      );
-
-
-    // ==================================================
-    // DISPLAY RECORDS
-    // ==================================================
-
-    let displayRecords = [];
-
-
-    if (
-      current.name === "morning"
-    ) {
-
-      displayRecords =
-        morningRecords;
-
-    }
-
-
-    else if (
-      current.name === "closed"
-    ) {
-
-      /*
-       * Keep morning values visible while the
-       * collection window is closed.
-       */
-
-      displayRecords =
-        morningRecords;
-
-    }
-
-
-    else if (
+    canEditEvening:
       current.name === "evening"
-    ) {
-
-      displayRecords =
-        eveningRecords;
-
-    }
-
-
-    // ==================================================
-    // RETURN
-    // ==================================================
-
-    return {
-
-      dairies:
-        dairiesWithRecords,
-
-      milkRecords:
-        displayRecords,
-
-      morningRecords,
-
-      eveningRecords,
-
-      session:
-        current.name,
-
-      sessionInfo:
-        current,
-
-      canSubmit:
-        current.canSubmit,
-
-      canEditMorning:
-        current.name === "morning" ||
-        current.name === "closed",
-
-      canEditEvening:
-        current.name === "evening"
-
-    };
 
   };
+
+};
 
 
 // ==================================================
 // SAVE MILK RECORDS
 //
 // NORMAL USER SUBMISSION
+//
+// IMPORTANT:
+// This function NEVER returns success for an empty
+// submission.
+//
+// Every submitted animal must actually produce a
+// database record.
 // ==================================================
 
-exports.saveMilkRecords =
-  async (
-    records,
-    user
-  ) => {
+exports.saveMilkRecords = async (
+  records,
+  user
+) => {
 
-    // ==================================================
-    // USER CHECK
-    // ==================================================
+  // ------------------------------------------------
+  // VALIDATE USER
+  // ------------------------------------------------
+
+  if (!user || !user._id) {
+
+    throw milkError(
+      "MILK_USER_REQUIRED",
+      "User ID is required to record milk."
+    );
+
+  }
+
+  // ------------------------------------------------
+  // VALIDATE SUBMISSION
+  // ------------------------------------------------
+
+  if (!records) {
+
+    throw milkError(
+      "MILK_NO_RECORDS",
+      "No milk records were submitted."
+    );
+
+  }
+
+  /*
+   * Depending on the EJS form, req.body.records
+   * can sometimes arrive as:
+   *
+   * object
+   * array
+   *
+   * Normalize it here.
+   */
+
+  let normalizedRecords = [];
+
+  if (Array.isArray(records)) {
+
+    normalizedRecords =
+      records;
+
+  }
+
+  else if (
+    typeof records === "object"
+  ) {
+
+    /*
+     * Supports forms where records are submitted
+     * using indexed/object field names.
+     */
+
+    normalizedRecords =
+      Object.values(records);
+
+  }
+
+  if (!normalizedRecords.length) {
+
+    throw milkError(
+      "MILK_NO_RECORDS",
+      "No milk records were submitted."
+    );
+
+  }
+
+  // ------------------------------------------------
+  // CURRENT SESSION
+  // ------------------------------------------------
+
+  const current =
+    getMilkSession();
+
+  if (!current.canSubmit) {
+
+    throw milkError(
+
+      "MILK_TIME_CLOSED",
+
+      "Milk submission is currently closed. Morning collection is available from midnight to 10:00 AM, while evening collection is available from 4:00 PM until midnight."
+
+    );
+
+  }
+
+  const session =
+    current.name;
+
+  const day =
+    current.day;
+
+  // ------------------------------------------------
+  // VALIDATE RECORD STRUCTURE
+  // ------------------------------------------------
+
+  const cleanedRecords = [];
+
+  for (
+    const record
+    of normalizedRecords
+  ) {
+
+    if (!record) {
+      continue;
+    }
+
+    /*
+     * Support both:
+     *
+     * record.dairy
+     *
+     * and:
+     *
+     * record.dairyId
+     */
+
+    const dairyId =
+      record.dairy ||
+      record.dairyId;
+
+    if (!dairyId) {
+      continue;
+    }
 
     if (
-      !user ||
-      !user._id
+      !mongoose.Types.ObjectId.isValid(
+        dairyId
+      )
     ) {
 
       throw milkError(
-        "MILK_USER_REQUIRED",
-        "User ID is required to record milk."
+        "MILK_INVALID_ANIMAL",
+        "One of the submitted dairy animal IDs is invalid."
       );
 
     }
 
-
-    // ==================================================
-    // NORMALIZE FORM DATA
-    // ==================================================
-
-    const normalizedRecords =
-      normalizeMilkRecords(
-        records
+    const liters =
+      Number(
+        record.liters
       );
 
-
     /*
-     * IMPORTANT:
+     * Empty string is NOT a valid submission.
      *
-     * Do NOT silently return [] here.
-     *
-     * That was one reason the controller could
-     * report "success" even though nothing had
-     * actually been saved.
+     * Zero IS valid.
      */
 
     if (
-      !normalizedRecords.length
+      record.liters === undefined ||
+      record.liters === null ||
+      record.liters === "" ||
+      Number.isNaN(liters) ||
+      liters < 0
     ) {
 
       throw milkError(
-        "MILK_NO_RECORDS",
-        "No milk records were submitted."
+
+        "MILK_INVALID_QUANTITY",
+
+        "Please enter a valid milk quantity for every animal being recorded."
+
       );
 
     }
 
+    cleanedRecords.push({
 
-    // ==================================================
-    // CURRENT SESSION
-    // ==================================================
+      dairy:
+        dairyId,
 
-    const current =
-      getMilkSession();
+      liters,
 
+      remarks:
+        typeof record.remarks === "string"
+          ? record.remarks.trim()
+          : ""
+
+    });
+
+  }
+
+  // ------------------------------------------------
+  // DO NOT REPORT SUCCESS FOR NOTHING
+  // ------------------------------------------------
+
+  if (!cleanedRecords.length) {
+
+    throw milkError(
+
+      "MILK_NO_RECORDS",
+
+      "No valid milk records were submitted. Please enter a milk quantity before saving."
+
+    );
+
+  }
+
+  // ------------------------------------------------
+  // PREVENT DUPLICATE ANIMALS IN SAME FORM
+  // ------------------------------------------------
+
+  const submittedIds =
+    new Set();
+
+  for (
+    const record
+    of cleanedRecords
+  ) {
+
+    const dairyId =
+      record.dairy.toString();
 
     if (
-      !current.canSubmit
-    ) {
-
-      throw milkError(
-
-        "MILK_TIME_CLOSED",
-
-        "Milk submission is currently closed. Morning collection is available from midnight to 10:00 AM, while evening collection is available from 4:00 PM until midnight."
-
-      );
-
-    }
-
-
-    const session =
-      current.name;
-
-
-    const day =
-      current.day;
-
-
-    // ==================================================
-    // PREPARE DAIRY IDS
-    // ==================================================
-
-    const dairyIds =
-      normalizedRecords
-        .map(
-          record =>
-            record?.dairy
-        )
-        .filter(Boolean);
-
-
-    if (
-      !dairyIds.length
-    ) {
-
-      throw milkError(
-        "MILK_NO_ANIMALS",
-        "No dairy animals were submitted."
-      );
-
-    }
-
-
-    // ==================================================
-    // VALIDATE OBJECT IDS
-    // ==================================================
-
-    for (
-      const dairyId of dairyIds
-    ) {
-
-      if (
-        !mongoose.Types.ObjectId.isValid(
-          dairyId
-        )
-      ) {
-
-        throw milkError(
-          "MILK_INVALID_ANIMAL",
-          "One or more submitted dairy animal IDs are invalid."
-        );
-
-      }
-
-    }
-
-
-    // ==================================================
-    // VERIFY THAT ANIMALS ARE MILKING ANIMALS
-    // ==================================================
-
-    const dairies =
-      await Dairy.find({
-
-        _id: {
-          $in: dairyIds
-        },
-
-        isMilking: true,
-
-        code: {
-
-          $gte: 0,
-
-          $mod: [2, 0]
-
-        }
-
-      })
-        .select("_id")
-        .lean();
-
-
-    const validDairyIds =
-      new Set(
-        dairies.map(
-          dairy =>
-            dairy._id.toString()
-        )
-      );
-
-
-    // ==================================================
-    // EXISTING RECORDS
-    // ==================================================
-
-    const existing =
-      await Milk.find({
-
-        dairy: {
-          $in: dairyIds
-        },
-
-        day,
-
-        session
-
-      })
-        .select(
-          "_id dairy liters remarks recordedBy recordedBySystem"
-        )
-        .lean();
-
-
-    const existingMap =
-      new Map();
-
-
-    for (
-      const record of existing
-    ) {
-
-      existingMap.set(
-        record.dairy.toString(),
-        record
-      );
-
-    }
-
-
-    // ==================================================
-    // BUILD DOCUMENTS
-    // ==================================================
-
-    const docs = [];
-
-    const submittedIds =
-      new Set();
-
-
-    for (
-      const record of normalizedRecords
-    ) {
-
-      if (
-        !record ||
-        !record.dairy
-      ) {
-
-        continue;
-
-      }
-
-
-      const dairyId =
-        record.dairy.toString();
-
-
-      // ----------------------------------------------
-      // DUPLICATE IN SAME FORM
-      // ----------------------------------------------
-
-      if (
-        submittedIds.has(
-          dairyId
-        )
-      ) {
-
-        throw milkError(
-
-          "MILK_DUPLICATE_RECORD",
-
-          "The same dairy animal was submitted more than once."
-
-        );
-
-      }
-
-
-      submittedIds.add(
+      submittedIds.has(
         dairyId
+      )
+    ) {
+
+      throw milkError(
+
+        "MILK_DUPLICATE_RECORD",
+
+        "The same dairy animal was submitted more than once."
+
       );
 
+    }
 
-      // ----------------------------------------------
-      // INVALID / NON-MILKING ANIMAL
-      // ----------------------------------------------
+    submittedIds.add(
+      dairyId
+    );
 
-      if (
-        !validDairyIds.has(
-          dairyId
-        )
-      ) {
+  }
 
-        throw milkError(
+  // ------------------------------------------------
+  // VERIFY ANIMALS EXIST AND ARE MILKING
+  // ------------------------------------------------
 
-          "MILK_INVALID_ANIMAL",
+  const dairyIds =
+    cleanedRecords.map(
+      record =>
+        record.dairy
+    );
 
-          "One or more selected animals are not currently marked as milking animals."
+  const dairies =
+    await Dairy.find({
 
-        );
+      _id: {
+        $in: dairyIds
+      },
 
-      }
+      isMilking: true
 
+    })
+      .select("_id code name isMilking")
+      .lean();
 
-      // ----------------------------------------------
-      // EXISTING RECORD
-      // ----------------------------------------------
+  const validDairyIds =
+    new Set(
+      dairies.map(
+        dairy =>
+          dairy._id.toString()
+      )
+    );
 
-      if (
-        existingMap.has(
-          dairyId
-        )
-      ) {
+  for (
+    const record
+    of cleanedRecords
+  ) {
 
-        throw milkError(
+    if (
+      !validDairyIds.has(
+        record.dairy.toString()
+      )
+    ) {
 
-          "MILK_ALREADY_RECORDED",
+      throw milkError(
 
-          "A milk record has already been submitted for one or more animals in this session. Only an administrator can edit an existing record."
+        "MILK_INVALID_ANIMAL",
 
-        );
+        "One or more selected animals are no longer marked as milking."
 
-      }
+      );
 
+    }
 
-      // ----------------------------------------------
-      // QUANTITY
-      // ----------------------------------------------
+  }
 
-      const liters =
-        Number(
-          record.liters
-        );
+  // ------------------------------------------------
+  // CHECK EXISTING RECORDS
+  // ------------------------------------------------
 
+  const existing =
+    await Milk.find({
 
-      if (
-        record.liters === "" ||
-        record.liters === null ||
-        record.liters === undefined ||
-        Number.isNaN(liters) ||
-        !Number.isFinite(liters) ||
-        liters < 0
-      ) {
+      dairy: {
+        $in: dairyIds
+      },
 
-        throw milkError(
+      day,
 
-          "MILK_INVALID_QUANTITY",
+      session
 
-          "Please enter a valid milk quantity of 0 litres or more."
+    })
+      .select(
+        "dairy liters remarks session day"
+      )
+      .lean();
 
-        );
+  if (existing.length) {
 
-      }
+    throw milkError(
 
+      "MILK_ALREADY_RECORDED",
 
-      // ----------------------------------------------
-      // DOCUMENT
-      // ----------------------------------------------
+      "A milk record has already been submitted for one or more animals in this session. Only an administrator can edit an existing record."
 
-      docs.push({
+    );
+
+  }
+
+  // ------------------------------------------------
+  // BUILD DOCUMENTS
+  // ------------------------------------------------
+
+  const docs =
+    cleanedRecords.map(
+      record => ({
 
         dairy:
           record.dairy,
 
-        liters,
+        liters:
+          record.liters,
 
         remarks:
-          typeof record.remarks === "string"
-            ? record.remarks.trim()
-            : "",
+          record.remarks,
 
         recordedBy:
           user._id,
@@ -1384,95 +1031,76 @@ exports.saveMilkRecords =
         month:
           current.month
 
-      });
+      })
+    );
 
-    }
+  // ------------------------------------------------
+  // INSERT
+  // ------------------------------------------------
 
+  let saved;
 
-    // ==================================================
-    // NOTHING VALID TO SAVE
-    // ==================================================
+  try {
+
+    saved =
+      await Milk.insertMany(
+        docs,
+        {
+          ordered: true
+        }
+      );
+
+  } catch (error) {
+
+    console.error(
+      "Milk insert error:",
+      error
+    );
 
     if (
-      !docs.length
+      error?.code === 11000
     ) {
 
       throw milkError(
 
-        "MILK_NO_RECORDS",
+        "MILK_ALREADY_RECORDED",
 
-        "No valid milk records were submitted."
+        "A milk record has already been submitted for one or more animals in this session. Only an administrator can edit an existing record."
 
       );
 
     }
 
+    throw error;
 
-    // ==================================================
-    // INSERT
-    // ==================================================
+  }
 
-    try {
+  // ------------------------------------------------
+  // VERY IMPORTANT
+  //
+  // Do not let the controller display "success"
+  // unless MongoDB actually returned saved records.
+  // ------------------------------------------------
 
-      const saved =
-        await Milk.insertMany(
-          docs,
-          {
-            ordered: true
-          }
-        );
+  if (
+    !saved ||
+    !Array.isArray(saved) ||
+    saved.length !== docs.length
+  ) {
 
+    throw milkError(
 
-      /*
-       * Never report success unless MongoDB
-       * actually returned saved documents.
-       */
+      "MILK_SAVE_FAILED",
 
-      if (
-        !saved ||
-        saved.length !== docs.length
-      ) {
+      "The milk records could not be saved. Please try again."
 
-        throw milkError(
+    );
 
-          "MILK_SAVE_FAILED",
+  }
 
-          "Milk records could not be saved."
+  return saved;
 
-        );
-
-      }
-
-
-      return saved;
-
-    } catch (error) {
-
-      // ----------------------------------------------
-      // DUPLICATE KEY
-      // ----------------------------------------------
-
-      if (
-        error &&
-        error.code === 11000
-      ) {
-
-        throw milkError(
-
-          "MILK_ALREADY_RECORDED",
-
-          "A milk record has already been submitted for one or more animals in this session. Only an administrator can edit an existing record."
-
-        );
-
-      }
-
-
-      throw error;
-
-    }
-
-  };
+};
 
 
 // ==================================================
@@ -1481,224 +1109,212 @@ exports.saveMilkRecords =
 // ADMIN ONLY
 // ==================================================
 
-exports.editMilkRecord =
-  async ({
-    recordId,
-    liters,
-    remarks,
-    user
-  }) => {
+exports.editMilkRecord = async ({
+  recordId,
+  liters,
+  remarks,
+  user
+}) => {
 
-    // ==================================================
-    // ADMIN
-    // ==================================================
+  // ------------------------------------------------
+  // ADMIN CHECK
+  // ------------------------------------------------
+
+  if (
+    !user ||
+    user.role !== "admin"
+  ) {
+
+    throw milkError(
+
+      "MILK_ADMIN_REQUIRED",
+
+      "Only an administrator can edit an existing milk record."
+
+    );
+
+  }
+
+  // ------------------------------------------------
+  // VALID ID
+  // ------------------------------------------------
+
+  if (
+    !mongoose.Types.ObjectId.isValid(
+      recordId
+    )
+  ) {
+
+    throw milkError(
+
+      "MILK_NOT_FOUND",
+
+      "Invalid milk record."
+
+    );
+
+  }
+
+  const record =
+    await Milk.findById(
+      recordId
+    );
+
+  if (!record) {
+
+    throw milkError(
+
+      "MILK_NOT_FOUND",
+
+      "Milk record not found."
+
+    );
+
+  }
+
+  const now =
+    getKenyaDateParts();
+
+  // ------------------------------------------------
+  // ONLY TODAY
+  // ------------------------------------------------
+
+  if (
+    record.day !== now.date
+  ) {
+
+    throw milkError(
+
+      "MILK_TIME_CLOSED",
+
+      "This milk record belongs to a previous day and can no longer be edited."
+
+    );
+
+  }
+
+  // ------------------------------------------------
+  // MORNING
+  // ------------------------------------------------
+
+  if (
+    record.session === "morning"
+  ) {
 
     if (
-      !user ||
-      user.role !== "admin"
+      now.timeMinutes >= 960
     ) {
 
       throw milkError(
 
-        "MILK_ADMIN_REQUIRED",
+        "MILK_TIME_CLOSED",
 
-        "Only an administrator can edit an existing milk record."
+        "Morning milk records can only be edited before the evening collection window begins at 4:00 PM."
 
       );
 
     }
 
+  }
 
-    // ==================================================
-    // ID
-    // ==================================================
+  // ------------------------------------------------
+  // EVENING
+  // ------------------------------------------------
 
-    if (
-      !mongoose.Types.ObjectId.isValid(
-        recordId
-      )
-    ) {
-
-      throw milkError(
-
-        "MILK_NOT_FOUND",
-
-        "Invalid milk record."
-
-      );
-
-    }
-
-
-    // ==================================================
-    // FIND RECORD
-    // ==================================================
-
-    const record =
-      await Milk.findById(
-        recordId
-      );
-
+  else if (
+    record.session === "evening"
+  ) {
 
     if (
-      !record
-    ) {
-
-      throw milkError(
-
-        "MILK_NOT_FOUND",
-
-        "Milk record not found."
-
-      );
-
-    }
-
-
-    // ==================================================
-    // CURRENT TIME
-    // ==================================================
-
-    const now =
-      getKenyaDateParts();
-
-
-    // ==================================================
-    // PREVIOUS DAYS
-    // ==================================================
-
-    if (
-      record.day !== now.date
+      now.timeMinutes < 960
     ) {
 
       throw milkError(
 
         "MILK_TIME_CLOSED",
 
-        "This milk record belongs to a previous day and can no longer be edited."
+        "Evening milk records can only be edited from 4:00 PM until midnight."
 
       );
 
     }
 
+  }
 
-    // ==================================================
-    // MORNING
-    // ==================================================
+  else {
 
-    if (
-      record.session === "morning"
-    ) {
+    throw milkError(
 
-      if (
-        now.timeMinutes >= 960
-      ) {
+      "MILK_TIME_CLOSED",
 
-        throw milkError(
+      "This milk record cannot be edited."
 
-          "MILK_TIME_CLOSED",
+    );
 
-          "Morning milk records can only be edited before the evening collection window begins at 4:00 PM."
+  }
 
-        );
+  // ------------------------------------------------
+  // VALIDATE QUANTITY
+  // ------------------------------------------------
 
-      }
+  if (
+    liters === undefined ||
+    liters === null ||
+    liters === ""
+  ) {
 
-    }
+    throw milkError(
 
+      "MILK_INVALID_QUANTITY",
 
-    // ==================================================
-    // EVENING
-    // ==================================================
+      "Milk quantity is required."
 
-    else if (
-      record.session === "evening"
-    ) {
+    );
 
-      if (
-        now.timeMinutes < 960
-      ) {
+  }
 
-        throw milkError(
+  const quantity =
+    Number(liters);
 
-          "MILK_TIME_CLOSED",
+  if (
+    Number.isNaN(quantity) ||
+    quantity < 0
+  ) {
 
-          "Evening milk records can only be edited from 4:00 PM until midnight."
+    throw milkError(
 
-        );
+      "MILK_INVALID_QUANTITY",
 
-      }
+      "Invalid milk quantity."
 
-    }
+    );
 
+  }
 
-    else {
+  // ------------------------------------------------
+  // UPDATE
+  // ------------------------------------------------
 
-      throw milkError(
+  record.liters =
+    quantity;
 
-        "MILK_TIME_CLOSED",
+  record.remarks =
+    typeof remarks === "string"
+      ? remarks.trim()
+      : "";
 
-        "This milk record cannot be edited."
+  /*
+   * Keep original recordedBy.
+   *
+   * Admin is editing the record, not becoming
+   * its original recorder.
+   */
 
-      );
+  await record.save();
 
-    }
+  return record;
 
-
-    // ==================================================
-    // QUANTITY
-    // ==================================================
-
-    const quantity =
-      Number(
-        liters
-      );
-
-
-    if (
-      liters === "" ||
-      liters === null ||
-      liters === undefined ||
-      Number.isNaN(quantity) ||
-      !Number.isFinite(quantity) ||
-      quantity < 0
-    ) {
-
-      throw milkError(
-
-        "MILK_INVALID_QUANTITY",
-
-        "Please enter a valid milk quantity of 0 litres or more."
-
-      );
-
-    }
-
-
-    // ==================================================
-    // UPDATE
-    // ==================================================
-
-    record.liters =
-      quantity;
-
-
-    record.remarks =
-      typeof remarks === "string"
-        ? remarks.trim()
-        : "";
-
-
-    /*
-     * Preserve the original recorder.
-     */
-
-    await record.save();
-
-
-    return record;
-
-  };
+};
 
 
 // ==================================================
@@ -1711,24 +1327,16 @@ exports.getCurrentPrice =
     const latest =
       await MilkSummary
         .findOne({
-
           price: {
             $gt: 0
           }
-
         })
         .sort({
-
           day: -1
-
         })
         .lean();
 
-
-    return (
-      latest?.price ||
-      50
-    );
+    return latest?.price || 50;
 
   };
 
@@ -1754,7 +1362,6 @@ exports.toggleMilkingStatus =
 
     }
 
-
     if (
       !mongoose.Types.ObjectId.isValid(
         dairyId
@@ -1767,23 +1374,18 @@ exports.toggleMilkingStatus =
 
     }
 
-
     const dairy =
       await Dairy.findById(
         dairyId
       );
 
-
-    if (
-      !dairy
-    ) {
+    if (!dairy) {
 
       throw new Error(
         "Dairy animal not found."
       );
 
     }
-
 
     if (
       dairy.code < 0 ||
@@ -1796,13 +1398,10 @@ exports.toggleMilkingStatus =
 
     }
 
-
     dairy.isMilking =
       !dairy.isMilking;
 
-
     await dairy.save();
-
 
     return dairy;
 
@@ -1814,25 +1413,19 @@ exports.toggleMilkingStatus =
 // ==================================================
 
 exports.getDailyStats =
-  async (
-    day
-  ) => {
+  async (day) => {
 
     const report =
       await Milk.getDailyReport(
         day
       );
 
-
     let summary =
       await MilkSummary.findOne({
         day
       });
 
-
-    if (
-      !summary
-    ) {
+    if (!summary) {
 
       summary =
         await MilkSummary.create({
@@ -1842,46 +1435,35 @@ exports.getDailyStats =
           month:
             day.slice(0, 7),
 
-          price:
-            50,
+          price: 50,
 
-          consumed:
-            0,
+          consumed: 0,
 
           available:
             report.stats.total || 0,
 
-          cash:
-            0,
+          cash: 0,
 
-          locked:
-            false,
+          locked: false,
 
-          sales:
-            []
+          sales: []
 
         });
 
     }
 
-
     const sales =
       summary.sales || [];
 
-
     const consumed =
       sales.reduce(
-        (
-          sum,
-          sale
-        ) =>
+        (sum, sale) =>
           sum +
           Number(
             sale.liters || 0
           ),
         0
       );
-
 
     const available =
       Math.max(
@@ -1895,20 +1477,15 @@ exports.getDailyStats =
 
       );
 
-
     const cash =
       sales.reduce(
-        (
-          sum,
-          sale
-        ) =>
+        (sum, sale) =>
           sum +
           Number(
             sale.cash || 0
           ),
         0
       );
-
 
     if (
       summary.consumed !== consumed ||
@@ -1928,7 +1505,6 @@ exports.getDailyStats =
       await summary.save();
 
     }
-
 
     return {
 
@@ -1966,23 +1542,18 @@ exports.getDailyStats =
 // ==================================================
 
 exports.getMonthlyStats =
-  async (
-    month
-  ) => {
+  async (month) => {
 
     const report =
       await Milk.getMonthlyReport(
         month
       );
 
-
     const dairies =
       await Dairy.find()
         .lean();
 
-
     const dairyMap = {};
-
 
     dairies.forEach(
       dairy => {
@@ -1994,28 +1565,25 @@ exports.getMonthlyStats =
       }
     );
 
-
     const records =
       (
         report.records || []
-      )
-        .map(
-          record => ({
+      ).map(
+        record => ({
 
-            dairy:
-              dairyMap[
-                record.dairy.toString()
-              ] || null,
+          dairy:
+            dairyMap[
+              record.dairy.toString()
+            ] || null,
 
-            total:
-              record.total,
+          total:
+            record.total,
 
-            avg:
-              record.avg
+          avg:
+            record.avg
 
-          })
-        );
-
+        })
+      );
 
     const summaries =
       await MilkSummary.find({
@@ -2023,19 +1591,11 @@ exports.getMonthlyStats =
       })
         .lean();
 
-
-    let totalConsumed =
-      0;
-
-    let totalCash =
-      0;
-
-    let totalPrice =
-      0;
-
+    let totalConsumed = 0;
+    let totalCash = 0;
+    let totalPrice = 0;
 
     const sales = [];
-
 
     summaries.forEach(
       summary => {
@@ -2044,7 +1604,6 @@ exports.getMonthlyStats =
           Number(
             summary.price || 0
           );
-
 
         (
           summary.sales || []
@@ -2056,12 +1615,10 @@ exports.getMonthlyStats =
                 sale.liters || 0
               );
 
-
             totalCash +=
               Number(
                 sale.cash || 0
               );
-
 
             sales.push(
               sale
@@ -2073,20 +1630,15 @@ exports.getMonthlyStats =
       }
     );
 
-
     const totalProduced =
       records.reduce(
-        (
-          sum,
-          record
-        ) =>
+        (sum, record) =>
           sum +
           Number(
             record.total || 0
           ),
         0
       );
-
 
     return {
 
@@ -2149,16 +1701,12 @@ exports.saveDailyStats =
         day
       );
 
-
     let summary =
       await MilkSummary.findOne({
         day
       });
 
-
-    if (
-      !summary
-    ) {
+    if (!summary) {
 
       summary =
         await MilkSummary.create({
@@ -2172,17 +1720,12 @@ exports.saveDailyStats =
 
     }
 
-
     const sales =
       summary.sales || [];
 
-
     const consumed =
       sales.reduce(
-        (
-          sum,
-          sale
-        ) =>
+        (sum, sale) =>
           sum +
           Number(
             sale.liters || 0
@@ -2190,13 +1733,9 @@ exports.saveDailyStats =
         0
       );
 
-
     const cash =
       sales.reduce(
-        (
-          sum,
-          sale
-        ) =>
+        (sum, sale) =>
           sum +
           Number(
             sale.cash || 0
@@ -2204,14 +1743,11 @@ exports.saveDailyStats =
         0
       );
 
-
     const numericPrice =
       Number(price);
 
-
     if (
       Number.isNaN(numericPrice) ||
-      !Number.isFinite(numericPrice) ||
       numericPrice < 0
     ) {
 
@@ -2221,14 +1757,11 @@ exports.saveDailyStats =
 
     }
 
-
     summary.price =
       numericPrice;
 
-
     summary.consumed =
       consumed;
-
 
     summary.available =
       Math.max(
@@ -2242,13 +1775,10 @@ exports.saveDailyStats =
 
       );
 
-
     summary.cash =
       cash;
 
-
     await summary.save();
-
 
     return summary;
 
@@ -2263,19 +1793,14 @@ exports.getSalesPageData =
   async () => {
 
     const today =
-      getKenyaDateParts()
-        .date;
-
+      getKenyaDateParts().date;
 
     let summary =
       await MilkSummary.findOne({
         day: today
       });
 
-
-    if (
-      !summary
-    ) {
+    if (!summary) {
 
       summary =
         await MilkSummary.create({
@@ -2288,7 +1813,6 @@ exports.getSalesPageData =
         });
 
     }
-
 
     const standingOrders =
       await StandingOrder.find({
@@ -2307,7 +1831,6 @@ exports.getSalesPageData =
         })
         .lean();
 
-
     standingOrders.forEach(
       order => {
 
@@ -2318,12 +1841,9 @@ exports.getSalesPageData =
             sale =>
 
               sale.standingOrderId &&
-
-              sale.standingOrderId
-                .toString() ===
+              sale.standingOrderId.toString() ===
               order._id.toString()
           );
-
 
         order.isFuture =
           order.effectiveDate &&
@@ -2334,7 +1854,6 @@ exports.getSalesPageData =
       }
     );
 
-
     const manualSales =
       (
         summary.sales || []
@@ -2343,27 +1862,21 @@ exports.getSalesPageData =
           !sale.standingOrderId
       );
 
-
     const report =
       await Milk.getDailyReport(
         today
       );
-
 
     const totalProduced =
       Number(
         report.stats.total || 0
       );
 
-
     const totalSales =
       (
         summary.sales || []
       ).reduce(
-        (
-          sum,
-          sale
-        ) =>
+        (sum, sale) =>
           sum +
           Number(
             sale.liters || 0
@@ -2371,17 +1884,12 @@ exports.getSalesPageData =
         0
       );
 
-
     const availableMilk =
       Math.max(
-
         0,
-
         totalProduced -
         totalSales
-
       );
-
 
     return {
 
@@ -2422,37 +1930,29 @@ exports.submitManualSale =
 
     }
 
-
     const quantity =
       Number(liters);
 
-
     if (
-      !Number.isFinite(quantity) ||
+      Number.isNaN(quantity) ||
       quantity <= 0
     ) {
 
       throw new Error(
-        "Please enter a valid quantity of milk."
+        "Invalid milk quantity."
       );
 
     }
 
-
     const today =
-      getKenyaDateParts()
-        .date;
-
+      getKenyaDateParts().date;
 
     let summary =
       await MilkSummary.findOne({
         day: today
       });
 
-
-    if (
-      !summary
-    ) {
+    if (!summary) {
 
       summary =
         await MilkSummary.create({
@@ -2466,31 +1966,24 @@ exports.submitManualSale =
 
     }
 
-
     const price =
       summary.price || 50;
-
 
     const report =
       await Milk.getDailyReport(
         today
       );
 
-
     const produced =
       Number(
         report.stats.total || 0
       );
 
-
     const sold =
       (
         summary.sales || []
       ).reduce(
-        (
-          sum,
-          sale
-        ) =>
+        (sum, sale) =>
           sum +
           Number(
             sale.liters || 0
@@ -2498,21 +1991,16 @@ exports.submitManualSale =
         0
       );
 
-
     const available =
       produced - sold;
 
-
-    if (
-      quantity > available
-    ) {
+    if (quantity > available) {
 
       throw new Error(
         `Insufficient milk available. Only ${available.toFixed(2)} L remaining.`
       );
 
     }
-
 
     summary.sales.push({
 
@@ -2529,13 +2017,9 @@ exports.submitManualSale =
 
     });
 
-
     summary.consumed =
       summary.sales.reduce(
-        (
-          sum,
-          sale
-        ) =>
+        (sum, sale) =>
           sum +
           Number(
             sale.liters || 0
@@ -2543,20 +2027,15 @@ exports.submitManualSale =
         0
       );
 
-
     summary.cash =
       summary.sales.reduce(
-        (
-          sum,
-          sale
-        ) =>
+        (sum, sale) =>
           sum +
           Number(
             sale.cash || 0
           ),
         0
       );
-
 
     summary.available =
       Math.max(
@@ -2565,9 +2044,7 @@ exports.submitManualSale =
         summary.consumed
       );
 
-
     await summary.save();
-
 
     return summary;
 
@@ -2583,28 +2060,12 @@ exports.submitStandingOrderSale =
     standingOrderId
   }) => {
 
-    if (
-      !mongoose.Types.ObjectId.isValid(
-        standingOrderId
-      )
-    ) {
-
-      throw new Error(
-        "Invalid standing order."
-      );
-
-    }
-
-
     const order =
       await StandingOrder.findById(
         standingOrderId
       );
 
-
-    if (
-      !order
-    ) {
+    if (!order) {
 
       throw new Error(
         "Standing order not found."
@@ -2612,21 +2073,15 @@ exports.submitStandingOrderSale =
 
     }
 
-
     const today =
-      getKenyaDateParts()
-        .date;
-
+      getKenyaDateParts().date;
 
     let summary =
       await MilkSummary.findOne({
         day: today
       });
 
-
-    if (
-      !summary
-    ) {
+    if (!summary) {
 
       summary =
         await MilkSummary.create({
@@ -2640,7 +2095,6 @@ exports.submitStandingOrderSale =
 
     }
 
-
     const alreadyProcessed =
       (
         summary.sales || []
@@ -2648,16 +2102,11 @@ exports.submitStandingOrderSale =
         sale =>
 
           sale.standingOrderId &&
-
-          sale.standingOrderId
-            .toString() ===
+          sale.standingOrderId.toString() ===
           standingOrderId
       );
 
-
-    if (
-      alreadyProcessed
-    ) {
+    if (alreadyProcessed) {
 
       throw new Error(
         "Standing order has already been processed today."
@@ -2665,31 +2114,24 @@ exports.submitStandingOrderSale =
 
     }
 
-
     const price =
       summary.price || 50;
-
 
     const report =
       await Milk.getDailyReport(
         today
       );
 
-
     const produced =
       Number(
         report.stats.total || 0
       );
 
-
     const sold =
       (
         summary.sales || []
       ).reduce(
-        (
-          sum,
-          sale
-        ) =>
+        (sum, sale) =>
           sum +
           Number(
             sale.liters || 0
@@ -2697,39 +2139,30 @@ exports.submitStandingOrderSale =
         0
       );
 
-
     const available =
       produced - sold;
 
-
     const orderLiters =
-      Number(
-        order.liters
-      );
-
+      Number(order.liters);
 
     if (
-      !Number.isFinite(orderLiters) ||
+      Number.isNaN(orderLiters) ||
       orderLiters <= 0
     ) {
 
       throw new Error(
-        "Standing order has an invalid milk quantity."
+        "Invalid standing order quantity."
       );
 
     }
 
-
-    if (
-      orderLiters > available
-    ) {
+    if (orderLiters > available) {
 
       throw new Error(
         `Insufficient milk available. Only ${available.toFixed(2)} L remaining.`
       );
 
     }
-
 
     summary.sales.push({
 
@@ -2749,13 +2182,9 @@ exports.submitStandingOrderSale =
 
     });
 
-
     summary.consumed =
       summary.sales.reduce(
-        (
-          sum,
-          sale
-        ) =>
+        (sum, sale) =>
           sum +
           Number(
             sale.liters || 0
@@ -2763,20 +2192,15 @@ exports.submitStandingOrderSale =
         0
       );
 
-
     summary.cash =
       summary.sales.reduce(
-        (
-          sum,
-          sale
-        ) =>
+        (sum, sale) =>
           sum +
           Number(
             sale.cash || 0
           ),
         0
       );
-
 
     summary.available =
       Math.max(
@@ -2785,9 +2209,7 @@ exports.submitStandingOrderSale =
         summary.consumed
       );
 
-
     await summary.save();
-
 
     return summary;
 
@@ -2799,16 +2221,13 @@ exports.submitStandingOrderSale =
 // ==================================================
 
 exports.updateMilkPrice =
-  async (
-    price
-  ) => {
+  async (price) => {
 
     const numericPrice =
       Number(price);
 
-
     if (
-      !Number.isFinite(numericPrice) ||
+      Number.isNaN(numericPrice) ||
       numericPrice < 0
     ) {
 
@@ -2818,21 +2237,15 @@ exports.updateMilkPrice =
 
     }
 
-
     const today =
-      getKenyaDateParts()
-        .date;
-
+      getKenyaDateParts().date;
 
     let summary =
       await MilkSummary.findOne({
         day: today
       });
 
-
-    if (
-      !summary
-    ) {
+    if (!summary) {
 
       summary =
         await MilkSummary.create({
@@ -2846,13 +2259,10 @@ exports.updateMilkPrice =
 
     }
 
-
     summary.price =
       numericPrice;
 
-
     await summary.save();
-
 
     return summary;
 
@@ -2880,22 +2290,19 @@ exports.addStandingOrder =
 
     }
 
-
     const quantity =
       Number(liters);
 
-
     if (
-      !Number.isFinite(quantity) ||
+      Number.isNaN(quantity) ||
       quantity <= 0
     ) {
 
       throw new Error(
-        "Please enter a valid standing-order quantity."
+        "Invalid standing order quantity."
       );
 
     }
-
 
     return StandingOrder.create({
 
@@ -2931,16 +2338,12 @@ exports.omitStandingOrder =
 
     }
 
-
     const order =
       await StandingOrder.findById(
         orderId
       );
 
-
-    if (
-      !order
-    ) {
+    if (!order) {
 
       throw new Error(
         "Standing order not found."
@@ -2948,17 +2351,13 @@ exports.omitStandingOrder =
 
     }
 
-
     order.omitted =
       true;
-
 
     order.isActive =
       false;
 
-
     await order.save();
-
 
     return order;
 
@@ -2987,24 +2386,19 @@ exports.getMilkingHistory =
 
     }
 
-
     const dairy =
       await Dairy.findById(
         dairyId
       )
         .lean();
 
-
-    if (
-      !dairy
-    ) {
+    if (!dairy) {
 
       throw new Error(
         "Dairy animal not found."
       );
 
     }
-
 
     const filter = {
 
@@ -3013,16 +2407,12 @@ exports.getMilkingHistory =
 
     };
 
-
-    if (
-      month
-    ) {
+    if (month) {
 
       filter.month =
         month;
 
     }
-
 
     const records =
       await Milk.find(
@@ -3037,21 +2427,14 @@ exports.getMilkingHistory =
         })
         .lean();
 
-
     const grouped = {};
 
-
-    for (
-      const record of records
-    ) {
+    for (const record of records) {
 
       const day =
         record.day;
 
-
-      if (
-        !grouped[day]
-      ) {
+      if (!grouped[day]) {
 
         grouped[day] = {
 
@@ -3063,11 +2446,9 @@ exports.getMilkingHistory =
 
       }
 
-
       grouped[day]
         .entries
         .push(record);
-
 
       grouped[day]
         .total +=
@@ -3077,20 +2458,15 @@ exports.getMilkingHistory =
 
     }
 
-
     const monthlyTotal =
       records.reduce(
-        (
-          sum,
-          record
-        ) =>
+        (sum, record) =>
           sum +
           Number(
             record.liters || 0
           ),
         0
       );
-
 
     return {
 
@@ -3115,19 +2491,14 @@ exports.getMilkingHistory =
 // ==================================================
 
 exports.lockDay =
-  async (
-    day
-  ) => {
+  async (day) => {
 
     const summary =
       await MilkSummary.findOne({
         day
       });
 
-
-    if (
-      !summary
-    ) {
+    if (!summary) {
 
       throw new Error(
         "Daily summary not found."
@@ -3135,13 +2506,10 @@ exports.lockDay =
 
     }
 
-
     summary.locked =
       true;
 
-
     await summary.save();
-
 
     return summary;
 
@@ -3153,19 +2521,14 @@ exports.lockDay =
 // ==================================================
 
 exports.unlockDay =
-  async (
-    day
-  ) => {
+  async (day) => {
 
     const summary =
       await MilkSummary.findOne({
         day
       });
 
-
-    if (
-      !summary
-    ) {
+    if (!summary) {
 
       throw new Error(
         "Daily summary not found."
@@ -3173,13 +2536,10 @@ exports.unlockDay =
 
     }
 
-
     summary.locked =
       false;
 
-
     await summary.save();
-
 
     return summary;
 
@@ -3193,18 +2553,14 @@ exports.unlockDay =
 exports.getMilkSession =
   getMilkSession;
 
-
 exports.getKenyaDateParts =
   getKenyaDateParts;
-
 
 exports.getSessionDeadline =
   getSessionDeadline;
 
-
 exports.canSubmitSession =
   canSubmitSession;
-
 
 exports.canAdminEditRecord =
   canAdminEditRecord;
