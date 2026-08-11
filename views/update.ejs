@@ -18,14 +18,7 @@
 
 
     <!-- =================================================
-         PAGE ACTION BAR
-
-         The View Assets button belongs to the parent page
-         and is positioned at the top-right.
-
-         The button controls the asset sidebar defined in:
-
-             views/dairy/assetBar.ejs
+         TOP-RIGHT PAGE ACTION
     ================================================== -->
 
     <div class="dairy-page-actions">
@@ -38,7 +31,6 @@
             aria-controls="assetBar"
             aria-expanded="false"
         >
-
 
             <span
                 class="asset-bar-trigger-icon"
@@ -75,28 +67,23 @@
 
     <% if (user) { %>
 
-
         <%- include("update/create-post", {
             user: user
         }) %>
-
 
     <% } %>
 
 
     <!-- =================================================
-         ASSET BAR
-
-         Contains:
-
-             • Overlay
-             • Right-side asset sidebar
-             • Animals
-             • Structures / Machines / Tools
-             • Asset Bar JavaScript
-
-         The View Assets button above controls this
-         sidebar through #viewPropertyButton.
+         ASSET SIDEBAR
+         
+         The partial contains:
+         
+         • Overlay
+         • Sidebar
+         • Animals
+         • Structures
+         • Sidebar JavaScript
     ================================================== -->
 
     <%- include("dairy/assetBar", {
@@ -120,11 +107,6 @@
 
 <!-- =====================================================
      UPDATE PAGE JAVASCRIPT
-     
-     IMPORTANT:
-     -----------------------------------------------------
-     assetBar.ejs already contains its own JavaScript,
-     so assetBar.js is NOT loaded separately here.
 ===================================================== -->
 
 <script
