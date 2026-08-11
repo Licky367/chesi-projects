@@ -12,102 +12,135 @@ exports.viewPage = async (req, res) => {
 
 try {
 
-    const { id } = req.params;
+const { id } = req.params;
 
 
-    /* =================================================
-       GET COMPLETE DAIRY PAGE DATA
-    ================================================= */
+/* =================================================
+   GET COMPLETE DAIRY PAGE DATA
+================================================= */
 
-    const data =
-        await updateService.getDairyPage(id);
-
-
-    /* =================================================
-       RENDER UPDATE PAGE
-    ================================================= */
-
-    res.render("update", {
-
-        title: "Dairy Profile",
+const data =
+    await updateService.getDairyPage(id);
 
 
-        /* =============================================
-           CURRENT DAIRY FARM
-        ============================================== */
+/* =================================================
+   DETERMINE PAGE FROM CODE
+   
+   NEGATIVE CODE:
+       Dairy Farm
+       → update.ejs
 
-        dairy:
-            data.dairy,
+   POSITIVE CODE:
+       Animal
+       → dairySet.ejs
 
+   NULL CODE:
+       Structure / Facility
+       → dairySet.ejs
+================================================= */
 
-        /* =============================================
-           FEED
-        ============================================== */
-
-        feed:
-            data.feed || [],
-
-
-        /* =============================================
-           WEEKLY MILK FEEDS
-
-           pageService returns:
-               weeklyFeeds
-
-           Keep the existing view variable:
-               weeklyFeed
-        ============================================== */
-
-        weeklyFeed:
-            data.weeklyFeeds || null,
+const isDairyFarm =
+    data.dairy &&
+    data.dairy.code !== null &&
+    data.dairy.code !== undefined &&
+    Number(data.dairy.code) < 0;
 
 
-        /* =============================================
-           COMMENT COUNT
-        ============================================== */
+/* =================================================
+   SELECT VIEW
+================================================= */
 
-        commentCount:
-            data.commentCount || 0,
-
-
-        /* =============================================
-           ASSETS BELONGING TO CURRENT DAIRY FARM
-
-           These have already been filtered by
-           pageService using:
-
-               assetCode === dairy.code
-        ============================================== */
-
-        assetDairies:
-            data.assetDairies || [],
+const view =
+    isDairyFarm
+        ? "update"
+        : "dairy/dairySet";
 
 
-        /* =============================================
-           LOGGED-IN USER
-        ============================================== */
+/* =================================================
+   RENDER SELECTED PAGE
+================================================= */
 
-        user:
-            req.session.user || null
+res.render(view, {
 
-    });
+    title: "Dairy Profile",
+
+
+    /* =============================================
+       CURRENT DAIRY
+    ============================================== */
+
+    dairy:
+        data.dairy,
+
+
+    /* =============================================
+       FEED
+    ============================================== */
+
+    feed:
+        data.feed || [],
+
+
+    /* =============================================
+       WEEKLY MILK FEEDS
+
+       pageService returns:
+           weeklyFeeds
+
+       Keep the existing view variable:
+           weeklyFeed
+    ============================================== */
+
+    weeklyFeed:
+        data.weeklyFeeds || null,
+
+
+    /* =============================================
+       COMMENT COUNT
+    ============================================== */
+
+    commentCount:
+        data.commentCount || 0,
+
+
+    /* =============================================
+       ASSETS BELONGING TO CURRENT DAIRY FARM
+
+       These have already been filtered by
+       pageService using:
+
+           assetCode === dairy.code
+    ============================================== */
+
+    assetDairies:
+        data.assetDairies || [],
+
+
+    /* =============================================
+       LOGGED-IN USER
+    ============================================== */
+
+    user:
+        req.session.user || null
+
+});
 
 } catch (err) {
 
-    console.error(
+console.error(
 
-        "VIEW PAGE ERROR:",
+    "VIEW PAGE ERROR:",
 
-        err.message
+    err.message
 
+);
+
+
+res
+    .status(500)
+    .send(
+        "Failed to load dairy profile"
     );
-
-
-    res
-        .status(500)
-        .send(
-            "Failed to load dairy profile"
-        );
 
 }
 
