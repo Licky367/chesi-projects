@@ -13,118 +13,21 @@
      dairy
          = Current Dairy Farm
 
-     dairies
-         = Available Dairy / Asset records
-
+     assetDairies
+         = Assets already filtered by pageService
+           to belong to the current Dairy Farm.
 
      CLASSIFICATION:
 
-     Current Dairy Farm:
-         dairy.code < 0
+     code > 0
+         = Animal
 
-     Animal:
-         code > 0
-         assetCode === current Dairy Farm code
+     code === null / undefined
+         = Structure / Machine / Tool
 
-     Structure / Machine / Tool:
-         code === null / undefined
-         assetCode === current Dairy Farm code
-
-
-     EXCLUDED:
-
-     Other Dairy Farms:
-         code < 0
-
-     Standalone Structures:
-         code === null / undefined
-         assetCode === null / undefined
-
-     ========================================================= --><!-- =========================================================
-     DETERMINE CURRENT DAIRY FARM CODE
-========================================================= --><%
-const currentFarmCode =
-dairy &&
-dairy.code !== null &&
-dairy.code !== undefined &&
-Number(dairy.code) < 0
-
-        ? Number(dairy.code)
-
-        : null;
-
-%>
-
-<!-- =========================================================
-     FILTER ASSETS BELONGING TO CURRENT DAIRY FARM
-========================================================= --><%
-const farmAssets =
-currentFarmCode !== null && Array.isArray(dairies)
-
-        ? dairies.filter(asset => {
-
-            if (!asset) {
-                return false;
-            }
-
-            if (
-                asset.assetCode === null ||
-                asset.assetCode === undefined
-            ) {
-                return false;
-            }
-
-            return (
-                Number(asset.assetCode) ===
-                currentFarmCode
-            );
-
-        })
-
-        : [];
-
-%>
-
-<!-- =========================================================
-     ANIMALS
-     
-     Positive code.
-     
-     Must belong to current Dairy Farm through assetCode.
-========================================================= --><%
-const animalDairies =
-farmAssets.filter(asset => {
-
-        return (
-            asset.code !== null &&
-            asset.code !== undefined &&
-            Number(asset.code) > 0
-        );
-
-    });
-
-%>
-
-<!-- =========================================================
-     STRUCTURES / MACHINES / TOOLS
-     
-     No code.
-     
-     Must belong to current Dairy Farm through assetCode.
-========================================================= --><%
-const structureDairies =
-farmAssets.filter(asset => {
-
-        return (
-            asset.code === null ||
-            asset.code === undefined
-        );
-
-    });
-
-%>
-
-<!-- =========================================================
+     Dairy Farms and unrelated assets have already been
+     excluded by pageService.
+========================================================= --><!-- =========================================================
      VIEW PROPERTY BUTTON
 ========================================================= --><button
 type="button"
@@ -208,25 +111,83 @@ aria-expanded="false"
      CURRENT FARM INFORMATION
 ====================================================== -->
 
-<% if (currentFarmCode !== null) { %>
+<% if (
+    dairy &&
+    dairy.code !== null &&
+    dairy.code !== undefined &&
+    Number(dairy.code) < 0
+) { %>
+
 
     <div class="asset-bar-farm">
+
 
         <span class="asset-bar-farm-label">
             FARM
         </span>
 
+
         <span class="asset-bar-farm-name">
             <%= dairy.name %>
         </span>
 
+
         <span class="asset-bar-farm-code">
-            Farm #<%= currentFarmCode %>
+            Farm #<%= dairy.code %>
         </span>
+
 
     </div>
 
+
 <% } %>
+
+
+<!-- =====================================================
+     PREPARE ASSET CATEGORIES
+     
+     assetDairies has already been restricted by the
+     backend to this Dairy Farm.
+====================================================== -->
+
+<%
+
+    const availableAssets =
+        Array.isArray(assetDairies)
+            ? assetDairies.filter(asset => !!asset)
+            : [];
+
+
+    const animalDairies =
+        availableAssets.filter(asset => {
+
+            return (
+
+                asset.code !== null &&
+
+                asset.code !== undefined &&
+
+                Number(asset.code) > 0
+
+            );
+
+        });
+
+
+    const structureDairies =
+        availableAssets.filter(asset => {
+
+            return (
+
+                asset.code === null ||
+
+                asset.code === undefined
+
+            );
+
+        });
+
+%>
 
 
 <!-- =====================================================
@@ -348,10 +309,6 @@ aria-expanded="false"
                 <% animalDairies.forEach(animal => { %>
 
 
-                    <!-- =================================
-                         ANIMAL
-                    ================================== -->
-
                     <button
                         type="button"
                         class="asset-bar-item asset-bar-animal"
@@ -448,10 +405,6 @@ aria-expanded="false"
             <% } else { %>
 
 
-                <!-- =====================================
-                     NO ANIMALS
-                ====================================== -->
-
                 <div class="asset-bar-empty">
 
                     <span
@@ -531,10 +484,6 @@ aria-expanded="false"
 
                 <% structureDairies.forEach(asset => { %>
 
-
-                    <!-- =================================
-                         STRUCTURE / MACHINE / TOOL
-                    ================================== -->
 
                     <button
                         type="button"
@@ -623,10 +572,6 @@ aria-expanded="false"
 
             <% } else { %>
 
-
-                <!-- =====================================
-                     NO STRUCTURES
-                ====================================== -->
 
                 <div class="asset-bar-empty">
 
