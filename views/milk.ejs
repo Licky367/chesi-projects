@@ -64,6 +64,37 @@
   }
 
   /* =========================
+     STATUS BAR
+  ========================= */
+
+  .milk-session-info {
+    padding: 14px 25px;
+    background: #f0fdf4;
+    border-bottom: 1px solid #dcfce7;
+    color: #166534;
+    font-size: 13px;
+  }
+
+  .milk-session-info strong {
+    font-weight: 700;
+  }
+
+  /* =========================
+     ALERT
+  ========================= */
+
+  .milk-alert {
+    margin: 18px 25px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* =========================
      TABLE WRAPPER
   ========================= */
 
@@ -80,7 +111,7 @@
     width: 100%;
     border-collapse: collapse;
     table-layout: fixed;
-}
+  }
 
   .milk-table th {
     padding: 16px 12px;
@@ -142,7 +173,7 @@
   ========================= */
 
   .milk-input,
-.remarks-input {
+  .remarks-input {
     width: 100%;
     box-sizing: border-box;
     padding: 11px 12px;
@@ -154,7 +185,7 @@
     font-family: inherit;
     font-size: 14px;
     transition: all .25s ease;
-}
+  }
 
   .milk-input:focus,
   .remarks-input:focus {
@@ -163,9 +194,52 @@
     box-shadow: 0 0 0 4px rgba(22,163,74,.1);
   }
 
+  .milk-input[readonly],
+  .remarks-input[readonly] {
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+    border-color: #e5e7eb;
+  }
+
   .remarks-input {
     min-height: 44px;
     resize: vertical;
+  }
+
+  /* =========================
+     LOCKED ROW
+  ========================= */
+
+  .milk-row-locked {
+    background: #fafafa;
+  }
+
+  .milk-row-locked:hover {
+    background: #fafafa !important;
+  }
+
+  /* =========================
+     STATUS
+  ========================= */
+
+  .milk-status {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .milk-status.recorded {
+    color: #166534;
+  }
+
+  .milk-status.locked {
+    color: #9a3412;
+  }
+
+  .milk-status.system {
+    color: #6b7280;
   }
 
   /* =========================
@@ -237,93 +311,173 @@
      SUCCESS MODAL
   ========================= */
 
-  .success-overlay{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    background:rgba(0,0,0,.45);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    z-index:9999;
-    animation:fadeIn .25s ease;
+  .success-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn .25s ease;
   }
 
-  .success-modal{
-    width:90%;
-    max-width:420px;
-    background:#fff;
-    border-radius:18px;
-    overflow:hidden;
-    text-align:center;
-    box-shadow:0 20px 50px rgba(0,0,0,.25);
-    animation:popUp .25s ease;
+  .success-modal {
+    width: 90%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    animation: popUp .25s ease;
   }
 
-  .success-top{
-    background:linear-gradient(135deg,#16a34a,#15803d);
-    padding:28px 20px;
-    color:#fff;
+  .success-top {
+    background: linear-gradient(135deg,#16a34a,#15803d);
+    padding: 28px 20px;
+    color: #fff;
   }
 
-  .success-top .icon{
-    font-size:56px;
-    margin-bottom:10px;
+  .success-top .icon {
+    font-size: 56px;
+    margin-bottom: 10px;
   }
 
-  .success-body{
-    padding:28px 24px;
+  .success-body {
+    padding: 28px 24px;
   }
 
-  .success-body h3{
-    margin:0 0 12px;
-    color:#166534;
-    font-size:24px;
+  .success-body h3 {
+    margin: 0 0 12px;
+    color: #166534;
+    font-size: 24px;
   }
 
-  .success-body p{
-    margin:0;
-    color:#6b7280;
-    font-size:15px;
-    line-height:1.6;
+  .success-body p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 15px;
+    line-height: 1.6;
   }
 
-  .success-footer{
-    padding:20px 24px 28px;
+  .success-footer {
+    padding: 20px 24px 28px;
   }
 
-  .success-btn{
-    width:100%;
-    padding:14px;
-    border:none;
-    border-radius:10px;
-    background:#16a34a;
-    color:#fff;
-    font-size:16px;
-    font-weight:700;
-    cursor:pointer;
-    transition:.2s;
+  .success-btn {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: #16a34a;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s;
   }
 
-  .success-btn:hover{
-    background:#15803d;
+  .success-btn:hover {
+    background: #15803d;
   }
 
-  @keyframes fadeIn{
-    from{opacity:0;}
-    to{opacity:1;}
+  /* =========================
+     ERROR MODAL
+  ========================= */
+
+  .error-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
   }
 
-  @keyframes popUp{
-    from{
-      opacity:0;
-      transform:scale(.85);
+  .error-modal {
+    width: 90%;
+    max-width: 430px;
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+  }
+
+  .error-top {
+    background: #fff7ed;
+    padding: 25px;
+    color: #9a3412;
+  }
+
+  .error-top .icon {
+    font-size: 48px;
+  }
+
+  .error-body {
+    padding: 25px;
+  }
+
+  .error-body h3 {
+    margin: 0 0 10px;
+    color: #9a3412;
+    font-size: 21px;
+  }
+
+  .error-body p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .error-footer {
+    padding: 0 25px 25px;
+  }
+
+  .error-btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: #ea580c;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* =========================
+     ANIMATIONS
+  ========================= */
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
     }
-    to{
-      opacity:1;
-      transform:scale(1);
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes popUp {
+    from {
+      opacity: 0;
+      transform: scale(.85);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 
@@ -331,70 +485,79 @@
      RESPONSIVE
   ========================= */
 
-@media (max-width:650px){
+  @media (max-width:650px) {
 
-  .milk-header{
-    align-items:flex-start;
+    .milk-header {
+      align-items: flex-start;
+    }
+
+    .milk-header h2 {
+      font-size: 23px;
+    }
+
+    .milk-icon {
+      width: 48px;
+      height: 48px;
+      font-size: 23px;
+    }
+
+    .milk-table-wrapper {
+      padding: 0 10px;
+      overflow-x: visible;
+    }
+
+    .milk-table th,
+    .milk-table td {
+      padding: 8px 4px;
+      font-size: 12px;
+      word-break: break-word;
+    }
+
+    .code-badge {
+      padding: 4px 6px;
+      font-size: 10px;
+    }
+
+    .milk-input,
+    .remarks-input {
+      padding: 8px;
+      font-size: 12px;
+    }
+
+    .submit-section {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .submit-btn {
+      width: 100%;
+      justify-content: center;
+    }
+
   }
-
-  .milk-header h2{
-    font-size:23px;
-  }
-
-  .milk-icon{
-    width:48px;
-    height:48px;
-    font-size:23px;
-  }
-
-  .milk-table-wrapper{
-    padding:0 10px;
-    overflow-x:visible;
-  }
-
-  .milk-table th,
-  .milk-table td{
-    padding:8px 4px;
-    font-size:12px;
-    word-break:break-word;
-  }
-
-  .code-badge{
-    padding:4px 6px;
-    font-size:10px;
-  }
-
-  .milk-input,
-  .remarks-input{
-    padding:8px;
-    font-size:12px;
-  }
-
-  .submit-section{
-    flex-direction:column;
-    align-items:stretch;
-  }
-
-  .submit-btn{
-    width:100%;
-    justify-content:center;
-  }
-
-}
 
 </style>
+
 
 <div class="milk-page">
 
   <div class="milk-card">
 
+    <!-- ==================================================
+         HEADER
+    ================================================== -->
+
     <div class="milk-header">
 
       <div>
 
-        <h2>🥛 Milk Collection</h2>
+        <h2>
+          🥛 Milk Collection
+        </h2>
 
-        <p>Record the daily milk production from each dairy animal.</p>
+        <p>
+          Record the daily milk production from each dairy animal.
+        </p>
 
       </div>
 
@@ -404,7 +567,9 @@
 
     </div>
 
+
     <% if (!dairies || dairies.length === 0) { %>
+
       <div class="empty-state">
 
         <div class="empty-icon">
@@ -423,13 +588,67 @@
 
     <% } else { %>
 
-      <!-- =========================
+
+      <!-- ==================================================
+           SESSION INFORMATION
+      ================================================== -->
+
+      <% const currentDairy = dairies[0]; %>
+
+      <div class="milk-session-info">
+
+        <% if (currentDairy.milkSession === "morning") { %>
+
+          <% if (currentDairy.isAdminCorrectionWindow) { %>
+
+            <strong>Morning correction period:</strong>
+            Normal submissions are closed.
+            Administrators can edit morning records until 4:00 PM.
+
+          <% } else { %>
+
+            <strong>Morning collection:</strong>
+            Submit once per animal before 10:00 AM.
+
+          <% } %>
+
+        <% } else { %>
+
+          <strong>Evening collection:</strong>
+          Submit once per animal from 4:00 PM until midnight.
+
+        <% } %>
+
+      </div>
+
+
+      <!-- ==================================================
+           ERROR
+      ================================================== -->
+
+      <% if (typeof error !== "undefined" && error) { %>
+
+        <div
+          class="milk-alert"
+          role="alert"
+        >
+
+          ⚠️
+          <%= error %>
+
+        </div>
+
+      <% } %>
+
+
+      <!-- ==================================================
            MILK FORM
-      ========================= -->
+      ================================================== -->
 
       <form
         action="/milk"
         method="POST"
+        id="milkForm"
       >
 
         <div class="milk-table-wrapper">
@@ -464,7 +683,41 @@
 
               <% dairies.forEach((dairy, index) => { %>
 
-                <tr>
+                <%
+                  const record =
+                    dairy.milkRecord;
+
+                  const isAdmin =
+                    user &&
+                    user.role === "admin";
+
+                  const isRecorded =
+                    !!record;
+
+                  const adminCorrection =
+                    isAdmin &&
+                    dairy.isAdminCorrectionWindow &&
+                    isRecorded;
+
+                  const canEdit =
+                    adminCorrection ||
+                    (
+                      dairy.milkState === "open" &&
+                      !isRecorded
+                    );
+
+                  const rowLocked =
+                    !canEdit;
+                %>
+
+
+                <tr
+                  class="<%= rowLocked ? 'milk-row-locked' : '' %>"
+                >
+
+                  <!-- ==================================================
+                       CODE
+                  ================================================== -->
 
                   <td>
 
@@ -482,6 +735,11 @@
 
                   </td>
 
+
+                  <!-- ==================================================
+                       NAME
+                  ================================================== -->
+
                   <td>
 
                     <span class="animal-name">
@@ -490,7 +748,54 @@
 
                     </span>
 
+                    <% if (record) { %>
+
+                      <% if (
+                        record.remarks === "Not Milked" &&
+                        record.liters === 0
+                      ) { %>
+
+                        <div class="milk-status system">
+
+                          System record:
+                          Not Milked
+
+                        </div>
+
+                      <% } else { %>
+
+                        <div class="milk-status recorded">
+
+                          ✓ Record submitted
+
+                          <% if (adminCorrection) { %>
+
+                            — Admin can edit
+
+                          <% } %>
+
+                        </div>
+
+                      <% } %>
+
+                    <% } else if (!canEdit) { %>
+
+                      <div class="milk-status locked">
+
+                        🔒
+                        <%= dairy.milkMessage ||
+                            "This entry is closed." %>
+
+                      </div>
+
+                    <% } %>
+
                   </td>
+
+
+                  <!-- ==================================================
+                       LITERS
+                  ================================================== -->
 
                   <td>
 
@@ -501,10 +806,16 @@
                       min="0"
                       name="records[<%= index %>][liters]"
                       placeholder="0.0"
-                      required
+                      value="<%= record ? record.liters : '' %>"
+                      <%= canEdit ? '' : 'readonly' %>
                     >
 
                   </td>
+
+
+                  <!-- ==================================================
+                       REMARKS
+                  ================================================== -->
 
                   <td>
 
@@ -512,7 +823,8 @@
                       class="remarks-input"
                       name="records[<%= index %>][remarks]"
                       placeholder="Optional remarks..."
-                    ></textarea>
+                      <%= canEdit ? '' : 'readonly' %>
+                    ><%= record ? record.remarks : '' %></textarea>
 
                   </td>
 
@@ -526,15 +838,34 @@
 
         </div>
 
-        <!-- =========================
+
+        <!-- ==================================================
              SUBMIT
-        ========================= -->
+        ================================================== -->
 
         <div class="submit-section">
 
           <div class="submit-hint">
 
-            💡 Enter the milk collected for each animal.
+            <% if (
+              user &&
+              user.role === "admin" &&
+              currentDairy.isAdminCorrectionWindow
+            ) { %>
+
+              🛠️ Administrators can correct morning records until 4:00 PM.
+
+            <% } else if (
+              currentDairy.milkSession === "morning"
+            ) { %>
+
+              💡 Morning milk must be submitted before 10:00 AM.
+
+            <% } else { %>
+
+              💡 Evening milk can be submitted from 4:00 PM until midnight.
+
+            <% } %>
 
           </div>
 
@@ -543,7 +874,21 @@
             class="submit-btn"
           >
 
-            ✓ Submit Milk Records
+            ✓
+
+            <% if (
+              user &&
+              user.role === "admin" &&
+              currentDairy.isAdminCorrectionWindow
+            ) { %>
+
+              Save Corrections
+
+            <% } else { %>
+
+              Submit Milk Records
+
+            <% } %>
 
           </button>
 
@@ -552,9 +897,11 @@
       </form>
 
     <% } %>
-    <!-- =========================
+
+
+    <!-- ==================================================
          SUCCESS POPUP
-    ========================= -->
+    ================================================== -->
 
     <div
       id="successOverlay"
@@ -599,49 +946,163 @@
 
     </div>
 
+
+    <!-- ==================================================
+         ERROR POPUP
+    ================================================== -->
+
+    <% if (
+      typeof error !== "undefined" &&
+      error
+    ) { %>
+
+      <div
+        id="errorOverlay"
+        class="error-overlay"
+        style="display:flex;"
+      >
+
+        <div class="error-modal">
+
+          <div class="error-top">
+
+            <div class="icon">
+              ⚠️
+            </div>
+
+          </div>
+
+          <div class="error-body">
+
+            <h3>
+              Milk Record Not Saved
+            </h3>
+
+            <p>
+              <%= error %>
+            </p>
+
+          </div>
+
+          <div class="error-footer">
+
+            <button
+              type="button"
+              id="errorOkBtn"
+              class="error-btn"
+            >
+              OK
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    <% } %>
+
   </div>
 
 </div>
+
+
 <script>
 
-  const successOverlay = document.getElementById("successOverlay");
-  const successOkBtn = document.getElementById("successOkBtn");
+  // ==================================================
+  // SUCCESS
+  // ==================================================
 
-  <% if (typeof success !== "undefined" && success) { %>
+  const successOverlay =
+    document.getElementById(
+      "successOverlay"
+    );
 
-    window.addEventListener("load", function () {
+  const successOkBtn =
+    document.getElementById(
+      "successOkBtn"
+    );
 
-      successOverlay.style.display = "flex";
+  <% if (
+    typeof success !== "undefined" &&
+    success
+  ) { %>
 
-    });
+    window.addEventListener(
+      "load",
+      function () {
+
+        if (successOverlay) {
+
+          successOverlay.style.display =
+            "flex";
+
+        }
+
+      }
+    );
 
   <% } %>
 
+
   if (successOkBtn) {
 
-    successOkBtn.addEventListener("click", function () {
+    successOkBtn.addEventListener(
+      "click",
+      function () {
 
-      successOverlay.style.display = "none";
+        if (successOverlay) {
 
-      // Reload the page without the success query parameter
-      window.location.replace("/milk");
+          successOverlay.style.display =
+            "none";
 
-    });
+        }
+
+        window.location.replace(
+          "/milk"
+        );
+
+      }
+    );
 
   }
 
-  // Prevent closing the popup by clicking outside it
-  if (successOverlay) {
 
-    successOverlay.addEventListener("click", function (e) {
+  // ==================================================
+  // ERROR
+  // ==================================================
 
-      if (e.target === successOverlay) {
+  const errorOverlay =
+    document.getElementById(
+      "errorOverlay"
+    );
 
-        e.stopPropagation();
+  const errorOkBtn =
+    document.getElementById(
+      "errorOkBtn"
+    );
+
+  if (errorOkBtn) {
+
+    errorOkBtn.addEventListener(
+      "click",
+      function () {
+
+        if (errorOverlay) {
+
+          errorOverlay.style.display =
+            "none";
+
+        }
+
+        window.history.replaceState(
+          {},
+          document.title,
+          "/milk"
+        );
 
       }
-
-    });
+    );
 
   }
 
