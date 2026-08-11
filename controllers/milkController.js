@@ -1,152 +1,50 @@
-const milkService =
-  require("../services/milkService");
+// ==========================================================
+// controllers/milkController.js
+// ==========================================================
+
+const milkService = require("../services/milkService");
 
 
-// ==================================================
+// ==========================================================
 // GET MILK PAGE
-// ==================================================
+// ==========================================================
 
-exports.getMilkPage = async (
-  req,
-  res
-) => {
+exports.getMilkPage = async (req, res) => {
 
   try {
 
     const data =
       await milkService.getMilkPageData();
 
+
     const currentSession =
-      data.session ||
-      "closed";
+      data?.session || "closed";
+
 
     const isAdmin =
       req.user?.role === "admin";
 
 
-    /*
-     * ------------------------------------------------
-     * EDIT REQUEST
-     * ------------------------------------------------
-     *
-     * If the page was opened with:
-     *
-     * /milk?edit=RECORD_ID
-     *
-     * the EJS can use editRecord to open/populate
-     * the edit interface.
-     */
+    return res.render("milk", {
 
-    let editRecord =
-      null;
+      dairies:
+        data?.dairies || [],
 
-    if (
-      req.query.edit &&
-      isAdmin
-    ) {
+      session:
+        currentSession,
 
-      try {
+      isAdmin,
 
-        editRecord =
-          await milkService.getMilkRecord(
-            req.query.edit
-          );
+      user:
+        req.user,
 
-      } catch (editError) {
+      success:
+        req.query.success === "1",
 
-        console.error(
-          "Load milk edit record error:",
-          editError
-        );
+      error:
+        req.query.error || ""
 
-      }
-
-    }
-
-
-    return res.render(
-      "milk",
-      {
-
-        /*
-         * All animals with their morning/evening
-         * records attached.
-         */
-
-        dairies:
-          data.dairies || [],
-
-
-        /*
-         * Current session:
-         *
-         * morning
-         * closed
-         * evening
-         */
-
-        session:
-          currentSession,
-
-
-        /*
-         * Permission information.
-         */
-
-        isAdmin,
-
-
-        canSubmit:
-          data.canSubmit === true,
-
-        canEditMorning:
-          data.canEditMorning === true,
-
-        canEditEvening:
-          data.canEditEvening === true,
-
-
-        /*
-         * Existing records.
-         */
-
-        milkRecords:
-          data.milkRecords || [],
-
-        morningRecords:
-          data.morningRecords || [],
-
-        eveningRecords:
-          data.eveningRecords || [],
-
-
-        /*
-         * Record selected for editing.
-         */
-
-        editRecord,
-
-
-        /*
-         * Logged-in user.
-         */
-
-        user:
-          req.user,
-
-
-        /*
-         * Flash-style query messages.
-         */
-
-        success:
-          req.query.success === "1",
-
-        error:
-          req.query.error || ""
-
-      }
-    );
+    });
 
   } catch (err) {
 
@@ -155,116 +53,155 @@ exports.getMilkPage = async (
       err
     );
 
+
     return res
       .status(500)
-      .render(
-        "milk",
-        {
+      .render("milk", {
 
-          dairies:
-            [],
+        dairies: [],
 
-          session:
-            "closed",
+        session: "closed",
 
-          isAdmin:
-            req.user?.role === "admin",
+        isAdmin:
+          req.user?.role === "admin",
 
-          canSubmit:
-            false,
+        user:
+          req.user,
 
-          canEditMorning:
-            false,
+        success: false,
 
-          canEditEvening:
-            false,
+        error:
+          "Error loading milk collection page."
 
-          milkRecords:
-            [],
-
-          morningRecords:
-            [],
-
-          eveningRecords:
-            [],
-
-          editRecord:
-            null,
-
-          user:
-            req.user,
-
-          success:
-            false,
-
-          error:
-            "Error loading milk collection page."
-
-        }
-      );
+      });
 
   }
 
 };
 
 
-// ==================================================
+// ==========================================================
 // SUBMIT MILK
+// ==========================================================
 //
-// NORMAL COLLECTION SUBMISSION
-// ==================================================
+// Used when an individual animal's milk record is submitted.
+//
+// The milk.ejs page creates a separate form for each animal:
+//
+//     dairy
+//     session
+//     liters
+//     remarks
+//
+// ==========================================================
 
-exports.submitMilk = async (
-  req,
-  res
-) => {
+exports.submitMilk = async (req, res) => {
 
   try {
 
-    /*
-     * ------------------------------------------------
-     * SAVE RECORDS
-     * ------------------------------------------------
-     */
+    const {
 
-    const savedRecords =
-      await milkService.saveMilkRecords(
-        req.body.records,
-        req.user
-      );
+      dairy,
+      session,
+      liters,
+      remarks
+
+    } = req.body;
 
 
-    /*
-     * ------------------------------------------------
-     * IMPORTANT
-     * ------------------------------------------------
-     *
-     * Never report success if nothing was saved.
-     *
-     * This prevents:
-     *
-     * "Record successfully saved"
-     *
-     * when the service actually inserted zero
-     * records.
-     */
+    // ------------------------------------------------------
+    // BASIC VALIDATION
+    // ------------------------------------------------------
 
-    if (
-      !Array.isArray(savedRecords) ||
-      savedRecords.length === 0
-    ) {
+    if (!dairy) {
 
       throw new Error(
-        "No milk records were saved. Please enter a valid milk quantity before saving."
+        "No dairy animal was selected."
       );
 
     }
 
 
-    /*
-     * At least one record was successfully
-     * inserted into MongoDB.
-     */
+    if (
+      liters === undefined ||
+      liters === null ||
+      liters === ""
+    ) {
+
+      throw new Error(
+        "Milk quantity is required."
+      );
+
+    }
+
+
+    const numericLiters =
+      Number(liters);
+
+
+    if (
+      !Number.isFinite(numericLiters) ||
+      numericLiters < 0
+    ) {
+
+      throw new Error(
+        "Milk quantity must be a valid number."
+      );
+
+    }
+
+
+    // ------------------------------------------------------
+    // SESSION VALIDATION
+    // ------------------------------------------------------
+
+    if (
+      session !== "morning" &&
+      session !== "evening"
+    ) {
+
+      throw new Error(
+        "Invalid milk collection session."
+      );
+
+    }
+
+
+    // ------------------------------------------------------
+    // SAVE ONE RECORD
+    // ------------------------------------------------------
+    //
+    // saveMilkRecords() supports the records format used
+    // throughout the milk module.
+    //
+    // We convert the individual form submission into one
+    // record here.
+    //
+    // ------------------------------------------------------
+
+    const records = [
+
+      {
+        dairy,
+
+        liters:
+          numericLiters,
+
+        remarks:
+          remarks || "",
+
+        session
+
+      }
+
+    ];
+
+
+    await milkService.saveMilkRecords(
+      records,
+      req.user
+    );
+
 
     return res.redirect(
       "/milk?success=1"
@@ -277,15 +214,12 @@ exports.submitMilk = async (
       err
     );
 
-    const message =
-      err.message ||
-      "Unable to save milk records.";
-
 
     return res.redirect(
       "/milk?error=" +
       encodeURIComponent(
-        message
+        err.message ||
+        "Unable to save milk record."
       )
     );
 
@@ -294,129 +228,63 @@ exports.submitMilk = async (
 };
 
 
-// ==================================================
+// ==========================================================
 // GET EDIT MILK
+// ==========================================================
 //
-// RETURNS THE ACTUAL RECORD
+// Kept for compatibility with any existing link such as:
 //
-// This endpoint is intended for the EJS edit
-// button/modal to call using fetch().
+//     /milk/edit/:id
 //
-// ADMIN ONLY.
-// ==================================================
+// The actual page editing is performed by the modal on
+// milk.ejs, so this route simply sends the user back to
+// the milk page with the record ID.
+//
+// ==========================================================
 
-exports.getEditMilk = async (
-  req,
-  res
-) => {
+exports.getEditMilk = async (req, res) => {
 
   try {
-
-    /*
-     * ------------------------------------------------
-     * ADMIN CHECK
-     * ------------------------------------------------
-     */
-
-    if (
-      req.user?.role !==
-      "admin"
-    ) {
-
-      return res
-        .status(403)
-        .json({
-
-          success:
-            false,
-
-          error:
-            "Only an administrator can edit milk records."
-
-        });
-
-    }
-
 
     const {
       id
     } = req.params;
 
 
-    if (
-      !id
-    ) {
+    if (!id) {
 
-      return res
-        .status(400)
-        .json({
-
-          success:
-            false,
-
-          error:
-            "Milk record ID is required."
-
-        });
-
-    }
-
-
-    /*
-     * ------------------------------------------------
-     * GET RECORD
-     * ------------------------------------------------
-     */
-
-    const record =
-      await milkService.getMilkRecord(
-        id
+      return res.redirect(
+        "/milk?error=" +
+        encodeURIComponent(
+          "Milk record was not specified."
+        )
       );
 
+    }
+
+
+    // ------------------------------------------------------
+    // ONLY ADMIN CAN EDIT
+    // ------------------------------------------------------
 
     if (
-      !record
+      req.user?.role !== "admin"
     ) {
 
-      return res
-        .status(404)
-        .json({
-
-          success:
-            false,
-
-          error:
-            "Milk record not found."
-
-        });
+      return res.redirect(
+        "/milk?error=" +
+        encodeURIComponent(
+          "Only administrators can edit milk records."
+        )
+      );
 
     }
 
 
-    /*
-     * ------------------------------------------------
-     * RETURN RECORD TO EJS
-     * ------------------------------------------------
-     *
-     * The frontend can now use:
-     *
-     * record._id
-     * record.dairy
-     * record.liters
-     * record.remarks
-     * record.session
-     * record.day
-     *
-     */
-
-    return res.json({
-
-      success:
-        true,
-
-      record
-
-    });
+    return res.redirect(
+      "/milk?edit=" +
+      encodeURIComponent(id)
+    );
 
   } catch (err) {
 
@@ -425,110 +293,110 @@ exports.getEditMilk = async (
       err
     );
 
-    return res
-      .status(
-        err.code ===
-          "MILK_NOT_FOUND"
-          ? 404
-          : 500
+
+    return res.redirect(
+      "/milk?error=" +
+      encodeURIComponent(
+        err.message ||
+        "Unable to open milk record."
       )
-      .json({
-
-        success:
-          false,
-
-        error:
-          err.message ||
-          "Unable to load milk record."
-
-      });
+    );
 
   }
 
 };
 
 
-// ==================================================
+// ==========================================================
 // UPDATE MILK RECORD
-//
 // ADMIN ONLY
-// ==================================================
+// ==========================================================
+//
+// POST /milk/:id
+//
+// This is the endpoint used by the edit modal.
+//
+// ==========================================================
 
-exports.updateMilkRecord = async (
-  req,
-  res
-) => {
+exports.updateMilkRecord = async (req, res) => {
 
   try {
-
-    /*
-     * ------------------------------------------------
-     * ADMIN CHECK
-     * ------------------------------------------------
-     *
-     * The service also checks this.
-     * Keeping it here prevents unnecessary database
-     * work and makes the controller secure as well.
-     */
-
-    if (
-      req.user?.role !==
-      "admin"
-    ) {
-
-      return res.redirect(
-        "/milk?error=" +
-        encodeURIComponent(
-          "Only an administrator can edit milk records."
-        )
-      );
-
-    }
-
 
     const {
       id
     } = req.params;
 
 
-    /*
-     * ------------------------------------------------
-     * UPDATE
-     * ------------------------------------------------
-     */
-
-    const updatedRecord =
-      await milkService.editMilkRecord({
-
-        recordId:
-          id,
-
-        liters:
-          req.body.liters,
-
-        remarks:
-          req.body.remarks,
-
-        user:
-          req.user
-
-      });
-
-
-    /*
-     * Make sure the service actually returned
-     * the updated document.
-     */
+    // ------------------------------------------------------
+    // ADMIN AUTHORIZATION
+    // ------------------------------------------------------
 
     if (
-      !updatedRecord
+      req.user?.role !== "admin"
     ) {
 
-      throw new Error(
-        "Milk record was not updated."
+      return res.redirect(
+        "/milk?error=" +
+        encodeURIComponent(
+          "Only administrators can edit milk records."
+        )
       );
 
     }
+
+
+    // ------------------------------------------------------
+    // VALIDATE RECORD ID
+    // ------------------------------------------------------
+
+    if (!id) {
+
+      throw new Error(
+        "Milk record ID is missing."
+      );
+
+    }
+
+
+    // ------------------------------------------------------
+    // VALIDATE LITRES
+    // ------------------------------------------------------
+
+    const numericLiters =
+      Number(req.body.liters);
+
+
+    if (
+      !Number.isFinite(numericLiters) ||
+      numericLiters < 0
+    ) {
+
+      throw new Error(
+        "Milk quantity must be a valid number."
+      );
+
+    }
+
+
+    // ------------------------------------------------------
+    // UPDATE RECORD
+    // ------------------------------------------------------
+
+    await milkService.editMilkRecord({
+
+      recordId:
+        id,
+
+      liters:
+        numericLiters,
+
+      remarks:
+        req.body.remarks || "",
+
+      user:
+        req.user
+
+    });
 
 
     return res.redirect(
@@ -556,14 +424,11 @@ exports.updateMilkRecord = async (
 };
 
 
-// ==================================================
+// ==========================================================
 // GET MILK STATS
-// ==================================================
+// ==========================================================
 
-exports.getMilkStats = async (
-  req,
-  res
-) => {
+exports.getMilkStats = async (req, res) => {
 
   try {
 
@@ -574,19 +439,17 @@ exports.getMilkStats = async (
     } = req.query;
 
 
-    // ==================================================
+    // ======================================================
     // DAILY REPORT
-    // ==================================================
+    // ======================================================
 
-    if (
-      type === "day"
-    ) {
+    if (type === "day") {
 
       const selectedDate =
         date ||
-        milkService
-          .getKenyaDateParts()
-          .date;
+        new Date()
+          .toISOString()
+          .split("T")[0];
 
 
       const data =
@@ -595,49 +458,44 @@ exports.getMilkStats = async (
         );
 
 
-      return res.render(
-        "milkStats",
-        {
+      return res.render("milkStats", {
 
-          type,
+        type,
 
-          date:
-            selectedDate,
+        date:
+          selectedDate,
 
-          month:
-            "",
+        month:
+          "",
 
-          records:
-            data.records || [],
+        records:
+          data?.records || [],
 
-          stats:
-            data.stats || {},
+        stats:
+          data?.stats || {},
 
-          sales:
-            data.sales || [],
+        sales:
+          data?.sales || [],
 
-          user:
-            req.user
+        user:
+          req.user
 
-        }
-      );
+      });
 
     }
 
 
-    // ==================================================
+    // ======================================================
     // MONTHLY REPORT
-    // ==================================================
+    // ======================================================
 
-    if (
-      type === "month"
-    ) {
+    if (type === "month") {
 
       const selectedMonth =
         month ||
-        milkService
-          .getKenyaDateParts()
-          .monthKey;
+        new Date()
+          .toISOString()
+          .slice(0, 7);
 
 
       const data =
@@ -646,89 +504,71 @@ exports.getMilkStats = async (
         );
 
 
-      return res.render(
-        "milkStats",
-        {
+      return res.render("milkStats", {
 
-          type,
-
-          date:
-            "",
-
-          month:
-            selectedMonth,
-
-          records:
-            data.records || [],
-
-          stats:
-            data.stats || {},
-
-          sales:
-            data.sales || [],
-
-          user:
-            req.user
-
-        }
-      );
-
-    }
-
-
-    // ==================================================
-    // FALLBACK
-    // ==================================================
-
-    return res.render(
-      "milkStats",
-      {
-
-        type:
-          "",
+        type,
 
         date:
           "",
 
         month:
-          "",
+          selectedMonth,
 
         records:
-          [],
+          data?.records || [],
 
-        stats: {
-
-          total:
-            0,
-
-          consumed:
-            0,
-
-          available:
-            0,
-
-          price:
-            0,
-
-          cash:
-            0,
-
-          locked:
-            false,
-
-          avg:
-            0
-
-        },
+        stats:
+          data?.stats || {},
 
         sales:
-          [],
+          data?.sales || [],
 
         user:
           req.user
 
-      }
-    );
+      });
+
+    }
+
+
+    // ======================================================
+    // INVALID TYPE
+    // ======================================================
+
+    return res.render("milkStats", {
+
+      type: "",
+
+      date: "",
+
+      month: "",
+
+      records: [],
+
+      stats: {
+
+        total: 0,
+
+        consumed: 0,
+
+        available: 0,
+
+        price: 0,
+
+        cash: 0,
+
+        locked: false,
+
+        avg: 0
+
+      },
+
+      sales: [],
+
+      user:
+        req.user
+
+    });
 
   } catch (err) {
 
@@ -736,6 +576,7 @@ exports.getMilkStats = async (
       "Milk stats error:",
       err
     );
+
 
     return res
       .status(500)
@@ -748,14 +589,11 @@ exports.getMilkStats = async (
 };
 
 
-// ==================================================
+// ==========================================================
 // SAVE DAILY STATS
-// ==================================================
+// ==========================================================
 
-exports.saveDailyStats = async (
-  req,
-  res
-) => {
+exports.saveDailyStats = async (req, res) => {
 
   try {
 
@@ -763,6 +601,15 @@ exports.saveDailyStats = async (
       day,
       price
     } = req.body;
+
+
+    if (!day) {
+
+      throw new Error(
+        "Day is required."
+      );
+
+    }
 
 
     await milkService.saveDailyStats({
@@ -774,8 +621,14 @@ exports.saveDailyStats = async (
     });
 
 
+    // ------------------------------------------------------
+    // IMPORTANT:
+    //
+    // The milk stats page is /milkStats, not /stats.
+    // ------------------------------------------------------
+
     return res.redirect(
-      `/stats?type=day&date=${encodeURIComponent(day)}`
+      `/milkStats?type=day&date=${encodeURIComponent(day)}`
     );
 
   } catch (err) {
@@ -784,6 +637,7 @@ exports.saveDailyStats = async (
       "Save daily stats error:",
       err
     );
+
 
     return res
       .status(500)
@@ -797,14 +651,11 @@ exports.saveDailyStats = async (
 };
 
 
-// ==================================================
+// ==========================================================
 // GET SALES PAGE
-// ==================================================
+// ==========================================================
 
-exports.getSalesPage = async (
-  req,
-  res
-) => {
+exports.getSalesPage = async (req, res) => {
 
   try {
 
@@ -812,30 +663,27 @@ exports.getSalesPage = async (
       await milkService.getSalesPageData();
 
 
-    return res.render(
-      "sales",
-      {
+    return res.render("sales", {
 
-        standingOrders:
-          data.standingOrders || [],
+      standingOrders:
+        data?.standingOrders || [],
 
-        manualSales:
-          data.manualSales || [],
+      manualSales:
+        data?.manualSales || [],
 
-        currentPrice:
-          data.currentPrice ?? 50,
+      currentPrice:
+        data?.currentPrice ?? 50,
 
-        totalSales:
-          data.totalSales || 0,
+      totalSales:
+        data?.totalSales || 0,
 
-        availableMilk:
-          data.availableMilk || 0,
+      availableMilk:
+        data?.availableMilk || 0,
 
-        user:
-          req.user
+      user:
+        req.user
 
-      }
-    );
+    });
 
   } catch (err) {
 
@@ -843,6 +691,7 @@ exports.getSalesPage = async (
       "Sales page error:",
       err
     );
+
 
     return res
       .status(500)
@@ -855,14 +704,11 @@ exports.getSalesPage = async (
 };
 
 
-// ==================================================
+// ==========================================================
 // SUBMIT MANUAL SALE
-// ==================================================
+// ==========================================================
 
-exports.submitManualSale = async (
-  req,
-  res
-) => {
+exports.submitManualSale = async (req, res) => {
 
   try {
 
@@ -891,11 +737,12 @@ exports.submitManualSale = async (
       err
     );
 
+
     return res
       .status(500)
       .send(
         err.message ||
-        "Unable to record sale."
+        "Unable to save manual sale."
       );
 
   }
@@ -903,73 +750,69 @@ exports.submitManualSale = async (
 };
 
 
-// ==================================================
+// ==========================================================
 // SUBMIT STANDING ORDER SALE
-// ==================================================
+// ==========================================================
 
-exports.submitStandingOrderSale =
-  async (
-    req,
-    res
-  ) => {
-
-    try {
-
-      await milkService.submitStandingOrderSale({
-
-        standingOrderId:
-          req.body.standingOrderId,
-
-        customerName:
-          req.body.customerName,
-
-        liters:
-          req.body.liters,
-
-        user:
-          req.user
-
-      });
-
-
-      return res.redirect(
-        "/sales"
-      );
-
-    } catch (err) {
-
-      console.error(
-        "Standing sale error:",
-        err
-      );
-
-      return res
-        .status(500)
-        .send(
-          err.message ||
-          "Unable to process standing order."
-        );
-
-    }
-
-  };
-
-
-// ==================================================
-// UPDATE MILK PRICE
-// ADMIN ONLY
-// ==================================================
-
-exports.updateMilkPrice = async (
+exports.submitStandingOrderSale = async (
   req,
   res
 ) => {
 
   try {
 
+    await milkService.submitStandingOrderSale({
+
+      standingOrderId:
+        req.body.standingOrderId,
+
+      customerName:
+        req.body.customerName,
+
+      liters:
+        req.body.liters,
+
+      user:
+        req.user
+
+    });
+
+
+    return res.redirect(
+      "/sales"
+    );
+
+  } catch (err) {
+
+    console.error(
+      "Standing sale error:",
+      err
+    );
+
+
+    return res
+      .status(500)
+      .send(
+        err.message ||
+        "Unable to save standing order sale."
+      );
+
+  }
+
+};
+
+
+// ==========================================================
+// UPDATE MILK PRICE
+// ADMIN ONLY
+// ==========================================================
+
+exports.updateMilkPrice = async (req, res) => {
+
+  try {
+
     if (
-      req.user?.role !==
-      "admin"
+      req.user?.role !== "admin"
     ) {
 
       return res.redirect(
@@ -980,9 +823,7 @@ exports.updateMilkPrice = async (
 
 
     const price =
-      Number(
-        req.body.price
-      );
+      Number(req.body.price);
 
 
     if (
@@ -991,7 +832,7 @@ exports.updateMilkPrice = async (
     ) {
 
       throw new Error(
-        "Invalid milk price."
+        "Milk price must be a valid number."
       );
 
     }
@@ -1013,6 +854,7 @@ exports.updateMilkPrice = async (
       err
     );
 
+
     return res
       .status(500)
       .send(
@@ -1025,9 +867,9 @@ exports.updateMilkPrice = async (
 };
 
 
-// ==================================================
+// ==========================================================
 // ADD STANDING ORDER
-// ==================================================
+// ==========================================================
 
 exports.addStandingOrder = async (
   req,
@@ -1062,6 +904,7 @@ exports.addStandingOrder = async (
       err
     );
 
+
     return res
       .status(500)
       .send(
@@ -1074,9 +917,9 @@ exports.addStandingOrder = async (
 };
 
 
-// ==================================================
+// ==========================================================
 // OMIT STANDING ORDER
-// ==================================================
+// ==========================================================
 
 exports.omitStandingOrder = async (
   req,
@@ -1112,6 +955,7 @@ exports.omitStandingOrder = async (
       err
     );
 
+
     return res
       .status(500)
       .send(
@@ -1124,9 +968,9 @@ exports.omitStandingOrder = async (
 };
 
 
-// ==================================================
+// ==========================================================
 // MILKING HISTORY
-// ==================================================
+// ==========================================================
 
 exports.getMilkingHistory = async (
   req,
@@ -1159,19 +1003,19 @@ exports.getMilkingHistory = async (
       {
 
         dairy:
-          data.dairy,
+          data?.dairy,
 
         records:
-          data.records || [],
+          data?.records || [],
 
         grouped:
-          data.grouped || {},
+          data?.grouped || {},
 
         monthlyTotal:
-          data.monthlyTotal || 0,
+          data?.monthlyTotal || 0,
 
         hasData:
-          data.hasData || false,
+          data?.hasData || false,
 
         selectedMonth:
           month || "",
@@ -1189,6 +1033,7 @@ exports.getMilkingHistory = async (
       err
     );
 
+
     return res
       .status(500)
       .send(
@@ -1201,52 +1046,66 @@ exports.getMilkingHistory = async (
 };
 
 
-// ==================================================
+// ==========================================================
 // TOGGLE MILKING STATUS
-// ==================================================
+// ADMIN ONLY
+// ==========================================================
 
-exports.toggleMilkingStatus =
-  async (
-    req,
-    res
-  ) => {
+exports.toggleMilkingStatus = async (
+  req,
+  res
+) => {
 
-    try {
+  try {
 
-      const {
-        id
-      } = req.params;
-
-
-      await milkService.toggleMilkingStatus({
-
-        dairyId:
-          id,
-
-        user:
-          req.user
-
-      });
+    const {
+      id
+    } = req.params;
 
 
-      return res.redirect(
-        `/milk/history/${id}`
-      );
-
-    } catch (err) {
-
-      console.error(
-        "Toggle milking status error:",
-        err
-      );
+    if (
+      req.user?.role !== "admin"
+    ) {
 
       return res
-        .status(500)
+        .status(403)
         .send(
-          err.message ||
-          "Unable to change milking status."
+          "Only administrators can change milking status."
         );
 
     }
 
-  };
+
+    await milkService.toggleMilkingStatus({
+
+      dairyId:
+        id,
+
+      user:
+        req.user
+
+    });
+
+
+    return res.redirect(
+      `/milk/history/${id}`
+    );
+
+  } catch (err) {
+
+    console.error(
+      "Toggle milking status error:",
+      err
+    );
+
+
+    return res
+      .status(500)
+      .send(
+        err.message ||
+        "Unable to change milking status."
+      );
+
+  }
+
+};
