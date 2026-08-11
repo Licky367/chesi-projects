@@ -1,115 +1,191 @@
 <!-- =====================================================
-     UPDATE PAGE ASSETS
-===================================================== -->
-
-<link
-    rel="stylesheet"
-    href="/css/update/update.css"
+     FLOATING VIEW ASSETS ACTION
+===================================================== --><div class="floating-assets-action"><button
+    type="button"
+    id="viewPropertyButton"
+    class="asset-bar-trigger"
+    aria-controls="assetBar"
+    aria-expanded="false"
+    title="View Assets"
 >
 
-<script src="/socket.io/socket.io.js"></script>
+    <span
+        class="asset-bar-trigger-icon"
+        aria-hidden="true"
+    >
+        ◉
+    </span>
 
 
-<!-- =====================================================
-     UPDATE PAGE
-===================================================== -->
-
-<div class="dairy-page">
+    <span class="asset-bar-trigger-text">
+        View Assets
+    </span>
 
 
-    <!-- =================================================
-         TOP-RIGHT PAGE ACTION
-    ================================================== -->
+</button>
 
-    <div class="dairy-page-actions">
+</div><!-- =====================================================
+     FLOATING ASSETS BUTTON STYLES
+===================================================== --><style>
 
+/* =========================================================
+   FLOATING ASSETS ACTION
+========================================================= */
 
-        <button
-            type="button"
-            id="viewPropertyButton"
-            class="asset-bar-trigger"
-            aria-controls="assetBar"
-            aria-expanded="false"
-        >
+.floating-assets-action{
 
-            <span
-                class="asset-bar-trigger-icon"
-                aria-hidden="true"
-            >
-                ◉
-            </span>
+    position:fixed;
 
+    right:20px;
 
-            <span class="asset-bar-trigger-text">
-                View Assets
-            </span>
+    bottom:75px;
+
+    z-index:1002;
+
+}
 
 
-        </button>
+/* =========================================================
+   VIEW ASSETS BUTTON
+========================================================= */
+
+.floating-assets-action .asset-bar-trigger{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:8px;
+
+    min-height:46px;
+
+    padding:0 16px;
+
+    border:none;
+
+    border-radius:24px;
+
+    background:#0b5d1e;
+
+    color:#fff;
+
+    box-shadow:
+        0 5px 18px rgba(0,0,0,.22);
+
+    cursor:pointer;
+
+    font-size:13px;
+
+    font-weight:700;
+
+    transition:
+        transform .2s ease,
+        background .2s ease,
+        box-shadow .2s ease;
+
+}
 
 
-    </div>
+.floating-assets-action .asset-bar-trigger:hover{
+
+    background:#084a18;
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 8px 22px rgba(0,0,0,.26);
+
+}
 
 
-    <!-- =================================================
-         PROFILE
-    ================================================== -->
+.floating-assets-action .asset-bar-trigger:active{
 
-    <%- include("update/profile-card", {
-        dairy: dairy,
-        user: user
-    }) %>
+    transform:translateY(0);
+
+}
 
 
-    <!-- =================================================
-         CREATE POST
-    ================================================== -->
+.floating-assets-action .asset-bar-trigger:focus-visible{
 
-    <% if (user) { %>
+    outline:3px solid rgba(11,93,30,.28);
 
-        <%- include("update/create-post", {
-            user: user
-        }) %>
+    outline-offset:3px;
 
-    <% } %>
+}
 
 
-    <!-- =================================================
-         ASSET SIDEBAR
-         
-         The partial contains:
-         
-         • Overlay
-         • Sidebar
-         • Animals
-         • Structures
-         • Sidebar JavaScript
-    ================================================== -->
+/* =========================================================
+   ICON
+========================================================= */
 
-    <%- include("dairy/assetBar", {
-        dairy: dairy,
-        assetDairies: assetDairies || []
-    }) %>
+.floating-assets-action .asset-bar-trigger-icon{
 
+    width:24px;
 
-    <!-- =================================================
-         FEED
-    ================================================== -->
+    height:24px;
 
-    <%- include("update/feed", {
-        feed: feed,
-        user: user
-    }) %>
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:18px;
+
+    line-height:1;
+
+}
 
 
-</div>
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:600px){
+
+    .floating-assets-action{
+
+        right:14px;
+
+        bottom:65px;
+
+    }
 
 
-<!-- =====================================================
-     UPDATE PAGE JAVASCRIPT
-===================================================== -->
+    .floating-assets-action .asset-bar-trigger{
 
-<script
-    src="/js/update/index.js"
-    defer
-></script>
+        width:48px;
+
+        height:48px;
+
+        min-height:48px;
+
+        padding:0;
+
+        border-radius:50%;
+
+    }
+
+
+    .floating-assets-action .asset-bar-trigger-text{
+
+        display:none;
+
+    }
+
+
+    .floating-assets-action .asset-bar-trigger-icon{
+
+        width:auto;
+
+        height:auto;
+
+        font-size:20px;
+
+    }
+
+}
+
+</style>
