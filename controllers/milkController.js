@@ -14,29 +14,20 @@ exports.getMilkPage = async (req, res) => {
       await milkService.getMilkPageData();
 
     /*
-     * The service returns:
+     * milkService.getMilkPageData() returns:
      *
-     * session: {
-     *   name: "morning" | "evening"
-     * }
+     * session:
+     *   "morning"
+     *   "closed"
+     *   "evening"
      *
-     * or:
-     *
-     * session: {
-     *   name: null
-     * }
-     *
-     * The EJS expects:
-     *
-     * "morning"
-     * "closed"
-     * "evening"
+     * Do NOT use data.session.name because
+     * session is already a string.
      */
 
     const currentSession =
-      data.session?.name ||
+      data.session ||
       "closed";
-
 
     const isAdmin =
       req.user?.role === "admin";
@@ -116,11 +107,10 @@ exports.submitMilk = async (
   try {
 
     /*
-     * IMPORTANT:
+     * saveMilkRecords() expects:
      *
-     * saveMilkRecords() expects the
-     * complete user object because it
-     * uses user._id.
+     * 1. records
+     * 2. complete user object
      */
 
     await milkService.saveMilkRecords(
@@ -140,13 +130,6 @@ exports.submitMilk = async (
       err
     );
 
-
-    /*
-     * Business-rule errors should return
-     * the user to the milk page rather
-     * than exposing a raw 500 page.
-     */
-
     const message =
       err.message ||
       "Unable to save milk records.";
@@ -163,13 +146,7 @@ exports.submitMilk = async (
 
 
 // ==================================================
-// GET EDIT MILK RECORD
-//
-// This route exists because the router
-// requires it.
-//
-// The actual edit form is displayed
-// through the modal on milk.ejs.
+// GET EDIT MILK
 // ==================================================
 
 exports.getEditMilk = async (
@@ -185,17 +162,10 @@ exports.getEditMilk = async (
 
 
     /*
-     * The normal milk page already contains
-     * the edit modal and submits directly to:
+     * The actual edit form is handled by
+     * the modal on milk.ejs.
      *
-     * POST /milk/edit/:id
-     *
-     * Therefore this GET route is retained
-     * for router compatibility.
-     *
-     * Redirecting to /milk keeps the edit UI
-     * in one place and does not interfere
-     * with the other milk pages.
+     * Keep this route for compatibility.
      */
 
     return res.redirect(
@@ -238,14 +208,6 @@ exports.updateMilkRecord = async (
     } = req.params;
 
 
-    /*
-     * editMilkRecord() performs the
-     * administrator authorization and
-     * milk-session validation.
-     *
-     * Pass the complete req.user object.
-     */
-
     await milkService.editMilkRecord({
 
       recordId:
@@ -274,12 +236,6 @@ exports.updateMilkRecord = async (
       err
     );
 
-
-    /*
-     * Return the administrator to the
-     * milk page with the actual business
-     * rule error.
-     */
 
     return res.redirect(
       "/milk?error=" +
@@ -512,6 +468,12 @@ exports.saveDailyStats = async (
     });
 
 
+    /*
+     * Keep the existing stats route behavior.
+     *
+     * This avoids changing routing for other pages.
+     */
+
     return res.redirect(
       `/stats?type=day&date=${encodeURIComponent(day)}`
     );
@@ -702,8 +664,7 @@ exports.updateMilkPrice = async (
   try {
 
     /*
-     * Keep authorization here as well as
-     * in the service.
+     * Keep the controller authorization.
      */
 
     if (
