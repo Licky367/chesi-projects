@@ -3,7 +3,7 @@
 
   Main entry file
 
-  Import order matters:
+  Import order:
 
   1. Variables
   2. Reset
@@ -29,9 +29,8 @@
 
 
 /*=========================================================
-  PROPERTY ACTION
+  TOP-RIGHT PAGE ACTION
 =========================================================*/
-
 
 .dairy-page-actions {
 
@@ -53,7 +52,6 @@
 /*=========================================================
   VIEW ASSETS BUTTON
 =========================================================*/
-
 
 .dairy-page-actions .asset-bar-trigger {
 
@@ -146,14 +144,8 @@
 /*=========================================================
   ASSET BAR OVERLAY
 
-  IMPORTANT:
-
-  Hidden by default.
-
-  It becomes visible ONLY when JavaScript adds
-  the "active" class.
+  CLOSED BY DEFAULT
 =========================================================*/
-
 
 .asset-bar-overlay {
 
@@ -194,17 +186,13 @@
 
 
 /*=========================================================
-  ASSET BAR
+  ASSET SIDEBAR
 
-  IMPORTANT:
+  CLOSED BY DEFAULT
 
-  The sidebar is completely OFF SCREEN by default.
-
-  It is NOT displayed when update.ejs loads.
-
-  JavaScript adds .active after View Assets is clicked.
+  The sidebar begins completely outside the right edge
+  of the screen.
 =========================================================*/
-
 
 .asset-bar {
 
@@ -235,13 +223,6 @@
 
     overflow: hidden;
 
-    /*
-     * CLOSED STATE
-     *
-     * The entire sidebar is positioned outside
-     * the right edge of the screen.
-     */
-
     transform: translateX(100%);
 
     visibility: hidden;
@@ -256,9 +237,8 @@
 
 
 /*=========================================================
-  OPEN STATE
+  OPEN SIDEBAR
 =========================================================*/
-
 
 .asset-bar.active {
 
@@ -272,9 +252,8 @@
 
 
 /*=========================================================
-  PREVENT BACKGROUND SCROLLING
+  LOCK PAGE SCROLLING
 =========================================================*/
-
 
 body.asset-bar-open {
 
@@ -286,7 +265,6 @@ body.asset-bar-open {
 /*=========================================================
   SIDEBAR HEADER
 =========================================================*/
-
 
 .asset-bar-header {
 
@@ -320,13 +298,13 @@ body.asset-bar-open {
 
     margin-bottom: 4px;
 
+    color: #2e7d32;
+
     font-size: 11px;
 
     font-weight: 700;
 
     letter-spacing: .08em;
-
-    color: #2e7d32;
 
 }
 
@@ -335,11 +313,11 @@ body.asset-bar-open {
 
     margin: 0;
 
+    color: #222222;
+
     font-size: 21px;
 
     font-weight: 700;
-
-    color: #222222;
 
 }
 
@@ -347,7 +325,6 @@ body.asset-bar-open {
 /*=========================================================
   CLOSE BUTTON
 =========================================================*/
-
 
 .asset-bar-close {
 
@@ -402,7 +379,6 @@ body.asset-bar-open {
   FARM INFORMATION
 =========================================================*/
 
-
 .asset-bar-farm {
 
     display: flex;
@@ -424,33 +400,33 @@ body.asset-bar-open {
 
 .asset-bar-farm-label {
 
+    color: #2e7d32;
+
     font-size: 10px;
 
     font-weight: 700;
 
     letter-spacing: .08em;
 
-    color: #2e7d32;
-
 }
 
 
 .asset-bar-farm-name {
 
+    color: #222222;
+
     font-size: 16px;
 
     font-weight: 700;
-
-    color: #222222;
 
 }
 
 
 .asset-bar-farm-code {
 
-    font-size: 12px;
-
     color: #707070;
+
+    font-size: 12px;
 
 }
 
@@ -458,7 +434,6 @@ body.asset-bar-open {
 /*=========================================================
   CATEGORY TABS
 =========================================================*/
-
 
 .asset-bar-tabs {
 
@@ -521,9 +496,9 @@ body.asset-bar-open {
 
 .asset-bar-tab-subtitle {
 
-    font-size: 10px;
-
     color: #999999;
+
+    font-size: 10px;
 
 }
 
@@ -548,14 +523,6 @@ body.asset-bar-open {
 }
 
 
-.asset-bar-tab.active
-.asset-bar-tab-subtitle {
-
-    color: #5f8f62;
-
-}
-
-
 .asset-bar-tab:focus-visible {
 
     outline: 2px solid #2e7d32;
@@ -568,7 +535,6 @@ body.asset-bar-open {
 /*=========================================================
   SIDEBAR CONTENT
 =========================================================*/
-
 
 .asset-bar-content {
 
@@ -584,9 +550,8 @@ body.asset-bar-open {
 
 
 /*=========================================================
-  CATEGORY SECTION
+  SECTIONS
 =========================================================*/
-
 
 .asset-bar-section {
 
@@ -605,7 +570,6 @@ body.asset-bar-open {
 /*=========================================================
   SECTION HEADER
 =========================================================*/
-
 
 .asset-bar-section-header {
 
@@ -630,13 +594,13 @@ body.asset-bar-open {
 
     margin-bottom: 3px;
 
+    color: #2e7d32;
+
     font-size: 10px;
 
     font-weight: 700;
 
     letter-spacing: .08em;
-
-    color: #2e7d32;
 
 }
 
@@ -645,11 +609,11 @@ body.asset-bar-open {
 
     margin: 0;
 
+    color: #222222;
+
     font-size: 18px;
 
     font-weight: 700;
-
-    color: #222222;
 
 }
 
@@ -687,7 +651,6 @@ body.asset-bar-open {
   ASSET LIST
 =========================================================*/
 
-
 .asset-bar-list {
 
     display: flex;
@@ -700,7 +663,6 @@ body.asset-bar-open {
 /*=========================================================
   ASSET ITEM
 =========================================================*/
-
 
 .asset-bar-item {
 
@@ -756,7 +718,6 @@ body.asset-bar-open {
   ASSET IMAGE
 =========================================================*/
 
-
 .asset-bar-item-image {
 
     width: 52px;
@@ -792,7 +753,6 @@ body.asset-bar-open {
 /*=========================================================
   ASSET DETAILS
 =========================================================*/
-
 
 .asset-bar-item-details {
 
@@ -857,9 +817,8 @@ body.asset-bar-open {
 
 
 /*=========================================================
-  ASSET ARROW
+  ARROW
 =========================================================*/
-
 
 .asset-bar-item-arrow {
 
@@ -877,7 +836,6 @@ body.asset-bar-open {
 /*=========================================================
   EMPTY STATE
 =========================================================*/
-
 
 .asset-bar-empty {
 
@@ -910,17 +868,16 @@ body.asset-bar-open {
 
 .asset-bar-empty-icon {
 
-    font-size: 24px;
-
     color: #aaaaaa;
+
+    font-size: 24px;
 
 }
 
 
 /*=========================================================
-  SIDEBAR FOOTER
+  FOOTER
 =========================================================*/
-
 
 .asset-bar-footer {
 
@@ -944,9 +901,8 @@ body.asset-bar-open {
 
 
 /*=========================================================
-  RESPONSIVE ASSET BAR
+  RESPONSIVE
 =========================================================*/
-
 
 @media (max-width: 600px) {
 
@@ -996,14 +952,12 @@ body.asset-bar-open {
 
     }
 
-
 }
 
 
 /*=========================================================
   REDUCED MOTION
 =========================================================*/
-
 
 @media (prefers-reduced-motion: reduce) {
 
