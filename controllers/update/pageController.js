@@ -1,47 +1,114 @@
+// ==========================================================
+// controllers/update/pageController.js
+// ==========================================================
+
 const updateService = require("../../services/update");
 
-
 /* =========================================================
-   🟨 VIEW DAIRY PROFILE PAGE
+🟨 VIEW DAIRY PROFILE PAGE
 ========================================================= */
+
 exports.viewPage = async (req, res) => {
 
-    try {
+try {
 
-        const { id } = req.params;
+    const { id } = req.params;
 
-        const data = await updateService.getDairyPage(id);
 
-        res.render("update", {
+    /* =================================================
+       GET COMPLETE DAIRY PAGE DATA
+    ================================================= */
 
-            title: "Dairy Profile",
+    const data =
+        await updateService.getDairyPage(id);
 
-            dairy: data.dairy,
 
-            feed: data.feed || [],
+    /* =================================================
+       RENDER UPDATE PAGE
+    ================================================= */
 
-            weeklyFeed: data.weeklyFeed || null,
+    res.render("update", {
 
-            commentCount: data.commentCount || 0,
+        title: "Dairy Profile",
 
-            user: req.session.user || null
 
-        });
+        /* =============================================
+           CURRENT DAIRY FARM
+        ============================================== */
 
-    } catch (err) {
+        dairy:
+            data.dairy,
 
-        console.error(
 
-            "VIEW PAGE ERROR:",
+        /* =============================================
+           FEED
+        ============================================== */
 
-            err.message
+        feed:
+            data.feed || [],
 
+
+        /* =============================================
+           WEEKLY MILK FEEDS
+
+           pageService returns:
+               weeklyFeeds
+
+           Keep the existing view variable:
+               weeklyFeed
+        ============================================== */
+
+        weeklyFeed:
+            data.weeklyFeeds || null,
+
+
+        /* =============================================
+           COMMENT COUNT
+        ============================================== */
+
+        commentCount:
+            data.commentCount || 0,
+
+
+        /* =============================================
+           ASSETS BELONGING TO CURRENT DAIRY FARM
+
+           These have already been filtered by
+           pageService using:
+
+               assetCode === dairy.code
+        ============================================== */
+
+        assetDairies:
+            data.assetDairies || [],
+
+
+        /* =============================================
+           LOGGED-IN USER
+        ============================================== */
+
+        user:
+            req.session.user || null
+
+    });
+
+} catch (err) {
+
+    console.error(
+
+        "VIEW PAGE ERROR:",
+
+        err.message
+
+    );
+
+
+    res
+        .status(500)
+        .send(
+            "Failed to load dairy profile"
         );
 
-        res
-            .status(500)
-            .send("Failed to load dairy profile");
-
-    }
+}
 
 };
