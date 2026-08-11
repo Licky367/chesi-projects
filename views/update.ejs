@@ -1,106 +1,31 @@
-<!-- =====================================================
-     UPDATE PAGE ASSETS
-===================================================== --><!-- =====================================================
-     UPDATE PAGE CSS
-
-     FILE:
-     public/css/update/update.css
-
-     This is the main Update page stylesheet.
-
-     assetBar.css is imported by update.css.
-===================================================== --><link
-    rel="stylesheet"
-    href="/css/update/update.css"
-><!-- =====================================================
-     SOCKET.IO
-
-     REQUIRED BY THE ORIGINAL UPDATE PAGE.
-===================================================== --><script
-    src="/socket.io/socket.io.js"
-></script><!-- =====================================================
-     UPDATE PAGE
-===================================================== --><div class="dairy-page"><!-- ===================================================
-     PROFILE
-==================================================== -->
-
-<%- include("update/profile-card", {
-    dairy: dairy,
-    user: user
+<!-- =====================================================  
+     UPDATE PAGE ASSETS  
+===================================================== -->  <link  
+  rel="stylesheet"  
+  href="/css/update/update.css"  
+>  <script src="/socket.io/socket.io.js"></script>  <!-- =====================================================  
+     UPDATE PAGE  
+===================================================== -->  <div class="dairy-page">    <!-- PROFILE -->  <%- include("update/profile-card", {
+dairy: dairy,
+user: user
 }) %>
 
+  <!-- CREATE POST -->  <% if (user) { %>
 
-<!-- ===================================================
-     CREATE POST
-==================================================== -->
-
-<% if (user) { %>
-
-    <%- include("update/create-post", {
-        user: user
-    }) %>
+<%- include("update/create-post", {  
+  user: user  
+}) %>
 
 <% } %>
 
-
-<!-- ===================================================
-     ASSET BAR
-
-     FILE:
-     views/dairy/assetBar.ejs
-
-     DATA:
-
-     dairy
-         = Current Dairy Farm
-
-     assetDairies
-         = Properties belonging ONLY to
-           the current Dairy Farm.
-==================================================== -->
-
-<%- include("dairy/assetBar", {
-    dairy: dairy,
-    assetDairies: assetDairies || []
+  <!-- FEED -->  <%- include("update/feed", {
+feed: feed,
+user: user
 }) %>
 
-
-<!-- ===================================================
-     FEED
-==================================================== -->
-
-<%- include("update/feed", {
-    feed: feed,
-    user: user
-}) %>
-
-</div><!-- =====================================================
-     UPDATE PAGE JAVASCRIPT
-===================================================== --><!-- =====================================================
-     ASSET BAR JAVASCRIPT
-
-     FILE:
-     public/js/update/assetBar.js
-
-     Browser URL:
-     /js/update/assetBar.js
-
-     This loads before the main Update entry point.
-===================================================== --><script
-    src="/js/update/assetBar.js"
-    defer
-></script><!-- =====================================================
-     UPDATE PAGE ENTRY POINT
-
-     FILE:
-     public/js/update/index.js
-
-     Browser URL:
-     /js/update/index.js
-
-     Handles the original Update page functionality
-     and initializes the Asset Bar.
-===================================================== --><script
-    src="/js/update/index.js"
-    defer
+</div>  <!-- =====================================================  
+     UPDATE PAGE JAVASCRIPT  
+===================================================== -->  <script  
+  src="/js/update/index.js"  
+  defer  
 ></script>
