@@ -3,9 +3,12 @@
 ===================================================== --><!-- =====================================================
      UPDATE PAGE CSS
 
-     This remains the original Update page stylesheet.
+     FILE:
+     public/css/update/update.css
 
-     assetBar.css is imported from update.css.
+     This is the main Update page stylesheet.
+
+     assetBar.css is imported by update.css.
 ===================================================== --><link
     rel="stylesheet"
     href="/css/update/update.css"
@@ -43,21 +46,24 @@
 <!-- ===================================================
      ASSET BAR
 
-     The sidebar receives:
+     FILE:
+     views/dairy/assetBar.ejs
+
+     DATA:
 
      dairy
          = Current Dairy Farm
 
      assetDairies
-         = Only assets belonging to this
-           Dairy Farm.
-==================================================== --
+         = Properties belonging ONLY to
+           the current Dairy Farm.
+==================================================== -->
 
 <%- include("dairy/assetBar", {
     dairy: dairy,
     assetDairies: assetDairies || []
 }) %>
--->
+
 
 <!-- ===================================================
      FEED
@@ -73,25 +79,27 @@
 ===================================================== --><!-- =====================================================
      ASSET BAR JAVASCRIPT
 
-     Must load BEFORE update/index.js because
-     update/index.js calls initializeAssetBar().
+     FILE:
+     public/js/update/assetBar.js
+
+     Browser URL:
+     /js/update/assetBar.js
+
+     This loads before the main Update entry point.
 ===================================================== --><script
     src="/js/update/assetBar.js"
     defer
 ></script><!-- =====================================================
-     ORIGINAL UPDATE PAGE ENTRY POINT
+     UPDATE PAGE ENTRY POINT
 
-     This remains responsible for:
+     FILE:
+     public/js/update/index.js
 
-       - Profile Update
-       - Post Modal
-       - Character Counter
-       - Image Preview
-       - Feed
-       - Feed Images
-       - Auto Resize
-       - Socket
-       - Asset Bar
+     Browser URL:
+     /js/update/index.js
+
+     Handles the original Update page functionality
+     and initializes the Asset Bar.
 ===================================================== --><script
     src="/js/update/index.js"
     defer
