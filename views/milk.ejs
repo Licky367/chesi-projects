@@ -1,64 +1,47 @@
 <%
-/* ==========================================================
-   MILK COLLECTION PAGE
-   ==========================================================
-
-   EXPECTED CONTROLLER DATA:
-
-      dairies
-      session
-      isAdmin
-      success
-      error
-
-   SESSION VALUES:
-
-      morning = 00:00 - 10:00
-      closed  = 10:00 - 16:00
-      evening = 16:00 - 00:00
-
-   BUSINESS RULES:
-
-      NORMAL USERS
-      ------------------------------------------------------
-      • Morning:
-          Can submit new morning records from 00:00-10:00.
-
-      • Closed:
-          Cannot submit or edit.
-
-      • Evening:
-          Can submit new evening records from 16:00-midnight.
-
-      • Existing records:
-          Cannot edit.
-
-      ADMIN
-      ------------------------------------------------------
-      • Morning:
-          Can submit and edit morning records.
-
-      • Closed:
-          Can still submit NEW morning records.
-          Can also edit EXISTING morning records.
-
-      • Evening:
-          Can submit and edit evening records.
-
-      • Admin editing:
-          Triggered by tapping an existing record and
-          calling openEditModal(...).
-
-   IMPORTANT:
-
-      The backend must enforce these rules too.
-      This page only controls the UI.
-========================================================== */
+// ==========================================================
+// MILK COLLECTION PAGE
+// ==========================================================
+//
+// EXPECTED CONTROLLER DATA:
+//
+//     dairies
+//     session
+//     isAdmin
+//     success
+//     error
+//
+// SESSION VALUES:
+//
+//     morning = 00:00 - 10:00
+//     closed  = 10:00 - 16:00
+//     evening = 16:00 - 00:00
+//
+// BUSINESS RULES:
+//
+// NORMAL USER
+//     • Morning: can submit morning records.
+//     • 10:00 AM - 4:00 PM: completely closed.
+//     • Evening: can submit evening records.
+//     • Existing records cannot be edited.
+//
+// ADMIN
+//     • Morning: can submit/edit morning records.
+//     • 10:00 AM - 4:00 PM: can submit/edit morning records.
+//     • Evening: can submit/edit evening records.
+//     • Can create a new record where one does not exist.
+//     • Can edit existing records by tapping them.
+//
+// IMPORTANT:
+//
+//     The frontend controls what is displayed.
+//     The backend must ALSO enforce these rules.
+// ==========================================================
 
 
-/* ==========================================================
-   SAFE DEFAULTS
-========================================================== */
+// ==========================================================
+// SAFE DEFAULTS
+// ==========================================================
 
 const pageError =
     typeof error !== "undefined"
@@ -91,59 +74,114 @@ const milkDairies =
         : [];
 
 
-/* ==========================================================
-   FRONTEND PERMISSION RULES
-========================================================== */
+// ==========================================================
+// SESSION PERMISSIONS
+// ==========================================================
 
-/*
-   A normal user may create records only when the
-   corresponding collection session is open.
+// Admin can enter morning records during BOTH:
+//     morning session
+//     closed period
+//
+// Admin can enter evening records only during:
+//     evening session
+//
+const adminMorningWindow =
+    adminUser &&
+    (
+        currentSession === "morning" ||
+        currentSession === "closed"
+    );
 
-   An admin may create records:
-      - morning session
-      - closed period (morning records)
-      - evening session
-*/
-const canSubmit =
-    adminUser ||
-    currentSession === "morning" ||
+const adminEveningWindow =
+    adminUser &&
     currentSession === "evening";
 
 
-/*
-   Which session are we currently working with?
+// Anyone can create records only during their open session.
+// Admin gets the additional morning access during closed time.
+const canSubmit =
+    currentSession === "morning" ||
+    currentSession === "evening" ||
+    adminMorningWindow;
 
-   Morning:
-      morning
 
-   Closed:
-      still morning because the morning collection
-      is the session that is being completed.
-
-   Evening:
-      evening
-*/
-const workingSession =
+// ==========================================================
+// DETERMINE WHICH SESSION IS CURRENTLY BEING ENTERED
+// ==========================================================
+//
+// During "closed":
+//     the relevant session is still MORNING.
+//
+// During evening:
+//     the relevant session is EVENING.
+//
+const entrySession =
     currentSession === "evening"
         ? "evening"
         : "morning";
 
 
-/*
-   Admins can edit existing records at any time during
-   the permitted period.
+// ==========================================================
+// DISPLAY LABELS
+// ==========================================================
 
-   Since the page displays the current working session,
-   an existing record shown here is editable by admin.
-*/
-const canAdminEdit =
-    adminUser &&
-    (
-        currentSession === "morning" ||
-        currentSession === "closed" ||
-        currentSession === "evening"
-    );
+let sessionTitle = "Collection Closed";
+let sessionDescription = "";
+let sessionIcon = "🔒";
+let sessionClass = "session-card-closed";
+let sessionBadgeClass = "session-closed";
+let sessionBadgeText = "Closed";
 
+if (currentSession === "morning") {
+
+    sessionTitle = "Morning collection is open";
+    sessionDescription =
+        "Record one milk entry for each cow before 10:00 AM.";
+    sessionIcon = "🌅";
+    sessionClass = "session-card-open";
+    sessionBadgeClass = "session-morning";
+    sessionBadgeText = "Morning";
+
+} else if (currentSession === "closed") {
+
+    sessionTitle = adminUser
+        ? "Morning collection is still available to administrators"
+        : "Collection is temporarily closed";
+
+    sessionDescription = adminUser
+        ? "Administrators can submit or edit morning records until 4:00 PM."
+        : "Morning collection closed at 10:00 AM. Evening collection opens at 4:00 PM.";
+
+    sessionIcon = adminUser ? "✏️" : "⏰";
+    sessionClass = adminUser
+        ? "session-card-admin"
+        : "session-card-closed";
+
+    sessionBadgeClass = adminUser
+        ? "session-admin"
+        : "session-closed";
+
+    sessionBadgeText = adminUser
+        ? "Admin Access"
+        : "Closed";
+
+} else if (currentSession === "evening") {
+
+    sessionTitle = "Evening collection is open";
+    sessionDescription =
+        "Record one milk entry for each cow before midnight.";
+    sessionIcon = "🌆";
+    sessionClass = "session-card-evening";
+    sessionBadgeClass = "session-evening";
+    sessionBadgeText = "Evening";
+
+} else {
+
+    sessionTitle = "Collection window unavailable";
+    sessionDescription =
+        "Please contact an administrator if this continues.";
+
+}
 %>
 
 
@@ -177,8 +215,7 @@ const canAdminEdit =
                 </h1>
 
                 <p>
-                    Record today's milk production for each
-                    dairy animal.
+                    Record today's milk production for each dairy animal.
                 </p>
 
             </div>
@@ -188,40 +225,12 @@ const canAdminEdit =
 
         <!-- SESSION BADGE -->
 
-        <div
-            class="
-                milk-session-badge
-                <%= currentSession === "morning"
-                    ? "session-morning"
-                    : currentSession === "evening"
-                        ? "session-evening"
-                        : "session-closed"
-                %>
-            "
-        >
+        <div class="milk-session-badge <%= sessionBadgeClass %>">
 
             <span class="session-dot"></span>
 
             <span>
-
-                <% if (currentSession === "morning") { %>
-
-                    Morning
-
-                <% } else if (currentSession === "evening") { %>
-
-                    Evening
-
-                <% } else if (currentSession === "closed") { %>
-
-                    Morning — Admin Entry
-
-                <% } else { %>
-
-                    Closed
-
-                <% } %>
-
+                <%= sessionBadgeText %>
             </span>
 
         </div>
@@ -294,157 +303,65 @@ const canAdminEdit =
          SESSION STATUS
     ======================================================= -->
 
-    <% if (currentSession === "morning") { %>
+    <div class="milk-session-card <%= sessionClass %>">
 
-        <div class="milk-session-card session-card-open">
+        <div class="session-card-icon">
+            <%= sessionIcon %>
+        </div>
 
-            <div class="session-card-icon">
-                🌅
+        <div class="session-card-content">
+
+            <div class="session-card-title">
+                <%= sessionTitle %>
             </div>
 
-            <div class="session-card-content">
+            <div class="session-card-description">
 
-                <div class="session-card-title">
-                    Morning collection is open
-                </div>
+                <%= sessionDescription %>
 
-                <div class="session-card-description">
+                <% if (currentSession === "closed" && adminUser) { %>
 
-                    <% if (adminUser) { %>
+                    <div class="admin-session-note">
+                        ✏️ Admin access: morning records can still be
+                        submitted or edited until 4:00 PM.
+                    </div>
 
-                        You can submit or edit morning
-                        records until
-                        <strong>4:00 PM</strong>.
+                <% } else if (currentSession === "closed" && !adminUser) { %>
 
-                    <% } else { %>
+                    <div class="admin-session-note">
+                        Contact an administrator if a correction is required.
+                    </div>
 
-                        Record one milk entry for each cow
-                        before
-                        <strong>10:00 AM</strong>.
-
-                    <% } %>
-
-                </div>
-
-            </div>
-
-            <div class="session-time">
-
-                <span>
-                    <%= adminUser ? "Admin closes" : "Closes" %>
-                </span>
-
-                <strong>
-                    <%= adminUser ? "4:00 PM" : "10:00 AM" %>
-                </strong>
+                <% } %>
 
             </div>
 
         </div>
 
 
-    <% } else if (currentSession === "closed") %>
+        <div class="session-time">
 
-        <div class="milk-session-card session-card-closed">
-
-            <div class="session-card-icon">
-                <%= adminUser ? "✏️" : "⏰" %>
-            </div>
-
-            <div class="session-card-content">
-
-                <div class="session-card-title">
-
-                    <% if (adminUser) { %>
-
-                        Morning collection — Admin entry
-
-                    <% } else { %>
-
-                        Collection is temporarily closed
-
-                    <% } %>
-
-                </div>
-
-                <div class="session-card-description">
-
-                    <% if (adminUser) { %>
-
-                        You can still submit new morning
-                        records or edit existing morning
-                        records until
-                        <strong>4:00 PM</strong>.
-
-                    <% } else { %>
-
-                        Morning collection closed at
-                        <strong>10:00 AM</strong>.
-
-                        Evening collection opens at
-                        <strong>4:00 PM</strong>.
-
-                        <div class="admin-session-note">
-                            Contact an administrator if a
-                            correction is required.
-                        </div>
-
-                    <% } %>
-
-                </div>
-
-            </div>
-
-            <div class="session-time">
+            <% if (currentSession === "morning") { %>
 
                 <span>
-                    <%= adminUser ? "Closes" : "Opens" %>
+                    Closes
                 </span>
 
                 <strong>
-                    <%= adminUser ? "4:00 PM" : "4:00 PM" %>
+                    10:00 AM
                 </strong>
 
-            </div>
+            <% } else if (currentSession === "closed") { %>
 
-        </div>
+                <span>
+                    Evening
+                </span>
 
+                <strong>
+                    4:00 PM
+                </strong>
 
-    <% } else if (currentSession === "evening") %>
-
-        <div class="milk-session-card session-card-evening">
-
-            <div class="session-card-icon">
-                🌆
-            </div>
-
-            <div class="session-card-content">
-
-                <div class="session-card-title">
-                    Evening collection is open
-                </div>
-
-                <div class="session-card-description">
-
-                    <% if (adminUser) { %>
-
-                        You can submit or edit evening
-                        records until
-                        <strong>midnight</strong>.
-
-                    <% } else { %>
-
-                        Record one milk entry for each cow
-                        before
-                        <strong>midnight</strong>.
-
-                    <% } %>
-
-                </div>
-
-            </div>
-
-            <div class="session-time">
+            <% } else if (currentSession === "evening") { %>
 
                 <span>
                     Closes
@@ -454,34 +371,11 @@ const canAdminEdit =
                     Midnight
                 </strong>
 
-            </div>
+            <% } %>
 
         </div>
 
-
-    <% } else %>
-
-        <div class="milk-session-card session-card-closed">
-
-            <div class="session-card-icon">
-                🔒
-            </div>
-
-            <div class="session-card-content">
-
-                <div class="session-card-title">
-                    Collection window unavailable
-                </div>
-
-                <div class="session-card-description">
-                    Please contact an administrator if this continues.
-                </div>
-
-            </div>
-
-        </div>
-
-    <% } %>
+    </div>
 
 
 
@@ -512,7 +406,6 @@ const canAdminEdit =
     <% } else { %>
 
 
-
         <!-- ==================================================
              MILK FORM
         =================================================== -->
@@ -532,9 +425,7 @@ const canAdminEdit =
             <section class="collection-card">
 
 
-                <!-- ==============================================
-                     COLLECTION HEADER
-                =============================================== -->
+                <!-- COLLECTION HEADER -->
 
                 <div class="collection-card-header">
 
@@ -558,22 +449,16 @@ const canAdminEdit =
                     </div>
 
 
-                    <!-- STATUS -->
-
                     <% if (canSubmit) { %>
 
                         <div class="collection-status">
 
                             <span class="status-dot"></span>
 
-                            <% if (currentSession === "closed") { %>
-
+                            <% if (currentSession === "closed" && adminUser) { %>
                                 Admin Entry
-
                             <% } else { %>
-
-                                Ready for entry
-
+                                Ready for Entry
                             <% } %>
 
                         </div>
@@ -581,9 +466,7 @@ const canAdminEdit =
                     <% } else { %>
 
                         <div class="collection-status status-locked">
-
                             🔒 Locked
-
                         </div>
 
                     <% } %>
@@ -592,9 +475,9 @@ const canAdminEdit =
 
 
 
-                <!-- ==============================================
+                <!-- ==================================================
                      TABLE
-                =============================================== -->
+                =================================================== -->
 
                 <div class="milk-table-wrapper">
 
@@ -631,68 +514,52 @@ const canAdminEdit =
 
                             <% milkDairies.forEach((dairy, index) => {
 
-
-                                /* ==================================================
-                                   DETERMINE RECORD FOR THE CURRENT SESSION
-                                ================================================== */
+                                // ==================================================
+                                // GET ONLY THE RECORD FOR THE ACTIVE SESSION
+                                // ==================================================
 
                                 let record = null;
 
+                                if (entrySession === "morning") {
 
-                                if (workingSession === "morning") {
+                                    record = dairy.morning || null;
 
-                                    record =
-                                        dairy.morning || null;
+                                } else if (entrySession === "evening") {
 
-                                } else if (workingSession === "evening") {
-
-                                    record =
-                                        dairy.evening || null;
+                                    record = dairy.evening || null;
 
                                 }
 
-
-                                /*
-                                   A new record may be submitted when:
-
-                                   ADMIN:
-                                      always during the valid
-                                      morning/admin/evening window.
-
-                                   NORMAL USER:
-                                      only during an open session.
-                                */
+                                // ==================================================
+                                // CAN THIS ROW ACCEPT A NEW RECORD?
+                                // ==================================================
 
                                 const canCreateRecord =
                                     !record &&
                                     canSubmit;
 
+                                // ==================================================
+                                // CAN ADMIN EDIT THIS EXISTING RECORD?
+                                // ==================================================
 
-                                const hasExistingRecord =
-                                    Boolean(record);
-
-
+                                const canEditRecord =
+                                    adminUser &&
+                                    record &&
+                                    record._id;
 
                             %>
 
 
-                                <!-- ==========================================
+                                <!-- ==================================================
                                      ANIMAL ROW
-                                =========================================== -->
+                                =================================================== -->
 
-                                <tr
-                                    class="<%= hasExistingRecord
-                                        ? "has-record"
-                                        : canCreateRecord
-                                            ? "needs-record"
-                                            : "locked-record"
-                                    %>"
-                                >
+                                <tr class="<%= record ? 'has-record' : 'needs-record' %>">
 
 
-                                    <!-- ======================================
+                                    <!-- ==========================================
                                          ANIMAL
-                                    ======================================= -->
+                                    =========================================== -->
 
                                     <td>
 
@@ -720,9 +587,9 @@ const canAdminEdit =
 
 
 
-                                    <!-- ======================================
+                                    <!-- ==========================================
                                          CODE
-                                    ======================================= -->
+                                    =========================================== -->
 
                                     <td>
 
@@ -734,11 +601,12 @@ const canAdminEdit =
 
 
 
-                                    <!-- ======================================
+                                    <!-- ==========================================
                                          MILK
-                                    ======================================= -->
+                                    =========================================== -->
 
                                     <td>
+
 
                                         <% if (record) { %>
 
@@ -748,13 +616,12 @@ const canAdminEdit =
                                             =================================== -->
 
                                             <div
+                                                class="<%= canEditRecord
+                                                    ? 'record-wrapper admin-edit-record'
+                                                    : 'record-wrapper'
+                                                %>"
 
-                                                <% if (
-                                                    canAdminEdit &&
-                                                    record._id
-                                                ) { %>
-
-                                                    class="record-wrapper admin-edit-record"
+                                                <% if (canEditRecord) { %>
 
                                                     role="button"
 
@@ -768,12 +635,7 @@ const canAdminEdit =
                                                         <%- JSON.stringify(record.remarks || "") %>
                                                     )"
 
-                                                <% } else { %>
-
-                                                    class="record-wrapper"
-
                                                 <% } %>
-
                                             >
 
                                                 <div class="milk-value-display">
@@ -791,10 +653,7 @@ const canAdminEdit =
                                                 </div>
 
 
-                                                <% if (
-                                                    canAdminEdit &&
-                                                    record._id
-                                                ) { %>
+                                                <% if (canEditRecord) { %>
 
                                                     <span class="edit-icon">
                                                         ✏️
@@ -853,7 +712,7 @@ const canAdminEdit =
                                                 </span>
 
                                                 <small>
-                                                    Closed
+                                                    Locked
                                                 </small>
 
                                             </div>
@@ -865,11 +724,12 @@ const canAdminEdit =
 
 
 
-                                    <!-- ======================================
+                                    <!-- ==========================================
                                          REMARKS
-                                    ======================================= -->
+                                    =========================================== -->
 
                                     <td>
+
 
                                         <% if (record) { %>
 
@@ -888,13 +748,12 @@ const canAdminEdit =
                                             =================================== -->
 
                                             <div
+                                                class="<%= canEditRecord
+                                                    ? 'remarks-wrapper admin-edit-record'
+                                                    : 'remarks-wrapper'
+                                                %>"
 
-                                                <% if (
-                                                    canAdminEdit &&
-                                                    record._id
-                                                ) { %>
-
-                                                    class="remarks-wrapper admin-edit-record"
+                                                <% if (canEditRecord) { %>
 
                                                     role="button"
 
@@ -908,18 +767,11 @@ const canAdminEdit =
                                                         <%- JSON.stringify(record.remarks || "") %>
                                                     )"
 
-                                                <% } else { %>
-
-                                                    class="remarks-wrapper"
-
                                                 <% } %>
-
                                             >
 
                                                 <div class="remarks-text">
-
                                                     <%= displayRemarks %>
-
                                                 </div>
 
 
@@ -939,7 +791,6 @@ const canAdminEdit =
 
                                                     </div>
 
-
                                                 <% } else { %>
 
                                                     <div class="record-badge">
@@ -955,10 +806,7 @@ const canAdminEdit =
                                                 <% } %>
 
 
-                                                <% if (
-                                                    canAdminEdit &&
-                                                    record._id
-                                                ) { %>
+                                                <% if (canEditRecord) { %>
 
                                                     <div class="admin-edit-hint">
 
@@ -991,7 +839,7 @@ const canAdminEdit =
 
 
                                             <!-- ==================================
-                                                 CLOSED
+                                                 LOCKED REMARKS
                                             =================================== -->
 
                                             <div class="closed-remarks">
@@ -1000,10 +848,8 @@ const canAdminEdit =
                                                     🔒
                                                 </span>
 
-                                                <span>
-                                                    No new records during
-                                                    this period.
-                                                </span>
+                                                No new records can be
+                                                submitted at this time.
 
                                             </div>
 
@@ -1016,6 +862,7 @@ const canAdminEdit =
 
 
                             <% }); %>
+
 
                         </tbody>
 
@@ -1035,6 +882,7 @@ const canAdminEdit =
 
 
                 <div class="submit-information">
+
 
                     <div class="submit-info-icon">
 
@@ -1057,83 +905,50 @@ const canAdminEdit =
                             </strong>
 
                             <span>
+                                Normal users can submit until
+                                <strong>10:00 AM</strong>.
+                                Administrators can continue making
+                                morning entries until <strong>4:00 PM</strong>.
+                            </span>
 
-                                <% if (adminUser) { %>
 
-                                    You can submit or edit morning
-                                    records until
-                                    <strong>4:00 PM</strong>.
+                        <% } else if (currentSession === "closed" && adminUser) { %>
 
-                                <% } else { %>
+                            <strong>
+                                Administrator morning access
+                            </strong>
 
-                                    Submit records before
-                                    <strong>10:00 AM</strong>.
-
-                                <% } %>
-
+                            <span>
+                                You can submit or edit morning records
+                                until <strong>4:00 PM</strong>.
                             </span>
 
 
                         <% } else if (currentSession === "closed") { %>
 
+                            <strong>
+                                Collection is currently closed
+                            </strong>
 
-                            <% if (adminUser) { %>
-
-                                <strong>
-                                    Admin morning entry is available
-                                </strong>
-
-                                <span>
-                                    You can submit new morning records
-                                    or edit existing records until
-                                    <strong>4:00 PM</strong>.
-                                </span>
-
-                            <% } else { %>
-
-                                <strong>
-                                    Collection is currently closed
-                                </strong>
-
-                                <span>
-                                    New submissions become available
-                                    at <strong>4:00 PM</strong>.
-                                </span>
-
-                                <span class="admin-footer-note">
-                                    Contact an administrator for corrections.
-                                </span>
-
-                            <% } %>
+                            <span>
+                                Evening collection becomes available
+                                at <strong>4:00 PM</strong>.
+                            </span>
 
 
                         <% } else if (currentSession === "evening") { %>
-
 
                             <strong>
                                 Evening collection is open
                             </strong>
 
                             <span>
-
-                                <% if (adminUser) { %>
-
-                                    You can submit or edit evening
-                                    records until
-                                    <strong>midnight</strong>.
-
-                                <% } else { %>
-
-                                    Submit records before
-                                    <strong>midnight</strong>.
-
-                                <% } %>
-
+                                Submit or, for administrators, edit
+                                evening records before <strong>midnight</strong>.
                             </span>
 
 
-                        <% } else %>
-
+                        <% } else { %>
 
                             <strong>
                                 Collection unavailable
@@ -1142,7 +957,6 @@ const canAdminEdit =
                             <span>
                                 Please contact an administrator.
                             </span>
-
 
                         <% } %>
 
@@ -1153,17 +967,14 @@ const canAdminEdit =
 
 
 
-                <!-- ==============================================
+                <!-- ==================================================
                      SUBMIT BUTTON
-                =============================================== -->
+                =================================================== -->
 
                 <button
                     type="submit"
                     class="submit-btn"
-
-                    <% if (!canSubmit) { %>
-                        disabled
-                    <% } %>
+                    <%= canSubmit ? "" : "disabled" %>
                 >
 
                     <span class="submit-btn-icon">
@@ -1176,10 +987,11 @@ const canAdminEdit =
 
                 </button>
 
+
             </div>
 
-
         </form>
+
 
     <% } %>
 
@@ -1227,10 +1039,10 @@ const canAdminEdit =
 .milk-header-icon {
     width: 58px;
     height: 58px;
-
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
 
     background: #eaf7ef;
     border: 1px solid #d5eddd;
@@ -1293,7 +1105,8 @@ const canAdminEdit =
 }
 
 .session-morning,
-.session-evening {
+.session-evening,
+.session-admin {
     background: #eaf7ef;
     color: #277437;
 }
@@ -1400,6 +1213,11 @@ const canAdminEdit =
     border-color: #d9ede0;
 }
 
+.session-card-admin {
+    background: #f0faf3;
+    border-color: #cce6d2;
+}
+
 .session-card-closed {
     background: #fafafa;
     border-color: #e7e9e7;
@@ -1424,6 +1242,7 @@ const canAdminEdit =
 
 .session-card-content {
     flex: 1;
+    min-width: 0;
 }
 
 .session-card-title {
@@ -1883,7 +1702,7 @@ const canAdminEdit =
 
 
 /* ==========================================================
-   LOCKED INPUT
+   LOCKED
 ========================================================== */
 
 .locked-input {
@@ -2074,12 +1893,6 @@ const canAdminEdit =
     display: block;
 }
 
-.admin-footer-note {
-    margin-top: 4px;
-
-    color: #4d8758;
-}
-
 
 /* ==========================================================
    SUBMIT BUTTON
@@ -2207,49 +2020,55 @@ const canAdminEdit =
     }
 
     /*
-       Keep the table compact on phones/tablets.
-       It can scroll only when genuinely necessary.
+       Keep the table close to the screen.
+       Horizontal scrolling is only used if the
+       device is genuinely too narrow.
     */
-    .milk-table {
-        min-width: 0;
-        width: 100%;
-    }
 
     .milk-table th,
     .milk-table td {
         padding: 10px 8px;
     }
 
-    .milk-submit-card {
-        flex-direction: column;
-        align-items: stretch;
-
-        padding: 15px;
+    .milk-table {
+        table-layout: fixed;
     }
 
-    .submit-btn {
-        width: 100%;
+    .col-animal {
+        width: 28%;
     }
 
-    .animal-avatar {
-        width: 34px;
-        height: 34px;
+    .col-code {
+        width: 14%;
+    }
 
-        border-radius: 10px;
+    .col-milk {
+        width: 20%;
+    }
 
-        font-size: 16px;
+    .col-remarks {
+        width: 38%;
     }
 
     .animal-cell {
         gap: 7px;
     }
 
+    .animal-avatar {
+        width: 32px;
+        height: 32px;
+
+        border-radius: 9px;
+
+        font-size: 15px;
+    }
+
     .animal-name {
-        font-size: 12px;
+        font-size: 11px;
     }
 
     .animal-label {
-        font-size: 9px;
+        font-size: 8px;
     }
 
     .code-badge {
@@ -2263,13 +2082,19 @@ const canAdminEdit =
     }
 
     .milk-input {
-        padding: 9px 23px 9px 8px;
+        padding: 9px 24px 9px 8px;
 
         font-size: 12px;
     }
 
+    .input-unit {
+        right: 7px;
+
+        font-size: 9px;
+    }
+
     .milk-value-display {
-        min-width: 58px;
+        min-width: 56px;
 
         padding: 8px 7px;
 
@@ -2277,7 +2102,7 @@ const canAdminEdit =
     }
 
     .remarks-input {
-        min-height: 45px;
+        min-height: 48px;
 
         padding: 8px;
 
@@ -2288,9 +2113,23 @@ const canAdminEdit =
         font-size: 10px;
     }
 
-    .record-badge,
+    .record-badge {
+        font-size: 8px;
+    }
+
     .admin-edit-hint {
         font-size: 8px;
+    }
+
+    .milk-submit-card {
+        flex-direction: column;
+        align-items: stretch;
+
+        padding: 15px;
+    }
+
+    .submit-btn {
+        width: 100%;
     }
 }
 
@@ -2312,7 +2151,6 @@ const canAdminEdit =
         box-sizing: border-box;
     }
 
-
     .milk-header {
         gap: 8px;
 
@@ -2329,8 +2167,6 @@ const canAdminEdit =
         width: 40px;
         height: 40px;
 
-        flex-shrink: 0;
-
         border-radius: 11px;
 
         font-size: 19px;
@@ -2338,7 +2174,6 @@ const canAdminEdit =
 
     .milk-eyebrow {
         font-size: 8px;
-
         letter-spacing: 1px;
     }
 
@@ -2347,9 +2182,9 @@ const canAdminEdit =
     }
 
     .milk-header p {
-        max-width: 190px;
+        max-width: 180px;
 
-        margin-top: 4px;
+        margin-top: 3px;
 
         font-size: 10px;
     }
@@ -2365,16 +2200,10 @@ const canAdminEdit =
         height: 6px;
     }
 
-
-    /* ==============================================
-       SESSION CARD
-    =============================================== */
-
     .milk-session-card {
-        gap: 9px;
+        gap: 8px;
 
         margin-bottom: 14px;
-
         padding: 11px;
 
         border-radius: 13px;
@@ -2401,15 +2230,8 @@ const canAdminEdit =
         font-size: 9px;
     }
 
-
-    /* ==============================================
-       COLLECTION CARD
-    =============================================== */
-
     .collection-card {
-        width: 100%;
-
-        border-radius: 13px;
+        border-radius: 12px;
     }
 
     .collection-card-header {
@@ -2431,9 +2253,12 @@ const canAdminEdit =
     }
 
 
-    /* ==============================================
-       COMPACT PHONE TABLE
-    =============================================== */
+    /*
+       IMPORTANT PHONE TABLE FIX
+
+       The table now stays almost the same width
+       as the phone instead of forcing a 680px table.
+    */
 
     .milk-table-wrapper {
         width: 100%;
@@ -2451,18 +2276,17 @@ const canAdminEdit =
 
     .milk-table th,
     .milk-table td {
-        padding: 8px 5px;
+        padding: 8px 4px;
     }
 
+    .milk-table th {
+        font-size: 7px;
 
-    /*
-       Mobile column proportions.
-       The table now fits the device instead of
-       forcing a 680px+ horizontal layout.
-    */
+        letter-spacing: .3px;
+    }
 
     .col-animal {
-        width: 32%;
+        width: 30%;
     }
 
     .col-code {
@@ -2470,7 +2294,7 @@ const canAdminEdit =
     }
 
     .col-milk {
-        width: 20%;
+        width: 22%;
     }
 
     .col-remarks {
@@ -2478,28 +2302,17 @@ const canAdminEdit =
     }
 
 
-    .milk-table th {
-        font-size: 7px;
-
-        letter-spacing: .4px;
-    }
-
-
-    /* ==============================================
-       ANIMAL
-    =============================================== */
-
     .animal-cell {
         gap: 5px;
     }
 
     .animal-avatar {
-        width: 27px;
-        height: 27px;
+        width: 25px;
+        height: 25px;
 
-        border-radius: 8px;
+        border-radius: 7px;
 
-        font-size: 13px;
+        font-size: 12px;
     }
 
     .animal-name {
@@ -2510,28 +2323,16 @@ const canAdminEdit =
         display: none;
     }
 
-
-    /* ==============================================
-       CODE
-    =============================================== */
-
     .code-badge {
-        padding: 4px 5px;
-
-        border-radius: 6px;
+        padding: 4px 4px;
 
         font-size: 8px;
     }
 
 
-    /* ==============================================
-       MILK
-    =============================================== */
-
     .milk-entry-wrapper {
         width: 100%;
-
-        max-width: 68px;
+        max-width: 65px;
     }
 
     .milk-input {
@@ -2539,27 +2340,28 @@ const canAdminEdit =
 
         padding:
             8px
-            19px
+            18px
             8px
-            7px;
+            6px;
 
-        border-radius: 8px;
+        border-radius: 7px;
 
         font-size: 10px;
     }
 
     .input-unit {
-        right: 6px;
+        right: 5px;
 
-        font-size: 8px;
+        font-size: 7px;
     }
 
+
     .milk-value-display {
-        min-width: 45px;
+        min-width: 42px;
 
-        padding: 7px 5px;
+        padding: 7px 4px;
 
-        border-radius: 8px;
+        border-radius: 7px;
 
         font-size: 10px;
     }
@@ -2572,33 +2374,15 @@ const canAdminEdit =
         font-size: 9px;
     }
 
-    .locked-input {
-        width: 48px;
-
-        padding: 7px 4px;
-
-        border-radius: 7px;
-
-        font-size: 9px;
-    }
-
-    .locked-input small {
-        font-size: 7px;
-    }
-
-
-    /* ==============================================
-       REMARKS
-    =============================================== */
 
     .remarks-input {
         width: 100%;
 
         min-height: 42px;
 
-        padding: 7px;
+        padding: 6px;
 
-        border-radius: 8px;
+        border-radius: 7px;
 
         font-size: 8px;
     }
@@ -2608,13 +2392,11 @@ const canAdminEdit =
 
         font-size: 8px;
 
-        line-height: 1.35;
-
         word-break: break-word;
     }
 
     .record-badge {
-        gap: 3px;
+        display: block;
 
         margin-top: 4px;
 
@@ -2630,28 +2412,22 @@ const canAdminEdit =
     }
 
     .closed-remarks {
-        gap: 4px;
+        gap: 3px;
 
         font-size: 7px;
     }
 
 
-    /* ==============================================
-       SUBMIT
-    =============================================== */
-
     .milk-submit-card {
-        gap: 12px;
-
         margin-top: 10px;
 
-        padding: 12px;
+        padding: 11px;
 
         border-radius: 12px;
     }
 
     .submit-information {
-        gap: 8px;
+        gap: 7px;
 
         font-size: 9px;
     }
@@ -2677,32 +2453,50 @@ const canAdminEdit =
         font-size: 12px;
     }
 
+}
 
-    /* ==============================================
-       EMPTY STATE
-    =============================================== */
 
-    .milk-empty-state {
-        padding: 45px 15px;
+/* ==========================================================
+   VERY SMALL PHONES
+========================================================== */
 
-        border-radius: 14px;
+@media (max-width: 360px) {
+
+    .milk-page {
+        padding-left: 5px;
+        padding-right: 5px;
     }
 
-    .empty-animal-icon {
-        width: 60px;
-        height: 60px;
-
-        border-radius: 18px;
-
-        font-size: 28px;
+    .milk-table th,
+    .milk-table td {
+        padding-left: 3px;
+        padding-right: 3px;
     }
 
-    .milk-empty-state h2 {
-        font-size: 16px;
+    .animal-avatar {
+        display: none;
     }
 
-    .milk-empty-state p {
-        font-size: 10px;
+    .animal-name {
+        font-size: 8px;
+    }
+
+    .code-badge {
+        font-size: 7px;
+    }
+
+    .milk-input {
+        max-width: 58px;
+    }
+
+    .milk-value-display {
+        min-width: 38px;
+
+        font-size: 9px;
+    }
+
+    .remarks-text {
+        font-size: 7px;
     }
 
 }
