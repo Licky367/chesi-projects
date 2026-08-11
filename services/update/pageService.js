@@ -6,78 +6,174 @@ const Dairy = require("../../models/dairy");
 const Update = require("../../models/Update");
 
 const {
-  formatFeed,
-  buildWeeklyMilkFeeds
+formatFeed,
+buildWeeklyMilkFeeds
 } = require("./helpers");
 
 /* ==========================================================
-   🟨 GET COMPLETE DAIRY PAGE
+🟨 GET COMPLETE DAIRY PAGE
 ========================================================= */
+
 exports.getDairyPage = async (id) => {
 
-  const dairy = await Dairy.findById(id);
+/* ========================================================
+GET CURRENT DAIRY
+======================================================== */
 
-  if (!dairy) {
+const dairy = await Dairy.findById(id);
 
-    throw new Error(
-      "Dairy profile not found."
-    );
+if (!dairy) {
 
-  }
+throw new Error(
+  "Dairy profile not found."
+);
 
-  const updates = await Update.find({
+}
 
-    dairy: id
+/* ========================================================
+GET ASSETS BELONGING TO THIS DAIRY FARM
 
-  })
+ Dairy Farm:
+     code < 0
 
-    .sort({
+ Child assets:
+     assetCode === dairy.code
 
-      createdAt: -1
+ This returns:
+     - Animals
+     - Structures
+     - Machines
+     - Tools
+     - Other farm property
 
-    });
+ It does NOT return:
+     - Other Dairy Farms
+     - Assets belonging to other farms
+     - Standalone assets
 
-  const feed = updates.map(formatFeed);
+======================================================== */
 
-  const weeklyFeeds =
-    await buildWeeklyMilkFeeds(id);
+let assetDairies = [];
 
-  feed.push(...weeklyFeeds);
+if (
 
-  feed.sort(
+dairy.code !== null &&
 
-    (a, b) =>
+dairy.code !== undefined &&
 
-      new Date(b.createdAt) -
-      new Date(a.createdAt)
+Number(dairy.code) < 0
 
-  );
+) {
 
-  let commentCount = 0;
+assetDairies = await Dairy.find({
 
-  for (const item of feed) {
+  assetCode: Number(dairy.code)
 
-    if (
-      Array.isArray(item.comments)
-    ) {
+})
 
-      commentCount +=
-        item.comments.length;
+  .sort({
 
-    }
+    code: 1,
 
-  }
+    name: 1
 
-  return {
+  });
 
-    dairy,
+}
 
-    feed,
+/* ========================================================
+GET UPDATES
+======================================================== */
 
-    weeklyFeeds,
+const updates = await Update.find({
 
-    commentCount
+dairy: id
 
-  };
+})
+
+.sort({
+
+  createdAt: -1
+
+});
+
+/* ========================================================
+FORMAT FEED
+======================================================== */
+
+const feed = updates.map(formatFeed);
+
+/* ========================================================
+BUILD WEEKLY MILK FEEDS
+======================================================== */
+
+const weeklyFeeds =
+await buildWeeklyMilkFeeds(id);
+
+/* ========================================================
+ADD WEEKLY MILK FEEDS
+======================================================== */
+
+feed.push(...weeklyFeeds);
+
+/* ========================================================
+SORT COMPLETE FEED
+======================================================== */
+
+feed.sort(
+
+(a, b) =>
+
+  new Date(b.createdAt) -
+  new Date(a.createdAt)
+
+);
+
+/* ========================================================
+COUNT COMMENTS
+======================================================== */
+
+let commentCount = 0;
+
+for (const item of feed) {
+
+if (
+  Array.isArray(item.comments)
+) {
+
+  commentCount +=
+    item.comments.length;
+
+}
+
+}
+
+/* ========================================================
+RETURN COMPLETE PAGE DATA
+
+ Existing values are preserved:
+     dairy
+     feed
+     weeklyFeeds
+     commentCount
+
+ New value:
+     assetDairies
+
+======================================================== */
+
+return {
+
+dairy,
+
+feed,
+
+weeklyFeeds,
+
+commentCount,
+
+assetDairies
+
+};
 
 };
