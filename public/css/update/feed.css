@@ -17,6 +17,7 @@
 
 }
 
+
 /*=========================================================
   FEED CARD
 =========================================================*/
@@ -40,6 +41,7 @@
     box-shadow:var(--shadow-lg);
 
 }
+
 
 /*=========================================================
   FEED HEADER
@@ -103,6 +105,8 @@
 
     color:var(--muted);
 
+    cursor:pointer;
+
     transition:var(--transition);
 
 }
@@ -113,39 +117,65 @@
 
 }
 
+
 /*=========================================================
   FEED BODY
 =========================================================*/
 
 .feed-body{
 
-    padding:16px 18px;
+    display:block;
+
+    width:100%;
+
+    padding:14px 18px;
+
+    margin:0;
 
     text-align:left;
 
-    height:auto;
-
-    min-height:0;
+    box-sizing:border-box;
 
 }
 
 .feed-body h3{
 
-    margin-bottom:12px;
+    margin:0 0 8px 0;
+
+    padding:0;
 
     color:var(--primary);
+
+    font-size:1.05rem;
+
+    line-height:1.4;
+
+    text-align:left;
 
 }
 
 .feed-body p{
 
-    margin-bottom:14px;
+    margin:0;
 
-    line-height:1.7;
+    padding:0;
+
+    line-height:1.6;
+
+    text-align:left;
 
 }
 
+
+/*=========================================================
+  TEXT POSTS
+=========================================================*/
+
 .post-text{
+
+    display:block;
+
+    width:100%;
 
     margin:0;
 
@@ -153,7 +183,9 @@
 
     font-size:15px;
 
-    line-height:1.7;
+    line-height:1.6;
+
+    color:var(--text);
 
     text-align:left;
 
@@ -165,6 +197,7 @@
 
 }
 
+
 /*=========================================================
   FEED IMAGE
 =========================================================*/
@@ -175,11 +208,16 @@
 
     width:100%;
 
-    margin-top:12px;
+    max-width:100%;
+
+    height:auto;
+
+    margin:12px 0 0 0;
 
     object-fit:cover;
 
 }
+
 
 /*=========================================================
   FEED ACTIONS
@@ -218,6 +256,8 @@
 
     font-weight:bold;
 
+    cursor:pointer;
+
     transition:var(--transition);
 
 }
@@ -254,5 +294,46 @@
 .toggle-comments i{
 
     font-size:1rem;
+
+}
+
+
+/*=========================================================
+  MOBILE FEED
+=========================================================*/
+
+@media (max-width:600px){
+
+    .feed-container{
+
+        gap:16px;
+
+    }
+
+    .feed-header{
+
+        padding:14px 15px;
+
+    }
+
+    .feed-body{
+
+        padding:12px 15px;
+
+    }
+
+    .feed-actions{
+
+        padding:10px 15px;
+
+    }
+
+    .post-text{
+
+        font-size:15px;
+
+        line-height:1.6;
+
+    }
 
 }
