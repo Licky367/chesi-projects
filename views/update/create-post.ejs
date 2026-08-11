@@ -1,240 +1,1261 @@
-<!-- =====================================================
+<!-- =========================================================
+     CREATE POST + POST MODAL
+========================================================= --><style>
+
+/* =========================================================
+   CREATE POST CARD
+========================================================= */
+
+.create-post-card {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.create-post-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+
+.create-post-avatar {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #e8f5e9;
+}
+
+
+.create-post-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+
+.create-post-heading {
+    min-width: 0;
+    line-height: 1.45;
+    color: #374151;
+    font-size: 14px;
+}
+
+
+.heading-line {
+    display: block;
+}
+
+
+.create-post-heading strong {
+    color: #111827;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   CLICKABLE COMPOSER
+========================================================= */
+
+.composer-trigger {
+    width: 100%;
+    min-height: 52px;
+    border: 1px solid #d1d5db;
+    border-radius: 14px;
+    background: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 8px 6px 16px;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.composer-trigger:hover {
+    background: #f3fdf5;
+    border-color: #86c78d;
+}
+
+
+.composer-trigger:focus {
+    outline: none;
+    border-color: #3f8f48;
+    box-shadow: 0 0 0 3px rgba(63, 143, 72, 0.12);
+}
+
+
+.composer-placeholder {
+    color: #6b7280;
+    font-size: 14px;
+    flex: 1;
+    text-align: left;
+}
+
+
+.image-icon-button {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border: none;
+    border-radius: 11px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.image-icon-button:hover {
+    background: #d5edd8;
+    transform: scale(1.04);
+}
+
+
+.image-icon-button:active {
+    transform: scale(0.96);
+}
+
+
+/* =========================================================
+   POST MODAL
+========================================================= */
+
+.post-modal {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 99999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 16px;
+    box-sizing: border-box;
+
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+
+    transition:
+        opacity 0.2s ease,
+        visibility 0.2s ease;
+}
+
+
+.post-modal.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+
+/* =========================================================
+   MODAL CONTENT
+========================================================= */
+
+.post-modal-content {
+    width: 100%;
+    max-width: 620px;
+    max-height: 92vh;
+    background: #ffffff;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+
+    transform: translateY(20px) scale(0.98);
+
+    transition:
+        transform 0.2s ease;
+}
+
+
+.post-modal.active .post-modal-content {
+    transform: translateY(0) scale(1);
+}
+
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
+
+.post-modal-header {
+    min-height: 58px;
+    padding: 0 16px;
+    border-bottom: 1px solid #e5e7eb;
+
+    display: grid;
+    grid-template-columns: 42px 1fr 42px;
+    align-items: center;
+
+    box-sizing: border-box;
+}
+
+
+.post-modal-header h3 {
+    margin: 0;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 700;
+    color: #111827;
+}
+
+
+.close-modal-button {
+    width: 38px;
+    height: 38px;
+    border: none;
+    background: transparent;
+    color: #374151;
+    border-radius: 50%;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 22px;
+}
+
+
+.close-modal-button:hover {
+    background: #f3f4f6;
+    color: #2e7d32;
+}
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+#postForm {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(92vh - 58px);
+}
+
+
+/* =========================================================
+   POST EDITOR
+========================================================= */
+
+.post-editor {
+    padding: 16px;
+}
+
+
+#postText {
+    width: 100%;
+    min-height: 190px;
+    max-height: 350px;
+
+    resize: vertical;
+
+    border: none;
+    outline: none;
+
+    font-family: inherit;
+    font-size: 16px;
+    line-height: 1.6;
+
+    color: #111827;
+    background: #ffffff;
+
+    box-sizing: border-box;
+}
+
+
+#postText::placeholder {
+    color: #9ca3af;
+}
+
+
+#postText:focus {
+    outline: none;
+}
+
+
+/* =========================================================
+   IMAGE PREVIEW
+========================================================= */
+
+.image-preview-container {
+    position: relative;
+    margin: 0 16px 10px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #f3f4f6;
+    max-height: 320px;
+}
+
+
+.image-preview {
+    display: block;
+    width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    background: #f3f4f6;
+}
+
+
+.remove-image-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+
+    width: 36px;
+    height: 36px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: rgba(0, 0, 0, 0.7);
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 15px;
+}
+
+
+.remove-image-button:hover {
+    background: rgba(0, 0, 0, 0.85);
+}
+
+
+/* =========================================================
+   COMPOSER BAR
+========================================================= */
+
+.composer-bar {
+    min-height: 62px;
+    padding: 10px 14px;
+
+    border-top: 1px solid #e5e7eb;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   ATTACHMENT
+========================================================= */
+
+.attachment-button {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 10px;
+    background: #f0fdf4;
+    color: #2e7d32;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 18px;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.attachment-button:hover {
+    background: #dcfce7;
+    transform: scale(1.04);
+}
+
+
+/* =========================================================
+   SELECTED IMAGE NAME
+========================================================= */
+
+.selected-image-name {
+    flex: 1;
+    min-width: 0;
+
+    font-size: 12px;
+    color: #6b7280;
+
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   CHARACTER COUNTER
+========================================================= */
+
+.character-counter {
+    font-size: 12px;
+    color: #9ca3af;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   SEND BUTTON
+========================================================= */
+
+.send-button {
+    width: 42px;
+    height: 42px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: #2e7d32;
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 17px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+.send-button:hover:not(:disabled) {
+    background: #256b2a;
+    transform: scale(1.05);
+}
+
+
+.send-button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+
+.send-button:disabled {
+    background: #cbd5ce;
+    color: #ffffff;
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .create-post-card {
+        border-radius: 14px;
+        padding: 13px;
+    }
+
+
+    .create-post-header {
+        gap: 10px;
+    }
+
+
+    .create-post-avatar {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+    }
+
+
+    .post-modal {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+
+    .post-modal-content {
+        width: 100%;
+        max-width: none;
+        max-height: 95vh;
+        border-radius: 20px 20px 0 0;
+    }
+
+
+    #postForm {
+        max-height: calc(95vh - 58px);
+    }
+
+
+    #postText {
+        min-height: 180px;
+        font-size: 16px;
+    }
+
+
+    .composer-bar {
+        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    }
+
+}
+
+
+</style><!-- =========================================================
      CREATE POST
+========================================================= --><section class="create-post-card"><!-- =====================================================
+     USER + HEADING
 ====================================================== -->
 
-<section class="create-post-card">
+<div class="create-post-header">
 
-    <!-- ==========================================
-         USER + HEADING
-    =========================================== -->
+    <div class="create-post-avatar">
 
-    <div class="create-post-header">
-
-        <!-- User Avatar -->
-
-        <div class="create-post-avatar">
-
-            <img
-                src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)) %>"
-                alt="<%= user.name %>"
-                class="avatar-sm"
-            >
-
-        </div>
-
-        <!-- Heading -->
-
-        <div class="create-post-heading">
-
-            <div class="heading-line">
-
-                <strong><%= user.name.split(" ")[0] %></strong>,
-                update us about
-
-            </div>
-
-            <div class="heading-line">
-
-                <strong><%= dairy.name %></strong>
-
-            </div>
-
-        </div>
+        <img
+            src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)) %>"
+            alt="<%= user.name %>"
+        >
 
     </div>
 
 
+    <div class="create-post-heading">
 
-    <!-- ==========================================
-         CLICKABLE COMPOSER
-    =========================================== -->
+        <div class="heading-line">
 
-    <div
-        id="openPostComposer"
-        class="composer-trigger"
-        role="button"
-        tabindex="0"
-        aria-label="Create Post"
-    >
+            <strong>
+                <%= user.name.split(" ")[0] %>
+            </strong>
+            , update us about
 
-        <span class="composer-placeholder">
-
-            Share an update...
-
-        </span>
-
-        <button
-            type="button"
-            id="openImagePicker"
-            class="image-icon-button"
-            aria-label="Add Photo"
-        >
-
-            <i class="bi bi-image-fill"></i>
-
-        </button>
-
-    </div>
-
-</section>
+        </div>
 
 
+        <div class="heading-line">
 
-<!-- =====================================================
-     POST MODAL
-====================================================== -->
+            <strong>
+                <%= dairy.name %>
+            </strong>
 
-<div
-    id="postModal"
-    class="post-modal"
->
-
-    <div class="post-modal-content">
-
-        <form
-            id="postForm"
-            action="/dairy/<%= dairy._id %>/post"
-            method="POST"
-            enctype="multipart/form-data"
-        >
-
-            <!-- ==========================================
-                 HEADER
-            =========================================== -->
-
-            <div class="post-modal-header">
-
-                <button
-                    type="button"
-                    id="closePostModal"
-                    class="close-modal-button"
-                    aria-label="Back"
-                >
-
-                    <i class="bi bi-arrow-left-circle-fill"></i>
-
-                </button>
-
-                <h3>
-
-                    New Update
-
-                </h3>
-
-                <span></span>
-
-            </div>
-
-
-
-            <!-- ==========================================
-                 IMAGE PREVIEW
-            =========================================== -->
-
-            <div
-                id="imagePreviewContainer"
-                class="image-preview-container"
-                style="display:none;"
-            >
-
-                <img
-                    id="imagePreview"
-                    class="image-preview"
-                    alt="Preview"
-                >
-
-                <button
-                    id="removeImage"
-                    type="button"
-                    class="remove-image-button"
-                >
-
-                    <i class="bi bi-x-lg"></i>
-
-                </button>
-
-            </div>
-
-
-
-            <!-- ==========================================
-                 POST TEXT
-            =========================================== -->
-
-            <div class="post-editor">
-
-                <textarea
-                    id="postText"
-                    name="text"
-                    maxlength="1000"
-                    required
-                    placeholder="<%= `${user.name.split(' ')[0]}, type your update here...` %>"
-                ></textarea>
-
-            </div>
-
-
-
-            <!-- ==========================================
-                 COMPOSER BAR
-            =========================================== -->
-
-            <div class="composer-bar">
-
-                <!-- Attachment -->
-
-                <label
-                    for="postImage"
-                    class="attachment-button"
-                >
-
-                    <i class="bi bi-paperclip-fill"></i>
-
-                </label>
-
-                <input
-                    id="postImage"
-                    name="image"
-                    type="file"
-                    accept="image/*"
-                    hidden
-                >
-
-                <!-- Selected Image -->
-
-                <span
-                    id="selectedImageName"
-                    class="selected-image-name"
-                ></span>
-
-                <!-- Character Counter -->
-
-                <span
-                    id="characterCounter"
-                    class="character-counter"
-                >
-
-                    0 / 1000
-
-                </span>
-
-                <!-- Send -->
-
-                <button
-                    id="submitPostButton"
-                    type="submit"
-                    class="send-button"
-                    aria-label="Post"
-                >
-
-                    <i class="bi bi-send-fill"></i>
-
-                </button>
-
-            </div>
-
-        </form>
+        </div>
 
     </div>
 
 </div>
+
+
+<!-- =====================================================
+     CLICKABLE COMPOSER
+====================================================== -->
+
+<div
+    id="openPostComposer"
+    class="composer-trigger"
+    role="button"
+    tabindex="0"
+    aria-label="Create a new update"
+>
+
+    <span class="composer-placeholder">
+        Share an update...
+    </span>
+
+
+    <button
+        type="button"
+        id="openImagePicker"
+        class="image-icon-button"
+        aria-label="Add photo"
+    >
+
+        <i class="bi bi-image-fill"></i>
+
+    </button>
+
+</div>
+
+</section><!-- =========================================================
+     POST MODAL
+========================================================= --><div
+    id="postModal"
+    class="post-modal"
+    aria-hidden="true"
+><div
+    class="post-modal-content"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="postModalTitle"
+>
+
+    <form
+        id="postForm"
+        action="/dairy/<%= dairy._id %>/post"
+        method="POST"
+        enctype="multipart/form-data"
+    >
+
+        <!-- =================================================
+             MODAL HEADER
+        ================================================== -->
+
+        <div class="post-modal-header">
+
+            <button
+                type="button"
+                id="closePostModal"
+                class="close-modal-button"
+                aria-label="Close"
+            >
+
+                <i class="bi bi-arrow-left-circle-fill"></i>
+
+            </button>
+
+
+            <h3 id="postModalTitle">
+                New Update
+            </h3>
+
+
+            <span></span>
+
+        </div>
+
+
+        <!-- =================================================
+             POST EDITOR
+        ================================================== -->
+
+        <div class="post-editor">
+
+            <textarea
+                id="postText"
+                name="text"
+                maxlength="1000"
+                placeholder="<%= user.name.split(' ')[0] %>, type your update here..."
+                aria-label="Post text"
+            ></textarea>
+
+        </div>
+
+
+        <!-- =================================================
+             IMAGE PREVIEW
+        ================================================== -->
+
+        <div
+            id="imagePreviewContainer"
+            class="image-preview-container"
+            style="display: none;"
+        >
+
+            <img
+                id="imagePreview"
+                class="image-preview"
+                alt="Selected image preview"
+            >
+
+
+            <button
+                type="button"
+                id="removeImage"
+                class="remove-image-button"
+                aria-label="Remove image"
+            >
+
+                <i class="bi bi-x-lg"></i>
+
+            </button>
+
+        </div>
+
+
+        <!-- =================================================
+             COMPOSER BAR
+        ================================================== -->
+
+        <div class="composer-bar">
+
+            <!-- Image attachment -->
+
+            <label
+                for="postImage"
+                class="attachment-button"
+                aria-label="Attach image"
+            >
+
+                <i class="bi bi-paperclip-fill"></i>
+
+            </label>
+
+
+            <input
+                id="postImage"
+                name="image"
+                type="file"
+                accept="image/*"
+                hidden
+            >
+
+
+            <!-- Selected file name -->
+
+            <span
+                id="selectedImageName"
+                class="selected-image-name"
+            ></span>
+
+
+            <!-- Character counter -->
+
+            <span
+                id="characterCounter"
+                class="character-counter"
+            >
+                0 / 1000
+            </span>
+
+
+            <!-- Submit -->
+
+            <button
+                id="submitPostButton"
+                type="submit"
+                class="send-button"
+                aria-label="Post update"
+                disabled
+            >
+
+                <i class="bi bi-send-fill"></i>
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+</div><!-- =========================================================
+     POST MODAL JAVASCRIPT
+========================================================= --><script>
+
+(function () {
+
+    "use strict";
+
+
+    /* =======================================================
+       INITIALIZE
+    ======================================================== */
+
+    function initializePostModal() {
+
+        const modal =
+            document.getElementById("postModal");
+
+        const composer =
+            document.getElementById("openPostComposer");
+
+        const imagePickerButton =
+            document.getElementById("openImagePicker");
+
+        const closeButton =
+            document.getElementById("closePostModal");
+
+        const form =
+            document.getElementById("postForm");
+
+        const textarea =
+            document.getElementById("postText");
+
+        const imageInput =
+            document.getElementById("postImage");
+
+        const imagePreviewContainer =
+            document.getElementById("imagePreviewContainer");
+
+        const imagePreview =
+            document.getElementById("imagePreview");
+
+        const removeImageButton =
+            document.getElementById("removeImage");
+
+        const selectedImageName =
+            document.getElementById("selectedImageName");
+
+        const characterCounter =
+            document.getElementById("characterCounter");
+
+        const submitButton =
+            document.getElementById("submitPostButton");
+
+
+        /* ===================================================
+           ELEMENT CHECK
+        ==================================================== */
+
+        if (
+            !modal ||
+            !composer ||
+            !imagePickerButton ||
+            !closeButton ||
+            !form ||
+            !textarea ||
+            !imageInput ||
+            !imagePreviewContainer ||
+            !imagePreview ||
+            !removeImageButton ||
+            !selectedImageName ||
+            !characterCounter ||
+            !submitButton
+        ) {
+
+            console.error(
+                "POST MODAL ERROR: Required element missing."
+            );
+
+            return;
+
+        }
+
+
+        /* ===================================================
+           OPEN MODAL
+        ==================================================== */
+
+        function openModal() {
+
+            modal.classList.add("active");
+
+            modal.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+            document.body.style.overflow = "hidden";
+
+
+            setTimeout(function () {
+
+                textarea.focus();
+
+            }, 150);
+
+        }
+
+
+        /* ===================================================
+           CLOSE MODAL
+        ==================================================== */
+
+        function closeModal() {
+
+            modal.classList.remove("active");
+
+            modal.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+            document.body.style.overflow = "";
+
+        }
+
+
+        /* ===================================================
+           UPDATE SEND BUTTON
+        ==================================================== */
+
+        function updateSendButton() {
+
+            const hasText =
+                textarea.value.trim().length > 0;
+
+            const hasImage =
+                imageInput.files &&
+                imageInput.files.length > 0;
+
+
+            submitButton.disabled =
+                !(hasText || hasImage);
+
+
+            /* Character counter */
+
+            characterCounter.textContent =
+                textarea.value.length + " / 1000";
+
+        }
+
+
+        /* ===================================================
+           IMAGE PREVIEW
+        ==================================================== */
+
+        function handleImageChange() {
+
+            const file =
+                imageInput.files &&
+                imageInput.files[0];
+
+
+            if (!file) {
+
+                clearImage();
+
+                updateSendButton();
+
+                return;
+
+            }
+
+
+            /* Display filename */
+
+            selectedImageName.textContent =
+                file.name;
+
+
+            /* Preview */
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload = function (event) {
+
+                imagePreview.src =
+                    event.target.result;
+
+                imagePreviewContainer.style.display =
+                    "block";
+
+            };
+
+
+            reader.readAsDataURL(file);
+
+
+            updateSendButton();
+
+        }
+
+
+        /* ===================================================
+           CLEAR IMAGE
+        ==================================================== */
+
+        function clearImage() {
+
+            imageInput.value = "";
+
+            imagePreview.src = "";
+
+            selectedImageName.textContent = "";
+
+            imagePreviewContainer.style.display =
+                "none";
+
+        }
+
+
+        /* ===================================================
+           COMPOSER CLICK
+        ==================================================== */
+
+        composer.addEventListener(
+            "click",
+            function (event) {
+
+                /*
+                 * If the image button was clicked,
+                 * its own handler handles it.
+                 */
+
+                if (
+                    event.target.closest(
+                        "#openImagePicker"
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                openModal();
+
+            }
+        );
+
+
+        /* ===================================================
+           COMPOSER KEYBOARD
+        ==================================================== */
+
+        composer.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Enter" ||
+                    event.key === " "
+                ) {
+
+                    event.preventDefault();
+
+                    openModal();
+
+                }
+
+            }
+        );
+
+
+        /* ===================================================
+           IMAGE BUTTON
+        ==================================================== */
+
+        imagePickerButton.addEventListener(
+            "click",
+            function (event) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                openModal();
+
+
+                /*
+                 * Wait until modal is open,
+                 * then open the file picker.
+                 */
+
+                setTimeout(function () {
+
+                    imageInput.click();
+
+                }, 150);
+
+            }
+        );
+
+
+        /* ===================================================
+           CLOSE BUTTON
+        ==================================================== */
+
+        closeButton.addEventListener(
+            "click",
+            function () {
+
+                closeModal();
+
+            }
+        );
+
+
+        /* ===================================================
+           CLICK OUTSIDE MODAL
+        ==================================================== */
+
+        modal.addEventListener(
+            "click",
+            function (event) {
+
+                if (
+                    event.target === modal
+                ) {
+
+                    closeModal();
+
+                }
+
+            }
+        );
+
+
+        /* ===================================================
+           ESCAPE KEY
+        ==================================================== */
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Escape" &&
+                    modal.classList.contains("active")
+                ) {
+
+                    closeModal();
+
+                }
+
+            }
+        );
+
+
+        /* ===================================================
+           TEXT INPUT
+        ==================================================== */
+
+        textarea.addEventListener(
+            "input",
+            function () {
+
+                updateSendButton();
+
+            }
+        );
+
+
+        /* ===================================================
+           IMAGE INPUT
+        ==================================================== */
+
+        imageInput.addEventListener(
+            "change",
+            function () {
+
+                handleImageChange();
+
+            }
+        );
+
+
+        /* ===================================================
+           REMOVE IMAGE
+        ==================================================== */
+
+        removeImageButton.addEventListener(
+            "click",
+            function () {
+
+                clearImage();
+
+                updateSendButton();
+
+            }
+        );
+
+
+        /* ===================================================
+           FORM SUBMIT
+        ==================================================== */
+
+        form.addEventListener(
+            "submit",
+            function (event) {
+
+                const hasText =
+                    textarea.value.trim().length > 0;
+
+                const hasImage =
+                    imageInput.files &&
+                    imageInput.files.length > 0;
+
+
+                /*
+                 * Prevent empty submission.
+                 */
+
+                if (
+                    !hasText &&
+                    !hasImage
+                ) {
+
+                    event.preventDefault();
+
+                    updateSendButton();
+
+                    return;
+
+                }
+
+
+                /*
+                 * Prevent double-click submissions.
+                 */
+
+                submitButton.disabled = true;
+
+                submitButton.innerHTML =
+                    '<i class="bi bi-hourglass-split"></i>';
+
+            }
+        );
+
+
+        /* ===================================================
+           INITIAL STATE
+        ==================================================== */
+
+        updateSendButton();
+
+        console.log(
+            "Post modal initialized successfully."
+        );
+
+    }
+
+
+    /* =======================================================
+       DOM READY
+    ======================================================== */
+
+    if (
+        document.readyState === "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializePostModal
+        );
+
+    } else {
+
+        initializePostModal();
+
+    }
+
+})();
+
+</script>
