@@ -1,47 +1,44 @@
 <%
-// ==========================================================
-// MILK COLLECTION PAGE
-// ==========================================================
-//
-// EXPECTED CONTROLLER DATA:
-//
-//     dairies
-//     session
-//     isAdmin
-//     success
-//     error
-//
-// SESSION VALUES:
-//
-//     morning = 00:00 - 10:00
-//     closed  = 10:00 - 16:00
-//     evening = 16:00 - 00:00
-//
-// BUSINESS RULES:
-//
-// NORMAL USER
-//     • Morning: can submit morning records.
-//     • 10:00 AM - 4:00 PM: completely closed.
-//     • Evening: can submit evening records.
-//     • Existing records cannot be edited.
-//
-// ADMIN
-//     • Morning: can submit/edit morning records.
-//     • 10:00 AM - 4:00 PM: can submit/edit morning records.
-//     • Evening: can submit/edit evening records.
-//     • Can create a new record where one does not exist.
-//     • Can edit existing records by tapping them.
-//
-// IMPORTANT:
-//
-//     The frontend controls what is displayed.
-//     The backend must ALSO enforce these rules.
-// ==========================================================
+/* ==========================================================
+   MILK COLLECTION PAGE
+==========================================================
+
+   EXPECTED CONTROLLER DATA:
+       dairies
+       session
+       isAdmin
+       success
+       error
+
+   SESSION VALUES:
+       morning = 00:00 - 10:00
+       closed  = 10:00 - 16:00
+       evening = 16:00 - 00:00
+
+   BUSINESS RULES:
+
+   NORMAL USER
+       • Morning: can submit individual morning records.
+       • 10:00 AM - 4:00 PM: completely closed.
+       • Evening: can submit individual evening records.
+       • Existing records are read-only.
+
+   ADMIN
+       • Morning: can submit/edit morning records.
+       • 10:00 AM - 4:00 PM: can submit/edit morning records.
+       • Evening: can submit/edit evening records.
+       • Can create a new record where one does not exist.
+       • Can edit existing records by tapping them.
+
+   IMPORTANT:
+       Frontend controls display/interaction.
+       Backend MUST also enforce these permissions.
+========================================================== */
 
 
-// ==========================================================
-// SAFE DEFAULTS
-// ==========================================================
+/* ==========================================================
+   SAFE DEFAULTS
+========================================================== */
 
 const pageError =
     typeof error !== "undefined"
@@ -74,17 +71,19 @@ const milkDairies =
         : [];
 
 
-// ==========================================================
-// SESSION PERMISSIONS
-// ==========================================================
+/* ==========================================================
+   SESSION PERMISSIONS
+========================================================== */
 
-// Admin can enter morning records during BOTH:
-//     morning session
-//     closed period
-//
-// Admin can enter evening records only during:
-//     evening session
-//
+/*
+   Admin can work on morning records during:
+       morning
+       closed
+
+   Admin can work on evening records during:
+       evening
+*/
+
 const adminMorningWindow =
     adminUser &&
     (
@@ -97,33 +96,37 @@ const adminEveningWindow =
     currentSession === "evening";
 
 
-// Anyone can create records only during their open session.
-// Admin gets the additional morning access during closed time.
+/*
+   Normal users can submit only during an open session.
+
+   Admin receives additional morning access during
+   the closed period.
+*/
 const canSubmit =
     currentSession === "morning" ||
     currentSession === "evening" ||
     adminMorningWindow;
 
 
-// ==========================================================
-// DETERMINE WHICH SESSION IS CURRENTLY BEING ENTERED
-// ==========================================================
-//
-// During "closed":
-//     the relevant session is still MORNING.
-//
-// During evening:
-//     the relevant session is EVENING.
-//
+/* ==========================================================
+   ACTIVE ENTRY SESSION
+========================================================== */
+
+/*
+   During closed period, admin is still working with
+   MORNING records.
+
+   During evening, work with EVENING records.
+*/
 const entrySession =
     currentSession === "evening"
         ? "evening"
         : "morning";
 
 
-// ==========================================================
-// DISPLAY LABELS
-// ==========================================================
+/* ==========================================================
+   DISPLAY LABELS
+========================================================== */
 
 let sessionTitle = "Collection Closed";
 let sessionDescription = "";
@@ -132,55 +135,83 @@ let sessionClass = "session-card-closed";
 let sessionBadgeClass = "session-closed";
 let sessionBadgeText = "Closed";
 
+
 if (currentSession === "morning") {
 
     sessionTitle = "Morning collection is open";
+
     sessionDescription =
-        "Record one milk entry for each cow before 10:00 AM.";
+        "Record milk for animals individually before 10:00 AM.";
+
     sessionIcon = "🌅";
+
     sessionClass = "session-card-open";
+
     sessionBadgeClass = "session-morning";
+
     sessionBadgeText = "Morning";
+
 
 } else if (currentSession === "closed") {
 
-    sessionTitle = adminUser
-        ? "Morning collection is still available to administrators"
-        : "Collection is temporarily closed";
+    if (adminUser) {
 
-    sessionDescription = adminUser
-        ? "Administrators can submit or edit morning records until 4:00 PM."
-        : "Morning collection closed at 10:00 AM. Evening collection opens at 4:00 PM.";
+        sessionTitle =
+            "Morning collection is available to administrators";
 
-    sessionIcon = adminUser ? "✏️" : "⏰";
-    sessionClass = adminUser
-        ? "session-card-admin"
-        : "session-card-closed";
+        sessionDescription =
+            "Administrators can submit new or edit existing morning records until 4:00 PM.";
 
-    sessionBadgeClass = adminUser
-        ? "session-admin"
-        : "session-closed";
+        sessionIcon = "✏️";
 
-    sessionBadgeText = adminUser
-        ? "Admin Access"
-        : "Closed";
+        sessionClass = "session-card-admin";
+
+        sessionBadgeClass = "session-admin";
+
+        sessionBadgeText = "Admin Access";
+
+    } else {
+
+        sessionTitle =
+            "Collection is temporarily closed";
+
+        sessionDescription =
+            "Morning collection closed at 10:00 AM. Evening collection opens at 4:00 PM.";
+
+        sessionIcon = "⏰";
+
+        sessionClass = "session-card-closed";
+
+        sessionBadgeClass = "session-closed";
+
+        sessionBadgeText = "Closed";
+    }
+
 
 } else if (currentSession === "evening") {
 
-    sessionTitle = "Evening collection is open";
+    sessionTitle =
+        "Evening collection is open";
+
     sessionDescription =
-        "Record one milk entry for each cow before midnight.";
+        "Record milk for animals individually before midnight.";
+
     sessionIcon = "🌆";
+
     sessionClass = "session-card-evening";
+
     sessionBadgeClass = "session-evening";
+
     sessionBadgeText = "Evening";
+
 
 } else {
 
-    sessionTitle = "Collection window unavailable";
+    sessionTitle =
+        "Collection window unavailable";
+
     sessionDescription =
         "Please contact an administrator if this continues.";
-
 }
 %>
 
@@ -215,7 +246,7 @@ if (currentSession === "morning") {
                 </h1>
 
                 <p>
-                    Record today's milk production for each dairy animal.
+                    Record today's milk production one animal at a time.
                 </p>
 
             </div>
@@ -254,7 +285,7 @@ if (currentSession === "morning") {
             <div>
 
                 <strong>
-                    Unable to save records
+                    Unable to save record
                 </strong>
 
                 <p>
@@ -284,11 +315,11 @@ if (currentSession === "morning") {
             <div>
 
                 <strong>
-                    Milk records saved
+                    Milk record saved
                 </strong>
 
                 <p>
-                    The collection records were saved successfully.
+                    The milk record was saved successfully.
                 </p>
 
             </div>
@@ -308,6 +339,7 @@ if (currentSession === "morning") {
         <div class="session-card-icon">
             <%= sessionIcon %>
         </div>
+
 
         <div class="session-card-content">
 
@@ -407,593 +439,826 @@ if (currentSession === "morning") {
 
 
         <!-- ==================================================
-             MILK FORM
+             COLLECTION CARD
         =================================================== -->
 
-        <form
-            action="/milk"
-            method="POST"
-            id="milkForm"
-            class="milk-form"
-        >
+        <section class="collection-card">
 
 
-            <!-- ==================================================
-                 COLLECTION CARD
-            =================================================== -->
+            <!-- COLLECTION HEADER -->
 
-            <section class="collection-card">
+            <div class="collection-card-header">
 
+                <div>
 
-                <!-- COLLECTION HEADER -->
-
-                <div class="collection-card-header">
-
-                    <div>
-
-                        <div class="collection-title">
-                            Today's Collection
-                        </div>
-
-                        <div class="collection-subtitle">
-
-                            <%= milkDairies.length %>
-
-                            <%= milkDairies.length === 1
-                                ? "animal"
-                                : "animals"
-                            %>
-
-                        </div>
-
+                    <div class="collection-title">
+                        Today's Collection
                     </div>
 
-
-                    <% if (canSubmit) { %>
-
-                        <div class="collection-status">
-
-                            <span class="status-dot"></span>
-
-                            <% if (currentSession === "closed" && adminUser) { %>
-                                Admin Entry
-                            <% } else { %>
-                                Ready for Entry
-                            <% } %>
-
-                        </div>
-
-                    <% } else { %>
-
-                        <div class="collection-status status-locked">
-                            🔒 Locked
-                        </div>
-
-                    <% } %>
+                    <div class="collection-subtitle">
+                        <%= milkDairies.length %>
+                        <%= milkDairies.length === 1
+                            ? "animal"
+                            : "animals"
+                        %>
+                    </div>
 
                 </div>
 
 
+                <% if (canSubmit) { %>
 
-                <!-- ==================================================
-                     TABLE
-                =================================================== -->
+                    <div class="collection-status">
 
-                <div class="milk-table-wrapper">
+                        <span class="status-dot"></span>
 
-                    <table class="milk-table">
+                        <% if (currentSession === "closed" && adminUser) { %>
+                            Admin Entry
+                        <% } else { %>
+                            Ready for Entry
+                        <% } %>
 
-                        <thead>
+                    </div>
 
-                            <tr>
+                <% } else { %>
 
-                                <th class="col-animal">
-                                    Animal
-                                </th>
+                    <div class="collection-status status-locked">
+                        🔒 Locked
+                    </div>
 
-                                <th class="col-code">
-                                    Code
-                                </th>
+                <% } %>
 
-                                <th class="col-milk">
-                                    Milk
-                                    <span>(Litres)</span>
-                                </th>
-
-                                <th class="col-remarks">
-                                    Remarks
-                                </th>
-
-                            </tr>
-
-                        </thead>
+            </div>
 
 
-                        <tbody>
+
+            <!-- ==================================================
+                 TABLE
+            =================================================== -->
+
+            <div class="milk-table-wrapper">
+
+                <table class="milk-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th class="col-animal">
+                                Animal
+                            </th>
+
+                            <th class="col-code">
+                                Code
+                            </th>
+
+                            <th class="col-milk">
+                                Milk
+                                <span>(Litres)</span>
+                            </th>
+
+                            <th class="col-remarks">
+                                Remarks
+                            </th>
+
+                            <th class="col-action">
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
 
 
-                            <% milkDairies.forEach((dairy, index) => {
-
-                                // ==================================================
-                                // GET ONLY THE RECORD FOR THE ACTIVE SESSION
-                                // ==================================================
-
-                                let record = null;
-
-                                if (entrySession === "morning") {
-
-                                    record = dairy.morning || null;
-
-                                } else if (entrySession === "evening") {
-
-                                    record = dairy.evening || null;
-
-                                }
-
-                                // ==================================================
-                                // CAN THIS ROW ACCEPT A NEW RECORD?
-                                // ==================================================
-
-                                const canCreateRecord =
-                                    !record &&
-                                    canSubmit;
-
-                                // ==================================================
-                                // CAN ADMIN EDIT THIS EXISTING RECORD?
-                                // ==================================================
-
-                                const canEditRecord =
-                                    adminUser &&
-                                    record &&
-                                    record._id;
-
-                            %>
+                    <tbody>
 
 
-                                <!-- ==================================================
-                                     ANIMAL ROW
-                                =================================================== -->
+                        <% milkDairies.forEach((dairy, index) => {
 
-                                <tr class="<%= record ? 'has-record' : 'needs-record' %>">
+                            /*
+                               Find only the record belonging to
+                               the current collection session.
+                            */
+
+                            let record = null;
+
+                            if (entrySession === "morning") {
+
+                                record =
+                                    dairy.morning || null;
+
+                            } else if (entrySession === "evening") {
+
+                                record =
+                                    dairy.evening || null;
+                            }
 
 
-                                    <!-- ==========================================
-                                         ANIMAL
-                                    =========================================== -->
+                            /*
+                               New record can be created if:
+                                   no record exists
+                                   AND
+                                   current user can submit
+                            */
 
-                                    <td>
+                            const canCreateRecord =
+                                !record &&
+                                canSubmit;
 
-                                        <div class="animal-cell">
 
-                                            <div class="animal-avatar">
-                                                🐄
-                                            </div>
+                            /*
+                               Existing record can be edited by admin.
+                            */
 
-                                            <div class="animal-info">
+                            const canEditRecord =
+                                adminUser &&
+                                record &&
+                                record._id;
 
-                                                <span class="animal-name">
-                                                    <%= dairy.name %>
-                                                </span>
 
-                                                <span class="animal-label">
-                                                    Dairy animal
-                                                </span>
+                            /*
+                               Unique form ID.
 
-                                            </div>
+                               The actual form is placed outside the table
+                               because forms cannot safely wrap table rows.
+                            */
+
+                            const formId =
+                                "milkRecordForm_" +
+                                String(dairy._id) +
+                                "_" +
+                                String(index);
+
+                        %>
+
+
+                            <!-- ==========================================
+                                 ANIMAL ROW
+                            =========================================== -->
+
+                            <tr
+                                class="<%= record
+                                    ? 'has-record'
+                                    : 'needs-record'
+                                %>"
+                            >
+
+
+                                <!-- ======================================
+                                     ANIMAL
+                                ======================================= -->
+
+                                <td>
+
+                                    <div class="animal-cell">
+
+                                        <div class="animal-avatar">
+                                            🐄
+                                        </div>
+
+                                        <div class="animal-info">
+
+                                            <span class="animal-name">
+                                                <%= dairy.name %>
+                                            </span>
+
+                                            <span class="animal-label">
+                                                Dairy animal
+                                            </span>
 
                                         </div>
 
-                                    </td>
+                                    </div>
+
+                                </td>
 
 
 
-                                    <!-- ==========================================
-                                         CODE
-                                    =========================================== -->
+                                <!-- ======================================
+                                     CODE
+                                ======================================= -->
 
-                                    <td>
+                                <td>
 
-                                        <span class="code-badge">
-                                            #<%= dairy.code %>
-                                        </span>
+                                    <span class="code-badge">
+                                        #<%= dairy.code %>
+                                    </span>
 
-                                    </td>
-
-
-
-                                    <!-- ==========================================
-                                         MILK
-                                    =========================================== -->
-
-                                    <td>
+                                </td>
 
 
-                                        <% if (record) { %>
+
+                                <!-- ======================================
+                                     MILK
+                                ======================================= -->
+
+                                <td>
 
 
-                                            <!-- ==================================
-                                                 EXISTING RECORD
-                                            =================================== -->
-
-                                            <div
-                                                class="<%= canEditRecord
-                                                    ? 'record-wrapper admin-edit-record'
-                                                    : 'record-wrapper'
-                                                %>"
-
-                                                <% if (canEditRecord) { %>
-
-                                                    role="button"
-
-                                                    tabindex="0"
-
-                                                    title="Tap to edit this record"
-
-                                                    onclick="openEditModal(
-                                                        '<%= record._id %>',
-                                                        '<%= Number(record.liters || 0) %>',
-                                                        <%- JSON.stringify(record.remarks || "") %>
-                                                    )"
-
-                                                <% } %>
-                                            >
-
-                                                <div class="milk-value-display">
-
-                                                    <span>
-                                                        <%= Number(
-                                                            record.liters || 0
-                                                        ).toFixed(1) %>
-                                                    </span>
-
-                                                    <small>
-                                                        L
-                                                    </small>
-
-                                                </div>
+                                    <% if (record) { %>
 
 
-                                                <% if (canEditRecord) { %>
+                                        <!-- EXISTING RECORD -->
 
-                                                    <span class="edit-icon">
-                                                        ✏️
-                                                    </span>
+                                        <div
+                                            class="<%= canEditRecord
+                                                ? 'record-wrapper admin-edit-record'
+                                                : 'record-wrapper'
+                                            %>"
 
-                                                <% } %>
+                                            <% if (canEditRecord) { %>
 
-                                            </div>
+                                                role="button"
 
+                                                tabindex="0"
 
-                                        <% } else if (canCreateRecord) { %>
+                                                title="Tap to edit this record"
 
+                                                onclick="openEditModal(
+                                                    '<%= record._id %>',
+                                                    '<%= Number(record.liters || 0) %>',
+                                                    <%- JSON.stringify(record.remarks || "") %>
+                                                )"
 
-                                            <!-- ==================================
-                                                 NEW RECORD
-                                            =================================== -->
+                                            <% } %>
+                                        >
 
-                                            <div class="milk-entry-wrapper">
-
-                                                <input
-                                                    class="milk-input"
-                                                    type="number"
-                                                    step="0.1"
-                                                    min="0"
-                                                    name="records[<%= index %>][liters]"
-                                                    placeholder="0.0"
-                                                    required
-                                                    inputmode="decimal"
-                                                >
-
-                                                <span class="input-unit">
-                                                    L
-                                                </span>
-
-                                            </div>
-
-
-                                            <input
-                                                type="hidden"
-                                                name="records[<%= index %>][dairy]"
-                                                value="<%= dairy._id %>"
-                                            >
-
-
-                                        <% } else { %>
-
-
-                                            <!-- ==================================
-                                                 LOCKED
-                                            =================================== -->
-
-                                            <div class="locked-input">
+                                            <div class="milk-value-display">
 
                                                 <span>
-                                                    —
+                                                    <%= Number(
+                                                        record.liters || 0
+                                                    ).toFixed(1) %>
                                                 </span>
 
                                                 <small>
-                                                    Locked
+                                                    L
                                                 </small>
 
                                             </div>
 
 
-                                        <% } %>
+                                            <% if (canEditRecord) { %>
 
-                                    </td>
+                                                <span class="edit-icon">
+                                                    ✏️
+                                                </span>
 
+                                            <% } %>
 
-
-                                    <!-- ==========================================
-                                         REMARKS
-                                    =========================================== -->
-
-                                    <td>
+                                        </div>
 
 
-                                        <% if (record) { %>
+                                    <% } else if (canCreateRecord) { %>
 
 
-                                            <%
-                                                const displayRemarks =
-                                                    record.remarks &&
-                                                    String(record.remarks).trim()
-                                                        ? record.remarks
-                                                        : "No remarks";
-                                            %>
+                                        <!-- NEW RECORD -->
 
+                                        <div class="milk-entry-wrapper">
 
-                                            <!-- ==================================
-                                                 EXISTING RECORD
-                                            =================================== -->
-
-                                            <div
-                                                class="<%= canEditRecord
-                                                    ? 'remarks-wrapper admin-edit-record'
-                                                    : 'remarks-wrapper'
-                                                %>"
-
-                                                <% if (canEditRecord) { %>
-
-                                                    role="button"
-
-                                                    tabindex="0"
-
-                                                    title="Tap to edit this record"
-
-                                                    onclick="openEditModal(
-                                                        '<%= record._id %>',
-                                                        '<%= Number(record.liters || 0) %>',
-                                                        <%- JSON.stringify(record.remarks || "") %>
-                                                    )"
-
-                                                <% } %>
+                                            <input
+                                                class="milk-input"
+                                                type="number"
+                                                step="0.1"
+                                                min="0"
+                                                name="liters"
+                                                form="<%= formId %>"
+                                                placeholder="0.0"
+                                                required
+                                                inputmode="decimal"
                                             >
 
-                                                <div class="remarks-text">
-                                                    <%= displayRemarks %>
-                                                </div>
+                                            <span class="input-unit">
+                                                L
+                                            </span>
+
+                                        </div>
 
 
-                                                <% if (
-                                                    record.recordedByType === "system" ||
-                                                    record.recordedBySystem
-                                                ) { %>
-
-                                                    <div class="record-badge system-record">
-
-                                                        <span>
-                                                            ⚙️
-                                                        </span>
-
-                                                        Automatically recorded
-                                                        as Not Milked.
-
-                                                    </div>
-
-                                                <% } else { %>
-
-                                                    <div class="record-badge">
-
-                                                        <span>
-                                                            ✓
-                                                        </span>
-
-                                                        Already recorded
-
-                                                    </div>
-
-                                                <% } %>
+                                    <% } else { %>
 
 
-                                                <% if (canEditRecord) { %>
+                                        <!-- LOCKED -->
 
-                                                    <div class="admin-edit-hint">
+                                        <div class="locked-input">
 
-                                                        ✏️
-                                                        Tap to edit
+                                            <span>
+                                                —
+                                            </span>
 
-                                                    </div>
+                                            <small>
+                                                Locked
+                                            </small>
 
-                                                <% } %>
+                                        </div>
 
+
+                                    <% } %>
+
+
+                                </td>
+
+
+
+                                <!-- ======================================
+                                     REMARKS
+                                ======================================= -->
+
+                                <td>
+
+
+                                    <% if (record) { %>
+
+
+                                        <%
+                                            const displayRemarks =
+                                                record.remarks &&
+                                                String(record.remarks).trim()
+                                                    ? record.remarks
+                                                    : "No remarks";
+                                        %>
+
+
+                                        <!-- EXISTING RECORD -->
+
+                                        <div
+                                            class="<%= canEditRecord
+                                                ? 'remarks-wrapper admin-edit-record'
+                                                : 'remarks-wrapper'
+                                            %>"
+
+                                            <% if (canEditRecord) { %>
+
+                                                role="button"
+
+                                                tabindex="0"
+
+                                                title="Tap to edit this record"
+
+                                                onclick="openEditModal(
+                                                    '<%= record._id %>',
+                                                    '<%= Number(record.liters || 0) %>',
+                                                    <%- JSON.stringify(record.remarks || "") %>
+                                                )"
+
+                                            <% } %>
+                                        >
+
+                                            <div class="remarks-text">
+                                                <%= displayRemarks %>
                                             </div>
 
 
-                                        <% } else if (canCreateRecord) { %>
+                                            <% if (
+                                                record.recordedByType === "system" ||
+                                                record.recordedBySystem
+                                            ) { %>
+
+                                                <div class="record-badge system-record">
+
+                                                    <span>
+                                                        ⚙️
+                                                    </span>
+
+                                                    Automatically recorded
+                                                    as Not Milked.
+
+                                                </div>
+
+                                            <% } else { %>
+
+                                                <div class="record-badge">
+
+                                                    <span>
+                                                        ✓
+                                                    </span>
+
+                                                    Already recorded
+
+                                                </div>
+
+                                            <% } %>
 
 
-                                            <!-- ==================================
-                                                 NEW REMARKS
-                                            =================================== -->
+                                            <% if (canEditRecord) { %>
 
-                                            <textarea
-                                                class="remarks-input"
-                                                name="records[<%= index %>][remarks]"
-                                                placeholder="Optional remarks..."
-                                                rows="2"
-                                            ></textarea>
+                                                <div class="admin-edit-hint">
+                                                    ✏️ Tap to edit
+                                                </div>
 
+                                            <% } %>
+
+                                        </div>
+
+
+                                    <% } else if (canCreateRecord) { %>
+
+
+                                        <!-- NEW REMARKS -->
+
+                                        <textarea
+                                            class="remarks-input"
+                                            name="remarks"
+                                            form="<%= formId %>"
+                                            placeholder="Optional remarks..."
+                                            rows="2"
+                                        ></textarea>
+
+
+                                    <% } else { %>
+
+
+                                        <!-- LOCKED REMARKS -->
+
+                                        <div class="closed-remarks">
+
+                                            <span>
+                                                🔒
+                                            </span>
+
+                                            <span>
+                                                No new record can be
+                                                submitted at this time.
+                                            </span>
+
+                                        </div>
+
+
+                                    <% } %>
+
+
+                                </td>
+
+
+
+                                <!-- ======================================
+                                     ACTION
+                                ======================================= -->
+
+                                <td class="action-cell">
+
+
+                                    <% if (record) { %>
+
+
+                                        <% if (canEditRecord) { %>
+
+                                            <button
+                                                type="button"
+                                                class="row-action-btn admin-action"
+                                                onclick="openEditModal(
+                                                    '<%= record._id %>',
+                                                    '<%= Number(record.liters || 0) %>',
+                                                    <%- JSON.stringify(record.remarks || "") %>
+                                                )"
+                                            >
+                                                ✏️
+                                                <span>Edit</span>
+                                            </button>
 
                                         <% } else { %>
 
-
-                                            <!-- ==================================
-                                                 LOCKED REMARKS
-                                            =================================== -->
-
-                                            <div class="closed-remarks">
+                                            <div class="read-only-label">
 
                                                 <span>
-                                                    🔒
+                                                    ✓
                                                 </span>
 
-                                                No new records can be
-                                                submitted at this time.
+                                                <span>
+                                                    Read-only
+                                                </span>
 
                                             </div>
 
-
                                         <% } %>
 
-                                    </td>
 
-                                </tr>
-
-
-                            <% }); %>
+                                    <% } else if (canCreateRecord) { %>
 
 
-                        </tbody>
+                                        <!--
+                                            Each animal has its OWN form.
 
-                    </table>
+                                            This means the user can submit
+                                            one animal without filling all
+                                            other animals.
+                                        -->
+
+                                        <button
+                                            type="submit"
+                                            form="<%= formId %>"
+                                            class="row-action-btn save-action"
+                                        >
+                                            ✓
+                                            <span>Save</span>
+                                        </button>
+
+
+                                    <% } else { %>
+
+
+                                        <div class="read-only-label locked-label">
+
+                                            <span>
+                                                🔒
+                                            </span>
+
+                                            <span>
+                                                Locked
+                                            </span>
+
+                                        </div>
+
+
+                                    <% } %>
+
+
+                                </td>
+
+
+                            </tr>
+
+
+                            <!-- ==========================================
+                                 INDIVIDUAL ANIMAL FORM
+
+                                 This form is intentionally outside the
+                                 table row.
+
+                                 The milk and remarks inputs above use
+                                 form="<%= formId %>" to belong to this form.
+                            =========================================== -->
+
+                            <% if (canCreateRecord) { %>
+
+                                <form
+                                    id="<%= formId %>"
+                                    action="/milk"
+                                    method="POST"
+                                    class="individual-milk-form"
+                                >
+
+                                    <input
+                                        type="hidden"
+                                        name="dairy"
+                                        value="<%= dairy._id %>"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="session"
+                                        value="<%= entrySession %>"
+                                    >
+
+                                </form>
+
+                            <% } %>
+
+
+                        <% }); %>
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- ==================================================
+             INFORMATION CARD
+        =================================================== -->
+
+        <div class="milk-submit-card">
+
+            <div class="submit-information">
+
+                <div class="submit-info-icon">
+
+                    <% if (canSubmit) { %>
+                        ✓
+                    <% } else { %>
+                        🔒
+                    <% } %>
 
                 </div>
 
-            </section>
+
+                <div>
+
+
+                    <% if (currentSession === "morning") { %>
+
+                        <strong>
+                            Morning collection is open
+                        </strong>
+
+                        <span>
+                            Enter and save each animal individually.
+                            Once saved, the record becomes read-only
+                            for normal users.
+                        </span>
+
+
+                    <% } else if (
+                        currentSession === "closed" &&
+                        adminUser
+                    ) { %>
+
+                        <strong>
+                            Administrator morning access
+                        </strong>
+
+                        <span>
+                            You can submit new morning records or edit
+                            existing morning records until
+                            <strong>4:00 PM</strong>.
+                        </span>
+
+
+                    <% } else if (
+                        currentSession === "closed"
+                    ) { %>
+
+                        <strong>
+                            Collection is currently closed
+                        </strong>
+
+                        <span>
+                            Evening collection becomes available
+                            at <strong>4:00 PM</strong>.
+                        </span>
+
+
+                    <% } else if (
+                        currentSession === "evening"
+                    ) { %>
+
+                        <strong>
+                            Evening collection is open
+                        </strong>
+
+                        <span>
+                            Enter and save each animal individually.
+                            Administrators can also edit existing
+                            evening records.
+                        </span>
+
+
+                    <% } else { %>
+
+                        <strong>
+                            Collection unavailable
+                        </strong>
+
+                        <span>
+                            Please contact an administrator.
+                        </span>
+
+                    <% } %>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+    <% } %>
+
+</div>
 
 
 
-            <!-- ==================================================
-                 SUBMISSION CARD
-            =================================================== -->
+<!-- ==========================================================
+     ADMIN EDIT MODAL
+========================================================== -->
 
-            <div class="milk-submit-card">
+<div
+    id="milkEditModal"
+    class="milk-edit-modal"
+    aria-hidden="true"
+>
 
-
-                <div class="submit-information">
-
-
-                    <div class="submit-info-icon">
-
-                        <% if (canSubmit) { %>
-                            ✓
-                        <% } else { %>
-                            🔒
-                        <% } %>
-
-                    </div>
+    <div
+        class="milk-edit-backdrop"
+        onclick="closeEditModal()"
+    ></div>
 
 
-                    <div>
+    <div class="milk-edit-dialog">
+
+        <div class="edit-modal-header">
+
+            <div>
+
+                <div class="edit-modal-eyebrow">
+                    ADMINISTRATOR
+                </div>
+
+                <h2>
+                    Edit Milk Record
+                </h2>
+
+                <p>
+                    Update the litres or remarks for this record.
+                </p>
+
+            </div>
 
 
-                        <% if (currentSession === "morning") { %>
+            <button
+                type="button"
+                class="modal-close-btn"
+                onclick="closeEditModal()"
+                aria-label="Close"
+            >
+                ×
+            </button>
 
-                            <strong>
-                                Morning collection is open
-                            </strong>
-
-                            <span>
-                                Normal users can submit until
-                                <strong>10:00 AM</strong>.
-                                Administrators can continue making
-                                morning entries until <strong>4:00 PM</strong>.
-                            </span>
+        </div>
 
 
-                        <% } else if (currentSession === "closed" && adminUser) { %>
+        <form
+            id="milkEditForm"
+            method="POST"
+            action=""
+        >
 
-                            <strong>
-                                Administrator morning access
-                            </strong>
-
-                            <span>
-                                You can submit or edit morning records
-                                until <strong>4:00 PM</strong>.
-                            </span>
+            <div class="edit-modal-body">
 
 
-                        <% } else if (currentSession === "closed") { %>
+                <div class="edit-field">
 
-                            <strong>
-                                Collection is currently closed
-                            </strong>
+                    <label for="editLiters">
+                        Milk
+                    </label>
 
-                            <span>
-                                Evening collection becomes available
-                                at <strong>4:00 PM</strong>.
-                            </span>
+                    <div class="edit-input-wrapper">
 
+                        <input
+                            id="editLiters"
+                            name="liters"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            required
+                            inputmode="decimal"
+                        >
 
-                        <% } else if (currentSession === "evening") { %>
-
-                            <strong>
-                                Evening collection is open
-                            </strong>
-
-                            <span>
-                                Submit or, for administrators, edit
-                                evening records before <strong>midnight</strong>.
-                            </span>
-
-
-                        <% } else { %>
-
-                            <strong>
-                                Collection unavailable
-                            </strong>
-
-                            <span>
-                                Please contact an administrator.
-                            </span>
-
-                        <% } %>
-
+                        <span>
+                            Litres
+                        </span>
 
                     </div>
 
                 </div>
 
 
+                <div class="edit-field">
 
-                <!-- ==================================================
-                     SUBMIT BUTTON
-                =================================================== -->
+                    <label for="editRemarks">
+                        Remarks
+                    </label>
+
+                    <textarea
+                        id="editRemarks"
+                        name="remarks"
+                        rows="4"
+                        placeholder="Optional remarks..."
+                    ></textarea>
+
+                </div>
+
+
+            </div>
+
+
+            <div class="edit-modal-footer">
+
+                <button
+                    type="button"
+                    class="modal-cancel-btn"
+                    onclick="closeEditModal()"
+                >
+                    Cancel
+                </button>
 
                 <button
                     type="submit"
-                    class="submit-btn"
-                    <%= canSubmit ? "" : "disabled" %>
+                    class="modal-save-btn"
                 >
-
-                    <span class="submit-btn-icon">
-                        ✓
-                    </span>
-
-                    <span>
-                        Submit Milk Records
-                    </span>
-
+                    ✓ Save Changes
                 </button>
-
 
             </div>
 
         </form>
 
-
-    <% } %>
+    </div>
 
 </div>
 
@@ -1011,7 +1276,7 @@ if (currentSession === "morning") {
 
 .milk-page {
     width: 100%;
-    max-width: 1450px;
+    max-width: 1500px;
     margin: 0 auto;
     padding: 28px 24px 50px;
     box-sizing: border-box;
@@ -1034,6 +1299,7 @@ if (currentSession === "morning") {
     display: flex;
     align-items: center;
     gap: 16px;
+    min-width: 0;
 }
 
 .milk-header-icon {
@@ -1381,7 +1647,7 @@ if (currentSession === "morning") {
 .collection-title {
     color: #27332b;
 
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 800;
 }
 
@@ -1390,7 +1656,7 @@ if (currentSession === "morning") {
 
     color: #89928d;
 
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .collection-status {
@@ -1398,7 +1664,7 @@ if (currentSession === "morning") {
     align-items: center;
     gap: 7px;
 
-    padding: 7px 11px;
+    padding: 8px 12px;
 
     border-radius: 999px;
 
@@ -1406,7 +1672,7 @@ if (currentSession === "morning") {
 
     color: #357a43;
 
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -1440,31 +1706,33 @@ if (currentSession === "morning") {
 .milk-table {
     width: 100%;
 
+    min-width: 820px;
+
     border-collapse: collapse;
 
     table-layout: fixed;
 }
 
 .milk-table th {
-    padding: 13px 17px;
+    padding: 15px 16px;
 
     background: #fafcfb;
 
-    color: #7b857f;
+    color: #707b74;
 
     border-bottom: 1px solid #e8ece9;
 
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 800;
 
     text-transform: uppercase;
-    letter-spacing: .8px;
+    letter-spacing: .7px;
 
     text-align: left;
 }
 
 .milk-table td {
-    padding: 14px 17px;
+    padding: 16px;
 
     border-bottom: 1px solid #eef1ef;
 
@@ -1486,22 +1754,30 @@ if (currentSession === "morning") {
 
 /* ==========================================================
    COLUMN WIDTHS
+
+   Deliberately larger than the previous version.
+   The table can scroll horizontally rather than shrinking
+   text into unreadable sizes.
 ========================================================== */
 
 .col-animal {
-    width: 28%;
+    width: 25%;
 }
 
 .col-code {
-    width: 13%;
+    width: 12%;
 }
 
 .col-milk {
-    width: 20%;
+    width: 18%;
 }
 
 .col-remarks {
-    width: 39%;
+    width: 31%;
+}
+
+.col-action {
+    width: 14%;
 }
 
 
@@ -1512,12 +1788,14 @@ if (currentSession === "morning") {
 .animal-cell {
     display: flex;
     align-items: center;
-    gap: 11px;
+    gap: 12px;
+
+    min-width: 0;
 }
 
 .animal-avatar {
-    width: 39px;
-    height: 39px;
+    width: 43px;
+    height: 43px;
 
     flex-shrink: 0;
 
@@ -1529,7 +1807,7 @@ if (currentSession === "morning") {
 
     background: #eef8f1;
 
-    font-size: 19px;
+    font-size: 21px;
 }
 
 .animal-info {
@@ -1543,7 +1821,7 @@ if (currentSession === "morning") {
 
     color: #26322a;
 
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 750;
 
     text-overflow: ellipsis;
@@ -1553,11 +1831,11 @@ if (currentSession === "morning") {
 .animal-label {
     display: block;
 
-    margin-top: 2px;
+    margin-top: 3px;
 
-    color: #9aa29d;
+    color: #8f9993;
 
-    font-size: 10px;
+    font-size: 11px;
 }
 
 
@@ -1569,7 +1847,7 @@ if (currentSession === "morning") {
     display: inline-flex;
     align-items: center;
 
-    padding: 6px 9px;
+    padding: 7px 10px;
 
     border-radius: 8px;
 
@@ -1579,7 +1857,7 @@ if (currentSession === "morning") {
 
     font-family: monospace;
 
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
 }
 
@@ -1591,7 +1869,7 @@ if (currentSession === "morning") {
 .milk-entry-wrapper {
     position: relative;
 
-    width: 110px;
+    width: 125px;
 }
 
 .milk-input {
@@ -1599,7 +1877,7 @@ if (currentSession === "morning") {
 
     box-sizing: border-box;
 
-    padding: 11px 29px 11px 12px;
+    padding: 12px 34px 12px 13px;
 
     border: 1px solid #dce4de;
     border-radius: 10px;
@@ -1610,7 +1888,7 @@ if (currentSession === "morning") {
 
     color: #243128;
 
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
 
     transition:
@@ -1636,13 +1914,13 @@ if (currentSession === "morning") {
     position: absolute;
 
     top: 50%;
-    right: 10px;
+    right: 11px;
 
     transform: translateY(-50%);
 
     color: #8c9690;
 
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
 }
 
@@ -1660,14 +1938,15 @@ if (currentSession === "morning") {
 }
 
 .milk-value-display {
-    min-width: 78px;
+    min-width: 86px;
 
     display: inline-flex;
     align-items: baseline;
     justify-content: center;
+
     gap: 4px;
 
-    padding: 10px 12px;
+    padding: 11px 13px;
 
     border-radius: 10px;
 
@@ -1675,14 +1954,14 @@ if (currentSession === "morning") {
 
     color: #315d3b;
 
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
 }
 
 .milk-value-display small {
     color: #7d8b82;
 
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
 }
 
@@ -1697,7 +1976,7 @@ if (currentSession === "morning") {
 }
 
 .edit-icon {
-    font-size: 13px;
+    font-size: 14px;
 }
 
 
@@ -1706,14 +1985,15 @@ if (currentSession === "morning") {
 ========================================================== */
 
 .locked-input {
-    width: 78px;
+    width: 90px;
 
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
 
-    padding: 10px;
+    gap: 6px;
+
+    padding: 11px;
 
     box-sizing: border-box;
 
@@ -1726,7 +2006,7 @@ if (currentSession === "morning") {
 }
 
 .locked-input small {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
 }
 
@@ -1737,11 +2017,12 @@ if (currentSession === "morning") {
 
 .remarks-input {
     width: 100%;
-    min-height: 54px;
+
+    min-height: 58px;
 
     box-sizing: border-box;
 
-    padding: 10px 11px;
+    padding: 10px 12px;
 
     resize: vertical;
 
@@ -1756,7 +2037,8 @@ if (currentSession === "morning") {
 
     font-family: inherit;
 
-    font-size: 12px;
+    font-size: 13px;
+
     line-height: 1.45;
 
     transition:
@@ -1784,8 +2066,11 @@ if (currentSession === "morning") {
 
     color: #56625b;
 
-    font-size: 12px;
-    line-height: 1.45;
+    font-size: 13px;
+
+    line-height: 1.5;
+
+    word-break: break-word;
 }
 
 .record-badge {
@@ -1793,11 +2078,11 @@ if (currentSession === "morning") {
     align-items: center;
     gap: 5px;
 
-    margin-top: 6px;
+    margin-top: 7px;
 
     color: #4f8a5c;
 
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
 }
 
@@ -1810,38 +2095,124 @@ if (currentSession === "morning") {
 
     color: #4b9258;
 
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
 }
 
 .closed-remarks {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+
     gap: 7px;
 
     color: #9ba29d;
 
-    font-size: 11px;
-    line-height: 1.4;
+    font-size: 12px;
+
+    line-height: 1.45;
 }
 
 
 /* ==========================================================
-   SUBMISSION CARD
+   ACTION COLUMN
+========================================================== */
+
+.action-cell {
+    text-align: left;
+}
+
+.row-action-btn {
+    min-width: 82px;
+
+    min-height: 40px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    padding: 8px 12px;
+
+    border: none;
+    border-radius: 9px;
+
+    font-family: inherit;
+
+    font-size: 12px;
+    font-weight: 750;
+
+    cursor: pointer;
+
+    transition:
+        transform .15s ease,
+        background .15s ease,
+        box-shadow .15s ease;
+}
+
+.save-action {
+    background: #2e7d32;
+
+    color: #ffffff;
+
+    box-shadow:
+        0 4px 12px rgba(46, 125, 50, 0.16);
+}
+
+.save-action:hover {
+    background: #256b2a;
+
+    transform: translateY(-1px);
+}
+
+.admin-action {
+    background: #eaf7ef;
+
+    color: #28723a;
+}
+
+.admin-action:hover {
+    background: #dcefe1;
+
+    transform: translateY(-1px);
+}
+
+.read-only-label {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 6px;
+
+    color: #4f8a5c;
+
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.locked-label {
+    color: #969e99;
+}
+
+
+/* ==========================================================
+   INFORMATION CARD
 ========================================================== */
 
 .milk-submit-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
+
     gap: 20px;
 
     margin-top: 16px;
+
     padding: 17px 19px;
 
     background: #ffffff;
 
     border: 1px solid #e5eae6;
+
     border-radius: 17px;
 
     box-shadow:
@@ -1851,12 +2222,14 @@ if (currentSession === "morning") {
 .submit-information {
     display: flex;
     align-items: flex-start;
+
     gap: 11px;
 
     color: #647068;
 
     font-size: 12px;
-    line-height: 1.45;
+
+    line-height: 1.5;
 }
 
 .submit-info-icon {
@@ -1895,67 +2268,261 @@ if (currentSession === "morning") {
 
 
 /* ==========================================================
-   SUBMIT BUTTON
+   HIDDEN INDIVIDUAL FORMS
 ========================================================== */
 
-.submit-btn {
-    min-height: 46px;
+.individual-milk-form {
+    display: none;
+}
 
-    display: inline-flex;
+
+/* ==========================================================
+   ADMIN EDIT MODAL
+========================================================== */
+
+.milk-edit-modal {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 9999;
+
+    display: none;
+
     align-items: center;
     justify-content: center;
-    gap: 9px;
 
-    padding: 0 20px;
+    padding: 20px;
+
+    box-sizing: border-box;
+}
+
+.milk-edit-modal.open {
+    display: flex;
+}
+
+.milk-edit-backdrop {
+    position: absolute;
+
+    inset: 0;
+
+    background: rgba(15, 30, 20, 0.42);
+
+    backdrop-filter: blur(3px);
+}
+
+.milk-edit-dialog {
+    position: relative;
+
+    width: 100%;
+
+    max-width: 520px;
+
+    background: #ffffff;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.18);
+
+    overflow: hidden;
+}
+
+.edit-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 22px 22px 17px;
+
+    border-bottom: 1px solid #edf0ed;
+}
+
+.edit-modal-eyebrow {
+    margin-bottom: 4px;
+
+    color: #2e7d32;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.2px;
+}
+
+.edit-modal-header h2 {
+    margin: 0;
+
+    color: #26322a;
+
+    font-size: 20px;
+}
+
+.edit-modal-header p {
+    margin: 5px 0 0;
+
+    color: #7b8580;
+
+    font-size: 12px;
+}
+
+.modal-close-btn {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     border: none;
-    border-radius: 11px;
 
-    background: #2e7d32;
+    border-radius: 9px;
 
-    color: #ffffff;
+    background: #f3f5f3;
+
+    color: #657068;
+
+    font-size: 22px;
+
+    cursor: pointer;
+}
+
+.edit-modal-body {
+    padding: 20px 22px;
+}
+
+.edit-field {
+    margin-bottom: 17px;
+}
+
+.edit-field:last-child {
+    margin-bottom: 0;
+}
+
+.edit-field label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #3a473f;
+
+    font-size: 12px;
+
+    font-weight: 750;
+}
+
+.edit-input-wrapper {
+    position: relative;
+}
+
+.edit-input-wrapper input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px 70px 12px 13px;
+
+    border: 1px solid #dce4de;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    font-size: 15px;
+
+    font-weight: 700;
+}
+
+.edit-input-wrapper span {
+    position: absolute;
+
+    top: 50%;
+    right: 12px;
+
+    transform: translateY(-50%);
+
+    color: #89938d;
+
+    font-size: 11px;
+
+    font-weight: 700;
+}
+
+.edit-field textarea {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 11px 12px;
+
+    border: 1px solid #dce4de;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    resize: vertical;
 
     font-family: inherit;
 
     font-size: 13px;
+
+    line-height: 1.45;
+}
+
+.edit-input-wrapper input:focus,
+.edit-field textarea:focus {
+    border-color: #55a666;
+
+    box-shadow:
+        0 0 0 3px rgba(76, 175, 80, 0.09);
+}
+
+.edit-modal-footer {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    padding: 15px 22px;
+
+    background: #fafcfb;
+
+    border-top: 1px solid #edf0ed;
+}
+
+.modal-cancel-btn,
+.modal-save-btn {
+    min-height: 42px;
+
+    padding: 0 16px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    font-family: inherit;
+
+    font-size: 12px;
+
     font-weight: 750;
 
     cursor: pointer;
-
-    box-shadow:
-        0 5px 14px rgba(46, 125, 50, 0.18);
-
-    transition:
-        transform .15s ease,
-        background .15s ease,
-        box-shadow .15s ease;
 }
 
-.submit-btn:hover:not(:disabled) {
-    background: #256b2a;
+.modal-cancel-btn {
+    background: #eef1ef;
 
-    transform: translateY(-1px);
-
-    box-shadow:
-        0 7px 18px rgba(46, 125, 50, 0.22);
+    color: #59645d;
 }
 
-.submit-btn:active:not(:disabled) {
-    transform: translateY(0);
-}
+.modal-save-btn {
+    background: #2e7d32;
 
-.submit-btn:disabled {
-    background: #d5d9d6;
-
-    color: #89908b;
-
-    cursor: not-allowed;
-
-    box-shadow: none;
-}
-
-.submit-btn-icon {
-    font-size: 15px;
+    color: #ffffff;
 }
 
 
@@ -1963,174 +2530,286 @@ if (currentSession === "morning") {
    TABLET
 ========================================================== */
 
-@media (max-width: 800px) {
+@media (max-width: 900px) {
 
     .milk-page {
-        padding: 20px 13px 35px;
-    }
-
-    .milk-header {
-        align-items: flex-start;
-    }
-
-    .milk-header-icon {
-        width: 49px;
-        height: 49px;
-
-        border-radius: 14px;
-
-        font-size: 24px;
+        padding: 22px 14px 40px;
     }
 
     .milk-header h1 {
-        font-size: 23px;
+        font-size: 25px;
     }
 
     .milk-header p {
-        font-size: 12px;
+        font-size: 13px;
+    }
+
+    .milk-table {
+        min-width: 760px;
+    }
+
+    .milk-table th,
+    .milk-table td {
+        padding: 14px 12px;
+    }
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 650px) {
+
+    .milk-page {
+        padding: 16px 9px 30px;
+    }
+
+
+    /* HEADER */
+
+    .milk-header {
+        align-items: flex-start;
+
+        gap: 10px;
+
+        margin-bottom: 16px;
+    }
+
+    .milk-header-content {
+        gap: 9px;
+    }
+
+    .milk-header-icon {
+        width: 44px;
+        height: 44px;
+
+        border-radius: 12px;
+
+        font-size: 21px;
+    }
+
+    .milk-eyebrow {
+        font-size: 9px;
+
+        letter-spacing: 1px;
+    }
+
+    .milk-header h1 {
+        font-size: 21px;
+    }
+
+    .milk-header p {
+        margin-top: 4px;
+
+        font-size: 11px;
     }
 
     .milk-session-badge {
-        padding: 7px 10px;
+        padding: 7px 9px;
 
-        font-size: 11px;
+        font-size: 10px;
+    }
+
+
+    /* SESSION */
+
+    .milk-session-card {
+        align-items: flex-start;
+
+        gap: 10px;
+
+        padding: 13px;
+
+        border-radius: 14px;
+    }
+
+    .session-card-icon {
+        width: 37px;
+        height: 37px;
+
+        border-radius: 10px;
+
+        font-size: 17px;
+    }
+
+    .session-card-title {
+        font-size: 12px;
+    }
+
+    .session-card-description {
+        font-size: 10px;
+    }
+
+    .admin-session-note {
+        font-size: 10px;
     }
 
     .session-time {
         display: none;
     }
 
-    .milk-session-card {
-        align-items: flex-start;
 
-        padding: 14px;
-    }
-
-    .session-card-icon {
-        width: 40px;
-        height: 40px;
-    }
+    /* COLLECTION */
 
     .collection-card {
-        border-radius: 15px;
+        border-radius: 14px;
     }
 
     .collection-card-header {
-        padding: 15px;
+        padding: 14px;
     }
 
-    /*
-       Keep the table close to the screen.
-       Horizontal scrolling is only used if the
-       device is genuinely too narrow.
-    */
-
-    .milk-table th,
-    .milk-table td {
-        padding: 10px 8px;
+    .collection-title {
+        font-size: 14px;
     }
 
-    .milk-table {
-        table-layout: fixed;
-    }
-
-    .col-animal {
-        width: 28%;
-    }
-
-    .col-code {
-        width: 14%;
-    }
-
-    .col-milk {
-        width: 20%;
-    }
-
-    .col-remarks {
-        width: 38%;
-    }
-
-    .animal-cell {
-        gap: 7px;
-    }
-
-    .animal-avatar {
-        width: 32px;
-        height: 32px;
-
-        border-radius: 9px;
-
-        font-size: 15px;
-    }
-
-    .animal-name {
+    .collection-subtitle {
         font-size: 11px;
     }
 
-    .animal-label {
-        font-size: 8px;
-    }
-
-    .code-badge {
-        padding: 5px 6px;
-
-        font-size: 10px;
-    }
-
-    .milk-entry-wrapper {
-        width: 82px;
-    }
-
-    .milk-input {
-        padding: 9px 24px 9px 8px;
-
-        font-size: 12px;
-    }
-
-    .input-unit {
-        right: 7px;
+    .collection-status {
+        padding: 6px 8px;
 
         font-size: 9px;
     }
 
-    .milk-value-display {
-        min-width: 56px;
 
-        padding: 8px 7px;
+    /*
+       IMPORTANT:
+
+       Do NOT shrink the table until text becomes unreadable.
+
+       Instead, give it a sensible minimum width and allow
+       horizontal scrolling.
+    */
+
+    .milk-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .milk-table {
+        min-width: 760px;
+    }
+
+    .milk-table th {
+        padding: 13px 11px;
+
+        font-size: 10px;
+    }
+
+    .milk-table td {
+        padding: 14px 11px;
+    }
+
+
+    /* ANIMAL */
+
+    .animal-cell {
+        gap: 9px;
+    }
+
+    .animal-avatar {
+        width: 38px;
+        height: 38px;
+
+        border-radius: 10px;
+
+        font-size: 18px;
+    }
+
+    .animal-name {
+        font-size: 14px;
+    }
+
+    .animal-label {
+        font-size: 10px;
+    }
+
+
+    /* CODE */
+
+    .code-badge {
+        padding: 6px 8px;
 
         font-size: 12px;
     }
 
+
+    /* MILK */
+
+    .milk-entry-wrapper {
+        width: 115px;
+    }
+
+    .milk-input {
+        padding: 11px 31px 11px 11px;
+
+        font-size: 14px;
+    }
+
+    .input-unit {
+        right: 9px;
+
+        font-size: 11px;
+    }
+
+    .milk-value-display {
+        min-width: 78px;
+
+        padding: 10px 11px;
+
+        font-size: 14px;
+    }
+
+
+    /* REMARKS */
+
     .remarks-input {
-        min-height: 48px;
+        min-height: 55px;
 
-        padding: 8px;
-
-        font-size: 10px;
+        font-size: 12px;
     }
 
     .remarks-text {
-        font-size: 10px;
+        font-size: 12px;
     }
 
     .record-badge {
-        font-size: 8px;
+        font-size: 10px;
     }
 
     .admin-edit-hint {
-        font-size: 8px;
+        font-size: 10px;
     }
+
+
+    /* ACTION */
+
+    .row-action-btn {
+        min-width: 78px;
+
+        min-height: 38px;
+
+        padding: 7px 10px;
+
+        font-size: 11px;
+    }
+
+
+    /* INFORMATION */
 
     .milk-submit-card {
-        flex-direction: column;
-        align-items: stretch;
+        padding: 14px;
 
-        padding: 15px;
+        border-radius: 13px;
     }
 
-    .submit-btn {
-        width: 100%;
+    .submit-information {
+        font-size: 10px;
     }
+
 }
 
 
@@ -2138,43 +2817,26 @@ if (currentSession === "morning") {
    SMALL PHONES
 ========================================================== */
 
-@media (max-width: 480px) {
+@media (max-width: 420px) {
 
     .milk-page {
-        width: 100%;
-
-        padding:
-            15px
-            7px
-            30px;
-
-        box-sizing: border-box;
+        padding-left: 7px;
+        padding-right: 7px;
     }
 
     .milk-header {
-        gap: 8px;
-
-        margin-bottom: 16px;
-    }
-
-    .milk-header-content {
-        gap: 8px;
-
-        min-width: 0;
+        gap: 7px;
     }
 
     .milk-header-icon {
-        width: 40px;
-        height: 40px;
+        width: 39px;
+        height: 39px;
 
-        border-radius: 11px;
-
-        font-size: 19px;
+        font-size: 18px;
     }
 
     .milk-eyebrow {
         font-size: 8px;
-        letter-spacing: 1px;
     }
 
     .milk-header h1 {
@@ -2182,275 +2844,80 @@ if (currentSession === "morning") {
     }
 
     .milk-header p {
-        max-width: 180px;
-
-        margin-top: 3px;
+        max-width: 170px;
 
         font-size: 10px;
     }
 
     .milk-session-badge {
-        padding: 6px 8px;
+        padding: 6px 7px;
 
         font-size: 9px;
     }
 
-    .session-dot {
-        width: 6px;
-        height: 6px;
+    /*
+       Still readable.
+
+       We deliberately do NOT reduce names to 8px,
+       because horizontal scrolling is preferable to
+       unreadable text.
+    */
+
+    .milk-table {
+        min-width: 720px;
     }
 
-    .milk-session-card {
-        gap: 8px;
-
-        margin-bottom: 14px;
-        padding: 11px;
-
-        border-radius: 13px;
+    .milk-table th {
+        font-size: 9px;
     }
 
-    .session-card-icon {
-        width: 34px;
-        height: 34px;
+    .milk-table td {
+        padding: 13px 10px;
+    }
 
-        border-radius: 9px;
+    .animal-name {
+        font-size: 13px;
+    }
+
+    .animal-label {
+        font-size: 9px;
+    }
+
+    .animal-avatar {
+        width: 35px;
+        height: 35px;
 
         font-size: 16px;
     }
 
-    .session-card-title {
+    .code-badge {
         font-size: 11px;
     }
 
-    .session-card-description {
-        font-size: 9px;
-    }
-
-    .admin-session-note {
-        font-size: 9px;
-    }
-
-    .collection-card {
-        border-radius: 12px;
-    }
-
-    .collection-card-header {
-        padding: 11px;
-    }
-
-    .collection-title {
-        font-size: 12px;
-    }
-
-    .collection-subtitle {
-        font-size: 9px;
-    }
-
-    .collection-status {
-        padding: 5px 7px;
-
-        font-size: 8px;
-    }
-
-
-    /*
-       IMPORTANT PHONE TABLE FIX
-
-       The table now stays almost the same width
-       as the phone instead of forcing a 680px table.
-    */
-
-    .milk-table-wrapper {
-        width: 100%;
-
-        overflow-x: hidden;
-    }
-
-    .milk-table {
-        width: 100%;
-
-        min-width: 0;
-
-        table-layout: fixed;
-    }
-
-    .milk-table th,
-    .milk-table td {
-        padding: 8px 4px;
-    }
-
-    .milk-table th {
-        font-size: 7px;
-
-        letter-spacing: .3px;
-    }
-
-    .col-animal {
-        width: 30%;
-    }
-
-    .col-code {
-        width: 15%;
-    }
-
-    .col-milk {
-        width: 22%;
-    }
-
-    .col-remarks {
-        width: 33%;
-    }
-
-
-    .animal-cell {
-        gap: 5px;
-    }
-
-    .animal-avatar {
-        width: 25px;
-        height: 25px;
-
-        border-radius: 7px;
-
-        font-size: 12px;
-    }
-
-    .animal-name {
-        font-size: 9px;
-    }
-
-    .animal-label {
-        display: none;
-    }
-
-    .code-badge {
-        padding: 4px 4px;
-
-        font-size: 8px;
-    }
-
-
     .milk-entry-wrapper {
-        width: 100%;
-        max-width: 65px;
+        width: 105px;
     }
 
     .milk-input {
-        width: 100%;
-
-        padding:
-            8px
-            18px
-            8px
-            6px;
-
-        border-radius: 7px;
-
-        font-size: 10px;
+        font-size: 13px;
     }
-
-    .input-unit {
-        right: 5px;
-
-        font-size: 7px;
-    }
-
 
     .milk-value-display {
-        min-width: 42px;
-
-        padding: 7px 4px;
-
-        border-radius: 7px;
-
-        font-size: 10px;
-    }
-
-    .milk-value-display small {
-        font-size: 7px;
-    }
-
-    .edit-icon {
-        font-size: 9px;
-    }
-
-
-    .remarks-input {
-        width: 100%;
-
-        min-height: 42px;
-
-        padding: 6px;
-
-        border-radius: 7px;
-
-        font-size: 8px;
+        font-size: 13px;
     }
 
     .remarks-text {
-        max-width: 100%;
-
-        font-size: 8px;
-
-        word-break: break-word;
-    }
-
-    .record-badge {
-        display: block;
-
-        margin-top: 4px;
-
-        font-size: 7px;
-
-        line-height: 1.25;
-    }
-
-    .admin-edit-hint {
-        margin-top: 4px;
-
-        font-size: 7px;
-    }
-
-    .closed-remarks {
-        gap: 3px;
-
-        font-size: 7px;
-    }
-
-
-    .milk-submit-card {
-        margin-top: 10px;
-
-        padding: 11px;
-
-        border-radius: 12px;
-    }
-
-    .submit-information {
-        gap: 7px;
-
-        font-size: 9px;
-    }
-
-    .submit-info-icon {
-        width: 25px;
-        height: 25px;
-
-        border-radius: 7px;
-
         font-size: 11px;
     }
 
-    .submit-btn {
-        min-height: 42px;
-
-        border-radius: 9px;
-
+    .remarks-input {
         font-size: 11px;
     }
 
-    .submit-btn-icon {
-        font-size: 12px;
+    .row-action-btn {
+        min-width: 72px;
+
+        font-size: 10px;
     }
 
 }
@@ -2458,45 +2925,33 @@ if (currentSession === "morning") {
 
 /* ==========================================================
    VERY SMALL PHONES
+
+   Keep readability. The table scrolls horizontally instead
+   of reducing the text to microscopic sizes.
 ========================================================== */
 
 @media (max-width: 360px) {
 
-    .milk-page {
-        padding-left: 5px;
-        padding-right: 5px;
+    .milk-table {
+        min-width: 700px;
     }
 
     .milk-table th,
     .milk-table td {
-        padding-left: 3px;
-        padding-right: 3px;
-    }
-
-    .animal-avatar {
-        display: none;
+        padding-left: 9px;
+        padding-right: 9px;
     }
 
     .animal-name {
-        font-size: 8px;
+        font-size: 13px;
     }
 
-    .code-badge {
-        font-size: 7px;
-    }
-
-    .milk-input {
-        max-width: 58px;
-    }
-
-    .milk-value-display {
-        min-width: 38px;
-
+    .animal-label {
         font-size: 9px;
     }
 
     .remarks-text {
-        font-size: 7px;
+        font-size: 11px;
     }
 
 }
@@ -2514,4 +2969,206 @@ if (currentSession === "morning") {
 
 }
 
+
+/* ==========================================================
+   MODAL MOBILE
+========================================================== */
+
+@media (max-width: 520px) {
+
+    .milk-edit-modal {
+        padding: 12px;
+    }
+
+    .milk-edit-dialog {
+        border-radius: 16px;
+    }
+
+    .edit-modal-header {
+        padding: 18px 17px 15px;
+    }
+
+    .edit-modal-body {
+        padding: 17px;
+    }
+
+    .edit-modal-footer {
+        padding: 13px 17px;
+    }
+
+    .modal-cancel-btn,
+    .modal-save-btn {
+        flex: 1;
+    }
+
+}
+
 </style>
+
+
+
+<!-- ==========================================================
+     JAVASCRIPT
+========================================================== -->
+
+<script>
+
+/* ==========================================================
+   ADMIN EDIT MODAL
+========================================================== */
+
+function openEditModal(recordId, liters, remarks) {
+
+    const modal =
+        document.getElementById("milkEditModal");
+
+    const form =
+        document.getElementById("milkEditForm");
+
+    const litersInput =
+        document.getElementById("editLiters");
+
+    const remarksInput =
+        document.getElementById("editRemarks");
+
+
+    if (!modal || !form || !litersInput || !remarksInput) {
+        return;
+    }
+
+
+    /*
+       IMPORTANT:
+
+       Change this URL if your backend uses a different
+       admin update route.
+
+       Example:
+           POST /milk/:recordId
+    */
+
+    form.action =
+        "/milk/" +
+        encodeURIComponent(recordId);
+
+
+    litersInput.value =
+        Number(liters || 0);
+
+
+    remarksInput.value =
+        remarks || "";
+
+
+    modal.classList.add("open");
+
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+
+    setTimeout(() => {
+
+        litersInput.focus();
+
+    }, 50);
+}
+
+
+/* ==========================================================
+   CLOSE MODAL
+========================================================== */
+
+function closeEditModal() {
+
+    const modal =
+        document.getElementById("milkEditModal");
+
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.remove("open");
+
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+}
+
+
+/* ==========================================================
+   ESC KEY
+========================================================== */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        if (event.key === "Escape") {
+
+            closeEditModal();
+
+        }
+
+    }
+);
+
+
+/* ==========================================================
+   PREVENT DOUBLE SUBMISSION
+
+   Because each animal has its own form, this only disables
+   the button belonging to the animal being submitted.
+========================================================== */
+
+document.addEventListener(
+    "submit",
+    function(event) {
+
+        const form =
+            event.target;
+
+        if (!form || !form.id) {
+            return;
+        }
+
+
+        const buttons =
+            document.querySelectorAll(
+                'button[type="submit"][form="' +
+                form.id +
+                '"]'
+            );
+
+
+        buttons.forEach(function(button) {
+
+            button.disabled = true;
+
+            button.classList.add(
+                "is-submitting"
+            );
+
+            const span =
+                button.querySelector("span");
+
+            if (span) {
+
+                span.textContent =
+                    "Saving...";
+
+            } else {
+
+                button.textContent =
+                    "Saving...";
+
+            }
+
+        });
+
+    }
+);
+
+</script>
