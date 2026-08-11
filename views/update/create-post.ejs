@@ -1,94 +1,402 @@
 <!-- =========================================================
      CREATE POST + FULL SCREEN POST MODAL
-========================================================= --><style>
+========================================================= -->
+
+<!-- Bootstrap Icons -->
+<link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+>
+
+
+<!-- =========================================================
+     CREATE POST CARD
+========================================================= -->
+
+<section class="create-post-card">
+
+    <div class="create-post-header">
+
+        <!-- USER AVATAR -->
+        <div class="create-post-avatar">
+
+            <img
+                src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)) %>"
+                alt="<%= user.name %>"
+                class="avatar-sm"
+            >
+
+        </div>
+
+
+        <!-- HEADING -->
+        <div class="create-post-heading">
+
+            <div class="heading-line">
+
+                <strong>
+                    <%= user.name.split(" ")[0] %>
+                </strong>
+
+                , update us about
+
+            </div>
+
+            <div class="heading-line">
+
+                <strong>
+                    <%= dairy.name %>
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         CLICKABLE COMPOSER TRIGGER
+    ====================================================== -->
+
+    <div
+        id="openPostComposer"
+        class="composer-trigger"
+        role="button"
+        tabindex="0"
+        aria-label="Create post"
+    >
+
+        <span>
+            Share an update...
+        </span>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     FULL SCREEN POST MODAL
+========================================================= -->
+
+<div
+    id="postModal"
+    class="post-modal"
+    aria-hidden="true"
+>
+
+    <div class="post-modal-content">
+
+
+        <!-- =================================================
+             MODAL HEADER
+        ================================================== -->
+
+        <header class="post-modal-header">
+
+            <button
+                type="button"
+                id="closePostModal"
+                class="post-back-button"
+                aria-label="Go back"
+            >
+
+                <i class="bi bi-arrow-left"></i>
+
+            </button>
+
+
+            <div class="post-modal-title">
+
+                <strong>New Update</strong>
+
+                <span>
+                    <%= dairy.name %>
+                </span>
+
+            </div>
+
+
+            <!-- Spacer -->
+            <div class="post-header-spacer"></div>
+
+        </header>
+
+
+
+        <!-- =================================================
+             POST BODY
+        ================================================== -->
+
+        <main class="post-modal-body">
+
+
+            <!-- =============================================
+                 IMAGE PREVIEW
+            ============================================== -->
+
+            <div
+                id="imagePreviewContainer"
+                class="image-preview-container"
+                hidden
+            >
+
+                <div class="image-preview-wrapper">
+
+                    <img
+                        id="imagePreview"
+                        src=""
+                        alt="Selected image"
+                        class="image-preview"
+                    >
+
+                    <button
+                        type="button"
+                        id="removeImage"
+                        class="remove-image-button"
+                        aria-label="Remove image"
+                    >
+
+                        <i class="bi bi-x-lg"></i>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+        </main>
+
+
+
+        <!-- =================================================
+             BOTTOM MESSAGE COMPOSER
+        ================================================== -->
+
+        <div class="post-composer-wrapper">
+
+            <form
+                id="postForm"
+                action="/dairy/<%= dairy._id %>/post"
+                method="POST"
+                enctype="multipart/form-data"
+                class="post-form"
+            >
+
+
+                <!-- =========================================
+                     MESSAGE COMPOSER
+                ========================================== -->
+
+                <div class="post-composer">
+
+
+                    <!-- =====================================
+                         ATTACHMENT
+                    ====================================== -->
+
+                    <label
+                        for="postImage"
+                        class="composer-icon-button attachment-button"
+                        aria-label="Attach image"
+                        title="Attach image"
+                    >
+
+                        <i class="bi bi-paperclip"></i>
+
+                    </label>
+
+
+                    <input
+                        type="file"
+                        id="postImage"
+                        name="image"
+                        accept="image/*"
+                        hidden
+                    >
+
+
+
+                    <!-- =====================================
+                         TEXT INPUT
+                    ====================================== -->
+
+                    <div class="composer-input-area">
+
+                        <textarea
+                            id="postText"
+                            name="text"
+                            maxlength="1000"
+                            rows="1"
+                            placeholder="Type your update..."
+                            aria-label="Type your update"
+                        ></textarea>
+
+
+                        <span
+                            id="characterCounter"
+                            class="character-counter"
+                        >
+                            0/1000
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- =====================================
+                         SEND
+                    ====================================== -->
+
+                    <button
+                        type="submit"
+                        id="submitPostButton"
+                        class="composer-send-button"
+                        aria-label="Send update"
+                        disabled
+                    >
+
+                        <i class="bi bi-send-fill"></i>
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     CSS
+========================================================= -->
+
+<style>
 
 /* =========================================================
    CREATE POST CARD
 ========================================================= */
 
 .create-post-card {
+
     width: 100%;
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 18px;
+    background: #ffffff;
+    border-radius: 16px;
     padding: 16px;
+    margin-bottom: 16px;
     box-sizing: border-box;
+
+    border: 1px solid #e7eee9;
+
 }
 
+
 .create-post-header {
+
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 14px;
 }
+
 
 .create-post-avatar {
-    flex: 0 0 auto;
+
+    flex-shrink: 0;
 }
 
-.create-post-avatar img {
-    width: 46px;
-    height: 46px;
+
+.avatar-sm {
+
+    width: 44px;
+    height: 44px;
+
     border-radius: 50%;
+
     object-fit: cover;
+
     display: block;
+
 }
+
 
 .create-post-heading {
-    color: #374151;
+
+    min-width: 0;
+
     font-size: 14px;
-    line-height: 1.4;
+    line-height: 1.5;
+
+    color: #555;
+
 }
 
-.create-post-heading strong {
-    color: #166534;
-    font-weight: 700;
-}
 
 .heading-line {
+
     display: block;
+
 }
 
 
-/* =========================================================
-   OPEN COMPOSER
-========================================================= */
+.create-post-heading strong {
+
+    color: #222;
+
+}
+
 
 .composer-trigger {
-    width: 100%;
-    min-height: 52px;
+
+    margin-top: 14px;
+
+    min-height: 48px;
+
+    padding: 0 16px;
+
+    border: 1px solid #dfe8e2;
+
+    border-radius: 24px;
 
     display: flex;
     align-items: center;
 
-    padding: 0 16px;
+    color: #888;
 
-    box-sizing: border-box;
-
-    background: #f7f9f8;
-    border: 1px solid #dfe7e2;
-    border-radius: 14px;
+    background: #f8faf8;
 
     cursor: pointer;
 
-    transition: 0.2s ease;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.15s ease;
+
 }
+
 
 .composer-trigger:hover {
-    background: #f1f6f3;
-    border-color: #86b99a;
+
+    background: #f1f7f3;
+
+    border-color: #2e8b57;
+
 }
 
-.composer-trigger:focus {
-    outline: none;
-    border-color: #16a34a;
-    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+
+.composer-trigger:active {
+
+    transform: scale(0.99);
+
 }
 
-.composer-placeholder {
-    color: #8a938e;
-    font-size: 15px;
-}
 
 
 /* =========================================================
@@ -96,140 +404,165 @@
 ========================================================= */
 
 .post-modal {
+
     position: fixed;
+
     inset: 0;
 
-    width: 100%;
+    width: 100vw;
     height: 100dvh;
 
-    background: #fff;
+    background: #ffffff;
 
     z-index: 99999;
 
-    display: flex;
-    flex-direction: column;
+    display: none;
 
-    visibility: hidden;
-    opacity: 0;
-    pointer-events: none;
+    overflow: hidden;
 
-    transform: translateY(100%);
-
-    transition:
-        transform 0.25s ease,
-        opacity 0.2s ease,
-        visibility 0.25s ease;
 }
+
 
 .post-modal.active {
-    visibility: visible;
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateY(0);
+
+    display: block;
+
 }
 
 
-/* =========================================================
-   MODAL CONTENT
-========================================================= */
-
 .post-modal-content {
+
+    position: relative;
+
     width: 100%;
     height: 100%;
 
     display: flex;
+
     flex-direction: column;
 
-    background: #fff;
+    background: #ffffff;
+
 }
 
 
+
 /* =========================================================
-   MODAL HEADER
+   HEADER
 ========================================================= */
 
 .post-modal-header {
+
     flex: 0 0 auto;
 
-    width: 100%;
-    min-height: 64px;
+    height: 64px;
 
-    display: grid;
-    grid-template-columns: 52px 1fr 52px;
+    width: 100%;
+
+    display: flex;
+
     align-items: center;
 
-    padding: 0 12px;
+    padding:
+        0 16px;
 
     box-sizing: border-box;
 
-    background: #fff;
+    border-bottom: 1px solid #e8eee9;
 
-    border-bottom: 1px solid #e5e7eb;
-}
+    background: #ffffff;
 
-.post-modal-header h3 {
-    margin: 0;
-
-    text-align: center;
-
-    color: #166534;
-
-    font-size: 18px;
-    font-weight: 700;
 }
 
 
-/* =========================================================
-   BACK BUTTON
-========================================================= */
+.post-back-button {
 
-.close-modal-button {
     width: 44px;
     height: 44px;
 
-    padding: 0;
-    margin: 0;
-
     border: none;
+
     background: transparent;
 
+    color: #198754;
+
     display: flex;
+
     align-items: center;
     justify-content: center;
 
-    color: #16a34a;
-
     cursor: pointer;
 
-    transition: 0.15s ease;
+    font-size: 27px;
+
+    padding: 0;
+
+    flex-shrink: 0;
+
 }
 
-.close-modal-button:hover {
-    color: #15803d;
-    transform: translateX(-2px);
-}
 
-.close-modal-button:active {
-    transform: scale(0.9);
-}
-
-.close-modal-button svg {
-    width: 28px;
-    height: 28px;
+.post-back-button i {
 
     display: block;
 
-    stroke: currentColor;
 }
 
 
+.post-back-button:hover {
+
+    color: #146c43;
+
+}
+
+
+.post-modal-title {
+
+    margin-left: 8px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    line-height: 1.25;
+
+}
+
+
+.post-modal-title strong {
+
+    font-size: 17px;
+
+    color: #202520;
+
+}
+
+
+.post-modal-title span {
+
+    margin-top: 2px;
+
+    font-size: 12px;
+
+    color: #7a817d;
+
+}
+
+
+.post-header-spacer {
+
+    flex: 1;
+
+}
+
+
+
 /* =========================================================
-   MODAL BODY
-   NO TEXTAREA HERE
-   NO PAPERCLIP HERE
+   BODY
 ========================================================= */
 
 .post-modal-body {
+
     flex: 1 1 auto;
 
     min-height: 0;
@@ -240,8 +573,8 @@
 
     box-sizing: border-box;
 
-    background: #fff;
 }
+
 
 
 /* =========================================================
@@ -249,213 +582,264 @@
 ========================================================= */
 
 .image-preview-container {
+
+    width: 100%;
+
+}
+
+
+.image-preview-wrapper {
+
     position: relative;
 
     width: 100%;
 
-    border-radius: 16px;
+    max-width: 600px;
+
+    margin: 0 auto;
+
+    border-radius: 14px;
 
     overflow: hidden;
 
-    background: #f3f4f6;
+    background: #f4f6f4;
 
-    border: 1px solid #e5e7eb;
 }
 
+
 .image-preview {
+
     display: block;
 
     width: 100%;
-    max-height: 65vh;
+
+    max-height: 55vh;
 
     object-fit: contain;
 
-    background: #f3f4f6;
 }
 
 
-/* =========================================================
-   REMOVE IMAGE
-========================================================= */
-
 .remove-image-button {
+
     position: absolute;
 
-    top: 12px;
-    right: 12px;
+    top: 10px;
+    right: 10px;
 
-    width: 40px;
-    height: 40px;
-
-    padding: 0;
+    width: 38px;
+    height: 38px;
 
     border: none;
+
     border-radius: 50%;
 
     background: rgba(0, 0, 0, 0.65);
 
-    color: #fff;
+    color: #ffffff;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
     cursor: pointer;
+
+    font-size: 16px;
+
 }
 
-.remove-image-button svg {
-    width: 19px;
-    height: 19px;
-
-    stroke: currentColor;
-}
 
 
 /* =========================================================
-   BOTTOM COMPOSER
+   BOTTOM COMPOSER WRAPPER
 ========================================================= */
 
-.composer-bar {
+.post-composer-wrapper {
+
     flex: 0 0 auto;
 
     width: 100%;
-
-    display: flex;
-    align-items: flex-end;
-
-    gap: 8px;
 
     padding:
         10px
         12px
-        calc(10px + env(safe-area-inset-bottom))
-        12px;
+        calc(10px + env(safe-area-inset-bottom));
 
     box-sizing: border-box;
 
-    background: #fff;
+    background: #ffffff;
 
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid #e8eee9;
+
 }
+
 
 
 /* =========================================================
-   PAPERCLIP
+   FORM
 ========================================================= */
 
-.attachment-button {
-    flex: 0 0 auto;
-
-    width: 42px;
-    height: 44px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    color: #16a34a;
-
-    cursor: pointer;
-
-    transition: 0.15s ease;
-}
-
-.attachment-button:hover {
-    color: #15803d;
-}
-
-.attachment-button:active {
-    transform: scale(0.88);
-}
-
-.attachment-button svg {
-    width: 25px;
-    height: 25px;
-
-    display: block;
-
-    stroke: currentColor;
-}
-
-
-/* =========================================================
-   INPUT CONTAINER
-
-   THIS IS THE ONLY PLACE WHERE THE USER TYPES
-========================================================= */
-
-.composer-input-area {
-    flex: 1 1 auto;
-
-    min-width: 0;
-
-    min-height: 44px;
-
-    display: flex;
-    align-items: flex-end;
-
-    background: #f4f7f5;
-
-    border: 1px solid #dfe7e2;
-
-    border-radius: 23px;
-
-    padding: 0 12px;
-
-    box-sizing: border-box;
-
-    transition: 0.2s ease;
-}
-
-.composer-input-area:focus-within {
-    border-color: #86c79b;
-
-    box-shadow:
-        0 0 0 2px rgba(22, 163, 74, 0.08);
-}
-
-
-/* =========================================================
-   ONLY TEXT INPUT
-========================================================= */
-
-.composer-input {
-    flex: 1 1 auto;
-
-    min-width: 0;
+.post-form {
 
     width: 100%;
 
-    min-height: 42px;
+    margin: 0;
+
+}
+
+
+
+/* =========================================================
+   WHATSAPP-STYLE COMPOSER
+========================================================= */
+
+.post-composer {
+
+    width: 100%;
+
+    min-height: 50px;
+
+    display: flex;
+
+    align-items: flex-end;
+
+    gap: 8px;
+
+    padding: 5px 7px;
+
+    box-sizing: border-box;
+
+    border: 1px solid #dce6df;
+
+    border-radius: 28px;
+
+    background: #f7faf8;
+
+}
+
+
+
+/* =========================================================
+   ATTACHMENT ICON
+========================================================= */
+
+.composer-icon-button {
+
+    flex: 0 0 42px;
+
+    width: 42px;
+    height: 42px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #198754;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 23px;
+
+    padding: 0;
+
+}
+
+
+.composer-icon-button:hover {
+
+    color: #146c43;
+
+}
+
+
+.attachment-button i {
+
+    display: block;
+
+    transform: rotate(-20deg);
+
+}
+
+
+
+/* =========================================================
+   TEXT INPUT AREA
+========================================================= */
+
+.composer-input-area {
+
+    position: relative;
+
+    flex: 1;
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: flex-end;
+
+}
+
+
+#postText {
+
+    width: 100%;
+
+    min-height: 40px;
+
     max-height: 120px;
 
     resize: none;
 
+    overflow-y: auto;
+
     border: none;
+
     outline: none;
 
     background: transparent;
 
-    padding: 11px 0;
+    padding:
+        10px
+        4px
+        5px;
+
+    margin: 0;
 
     box-sizing: border-box;
-
-    color: #17201a;
 
     font-family: inherit;
 
     font-size: 15px;
 
     line-height: 20px;
+
+    color: #202520;
+
 }
 
-.composer-input::placeholder {
-    color: #8b948f;
+
+#postText::placeholder {
+
+    color: #8b928d;
+
 }
 
-.composer-input:focus {
+
+#postText:focus {
+
     outline: none;
+
+    box-shadow: none;
+
 }
+
 
 
 /* =========================================================
@@ -463,80 +847,88 @@
 ========================================================= */
 
 .character-counter {
-    flex: 0 0 auto;
 
-    margin-left: 7px;
-    margin-bottom: 11px;
+    position: absolute;
 
-    color: #8a938e;
+    right: 5px;
 
-    font-size: 11px;
+    bottom: 1px;
 
-    white-space: nowrap;
+    font-size: 10px;
+
+    color: #8a928d;
+
+    pointer-events: none;
+
+    background: #f7faf8;
+
+    padding-left: 3px;
+
 }
+
 
 
 /* =========================================================
    SEND BUTTON
 ========================================================= */
 
-.send-button {
-    flex: 0 0 auto;
+.composer-send-button {
 
-    width: 44px;
-    height: 44px;
+    flex: 0 0 42px;
 
-    padding: 0;
+    width: 42px;
+    height: 42px;
 
     border: none;
+
+    border-radius: 50%;
+
     background: transparent;
 
-    color: #16a34a;
+    color: #198754;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
     cursor: pointer;
 
-    transition: 0.15s ease;
-}
+    font-size: 20px;
 
-.send-button svg {
-    width: 28px;
-    height: 28px;
+    padding: 0;
 
-    display: block;
+    transition:
+        color 0.2s ease,
+        transform 0.15s ease;
 
-    fill: currentColor;
-}
-
-.send-button:hover {
-    color: #15803d;
-
-    transform: translateX(1px);
-}
-
-.send-button:active {
-    transform: scale(0.88);
-}
-
-.send-button:disabled {
-    color: #a8b5ad;
-
-    cursor: not-allowed;
-
-    transform: none;
 }
 
 
-/* =========================================================
-   HIDDEN FILE INPUT
-========================================================= */
+.composer-send-button:not(:disabled):hover {
 
-#postImage {
-    display: none;
+    color: #146c43;
+
+    transform: scale(1.08);
+
 }
+
+
+.composer-send-button:not(:disabled):active {
+
+    transform: scale(0.94);
+
+}
+
+
+.composer-send-button:disabled {
+
+    color: #b8c2bc;
+
+    cursor: default;
+
+}
+
 
 
 /* =========================================================
@@ -545,365 +937,132 @@
 
 @media (max-width: 600px) {
 
-    .create-post-card {
-        border-radius: 14px;
-        padding: 14px;
+    .post-modal-header {
+
+        height: 60px;
+
+        padding: 0 10px;
+
     }
 
-    .post-modal-header {
-        min-height: 60px;
+
+    .post-modal-title strong {
+
+        font-size: 16px;
+
     }
+
 
     .post-modal-body {
+
         padding: 14px;
+
     }
 
-    .composer-bar {
-        gap: 5px;
+
+    .post-composer-wrapper {
+
+        padding:
+            8px
+            8px
+            calc(8px + env(safe-area-inset-bottom));
+
     }
 
-    .attachment-button {
-        width: 38px;
+
+    .post-composer {
+
+        min-height: 48px;
+
+        gap: 4px;
+
+        padding: 4px 5px;
+
     }
 
-    .send-button {
-        width: 42px;
+
+    .composer-icon-button {
+
+        width: 40px;
+        height: 40px;
+
+        flex-basis: 40px;
+
+        font-size: 22px;
+
     }
 
-    .character-counter {
-        font-size: 10px;
-        margin-left: 4px;
+
+    .composer-send-button {
+
+        width: 40px;
+        height: 40px;
+
+        flex-basis: 40px;
+
+        font-size: 19px;
+
+    }
+
+
+    #postText {
+
+        font-size: 15px;
+
+        min-height: 38px;
+
     }
 
 }
 
 
+
 /* =========================================================
-   VERY SMALL PHONES
+   SMALL PHONES
 ========================================================= */
 
 @media (max-width: 380px) {
 
+    .post-modal-title span {
+
+        display: none;
+
+    }
+
+
+    .post-modal-body {
+
+        padding: 10px;
+
+    }
+
+
     .character-counter {
+
         font-size: 9px;
+
     }
 
 }
 
+</style>
 
-/* =========================================================
-   PREVENT BACKGROUND SCROLL
-========================================================= */
 
-body.post-modal-open {
-    overflow: hidden;
-}
 
-</style><!-- =========================================================
-     CREATE POST CARD
-========================================================= --><section class="create-post-card"><div class="create-post-header">
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
 
-    <div class="create-post-avatar">
-
-        <img
-            src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)) %>"
-            alt="<%= user.name %>"
-        >
-
-    </div>
-
-
-    <div class="create-post-heading">
-
-        <div class="heading-line">
-
-            <strong>
-                <%= user.name.split(" ")[0] %>
-            </strong>
-
-            , update us about
-
-        </div>
-
-
-        <div class="heading-line">
-
-            <strong>
-                <%= dairy.name %>
-            </strong>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-<!-- =====================================================
-     ONLY OPEN COMPOSER
-====================================================== -->
-
-<div
-    id="openPostComposer"
-    class="composer-trigger"
-    role="button"
-    tabindex="0"
-    aria-label="Create Post"
->
-
-    <span class="composer-placeholder">
-        Share an update...
-    </span>
-
-</div>
-
-</section><!-- =========================================================
-     FULL SCREEN POST MODAL
-========================================================= --><div
-    id="postModal"
-    class="post-modal"
-    aria-hidden="true"
-><div class="post-modal-content">
-
-
-    <!-- =================================================
-         HEADER
-    ================================================== -->
-
-    <div class="post-modal-header">
-
-        <button
-            type="button"
-            id="closePostModal"
-            class="close-modal-button"
-            aria-label="Back"
-        >
-
-            <!-- REAL BACK ARROW -->
-
-            <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-            >
-
-                <path d="M19 12H5"></path>
-
-                <path d="M12 19l-7-7 7-7"></path>
-
-            </svg>
-
-        </button>
-
-
-        <h3>
-            New Update
-        </h3>
-
-
-        <span></span>
-
-    </div>
-
-
-    <!-- =================================================
-         FORM
-    ================================================== -->
-
-    <form
-        id="postForm"
-        action="/dairy/<%= dairy._id %>/post"
-        method="POST"
-        enctype="multipart/form-data"
-    >
-
-
-        <!-- =================================================
-             BODY
-
-             IMPORTANT:
-             NO TEXTAREA HERE.
-             NO PAPERCLIP HERE.
-        ================================================== -->
-
-        <div class="post-modal-body">
-
-
-            <!-- =============================================
-                 IMAGE PREVIEW ONLY
-            ============================================== -->
-
-            <div
-                id="imagePreviewContainer"
-                class="image-preview-container"
-                style="display:none;"
-            >
-
-                <img
-                    id="imagePreview"
-                    class="image-preview"
-                    alt="Selected image preview"
-                >
-
-
-                <button
-                    id="removeImage"
-                    type="button"
-                    class="remove-image-button"
-                    aria-label="Remove image"
-                >
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                    >
-
-                        <path d="M6 6l12 12"></path>
-                        <path d="M18 6L6 18"></path>
-
-                    </svg>
-
-                </button>
-
-            </div>
-
-
-        </div>
-
-
-        <!-- =================================================
-             BOTTOM COMPOSER
-
-             📎 [ Type your update... 0/1000 ] [ ➤ ]
-
-             THIS IS THE ONLY INPUT.
-        ================================================== -->
-
-        <div class="composer-bar">
-
-
-            <!-- =============================================
-                 ONLY PAPERCLIP ICON
-            ============================================== -->
-
-            <label
-                for="postImage"
-                class="attachment-button"
-                aria-label="Attach image"
-            >
-
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                >
-
-                    <path
-                        d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
-                    ></path>
-
-                </svg>
-
-            </label>
-
-
-            <!-- =============================================
-                 ACTUAL FILE INPUT
-
-                 Controller receives:
-                 req.file
-            ============================================== -->
-
-            <input
-                id="postImage"
-                name="image"
-                type="file"
-                accept="image/*"
-            >
-
-
-            <!-- =============================================
-                 ONLY TEXT INPUT
-
-                 Controller receives:
-                 req.body.text
-            ============================================== -->
-
-            <div class="composer-input-area">
-
-                <textarea
-                    id="composerInput"
-                    class="composer-input"
-                    name="text"
-                    maxlength="1000"
-                    placeholder="Type your update..."
-                    rows="1"
-                    aria-label="Type your update"
-                ></textarea>
-
-
-                <span
-                    id="characterCounter"
-                    class="character-counter"
-                >
-                    0/1000
-                </span>
-
-            </div>
-
-
-            <!-- =============================================
-                 ONLY SEND ICON
-            ============================================== -->
-
-            <button
-                id="submitPostButton"
-                type="submit"
-                class="send-button"
-                aria-label="Send post"
-                disabled
-            >
-
-                <!-- REAL SEND ARROW -->
-
-                <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                >
-
-                    <path
-                        d="M3.4 20.4L21 12 3.4 3.6 3 10l12 2-12 2 .4 6.4z"
-                    ></path>
-
-                </svg>
-
-            </button>
-
-
-        </div>
-
-    </form>
-
-</div>
-
-</div><script>
-
-/* =========================================================
-   POST MODAL
-========================================================= */
+<script>
 
 (function () {
+
+    "use strict";
+
+
+    /* =====================================================
+       INITIALIZE
+    ====================================================== */
 
     function initializePostModal() {
 
@@ -916,11 +1075,8 @@ body.post-modal-open {
         const closeButton =
             document.getElementById("closePostModal");
 
-        const form =
-            document.getElementById("postForm");
-
-        const composerInput =
-            document.getElementById("composerInput");
+        const textarea =
+            document.getElementById("postText");
 
         const imageInput =
             document.getElementById("postImage");
@@ -940,23 +1096,30 @@ body.post-modal-open {
         const sendButton =
             document.getElementById("submitPostButton");
 
+        const form =
+            document.getElementById("postForm");
 
-        /* =====================================================
-           CHECK REQUIRED ELEMENTS
-        ====================================================== */
+
+        /* =================================================
+           REQUIRED ELEMENT CHECK
+        ================================================== */
 
         if (
             !modal ||
             !openComposer ||
             !closeButton ||
-            !form ||
-            !composerInput ||
+            !textarea ||
             !imageInput ||
-            !sendButton
+            !imagePreviewContainer ||
+            !imagePreview ||
+            !removeImage ||
+            !characterCounter ||
+            !sendButton ||
+            !form
         ) {
 
-            console.warn(
-                "Post modal not initialized. Required element missing."
+            console.error(
+                "Post modal could not initialize. Required element missing."
             );
 
             return;
@@ -964,9 +1127,9 @@ body.post-modal-open {
         }
 
 
-        /* =====================================================
+        /* =================================================
            OPEN MODAL
-        ====================================================== */
+        ================================================== */
 
         function openModal() {
 
@@ -977,22 +1140,21 @@ body.post-modal-open {
                 "false"
             );
 
-            document.body.classList.add(
-                "post-modal-open"
-            );
+            document.body.style.overflow = "hidden";
+
 
             setTimeout(function () {
 
-                composerInput.focus();
+                textarea.focus();
 
-            }, 250);
+            }, 100);
 
         }
 
 
-        /* =====================================================
+        /* =================================================
            CLOSE MODAL
-        ====================================================== */
+        ================================================== */
 
         function closeModal() {
 
@@ -1003,26 +1165,100 @@ body.post-modal-open {
                 "true"
             );
 
-            document.body.classList.remove(
-                "post-modal-open"
-            );
+            document.body.style.overflow = "";
 
         }
 
 
-        /* =====================================================
-           OPEN COMPOSER
-        ====================================================== */
+        /* =================================================
+           CHARACTER COUNTER
+        ================================================== */
 
-        openComposer.addEventListener(
-            "click",
-            openModal
+        function updateCharacterCounter() {
+
+            const length =
+                textarea.value.length;
+
+            characterCounter.textContent =
+                length + "/1000";
+
+        }
+
+
+        /* =================================================
+           SEND BUTTON
+        ================================================== */
+
+        function updateSendButton() {
+
+            const hasText =
+                textarea.value.trim().length > 0;
+
+            const hasImage =
+                imageInput.files &&
+                imageInput.files.length > 0;
+
+            sendButton.disabled =
+                !(hasText || hasImage);
+
+        }
+
+
+        /* =================================================
+           TEXTAREA AUTO HEIGHT
+        ================================================== */
+
+        function resizeTextarea() {
+
+            textarea.style.height = "auto";
+
+            const newHeight =
+                Math.min(
+                    textarea.scrollHeight,
+                    120
+                );
+
+            textarea.style.height =
+                newHeight + "px";
+
+        }
+
+
+        /* =================================================
+           TEXT INPUT
+        ================================================== */
+
+        textarea.addEventListener(
+            "input",
+            function () {
+
+                updateCharacterCounter();
+
+                updateSendButton();
+
+                resizeTextarea();
+
+            }
         );
 
 
-        /* =====================================================
-           KEYBOARD ACCESS
-        ====================================================== */
+        /* =================================================
+           OPEN COMPOSER
+        ================================================== */
+
+        openComposer.addEventListener(
+            "click",
+            function () {
+
+                openModal();
+
+            }
+        );
+
+
+        /* =================================================
+           KEYBOARD OPEN
+        ================================================== */
 
         openComposer.addEventListener(
             "keydown",
@@ -1043,19 +1279,23 @@ body.post-modal-open {
         );
 
 
-        /* =====================================================
-           BACK BUTTON
-        ====================================================== */
+        /* =================================================
+           CLOSE
+        ================================================== */
 
         closeButton.addEventListener(
             "click",
-            closeModal
+            function () {
+
+                closeModal();
+
+            }
         );
 
 
-        /* =====================================================
+        /* =================================================
            ESCAPE
-        ====================================================== */
+        ================================================== */
 
         document.addEventListener(
             "keydown",
@@ -1074,87 +1314,22 @@ body.post-modal-open {
         );
 
 
-        /* =====================================================
-           CHARACTER COUNTER
-        ====================================================== */
-
-        function updateCounter() {
-
-            characterCounter.textContent =
-                composerInput.value.length + "/1000";
-
-        }
-
-
-        /* =====================================================
-           SEND BUTTON
-        ====================================================== */
-
-        function updateSendButton() {
-
-            const hasText =
-                composerInput.value.trim().length > 0;
-
-            const hasImage =
-                imageInput.files &&
-                imageInput.files.length > 0;
-
-            sendButton.disabled =
-                !(hasText || hasImage);
-
-        }
-
-
-        /* =====================================================
-           AUTO GROW TEXTAREA
-        ====================================================== */
-
-        function resizeInput() {
-
-            composerInput.style.height = "42px";
-
-            const height =
-                Math.min(
-                    composerInput.scrollHeight,
-                    120
-                );
-
-            composerInput.style.height =
-                height + "px";
-
-        }
-
-
-        /* =====================================================
-           USER TYPING
-        ====================================================== */
-
-        composerInput.addEventListener(
-            "input",
-            function () {
-
-                updateCounter();
-
-                updateSendButton();
-
-                resizeInput();
-
-            }
-        );
-
-
-        /* =====================================================
+        /* =================================================
            IMAGE SELECTED
-        ====================================================== */
+        ================================================== */
 
         imageInput.addEventListener(
             "change",
             function () {
 
-                if (
-                    !imageInput.files ||
-                    imageInput.files.length === 0
-                ) {
+                const file =
+                    imageInput.files[0];
+
+                if (!file) {
+
+                    imagePreviewContainer.hidden = true;
+
+                    imagePreview.src = "";
 
                     updateSendButton();
 
@@ -1163,37 +1338,40 @@ body.post-modal-open {
                 }
 
 
-                const file =
-                    imageInput.files[0];
-
-
-                /* =============================================
-                   PREVIEW
-                ============================================== */
-
                 if (
-                    file.type &&
-                    file.type.startsWith("image/")
+                    !file.type.startsWith("image/")
                 ) {
 
-                    const reader =
-                        new FileReader();
+                    imageInput.value = "";
 
-                    reader.onload =
-                        function (event) {
+                    imagePreviewContainer.hidden = true;
 
-                            imagePreview.src =
-                                event.target.result;
+                    imagePreview.src = "";
 
-                            imagePreviewContainer.style.display =
-                                "block";
+                    updateSendButton();
 
-                        };
-
-                    reader.readAsDataURL(file);
+                    return;
 
                 }
 
+
+                const reader =
+                    new FileReader();
+
+
+                reader.onload =
+                    function (event) {
+
+                        imagePreview.src =
+                            event.target.result;
+
+                        imagePreviewContainer.hidden =
+                            false;
+
+                    };
+
+
+                reader.readAsDataURL(file);
 
                 updateSendButton();
 
@@ -1201,9 +1379,9 @@ body.post-modal-open {
         );
 
 
-        /* =====================================================
+        /* =================================================
            REMOVE IMAGE
-        ====================================================== */
+        ================================================== */
 
         removeImage.addEventListener(
             "click",
@@ -1213,8 +1391,7 @@ body.post-modal-open {
 
                 imagePreview.src = "";
 
-                imagePreviewContainer.style.display =
-                    "none";
+                imagePreviewContainer.hidden = true;
 
                 updateSendButton();
 
@@ -1222,84 +1399,58 @@ body.post-modal-open {
         );
 
 
-        /* =====================================================
+        /* =================================================
            FORM SUBMIT
-        ====================================================== */
+        ================================================== */
 
         form.addEventListener(
             "submit",
             function (event) {
 
-                const hasText =
-                    composerInput.value.trim().length > 0;
+                const text =
+                    textarea.value.trim();
 
                 const hasImage =
                     imageInput.files &&
                     imageInput.files.length > 0;
 
 
-                /* ---------------------------------------------
-                   Controller requires either text or image.
-                ---------------------------------------------- */
-
-                if (
-                    !hasText &&
-                    !hasImage
-                ) {
+                if (!text && !hasImage) {
 
                     event.preventDefault();
+
+                    textarea.focus();
 
                     return;
 
                 }
 
 
-                /* ---------------------------------------------
-                   name="text" is already on the textarea.
-                   Therefore req.body.text receives it directly.
-                ---------------------------------------------- */
-
                 sendButton.disabled = true;
 
-
-                /* ---------------------------------------------
-                   Sending icon
-                ---------------------------------------------- */
-
-                sendButton.innerHTML = `
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        aria-hidden="true"
-                    >
-                        <path d="M5 12h14"></path>
-                        <path d="M13 6l6 6-6 6"></path>
-                    </svg>
-                `;
+                sendButton.innerHTML =
+                    '<i class="bi bi-hourglass-split"></i>';
 
             }
         );
 
 
-        /* =====================================================
+        /* =================================================
            INITIAL STATE
-        ====================================================== */
+        ================================================== */
 
-        updateCounter();
+        updateCharacterCounter();
 
         updateSendButton();
 
-        resizeInput();
+        resizeTextarea();
 
     }
 
 
-    /* =========================================================
+    /* =====================================================
        DOM READY
-    ========================================================= */
+    ====================================================== */
 
     if (
         document.readyState === "loading"
