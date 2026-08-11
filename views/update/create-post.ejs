@@ -1,5 +1,4 @@
 <!-- =========================================================
-     UPDATE PAGE
      CREATE POST + FULL SCREEN POST MODAL
 ========================================================= --><style>
 
@@ -9,17 +8,12 @@
 
 .create-post-card {
     width: 100%;
-    background: #ffffff;
+    background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 18px;
     padding: 16px;
     box-sizing: border-box;
 }
-
-
-/* =========================================================
-   CREATE POST HEADER
-========================================================= */
 
 .create-post-header {
     display: flex;
@@ -41,7 +35,6 @@
 }
 
 .create-post-heading {
-    min-width: 0;
     color: #374151;
     font-size: 14px;
     line-height: 1.4;
@@ -58,18 +51,19 @@
 
 
 /* =========================================================
-   CLICKABLE COMPOSER
+   OPEN COMPOSER
 ========================================================= */
 
 .composer-trigger {
     width: 100%;
     min-height: 52px;
-    box-sizing: border-box;
 
     display: flex;
     align-items: center;
 
     padding: 0 16px;
+
+    box-sizing: border-box;
 
     background: #f7f9f8;
     border: 1px solid #dfe7e2;
@@ -77,16 +71,12 @@
 
     cursor: pointer;
 
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
+    transition: 0.2s ease;
 }
 
 .composer-trigger:hover {
     background: #f1f6f3;
     border-color: #86b99a;
-    box-shadow: 0 3px 10px rgba(22, 101, 52, 0.08);
 }
 
 .composer-trigger:focus {
@@ -112,7 +102,7 @@
     width: 100%;
     height: 100dvh;
 
-    background: #ffffff;
+    background: #fff;
 
     z-index: 99999;
 
@@ -121,7 +111,6 @@
 
     visibility: hidden;
     opacity: 0;
-
     pointer-events: none;
 
     transform: translateY(100%);
@@ -151,7 +140,7 @@
     display: flex;
     flex-direction: column;
 
-    background: #ffffff;
+    background: #fff;
 }
 
 
@@ -166,23 +155,16 @@
     min-height: 64px;
 
     display: grid;
-    grid-template-columns: 48px 1fr 48px;
+    grid-template-columns: 52px 1fr 52px;
     align-items: center;
 
-    padding:
-        env(safe-area-inset-top)
-        14px
-        0
-        14px;
+    padding: 0 12px;
 
     box-sizing: border-box;
 
+    background: #fff;
+
     border-bottom: 1px solid #e5e7eb;
-
-    background: #ffffff;
-
-    position: relative;
-    z-index: 5;
 }
 
 .post-modal-header h3 {
@@ -215,13 +197,11 @@
     align-items: center;
     justify-content: center;
 
-    cursor: pointer;
-
     color: #16a34a;
 
-    transition:
-        transform 0.15s ease,
-        color 0.15s ease;
+    cursor: pointer;
+
+    transition: 0.15s ease;
 }
 
 .close-modal-button:hover {
@@ -230,12 +210,12 @@
 }
 
 .close-modal-button:active {
-    transform: scale(0.92);
+    transform: scale(0.9);
 }
 
 .close-modal-button svg {
-    width: 27px;
-    height: 27px;
+    width: 28px;
+    height: 28px;
 
     display: block;
 
@@ -245,6 +225,8 @@
 
 /* =========================================================
    MODAL BODY
+   NO TEXTAREA HERE
+   NO PAPERCLIP HERE
 ========================================================= */
 
 .post-modal-body {
@@ -258,7 +240,7 @@
 
     box-sizing: border-box;
 
-    background: #ffffff;
+    background: #fff;
 }
 
 
@@ -271,9 +253,7 @@
 
     width: 100%;
 
-    margin-bottom: 18px;
-
-    border-radius: 14px;
+    border-radius: 16px;
 
     overflow: hidden;
 
@@ -286,29 +266,35 @@
     display: block;
 
     width: 100%;
-    max-height: 420px;
+    max-height: 65vh;
 
     object-fit: contain;
 
     background: #f3f4f6;
 }
 
+
+/* =========================================================
+   REMOVE IMAGE
+========================================================= */
+
 .remove-image-button {
     position: absolute;
 
-    top: 10px;
-    right: 10px;
+    top: 12px;
+    right: 12px;
 
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
+
+    padding: 0;
 
     border: none;
-
     border-radius: 50%;
 
     background: rgba(0, 0, 0, 0.65);
 
-    color: #ffffff;
+    color: #fff;
 
     display: flex;
     align-items: center;
@@ -326,108 +312,7 @@
 
 
 /* =========================================================
-   POST TEXT AREA
-========================================================= */
-
-.post-editor {
-    width: 100%;
-}
-
-.post-editor textarea {
-    width: 100%;
-
-    min-height: 220px;
-
-    resize: none;
-
-    border: none;
-    outline: none;
-
-    background: transparent;
-
-    color: #17201a;
-
-    font-family: inherit;
-
-    font-size: 17px;
-
-    line-height: 1.6;
-
-    padding: 0;
-
-    box-sizing: border-box;
-}
-
-.post-editor textarea::placeholder {
-    color: #9ca3af;
-}
-
-.post-editor textarea:focus {
-    outline: none;
-}
-
-
-/* =========================================================
-   ATTACHMENT SECTION
-========================================================= */
-
-.modal-attachment-area {
-    margin-top: 20px;
-
-    padding: 14px 0;
-
-    border-top: 1px solid #eef1ef;
-}
-
-.modal-attachment-button {
-    display: inline-flex;
-
-    align-items: center;
-    gap: 9px;
-
-    color: #16a34a;
-
-    font-size: 14px;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    user-select: none;
-}
-
-.modal-attachment-button:hover {
-    color: #15803d;
-}
-
-.modal-attachment-button svg {
-    width: 23px;
-    height: 23px;
-
-    stroke: currentColor;
-}
-
-
-/* =========================================================
-   SELECTED IMAGE NAME
-========================================================= */
-
-.selected-image-name {
-    display: block;
-
-    margin-top: 8px;
-
-    color: #6b7280;
-
-    font-size: 13px;
-
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-
-/* =========================================================
-   WHATSAPP / SMS STYLE COMPOSER BAR
+   BOTTOM COMPOSER
 ========================================================= */
 
 .composer-bar {
@@ -436,8 +321,9 @@
     width: 100%;
 
     display: flex;
-    align-items: center;
-    gap: 9px;
+    align-items: flex-end;
+
+    gap: 8px;
 
     padding:
         10px
@@ -447,7 +333,7 @@
 
     box-sizing: border-box;
 
-    background: #ffffff;
+    background: #fff;
 
     border-top: 1px solid #e5e7eb;
 }
@@ -460,8 +346,8 @@
 .attachment-button {
     flex: 0 0 auto;
 
-    width: 38px;
-    height: 42px;
+    width: 42px;
+    height: 44px;
 
     display: flex;
     align-items: center;
@@ -471,9 +357,7 @@
 
     cursor: pointer;
 
-    transition:
-        color 0.15s ease,
-        transform 0.15s ease;
+    transition: 0.15s ease;
 }
 
 .attachment-button:hover {
@@ -481,12 +365,12 @@
 }
 
 .attachment-button:active {
-    transform: scale(0.9);
+    transform: scale(0.88);
 }
 
 .attachment-button svg {
-    width: 24px;
-    height: 24px;
+    width: 25px;
+    height: 25px;
 
     display: block;
 
@@ -495,7 +379,9 @@
 
 
 /* =========================================================
-   INPUT AREA
+   INPUT CONTAINER
+
+   THIS IS THE ONLY PLACE WHERE THE USER TYPES
 ========================================================= */
 
 .composer-input-area {
@@ -503,16 +389,22 @@
 
     min-width: 0;
 
+    min-height: 44px;
+
     display: flex;
-    align-items: center;
+    align-items: flex-end;
 
     background: #f4f7f5;
 
     border: 1px solid #dfe7e2;
 
-    border-radius: 22px;
+    border-radius: 23px;
 
-    padding: 0 13px;
+    padding: 0 12px;
+
+    box-sizing: border-box;
+
+    transition: 0.2s ease;
 }
 
 .composer-input-area:focus-within {
@@ -524,7 +416,7 @@
 
 
 /* =========================================================
-   TEXTAREA INSIDE COMPOSER
+   ONLY TEXT INPUT
 ========================================================= */
 
 .composer-input {
@@ -532,7 +424,10 @@
 
     min-width: 0;
 
-    height: 42px;
+    width: 100%;
+
+    min-height: 42px;
+    max-height: 120px;
 
     resize: none;
 
@@ -571,6 +466,7 @@
     flex: 0 0 auto;
 
     margin-left: 7px;
+    margin-bottom: 11px;
 
     color: #8a938e;
 
@@ -593,7 +489,6 @@
     padding: 0;
 
     border: none;
-
     background: transparent;
 
     color: #16a34a;
@@ -604,14 +499,12 @@
 
     cursor: pointer;
 
-    transition:
-        color 0.15s ease,
-        transform 0.15s ease;
+    transition: 0.15s ease;
 }
 
 .send-button svg {
-    width: 27px;
-    height: 27px;
+    width: 28px;
+    height: 28px;
 
     display: block;
 
@@ -662,20 +555,15 @@
     }
 
     .post-modal-body {
-        padding: 16px;
-    }
-
-    .post-editor textarea {
-        min-height: 180px;
-        font-size: 16px;
+        padding: 14px;
     }
 
     .composer-bar {
-        gap: 6px;
+        gap: 5px;
     }
 
     .attachment-button {
-        width: 36px;
+        width: 38px;
     }
 
     .send-button {
@@ -691,13 +579,13 @@
 
 
 /* =========================================================
-   VERY SMALL SCREENS
+   VERY SMALL PHONES
 ========================================================= */
 
 @media (max-width: 380px) {
 
     .character-counter {
-        display: none;
+        font-size: 9px;
     }
 
 }
@@ -724,6 +612,7 @@ body.post-modal-open {
 
     </div>
 
+
     <div class="create-post-heading">
 
         <div class="heading-line">
@@ -731,9 +620,11 @@ body.post-modal-open {
             <strong>
                 <%= user.name.split(" ")[0] %>
             </strong>
+
             , update us about
 
         </div>
+
 
         <div class="heading-line">
 
@@ -749,8 +640,7 @@ body.post-modal-open {
 
 
 <!-- =====================================================
-     CLICKABLE COMPOSER
-     NO IMAGE ICON HERE
+     ONLY OPEN COMPOSER
 ====================================================== -->
 
 <div
@@ -789,7 +679,7 @@ body.post-modal-open {
             aria-label="Back"
         >
 
-            <!-- REAL BACK ARROW SVG -->
+            <!-- REAL BACK ARROW -->
 
             <svg
                 viewBox="0 0 24 24"
@@ -829,20 +719,23 @@ body.post-modal-open {
         action="/dairy/<%= dairy._id %>/post"
         method="POST"
         enctype="multipart/form-data"
-        style="display:flex; flex-direction:column; height:100%; min-height:0;"
     >
 
 
-        <!-- =============================================
-             SCROLLABLE BODY
-        ============================================== -->
+        <!-- =================================================
+             BODY
+
+             IMPORTANT:
+             NO TEXTAREA HERE.
+             NO PAPERCLIP HERE.
+        ================================================== -->
 
         <div class="post-modal-body">
 
 
-            <!-- =========================================
-                 IMAGE PREVIEW
-            ========================================== -->
+            <!-- =============================================
+                 IMAGE PREVIEW ONLY
+            ============================================== -->
 
             <div
                 id="imagePreviewContainer"
@@ -882,86 +775,22 @@ body.post-modal-open {
             </div>
 
 
-            <!-- =========================================
-                 POST TEXT
-            ========================================== -->
-
-            <div class="post-editor">
-
-                <textarea
-                    id="postText"
-                    name="text"
-                    maxlength="1000"
-                    placeholder="<%= user.name.split(' ')[0] %>, type your update here..."
-                ></textarea>
-
-            </div>
-
-
-            <!-- =========================================
-                 ATTACHMENT INFORMATION
-
-                 File icon is available HERE,
-                 NOT ON THE ORIGINAL COMPOSER.
-            ========================================== -->
-
-            <div class="modal-attachment-area">
-
-                <label
-                    for="postImage"
-                    class="modal-attachment-button"
-                >
-
-                    <!-- REAL PAPERCLIP SVG -->
-
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        aria-hidden="true"
-                    >
-
-                        <path
-                            d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
-                        ></path>
-
-                    </svg>
-
-                    Add photo
-
-                </label>
-
-
-                <input
-                    id="postImage"
-                    name="image"
-                    type="file"
-                    accept="image/*"
-                >
-
-
-                <span
-                    id="selectedImageName"
-                    class="selected-image-name"
-                ></span>
-
-            </div>
-
         </div>
 
 
         <!-- =================================================
-             WHATSAPP / SMS STYLE COMPOSER
+             BOTTOM COMPOSER
+
+             📎 [ Type your update... 0/1000 ] [ ➤ ]
+
+             THIS IS THE ONLY INPUT.
         ================================================== -->
 
         <div class="composer-bar">
 
 
             <!-- =============================================
-                 PAPERCLIP
+                 ONLY PAPERCLIP ICON
             ============================================== -->
 
             <label
@@ -990,9 +819,25 @@ body.post-modal-open {
 
 
             <!-- =============================================
-                 TYPING AREA
+                 ACTUAL FILE INPUT
 
-                 📎 [ Type your update... 0/1000 ] [ SEND ]
+                 Controller receives:
+                 req.file
+            ============================================== -->
+
+            <input
+                id="postImage"
+                name="image"
+                type="file"
+                accept="image/*"
+            >
+
+
+            <!-- =============================================
+                 ONLY TEXT INPUT
+
+                 Controller receives:
+                 req.body.text
             ============================================== -->
 
             <div class="composer-input-area">
@@ -1000,6 +845,7 @@ body.post-modal-open {
                 <textarea
                     id="composerInput"
                     class="composer-input"
+                    name="text"
                     maxlength="1000"
                     placeholder="Type your update..."
                     rows="1"
@@ -1018,7 +864,7 @@ body.post-modal-open {
 
 
             <!-- =============================================
-                 SEND BUTTON
+                 ONLY SEND ICON
             ============================================== -->
 
             <button
@@ -1029,7 +875,7 @@ body.post-modal-open {
                 disabled
             >
 
-                <!-- REAL SEND ICON -->
+                <!-- REAL SEND ARROW -->
 
                 <svg
                     viewBox="0 0 24 24"
@@ -1044,8 +890,8 @@ body.post-modal-open {
 
             </button>
 
-        </div>
 
+        </div>
 
     </form>
 
@@ -1073,9 +919,6 @@ body.post-modal-open {
         const form =
             document.getElementById("postForm");
 
-        const textarea =
-            document.getElementById("postText");
-
         const composerInput =
             document.getElementById("composerInput");
 
@@ -1091,9 +934,6 @@ body.post-modal-open {
         const removeImage =
             document.getElementById("removeImage");
 
-        const selectedImageName =
-            document.getElementById("selectedImageName");
-
         const characterCounter =
             document.getElementById("characterCounter");
 
@@ -1102,7 +942,7 @@ body.post-modal-open {
 
 
         /* =====================================================
-           REQUIRED ELEMENT CHECK
+           CHECK REQUIRED ELEMENTS
         ====================================================== */
 
         if (
@@ -1110,14 +950,13 @@ body.post-modal-open {
             !openComposer ||
             !closeButton ||
             !form ||
-            !textarea ||
             !composerInput ||
             !imageInput ||
             !sendButton
         ) {
 
             console.warn(
-                "Post modal could not initialize. Required element missing."
+                "Post modal not initialized. Required element missing."
             );
 
             return;
@@ -1141,7 +980,6 @@ body.post-modal-open {
             document.body.classList.add(
                 "post-modal-open"
             );
-
 
             setTimeout(function () {
 
@@ -1178,16 +1016,12 @@ body.post-modal-open {
 
         openComposer.addEventListener(
             "click",
-            function () {
-
-                openModal();
-
-            }
+            openModal
         );
 
 
         /* =====================================================
-           KEYBOARD OPEN
+           KEYBOARD ACCESS
         ====================================================== */
 
         openComposer.addEventListener(
@@ -1210,16 +1044,12 @@ body.post-modal-open {
 
 
         /* =====================================================
-           CLOSE
+           BACK BUTTON
         ====================================================== */
 
         closeButton.addEventListener(
             "click",
-            function () {
-
-                closeModal();
-
-            }
+            closeModal
         );
 
 
@@ -1245,60 +1075,19 @@ body.post-modal-open {
 
 
         /* =====================================================
-           TEXTAREA HEIGHT
-        ====================================================== */
-
-        function resizeComposer() {
-
-            composerInput.style.height = "42px";
-
-            const newHeight =
-                Math.min(
-                    composerInput.scrollHeight,
-                    120
-                );
-
-            composerInput.style.height =
-                newHeight + "px";
-
-        }
-
-
-        /* =====================================================
-           SYNC TEXT
-        ====================================================== */
-
-        function syncText() {
-
-            textarea.value =
-                composerInput.value;
-
-            updateCounter();
-
-            updateSendButton();
-
-            resizeComposer();
-
-        }
-
-
-        /* =====================================================
            CHARACTER COUNTER
         ====================================================== */
 
         function updateCounter() {
 
-            const length =
-                composerInput.value.length;
-
             characterCounter.textContent =
-                length + "/1000";
+                composerInput.value.length + "/1000";
 
         }
 
 
         /* =====================================================
-           SEND BUTTON STATE
+           SEND BUTTON
         ====================================================== */
 
         function updateSendButton() {
@@ -1317,21 +1106,45 @@ body.post-modal-open {
 
 
         /* =====================================================
-           TYPING
+           AUTO GROW TEXTAREA
+        ====================================================== */
+
+        function resizeInput() {
+
+            composerInput.style.height = "42px";
+
+            const height =
+                Math.min(
+                    composerInput.scrollHeight,
+                    120
+                );
+
+            composerInput.style.height =
+                height + "px";
+
+        }
+
+
+        /* =====================================================
+           USER TYPING
         ====================================================== */
 
         composerInput.addEventListener(
             "input",
             function () {
 
-                syncText();
+                updateCounter();
+
+                updateSendButton();
+
+                resizeInput();
 
             }
         );
 
 
         /* =====================================================
-           IMAGE SELECTION
+           IMAGE SELECTED
         ====================================================== */
 
         imageInput.addEventListener(
@@ -1340,7 +1153,7 @@ body.post-modal-open {
 
                 if (
                     !imageInput.files ||
-                    !imageInput.files.length
+                    imageInput.files.length === 0
                 ) {
 
                     updateSendButton();
@@ -1355,7 +1168,7 @@ body.post-modal-open {
 
 
                 /* =============================================
-                   IMAGE PREVIEW
+                   PREVIEW
                 ============================================== */
 
                 if (
@@ -1382,18 +1195,6 @@ body.post-modal-open {
                 }
 
 
-                /* =============================================
-                   FILE NAME
-                ============================================== */
-
-                if (selectedImageName) {
-
-                    selectedImageName.textContent =
-                        file.name;
-
-                }
-
-
                 updateSendButton();
 
             }
@@ -1404,59 +1205,42 @@ body.post-modal-open {
            REMOVE IMAGE
         ====================================================== */
 
-        if (removeImage) {
+        removeImage.addEventListener(
+            "click",
+            function () {
 
-            removeImage.addEventListener(
-                "click",
-                function () {
+                imageInput.value = "";
 
-                    imageInput.value = "";
+                imagePreview.src = "";
 
-                    imagePreview.src = "";
+                imagePreviewContainer.style.display =
+                    "none";
 
-                    imagePreviewContainer.style.display =
-                        "none";
+                updateSendButton();
 
-                    if (selectedImageName) {
-
-                        selectedImageName.textContent =
-                            "";
-
-                    }
-
-                    updateSendButton();
-
-                }
-            );
-
-        }
+            }
+        );
 
 
         /* =====================================================
-           SUBMIT FORM
+           FORM SUBMIT
         ====================================================== */
 
         form.addEventListener(
             "submit",
-            function () {
-
-                /* ---------------------------------------------
-                   Copy composer text into the actual form
-                   field used by the controller:
-                   req.body.text
-                ---------------------------------------------- */
-
-                textarea.value =
-                    composerInput.value.trim();
-
+            function (event) {
 
                 const hasText =
-                    textarea.value.length > 0;
+                    composerInput.value.trim().length > 0;
 
                 const hasImage =
                     imageInput.files &&
                     imageInput.files.length > 0;
 
+
+                /* ---------------------------------------------
+                   Controller requires either text or image.
+                ---------------------------------------------- */
 
                 if (
                     !hasText &&
@@ -1470,11 +1254,16 @@ body.post-modal-open {
                 }
 
 
+                /* ---------------------------------------------
+                   name="text" is already on the textarea.
+                   Therefore req.body.text receives it directly.
+                ---------------------------------------------- */
+
                 sendButton.disabled = true;
 
 
                 /* ---------------------------------------------
-                   Replace send icon with simple sending state
+                   Sending icon
                 ---------------------------------------------- */
 
                 sendButton.innerHTML = `
@@ -1486,9 +1275,8 @@ body.post-modal-open {
                         stroke-linecap="round"
                         aria-hidden="true"
                     >
-                        <path d="M12 2v12"></path>
-                        <path d="M7 9l5 5 5-5"></path>
-                        <path d="M5 21h14"></path>
+                        <path d="M5 12h14"></path>
+                        <path d="M13 6l6 6-6 6"></path>
                     </svg>
                 `;
 
@@ -1504,13 +1292,13 @@ body.post-modal-open {
 
         updateSendButton();
 
-        resizeComposer();
+        resizeInput();
 
     }
 
 
     /* =========================================================
-       INITIALIZE AFTER DOM LOAD
+       DOM READY
     ========================================================= */
 
     if (
