@@ -1,9 +1,9 @@
 <!-- =========================================================
-     CREATE POST + POST MODAL
+     CREATE POST + FULL SCREEN POST MODAL
 ========================================================= --><style>
 
 /* =========================================================
-   CREATE POST CARD
+   PAGE COMPOSER
 ========================================================= */
 
 .create-post-card {
@@ -13,14 +13,10 @@
     border-radius: 18px;
     padding: 16px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
     box-sizing: border-box;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
 }
 
-
-/* =========================================================
-   HEADER
-========================================================= */
 
 .create-post-header {
     display: flex;
@@ -49,10 +45,9 @@
 
 
 .create-post-heading {
-    min-width: 0;
-    line-height: 1.45;
     color: #374151;
     font-size: 14px;
+    line-height: 1.45;
 }
 
 
@@ -68,106 +63,83 @@
 
 
 /* =========================================================
-   CLICKABLE COMPOSER
+   PAGE COMPOSER TRIGGER
+   NO IMAGE ICON HERE
 ========================================================= */
 
 .composer-trigger {
     width: 100%;
     min-height: 52px;
+
     border: 1px solid #d1d5db;
-    border-radius: 14px;
-    background: #f9fafb;
+    border-radius: 15px;
+
+    background: #f8faf9;
+
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 6px 8px 6px 16px;
+
+    padding: 0 16px;
+
     box-sizing: border-box;
+
     cursor: pointer;
+
     transition:
-        background 0.2s ease,
         border-color 0.2s ease,
+        background 0.2s ease,
         box-shadow 0.2s ease;
 }
 
 
 .composer-trigger:hover {
-    background: #f3fdf5;
-    border-color: #86c78d;
+    background: #f3faf4;
+    border-color: #78b67f;
 }
 
 
 .composer-trigger:focus {
     outline: none;
-    border-color: #3f8f48;
-    box-shadow: 0 0 0 3px rgba(63, 143, 72, 0.12);
+    border-color: #2e7d32;
+    box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12);
 }
 
 
 .composer-placeholder {
     color: #6b7280;
     font-size: 14px;
-    flex: 1;
-    text-align: left;
-}
-
-
-.image-icon-button {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    border: none;
-    border-radius: 11px;
-    background: #e8f5e9;
-    color: #2e7d32;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    cursor: pointer;
-    transition:
-        background 0.2s ease,
-        transform 0.2s ease;
-}
-
-
-.image-icon-button:hover {
-    background: #d5edd8;
-    transform: scale(1.04);
-}
-
-
-.image-icon-button:active {
-    transform: scale(0.96);
 }
 
 
 /* =========================================================
-   POST MODAL
+   FULL SCREEN MODAL
 ========================================================= */
 
 .post-modal {
     position: fixed;
+
     inset: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.55);
-    z-index: 99999;
+
+    width: 100vw;
+    height: 100dvh;
+
+    background: #ffffff;
+
+    z-index: 999999;
 
     display: flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 16px;
-    box-sizing: border-box;
+    flex-direction: column;
 
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
 
+    transform: translateY(100%);
+
     transition:
+        transform 0.28s ease,
         opacity 0.2s ease,
-        visibility 0.2s ease;
+        visibility 0.28s ease;
 }
 
 
@@ -175,6 +147,8 @@
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
+
+    transform: translateY(0);
 }
 
 
@@ -184,22 +158,12 @@
 
 .post-modal-content {
     width: 100%;
-    max-width: 620px;
-    max-height: 92vh;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
     background: #ffffff;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-
-    transform: translateY(20px) scale(0.98);
-
-    transition:
-        transform 0.2s ease;
-}
-
-
-.post-modal.active .post-modal-content {
-    transform: translateY(0) scale(1);
 }
 
 
@@ -208,47 +172,85 @@
 ========================================================= */
 
 .post-modal-header {
-    min-height: 58px;
+    height: 62px;
+    min-height: 62px;
+
+    display: flex;
+    align-items: center;
+
     padding: 0 16px;
+
     border-bottom: 1px solid #e5e7eb;
 
-    display: grid;
-    grid-template-columns: 42px 1fr 42px;
-    align-items: center;
+    background: #ffffff;
+
+    position: relative;
+
+    z-index: 5;
 
     box-sizing: border-box;
 }
 
 
-.post-modal-header h3 {
-    margin: 0;
-    text-align: center;
-    font-size: 17px;
-    font-weight: 700;
-    color: #111827;
-}
-
+/* =========================================================
+   BACK BUTTON
+========================================================= */
 
 .close-modal-button {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
+
     border: none;
-    background: transparent;
-    color: #374151;
     border-radius: 50%;
-    cursor: pointer;
+
+    background: transparent;
+
+    color: #1f2937;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    font-size: 22px;
+    cursor: pointer;
+
+    font-size: 25px;
+
+    flex-shrink: 0;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
 }
 
 
 .close-modal-button:hover {
-    background: #f3f4f6;
+    background: #f0fdf4;
     color: #2e7d32;
+}
+
+
+.close-modal-button:active {
+    transform: scale(0.92);
+}
+
+
+.post-modal-header h3 {
+    position: absolute;
+
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    margin: 0;
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+    color: #111827;
+
+    white-space: nowrap;
 }
 
 
@@ -257,37 +259,55 @@
 ========================================================= */
 
 #postForm {
+    width: 100%;
+    height: calc(100% - 62px);
+
     display: flex;
     flex-direction: column;
-    max-height: calc(92vh - 58px);
+
+    min-height: 0;
 }
 
 
 /* =========================================================
-   POST EDITOR
+   MESSAGE / TYPING AREA
 ========================================================= */
 
 .post-editor {
-    padding: 16px;
+    flex: 1;
+
+    min-height: 0;
+
+    padding: 20px 18px;
+
+    overflow-y: auto;
+
+    background: #ffffff;
+
+    box-sizing: border-box;
 }
 
 
 #postText {
     width: 100%;
-    min-height: 190px;
-    max-height: 350px;
+    height: 100%;
 
-    resize: vertical;
+    min-height: 200px;
 
     border: none;
     outline: none;
 
-    font-family: inherit;
-    font-size: 16px;
-    line-height: 1.6;
+    resize: none;
+
+    background: transparent;
 
     color: #111827;
-    background: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 17px;
+
+    line-height: 1.6;
 
     box-sizing: border-box;
 }
@@ -298,46 +318,57 @@
 }
 
 
-#postText:focus {
-    outline: none;
-}
-
-
 /* =========================================================
    IMAGE PREVIEW
 ========================================================= */
 
 .image-preview-container {
     position: relative;
-    margin: 0 16px 10px;
-    border-radius: 14px;
+
+    margin: 0 14px 8px;
+
+    max-width: 500px;
+
+    max-height: 260px;
+
+    border-radius: 16px;
+
     overflow: hidden;
+
     background: #f3f4f6;
-    max-height: 320px;
+
+    flex-shrink: 0;
 }
 
 
 .image-preview {
     display: block;
+
     width: 100%;
-    max-height: 320px;
+
+    max-height: 260px;
+
     object-fit: contain;
+
     background: #f3f4f6;
 }
 
 
 .remove-image-button {
     position: absolute;
-    top: 10px;
-    right: 10px;
+
+    top: 9px;
+    right: 9px;
 
     width: 36px;
     height: 36px;
 
     border: none;
+
     border-radius: 50%;
 
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.72);
+
     color: #ffffff;
 
     display: flex;
@@ -350,75 +381,125 @@
 }
 
 
-.remove-image-button:hover {
-    background: rgba(0, 0, 0, 0.85);
-}
-
-
 /* =========================================================
-   COMPOSER BAR
+   WHATSAPP / SMS STYLE COMPOSER BAR
 ========================================================= */
 
 .composer-bar {
-    min-height: 62px;
-    padding: 10px 14px;
-
-    border-top: 1px solid #e5e7eb;
+    width: 100%;
 
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-end;
+
+    gap: 8px;
+
+    padding: 10px 12px;
+
+    padding-bottom:
+        calc(10px + env(safe-area-inset-bottom));
+
+    background: #ffffff;
+
+    border-top: 1px solid #e5e7eb;
 
     box-sizing: border-box;
 }
 
 
 /* =========================================================
-   ATTACHMENT
+   ATTACHMENT BUTTON
 ========================================================= */
 
 .attachment-button {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
 
-    border-radius: 10px;
-    background: #f0fdf4;
-    color: #2e7d32;
+    min-width: 44px;
+
+    border-radius: 50%;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
+    color: #4b5563;
+
+    background: transparent;
+
     cursor: pointer;
 
-    font-size: 18px;
+    font-size: 23px;
 
     transition:
         background 0.2s ease,
-        transform 0.2s ease;
+        color 0.2s ease,
+        transform 0.15s ease;
 }
 
 
 .attachment-button:hover {
-    background: #dcfce7;
-    transform: scale(1.04);
+    background: #f3f4f6;
+    color: #2e7d32;
+}
+
+
+.attachment-button:active {
+    transform: scale(0.9);
 }
 
 
 /* =========================================================
-   SELECTED IMAGE NAME
+   TEXT INPUT CONTAINER
 ========================================================= */
 
-.selected-image-name {
+.message-input-wrapper {
     flex: 1;
+
     min-width: 0;
 
-    font-size: 12px;
-    color: #6b7280;
+    min-height: 44px;
 
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    max-height: 130px;
+
+    display: flex;
+    align-items: center;
+
+    background: #f1f3f4;
+
+    border-radius: 22px;
+
+    padding: 0 16px;
+
+    box-sizing: border-box;
+
+    transition:
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.message-input-wrapper:focus-within {
+    background: #eef7ef;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(46, 125, 50, 0.2);
+}
+
+
+#postText {
+    height: auto;
+
+    min-height: 44px;
+
+    max-height: 120px;
+
+    padding: 11px 0;
+
+    overflow-y: auto;
+
+    font-size: 16px;
+
+    line-height: 1.4;
 }
 
 
@@ -427,9 +508,15 @@
 ========================================================= */
 
 .character-counter {
-    font-size: 12px;
+    font-size: 11px;
+
     color: #9ca3af;
+
     white-space: nowrap;
+
+    align-self: center;
+
+    margin-right: 4px;
 }
 
 
@@ -438,43 +525,59 @@
 ========================================================= */
 
 .send-button {
-    width: 42px;
-    height: 42px;
+    width: 46px;
+    height: 46px;
+
+    min-width: 46px;
 
     border: none;
+
     border-radius: 50%;
 
     background: #2e7d32;
+
     color: #ffffff;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    font-size: 17px;
-
     cursor: pointer;
+
+    font-size: 19px;
+
+    box-shadow:
+        0 3px 8px rgba(46, 125, 50, 0.25);
 
     transition:
         background 0.2s ease,
-        transform 0.2s ease;
+        transform 0.15s ease,
+        box-shadow 0.2s ease;
 }
 
 
 .send-button:hover:not(:disabled) {
     background: #256b2a;
+
     transform: scale(1.05);
+
+    box-shadow:
+        0 5px 12px rgba(46, 125, 50, 0.3);
 }
 
 
 .send-button:active:not(:disabled) {
-    transform: scale(0.95);
+    transform: scale(0.92);
 }
 
 
 .send-button:disabled {
-    background: #cbd5ce;
+    background: #d1d5db;
+
     color: #ffffff;
+
+    box-shadow: none;
+
     cursor: not-allowed;
 }
 
@@ -491,11 +594,6 @@
     }
 
 
-    .create-post-header {
-        gap: 10px;
-    }
-
-
     .create-post-avatar {
         width: 42px;
         height: 42px;
@@ -503,45 +601,65 @@
     }
 
 
-    .post-modal {
-        padding: 0;
-        align-items: flex-end;
-    }
-
-
-    .post-modal-content {
-        width: 100%;
-        max-width: none;
-        max-height: 95vh;
-        border-radius: 20px 20px 0 0;
+    .post-modal-header {
+        height: 58px;
+        min-height: 58px;
+        padding: 0 10px;
     }
 
 
     #postForm {
-        max-height: calc(95vh - 58px);
+        height: calc(100% - 58px);
     }
 
 
-    #postText {
-        min-height: 180px;
-        font-size: 16px;
+    .post-editor {
+        padding: 16px 14px;
     }
 
 
     .composer-bar {
-        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        gap: 5px;
+
+        padding-left: 7px;
+        padding-right: 7px;
+    }
+
+
+    .attachment-button {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+    }
+
+
+    .send-button {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+    }
+
+
+    .character-counter {
+        display: none;
+    }
+
+
+    .message-input-wrapper {
+        border-radius: 21px;
+        padding: 0 14px;
+    }
+
+
+    #postText {
+        font-size: 16px;
     }
 
 }
 
-
 </style><!-- =========================================================
-     CREATE POST
-========================================================= --><section class="create-post-card"><!-- =====================================================
-     USER + HEADING
-====================================================== -->
-
-<div class="create-post-header">
+     CREATE POST CARD
+========================================================= --><section class="create-post-card"><div class="create-post-header">
 
     <div class="create-post-avatar">
 
@@ -579,7 +697,8 @@
 
 
 <!-- =====================================================
-     CLICKABLE COMPOSER
+     COMPOSER
+     NO IMAGE ICON HERE
 ====================================================== -->
 
 <div
@@ -594,32 +713,15 @@
         Share an update...
     </span>
 
-
-    <button
-        type="button"
-        id="openImagePicker"
-        class="image-icon-button"
-        aria-label="Add photo"
-    >
-
-        <i class="bi bi-image-fill"></i>
-
-    </button>
-
 </div>
 
 </section><!-- =========================================================
-     POST MODAL
+     FULL SCREEN POST MODAL
 ========================================================= --><div
     id="postModal"
     class="post-modal"
     aria-hidden="true"
-><div
-    class="post-modal-content"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="postModalTitle"
->
+><div class="post-modal-content">
 
     <form
         id="postForm"
@@ -629,7 +731,7 @@
     >
 
         <!-- =================================================
-             MODAL HEADER
+             HEADER
         ================================================== -->
 
         <div class="post-modal-header">
@@ -638,26 +740,23 @@
                 type="button"
                 id="closePostModal"
                 class="close-modal-button"
-                aria-label="Close"
+                aria-label="Back"
             >
 
-                <i class="bi bi-arrow-left-circle-fill"></i>
+                <i class="bi bi-arrow-left"></i>
 
             </button>
 
 
-            <h3 id="postModalTitle">
+            <h3>
                 New Update
             </h3>
-
-
-            <span></span>
 
         </div>
 
 
         <!-- =================================================
-             POST EDITOR
+             MAIN TYPING AREA
         ================================================== -->
 
         <div class="post-editor">
@@ -667,7 +766,7 @@
                 name="text"
                 maxlength="1000"
                 placeholder="<%= user.name.split(' ')[0] %>, type your update here..."
-                aria-label="Post text"
+                aria-label="Write your update"
             ></textarea>
 
         </div>
@@ -680,7 +779,7 @@
         <div
             id="imagePreviewContainer"
             class="image-preview-container"
-            style="display: none;"
+            style="display:none;"
         >
 
             <img
@@ -705,12 +804,12 @@
 
 
         <!-- =================================================
-             COMPOSER BAR
+             WHATSAPP / SMS STYLE INPUT BAR
         ================================================== -->
 
         <div class="composer-bar">
 
-            <!-- Image attachment -->
+            <!-- FILE / ATTACHMENT -->
 
             <label
                 for="postImage"
@@ -718,45 +817,41 @@
                 aria-label="Attach image"
             >
 
-                <i class="bi bi-paperclip-fill"></i>
+                <i class="bi bi-paperclip"></i>
 
             </label>
 
 
             <input
+                type="file"
                 id="postImage"
                 name="image"
-                type="file"
                 accept="image/*"
                 hidden
             >
 
 
-            <!-- Selected file name -->
+            <!-- TEXT INPUT -->
 
-            <span
-                id="selectedImageName"
-                class="selected-image-name"
-            ></span>
+            <div class="message-input-wrapper">
 
+                <span
+                    id="characterCounter"
+                    class="character-counter"
+                >
+                    0/1000
+                </span>
 
-            <!-- Character counter -->
-
-            <span
-                id="characterCounter"
-                class="character-counter"
-            >
-                0 / 1000
-            </span>
+            </div>
 
 
-            <!-- Submit -->
+            <!-- SEND -->
 
             <button
-                id="submitPostButton"
                 type="submit"
+                id="submitPostButton"
                 class="send-button"
-                aria-label="Post update"
+                aria-label="Send update"
                 disabled
             >
 
@@ -771,17 +866,13 @@
 </div>
 
 </div><!-- =========================================================
-     POST MODAL JAVASCRIPT
+     JAVASCRIPT
 ========================================================= --><script>
 
 (function () {
 
     "use strict";
 
-
-    /* =======================================================
-       INITIALIZE
-    ======================================================== */
 
     function initializePostModal() {
 
@@ -790,9 +881,6 @@
 
         const composer =
             document.getElementById("openPostComposer");
-
-        const imagePickerButton =
-            document.getElementById("openImagePicker");
 
         const closeButton =
             document.getElementById("closePostModal");
@@ -806,47 +894,42 @@
         const imageInput =
             document.getElementById("postImage");
 
-        const imagePreviewContainer =
+        const previewContainer =
             document.getElementById("imagePreviewContainer");
 
-        const imagePreview =
+        const preview =
             document.getElementById("imagePreview");
 
-        const removeImageButton =
+        const removeImage =
             document.getElementById("removeImage");
 
-        const selectedImageName =
-            document.getElementById("selectedImageName");
-
-        const characterCounter =
+        const counter =
             document.getElementById("characterCounter");
 
-        const submitButton =
+        const sendButton =
             document.getElementById("submitPostButton");
 
 
-        /* ===================================================
-           ELEMENT CHECK
-        ==================================================== */
+        /* =====================================================
+           SAFETY CHECK
+        ====================================================== */
 
         if (
             !modal ||
             !composer ||
-            !imagePickerButton ||
             !closeButton ||
             !form ||
             !textarea ||
             !imageInput ||
-            !imagePreviewContainer ||
-            !imagePreview ||
-            !removeImageButton ||
-            !selectedImageName ||
-            !characterCounter ||
-            !submitButton
+            !previewContainer ||
+            !preview ||
+            !removeImage ||
+            !counter ||
+            !sendButton
         ) {
 
             console.error(
-                "POST MODAL ERROR: Required element missing."
+                "Post modal: required element missing."
             );
 
             return;
@@ -854,9 +937,9 @@
         }
 
 
-        /* ===================================================
-           OPEN MODAL
-        ==================================================== */
+        /* =====================================================
+           OPEN
+        ====================================================== */
 
         function openModal() {
 
@@ -867,21 +950,22 @@
                 "false"
             );
 
-            document.body.style.overflow = "hidden";
+            document.body.style.overflow =
+                "hidden";
 
 
             setTimeout(function () {
 
                 textarea.focus();
 
-            }, 150);
+            }, 250);
 
         }
 
 
-        /* ===================================================
-           CLOSE MODAL
-        ==================================================== */
+        /* =====================================================
+           CLOSE
+        ====================================================== */
 
         function closeModal() {
 
@@ -892,141 +976,44 @@
                 "true"
             );
 
-            document.body.style.overflow = "";
+            document.body.style.overflow =
+                "";
 
         }
 
 
-        /* ===================================================
+        /* =====================================================
            UPDATE SEND BUTTON
-        ==================================================== */
+        ====================================================== */
 
-        function updateSendButton() {
+        function updateState() {
 
             const hasText =
                 textarea.value.trim().length > 0;
 
             const hasImage =
-                imageInput.files &&
                 imageInput.files.length > 0;
 
 
-            submitButton.disabled =
+            sendButton.disabled =
                 !(hasText || hasImage);
 
 
-            /* Character counter */
-
-            characterCounter.textContent =
-                textarea.value.length + " / 1000";
+            counter.textContent =
+                textarea.value.length + "/1000";
 
         }
 
 
-        /* ===================================================
-           IMAGE PREVIEW
-        ==================================================== */
-
-        function handleImageChange() {
-
-            const file =
-                imageInput.files &&
-                imageInput.files[0];
-
-
-            if (!file) {
-
-                clearImage();
-
-                updateSendButton();
-
-                return;
-
-            }
-
-
-            /* Display filename */
-
-            selectedImageName.textContent =
-                file.name;
-
-
-            /* Preview */
-
-            const reader =
-                new FileReader();
-
-
-            reader.onload = function (event) {
-
-                imagePreview.src =
-                    event.target.result;
-
-                imagePreviewContainer.style.display =
-                    "block";
-
-            };
-
-
-            reader.readAsDataURL(file);
-
-
-            updateSendButton();
-
-        }
-
-
-        /* ===================================================
-           CLEAR IMAGE
-        ==================================================== */
-
-        function clearImage() {
-
-            imageInput.value = "";
-
-            imagePreview.src = "";
-
-            selectedImageName.textContent = "";
-
-            imagePreviewContainer.style.display =
-                "none";
-
-        }
-
-
-        /* ===================================================
-           COMPOSER CLICK
-        ==================================================== */
+        /* =====================================================
+           OPEN COMPOSER
+        ====================================================== */
 
         composer.addEventListener(
             "click",
-            function (event) {
-
-                /*
-                 * If the image button was clicked,
-                 * its own handler handles it.
-                 */
-
-                if (
-                    event.target.closest(
-                        "#openImagePicker"
-                    )
-                ) {
-
-                    return;
-
-                }
-
-
-                openModal();
-
-            }
+            openModal
         );
 
-
-        /* ===================================================
-           COMPOSER KEYBOARD
-        ==================================================== */
 
         composer.addEventListener(
             "keydown",
@@ -1047,74 +1034,19 @@
         );
 
 
-        /* ===================================================
-           IMAGE BUTTON
-        ==================================================== */
-
-        imagePickerButton.addEventListener(
-            "click",
-            function (event) {
-
-                event.preventDefault();
-
-                event.stopPropagation();
-
-
-                openModal();
-
-
-                /*
-                 * Wait until modal is open,
-                 * then open the file picker.
-                 */
-
-                setTimeout(function () {
-
-                    imageInput.click();
-
-                }, 150);
-
-            }
-        );
-
-
-        /* ===================================================
-           CLOSE BUTTON
-        ==================================================== */
+        /* =====================================================
+           CLOSE
+        ====================================================== */
 
         closeButton.addEventListener(
             "click",
-            function () {
-
-                closeModal();
-
-            }
+            closeModal
         );
 
 
-        /* ===================================================
-           CLICK OUTSIDE MODAL
-        ==================================================== */
-
-        modal.addEventListener(
-            "click",
-            function (event) {
-
-                if (
-                    event.target === modal
-                ) {
-
-                    closeModal();
-
-                }
-
-            }
-        );
-
-
-        /* ===================================================
-           ESCAPE KEY
-        ==================================================== */
+        /* =====================================================
+           ESC
+        ====================================================== */
 
         document.addEventListener(
             "keydown",
@@ -1133,53 +1065,90 @@
         );
 
 
-        /* ===================================================
-           TEXT INPUT
-        ==================================================== */
+        /* =====================================================
+           TEXT
+        ====================================================== */
 
         textarea.addEventListener(
             "input",
             function () {
 
-                updateSendButton();
+                updateState();
 
             }
         );
 
 
-        /* ===================================================
-           IMAGE INPUT
-        ==================================================== */
+        /* =====================================================
+           IMAGE
+        ====================================================== */
 
         imageInput.addEventListener(
             "change",
             function () {
 
-                handleImageChange();
+                const file =
+                    imageInput.files[0];
+
+
+                if (!file) {
+
+                    return;
+
+                }
+
+
+                const reader =
+                    new FileReader();
+
+
+                reader.onload =
+                    function (event) {
+
+                        preview.src =
+                            event.target.result;
+
+                        previewContainer.style.display =
+                            "block";
+
+                    };
+
+
+                reader.readAsDataURL(file);
+
+
+                updateState();
 
             }
         );
 
 
-        /* ===================================================
+        /* =====================================================
            REMOVE IMAGE
-        ==================================================== */
+        ====================================================== */
 
-        removeImageButton.addEventListener(
+        removeImage.addEventListener(
             "click",
             function () {
 
-                clearImage();
+                imageInput.value = "";
 
-                updateSendButton();
+                preview.src = "";
+
+                previewContainer.style.display =
+                    "none";
+
+                updateState();
+
+                textarea.focus();
 
             }
         );
 
 
-        /* ===================================================
-           FORM SUBMIT
-        ==================================================== */
+        /* =====================================================
+           SUBMIT
+        ====================================================== */
 
         form.addEventListener(
             "submit",
@@ -1189,13 +1158,8 @@
                     textarea.value.trim().length > 0;
 
                 const hasImage =
-                    imageInput.files &&
                     imageInput.files.length > 0;
 
-
-                /*
-                 * Prevent empty submission.
-                 */
 
                 if (
                     !hasText &&
@@ -1204,42 +1168,39 @@
 
                     event.preventDefault();
 
-                    updateSendButton();
-
                     return;
 
                 }
 
 
-                /*
-                 * Prevent double-click submissions.
-                 */
+                sendButton.disabled =
+                    true;
 
-                submitButton.disabled = true;
 
-                submitButton.innerHTML =
+                sendButton.innerHTML =
                     '<i class="bi bi-hourglass-split"></i>';
 
             }
         );
 
 
-        /* ===================================================
+        /* =====================================================
            INITIAL STATE
-        ==================================================== */
+        ====================================================== */
 
-        updateSendButton();
+        updateState();
+
 
         console.log(
-            "Post modal initialized successfully."
+            "Post modal initialized."
         );
 
     }
 
 
-    /* =======================================================
+    /* =========================================================
        DOM READY
-    ======================================================== */
+    ========================================================= */
 
     if (
         document.readyState === "loading"
