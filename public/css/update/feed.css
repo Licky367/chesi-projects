@@ -77,6 +77,8 @@
 
     flex-direction:column;
 
+    align-items:flex-start;
+
 }
 
 .feed-user-info strong{
@@ -100,6 +102,8 @@
     border:none;
 
     background:none;
+
+    padding:6px;
 
     font-size:1.2rem;
 
@@ -126,19 +130,74 @@
 
     display:block;
 
+    position:relative;
+
     width:100%;
 
-    padding:14px 18px;
+    height:auto;
+
+    min-height:0;
 
     margin:0;
 
+    padding:14px 18px;
+
+    box-sizing:border-box;
+
     text-align:left;
+
+    align-items:initial;
+
+    justify-content:initial;
+
+}
+
+
+/*=========================================================
+  POST CARD BODY
+=========================================================*/
+
+/*
+   Explicitly prevent other global/responsive styles
+   from centering post content.
+*/
+
+.post-card .feed-body{
+
+    display:block;
+
+    width:100%;
+
+    height:auto;
+
+    min-height:0;
+
+    margin:0;
+
+    padding:14px 18px;
+
+    text-align:left;
+
+    align-items:initial;
+
+    justify-content:initial;
+
+    flex-direction:initial;
 
     box-sizing:border-box;
 
 }
 
+
+/*=========================================================
+  POST TITLE
+=========================================================*/
+
 .feed-body h3{
+
+    display:block;
+
+    width:100%;
 
     margin:0 0 8px 0;
 
@@ -154,7 +213,16 @@
 
 }
 
+
+/*=========================================================
+  POST TEXT
+=========================================================*/
+
 .feed-body p{
+
+    display:block;
+
+    width:100%;
 
     margin:0;
 
@@ -166,12 +234,7 @@
 
 }
 
-
-/*=========================================================
-  TEXT POSTS
-=========================================================*/
-
-.post-text{
+.post-card .post-text{
 
     display:block;
 
@@ -199,6 +262,24 @@
 
 
 /*=========================================================
+  TEXT-ONLY POST
+=========================================================*/
+
+/*
+   A text-only post should not create a large empty
+   centered area.
+*/
+
+.post-card:not(:has(.feed-img)) .feed-body{
+
+    min-height:0;
+
+    height:auto;
+
+}
+
+
+/*=========================================================
   FEED IMAGE
 =========================================================*/
 
@@ -214,7 +295,22 @@
 
     margin:12px 0 0 0;
 
+    padding:0;
+
     object-fit:cover;
+
+    box-sizing:border-box;
+
+}
+
+
+/*=========================================================
+  IMAGE POST BODY
+=========================================================*/
+
+.post-card .feed-body:has(.feed-img){
+
+    padding:14px 18px;
 
 }
 
@@ -243,6 +339,8 @@
     display:flex;
 
     align-items:center;
+
+    justify-content:center;
 
     gap:6px;
 
@@ -299,7 +397,7 @@
 
 
 /*=========================================================
-  MOBILE FEED
+  MOBILE
 =========================================================*/
 
 @media (max-width:600px){
@@ -316,9 +414,9 @@
 
     }
 
-    .feed-body{
+    .post-card .feed-body{
 
-        padding:12px 15px;
+        padding:14px 15px;
 
     }
 
