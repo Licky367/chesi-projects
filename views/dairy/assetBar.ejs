@@ -1,19 +1,60 @@
 <% /* =========================================================
    ASSET BAR
+
    FILE:
-   views/dairy/assetBar.ejs
+       views/dairy/assetBar.ejs
 
-   ALL ASSETS USE THE SAME DETAIL ROUTE:
+   PURPOSE:
+       ----------------------------------------------------------
+       Displays properties belonging ONLY to the currently
+       viewed Dairy Farm.
 
-       /dairy/<%= dairy._id %>
+   IMPORTANT:
+       ----------------------------------------------------------
+       The "View Assets" button belongs to the parent page.
 
-   This applies to:
-       • Animals
-       • Structures
-       • Machines
-       • Tools
+       Parent button:
+           #viewPropertyButton
 
-   No separate asset route is used.
+   LAYOUT:
+       ----------------------------------------------------------
+       Main layout has:
+
+           Header      = 70px
+           Top menu    = 50px
+           Footer      = 50px
+
+       Therefore the asset sidebar is constrained between:
+
+           top: 120px
+           bottom: 50px
+
+       It will NOT overlap:
+
+           • Main header
+           • Top menu
+           • Main footer
+
+   CLASSIFICATION:
+
+       code > 0
+           = Animal
+
+       code === null / undefined
+           = Structure / Machine / Tool
+
+   NAVIGATION:
+       ----------------------------------------------------------
+       ALL displayed assets use the CURRENT DAIRY ID.
+
+       Exact route:
+
+           /dairy/<%= dairy._id %>
+
+       No asset._id is used.
+       No animal._id is used.
+       No structure._id is used.
+       No other asset-detail route is used.
 ========================================================= */ %>
 
 
@@ -26,7 +67,16 @@ const availableAssets =
     Array.isArray(assetDairies)
         ? assetDairies.filter(asset => !!asset)
         : [];
+%>
 
+
+<% /* =========================================================
+   ANIMALS
+
+   code > 0
+========================================================= */ %>
+
+<%
 const animalDairies =
     availableAssets.filter(asset => {
 
@@ -37,7 +87,16 @@ const animalDairies =
         );
 
     });
+%>
 
+
+<% /* =========================================================
+   STRUCTURES / MACHINES / TOOLS
+
+   code === null / undefined
+========================================================= */ %>
+
+<%
 const structureDairies =
     availableAssets.filter(asset => {
 
@@ -51,7 +110,9 @@ const structureDairies =
 
 
 <!-- =========================================================
-     OVERLAY
+     SIDEBAR OVERLAY
+
+     Hidden until JavaScript adds .active.
 ========================================================= -->
 
 <div
@@ -63,18 +124,24 @@ const structureDairies =
 
 <!-- =========================================================
      ASSET SIDEBAR
+
+     Constrained between:
+         top: 120px
+         bottom: 50px
 ========================================================= -->
 
 <aside
     id="assetBar"
     class="asset-bar"
-    aria-label="Farm Assets"
+    aria-label="Assets"
     aria-hidden="true"
 >
 
 
     <!-- =====================================================
-         CATEGORY TABS
+         CATEGORY SWITCHER
+
+         Positioned at the very top of the asset sidebar.
     ====================================================== -->
 
     <div
@@ -82,6 +149,10 @@ const structureDairies =
         role="tablist"
         aria-label="Asset categories"
     >
+
+        <!-- =================================================
+             ANIMALS TAB
+        ================================================== -->
 
         <button
             type="button"
@@ -103,6 +174,10 @@ const structureDairies =
 
         </button>
 
+
+        <!-- =================================================
+             STRUCTURES TAB
+        ================================================== -->
 
         <button
             type="button"
@@ -132,7 +207,7 @@ const structureDairies =
 
 
     <!-- =====================================================
-         CURRENT FARM
+         CURRENT FARM INFORMATION
     ====================================================== -->
 
     <% if (
@@ -162,7 +237,9 @@ const structureDairies =
 
 
     <!-- =====================================================
-         CONTENT
+         ASSET CONTENT
+
+         Independently scrollable.
     ====================================================== -->
 
     <div class="asset-bar-content">
@@ -201,14 +278,18 @@ const structureDairies =
             </div>
 
 
+            <!-- =============================================
+                 ANIMAL LIST
+            ============================================== -->
+
             <div class="asset-bar-list">
 
                 <% if (animalDairies.length) { %>
 
-                    <% animalDairies.forEach(dairy => { %>
+                    <% animalDairies.forEach(animal => { %>
 
                         <!-- =================================
-                             ALL ASSETS USE:
+                             ALL ANIMALS USE:
 
                              /dairy/<%= dairy._id %>
                         ================================== -->
@@ -216,52 +297,71 @@ const structureDairies =
                         <a
                             href="/dairy/<%= dairy._id %>"
                             class="asset-bar-item asset-bar-animal"
-                            data-asset-code="<%= dairy.code %>"
-                            data-asset-parent-code="<%= dairy.assetCode || '' %>"
+                            data-asset-code="<%= animal.code %>"
+                            data-asset-parent-code="<%= animal.assetCode || '' %>"
                             data-asset-type="animal"
                         >
 
-                            <span class="asset-bar-item-image">
+                            <!-- IMAGE -->
+
+                            <span
+                                class="asset-bar-item-image"
+                            >
 
                                 <img
-                                    src="<%= dairy.displayImage %>"
-                                    alt="<%= dairy.name %>"
+                                    src="<%= animal.displayImage %>"
+                                    alt="<%= animal.name %>"
                                     loading="lazy"
                                 >
 
                             </span>
 
 
-                            <span class="asset-bar-item-details">
+                            <!-- DETAILS -->
 
-                                <span class="asset-bar-item-name">
-                                    <%= dairy.name %>
+                            <span
+                                class="asset-bar-item-details"
+                            >
+
+                                <span
+                                    class="asset-bar-item-name"
+                                >
+                                    <%= animal.name %>
                                 </span>
 
-                                <span class="asset-bar-item-code">
-                                    Animal #<%= dairy.code %>
+
+                                <span
+                                    class="asset-bar-item-code"
+                                >
+                                    Animal #<%= animal.code %>
                                 </span>
 
 
-                                <% if (dairy.type) { %>
+                                <% if (animal.type) { %>
 
-                                    <span class="asset-bar-item-meta">
-                                        <%= dairy.type %>
+                                    <span
+                                        class="asset-bar-item-meta"
+                                    >
+                                        <%= animal.type %>
                                     </span>
 
                                 <% } %>
 
 
-                                <% if (dairy.gender) { %>
+                                <% if (animal.gender) { %>
 
-                                    <span class="asset-bar-item-meta">
-                                        <%= dairy.gender %>
+                                    <span
+                                        class="asset-bar-item-meta"
+                                    >
+                                        <%= animal.gender %>
                                     </span>
 
                                 <% } %>
 
                             </span>
 
+
+                            <!-- ARROW -->
 
                             <span
                                 class="asset-bar-item-arrow"
@@ -332,62 +432,84 @@ const structureDairies =
             </div>
 
 
+            <!-- =============================================
+                 STRUCTURE LIST
+            ============================================== -->
+
             <div class="asset-bar-list">
 
                 <% if (structureDairies.length) { %>
 
-                    <% structureDairies.forEach(dairy => { %>
+                    <% structureDairies.forEach(asset => { %>
 
                         <!-- =================================
-                             SAME ROUTE AS ANIMALS:
+                             ALL STRUCTURES USE:
 
                              /dairy/<%= dairy._id %>
+
+                             There is NO asset._id here.
                         ================================== -->
 
                         <a
                             href="/dairy/<%= dairy._id %>"
                             class="asset-bar-item asset-bar-structure"
-                            data-asset-parent-code="<%= dairy.assetCode || '' %>"
+                            data-asset-parent-code="<%= asset.assetCode || '' %>"
                             data-asset-type="structure"
                         >
 
-                            <span class="asset-bar-item-image">
+                            <!-- IMAGE -->
+
+                            <span
+                                class="asset-bar-item-image"
+                            >
 
                                 <img
-                                    src="<%= dairy.displayImage %>"
-                                    alt="<%= dairy.name %>"
+                                    src="<%= asset.displayImage %>"
+                                    alt="<%= asset.name %>"
                                     loading="lazy"
                                 >
 
                             </span>
 
 
-                            <span class="asset-bar-item-details">
+                            <!-- DETAILS -->
 
-                                <span class="asset-bar-item-name">
-                                    <%= dairy.name %>
+                            <span
+                                class="asset-bar-item-details"
+                            >
+
+                                <span
+                                    class="asset-bar-item-name"
+                                >
+                                    <%= asset.name %>
                                 </span>
 
 
-                                <% if (dairy.type) { %>
+                                <% if (asset.type) { %>
 
-                                    <span class="asset-bar-item-meta">
-                                        <%= dairy.type %>
+                                    <span
+                                        class="asset-bar-item-meta"
+                                    >
+                                        <%= asset.type %>
                                     </span>
 
                                 <% } %>
 
 
-                                <% if (dairy.location) { %>
+                                <% if (asset.location) { %>
 
-                                    <span class="asset-bar-item-meta">
-                                        <%= dairy.location %>
+                                    <span
+                                        class="asset-bar-item-meta"
+                                    >
+                                        <%= asset.location %>
                                     </span>
 
                                 <% } %>
 
                             </span>
 
+
+                            <!-- ARROW -->
 
                             <span
                                 class="asset-bar-item-arrow"
@@ -430,7 +552,20 @@ const structureDairies =
 
 
 <!-- =========================================================
-     JAVASCRIPT
+     ASSET BAR JAVASCRIPT
+
+     Parent page provides:
+
+         #viewPropertyButton
+
+     Controls:
+
+         • Opening
+         • Closing
+         • Overlay
+         • Escape key
+         • Category switching
+         • Background scrolling
 ========================================================= -->
 
 <script>
@@ -439,36 +574,44 @@ document.addEventListener(
     "DOMContentLoaded",
     function() {
 
+
+        /* =================================================
+           ELEMENTS
+        ================================================= */
+
         const assetBar =
             document.getElementById(
                 "assetBar"
             );
+
 
         const overlay =
             document.getElementById(
                 "assetBarOverlay"
             );
 
+
         const openButton =
             document.getElementById(
                 "viewPropertyButton"
             );
 
-        const closeButton =
-            document.getElementById(
-                "closeAssetBar"
-            );
 
         const tabs =
             document.querySelectorAll(
                 ".asset-bar-tab"
             );
 
+
         const sections =
             document.querySelectorAll(
                 ".asset-bar-section"
             );
 
+
+        /* =================================================
+           SAFETY CHECK
+        ================================================= */
 
         if (!assetBar) {
 
@@ -498,21 +641,28 @@ document.addEventListener(
 
         function setCategory(category) {
 
+            if (!category) {
+                return;
+            }
+
+
             tabs.forEach(
                 function(tab) {
 
-                    const active =
+                    const isActive =
                         tab.dataset.assetCategory ===
                         category;
 
+
                     tab.classList.toggle(
                         "active",
-                        active
+                        isActive
                     );
+
 
                     tab.setAttribute(
                         "aria-selected",
-                        String(active)
+                        String(isActive)
                     );
 
                 }
@@ -522,17 +672,19 @@ document.addEventListener(
             sections.forEach(
                 function(section) {
 
-                    const active =
+                    const isActive =
                         section.dataset.assetSection ===
                         category;
 
+
                     section.classList.toggle(
                         "active",
-                        active
+                        isActive
                     );
 
+
                     section.hidden =
-                        !active;
+                        !isActive;
 
                 }
             );
@@ -541,18 +693,43 @@ document.addEventListener(
 
 
         /* =================================================
-           OPEN
+           OPEN SIDEBAR
         ================================================= */
 
         function openAssetBar() {
 
-            setCategory("animals");
+            setCategory(
+                "animals"
+            );
 
-            assetBar.classList.add("active");
+
+            assetBar.classList.add(
+                "active"
+            );
+
 
             if (overlay) {
 
-                overlay.classList.add("active");
+                overlay.classList.add(
+                    "active"
+                );
+
+            }
+
+
+            assetBar.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+
+            openButton.setAttribute(
+                "aria-expanded",
+                "true"
+            );
+
+
+            if (overlay) {
 
                 overlay.setAttribute(
                     "aria-hidden",
@@ -561,15 +738,6 @@ document.addEventListener(
 
             }
 
-            assetBar.setAttribute(
-                "aria-hidden",
-                "false"
-            );
-
-            openButton.setAttribute(
-                "aria-expanded",
-                "true"
-            );
 
             document.body.classList.add(
                 "asset-bar-open"
@@ -579,7 +747,7 @@ document.addEventListener(
 
 
         /* =================================================
-           CLOSE
+           CLOSE SIDEBAR
         ================================================= */
 
         function closeAssetBar() {
@@ -588,11 +756,29 @@ document.addEventListener(
                 "active"
             );
 
+
             if (overlay) {
 
                 overlay.classList.remove(
                     "active"
                 );
+
+            }
+
+
+            assetBar.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+
+            openButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+
+            if (overlay) {
 
                 overlay.setAttribute(
                     "aria-hidden",
@@ -601,19 +787,11 @@ document.addEventListener(
 
             }
 
-            assetBar.setAttribute(
-                "aria-hidden",
-                "true"
-            );
-
-            openButton.setAttribute(
-                "aria-expanded",
-                "false"
-            );
 
             document.body.classList.remove(
                 "asset-bar-open"
             );
+
 
             openButton.focus();
 
@@ -621,7 +799,7 @@ document.addEventListener(
 
 
         /* =================================================
-           OPEN BUTTON
+           VIEW ASSETS BUTTON
         ================================================= */
 
         openButton.addEventListener(
@@ -637,19 +815,14 @@ document.addEventListener(
 
 
         /* =================================================
-           CLOSE BUTTON
-
-           If your CSS/parent page contains
-           #closeAssetBar, this will close the bar.
+           OVERLAY CLICK
         ================================================= */
 
-        if (closeButton) {
+        if (overlay) {
 
-            closeButton.addEventListener(
+            overlay.addEventListener(
                 "click",
-                function(event) {
-
-                    event.preventDefault();
+                function() {
 
                     closeAssetBar();
 
@@ -660,21 +833,7 @@ document.addEventListener(
 
 
         /* =================================================
-           OVERLAY
-        ================================================= */
-
-        if (overlay) {
-
-            overlay.addEventListener(
-                "click",
-                closeAssetBar
-            );
-
-        }
-
-
-        /* =================================================
-           ESCAPE
+           ESCAPE KEY
         ================================================= */
 
         document.addEventListener(
@@ -697,7 +856,7 @@ document.addEventListener(
 
 
         /* =================================================
-           CATEGORY TABS
+           CATEGORY TAB CLICK
         ================================================= */
 
         tabs.forEach(
@@ -709,8 +868,18 @@ document.addEventListener(
 
                         event.preventDefault();
 
+
+                        const category =
+                            tab.dataset.assetCategory;
+
+
+                        if (!category) {
+                            return;
+                        }
+
+
                         setCategory(
-                            tab.dataset.assetCategory
+                            category
                         );
 
                     }
@@ -718,6 +887,7 @@ document.addEventListener(
 
             }
         );
+
 
     }
 );
