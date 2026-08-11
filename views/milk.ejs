@@ -156,6 +156,7 @@
   }
 
   .recorded {
+    margin-top: 8px;
     padding: 10px 12px;
     border-radius: 8px;
     background: #f3f4f6;
@@ -170,7 +171,7 @@
   }
 
   .system-record {
-    color: #9a3412;
+    color: #9a3412 !important;
   }
 
   .readonly-input {
@@ -192,6 +193,10 @@
     cursor: pointer;
     font-size: 12px;
     font-weight: 700;
+  }
+
+  .admin-edit button:hover {
+    background: #14532d;
   }
 
   .submit-section {
@@ -288,6 +293,14 @@
     line-height: 1.6;
   }
 
+  .milk-modal-box label {
+    display: block;
+    margin: 12px 0 6px;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
   .modal-actions {
     display: flex;
     gap: 10px;
@@ -310,8 +323,13 @@
 
   @media(max-width:650px) {
 
+    .milk-page {
+      padding-top: 10px;
+    }
+
     .milk-header {
       align-items: flex-start;
+      padding: 20px;
     }
 
     .milk-header h2 {
@@ -322,6 +340,7 @@
       width: 48px;
       height: 48px;
       font-size: 23px;
+      flex-shrink: 0;
     }
 
     .milk-table-wrapper {
@@ -343,6 +362,7 @@
     .submit-section {
       flex-direction: column;
       align-items: stretch;
+      padding: 18px;
     }
 
     .submit-btn {
@@ -350,463 +370,539 @@
       justify-content: center;
     }
 
+    .milk-status,
+    .milk-error,
+    .milk-success {
+      margin-left: 15px;
+      margin-right: 15px;
+    }
+
   }
 
-</style>
-
-
-<div class="milk-page">
-
-  <div class="milk-card">
-
-    <!-- ==================================================
-         HEADER
-    ================================================== -->
-
-    <div class="milk-header">
-
-      <div>
-
-        <h2>
-          🥛 Milk Collection
-        </h2>
-
-        <p>
-          Record milk production for each dairy animal.
-        </p>
-
-      </div>
-
-      <div class="milk-icon">
-        🥛
-      </div>
-
-    </div>
-
-
-    <!-- ==================================================
-         ERROR
-    ================================================== -->
-
-    <% if (error) { %>
-
-      <div class="milk-error">
-
-        ⚠️ <%= error %>
-
-      </div>
-
-    <% } %>
-
-
-    <!-- ==================================================
-         SUCCESS
-    ================================================== -->
-
-    <% if (success) { %>
-
-      <div class="milk-success">
-
-        ✓ Milk record saved successfully.
-
-      </div>
-
-    <% } %>
-
-
-    <!-- ==================================================
-         SESSION STATUS
-    ================================================== -->
-
-    <% if (session === "morning") { %>
-
-      <div class="milk-status">
-
-        🌅 <strong>Morning session is open.</strong>
-        Submit one record per animal before 10:00 AM.
-
-      </div>
-
-    <% } else if (session === "evening") { %>
-
-      <div class="milk-status">
-
-        🌆 <strong>Evening session is open.</strong>
-        Submit one record per animal after 4:00 PM.
-
-      </div>
-
-    <% } else { %>
-
-      <div class="milk-status warning">
-
-        ⏰ Milk collection is currently between sessions.
-        Morning collection has closed and evening collection
-        starts at 4:00 PM.
-
-        <% if (!isAdmin) { %>
-
-          Contact an administrator if a correction is required.
-
-        <% } %>
-
-      </div>
-
-    <% } %>
-
-
-    <% if (!dairies || dairies.length === 0) { %>
-
-      <div class="empty-state">
-
-        <div class="empty-icon">
-          🐄
-        </div>
-
-        <h3>
-          No Animals Currently Being Milked
-        </h3>
-
-        <p>
-          There are no active dairy animals available.
-        </p>
-
-      </div>
-
-    <% } else { %>
-
-
-      <!-- ==================================================
-           FORM
-      ================================================== -->
-
-      <form
-        action="/milk"
-        method="POST"
-        id="milkForm"
-      >
-
-        <div class="milk-table-wrapper">
-
-          <table class="milk-table">
-
-            <thead>
-
-              <tr>
-
-                <th>
-                  Code
-                </th>
-
-                <th>
-                  Name
-                </th>
-
-                <th>
-                  Milk (L)
-                </th>
-
-                <th>
-                  Remarks
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              <% dairies.forEach((dairy, index) => {
-
-                const record =
-                  session === "morning"
-                    ? dairy.morning
-                    : session === "evening"
-                      ? dairy.evening
-                      : dairy.morning || dairy.evening;
-
-              %>
-
-                <tr>
-
-                  <td>
-
-                    <span class="code-badge">
-
-                      #<%= dairy.code %>
-
-                    </span>
-
-                  </td>
-
-
-                  <td>
-
-                    <span class="animal-name">
-
-                      <%= dairy.name %>
-
-                    </span>
-
-                  </td>
-
-
-                  <td>
-
-                    <% if (record) { %>
-
-                      <input
-                        class="milk-input readonly-input"
-                        type="number"
-                        value="<%= record.liters %>"
-                        readonly
-                      >
-
-                    <% } else if (session) { %>
-
-                      <input
-                        class="milk-input"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        name="records[<%= index %>][liters]"
-                        placeholder="0.0"
-                        required
-                      >
-
-                      <input
-                        type="hidden"
-                        name="records[<%= index %>][dairy]"
-                        value="<%= dairy._id %>"
-                      >
-
-                    <% } else { %>
-
-                      <input
-                        class="milk-input readonly-input"
-                        type="number"
-                        value="0"
-                        readonly
-                      >
-
-                    <% } %>
-
-                  </td>
-
-
-                  <td>
-
-                    <% if (record) { %>
-
-                      <textarea
-                        class="remarks-input readonly-input"
-                        readonly
-                      ><%= record.remarks %></textarea>
-
-                      <div class="recorded">
-
-                        <% if (
-                          record.recordedByType === "system"
-                        ) { %>
-
-                          <strong class="system-record">
-                            System
-                          </strong>
-
-                          Automatically recorded as
-                          Not Milked.
-
-                        <% } else { %>
-
-                          <strong>
-                            Recorded
-                          </strong>
-
-                          This animal has already been
-                          recorded for this session.
-
-                        <% } %>
-
-                      </div>
-
-
-                      <% if (isAdmin) { %>
-
-                        <div class="admin-edit">
-
-                          <button
-                            type="button"
-                            onclick="openEditModal(
-                              '<%= record._id %>',
-                              '<%= record.liters %>',
-                              '<%= (record.remarks || '').replace(/'/g, '&#39;') %>'
-                            )"
-                          >
-                            ✏️ Edit Record
-                          </button>
-
-                        </div>
-
-                      <% } %>
-
-
-                    <% } else if (session) { %>
-
-                      <textarea
-                        class="remarks-input"
-                        name="records[<%= index %>][remarks]"
-                        placeholder="Optional remarks..."
-                      ></textarea>
-
-                    <% } else { %>
-
-                      <textarea
-                        class="remarks-input readonly-input"
-                        readonly
-                      >Collection closed.</textarea>
-
-                    <% } %>
-
-                  </td>
-
-                </tr>
-
-              <% }) %>
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-
-        <!-- ==================================================
-             SUBMIT
-        ================================================== -->
-
-        <div class="submit-section">
-
-          <div class="submit-hint">
-
-            <% if (session === "morning") { %>
-
-              🌅 Morning records must be submitted before
-              10:00 AM.
-
-            <% } else if (session === "evening") { %>
-
-              🌆 Evening records must be submitted from
-              4:00 PM until midnight.
-
-            <% } else { %>
-
-              🔒 The current collection window is closed.
-
-            <% } %>
-
-          </div>
-
-
-          <button
-            type="submit"
-            class="submit-btn"
-            <% if (!session) { %>
-              disabled
-            <% } %>
-          >
-
-            ✓ Submit Milk Records
-
-          </button>
-
-        </div>
-
-      </form>
-
-    <% } %>
-
+</style><%
+/*
+
+* ==========================================================
+* SAFE DEFAULTS
+* ==========================================================
+* 
+* The controller may not send every optional variable.
+* Do NOT directly use an undefined EJS variable.
+  */
+
+const pageError =
+typeof error !== "undefined"
+? error
+: "";
+
+const pageSuccess =
+typeof success !== "undefined"
+? Boolean(success)
+: false;
+
+const currentSession =
+typeof session !== "undefined"
+? session
+: "";
+
+const adminUser =
+typeof isAdmin !== "undefined"
+? Boolean(isAdmin)
+: (
+typeof user !== "undefined" &&
+user &&
+user.role === "admin"
+);
+
+const milkDairies =
+Array.isArray(dairies)
+? dairies
+: [];
+
+%>
+
+<div class="milk-page">  <div class="milk-card"><!-- ==================================================
+     HEADER
+================================================== -->
+
+<div class="milk-header">
+
+  <div>
+
+    <h2>
+      🥛 Milk Collection
+    </h2>
+
+    <p>
+      Record milk production for each dairy animal.
+    </p>
+
+  </div>
+
+  <div class="milk-icon">
+    🥛
   </div>
 
 </div>
 
 
 <!-- ==================================================
-     ADMIN EDIT MODAL
+     ERROR
 ================================================== -->
 
-<div
-  id="editMilkModal"
-  class="milk-modal"
->
+<% if (pageError) { %>
 
-  <div class="milk-modal-box">
+  <div class="milk-error">
 
-    <h3>
-      ✏️ Edit Milk Record
-    </h3>
-
-    <p>
-      You are editing an existing milk record.
-      Changes will be recorded under your administrator account.
-    </p>
-
-    <form
-      id="editMilkForm"
-      method="POST"
-    >
-
-      <label>
-        Milk (Liters)
-      </label>
-
-      <input
-        id="editLiters"
-        class="milk-input"
-        type="number"
-        step="0.1"
-        min="0"
-        name="liters"
-        required
-      >
-
-      <br>
-
-      <label>
-        Remarks
-      </label>
-
-      <textarea
-        id="editRemarks"
-        class="remarks-input"
-        name="remarks"
-      ></textarea>
-
-      <div class="modal-actions">
-
-        <button
-          type="button"
-          onclick="closeEditModal()"
-        >
-          Cancel
-        </button>
-
-        <button
-          type="submit"
-          class="modal-ok"
-        >
-          Save Changes
-        </button>
-
-      </div>
-
-    </form>
+    ⚠️ <%= pageError %>
 
   </div>
 
-</div>
+<% } %>
 
 
-<script>
+<!-- ==================================================
+     SUCCESS
+================================================== -->
+
+<% if (pageSuccess) { %>
+
+  <div class="milk-success">
+
+    ✓ Milk record saved successfully.
+
+  </div>
+
+<% } %>
+
+
+<!-- ==================================================
+     SESSION STATUS
+================================================== -->
+
+<% if (currentSession === "morning") { %>
+
+  <div class="milk-status">
+
+    🌅 <strong>Morning session is open.</strong>
+
+    Submit one record per animal before
+    4:00 PM.
+
+  </div>
+
+<% } else if (currentSession === "evening") { %>
+
+  <div class="milk-status">
+
+    🌆 <strong>Evening session is open.</strong>
+
+    Submit one record per animal before
+    midnight.
+
+  </div>
+
+<% } else { %>
+
+  <div class="milk-status warning">
+
+    ⏰ Milk collection is currently closed.
+
+    Morning records can be handled before
+    4:00 PM, while evening records close at
+    the end of the day.
+
+    <% if (!adminUser) { %>
+
+      Contact an administrator if a correction
+      is required.
+
+    <% } %>
+
+  </div>
+
+<% } %>
+
+
+<!-- ==================================================
+     ANIMALS
+================================================== -->
+
+<% if (milkDairies.length === 0) { %>
+
+  <div class="empty-state">
+
+    <div class="empty-icon">
+      🐄
+    </div>
+
+    <h3>
+      No Animals Currently Being Milked
+    </h3>
+
+    <p>
+      There are no active dairy animals available.
+    </p>
+
+  </div>
+
+<% } else { %>
+
+
+  <!-- ==================================================
+       FORM
+  ================================================== -->
+
+  <form
+    action="/milk"
+    method="POST"
+    id="milkForm"
+  >
+
+    <div class="milk-table-wrapper">
+
+      <table class="milk-table">
+
+        <thead>
+
+          <tr>
+
+            <th>
+              Code
+            </th>
+
+            <th>
+              Name
+            </th>
+
+            <th>
+              Milk (L)
+            </th>
+
+            <th>
+              Remarks
+            </th>
+
+          </tr>
+
+        </thead>
+
+        <tbody>
+
+          <% milkDairies.forEach((dairy, index) => {
+
+            let record = null;
+
+            if (currentSession === "morning") {
+
+              record = dairy.morning || null;
+
+            } else if (currentSession === "evening") {
+
+              record = dairy.evening || null;
+
+            } else {
+
+              record =
+                dairy.morning ||
+                dairy.evening ||
+                null;
+
+            }
+
+          %>
+
+            <tr>
+
+              <!-- ==================================================
+                   CODE
+              ================================================== -->
+
+              <td>
+
+                <span class="code-badge">
+
+                  #<%= dairy.code %>
+
+                </span>
+
+              </td>
+
+
+              <!-- ==================================================
+                   NAME
+              ================================================== -->
+
+              <td>
+
+                <span class="animal-name">
+
+                  <%= dairy.name %>
+
+                </span>
+
+              </td>
+
+
+              <!-- ==================================================
+                   MILK
+              ================================================== -->
+
+              <td>
+
+                <% if (record) { %>
+
+                  <input
+                    class="milk-input readonly-input"
+                    type="number"
+                    value="<%= Number(record.liters || 0) %>"
+                    readonly
+                  >
+
+                <% } else if (currentSession) { %>
+
+                  <input
+                    class="milk-input"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    name="records[<%= index %>][liters]"
+                    placeholder="0.0"
+                    required
+                  >
+
+                  <input
+                    type="hidden"
+                    name="records[<%= index %>][dairy]"
+                    value="<%= dairy._id %>"
+                  >
+
+                <% } else { %>
+
+                  <input
+                    class="milk-input readonly-input"
+                    type="number"
+                    value="0"
+                    readonly
+                  >
+
+                <% } %>
+
+              </td>
+
+
+              <!-- ==================================================
+                   REMARKS
+              ================================================== -->
+
+              <td>
+
+                <% if (record) { %>
+
+                  <textarea
+                    class="remarks-input readonly-input"
+                    readonly
+                  ><%= record.remarks || "" %></textarea>
+
+
+                  <div class="recorded">
+
+                    <% if (
+                      record.recordedByType === "system"
+                    ) { %>
+
+                      <strong class="system-record">
+                        System
+                      </strong>
+
+                      Automatically recorded as
+                      Not Milked.
+
+                    <% } else { %>
+
+                      <strong>
+                        Recorded
+                      </strong>
+
+                      This animal has already been
+                      recorded for this session.
+
+                    <% } %>
+
+                  </div>
+
+
+                  <!-- ==================================================
+                       ADMIN EDIT
+                  ================================================== -->
+
+                  <% if (
+                    adminUser &&
+                    record._id
+                  ) { %>
+
+                    <div class="admin-edit">
+
+                      <button
+                        type="button"
+                        onclick="openEditModal(
+                          '<%= record._id %>',
+                          '<%= Number(record.liters || 0) %>',
+                          <%- JSON.stringify(record.remarks || "") %>
+                        )"
+                      >
+
+                        ✏️ Edit Record
+
+                      </button>
+
+                    </div>
+
+                  <% } %>
+
+
+                <% } else if (currentSession) { %>
+
+                  <textarea
+                    class="remarks-input"
+                    name="records[<%= index %>][remarks]"
+                    placeholder="Optional remarks..."
+                  ></textarea>
+
+                <% } else { %>
+
+                  <textarea
+                    class="remarks-input readonly-input"
+                    readonly
+                  >Collection closed.</textarea>
+
+                <% } %>
+
+              </td>
+
+            </tr>
+
+          <% }); %>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+
+    <!-- ==================================================
+         SUBMIT
+    ================================================== -->
+
+    <div class="submit-section">
+
+      <div class="submit-hint">
+
+        <% if (currentSession === "morning") { %>
+
+          🌅 Morning records must be submitted
+          before 4:00 PM.
+
+        <% } else if (currentSession === "evening") { %>
+
+          🌆 Evening records can be submitted
+          from 4:00 PM until midnight.
+
+        <% } else { %>
+
+          🔒 The current collection window is closed.
+
+        <% } %>
+
+      </div>
+
+
+      <button
+        type="submit"
+        class="submit-btn"
+        <% if (!currentSession) { %>
+          disabled
+        <% } %>
+      >
+
+        ✓ Submit Milk Records
+
+      </button>
+
+    </div>
+
+  </form>
+
+<% } %>
+
+  </div></div><!-- ==================================================
+     ADMIN EDIT MODAL
+================================================== --><div
+  id="editMilkModal"
+  class="milk-modal"
+>  <div class="milk-modal-box"><h3>
+  ✏️ Edit Milk Record
+</h3>
+
+<p>
+  You are editing an existing milk record.
+  Changes will be recorded under your administrator
+  account.
+</p>
+
+<form
+  id="editMilkForm"
+  method="POST"
+>
+
+  <label for="editLiters">
+    Milk (Liters)
+  </label>
+
+  <input
+    id="editLiters"
+    class="milk-input"
+    type="number"
+    step="0.1"
+    min="0"
+    name="liters"
+    required
+  >
+
+
+  <label for="editRemarks">
+    Remarks
+  </label>
+
+  <textarea
+    id="editRemarks"
+    class="remarks-input"
+    name="remarks"
+  ></textarea>
+
+
+  <div class="modal-actions">
+
+    <button
+      type="button"
+      onclick="closeEditModal()"
+    >
+      Cancel
+    </button>
+
+    <button
+      type="submit"
+      class="modal-ok"
+    >
+      Save Changes
+    </button>
+
+  </div>
+
+</form>
+
+  </div></div><script>
 
   // ==================================================
   // ADMIN EDIT MODAL
@@ -838,7 +934,12 @@
         "editRemarks"
       );
 
-    if (!modal || !form) {
+    if (
+      !modal ||
+      !form ||
+      !litersInput ||
+      !remarksInput
+    ) {
 
       return;
 
@@ -859,6 +960,9 @@
 
   }
 
+
+  // ==================================================
+  // CLOSE MODAL
   // ==================================================
 
   function closeEditModal() {
@@ -878,20 +982,24 @@
 
   }
 
+
   // ==================================================
   // OUTSIDE CLICK
   // ==================================================
 
-  document
-    .getElementById(
+  const editMilkModal =
+    document.getElementById(
       "editMilkModal"
-    )
-    ?.addEventListener(
+    );
+
+  if (editMilkModal) {
+
+    editMilkModal.addEventListener(
       "click",
       function(event) {
 
         if (
-          event.target === this
+          event.target === editMilkModal
         ) {
 
           closeEditModal();
@@ -900,5 +1008,27 @@
 
       }
     );
+
+  }
+
+
+  // ==================================================
+  // ESCAPE KEY
+  // ==================================================
+
+  document.addEventListener(
+    "keydown",
+    function(event) {
+
+      if (
+        event.key === "Escape"
+      ) {
+
+        closeEditModal();
+
+      }
+
+    }
+  );
 
 </script>
