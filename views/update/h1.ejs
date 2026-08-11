@@ -1,0 +1,890 @@
+<% /* ==========================================================
+DAIRY FARM INTRODUCTION / H1
+
+FILE:
+views/update/h1.ejs
+
+PURPOSE:
+
+Introductory hero section for a Dairy Farm.
+
+BACKGROUND:
+/images/h1.png
+
+DATA REQUIRED:
+dairy
+
+========================================================== */ %>
+
+<section
+    class="dairy-h1"
+    aria-label="Dairy Farm Introduction"
+><!-- =====================================================
+     BACKGROUND IMAGE
+====================================================== -->
+
+<div
+    class="dairy-h1-background"
+    aria-hidden="true"
+></div>
+
+
+<!-- =====================================================
+     GREEN / BROWN OVERLAY
+====================================================== -->
+
+<div
+    class="dairy-h1-overlay"
+    aria-hidden="true"
+></div>
+
+
+<!-- =====================================================
+     MAIN CONTENT
+====================================================== -->
+
+<div class="dairy-h1-content">
+
+
+    <!-- =================================================
+         SMALL LABEL
+    ================================================== -->
+
+    <div class="dairy-h1-label">
+
+        <span class="dairy-h1-label-line"></span>
+
+        <span>
+            DAIRY FARM
+        </span>
+
+        <span class="dairy-h1-label-line"></span>
+
+    </div>
+
+
+    <!-- =================================================
+         FARM NAME
+    ================================================== -->
+
+    <h1 class="dairy-h1-title">
+
+        Welcome to
+        <span>
+            <%= dairy.name || "Our Dairy Farm" %>
+        </span>
+
+    </h1>
+
+
+    <!-- =================================================
+         FARM CODE
+    ================================================== -->
+
+    <% if (
+        dairy &&
+        dairy.code !== null &&
+        dairy.code !== undefined
+    ) { %>
+
+        <div class="dairy-h1-code">
+
+            FARM #<%= dairy.code %>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- =================================================
+         INTRODUCTORY MESSAGE
+    ================================================== -->
+
+    <div class="dairy-h1-message">
+
+
+        <p>
+            Welcome to
+            <strong>
+                <%= dairy.name || "this dairy farm" %>
+            </strong>.
+            We're glad to have you here.
+        </p>
+
+
+        <p>
+            Support the activities here by updating
+            us about the welfare of all assets within
+            the dairy farm.
+        </p>
+
+
+        <p>
+            In case of any inconveniences, keep us
+            updated on this site.
+        </p>
+
+
+    </div>
+
+
+    <!-- =================================================
+         FARM VALUES
+    ================================================== -->
+
+    <div class="dairy-h1-values">
+
+
+        <!-- =============================================
+             ANIMALS
+        ============================================== -->
+
+        <div class="dairy-h1-value">
+
+            <span
+                class="dairy-h1-value-icon"
+                aria-hidden="true"
+            >
+                ♧
+            </span>
+
+            <div>
+
+                <strong>
+                    Animal Welfare
+                </strong>
+
+                <span>
+                    Care for every animal
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- =============================================
+             ASSETS
+        ============================================== -->
+
+        <div class="dairy-h1-value">
+
+            <span
+                class="dairy-h1-value-icon"
+                aria-hidden="true"
+            >
+                ◈
+            </span>
+
+            <div>
+
+                <strong>
+                    Farm Assets
+                </strong>
+
+                <span>
+                    Maintain every resource
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <!-- =============================================
+             UPDATES
+        ============================================== -->
+
+        <div class="dairy-h1-value">
+
+            <span
+                class="dairy-h1-value-icon"
+                aria-hidden="true"
+            >
+                ↗
+            </span>
+
+            <div>
+
+                <strong>
+                    Stay Updated
+                </strong>
+
+                <span>
+                    Keep the farm informed
+                </span>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+</section><!-- =========================================================
+     DAIRY H1 STYLES
+========================================================= --><style>
+
+/* =========================================================
+   MAIN HERO
+========================================================= */
+
+.dairy-h1{
+
+    position:relative;
+
+    width:100%;
+
+    min-height:520px;
+
+    margin:0 0 28px;
+
+    overflow:hidden;
+
+    border-radius:18px;
+
+    background:#273724;
+
+    box-shadow:
+        0 14px 38px
+        rgba(45,35,20,.18);
+
+}
+
+
+/* =========================================================
+   BACKGROUND IMAGE
+========================================================= */
+
+.dairy-h1-background{
+
+    position:absolute;
+
+    inset:0;
+
+    background-image:
+        url("/images/h1.png");
+
+    background-repeat:no-repeat;
+
+    background-size:cover;
+
+    background-position:center center;
+
+    transform:scale(1.015);
+
+}
+
+
+/* =========================================================
+   GREEN / BROWN OVERLAY
+
+   Stronger on the left where the text sits.
+========================================================= */
+
+.dairy-h1-overlay{
+
+    position:absolute;
+
+    inset:0;
+
+    background:
+        linear-gradient(
+            90deg,
+
+            rgba(24,43,24,.96) 0%,
+
+            rgba(31,48,27,.91) 25%,
+
+            rgba(54,55,29,.72) 48%,
+
+            rgba(65,53,31,.40) 70%,
+
+            rgba(39,43,26,.20) 100%
+        );
+
+}
+
+
+/* =========================================================
+   CONTENT CONTAINER
+========================================================= */
+
+.dairy-h1-content{
+
+    position:relative;
+
+    z-index:2;
+
+    width:100%;
+
+    max-width:1180px;
+
+    min-height:520px;
+
+    margin:0 auto;
+
+    padding:
+
+        clamp(45px, 6vw, 75px)
+
+        clamp(24px, 6vw, 70px)
+
+        45px;
+
+    box-sizing:border-box;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:flex-start;
+
+}
+
+
+/* =========================================================
+   LABEL
+========================================================= */
+
+.dairy-h1-label{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    margin-bottom:15px;
+
+    color:#d8c99f;
+
+    font-size:10px;
+
+    font-weight:800;
+
+    letter-spacing:2.5px;
+
+}
+
+
+.dairy-h1-label-line{
+
+    display:block;
+
+    width:28px;
+
+    height:1px;
+
+    background:
+        rgba(216,201,159,.75);
+
+}
+
+
+/* =========================================================
+   TITLE
+========================================================= */
+
+.dairy-h1-title{
+
+    max-width:780px;
+
+    margin:0;
+
+    font-size:
+        clamp(
+            34px,
+            5vw,
+            62px
+        );
+
+    line-height:1.05;
+
+    letter-spacing:-1.2px;
+
+    font-weight:800;
+
+    color:#fff;
+
+    text-shadow:
+        0 3px 15px
+        rgba(0,0,0,.35);
+
+}
+
+
+.dairy-h1-title span{
+
+    display:block;
+
+    margin-top:5px;
+
+    color:#e3d3a5;
+
+}
+
+
+/* =========================================================
+   FARM CODE
+========================================================= */
+
+.dairy-h1-code{
+
+    margin-top:12px;
+
+    padding:5px 10px;
+
+    border-radius:5px;
+
+    border:1px solid
+        rgba(225,211,165,.30);
+
+    background:
+        rgba(24,43,24,.45);
+
+    color:#d8c99f;
+
+    font-size:9px;
+
+    font-weight:800;
+
+    letter-spacing:1.5px;
+
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+.dairy-h1-message{
+
+    max-width:670px;
+
+    margin-top:25px;
+
+}
+
+
+.dairy-h1-message p{
+
+    margin:0 0 10px;
+
+    color:
+        rgba(255,255,255,.91);
+
+    font-size:
+        clamp(
+            13px,
+            1.5vw,
+            15px
+        );
+
+    line-height:1.7;
+
+    font-weight:400;
+
+    text-shadow:
+        0 2px 8px
+        rgba(0,0,0,.35);
+
+}
+
+
+.dairy-h1-message p:last-child{
+
+    margin-bottom:0;
+
+}
+
+
+.dairy-h1-message strong{
+
+    color:#f0e2b8;
+
+    font-weight:700;
+
+}
+
+
+/* =========================================================
+   VALUES
+========================================================= */
+
+.dairy-h1-values{
+
+    width:100%;
+
+    max-width:760px;
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap:10px;
+
+    margin-top:30px;
+
+}
+
+
+/* =========================================================
+   VALUE CARD
+========================================================= */
+
+.dairy-h1-value{
+
+    min-width:0;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:12px;
+
+    border:1px solid
+        rgba(225,211,165,.20);
+
+    border-radius:11px;
+
+    background:
+        rgba(24,43,24,.55);
+
+    backdrop-filter:blur(5px);
+
+    -webkit-backdrop-filter:blur(5px);
+
+}
+
+
+/* =========================================================
+   VALUE ICON
+========================================================= */
+
+.dairy-h1-value-icon{
+
+    flex:0 0 34px;
+
+    width:34px;
+
+    height:34px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    border-radius:50%;
+
+    border:1px solid
+        rgba(216,201,159,.35);
+
+    color:#dfcf9e;
+
+    font-size:17px;
+
+}
+
+
+/* =========================================================
+   VALUE TEXT
+========================================================= */
+
+.dairy-h1-value div{
+
+    min-width:0;
+
+}
+
+
+.dairy-h1-value strong{
+
+    display:block;
+
+    margin-bottom:3px;
+
+    color:#f0e4c2;
+
+    font-size:11px;
+
+    font-weight:800;
+
+}
+
+
+.dairy-h1-value span:not(.dairy-h1-value-icon){
+
+    display:block;
+
+    color:
+        rgba(255,255,255,.68);
+
+    font-size:9px;
+
+    line-height:1.35;
+
+}
+
+
+/* =========================================================
+   LARGE SCREENS
+
+   Prevents the hero from becoming excessively stretched.
+========================================================= */
+
+@media(min-width:1400px){
+
+    .dairy-h1{
+
+        min-height:560px;
+
+    }
+
+
+    .dairy-h1-content{
+
+        min-height:560px;
+
+        padding-left:80px;
+
+        padding-right:80px;
+
+    }
+
+
+    .dairy-h1-message{
+
+        max-width:720px;
+
+    }
+
+}
+
+
+/* =========================================================
+   TABLETS
+========================================================= */
+
+@media(max-width:900px){
+
+    .dairy-h1{
+
+        min-height:500px;
+
+    }
+
+
+    .dairy-h1-content{
+
+        min-height:500px;
+
+    }
+
+
+    .dairy-h1-overlay{
+
+        background:
+            linear-gradient(
+                90deg,
+
+                rgba(24,43,24,.96) 0%,
+
+                rgba(31,48,27,.86) 48%,
+
+                rgba(54,55,29,.48) 100%
+            );
+
+    }
+
+
+    .dairy-h1-values{
+
+        max-width:700px;
+
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:650px){
+
+    .dairy-h1{
+
+        min-height:620px;
+
+        margin-bottom:20px;
+
+        border-radius:14px;
+
+    }
+
+
+    .dairy-h1-content{
+
+        min-height:620px;
+
+        padding:
+
+            38px
+
+            20px
+
+            30px;
+
+        justify-content:center;
+
+    }
+
+
+    .dairy-h1-background{
+
+        background-position:
+            62% center;
+
+    }
+
+
+    .dairy-h1-overlay{
+
+        background:
+            linear-gradient(
+                180deg,
+
+                rgba(24,43,24,.86) 0%,
+
+                rgba(27,45,25,.90) 50%,
+
+                rgba(39,40,24,.95) 100%
+            );
+
+    }
+
+
+    .dairy-h1-label{
+
+        font-size:9px;
+
+        letter-spacing:2px;
+
+    }
+
+
+    .dairy-h1-title{
+
+        font-size:
+            clamp(
+                32px,
+                10vw,
+                43px
+            );
+
+        letter-spacing:-.7px;
+
+    }
+
+
+    .dairy-h1-message{
+
+        margin-top:20px;
+
+    }
+
+
+    .dairy-h1-message p{
+
+        font-size:13px;
+
+        line-height:1.65;
+
+        margin-bottom:9px;
+
+    }
+
+
+    .dairy-h1-values{
+
+        grid-template-columns:1fr;
+
+        gap:7px;
+
+        margin-top:22px;
+
+    }
+
+
+    .dairy-h1-value{
+
+        padding:9px 11px;
+
+    }
+
+
+    .dairy-h1-value-icon{
+
+        flex-basis:31px;
+
+        width:31px;
+
+        height:31px;
+
+        font-size:15px;
+
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
+
+@media(max-width:380px){
+
+    .dairy-h1{
+
+        min-height:650px;
+
+    }
+
+
+    .dairy-h1-content{
+
+        min-height:650px;
+
+        padding-left:16px;
+
+        padding-right:16px;
+
+    }
+
+
+    .dairy-h1-title{
+
+        font-size:30px;
+
+    }
+
+
+    .dairy-h1-message p{
+
+        font-size:12px;
+
+    }
+
+}
+
+</style>
