@@ -2,8 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 
-const milkController =
-  require("../controllers/milkController");
+const milkController = require("../controllers/milkController");
 
 // ==================================================
 // AUTHENTICATION MIDDLEWARE
@@ -11,30 +10,21 @@ const milkController =
 
 const requireLogin = (req, res, next) => {
 
-  if (
-    !req.session ||
-    !req.session.user
-  ) {
+  if (!req.session || !req.session.user) {
 
     return res.redirect("/login");
 
   }
 
-  req.user =
-    req.session.user;
+  req.user = req.session.user;
 
   next();
 
 };
 
-
 // ==================================================
 // MILK COLLECTION
 // ==================================================
-
-// --------------------------------------------------
-// MILK COLLECTION PAGE
-// --------------------------------------------------
 
 router.get(
   "/milk",
@@ -42,37 +32,34 @@ router.get(
   milkController.getMilkPage
 );
 
-
-// --------------------------------------------------
-// SUBMIT NEW MILK RECORDS
-// --------------------------------------------------
-
 router.post(
   "/milk",
   requireLogin,
   milkController.submitMilk
 );
 
+// ==================================================
+// EDIT MILK RECORD
+//
+// These are additional routes only.
+// They do NOT replace /milk.
+// ==================================================
 
-// --------------------------------------------------
-// EDIT EXISTING MILK RECORD
-// ADMIN ONLY
-// --------------------------------------------------
+router.get(
+  "/milk/edit/:id",
+  requireLogin,
+  milkController.getEditMilk
+);
 
 router.post(
   "/milk/edit/:id",
   requireLogin,
-  milkController.editMilkRecord
+  milkController.updateMilkRecord
 );
-
 
 // ==================================================
 // MILK STATISTICS
 // ==================================================
-
-// --------------------------------------------------
-// MILK STATISTICS PAGE
-// --------------------------------------------------
 
 router.get(
   "/stats",
@@ -80,17 +67,11 @@ router.get(
   milkController.getMilkStats
 );
 
-
-// --------------------------------------------------
-// SAVE DAILY STATISTICS / PRICE
-// --------------------------------------------------
-
 router.post(
   "/stats/day",
   requireLogin,
   milkController.saveDailyStats
 );
-
 
 // ==================================================
 // MILKING HISTORY
@@ -103,7 +84,6 @@ router.get(
   milkController.getMilkingHistory
 );
 
-
 // ==================================================
 // MILKING STATUS
 // ONE SPECIFIC DAIRY ANIMAL
@@ -115,14 +95,11 @@ router.post(
   milkController.toggleMilkingStatus
 );
 
-
 // ==================================================
 // SALES
 // ==================================================
 
-// --------------------------------------------------
-// SALES PAGE
-// --------------------------------------------------
+// Sales page
 
 router.get(
   "/sales",
@@ -130,10 +107,7 @@ router.get(
   milkController.getSalesPage
 );
 
-
-// --------------------------------------------------
-// MANUAL SALE
-// --------------------------------------------------
+// Manual sale
 
 router.post(
   "/sales/manual",
@@ -141,10 +115,7 @@ router.post(
   milkController.submitManualSale
 );
 
-
-// --------------------------------------------------
-// UPDATE MILK PRICE
-// --------------------------------------------------
+// Update milk price
 
 router.post(
   "/sales/price",
@@ -152,10 +123,7 @@ router.post(
   milkController.updateMilkPrice
 );
 
-
-// --------------------------------------------------
-// STANDING ORDER SALE
-// --------------------------------------------------
+// Submit one standing-order sale
 
 router.post(
   "/sales/standing/submit",
@@ -163,14 +131,9 @@ router.post(
   milkController.submitStandingOrderSale
 );
 
-
 // ==================================================
 // STANDING ORDERS
 // ==================================================
-
-// --------------------------------------------------
-// ADD STANDING ORDER
-// --------------------------------------------------
 
 router.post(
   "/sales/standing",
@@ -178,17 +141,11 @@ router.post(
   milkController.addStandingOrder
 );
 
-
-// --------------------------------------------------
-// OMIT STANDING ORDER
-// --------------------------------------------------
-
 router.post(
   "/sales/standing/omit",
   requireLogin,
   milkController.omitStandingOrder
 );
-
 
 // ==================================================
 // EXPORT
