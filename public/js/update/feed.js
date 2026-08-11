@@ -1,21 +1,29 @@
 /*=========================================================
-  UPDATE PAGE
+  UPDATE PAGE JAVASCRIPT
   FEED.JS
 =========================================================*/
 
 
 /*=========================================================
-  DOM HELPERS
+  DOM READY
 =========================================================*/
 
-const $ = selector =>
-    document.querySelector(selector);
+document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+        initializeFeed();
+
+    }
+);
 
 
-const $$ = selector =>
-    Array.from(
-        document.querySelectorAll(selector)
-    );
+/*=========================================================
+  HELPERS
+=========================================================*/
+
+const $$ = (selector) =>
+    [...document.querySelectorAll(selector)];
 
 
 /*=========================================================
@@ -23,14 +31,6 @@ const $$ = selector =>
 =========================================================*/
 
 function showMessage(message){
-
-    if(typeof window.showMessage === "function"){
-
-        window.showMessage(message);
-
-        return;
-
-    }
 
     alert(message);
 
@@ -43,79 +43,15 @@ function showMessage(message){
 
 function initializeFeed(){
 
-    try{
+    initializeCommentToggle();
 
-        initializeCommentToggle();
+    initializeLikes();
 
-    }
-    catch(error){
+    initializeCommentForms();
 
-        console.error(
-            "COMMENT TOGGLE INITIALIZATION ERROR:",
-            error
-        );
+    initializeDeletePosts();
 
-    }
-
-
-    try{
-
-        initializeLikes();
-
-    }
-    catch(error){
-
-        console.error(
-            "LIKE INITIALIZATION ERROR:",
-            error
-        );
-
-    }
-
-
-    try{
-
-        initializeCommentForms();
-
-    }
-    catch(error){
-
-        console.error(
-            "COMMENT FORM INITIALIZATION ERROR:",
-            error
-        );
-
-    }
-
-
-    try{
-
-        initializeDeletePosts();
-
-    }
-    catch(error){
-
-        console.error(
-            "DELETE POST INITIALIZATION ERROR:",
-            error
-        );
-
-    }
-
-
-    try{
-
-        initializeDeleteComments();
-
-    }
-    catch(error){
-
-        console.error(
-            "DELETE COMMENT INITIALIZATION ERROR:",
-            error
-        );
-
-    }
+    initializeDeleteComments();
 
 }
 
@@ -127,11 +63,11 @@ function initializeFeed(){
 function initializeCommentToggle(){
 
     $$(".toggle-comments")
-    .forEach(button => {
+    .forEach(button=>{
 
         button.addEventListener(
             "click",
-            () => {
+            ()=>{
 
                 const card =
                     button.closest(
@@ -144,179 +80,89 @@ function initializeCommentToggle(){
 
                 }
 
-                const section =
+                const modal =
                     card.querySelector(
-                        ".comment-section"
+                        ".comment-modal"
                     );
 
-                if(!section){
+                if(!modal){
 
                     return;
 
                 }
 
-                section.classList.toggle(
-                    "hidden"
+                modal.classList.add(
+                    "active"
                 );
 
+                document.body.style.overflow =
+                    "hidden";
+
+
+                setTimeout(() => {
+
+                    const textarea =
+                        modal.querySelector(
+                            ".comment-form textarea"
+                        );
+
+                    textarea?.focus();
+
+                }, 120);
+
             }
         );
 
     });
 
-}
+
+    /*=====================================================
+      CLOSE COMMENT MODALS
+    =====================================================*/
+
+    $$(".close-comment-modal")
+    .forEach(closeButton=>{
+
+        closeButton.addEventListener(
+            "click",
+            ()=>{
+
+                closeButton.closest(
+                    ".comment-modal"
+                )?.classList.remove(
+                    "active"
+                );
+
+                document.body.style.overflow =
+                    "";
+
+            }
+        );
+
+    });
 
 
-/*=========================================================
-  ADD COMMENTS
-=========================================================*/
+    /*=====================================================
+      CLOSE WHEN CLICKING OUTSIDE MODAL
+    =====================================================*/
 
-function initializeCommentForms(){
+    $$(".comment-modal")
+    .forEach(modal=>{
 
-    $$(".comment-form")
-    .forEach(form => {
+        modal.addEventListener(
+            "click",
+            (event)=>{
 
-        form.addEventListener(
-            "submit",
-            async event => {
+                if(
+                    event.target === modal
+                ){
 
-                event.preventDefault();
-
-
-                const textarea =
-                    form.querySelector(
-                        "textarea"
+                    modal.classList.remove(
+                        "active"
                     );
 
-                if(!textarea){
-
-                    return;
-
-                }
-
-
-                const text =
-                    textarea.value.trim();
-
-                if(!text){
-
-                    textarea.focus();
-
-                    return;
-
-                }
-
-
-                const id =
-                    form.dataset.id;
-
-                const type =
-                    form.dataset.type ||
-                    "post";
-
-
-                if(!id){
-
-                    showMessage(
-                        "Unable to identify this item."
-                    );
-
-                    return;
-
-                }
-
-
-                const submitButton =
-                    form.querySelector(
-                        'button[type="submit"]'
-                    );
-
-
-                if(submitButton){
-
-                    submitButton.disabled = true;
-
-                }
-
-
-                try{
-
-                    const response =
-                        await fetch(
-
-                            type === "post"
-                                ? `/post/${id}/comment`
-                                : `/${type}/${id}/comment`,
-
-                            {
-
-                                method: "POST",
-
-                                headers: {
-                                    "Content-Type":
-                                        "application/json"
-                                },
-
-                                body:
-                                    JSON.stringify({
-                                        text
-                                    })
-
-                            }
-
-                        );
-
-
-                    const result =
-                        await response.json();
-
-
-                    if(!response.ok){
-
-                        showMessage(
-                            result.message ||
-                            "Unable to post comment."
-                        );
-
-                        return;
-
-                    }
-
-
-                    if(!result.success){
-
-                        showMessage(
-                            result.message ||
-                            "Unable to post comment."
-                        );
-
-                        return;
-
-                    }
-
-
-                    location.reload();
-
-                }
-                catch(error){
-
-                    console.error(
-                        "COMMENT ERROR:",
-                        error
-                    );
-
-                    showMessage(
-                        "Unable to post comment."
-                    );
-
-                }
-                finally{
-
-                    if(submitButton){
-
-                        submitButton.disabled = false;
-
-                    }
+                    document.body.style.overflow =
+                        "";
 
                 }
 
@@ -325,39 +171,54 @@ function initializeCommentForms(){
 
     });
 
+
+    /*=====================================================
+      ESCAPE KEY
+    =====================================================*/
+
+    document.addEventListener(
+        "keydown",
+        (event)=>{
+
+            if(
+                event.key === "Escape"
+            ){
+
+                $$(".comment-modal.active")
+                .forEach(modal=>{
+
+                    modal.classList.remove(
+                        "active"
+                    );
+
+                });
+
+                document.body.style.overflow =
+                    "";
+
+            }
+
+        }
+    );
+
 }
 
 
 /*=========================================================
-  LIKE POSTS / FEED ITEMS
+  LIKE POSTS
 =========================================================*/
 
 function initializeLikes(){
 
     $$(".like-btn")
-    .forEach(button => {
+    .forEach(button=>{
 
         button.addEventListener(
             "click",
-            async () => {
+            async ()=>{
 
                 const id =
                     button.dataset.id;
-
-                const type =
-                    button.dataset.type ||
-                    "post";
-
-
-                if(!id){
-
-                    showMessage(
-                        "Unable to identify this item."
-                    );
-
-                    return;
-
-                }
 
 
                 button.disabled = true;
@@ -368,9 +229,7 @@ function initializeLikes(){
                     const response =
                         await fetch(
 
-                            type === "post"
-                                ? `/post/${id}/like`
-                                : `/${type}/${id}/like`,
+                            `/post/${id}/like`,
 
                             {
                                 method: "POST"
@@ -381,18 +240,6 @@ function initializeLikes(){
 
                     const result =
                         await response.json();
-
-
-                    if(!response.ok){
-
-                        showMessage(
-                            result.message ||
-                            "Unable to like."
-                        );
-
-                        return;
-
-                    }
 
 
                     if(!result.success){
@@ -416,7 +263,7 @@ function initializeLikes(){
                     if(count){
 
                         count.textContent =
-                            result.likes ?? 0;
+                            result.likes;
 
                     }
 
@@ -454,17 +301,257 @@ function initializeLikes(){
 
 
 /*=========================================================
+  ADD COMMENTS
+=========================================================*/
+
+function initializeCommentForms(){
+
+    $$(".comment-form")
+    .forEach(form=>{
+
+        form.addEventListener(
+            "submit",
+            async (event)=>{
+
+                event.preventDefault();
+
+
+                const textarea =
+                    form.querySelector(
+                        "textarea"
+                    );
+
+
+                if(!textarea){
+
+                    return;
+
+                }
+
+
+                const text =
+                    textarea.value.trim();
+
+
+                if(!text){
+
+                    textarea.focus();
+
+                    return;
+
+                }
+
+
+                const id =
+                    form.dataset.id;
+
+
+                const submitButton =
+                    form.querySelector(
+                        'button[type="submit"]'
+                    );
+
+
+                submitButton &&
+                    (
+                        submitButton.disabled =
+                            true
+                    );
+
+
+                try{
+
+                    const response =
+                        await fetch(
+
+                            `/post/${id}/comment`,
+
+                            {
+
+                                method: "POST",
+
+                                headers: {
+
+                                    "Content-Type":
+                                        "application/json"
+
+                                },
+
+                                body:
+                                    JSON.stringify({
+                                        text
+                                    })
+
+                            }
+
+                        );
+
+
+                    const result =
+                        await response.json();
+
+
+                    if(!result.success){
+
+                        showMessage(
+                            result.message ||
+                            "Unable to post comment."
+                        );
+
+                        return;
+
+                    }
+
+
+                    const modal =
+                        form.closest(
+                            ".comment-modal"
+                        );
+
+
+                    if(modal){
+
+                        const commentList =
+                            modal.querySelector(
+                                ".comment-section"
+                            );
+
+
+                        const count =
+                            form.closest(
+                                ".feed-card"
+                            )?.querySelector(
+                                ".comment-count"
+                            );
+
+
+                        if(count){
+
+                            count.textContent =
+                                Number(
+                                    count.textContent ||
+                                    0
+                                ) + 1;
+
+                        }
+
+
+                        if(commentList){
+
+                            const newComment =
+                                document.createElement(
+                                    "div"
+                                );
+
+
+                            newComment.className =
+                                "comment-item";
+
+
+                            newComment.innerHTML = `
+                                <div class="comment-user">
+
+                                    <img
+                                        src="${result.comment.userImage || (`https://ui-avatars.com/api/?name=${encodeURIComponent(result.comment.userName)}`)}"
+                                        class="avatar-xs"
+                                        alt="${result.comment.userName}"
+                                    >
+
+                                    <div class="comment-content">
+
+                                        <strong>
+                                            ${result.comment.userName}
+                                        </strong>
+
+                                        <p>
+                                            ${result.comment.text}
+                                        </p>
+
+                                        <small>
+                                            ${result.comment.dateText || ""}
+                                        </small>
+
+                                    </div>
+
+                                </div>
+                            `;
+
+
+                            const existing =
+                                commentList.querySelector(
+                                    ".comment-empty-state"
+                                );
+
+
+                            if(existing){
+
+                                existing.remove();
+
+                            }
+
+
+                            commentList.prepend(
+                                newComment
+                            );
+
+                        }
+
+                    }
+
+
+                    textarea.value = "";
+
+
+                    resizeTextarea(
+                        textarea
+                    );
+
+
+                    form.reset();
+
+                }
+                catch(error){
+
+                    console.error(
+                        "COMMENT ERROR:",
+                        error
+                    );
+
+                    showMessage(
+                        "Unable to post comment."
+                    );
+
+                }
+                finally{
+
+                    submitButton &&
+                        (
+                            submitButton.disabled =
+                                false
+                        );
+
+                }
+
+            }
+        );
+
+    });
+
+}
+
+
+/*=========================================================
   DELETE POSTS
 =========================================================*/
 
 function initializeDeletePosts(){
 
     $$(".delete-post")
-    .forEach(button => {
+    .forEach(button=>{
 
         button.addEventListener(
             "click",
-            async () => {
+            async ()=>{
 
                 const confirmed =
                     confirm(
@@ -479,22 +566,11 @@ function initializeDeletePosts(){
                 }
 
 
+                button.disabled = true;
+
+
                 const id =
                     button.dataset.id;
-
-
-                if(!id){
-
-                    showMessage(
-                        "Unable to identify this post."
-                    );
-
-                    return;
-
-                }
-
-
-                button.disabled = true;
 
 
                 try{
@@ -515,18 +591,6 @@ function initializeDeletePosts(){
                         await response.json();
 
 
-                    if(!response.ok){
-
-                        showMessage(
-                            result.message ||
-                            "Delete failed."
-                        );
-
-                        return;
-
-                    }
-
-
                     if(!result.success){
 
                         showMessage(
@@ -539,17 +603,9 @@ function initializeDeletePosts(){
                     }
 
 
-                    const card =
-                        button.closest(
-                            ".feed-card"
-                        );
-
-
-                    if(card){
-
-                        card.remove();
-
-                    }
+                    button.closest(
+                        ".feed-card"
+                    )?.remove();
 
                 }
                 catch(error){
@@ -562,11 +618,6 @@ function initializeDeletePosts(){
                     showMessage(
                         "Unable to delete post."
                     );
-
-                }
-                finally{
-
-                    button.disabled = false;
 
                 }
 
@@ -585,11 +636,11 @@ function initializeDeletePosts(){
 function initializeDeleteComments(){
 
     $$(".delete-comment")
-    .forEach(button => {
+    .forEach(button=>{
 
         button.addEventListener(
             "click",
-            async () => {
+            async ()=>{
 
                 const confirmed =
                     confirm(
@@ -604,22 +655,11 @@ function initializeDeleteComments(){
                 }
 
 
+                button.disabled = true;
+
+
                 const id =
                     button.dataset.id;
-
-
-                if(!id){
-
-                    showMessage(
-                        "Unable to identify this comment."
-                    );
-
-                    return;
-
-                }
-
-
-                button.disabled = true;
 
 
                 try{
@@ -640,18 +680,6 @@ function initializeDeleteComments(){
                         await response.json();
 
 
-                    if(!response.ok){
-
-                        showMessage(
-                            result.message ||
-                            "Delete failed."
-                        );
-
-                        return;
-
-                    }
-
-
                     if(!result.success){
 
                         showMessage(
@@ -664,15 +692,37 @@ function initializeDeleteComments(){
                     }
 
 
-                    const comment =
+                    const commentItem =
                         button.closest(
                             ".comment-item"
                         );
 
 
-                    if(comment){
+                    commentItem?.remove();
 
-                        comment.remove();
+
+                    const card =
+                        button.closest(
+                            ".feed-card"
+                        );
+
+
+                    const count =
+                        card?.querySelector(
+                            ".comment-count"
+                        );
+
+
+                    if(count){
+
+                        count.textContent =
+                            Math.max(
+                                0,
+                                Number(
+                                    count.textContent ||
+                                    0
+                                ) - 1
+                            );
 
                     }
 
@@ -689,11 +739,6 @@ function initializeDeleteComments(){
                     );
 
                 }
-                finally{
-
-                    button.disabled = false;
-
-                }
 
             }
         );
@@ -704,21 +749,23 @@ function initializeDeleteComments(){
 
 
 /*=========================================================
-  START FEED
+  TEXTAREA RESIZE
 =========================================================*/
 
-if(
-    document.readyState === "loading"
-){
+function resizeTextarea(element){
 
-    document.addEventListener(
-        "DOMContentLoaded",
-        initializeFeed
-    );
+    if(!element){
 
-}
-else{
+        return;
 
-    initializeFeed();
+    }
+
+
+    element.style.height =
+        "auto";
+
+
+    element.style.height =
+        element.scrollHeight + "px";
 
 }
