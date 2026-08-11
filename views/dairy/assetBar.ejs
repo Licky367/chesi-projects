@@ -5,17 +5,34 @@
      views/dairy/assetBar.ejs
 
      PURPOSE:
+     ----------------------------------------------------------
      Display properties belonging ONLY to the currently
      viewed Dairy Farm.
 
-     DATA EXPECTED:
+     IMPORTANT:
+     ----------------------------------------------------------
+     The View Assets button belongs to the parent page.
 
-     dairy
-         = Current Dairy Farm
+     Parent button:
 
-     assetDairies
-         = Assets already filtered by pageService
-           to belong to the current Dairy Farm.
+         #viewPropertyButton
+
+     This partial contains ONLY:
+
+         • Overlay
+         • Right-side asset drawer
+         • Asset category switcher
+         • Animals
+         • Structures / Machines / Tools
+         • Asset Bar JavaScript
+
+     The drawer intentionally DOES NOT contain:
+
+         • Main page header
+         • Main page footer
+         • View Assets button
+         • Separate sidebar header
+         • Separate sidebar footer
 
      CLASSIFICATION:
 
@@ -24,23 +41,6 @@
 
      code === null / undefined
          = Structure / Machine / Tool
-
-     IMPORTANT:
-
-     The "View Assets" button belongs to the parent page.
-
-     Parent button ID:
-
-         #viewPropertyButton
-
-     This partial contains:
-
-         • Overlay
-         • Right-side asset sidebar
-         • Farm information
-         • Animals
-         • Structures / Machines / Tools
-         • Sidebar JavaScript
 ========================================================= */ %>
 
 
@@ -93,9 +93,12 @@ const structureDairies =
 
 
 <!-- =========================================================
-     SIDEBAR OVERLAY
+     ASSET DRAWER OVERLAY
 
-     Hidden by CSS until JavaScript adds .active.
+     Hidden by default.
+
+     It only becomes visible when the View Assets button
+     is clicked.
 ========================================================= -->
 
 <div
@@ -106,92 +109,29 @@ const structureDairies =
 
 
 <!-- =========================================================
-     ASSET SIDEBAR
+     ASSET DRAWER
+     
+     This drawer is positioned BETWEEN the main page
+     header and footer.
+
+     It does NOT cover the header or footer.
 ========================================================= -->
 
 <aside
     id="assetBar"
     class="asset-bar"
-    aria-label="Assets"
+    aria-label="Farm Assets"
     aria-hidden="true"
 >
 
 
     <!-- =====================================================
-         SIDEBAR HEADER
-    ====================================================== -->
-
-    <div class="asset-bar-header">
-
-
-        <div class="asset-bar-heading">
-
-            <span class="asset-bar-heading-label">
-                FARM ASSETS
-            </span>
-
-            <h2>
-                Your Assets
-            </h2>
-
-        </div>
-
-
-        <!-- =================================================
-             CLOSE BUTTON
-        ================================================== -->
-
-        <button
-            type="button"
-            id="closeAssetBar"
-            class="asset-bar-close"
-            aria-label="Close Assets"
-        >
-
-            <span aria-hidden="true">
-                ×
-            </span>
-
-        </button>
-
-
-    </div>
-
-
-    <!-- =====================================================
-         CURRENT FARM INFORMATION
-    ====================================================== -->
-
-    <% if (
-        dairy &&
-        dairy.code !== null &&
-        dairy.code !== undefined &&
-        Number(dairy.code) < 0
-    ) { %>
-
-
-        <div class="asset-bar-farm">
-
-            <span class="asset-bar-farm-label">
-                FARM
-            </span>
-
-            <span class="asset-bar-farm-name">
-                <%= dairy.name %>
-            </span>
-
-            <span class="asset-bar-farm-code">
-                Farm #<%= dairy.code %>
-            </span>
-
-        </div>
-
-
-    <% } %>
-
-
-    <!-- =====================================================
          CATEGORY SWITCHER
+
+         This is intentionally the FIRST element inside
+         the drawer.
+
+         There is no separate sidebar header.
     ====================================================== -->
 
     <div
@@ -202,7 +142,7 @@ const structureDairies =
 
 
         <!-- =================================================
-             ANIMALS TAB
+             ANIMALS
         ================================================== -->
 
         <button
@@ -223,7 +163,7 @@ const structureDairies =
 
 
         <!-- =================================================
-             STRUCTURES TAB
+             STRUCTURES
         ================================================== -->
 
         <button
@@ -251,7 +191,7 @@ const structureDairies =
 
 
     <!-- =====================================================
-         SIDEBAR CONTENT
+         DRAWER CONTENT
     ====================================================== -->
 
     <div class="asset-bar-content">
@@ -270,7 +210,12 @@ const structureDairies =
         >
 
 
+            <!-- =================================================
+                 ANIMAL SECTION HEADER
+            ================================================== -->
+
             <div class="asset-bar-section-header">
+
 
                 <div>
 
@@ -289,8 +234,13 @@ const structureDairies =
                     <%= animalDairies.length %>
                 </span>
 
+
             </div>
 
+
+            <!-- =================================================
+                 ANIMAL LIST
+            ================================================== -->
 
             <div class="asset-bar-list">
 
@@ -315,6 +265,10 @@ const structureDairies =
                         >
 
 
+                            <!-- =================================
+                                 IMAGE
+                            ================================== -->
+
                             <span
                                 class="asset-bar-item-image"
                             >
@@ -328,9 +282,14 @@ const structureDairies =
                             </span>
 
 
+                            <!-- =================================
+                                 INFORMATION
+                            ================================== -->
+
                             <span
                                 class="asset-bar-item-details"
                             >
+
 
                                 <span
                                     class="asset-bar-item-name"
@@ -367,8 +326,13 @@ const structureDairies =
 
                                 <% } %>
 
+
                             </span>
 
+
+                            <!-- =================================
+                                 ARROW
+                            ================================== -->
 
                             <span
                                 class="asset-bar-item-arrow"
@@ -389,6 +353,7 @@ const structureDairies =
 
                     <div class="asset-bar-empty">
 
+
                         <span
                             class="asset-bar-empty-icon"
                             aria-hidden="true"
@@ -396,9 +361,11 @@ const structureDairies =
                             —
                         </span>
 
+
                         <span>
                             No animals found for this dairy farm.
                         </span>
+
 
                     </div>
 
@@ -426,7 +393,12 @@ const structureDairies =
         >
 
 
+            <!-- =================================================
+                 STRUCTURE SECTION HEADER
+            ================================================== -->
+
             <div class="asset-bar-section-header">
+
 
                 <div>
 
@@ -445,8 +417,13 @@ const structureDairies =
                     <%= structureDairies.length %>
                 </span>
 
+
             </div>
 
+
+            <!-- =================================================
+                 STRUCTURE LIST
+            ================================================== -->
 
             <div class="asset-bar-list">
 
@@ -469,6 +446,10 @@ const structureDairies =
                         >
 
 
+                            <!-- =================================
+                                 IMAGE
+                            ================================== -->
+
                             <span
                                 class="asset-bar-item-image"
                             >
@@ -482,9 +463,14 @@ const structureDairies =
                             </span>
 
 
+                            <!-- =================================
+                                 INFORMATION
+                            ================================== -->
+
                             <span
                                 class="asset-bar-item-details"
                             >
+
 
                                 <span
                                     class="asset-bar-item-name"
@@ -514,8 +500,13 @@ const structureDairies =
 
                                 <% } %>
 
+
                             </span>
 
+
+                            <!-- =================================
+                                 ARROW
+                            ================================== -->
 
                             <span
                                 class="asset-bar-item-arrow"
@@ -536,6 +527,7 @@ const structureDairies =
 
                     <div class="asset-bar-empty">
 
+
                         <span
                             class="asset-bar-empty-icon"
                             aria-hidden="true"
@@ -543,10 +535,12 @@ const structureDairies =
                             —
                         </span>
 
+
                         <span>
                             No structures, machines or tools
                             found for this dairy farm.
                         </span>
+
 
                     </div>
 
@@ -563,32 +557,26 @@ const structureDairies =
     </div>
 
 
-    <!-- =====================================================
-         SIDEBAR FOOTER
-    ====================================================== -->
-
-    <div class="asset-bar-footer">
-
-        <span>
-            Select an asset to view its details.
-        </span>
-
-    </div>
-
-
 </aside>
 
 
 <!-- =========================================================
      ASSET BAR JAVASCRIPT
 
-     The parent page provides:
+     Parent page provides:
 
          #viewPropertyButton
 
-     This script controls the sidebar.
+     This controls:
 
-     No separate assetBar.js file is required.
+         • Opening
+         • Closing
+         • Overlay
+         • Escape key
+         • Category switching
+         • Accessibility state
+
+     No separate assetBar.js is required.
 ========================================================= -->
 
 <script>
@@ -617,12 +605,6 @@ document.addEventListener(
         const openButton =
             document.getElementById(
                 "viewPropertyButton"
-            );
-
-
-        const closeButton =
-            document.getElementById(
-                "closeAssetBar"
             );
 
 
@@ -736,35 +718,33 @@ document.addEventListener(
 
 
         /* =================================================
-           RESET CATEGORY
-           
-           Animals is the default category whenever the
-           sidebar opens.
-        ================================================= */
-
-        function resetCategory() {
-
-            setCategory(
-                "animals"
-            );
-
-        }
-
-
-        /* =================================================
-           OPEN ASSET SIDEBAR
+           OPEN ASSET BAR
         ================================================= */
 
         function openAssetBar() {
 
 
-            resetCategory();
+            /*
+             * Always begin with Animals.
+             */
 
+            setCategory(
+                "animals"
+            );
+
+
+            /*
+             * Activate drawer.
+             */
 
             assetBar.classList.add(
                 "active"
             );
 
+
+            /*
+             * Activate overlay.
+             */
 
             if (overlay) {
 
@@ -774,6 +754,10 @@ document.addEventListener(
 
             }
 
+
+            /*
+             * Accessibility.
+             */
 
             assetBar.setAttribute(
                 "aria-hidden",
@@ -797,30 +781,20 @@ document.addEventListener(
             }
 
 
+            /*
+             * Prevent background scrolling.
+             */
+
             document.body.classList.add(
                 "asset-bar-open"
             );
-
-
-            if (closeButton) {
-
-                setTimeout(
-                    function() {
-
-                        closeButton.focus();
-
-                    },
-                    50
-                );
-
-            }
 
 
         }
 
 
         /* =================================================
-           CLOSE ASSET SIDEBAR
+           CLOSE ASSET BAR
         ================================================= */
 
         function closeAssetBar() {
@@ -867,6 +841,10 @@ document.addEventListener(
             );
 
 
+            /*
+             * Return focus to the View Assets button.
+             */
+
             openButton.focus();
 
 
@@ -893,26 +871,6 @@ document.addEventListener(
 
 
         /* =================================================
-           CLOSE BUTTON
-        ================================================= */
-
-        if (closeButton) {
-
-            closeButton.addEventListener(
-                "click",
-                function(event) {
-
-                    event.preventDefault();
-
-                    closeAssetBar();
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
            OVERLAY CLICK
         ================================================= */
 
@@ -922,7 +880,9 @@ document.addEventListener(
                 "click",
                 function() {
 
+
                     closeAssetBar();
+
 
                 }
             );
@@ -946,7 +906,9 @@ document.addEventListener(
                     )
                 ) {
 
+
                     closeAssetBar();
+
 
                 }
 
@@ -956,7 +918,7 @@ document.addEventListener(
 
 
         /* =================================================
-           CATEGORY TAB CLICK
+           CATEGORY SWITCHING
         ================================================= */
 
         tabs.forEach(
@@ -971,12 +933,8 @@ document.addEventListener(
                         event.preventDefault();
 
 
-                        const category =
-                            tab.dataset.assetCategory;
-
-
                         setCategory(
-                            category
+                            tab.dataset.assetCategory
                         );
 
 
@@ -990,11 +948,8 @@ document.addEventListener(
 
         /* =================================================
            PROPERTY ITEM HANDLING
-
+           
            Navigation is intentionally not implemented yet.
-
-           The selected asset information is exposed through
-           the sidebar dataset for future navigation.
         ================================================= */
 
         propertyItems.forEach(
