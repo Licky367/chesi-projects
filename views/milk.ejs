@@ -1,28 +1,58 @@
-<% /* ==========================================================
+<%
+/* ==========================================================
    MILK COLLECTION PAGE
    ==========================================================
 
    EXPECTED CONTROLLER DATA:
-       dairies
-       session
-       isAdmin
-       success
-       error
+
+      dairies
+      session
+      isAdmin
+      success
+      error
 
    SESSION VALUES:
-       morning = 00:00 - 10:00
-       closed  = 10:00 - 16:00
-       evening = 16:00 - 00:00
+
+      morning = 00:00 - 10:00
+      closed  = 10:00 - 16:00
+      evening = 16:00 - 00:00
 
    BUSINESS RULES:
-       • One record per cow per session.
-       • Normal users can submit only during an open session.
-       • Once a cow has a record, normal users cannot edit it.
-       • Admins can edit existing records.
-       • Admins can edit morning records during the
-         10:00 AM - 4:00 PM closed period.
-       • Admin editing is triggered by tapping the existing
-         record and calling openEditModal(...).
+
+      NORMAL USERS
+      ------------------------------------------------------
+      • Morning:
+          Can submit new morning records from 00:00-10:00.
+
+      • Closed:
+          Cannot submit or edit.
+
+      • Evening:
+          Can submit new evening records from 16:00-midnight.
+
+      • Existing records:
+          Cannot edit.
+
+      ADMIN
+      ------------------------------------------------------
+      • Morning:
+          Can submit and edit morning records.
+
+      • Closed:
+          Can still submit NEW morning records.
+          Can also edit EXISTING morning records.
+
+      • Evening:
+          Can submit and edit evening records.
+
+      • Admin editing:
+          Triggered by tapping an existing record and
+          calling openEditModal(...).
+
+   IMPORTANT:
+
+      The backend must enforce these rules too.
+      This page only controls the UI.
 ========================================================== */
 
 
@@ -59,6 +89,60 @@ const milkDairies =
     Array.isArray(dairies)
         ? dairies
         : [];
+
+
+/* ==========================================================
+   FRONTEND PERMISSION RULES
+========================================================== */
+
+/*
+   A normal user may create records only when the
+   corresponding collection session is open.
+
+   An admin may create records:
+      - morning session
+      - closed period (morning records)
+      - evening session
+*/
+const canSubmit =
+    adminUser ||
+    currentSession === "morning" ||
+    currentSession === "evening";
+
+
+/*
+   Which session are we currently working with?
+
+   Morning:
+      morning
+
+   Closed:
+      still morning because the morning collection
+      is the session that is being completed.
+
+   Evening:
+      evening
+*/
+const workingSession =
+    currentSession === "evening"
+        ? "evening"
+        : "morning";
+
+
+/*
+   Admins can edit existing records at any time during
+   the permitted period.
+
+   Since the page displays the current working session,
+   an existing record shown here is editable by admin.
+*/
+const canAdminEdit =
+    adminUser &&
+    (
+        currentSession === "morning" ||
+        currentSession === "closed" ||
+        currentSession === "evening"
+    );
 
 %>
 
@@ -105,13 +189,15 @@ const milkDairies =
         <!-- SESSION BADGE -->
 
         <div
-            class="milk-session-badge
+            class="
+                milk-session-badge
                 <%= currentSession === "morning"
                     ? "session-morning"
                     : currentSession === "evening"
                         ? "session-evening"
                         : "session-closed"
-                %>"
+                %>
+            "
         >
 
             <span class="session-dot"></span>
@@ -125,6 +211,10 @@ const milkDairies =
                 <% } else if (currentSession === "evening") { %>
 
                     Evening
+
+                <% } else if (currentSession === "closed") { %>
+
+                    Morning — Admin Entry
 
                 <% } else { %>
 
@@ -219,8 +309,21 @@ const milkDairies =
                 </div>
 
                 <div class="session-card-description">
-                    Record one milk entry for each cow before
-                    <strong>10:00 AM</strong>.
+
+                    <% if (adminUser) { %>
+
+                        You can submit or edit morning
+                        records until
+                        <strong>4:00 PM</strong>.
+
+                    <% } else { %>
+
+                        Record one milk entry for each cow
+                        before
+                        <strong>10:00 AM</strong>.
+
+                    <% } %>
+
                 </div>
 
             </div>
@@ -228,11 +331,11 @@ const milkDairies =
             <div class="session-time">
 
                 <span>
-                    Closes
+                    <%= adminUser ? "Admin closes" : "Closes" %>
                 </span>
 
                 <strong>
-                    10:00 AM
+                    <%= adminUser ? "4:00 PM" : "10:00 AM" %>
                 </strong>
 
             </div>
@@ -240,38 +343,50 @@ const milkDairies =
         </div>
 
 
-    <% } else if (currentSession === "closed") { %>
+    <% } else if (currentSession === "closed") %>
 
         <div class="milk-session-card session-card-closed">
 
             <div class="session-card-icon">
-                ⏰
+                <%= adminUser ? "✏️" : "⏰" %>
             </div>
 
             <div class="session-card-content">
 
                 <div class="session-card-title">
-                    Collection is temporarily closed
+
+                    <% if (adminUser) { %>
+
+                        Morning collection — Admin entry
+
+                    <% } else { %>
+
+                        Collection is temporarily closed
+
+                    <% } %>
+
                 </div>
 
                 <div class="session-card-description">
 
-                    Morning collection closed at
-                    <strong>10:00 AM</strong>.
-
-                    Evening collection opens at
-                    <strong>4:00 PM</strong>.
-
                     <% if (adminUser) { %>
 
-                        <div class="admin-session-note">
-                            ✏️ You can still edit existing morning records.
-                        </div>
+                        You can still submit new morning
+                        records or edit existing morning
+                        records until
+                        <strong>4:00 PM</strong>.
 
                     <% } else { %>
 
+                        Morning collection closed at
+                        <strong>10:00 AM</strong>.
+
+                        Evening collection opens at
+                        <strong>4:00 PM</strong>.
+
                         <div class="admin-session-note">
-                            Contact an administrator if a correction is required.
+                            Contact an administrator if a
+                            correction is required.
                         </div>
 
                     <% } %>
@@ -283,11 +398,11 @@ const milkDairies =
             <div class="session-time">
 
                 <span>
-                    Opens
+                    <%= adminUser ? "Closes" : "Opens" %>
                 </span>
 
                 <strong>
-                    4:00 PM
+                    <%= adminUser ? "4:00 PM" : "4:00 PM" %>
                 </strong>
 
             </div>
@@ -295,7 +410,7 @@ const milkDairies =
         </div>
 
 
-    <% } else if (currentSession === "evening") { %>
+    <% } else if (currentSession === "evening") %>
 
         <div class="milk-session-card session-card-evening">
 
@@ -310,8 +425,21 @@ const milkDairies =
                 </div>
 
                 <div class="session-card-description">
-                    Record one milk entry for each cow before
-                    <strong>midnight</strong>.
+
+                    <% if (adminUser) { %>
+
+                        You can submit or edit evening
+                        records until
+                        <strong>midnight</strong>.
+
+                    <% } else { %>
+
+                        Record one milk entry for each cow
+                        before
+                        <strong>midnight</strong>.
+
+                    <% } %>
+
                 </div>
 
             </div>
@@ -331,7 +459,7 @@ const milkDairies =
         </div>
 
 
-    <% } else { %>
+    <% } else %>
 
         <div class="milk-session-card session-card-closed">
 
@@ -384,6 +512,7 @@ const milkDairies =
     <% } else { %>
 
 
+
         <!-- ==================================================
              MILK FORM
         =================================================== -->
@@ -429,23 +558,32 @@ const milkDairies =
                     </div>
 
 
-                    <% if (
-                        currentSession === "morning" ||
-                        currentSession === "evening"
-                    ) { %>
+                    <!-- STATUS -->
+
+                    <% if (canSubmit) { %>
 
                         <div class="collection-status">
 
                             <span class="status-dot"></span>
 
-                            Ready for entry
+                            <% if (currentSession === "closed") { %>
+
+                                Admin Entry
+
+                            <% } else { %>
+
+                                Ready for entry
+
+                            <% } %>
 
                         </div>
 
                     <% } else { %>
 
                         <div class="collection-status status-locked">
+
                             🔒 Locked
+
                         </div>
 
                     <% } %>
@@ -493,53 +631,68 @@ const milkDairies =
 
                             <% milkDairies.forEach((dairy, index) => {
 
+
                                 /* ==================================================
-                                   DETERMINE RECORD TO DISPLAY
+                                   DETERMINE RECORD FOR THE CURRENT SESSION
                                 ================================================== */
 
                                 let record = null;
 
-                                if (
-                                    currentSession === "morning"
-                                ) {
+
+                                if (workingSession === "morning") {
 
                                     record =
                                         dairy.morning || null;
 
-                                } else if (
-                                    currentSession === "evening"
-                                ) {
+                                } else if (workingSession === "evening") {
 
                                     record =
                                         dairy.evening || null;
 
-                                } else if (
-                                    currentSession === "closed"
-                                ) {
-
-                                    record =
-                                        dairy.morning || null;
-
                                 }
+
+
+                                /*
+                                   A new record may be submitted when:
+
+                                   ADMIN:
+                                      always during the valid
+                                      morning/admin/evening window.
+
+                                   NORMAL USER:
+                                      only during an open session.
+                                */
+
+                                const canCreateRecord =
+                                    !record &&
+                                    canSubmit;
+
+
+                                const hasExistingRecord =
+                                    Boolean(record);
+
+
 
                             %>
 
 
-                                <!-- ==================================================
+                                <!-- ==========================================
                                      ANIMAL ROW
-                                =================================================== -->
+                                =========================================== -->
 
                                 <tr
-                                    class="<%= record
+                                    class="<%= hasExistingRecord
                                         ? "has-record"
-                                        : "needs-record"
+                                        : canCreateRecord
+                                            ? "needs-record"
+                                            : "locked-record"
                                     %>"
                                 >
 
 
-                                    <!-- ==========================================
+                                    <!-- ======================================
                                          ANIMAL
-                                    =========================================== -->
+                                    ======================================= -->
 
                                     <td>
 
@@ -567,9 +720,9 @@ const milkDairies =
 
 
 
-                                    <!-- ==========================================
+                                    <!-- ======================================
                                          CODE
-                                    =========================================== -->
+                                    ======================================= -->
 
                                     <td>
 
@@ -581,20 +734,23 @@ const milkDairies =
 
 
 
-                                    <!-- ==========================================
+                                    <!-- ======================================
                                          MILK
-                                    =========================================== -->
+                                    ======================================= -->
 
                                     <td>
 
                                         <% if (record) { %>
 
 
-                                            <!-- EXISTING RECORD -->
+                                            <!-- ==================================
+                                                 EXISTING RECORD
+                                            =================================== -->
 
                                             <div
+
                                                 <% if (
-                                                    adminUser &&
+                                                    canAdminEdit &&
                                                     record._id
                                                 ) { %>
 
@@ -617,12 +773,15 @@ const milkDairies =
                                                     class="record-wrapper"
 
                                                 <% } %>
+
                                             >
 
                                                 <div class="milk-value-display">
 
                                                     <span>
-                                                        <%= Number(record.liters || 0).toFixed(1) %>
+                                                        <%= Number(
+                                                            record.liters || 0
+                                                        ).toFixed(1) %>
                                                     </span>
 
                                                     <small>
@@ -633,7 +792,7 @@ const milkDairies =
 
 
                                                 <% if (
-                                                    adminUser &&
+                                                    canAdminEdit &&
                                                     record._id
                                                 ) { %>
 
@@ -646,13 +805,12 @@ const milkDairies =
                                             </div>
 
 
-                                        <% } else if (
-                                            currentSession === "morning" ||
-                                            currentSession === "evening"
-                                        ) { %>
+                                        <% } else if (canCreateRecord) { %>
 
 
-                                            <!-- NEW RECORD -->
+                                            <!-- ==================================
+                                                 NEW RECORD
+                                            =================================== -->
 
                                             <div class="milk-entry-wrapper">
 
@@ -684,7 +842,9 @@ const milkDairies =
                                         <% } else { %>
 
 
-                                            <!-- CLOSED PERIOD -->
+                                            <!-- ==================================
+                                                 LOCKED
+                                            =================================== -->
 
                                             <div class="locked-input">
 
@@ -705,9 +865,9 @@ const milkDairies =
 
 
 
-                                    <!-- ==========================================
+                                    <!-- ======================================
                                          REMARKS
-                                    =========================================== -->
+                                    ======================================= -->
 
                                     <td>
 
@@ -723,11 +883,14 @@ const milkDairies =
                                             %>
 
 
-                                            <!-- EXISTING RECORD -->
+                                            <!-- ==================================
+                                                 EXISTING RECORD
+                                            =================================== -->
 
                                             <div
+
                                                 <% if (
-                                                    adminUser &&
+                                                    canAdminEdit &&
                                                     record._id
                                                 ) { %>
 
@@ -750,10 +913,13 @@ const milkDairies =
                                                     class="remarks-wrapper"
 
                                                 <% } %>
+
                                             >
 
                                                 <div class="remarks-text">
+
                                                     <%= displayRemarks %>
+
                                                 </div>
 
 
@@ -790,7 +956,7 @@ const milkDairies =
 
 
                                                 <% if (
-                                                    adminUser &&
+                                                    canAdminEdit &&
                                                     record._id
                                                 ) { %>
 
@@ -806,13 +972,12 @@ const milkDairies =
                                             </div>
 
 
-                                        <% } else if (
-                                            currentSession === "morning" ||
-                                            currentSession === "evening"
-                                        ) { %>
+                                        <% } else if (canCreateRecord) { %>
 
 
-                                            <!-- NEW REMARKS -->
+                                            <!-- ==================================
+                                                 NEW REMARKS
+                                            =================================== -->
 
                                             <textarea
                                                 class="remarks-input"
@@ -825,7 +990,9 @@ const milkDairies =
                                         <% } else { %>
 
 
-                                            <!-- CLOSED PERIOD -->
+                                            <!-- ==================================
+                                                 CLOSED
+                                            =================================== -->
 
                                             <div class="closed-remarks">
 
@@ -833,8 +1000,10 @@ const milkDairies =
                                                     🔒
                                                 </span>
 
-                                                No new records during
-                                                this period.
+                                                <span>
+                                                    No new records during
+                                                    this period.
+                                                </span>
 
                                             </div>
 
@@ -848,7 +1017,6 @@ const milkDairies =
 
                             <% }); %>
 
-
                         </tbody>
 
                     </table>
@@ -860,7 +1028,7 @@ const milkDairies =
 
 
             <!-- ==================================================
-                 SUBMIT SECTION
+                 SUBMISSION CARD
             =================================================== -->
 
             <div class="milk-submit-card">
@@ -870,23 +1038,17 @@ const milkDairies =
 
                     <div class="submit-info-icon">
 
-                        <% if (
-                            currentSession === "morning" ||
-                            currentSession === "evening"
-                        ) { %>
-
+                        <% if (canSubmit) { %>
                             ✓
-
                         <% } else { %>
-
                             🔒
-
                         <% } %>
 
                     </div>
 
 
                     <div>
+
 
                         <% if (currentSession === "morning") { %>
 
@@ -895,43 +1057,48 @@ const milkDairies =
                             </strong>
 
                             <span>
-                                Submit records before
-                                <strong>10:00 AM</strong>.
-                            </span>
 
+                                <% if (adminUser) { %>
 
-                        <% } else if (currentSession === "evening") { %>
+                                    You can submit or edit morning
+                                    records until
+                                    <strong>4:00 PM</strong>.
 
-                            <strong>
-                                Evening collection is open
-                            </strong>
+                                <% } else { %>
 
-                            <span>
-                                Submit records before
-                                <strong>midnight</strong>.
+                                    Submit records before
+                                    <strong>10:00 AM</strong>.
+
+                                <% } %>
+
                             </span>
 
 
                         <% } else if (currentSession === "closed") { %>
 
-                            <strong>
-                                Collection is currently closed
-                            </strong>
-
-                            <span>
-                                New submissions become available
-                                at <strong>4:00 PM</strong>.
-                            </span>
-
 
                             <% if (adminUser) { %>
 
-                                <span class="admin-footer-note">
-                                    You can still edit existing
-                                    morning records.
+                                <strong>
+                                    Admin morning entry is available
+                                </strong>
+
+                                <span>
+                                    You can submit new morning records
+                                    or edit existing records until
+                                    <strong>4:00 PM</strong>.
                                 </span>
 
                             <% } else { %>
+
+                                <strong>
+                                    Collection is currently closed
+                                </strong>
+
+                                <span>
+                                    New submissions become available
+                                    at <strong>4:00 PM</strong>.
+                                </span>
 
                                 <span class="admin-footer-note">
                                     Contact an administrator for corrections.
@@ -940,7 +1107,33 @@ const milkDairies =
                             <% } %>
 
 
-                        <% } else { %>
+                        <% } else if (currentSession === "evening") { %>
+
+
+                            <strong>
+                                Evening collection is open
+                            </strong>
+
+                            <span>
+
+                                <% if (adminUser) { %>
+
+                                    You can submit or edit evening
+                                    records until
+                                    <strong>midnight</strong>.
+
+                                <% } else { %>
+
+                                    Submit records before
+                                    <strong>midnight</strong>.
+
+                                <% } %>
+
+                            </span>
+
+
+                        <% } else %>
+
 
                             <strong>
                                 Collection unavailable
@@ -950,7 +1143,9 @@ const milkDairies =
                                 Please contact an administrator.
                             </span>
 
+
                         <% } %>
+
 
                     </div>
 
@@ -958,19 +1153,16 @@ const milkDairies =
 
 
 
-                <!-- SUBMIT BUTTON -->
+                <!-- ==============================================
+                     SUBMIT BUTTON
+                =============================================== -->
 
                 <button
                     type="submit"
                     class="submit-btn"
 
-                    <% if (
-                        currentSession !== "morning" &&
-                        currentSession !== "evening"
-                    ) { %>
-
+                    <% if (!canSubmit) { %>
                         disabled
-
                     <% } %>
                 >
 
@@ -988,7 +1180,6 @@ const milkDairies =
 
 
         </form>
-
 
     <% } %>
 
@@ -1423,6 +1614,8 @@ const milkDairies =
     width: 100%;
 
     overflow-x: auto;
+
+    -webkit-overflow-scrolling: touch;
 }
 
 .milk-table {
@@ -1494,7 +1687,7 @@ const milkDairies =
 
 
 /* ==========================================================
-   ANIMAL CELL
+   ANIMAL
 ========================================================== */
 
 .animal-cell {
@@ -1954,7 +2147,7 @@ const milkDairies =
 
 
 /* ==========================================================
-   TABLET / MOBILE
+   TABLET
 ========================================================== */
 
 @media (max-width: 800px) {
@@ -2013,13 +2206,18 @@ const milkDairies =
         padding: 15px;
     }
 
+    /*
+       Keep the table compact on phones/tablets.
+       It can scroll only when genuinely necessary.
+    */
     .milk-table {
-        min-width: 720px;
+        min-width: 0;
+        width: 100%;
     }
 
     .milk-table th,
     .milk-table td {
-        padding: 12px;
+        padding: 10px 8px;
     }
 
     .milk-submit-card {
@@ -2033,6 +2231,67 @@ const milkDairies =
         width: 100%;
     }
 
+    .animal-avatar {
+        width: 34px;
+        height: 34px;
+
+        border-radius: 10px;
+
+        font-size: 16px;
+    }
+
+    .animal-cell {
+        gap: 7px;
+    }
+
+    .animal-name {
+        font-size: 12px;
+    }
+
+    .animal-label {
+        font-size: 9px;
+    }
+
+    .code-badge {
+        padding: 5px 6px;
+
+        font-size: 10px;
+    }
+
+    .milk-entry-wrapper {
+        width: 82px;
+    }
+
+    .milk-input {
+        padding: 9px 23px 9px 8px;
+
+        font-size: 12px;
+    }
+
+    .milk-value-display {
+        min-width: 58px;
+
+        padding: 8px 7px;
+
+        font-size: 12px;
+    }
+
+    .remarks-input {
+        min-height: 45px;
+
+        padding: 8px;
+
+        font-size: 10px;
+    }
+
+    .remarks-text {
+        font-size: 10px;
+    }
+
+    .record-badge,
+    .admin-edit-hint {
+        font-size: 8px;
+    }
 }
 
 
@@ -2043,61 +2302,407 @@ const milkDairies =
 @media (max-width: 480px) {
 
     .milk-page {
-        padding-left: 10px;
-        padding-right: 10px;
+        width: 100%;
+
+        padding:
+            15px
+            7px
+            30px;
+
+        box-sizing: border-box;
+    }
+
+
+    .milk-header {
+        gap: 8px;
+
+        margin-bottom: 16px;
     }
 
     .milk-header-content {
-        gap: 10px;
+        gap: 8px;
+
+        min-width: 0;
     }
 
     .milk-header-icon {
-        width: 44px;
-        height: 44px;
+        width: 40px;
+        height: 40px;
 
-        font-size: 21px;
+        flex-shrink: 0;
+
+        border-radius: 11px;
+
+        font-size: 19px;
     }
 
     .milk-eyebrow {
-        font-size: 9px;
+        font-size: 8px;
+
+        letter-spacing: 1px;
     }
 
     .milk-header h1 {
-        font-size: 20px;
+        font-size: 19px;
     }
 
     .milk-header p {
-        max-width: 210px;
+        max-width: 190px;
 
-        font-size: 11px;
-    }
+        margin-top: 4px;
 
-    .milk-session-badge {
         font-size: 10px;
     }
 
-    .milk-session-card {
-        gap: 10px;
-    }
+    .milk-session-badge {
+        padding: 6px 8px;
 
-    .session-card-title {
-        font-size: 13px;
-    }
-
-    .session-card-description {
-        font-size: 11px;
-    }
-
-    .collection-title {
-        font-size: 14px;
-    }
-
-    .collection-status {
         font-size: 9px;
     }
 
+    .session-dot {
+        width: 6px;
+        height: 6px;
+    }
+
+
+    /* ==============================================
+       SESSION CARD
+    =============================================== */
+
+    .milk-session-card {
+        gap: 9px;
+
+        margin-bottom: 14px;
+
+        padding: 11px;
+
+        border-radius: 13px;
+    }
+
+    .session-card-icon {
+        width: 34px;
+        height: 34px;
+
+        border-radius: 9px;
+
+        font-size: 16px;
+    }
+
+    .session-card-title {
+        font-size: 11px;
+    }
+
+    .session-card-description {
+        font-size: 9px;
+    }
+
+    .admin-session-note {
+        font-size: 9px;
+    }
+
+
+    /* ==============================================
+       COLLECTION CARD
+    =============================================== */
+
+    .collection-card {
+        width: 100%;
+
+        border-radius: 13px;
+    }
+
+    .collection-card-header {
+        padding: 11px;
+    }
+
+    .collection-title {
+        font-size: 12px;
+    }
+
+    .collection-subtitle {
+        font-size: 9px;
+    }
+
+    .collection-status {
+        padding: 5px 7px;
+
+        font-size: 8px;
+    }
+
+
+    /* ==============================================
+       COMPACT PHONE TABLE
+    =============================================== */
+
+    .milk-table-wrapper {
+        width: 100%;
+
+        overflow-x: hidden;
+    }
+
     .milk-table {
-        min-width: 680px;
+        width: 100%;
+
+        min-width: 0;
+
+        table-layout: fixed;
+    }
+
+    .milk-table th,
+    .milk-table td {
+        padding: 8px 5px;
+    }
+
+
+    /*
+       Mobile column proportions.
+       The table now fits the device instead of
+       forcing a 680px+ horizontal layout.
+    */
+
+    .col-animal {
+        width: 32%;
+    }
+
+    .col-code {
+        width: 15%;
+    }
+
+    .col-milk {
+        width: 20%;
+    }
+
+    .col-remarks {
+        width: 33%;
+    }
+
+
+    .milk-table th {
+        font-size: 7px;
+
+        letter-spacing: .4px;
+    }
+
+
+    /* ==============================================
+       ANIMAL
+    =============================================== */
+
+    .animal-cell {
+        gap: 5px;
+    }
+
+    .animal-avatar {
+        width: 27px;
+        height: 27px;
+
+        border-radius: 8px;
+
+        font-size: 13px;
+    }
+
+    .animal-name {
+        font-size: 9px;
+    }
+
+    .animal-label {
+        display: none;
+    }
+
+
+    /* ==============================================
+       CODE
+    =============================================== */
+
+    .code-badge {
+        padding: 4px 5px;
+
+        border-radius: 6px;
+
+        font-size: 8px;
+    }
+
+
+    /* ==============================================
+       MILK
+    =============================================== */
+
+    .milk-entry-wrapper {
+        width: 100%;
+
+        max-width: 68px;
+    }
+
+    .milk-input {
+        width: 100%;
+
+        padding:
+            8px
+            19px
+            8px
+            7px;
+
+        border-radius: 8px;
+
+        font-size: 10px;
+    }
+
+    .input-unit {
+        right: 6px;
+
+        font-size: 8px;
+    }
+
+    .milk-value-display {
+        min-width: 45px;
+
+        padding: 7px 5px;
+
+        border-radius: 8px;
+
+        font-size: 10px;
+    }
+
+    .milk-value-display small {
+        font-size: 7px;
+    }
+
+    .edit-icon {
+        font-size: 9px;
+    }
+
+    .locked-input {
+        width: 48px;
+
+        padding: 7px 4px;
+
+        border-radius: 7px;
+
+        font-size: 9px;
+    }
+
+    .locked-input small {
+        font-size: 7px;
+    }
+
+
+    /* ==============================================
+       REMARKS
+    =============================================== */
+
+    .remarks-input {
+        width: 100%;
+
+        min-height: 42px;
+
+        padding: 7px;
+
+        border-radius: 8px;
+
+        font-size: 8px;
+    }
+
+    .remarks-text {
+        max-width: 100%;
+
+        font-size: 8px;
+
+        line-height: 1.35;
+
+        word-break: break-word;
+    }
+
+    .record-badge {
+        gap: 3px;
+
+        margin-top: 4px;
+
+        font-size: 7px;
+
+        line-height: 1.25;
+    }
+
+    .admin-edit-hint {
+        margin-top: 4px;
+
+        font-size: 7px;
+    }
+
+    .closed-remarks {
+        gap: 4px;
+
+        font-size: 7px;
+    }
+
+
+    /* ==============================================
+       SUBMIT
+    =============================================== */
+
+    .milk-submit-card {
+        gap: 12px;
+
+        margin-top: 10px;
+
+        padding: 12px;
+
+        border-radius: 12px;
+    }
+
+    .submit-information {
+        gap: 8px;
+
+        font-size: 9px;
+    }
+
+    .submit-info-icon {
+        width: 25px;
+        height: 25px;
+
+        border-radius: 7px;
+
+        font-size: 11px;
+    }
+
+    .submit-btn {
+        min-height: 42px;
+
+        border-radius: 9px;
+
+        font-size: 11px;
+    }
+
+    .submit-btn-icon {
+        font-size: 12px;
+    }
+
+
+    /* ==============================================
+       EMPTY STATE
+    =============================================== */
+
+    .milk-empty-state {
+        padding: 45px 15px;
+
+        border-radius: 14px;
+    }
+
+    .empty-animal-icon {
+        width: 60px;
+        height: 60px;
+
+        border-radius: 18px;
+
+        font-size: 28px;
+    }
+
+    .milk-empty-state h2 {
+        font-size: 16px;
+    }
+
+    .milk-empty-state p {
+        font-size: 10px;
     }
 
 }
