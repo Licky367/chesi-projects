@@ -19,12 +19,12 @@
    This partial contains:
        • Asset overlay
        • Right-side asset sidebar
+       • Close button
        • Animals / Structures tabs
        • Farm information
        • Animals
        • Structures / Machines / Tools
        • Sidebar JavaScript
-       • Sidebar styles
 
    LAYOUT ALIGNMENT:
    ------------------------------------------------------
@@ -39,22 +39,8 @@
        top: 120px
        bottom: 50px
 
-   It will NOT overlap:
-       • Main header
-       • Top menu
-       • Footer
-
-   RESPONSIVE BEHAVIOUR:
-   ------------------------------------------------------
-   Desktop:
-       Compact right-side drawer.
-
-   Mobile:
-       Drawer occupies approximately 84vw,
-       leaving part of the parent page visible.
-
-   Very small screens:
-       Drawer occupies approximately 90vw.
+   It will NOT overlap the main header,
+   top menu, or footer.
 
    CLASSIFICATION:
    ------------------------------------------------------
@@ -147,11 +133,29 @@ const structureDairies =
     aria-hidden="true"
 >
 
+
+    <!-- =====================================================
+         CLOSE BUTTON
+
+         This closes the asset sidebar and returns the user
+         to the parent dairy page.
+    ====================================================== -->
+
+    <button
+        type="button"
+        id="assetBarCloseButton"
+        class="asset-bar-close"
+        aria-label="Close farm assets"
+        title="Close"
+    >
+        <span aria-hidden="true">&times;</span>
+    </button>
+
+
     <!-- =====================================================
          CATEGORY SWITCHER
 
-         Intentionally placed at the very top.
-         There is no sidebar title and no close button.
+         Animals / Structures
     ====================================================== -->
 
     <div
@@ -159,6 +163,7 @@ const structureDairies =
         role="tablist"
         aria-label="Asset categories"
     >
+
 
         <!-- =================================================
              ANIMALS
@@ -209,6 +214,7 @@ const structureDairies =
 
         </button>
 
+
     </div>
 
 
@@ -230,6 +236,7 @@ const structureDairies =
             Number(dairy.code) < 0
         ) { %>
 
+
             <div class="asset-bar-farm">
 
                 <span class="asset-bar-farm-label">
@@ -246,6 +253,7 @@ const structureDairies =
 
             </div>
 
+
         <% } %>
 
 
@@ -260,6 +268,7 @@ const structureDairies =
             role="tabpanel"
             aria-labelledby="assetAnimalsTab"
         >
+
 
             <!-- =============================================
                  SECTION LABEL
@@ -284,9 +293,12 @@ const structureDairies =
 
             <div class="asset-bar-list">
 
+
                 <% if (animalDairies.length) { %>
 
+
                     <% animalDairies.forEach(animal => { %>
+
 
                         <button
                             type="button"
@@ -300,6 +312,7 @@ const structureDairies =
 
                             data-asset-type="animal"
                         >
+
 
                             <!-- =================================
                                  IMAGE
@@ -361,6 +374,7 @@ const structureDairies =
 
                                 <% } %>
 
+
                             </span>
 
 
@@ -375,7 +389,9 @@ const structureDairies =
                                 ›
                             </span>
 
+
                         </button>
+
 
                     <% }); %>
 
@@ -401,6 +417,7 @@ const structureDairies =
 
                 <% } %>
 
+
             </div>
 
         </section>
@@ -418,6 +435,7 @@ const structureDairies =
             aria-labelledby="assetStructuresTab"
             hidden
         >
+
 
             <!-- =============================================
                  SECTION LABEL
@@ -442,9 +460,12 @@ const structureDairies =
 
             <div class="asset-bar-list">
 
+
                 <% if (structureDairies.length) { %>
 
+
                     <% structureDairies.forEach(asset => { %>
+
 
                         <button
                             type="button"
@@ -456,6 +477,7 @@ const structureDairies =
 
                             data-asset-type="structure"
                         >
+
 
                             <!-- =================================
                                  IMAGE
@@ -510,6 +532,7 @@ const structureDairies =
 
                                 <% } %>
 
+
                             </span>
 
 
@@ -524,7 +547,9 @@ const structureDairies =
                                 ›
                             </span>
 
+
                         </button>
+
 
                     <% }); %>
 
@@ -551,9 +576,11 @@ const structureDairies =
 
                 <% } %>
 
+
             </div>
 
         </section>
+
 
     </div>
 
@@ -562,11 +589,6 @@ const structureDairies =
 
 <!-- =========================================================
      ASSET BAR JAVASCRIPT
-
-     The parent page provides:
-         #viewPropertyButton
-
-     No separate assetBar.js file is required.
 ========================================================= -->
 
 <script>
@@ -595,6 +617,12 @@ document.addEventListener(
         const openButton =
             document.getElementById(
                 "viewPropertyButton"
+            );
+
+
+        const closeButton =
+            document.getElementById(
+                "assetBarCloseButton"
             );
 
 
@@ -627,6 +655,7 @@ document.addEventListener(
             );
 
             return;
+
         }
 
 
@@ -637,6 +666,7 @@ document.addEventListener(
             );
 
             return;
+
         }
 
 
@@ -645,6 +675,7 @@ document.addEventListener(
         ================================================= */
 
         function setCategory(category) {
+
 
             if (!category) {
                 return;
@@ -657,6 +688,7 @@ document.addEventListener(
 
             tabs.forEach(
                 function(tab) {
+
 
                     const isActive =
                         tab.dataset.assetCategory ===
@@ -674,6 +706,7 @@ document.addEventListener(
                         String(isActive)
                     );
 
+
                 }
             );
 
@@ -684,6 +717,7 @@ document.addEventListener(
 
             sections.forEach(
                 function(section) {
+
 
                     const isActive =
                         section.dataset.assetSection ===
@@ -699,8 +733,10 @@ document.addEventListener(
                     section.hidden =
                         !isActive;
 
+
                 }
             );
+
 
         }
 
@@ -757,16 +793,10 @@ document.addEventListener(
             }
 
 
-            /*
-             * IMPORTANT:
-             *
-             * We intentionally do NOT lock
-             * the parent page scroll.
-             */
-
             document.body.classList.add(
                 "asset-bar-open"
             );
+
 
         }
 
@@ -818,6 +848,7 @@ document.addEventListener(
                 "asset-bar-open"
             );
 
+
         }
 
 
@@ -829,12 +860,38 @@ document.addEventListener(
             "click",
             function(event) {
 
+
                 event.preventDefault();
+
 
                 openAssetBar();
 
+
             }
         );
+
+
+        /* =================================================
+           CLOSE BUTTON
+        ================================================= */
+
+        if (closeButton) {
+
+            closeButton.addEventListener(
+                "click",
+                function(event) {
+
+
+                    event.preventDefault();
+
+
+                    closeAssetBar();
+
+
+                }
+            );
+
+        }
 
 
         /* =================================================
@@ -847,7 +904,9 @@ document.addEventListener(
                 "click",
                 function() {
 
+
                     closeAssetBar();
+
 
                 }
             );
@@ -863,6 +922,7 @@ document.addEventListener(
             "keydown",
             function(event) {
 
+
                 if (
                     event.key === "Escape" &&
                     assetBar.classList.contains(
@@ -870,9 +930,12 @@ document.addEventListener(
                     )
                 ) {
 
+
                     closeAssetBar();
 
+
                 }
+
 
             }
         );
@@ -885,9 +948,11 @@ document.addEventListener(
         tabs.forEach(
             function(tab) {
 
+
                 tab.addEventListener(
                     "click",
                     function(event) {
+
 
                         event.preventDefault();
 
@@ -896,8 +961,10 @@ document.addEventListener(
                             tab.dataset.assetCategory
                         );
 
+
                     }
                 );
+
 
             }
         );
@@ -905,15 +972,11 @@ document.addEventListener(
 
         /* =================================================
            PROPERTY ITEM HANDLING
-
-           Navigation is intentionally not implemented.
-
-           The selected asset remains available through
-           the sidebar dataset for future navigation.
         ================================================= */
 
         propertyItems.forEach(
             function(item) {
+
 
                 item.addEventListener(
                     "click",
@@ -935,8 +998,10 @@ document.addEventListener(
                         assetBar.dataset.selectedParentCode =
                             item.dataset.assetParentCode || "";
 
+
                     }
                 );
+
 
             }
         );
@@ -944,10 +1009,6 @@ document.addEventListener(
 
         /* =================================================
            INITIAL STATE
-
-           IMPORTANT:
-           Sidebar MUST remain closed when page initially
-           loads.
         ================================================= */
 
         assetBar.classList.remove(
@@ -981,6 +1042,7 @@ document.addEventListener(
             "false"
         );
 
+
     }
 );
 
@@ -989,11 +1051,10 @@ document.addEventListener(
 
 <!-- =========================================================
      ASSET BAR STYLES
-
-     Responsive compact right-side drawer.
 ========================================================= -->
 
 <style>
+
 
 /* =========================================================
    ASSET BAR OVERLAY
@@ -1004,11 +1065,15 @@ document.addEventListener(
     position: fixed;
 
     top: 120px;
+
     left: 0;
+
     right: 0;
+
     bottom: 50px;
 
-    background: rgba(15, 25, 18, .20);
+    background:
+        rgba(0, 0, 0, .38);
 
     opacity: 0;
 
@@ -1017,8 +1082,8 @@ document.addEventListener(
     pointer-events: none;
 
     transition:
-        opacity .22s ease,
-        visibility .22s ease;
+        opacity .25s ease,
+        visibility .25s ease;
 
     z-index: 1003;
 
@@ -1037,7 +1102,7 @@ document.addEventListener(
 
 
 /* =========================================================
-   SIDEBAR
+   ASSET SIDEBAR
 ========================================================= */
 
 .asset-bar {
@@ -1050,18 +1115,15 @@ document.addEventListener(
 
     bottom: 50px;
 
-    width: 300px;
+    width: 360px;
 
-    max-width: calc(100vw - 80px);
+    max-width:
+        calc(100vw - 24px);
 
     background: #ffffff;
 
-    border-left: 1px solid #dfe7e1;
-
-    border-radius: 14px 0 0 14px;
-
     box-shadow:
-        -6px 0 24px rgba(0, 0, 0, .14);
+        -5px 0 20px rgba(0, 0, 0, .18);
 
     overflow: hidden;
 
@@ -1069,15 +1131,16 @@ document.addEventListener(
 
     flex-direction: column;
 
-    transform: translateX(105%);
+    transform:
+        translateX(105%);
 
     visibility: hidden;
 
     pointer-events: none;
 
     transition:
-        transform .26s cubic-bezier(.4, 0, .2, 1),
-        visibility .26s ease;
+        transform .28s ease,
+        visibility .28s ease;
 
     z-index: 1004;
 
@@ -1090,11 +1153,99 @@ document.addEventListener(
 
 .asset-bar.active {
 
-    transform: translateX(0);
+    transform:
+        translateX(0);
 
     visibility: visible;
 
     pointer-events: auto;
+
+}
+
+
+/* =========================================================
+   CLOSE BUTTON
+========================================================= */
+
+.asset-bar-close {
+
+    position: absolute;
+
+    top: 8px;
+
+    right: 8px;
+
+    z-index: 10;
+
+    width: 34px;
+
+    height: 34px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid #dfe6e1;
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, .96);
+
+    color: #4f5a53;
+
+    cursor: pointer;
+
+    font-size: 24px;
+
+    font-weight: 400;
+
+    line-height: 1;
+
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, .10);
+
+    transition:
+        background .18s ease,
+        color .18s ease,
+        border-color .18s ease,
+        transform .18s ease,
+        box-shadow .18s ease;
+
+}
+
+
+.asset-bar-close:hover {
+
+    background: #f1f6f2;
+
+    color: #0b5d1e;
+
+    border-color: #b9cbbd;
+
+    box-shadow:
+        0 3px 10px rgba(0, 0, 0, .14);
+
+}
+
+
+.asset-bar-close:active {
+
+    transform:
+        scale(.92);
+
+}
+
+
+.asset-bar-close span {
+
+    display: block;
+
+    transform:
+        translateY(-1px);
 
 }
 
@@ -1111,9 +1262,10 @@ document.addEventListener(
 
     width: 100%;
 
-    background: #f5f8f6;
+    background: #f4f7f5;
 
-    border-bottom: 1px solid #dfe6e1;
+    border-bottom:
+        1px solid #dfe6e1;
 
 }
 
@@ -1132,31 +1284,33 @@ document.addEventListener(
 
     background: transparent;
 
-    padding: 12px 7px 10px;
+    padding:
+        14px 8px 12px;
 
     cursor: pointer;
 
-    color: #59645d;
+    color: #526057;
 
-    font-size: 12px;
+    font-size: 13px;
 
     font-weight: 700;
 
     text-align: center;
 
-    border-bottom: 3px solid transparent;
+    border-bottom:
+        3px solid transparent;
 
     transition:
-        background .18s ease,
-        color .18s ease,
-        border-color .18s ease;
+        background .2s ease,
+        color .2s ease,
+        border-color .2s ease;
 
 }
 
 
 .asset-bar-tab:hover {
 
-    background: #eaf0ec;
+    background: #e9efeb;
 
 }
 
@@ -1167,7 +1321,8 @@ document.addEventListener(
 
     color: #0b5d1e;
 
-    border-bottom-color: #0b5d1e;
+    border-bottom-color:
+        #0b5d1e;
 
 }
 
@@ -1187,26 +1342,27 @@ document.addEventListener(
 
     justify-content: center;
 
-    min-width: 20px;
+    min-width: 22px;
 
-    height: 20px;
+    height: 22px;
 
-    margin-left: 4px;
+    margin-left: 5px;
 
-    padding: 0 5px;
+    padding: 0 6px;
 
     border-radius: 20px;
 
     background: #e2ebe5;
 
-    font-size: 10px;
+    font-size: 11px;
 
     font-weight: 700;
 
 }
 
 
-.asset-bar-tab.active .asset-bar-tab-count {
+.asset-bar-tab.active
+.asset-bar-tab-count {
 
     background: #0b5d1e;
 
@@ -1229,12 +1385,6 @@ document.addEventListener(
 
     overflow-x: hidden;
 
-    scrollbar-width: thin;
-
-    scrollbar-color:
-        #c8d3cb
-        transparent;
-
 }
 
 
@@ -1244,11 +1394,13 @@ document.addEventListener(
 
 .asset-bar-farm {
 
-    padding: 11px 13px;
+    padding:
+        13px 15px;
 
     background: #f7faf8;
 
-    border-bottom: 1px solid #e5ebe7;
+    border-bottom:
+        1px solid #e5ebe7;
 
 }
 
@@ -1261,7 +1413,7 @@ document.addEventListener(
 
     color: #0b5d1e;
 
-    font-size: 9px;
+    font-size: 10px;
 
     font-weight: 800;
 
@@ -1274,19 +1426,13 @@ document.addEventListener(
 
     display: inline-block;
 
-    max-width: 72%;
-
-    overflow: hidden;
+    max-width: 75%;
 
     color: #202823;
 
-    font-size: 13px;
+    font-size: 14px;
 
     font-weight: 700;
-
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
 
 }
 
@@ -1295,11 +1441,11 @@ document.addEventListener(
 
     float: right;
 
-    margin-top: 1px;
+    margin-top: 2px;
 
     color: #758078;
 
-    font-size: 10px;
+    font-size: 11px;
 
 }
 
@@ -1328,7 +1474,8 @@ document.addEventListener(
 
 .asset-bar-section-header {
 
-    padding: 13px 13px 9px;
+    padding:
+        15px 15px 10px;
 
 }
 
@@ -1341,7 +1488,7 @@ document.addEventListener(
 
     color: #0b5d1e;
 
-    font-size: 8px;
+    font-size: 9px;
 
     font-weight: 800;
 
@@ -1358,7 +1505,7 @@ document.addEventListener(
 
     color: #1d2520;
 
-    font-size: 16px;
+    font-size: 18px;
 
     font-weight: 700;
 
@@ -1371,7 +1518,8 @@ document.addEventListener(
 
 .asset-bar-list {
 
-    padding: 0 9px 12px;
+    padding:
+        0 10px 15px;
 
 }
 
@@ -1388,15 +1536,16 @@ document.addEventListener(
 
     align-items: center;
 
-    gap: 9px;
+    gap: 10px;
 
-    padding: 8px;
+    padding: 9px;
 
-    margin-bottom: 6px;
+    margin-bottom: 7px;
 
-    border: 1px solid #e3e9e4;
+    border:
+        1px solid #e4e9e5;
 
-    border-radius: 9px;
+    border-radius: 10px;
 
     background: #ffffff;
 
@@ -1405,10 +1554,10 @@ document.addEventListener(
     text-align: left;
 
     transition:
-        background .18s ease,
-        border-color .18s ease,
-        transform .15s ease,
-        box-shadow .18s ease;
+        background .2s ease,
+        border-color .2s ease,
+        transform .2s ease,
+        box-shadow .2s ease;
 
 }
 
@@ -1420,14 +1569,16 @@ document.addEventListener(
     border-color: #b9cbbd;
 
     box-shadow:
-        0 3px 10px rgba(0, 0, 0, .05);
+        0 3px 10px
+        rgba(0, 0, 0, .06);
 
 }
 
 
 .asset-bar-item:active {
 
-    transform: scale(.985);
+    transform:
+        scale(.99);
 
 }
 
@@ -1438,15 +1589,15 @@ document.addEventListener(
 
 .asset-bar-item-image {
 
-    flex: 0 0 43px;
+    flex: 0 0 48px;
 
-    width: 43px;
+    width: 48px;
 
-    height: 43px;
+    height: 48px;
 
     overflow: hidden;
 
-    border-radius: 8px;
+    border-radius: 9px;
 
     background: #edf2ee;
 
@@ -1491,7 +1642,7 @@ document.addEventListener(
 
     color: #202620;
 
-    font-size: 12px;
+    font-size: 13px;
 
     font-weight: 700;
 
@@ -1506,7 +1657,7 @@ document.addEventListener(
 
     color: #0b5d1e;
 
-    font-size: 9px;
+    font-size: 10px;
 
     font-weight: 700;
 
@@ -1519,7 +1670,7 @@ document.addEventListener(
 
     color: #747d76;
 
-    font-size: 9px;
+    font-size: 10px;
 
     text-overflow: ellipsis;
 
@@ -1538,7 +1689,7 @@ document.addEventListener(
 
     color: #8b948e;
 
-    font-size: 20px;
+    font-size: 23px;
 
     line-height: 1;
 
@@ -1557,18 +1708,19 @@ document.addEventListener(
 
     gap: 8px;
 
-    padding: 18px 10px;
+    padding:
+        20px 10px;
 
     color: #7a827c;
 
-    font-size: 11px;
+    font-size: 12px;
 
 }
 
 
 .asset-bar-empty-icon {
 
-    font-size: 16px;
+    font-size: 18px;
 
     color: #a3aba6;
 
@@ -1576,31 +1728,12 @@ document.addEventListener(
 
 
 /* =========================================================
-   IMPORTANT
-
-   DO NOT LOCK THE PARENT PAGE SCROLL.
-
-   The JavaScript may still add:
-       body.asset-bar-open
-
-   but there is deliberately no overflow:hidden rule here.
+   BODY SCROLL LOCK
 ========================================================= */
 
+body.asset-bar-open {
 
-/* =========================================================
-   TABLET
-========================================================= */
-
-@media (max-width: 900px) {
-
-    .asset-bar {
-
-        width: 280px;
-
-        max-width:
-            calc(100vw - 70px);
-
-    }
+    overflow: hidden;
 
 }
 
@@ -1611,210 +1744,85 @@ document.addEventListener(
 
 @media (max-width: 600px) {
 
+
     .asset-bar {
 
-        top: 120px;
+        width: 320px;
 
-        bottom: 50px;
-
-        width: 84vw;
-
-        max-width: 84vw;
-
-        border-radius:
-            12px 0 0 12px;
-
-        box-shadow:
-            -5px 0 18px rgba(0, 0, 0, .13);
+        max-width:
+            calc(100vw - 18px);
 
     }
 
 
-    .asset-bar-overlay {
+    .asset-bar-close {
 
-        background:
-            rgba(15, 25, 18, .14);
+        width: 32px;
 
-    }
+        height: 32px;
 
+        top: 7px;
 
-    .asset-bar-tabs {
+        right: 7px;
 
-        min-height: 44px;
-
-    }
-
-
-    .asset-bar-tab {
-
-        padding:
-            11px 5px 9px;
-
-        font-size: 11px;
-
-    }
-
-
-    .asset-bar-tab-count {
-
-        min-width: 19px;
-
-        height: 19px;
-
-        font-size: 9px;
-
-    }
-
-
-    .asset-bar-section-header {
-
-        padding:
-            12px 11px 8px;
-
-    }
-
-
-    .asset-bar-section-header h3 {
-
-        font-size: 15px;
-
-    }
-
-
-    .asset-bar-list {
-
-        padding-left: 8px;
-
-        padding-right: 8px;
-
-    }
-
-
-    .asset-bar-item {
-
-        gap: 8px;
-
-        padding: 7px;
-
-        margin-bottom: 5px;
+        font-size: 22px;
 
     }
 
 
     .asset-bar-item-image {
 
-        flex-basis: 40px;
+        flex-basis: 44px;
 
-        width: 40px;
+        width: 44px;
 
-        height: 40px;
-
-    }
-
-
-    .asset-bar-item-name {
-
-        font-size: 11px;
+        height: 44px;
 
     }
 
-
-    .asset-bar-item-code,
-    .asset-bar-item-meta {
-
-        font-size: 8px;
-
-    }
-
-
-    .asset-bar-item-arrow {
-
-        font-size: 19px;
-
-    }
 
 }
 
 
 /* =========================================================
-   VERY SMALL PHONES
+   VERY SMALL SCREENS
 ========================================================= */
 
 @media (max-width: 380px) {
 
+
     .asset-bar {
 
-        width: 90vw;
-
-        max-width: 90vw;
-
-    }
-
-
-    .asset-bar-tab {
-
-        font-size: 10px;
+        width:
+            calc(100vw - 10px);
 
     }
 
 
-    .asset-bar-item-image {
+    .asset-bar-close {
 
-        flex-basis: 38px;
+        width: 30px;
 
-        width: 38px;
+        height: 30px;
 
-        height: 38px;
+        font-size: 21px;
 
     }
+
 
 }
 
 
 /* =========================================================
-   LANDSCAPE PHONES
+   ACCESSIBILITY
 ========================================================= */
 
-@media (max-height: 500px) and (max-width: 900px) {
+.asset-bar-close:focus-visible {
 
-    .asset-bar {
+    outline:
+        3px solid rgba(11, 93, 30, .25);
 
-        top: 120px;
-
-        bottom: 35px;
-
-        width: 300px;
-
-        max-width: 55vw;
-
-    }
-
-
-    .asset-bar-section-header {
-
-        padding-top: 8px;
-
-        padding-bottom: 6px;
-
-    }
-
-
-    .asset-bar-item {
-
-        padding: 6px;
-
-    }
-
-
-    .asset-bar-item-image {
-
-        width: 36px;
-
-        height: 36px;
-
-        flex-basis: 36px;
-
-    }
+    outline-offset: 2px;
 
 }
 
