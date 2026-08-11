@@ -4,21 +4,127 @@
      FILE:
      views/dairy/assetBar.ejs
 
+     PURPOSE:
+     Display properties belonging ONLY to the currently
+     viewed Dairy Farm.
+
      DATA EXPECTED:
+
+     dairy
+         = Current Dairy Farm
+
      dairies
+         = Available Dairy / Asset records
+
 
      CLASSIFICATION:
 
-     code < 0
-         = Dairy Farm
-         = excluded from this sidebar
+     Current Dairy Farm:
+         dairy.code < 0
 
-     code > 0
-         = Animal
+     Animal:
+         code > 0
+         assetCode === current Dairy Farm code
 
-     code === null / undefined
-         = Structure / Machine / Tool
-========================================================= --><!-- =========================================================
+     Structure / Machine / Tool:
+         code === null / undefined
+         assetCode === current Dairy Farm code
+
+
+     EXCLUDED:
+
+     Other Dairy Farms:
+         code < 0
+
+     Standalone Structures:
+         code === null / undefined
+         assetCode === null / undefined
+
+     ========================================================= --><!-- =========================================================
+     DETERMINE CURRENT DAIRY FARM CODE
+========================================================= --><%
+const currentFarmCode =
+dairy &&
+dairy.code !== null &&
+dairy.code !== undefined &&
+Number(dairy.code) < 0
+
+        ? Number(dairy.code)
+
+        : null;
+
+%>
+
+<!-- =========================================================
+     FILTER ASSETS BELONGING TO CURRENT DAIRY FARM
+========================================================= --><%
+const farmAssets =
+currentFarmCode !== null && Array.isArray(dairies)
+
+        ? dairies.filter(asset => {
+
+            if (!asset) {
+                return false;
+            }
+
+            if (
+                asset.assetCode === null ||
+                asset.assetCode === undefined
+            ) {
+                return false;
+            }
+
+            return (
+                Number(asset.assetCode) ===
+                currentFarmCode
+            );
+
+        })
+
+        : [];
+
+%>
+
+<!-- =========================================================
+     ANIMALS
+     
+     Positive code.
+     
+     Must belong to current Dairy Farm through assetCode.
+========================================================= --><%
+const animalDairies =
+farmAssets.filter(asset => {
+
+        return (
+            asset.code !== null &&
+            asset.code !== undefined &&
+            Number(asset.code) > 0
+        );
+
+    });
+
+%>
+
+<!-- =========================================================
+     STRUCTURES / MACHINES / TOOLS
+     
+     No code.
+     
+     Must belong to current Dairy Farm through assetCode.
+========================================================= --><%
+const structureDairies =
+farmAssets.filter(asset => {
+
+        return (
+            asset.code === null ||
+            asset.code === undefined
+        );
+
+    });
+
+%>
+
+<!-- =========================================================
      VIEW PROPERTY BUTTON
 ========================================================= --><button
 type="button"
@@ -29,7 +135,10 @@ aria-expanded="false"
 
 «»
 
-<span class="asset-bar-trigger-icon" aria-hidden="true">
+<span
+    class="asset-bar-trigger-icon"
+    aria-hidden="true"
+>
     ◉
 </span>
 
@@ -39,10 +148,10 @@ aria-expanded="false"
 
 </button><!-- =========================================================
      SIDEBAR OVERLAY
-     
+
      Hidden by default.
-     
-     Clicking this area closes the sidebar.
+
+     Clicking outside the sidebar closes it.
 ========================================================= --><div
     id="assetBarOverlay"
     class="asset-bar-overlay"
@@ -64,7 +173,7 @@ aria-expanded="false"
     <div class="asset-bar-heading">
 
         <span class="asset-bar-heading-label">
-            Property
+            PROPERTY
         </span>
 
         <h2>
@@ -84,13 +193,40 @@ aria-expanded="false"
         class="asset-bar-close"
         aria-label="Close Property"
     >
+
         <span aria-hidden="true">
             ×
         </span>
+
     </button>
 
 
 </div>
+
+
+<!-- =====================================================
+     CURRENT FARM INFORMATION
+====================================================== -->
+
+<% if (currentFarmCode !== null) { %>
+
+    <div class="asset-bar-farm">
+
+        <span class="asset-bar-farm-label">
+            FARM
+        </span>
+
+        <span class="asset-bar-farm-name">
+            <%= dairy.name %>
+        </span>
+
+        <span class="asset-bar-farm-code">
+            Farm #<%= currentFarmCode %>
+        </span>
+
+    </div>
+
+<% } %>
 
 
 <!-- =====================================================
@@ -104,9 +240,9 @@ aria-expanded="false"
 >
 
 
-    <!-- =================================================
+    <!-- ================================================
          ANIMALS TAB
-    ================================================== -->
+    ================================================= -->
 
     <button
         type="button"
@@ -116,15 +252,17 @@ aria-expanded="false"
         aria-selected="true"
         aria-controls="assetAnimals"
     >
+
         <span class="asset-bar-tab-title">
             Animals
         </span>
+
     </button>
 
 
-    <!-- =================================================
+    <!-- ================================================
          STRUCTURES TAB
-    ================================================== -->
+    ================================================= -->
 
     <button
         type="button"
@@ -134,6 +272,7 @@ aria-expanded="false"
         aria-selected="false"
         aria-controls="assetStructures"
     >
+
         <span class="asset-bar-tab-title">
             Structures
         </span>
@@ -141,6 +280,7 @@ aria-expanded="false"
         <span class="asset-bar-tab-subtitle">
             Machines &amp; Tools
         </span>
+
     </button>
 
 
@@ -167,7 +307,12 @@ aria-expanded="false"
     >
 
 
+        <!-- =============================================
+             SECTION HEADER
+        ============================================== -->
+
         <div class="asset-bar-section-header">
+
 
             <div>
 
@@ -181,35 +326,18 @@ aria-expanded="false"
 
             </div>
 
+
             <span class="asset-bar-count">
-
-                <%
-                    const animalDairies =
-                        Array.isArray(dairies)
-
-                            ? dairies.filter(dairy => {
-
-                                return (
-
-                                    dairy.code !== null &&
-
-                                    dairy.code !== undefined &&
-
-                                    Number(dairy.code) > 0
-
-                                );
-
-                            })
-
-                            : [];
-                %>
-
                 <%= animalDairies.length %>
-
             </span>
+
 
         </div>
 
+
+        <!-- =============================================
+             ANIMAL LIST
+        ============================================== -->
 
         <div class="asset-bar-list">
 
@@ -217,18 +345,19 @@ aria-expanded="false"
             <% if (animalDairies.length) { %>
 
 
-                <% animalDairies.forEach(dairy => { %>
+                <% animalDairies.forEach(animal => { %>
 
 
                     <!-- =================================
-                         ANIMAL ITEM
+                         ANIMAL
                     ================================== -->
 
                     <button
                         type="button"
                         class="asset-bar-item asset-bar-animal"
-                        data-asset-id="<%= dairy._id %>"
-                        data-asset-code="<%= dairy.code %>"
+                        data-asset-id="<%= animal._id %>"
+                        data-asset-code="<%= animal.code %>"
+                        data-asset-parent-code="<%= animal.assetCode %>"
                         data-asset-type="animal"
                     >
 
@@ -237,11 +366,13 @@ aria-expanded="false"
                              IMAGE
                         ============================== -->
 
-                        <span class="asset-bar-item-image">
+                        <span
+                            class="asset-bar-item-image"
+                        >
 
                             <img
-                                src="<%= dairy.displayImage %>"
-                                alt="<%= dairy.name %>"
+                                src="<%= animal.displayImage %>"
+                                alt="<%= animal.name %>"
                                 loading="lazy"
                             >
 
@@ -252,32 +383,42 @@ aria-expanded="false"
                              INFORMATION
                         ============================== -->
 
-                        <span class="asset-bar-item-details">
+                        <span
+                            class="asset-bar-item-details"
+                        >
 
 
-                            <span class="asset-bar-item-name">
-                                <%= dairy.name %>
+                            <span
+                                class="asset-bar-item-name"
+                            >
+                                <%= animal.name %>
                             </span>
 
 
-                            <span class="asset-bar-item-code">
-                                Animal #<%= dairy.code %>
+                            <span
+                                class="asset-bar-item-code"
+                            >
+                                Animal #<%= animal.code %>
                             </span>
 
 
-                            <% if (dairy.type) { %>
+                            <% if (animal.type) { %>
 
-                                <span class="asset-bar-item-meta">
-                                    <%= dairy.type %>
+                                <span
+                                    class="asset-bar-item-meta"
+                                >
+                                    <%= animal.type %>
                                 </span>
 
                             <% } %>
 
 
-                            <% if (dairy.gender) { %>
+                            <% if (animal.gender) { %>
 
-                                <span class="asset-bar-item-meta">
-                                    <%= dairy.gender %>
+                                <span
+                                    class="asset-bar-item-meta"
+                                >
+                                    <%= animal.gender %>
                                 </span>
 
                             <% } %>
@@ -307,14 +448,21 @@ aria-expanded="false"
             <% } else { %>
 
 
+                <!-- =====================================
+                     NO ANIMALS
+                ====================================== -->
+
                 <div class="asset-bar-empty">
 
-                    <span class="asset-bar-empty-icon">
+                    <span
+                        class="asset-bar-empty-icon"
+                        aria-hidden="true"
+                    >
                         —
                     </span>
 
                     <span>
-                        No animals found.
+                        No animals found for this dairy farm.
                     </span>
 
                 </div>
@@ -343,7 +491,12 @@ aria-expanded="false"
     >
 
 
+        <!-- =============================================
+             SECTION HEADER
+        ============================================== -->
+
         <div class="asset-bar-section-header">
+
 
             <div>
 
@@ -357,33 +510,18 @@ aria-expanded="false"
 
             </div>
 
+
             <span class="asset-bar-count">
-
-                <%
-                    const structureDairies =
-                        Array.isArray(dairies)
-
-                            ? dairies.filter(dairy => {
-
-                                return (
-
-                                    dairy.code === null ||
-
-                                    dairy.code === undefined
-
-                                );
-
-                            })
-
-                            : [];
-                %>
-
                 <%= structureDairies.length %>
-
             </span>
+
 
         </div>
 
+
+        <!-- =============================================
+             STRUCTURE LIST
+        ============================================== -->
 
         <div class="asset-bar-list">
 
@@ -391,7 +529,7 @@ aria-expanded="false"
             <% if (structureDairies.length) { %>
 
 
-                <% structureDairies.forEach(dairy => { %>
+                <% structureDairies.forEach(asset => { %>
 
 
                     <!-- =================================
@@ -401,7 +539,8 @@ aria-expanded="false"
                     <button
                         type="button"
                         class="asset-bar-item asset-bar-structure"
-                        data-asset-id="<%= dairy._id %>"
+                        data-asset-id="<%= asset._id %>"
+                        data-asset-parent-code="<%= asset.assetCode %>"
                         data-asset-type="structure"
                     >
 
@@ -410,11 +549,13 @@ aria-expanded="false"
                              IMAGE
                         ============================== -->
 
-                        <span class="asset-bar-item-image">
+                        <span
+                            class="asset-bar-item-image"
+                        >
 
                             <img
-                                src="<%= dairy.displayImage %>"
-                                alt="<%= dairy.name %>"
+                                src="<%= asset.displayImage %>"
+                                alt="<%= asset.name %>"
                                 loading="lazy"
                             >
 
@@ -425,27 +566,35 @@ aria-expanded="false"
                              INFORMATION
                         ============================== -->
 
-                        <span class="asset-bar-item-details">
+                        <span
+                            class="asset-bar-item-details"
+                        >
 
 
-                            <span class="asset-bar-item-name">
-                                <%= dairy.name %>
+                            <span
+                                class="asset-bar-item-name"
+                            >
+                                <%= asset.name %>
                             </span>
 
 
-                            <% if (dairy.type) { %>
+                            <% if (asset.type) { %>
 
-                                <span class="asset-bar-item-meta">
-                                    <%= dairy.type %>
+                                <span
+                                    class="asset-bar-item-meta"
+                                >
+                                    <%= asset.type %>
                                 </span>
 
                             <% } %>
 
 
-                            <% if (dairy.location) { %>
+                            <% if (asset.location) { %>
 
-                                <span class="asset-bar-item-meta">
-                                    <%= dairy.location %>
+                                <span
+                                    class="asset-bar-item-meta"
+                                >
+                                    <%= asset.location %>
                                 </span>
 
                             <% } %>
@@ -475,14 +624,22 @@ aria-expanded="false"
             <% } else { %>
 
 
+                <!-- =====================================
+                     NO STRUCTURES
+                ====================================== -->
+
                 <div class="asset-bar-empty">
 
-                    <span class="asset-bar-empty-icon">
+                    <span
+                        class="asset-bar-empty-icon"
+                        aria-hidden="true"
+                    >
                         —
                     </span>
 
                     <span>
-                        No structures, machines or tools found.
+                        No structures, machines or tools
+                        found for this dairy farm.
                     </span>
 
                 </div>
