@@ -1,54 +1,80 @@
 <!-- =====================================================
      UPDATE PAGE ASSETS
-===================================================== -->
-
-<link
+===================================================== --><!-- =====================================================
+     UPDATE PAGE CSS
+     
+     This remains the original Update page stylesheet.
+     
+     assetBar.css is imported from update.css.
+===================================================== --><link
   rel="stylesheet"
   href="/css/update/update.css"
->
-
-<script src="/socket.io/socket.io.js"></script>
-
-
-<!-- =====================================================
+><!-- =====================================================
+     SOCKET.IO
+     
+     REQUIRED BY THE ORIGINAL UPDATE PAGE.
+===================================================== --><script
+  src="/socket.io/socket.io.js"
+></script><!-- =====================================================
      UPDATE PAGE
-===================================================== -->
+===================================================== --><div class="dairy-page">  <!-- ===================================================
+       PROFILE
+  ==================================================== --><%- include("update/profile-card", {
+dairy: dairy,
+user: user
+}) %>
 
-<div class="dairy-page">
+  <!-- ===================================================
+       CREATE POST
+  ==================================================== --><% if (user) { %>
 
+<%- include("update/create-post", {
+  user: user
+}) %>
 
-  <!-- PROFILE -->
-  <%- include("update/profile-card", {
-    dairy: dairy,
-    user: user
-  }) %>
+<% } %>
 
+  <!-- ===================================================
+       ASSET BAR
+       
+       View Property button + property sidebar.
+  ==================================================== --><%- include("assetBar", {
+dairies: dairies
+}) %>
 
-  <!-- CREATE POST -->
-  <% if (user) { %>
+  <!-- ===================================================
+       FEED
+  ==================================================== --><%- include("update/feed", {
+feed: feed,
+user: user
+}) %>
 
-    <%- include("update/create-post", {
-      user: user
-    }) %>
-
-  <% } %>
-
-
-  <!-- FEED -->
-  <%- include("update/feed", {
-    feed: feed,
-    user: user
-  }) %>
-
-
-</div>
-
-
-<!-- =====================================================
+</div><!-- =====================================================
      UPDATE PAGE JAVASCRIPT
-===================================================== -->
-
-<script
+===================================================== --><!-- =====================================================
+     ASSET BAR JAVASCRIPT
+     
+     Must load BEFORE update/index.js because
+     update/index.js calls initializeAssetBar().
+===================================================== --><script
+  src="/js/update/assetBar.js"
+  defer
+></script><!-- =====================================================
+     ORIGINAL UPDATE PAGE ENTRY POINT
+     
+     This remains.
+     
+     It initializes:
+       - Profile Update
+       - Post Modal
+       - Character Counter
+       - Image Preview
+       - Feed
+       - Feed Images
+       - Auto Resize
+       - Socket
+       - Asset Bar
+===================================================== --><script
   src="/js/update/index.js"
   defer
 ></script>
