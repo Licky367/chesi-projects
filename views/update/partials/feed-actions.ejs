@@ -1,35 +1,481 @@
-<div class="feed-actions">
+<!-- ======================================================
+     FEED ACTIONS
+     LIKE + COMMENTS
+====================================================== -->
+
+<div
+    class="feed-actions"
+    data-feed-id="<%= item._id %>"
+    data-feed-type="<%= type || 'post' %>"
+>
+
+
+    <!-- ==================================================
+         LIKE
+    ================================================== -->
 
     <button
         class="like-btn"
         data-id="<%= item._id %>"
         data-type="<%= type || 'post' %>"
         type="button"
+        aria-label="Like"
     >
 
         <i class="bi bi-hand-thumbs-up-fill"></i>
 
         <span class="like-count">
-
             <%= item.likes || 0 %>
-
         </span>
 
     </button>
 
+
+    <!-- ==================================================
+         COMMENTS
+    ================================================== -->
+
     <button
         class="toggle-comments"
         type="button"
+        aria-label="Comments"
     >
 
         <i class="bi bi-chat-dots-fill"></i>
 
         <span class="comment-count">
-
-            <%= item.comments ? item.comments.length : 0 %>
-
+            <%= item.comments
+                ? item.comments.length
+                : 0 %>
         </span>
 
     </button>
 
+
 </div>
+
+
+<script>
+/* =========================================================
+   FEED ACTIONS
+   SELF-CONTAINED JAVASCRIPT
+
+   This script handles:
+   - Like
+   - Comment modal opening
+
+   It does NOT require feed.js.
+========================================================= */
+
+
+/* =========================================================
+   LIKE
+========================================================= */
+
+async function handleFeedLike(button){
+
+    if(!button){
+
+        return;
+
+    }
+
+
+    const id =
+        button.dataset.id;
+
+
+    const type =
+        button.dataset.type ||
+        "post";
+
+
+    if(!id){
+
+        console.error(
+            "FEED LIKE: Missing item ID."
+        );
+
+        return;
+
+    }
+
+
+    if(button.disabled){
+
+        return;
+
+    }
+
+
+    button.disabled =
+        true;
+
+
+    try{
+
+        const url =
+            type === "post"
+                ? `/post/${id}/like`
+                : `/${type}/${id}/like`;
+
+
+        console.log(
+            "FEED LIKE REQUEST:",
+            url
+        );
+
+
+        const response =
+            await fetch(
+                url,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Accept":
+                            "application/json"
+                    }
+                }
+            );
+
+
+        const result =
+            await response.json();
+
+
+        console.log(
+            "FEED LIKE RESPONSE:",
+            result
+        );
+
+
+        if(!response.ok){
+
+            throw new Error(
+                result.message ||
+                `Request failed (${response.status})`
+            );
+
+        }
+
+
+        if(!result.success){
+
+            throw new Error(
+                result.message ||
+                "Unable to like."
+            );
+
+        }
+
+
+        const count =
+            button.querySelector(
+                ".like-count"
+            );
+
+
+        if(count){
+
+            count.textContent =
+                result.likes ?? 0;
+
+        }
+
+
+        button.classList.toggle(
+            "liked",
+            result.liked === true
+        );
+
+    }
+    catch(error){
+
+        console.error(
+            "FEED LIKE ERROR:",
+            error
+        );
+
+
+        if(
+            typeof window.showMessage ===
+            "function"
+        ){
+
+            window.showMessage(
+                error.message ||
+                "Unable to like."
+            );
+
+        }
+        else{
+
+            alert(
+                error.message ||
+                "Unable to like."
+            );
+
+        }
+
+    }
+    finally{
+
+        button.disabled =
+            false;
+
+    }
+
+}
+
+
+/* =========================================================
+   COMMENT TOGGLE
+========================================================= */
+
+function handleFeedComments(button){
+
+    if(!button){
+
+        return;
+
+    }
+
+
+    const card =
+        button.closest(
+            ".feed-card"
+        );
+
+
+    if(!card){
+
+        console.error(
+            "FEED COMMENTS: Feed card not found."
+        );
+
+        return;
+
+    }
+
+
+    const modal =
+        card.querySelector(
+            ".comment-modal"
+        );
+
+
+    if(!modal){
+
+        console.error(
+            "FEED COMMENTS: Comment modal not found."
+        );
+
+        return;
+
+    }
+
+
+    modal.classList.add(
+        "active"
+    );
+
+
+    document.body.style.overflow =
+        "hidden";
+
+
+    const textarea =
+        modal.querySelector(
+            ".comment-form textarea"
+        );
+
+
+    setTimeout(
+        () => {
+
+            textarea?.focus();
+
+        },
+        100
+    );
+
+}
+
+
+/* =========================================================
+   CLOSE COMMENT MODAL
+========================================================= */
+
+function closeFeedCommentModal(modal){
+
+    if(!modal){
+
+        return;
+
+    }
+
+
+    modal.classList.remove(
+        "active"
+    );
+
+
+    document.body.style.overflow =
+        "";
+
+}
+
+
+/* =========================================================
+   GLOBAL CLICK HANDLER
+=========================================================
+
+   Event delegation means this works even if feed
+   elements are added dynamically later.
+========================================================= */
+
+if(
+    !window.__feedActionsInitialized
+){
+
+    window.__feedActionsInitialized =
+        true;
+
+
+    document.addEventListener(
+        "click",
+        event => {
+
+
+            /* =============================================
+               LIKE
+            ============================================= */
+
+            const likeButton =
+                event.target.closest(
+                    ".like-btn"
+                );
+
+
+            if(likeButton){
+
+                event.preventDefault();
+
+                handleFeedLike(
+                    likeButton
+                );
+
+                return;
+
+            }
+
+
+            /* =============================================
+               OPEN COMMENTS
+            ============================================= */
+
+            const commentButton =
+                event.target.closest(
+                    ".toggle-comments"
+                );
+
+
+            if(commentButton){
+
+                event.preventDefault();
+
+                handleFeedComments(
+                    commentButton
+                );
+
+                return;
+
+            }
+
+
+            /* =============================================
+               CLOSE COMMENT MODAL
+            ============================================= */
+
+            const closeButton =
+                event.target.closest(
+                    ".close-comment-modal"
+                );
+
+
+            if(closeButton){
+
+                event.preventDefault();
+
+
+                closeFeedCommentModal(
+                    closeButton.closest(
+                        ".comment-modal"
+                    )
+                );
+
+                return;
+
+            }
+
+
+            /* =============================================
+               CLICK OUTSIDE COMMENT MODAL
+            ============================================= */
+
+            const modal =
+                event.target.closest(
+                    ".comment-modal"
+                );
+
+
+            if(
+                modal &&
+                event.target === modal
+            ){
+
+                closeFeedCommentModal(
+                    modal
+                );
+
+            }
+
+        }
+    );
+
+
+    /* =====================================================
+       ESCAPE KEY
+    ===================================================== */
+
+    document.addEventListener(
+        "keydown",
+        event => {
+
+            if(
+                event.key !== "Escape"
+            ){
+
+                return;
+
+            }
+
+
+            document
+                .querySelectorAll(
+                    ".comment-modal.active"
+                )
+                .forEach(modal => {
+
+                    closeFeedCommentModal(
+                        modal
+                    );
+
+                });
+
+        }
+    );
+
+}
+</script>
