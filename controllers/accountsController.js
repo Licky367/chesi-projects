@@ -10,7 +10,8 @@ const accountsService =
 // USERS LIST
 // ==========================================================
 
-exports.getAccountsPage = async (req, res) => {
+exports.getAccountsPage =
+async (req, res) => {
 
   try {
 
@@ -22,7 +23,7 @@ exports.getAccountsPage = async (req, res) => {
 
       title: "All Users",
 
-      users,
+      users
 
     });
 
@@ -43,20 +44,19 @@ exports.getAccountsPage = async (req, res) => {
 // USER PROFILE
 // ==========================================================
 
-exports.getAccountProfile = async (req, res) => {
+exports.getAccountProfile =
+async (req, res) => {
 
   try {
 
-    const {
-      user,
-      dairies
-    } =
-      await accountsService.getUserProfileData(
-        req.params.id
-      );
+    const data =
+      await accountsService
+        .getUserProfileData(
+          req.params.id
+        );
 
 
-    if (!user) {
+    if (!data.user) {
 
       return res.status(404).send(
         "User not found"
@@ -65,17 +65,20 @@ exports.getAccountProfile = async (req, res) => {
     }
 
 
-    res.render("accountsProfile", {
+    res.render(
+      "accountsProfile",
+      {
 
-      title: user.name,
+        title: data.user.name,
 
-      user,
+        user: data.user,
 
-      dairies,
+        dairies: data.dairies,
 
-      currentUser: req.user,
+        currentUser: req.user
 
-    });
+      }
+    );
 
   } catch (err) {
 
@@ -94,13 +97,10 @@ exports.getAccountProfile = async (req, res) => {
 // UPDATE ROLE
 // ==========================================================
 
-exports.updateUserRole = async (req, res) => {
+exports.updateUserRole =
+async (req, res) => {
 
   try {
-
-    // --------------------------------------------------------
-    // Prevent changing your own role
-    // --------------------------------------------------------
 
     if (
       req.user._id.toString() ===
@@ -114,13 +114,12 @@ exports.updateUserRole = async (req, res) => {
     }
 
 
-    const { role } =
-      req.body;
-
-
     await accountsService.updateUserRole(
+
       req.params.id,
-      role
+
+      req.body.role
+
     );
 
 
@@ -133,6 +132,7 @@ exports.updateUserRole = async (req, res) => {
     console.error(err);
 
     res.status(500).send(
+      err.message ||
       "Failed to update role"
     );
 
@@ -142,37 +142,33 @@ exports.updateUserRole = async (req, res) => {
 
 
 // ==========================================================
-// ASSIGN ADDITIONAL DAIRY FARMS
+// ASSIGN DAIRY FARMS
 // ==========================================================
 
-exports.assignDairyFarms = async (req, res) => {
+exports.assignDairyFarms =
+async (req, res) => {
 
   try {
 
-    const userId =
-      req.params.id;
+    let {
+      assignedFarms
+    } = req.body;
 
 
-    let { assignedFarms } =
-      req.body;
-
-
-    // --------------------------------------------------------
-    // If only one farm was submitted, Express may give us
-    // a string instead of an array.
-    // Normalize it to an array.
-    // --------------------------------------------------------
-
-    if (!assignedFarms) {
+    if (
+      !assignedFarms
+    ) {
 
       return res.redirect(
-        `/accounts/${userId}`
+        `/accounts/${req.params.id}`
       );
 
     }
 
 
-    if (!Array.isArray(assignedFarms)) {
+    if (
+      !Array.isArray(assignedFarms)
+    ) {
 
       assignedFarms = [
         assignedFarms
@@ -182,13 +178,16 @@ exports.assignDairyFarms = async (req, res) => {
 
 
     await accountsService.assignDairyFarms(
-      userId,
+
+      req.params.id,
+
       assignedFarms
+
     );
 
 
     res.redirect(
-      `/accounts/${userId}`
+      `/accounts/${req.params.id}`
     );
 
   } catch (err) {
@@ -196,7 +195,44 @@ exports.assignDairyFarms = async (req, res) => {
     console.error(err);
 
     res.status(500).send(
+      err.message ||
       "Failed to assign Dairy Farms"
+    );
+
+  }
+
+};
+
+
+// ==========================================================
+// UNASSIGN DAIRY FARM
+// ==========================================================
+
+exports.unassignDairyFarm =
+async (req, res) => {
+
+  try {
+
+    await accountsService.unassignDairyFarm(
+
+      req.params.id,
+
+      req.body.farmId
+
+    );
+
+
+    res.redirect(
+      `/accounts/${req.params.id}`
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).send(
+      err.message ||
+      "Failed to unassign Dairy Farm"
     );
 
   }
@@ -208,13 +244,10 @@ exports.assignDairyFarms = async (req, res) => {
 // DELETE USER
 // ==========================================================
 
-exports.deleteUser = async (req, res) => {
+exports.deleteUser =
+async (req, res) => {
 
   try {
-
-    // --------------------------------------------------------
-    // Prevent deleting your own account
-    // --------------------------------------------------------
 
     if (
       req.user._id.toString() ===
