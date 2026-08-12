@@ -26,7 +26,7 @@ router.get(
 
 
 // ==========================================================
-// UPDATE USER ROLE
+// UPDATE ROLE
 // POST /accounts/:id/role
 // ==========================================================
 
@@ -39,10 +39,6 @@ router.post(
 // ==========================================================
 // ASSIGN DAIRY FARM
 // POST /accounts/:id/farms
-//
-// Adds a Dairy Farm to the user's assignedFarm array.
-//
-// Intended for dairyWorker users.
 // ==========================================================
 
 router.post(
@@ -54,9 +50,6 @@ router.post(
 // ==========================================================
 // UNASSIGN DAIRY FARM
 // POST /accounts/:id/farms/:farmId/unassign
-//
-// Removes the selected Dairy Farm from the user's
-// assignedFarm array.
 // ==========================================================
 
 router.post(
