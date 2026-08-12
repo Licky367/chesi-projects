@@ -2,8 +2,13 @@
 // services/accountsService.js
 // ==========================================================
 
-const User = require("../models/projectUser");
-const Dairy = require("../models/dairy");
+const mongoose = require("mongoose");
+
+const User =
+  require("../models/projectUser");
+
+const Dairy =
+  require("../models/dairy");
 
 
 // ==========================================================
@@ -12,42 +17,35 @@ const Dairy = require("../models/dairy");
 
 exports.getAllUsers = async () => {
 
-  return await User
-    .find()
-    .select("+password");
+  return await User.find();
 
 };
 
 
 // ==========================================================
 // GET USER PROFILE DATA
-//
-// Returns:
-//   - User
-//   - All Dairy Farms
-//
-// assignedFarm is populated so accountsProfile.ejs can
-// display the farm names and codes.
 // ==========================================================
 
-exports.getUserProfileData = async (userId) => {
+exports.getUserProfileData =
+async (userId) => {
 
   const user =
-    await User
-      .findById(userId)
+    await User.findById(userId)
       .populate({
         path: "assignedFarm",
-        select: "name code profileImage status"
+        select:
+          "name code profileImage status"
       });
 
 
   const dairies =
-    await Dairy
-      .find({
-        code: {
-          $lt: 0
-        }
-      })
+    await Dairy.find({
+
+      code: {
+        $lt: 0
+      }
+
+    })
       .select(
         "name code profileImage status"
       )
@@ -68,14 +66,16 @@ exports.getUserProfileData = async (userId) => {
 // GET SINGLE USER
 // ==========================================================
 
-exports.getUserById = async (userId) => {
+exports.getUserById =
+async (userId) => {
 
-  return await User
-    .findById(userId)
-    .populate({
-      path: "assignedFarm",
-      select: "name code profileImage status"
-    });
+  return await User.findById(
+    userId
+  ).populate({
+    path: "assignedFarm",
+    select:
+      "name code profileImage status"
+  });
 
 };
 
@@ -84,18 +84,45 @@ exports.getUserById = async (userId) => {
 // UPDATE USER ROLE
 // ==========================================================
 
-exports.updateUserRole = async (
-  userId,
-  role
-) => {
+exports.updateUserRole =
+async (userId, role) => {
+
+  if (
+    ![
+      "dairyWorker",
+      "poultryWorker",
+      "admin"
+    ].includes(role)
+  ) {
+
+    throw new Error(
+      "Invalid user role."
+    );
+
+  }
+
+
+  const update = {
+    role
+  };
+
+
+  // --------------------------------------------------------
+  // Only dairyWorker can have Dairy Farms.
+  // --------------------------------------------------------
+
+  if (role !== "dairyWorker") {
+
+    update.assignedFarm = [];
+
+  }
+
 
   return await User.findByIdAndUpdate(
 
     userId,
 
-    {
-      role
-    },
+    update,
 
     {
       new: true,
@@ -108,24 +135,19 @@ exports.updateUserRole = async (
 
 
 // ==========================================================
-// ASSIGN ADDITIONAL DAIRY FARMS
-//
-// This ADDS farms to the user's existing assignments.
-//
-// It does NOT replace the farms already assigned.
+// ASSIGN DAIRY FARMS
 // ==========================================================
 
-exports.assignDairyFarms = async (
+exports.assignDairyFarms =
+async (
   userId,
   assignedFarms
 ) => {
 
-  // ========================================================
-  // FIND USER
-  // ========================================================
-
   const user =
-    await User.findById(userId);
+    await User.findById(
+      userId
+    );
 
 
   if (!user) {
@@ -137,41 +159,36 @@ exports.assignDairyFarms = async (
   }
 
 
-  // ========================================================
-  // USER MUST BE A DAIRY WORKER
-  // ========================================================
-
   if (
     user.role !== "dairyWorker"
   ) {
 
     throw new Error(
-      "Only Dairy Workers can be assigned Dairy Farms."
+      "Only a Dairy Worker can be assigned Dairy Farms."
     );
 
   }
 
 
-  // ========================================================
-  // NORMALIZE EXISTING ASSIGNMENTS
-  // ========================================================
+  if (
+    !Array.isArray(assignedFarms)
+  ) {
 
-  if (!Array.isArray(user.assignedFarm)) {
-
-    user.assignedFarm = [];
+    assignedFarms =
+      assignedFarms
+        ? [assignedFarms]
+        : [];
 
   }
 
 
-  // ========================================================
-  // REMOVE EMPTY VALUES
-  // ========================================================
+  // --------------------------------------------------------
+  // Remove empty values.
+  // --------------------------------------------------------
 
   assignedFarms =
     assignedFarms.filter(
-      farmId =>
-        farmId &&
-        String(farmId).trim() !== ""
+      id => id && String(id).trim()
     );
 
 
@@ -182,47 +199,59 @@ exports.assignDairyFarms = async (
   }
 
 
-  // ========================================================
-  // REMOVE DUPLICATES FROM SUBMITTED IDS
-  // ========================================================
+  // --------------------------------------------------------
+  // Remove duplicate submitted IDs.
+  // --------------------------------------------------------
 
-  const uniqueFarmIds =
+  const uniqueIds =
     [
       ...new Set(
         assignedFarms.map(
-          farmId =>
-            String(farmId)
+          id => String(id)
         )
       )
     ];
 
 
-  // ========================================================
-  // VERIFY THAT ALL SELECTED IDS ARE DAIRY FARMS
-  //
-  // Negative Dairy.code = Dairy Farm
-  // ========================================================
+  // --------------------------------------------------------
+  // Validate ObjectIds.
+  // --------------------------------------------------------
+
+  for (const id of uniqueIds) {
+
+    if (
+      !mongoose.Types.ObjectId.isValid(id)
+    ) {
+
+      throw new Error(
+        "One or more selected Dairy Farms are invalid."
+      );
+
+    }
+
+  }
+
+
+  // --------------------------------------------------------
+  // Find only negative-code Dairy Farms.
+  // --------------------------------------------------------
 
   const farms =
     await Dairy.find({
 
       _id: {
-        $in: uniqueFarmIds
+        $in: uniqueIds
       },
 
       code: {
         $lt: 0
       }
 
-    }).select("_id code");
+    }).select("_id code name");
 
-
-  // ========================================================
-  // EVERY SUBMITTED ID MUST BE A VALID DAIRY FARM
-  // ========================================================
 
   if (
-    farms.length !== uniqueFarmIds.length
+    farms.length !== uniqueIds.length
   ) {
 
     throw new Error(
@@ -232,54 +261,137 @@ exports.assignDairyFarms = async (
   }
 
 
-  // ========================================================
-  // EXISTING FARM IDS
-  // ========================================================
+  // --------------------------------------------------------
+  // Existing assignments.
+  // --------------------------------------------------------
 
-  const existingFarmIds =
+  const existingIds =
     new Set(
 
-      user.assignedFarm.map(
-        farmId =>
-          String(
-            farmId._id ||
-            farmId
-          )
-      )
+      (user.assignedFarm || [])
+        .map(
+          id =>
+            String(
+              id._id || id
+            )
+        )
 
     );
 
 
-  // ========================================================
-  // ADD ONLY NEW FARMS
-  // ========================================================
+  // --------------------------------------------------------
+  // Add only farms that aren't already assigned.
+  // --------------------------------------------------------
 
   for (const farm of farms) {
 
-    const farmId =
+    const id =
       farm._id.toString();
 
 
     if (
-      !existingFarmIds.has(farmId)
+      !existingIds.has(id)
     ) {
 
       user.assignedFarm.push(
         farm._id
       );
 
-      existingFarmIds.add(
-        farmId
-      );
+      existingIds.add(id);
 
     }
 
   }
 
 
-  // ========================================================
-  // SAVE
-  // ========================================================
+  await user.save();
+
+
+  return user;
+
+};
+
+
+// ==========================================================
+// UNASSIGN ONE DAIRY FARM
+// ==========================================================
+
+exports.unassignDairyFarm =
+async (
+  userId,
+  farmId
+) => {
+
+  const user =
+    await User.findById(
+      userId
+    );
+
+
+  if (!user) {
+
+    throw new Error(
+      "User not found."
+    );
+
+  }
+
+
+  if (
+    user.role !== "dairyWorker"
+  ) {
+
+    throw new Error(
+      "Only a Dairy Worker can have assigned Dairy Farms."
+    );
+
+  }
+
+
+  if (
+    !mongoose.Types.ObjectId.isValid(
+      farmId
+    )
+  ) {
+
+    throw new Error(
+      "Invalid Dairy Farm."
+    );
+
+  }
+
+
+  const farm =
+    await Dairy.findOne({
+
+      _id: farmId,
+
+      code: {
+        $lt: 0
+      }
+
+    });
+
+
+  if (!farm) {
+
+    throw new Error(
+      "The selected record is not a valid Dairy Farm."
+    );
+
+  }
+
+
+  user.assignedFarm =
+    (user.assignedFarm || [])
+      .filter(
+        id =>
+          String(
+            id._id || id
+          ) !==
+          String(farmId)
+      );
+
 
   await user.save();
 
@@ -293,9 +405,8 @@ exports.assignDairyFarms = async (
 // DELETE USER
 // ==========================================================
 
-exports.deleteUser = async (
-  userId
-) => {
+exports.deleteUser =
+async (userId) => {
 
   return await User.findByIdAndDelete(
     userId
