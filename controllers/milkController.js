@@ -7,6 +7,262 @@ const milkService =
 
 
 // ==========================================================
+// INTERNAL HELPERS
+// ==========================================================
+//
+// These helpers normalize the data coming from milkService
+// into the exact structure expected by milk.ejs:
+//
+// [
+//     {
+//         farm: <Dairy Farm>,
+//         animals: [ <Dairy Animal>, ... ]
+//     }
+// ]
+//
+// The Milk page should therefore never have to guess whether
+// `dairies` contains farms or individual animals.
+// ==========================================================
+
+
+// ==========================================================
+// GET FARM ANIMALS
+// ==========================================================
+
+function getFarmAnimals(farm) {
+
+  if (!farm) {
+    return [];
+  }
+
+
+  /*
+   * Preferred property.
+   */
+
+  if (
+    Array.isArray(farm.animals)
+  ) {
+
+    return farm.animals;
+
+  }
+
+
+  /*
+   * Compatibility with possible existing property names.
+   */
+
+  if (
+    Array.isArray(farm.dairyAnimals)
+  ) {
+
+    return farm.dairyAnimals;
+
+  }
+
+
+  if (
+    Array.isArray(farm.assets)
+  ) {
+
+    return farm.assets;
+
+  }
+
+
+  if (
+    Array.isArray(farm.properties)
+  ) {
+
+    return farm.properties;
+
+  }
+
+
+  /*
+   * No animal array found.
+   */
+
+  return [];
+
+}
+
+
+// ==========================================================
+// CHECK WHETHER ANIMAL IS CURRENTLY MILKING
+// ==========================================================
+//
+// Your current EJS requires:
+//
+//     isMilking === true
+//
+// We therefore normalize the check here.
+//
+// If your Dairy model uses another definitive field later,
+// this is the one helper that needs changing.
+// ==========================================================
+
+function isCurrentlyMilking(animal) {
+
+  if (!animal) {
+    return false;
+  }
+
+
+  /*
+   * Primary field.
+   */
+
+  if (
+    animal.isMilking === true
+  ) {
+
+    return true;
+
+  }
+
+
+  /*
+   * Compatibility with boolean-like values.
+   */
+
+  if (
+    animal.isMilking === "true"
+  ) {
+
+    return true;
+
+  }
+
+
+  /*
+   * Some Mongoose documents may expose the value
+   * through a getter.
+   */
+
+  if (
+    Boolean(animal.isMilking) === true
+  ) {
+
+    return true;
+
+  }
+
+
+  return false;
+
+}
+
+
+// ==========================================================
+// NORMALIZE MILK FARM TABLES
+// ==========================================================
+//
+// Input:
+//
+//     data.dairies
+//
+// Expected input:
+//
+//     [
+//         farm,
+//         farm,
+//         farm
+//     ]
+//
+// Output:
+//
+//     [
+//         {
+//             farm,
+//             animals
+//         }
+//     ]
+//
+// Only animals currently participating in milk collection
+// are included.
+// ==========================================================
+
+function buildMilkDairyTables(dairies) {
+
+  if (
+    !Array.isArray(dairies)
+  ) {
+
+    return [];
+
+  }
+
+
+  const tables = [];
+
+
+  dairies.forEach(function (farm) {
+
+    if (!farm) {
+      return;
+    }
+
+
+    const farmAnimals =
+      getFarmAnimals(farm);
+
+
+    /*
+     * Only animals currently being milked.
+     */
+
+    const milkingAnimals =
+      farmAnimals.filter(
+        isCurrentlyMilking
+      );
+
+
+    /*
+     * Do not create an empty farm table.
+     */
+
+    if (
+      milkingAnimals.length === 0
+    ) {
+
+      return;
+
+    }
+
+
+    /*
+     * Keep the farm document intact.
+     *
+     * This allows milk.ejs to access:
+     *
+     *     farm._id
+     *     farm.name
+     *     farm.code
+     */
+
+    tables.push({
+
+      farm:
+
+        farm,
+
+      animals:
+
+        milkingAnimals
+
+    });
+
+  });
+
+
+  return tables;
+
+}
+
+
+// ==========================================================
 // GET MILK PAGE
 // ==========================================================
 //
@@ -14,18 +270,19 @@ const milkService =
 //
 // ADMIN
 // ----------------------------------------------------------
-// Receives all Dairy Farms.
-// Each Dairy Farm contains its own array of animals
-// currently participating in milk collection.
+// Receives all Dairy Farms and all currently milking animals
+// belonging to those farms.
 //
 // DAIRY WORKER
 // ----------------------------------------------------------
 // Receives ONLY the Dairy Farm currently selected/switched
 // to by that worker.
 //
-// The controller does NOT decide which farms are visible.
-// That responsibility belongs to milkService.
+// The service remains responsible for determining which farms
+// the user is allowed to see.
 //
+// The controller is responsible for transforming the returned
+// farms into the structure expected by milk.ejs.
 // ==========================================================
 
 exports.getMilkPage = async (req, res) => {
@@ -44,16 +301,6 @@ exports.getMilkPage = async (req, res) => {
 
     // ------------------------------------------------------
     // GET MILK PAGE DATA
-    //
-    // IMPORTANT:
-    //
-    // The user is passed into the service so the service
-    // can determine:
-    //
-    //     admin
-    //     dairyWorker
-    //
-    // and apply the current-farm rule.
     // ------------------------------------------------------
 
     const data =
@@ -62,12 +309,72 @@ exports.getMilkPage = async (req, res) => {
       );
 
 
-    const currentSession =
-      data?.session || "closed";
+    // ------------------------------------------------------
+    // CURRENT SESSION
+    // ------------------------------------------------------
 
+    const currentSession =
+      data?.session ||
+      "closed";
+
+
+    // ------------------------------------------------------
+    // ADMIN STATUS
+    // ------------------------------------------------------
 
     const isAdmin =
       user?.role === "admin";
+
+
+    // ------------------------------------------------------
+    // RAW FARMS FROM SERVICE
+    // ------------------------------------------------------
+
+    const rawDairies =
+      Array.isArray(data?.dairies)
+        ? data.dairies
+        : [];
+
+
+    // ------------------------------------------------------
+    // BUILD MILK TABLE DATA
+    // ------------------------------------------------------
+    //
+    // This is the important part.
+    //
+    // milk.ejs expects:
+    //
+    // milkDairyTables = [
+    //
+    //     {
+    //         farm: farm,
+    //         animals: [...]
+    //     }
+    //
+    // ]
+    //
+    // ------------------------------------------------------
+
+    const milkDairyTables =
+      buildMilkDairyTables(
+        rawDairies
+      );
+
+
+    // ------------------------------------------------------
+    // CURRENT FARM
+    // ------------------------------------------------------
+    //
+    // The service may already provide the currently selected
+    // farm. We expose both names because milk.ejs supports
+    // both `currentDairy` and `currentFarm`.
+    // ------------------------------------------------------
+
+    const activeFarm =
+      data?.currentDairy ||
+      data?.currentFarm ||
+      data?.activeFarm ||
+      null;
 
 
     // ------------------------------------------------------
@@ -79,50 +386,36 @@ exports.getMilkPage = async (req, res) => {
       {
 
         /*
-         * IMPORTANT:
-         *
-         * `dairies` is now expected to be an ARRAY OF
-         * DAIRY FARMS.
-         *
-         * Each farm contains its own animal array.
-         *
-         * Example:
-         *
-         * dairies = [
-         *
-         *     {
-         *         _id,
-         *         name,
-         *         code,
-         *
-         *         animals: [
-         *             {...},
-         *             {...}
-         *         ]
-         *     },
-         *
-         *     {
-         *         _id,
-         *         name,
-         *         code,
-         *
-         *         animals: [
-         *             {...},
-         *             {...}
-         *         ]
-         *     }
-         *
-         * ]
+         * PRIMARY VARIABLE USED BY THE NEW MILK EJS.
          */
 
-        dairies:
-          Array.isArray(data?.dairies)
-            ? data.dairies
-            : [],
+        milkDairyTables:
+          milkDairyTables,
 
 
         /*
-         * Current milk collection session.
+         * Keep `dairies` available for compatibility with
+         * any other code that may still reference it.
+         */
+
+        dairies:
+          rawDairies,
+
+
+        /*
+         * Current selected Dairy Farm.
+         */
+
+        currentDairy:
+          activeFarm,
+
+
+        currentFarm:
+          activeFarm,
+
+
+        /*
+         * Current collection session.
          */
 
         session:
@@ -184,18 +477,28 @@ exports.getMilkPage = async (req, res) => {
         {
 
           /*
-           * Empty farm array on failure.
+           * Always provide the exact structure expected
+           * by milk.ejs, even when loading fails.
            */
 
-          dairies: [],
+          milkDairyTables:
+            [],
 
 
-          /*
-           * Close collection window if the page
-           * cannot be loaded.
-           */
+          dairies:
+            [],
 
-          session: "closed",
+
+          currentDairy:
+            null,
+
+
+          currentFarm:
+            null,
+
+
+          session:
+            "closed",
 
 
           isAdmin:
@@ -240,11 +543,6 @@ exports.getMilkPage = async (req, res) => {
 //
 // The service must verify that the submitted animal belongs
 // to a farm the current user is allowed to work with.
-//
-// A dairy worker must NOT be able to submit milk for an
-// animal belonging to another farm simply by changing the
-// hidden `dairy` field in the browser.
-//
 // ==========================================================
 
 exports.submitMilk = async (req, res) => {
@@ -350,10 +648,6 @@ exports.submitMilk = async (req, res) => {
 
     // ------------------------------------------------------
     // SERVICE AUTHORIZATION
-    //
-    // milkService.saveMilkRecords() is responsible for
-    // verifying the animal/farm relationship and the user's
-    // permissions.
     // ------------------------------------------------------
 
     await milkService.saveMilkRecords(
@@ -395,12 +689,9 @@ exports.submitMilk = async (req, res) => {
 // GET EDIT MILK
 // ==========================================================
 //
-// Compatibility endpoint:
+// GET /milk/edit/:id
 //
-//     /milk/edit/:id
-//
-// Actual editing is performed through the modal in milk.ejs.
-//
+// Compatibility endpoint.
 // ==========================================================
 
 exports.getEditMilk = async (
@@ -478,9 +769,6 @@ exports.getEditMilk = async (
 // POST /milk/:id
 //
 // ADMIN ONLY
-//
-// Used by the edit modal in milk.ejs.
-//
 // ==========================================================
 
 exports.updateMilkRecord = async (
@@ -994,6 +1282,7 @@ exports.submitStandingOrderSale = async (
 
 // ==========================================================
 // UPDATE MILK PRICE
+// ==========================================================
 // ADMIN ONLY
 // ==========================================================
 
