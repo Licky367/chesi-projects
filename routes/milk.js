@@ -2,6 +2,11 @@ const express = require("express");
 
 const router = express.Router();
 
+
+// ==========================================================
+// CONTROLLERS
+// ==========================================================
+
 const milkController =
   require("../controllers/milkController");
 
@@ -21,28 +26,37 @@ const requireLogin = (req, res, next) => {
   ) {
 
     return res.redirect("/login");
-
   }
 
+
   /*
-   * Make the logged-in user available to:
-   *
-   * controllers
-   * services
-   * req.user
+   * Make the authenticated user available
+   * to controllers and services.
    */
 
   req.user =
     req.session.user;
 
-  next();
 
+  next();
 };
 
 
 // ==========================================================
 // MILK COLLECTION
 // ==========================================================
+//
+// All routes in this section are handled by:
+//
+//     milkController
+//
+// milkController should use:
+//
+//     services/milkService.js
+//
+// There is NO sales logic here.
+// ==========================================================
+
 
 /*
  * Display milk collection page
@@ -58,12 +72,11 @@ router.get(
 
 
 /*
- * Create a new individual milk record
+ * Create milk records
  *
  * POST /milk
  *
- * Used by the individual animal forms
- * in milk.ejs.
+ * Used by the milk collection forms.
  */
 
 router.post(
@@ -78,8 +91,9 @@ router.post(
 // ADMIN ONLY
 // ==========================================================
 
+
 /*
- * Edit a milk record
+ * Edit an existing milk record
  *
  * POST /milk/:id
  */
@@ -105,7 +119,7 @@ router.post(
 
 
 /*
- * Compatibility GET route
+ * Display milk-record edit page
  *
  * GET /milk/edit/:id
  */
@@ -120,9 +134,15 @@ router.get(
 // ==========================================================
 // MILK STATISTICS
 // ==========================================================
+//
+// Statistics here are MILK PRODUCTION statistics.
+//
+// Sales are NOT handled by milkService.
+// ==========================================================
+
 
 /*
- * Daily/monthly milk statistics
+ * Get milk statistics
  *
  * GET /stats?type=day
  * GET /stats?type=month
@@ -136,7 +156,7 @@ router.get(
 
 
 /*
- * Save daily milk statistics / price
+ * Save daily milk statistics / milk price
  *
  * POST /stats/day
  */
@@ -152,8 +172,9 @@ router.post(
 // MILKING HISTORY
 // ==========================================================
 
+
 /*
- * History for one dairy animal
+ * Get milking history for one animal
  *
  * GET /milk/history/:dairyId
  */
@@ -168,6 +189,7 @@ router.get(
 // ==========================================================
 // TOGGLE MILKING STATUS
 // ==========================================================
+
 
 /*
  * Toggle whether an animal is currently being milked.
@@ -184,23 +206,46 @@ router.post(
 
 // ==========================================================
 // SALES
-// SALES CONTROLLER
 // ==========================================================
+//
+// IMPORTANT:
+//
+// Sales are completely separated from milkService.
+//
+// These routes are handled ONLY by:
+//
+//     salesController
+//
+// salesController should use its own:
+//
+//     services/salesService.js
+//
+// milkController / milkService.js must NOT handle:
+//
+//     • manual sales
+//     • standing-order sales
+//     • sales page data
+//     • sales totals
+//     • sales consumption
+//     • sales cash
+//     • standing-order processing
+// ==========================================================
+
 
 /*
  * Display sales page
  *
- * ADMIN:
- *
- * GET /sales
- * GET /sales?farmId=<ID>
- *
- * DAIRY WORKER:
- *
  * GET /sales
  *
- * The controller determines the appropriate farm
- * based on the logged-in user.
+ * Administrator:
+ *     GET /sales
+ *     GET /sales?farmId=<ID>
+ *
+ * Dairy worker:
+ *     GET /sales
+ *
+ * salesController determines what the
+ * authenticated user is allowed to see.
  */
 
 router.get(
@@ -228,10 +273,8 @@ router.post(
  *
  * POST /sales/price
  *
- * Administrator only.
- *
- * The controller is responsible for enforcing
- * the administrator permission.
+ * Permission checking belongs to
+ * salesController / salesService.
  */
 
 router.post(
@@ -244,9 +287,19 @@ router.post(
 // ==========================================================
 // STANDING ORDERS
 // ==========================================================
+//
+// Standing orders belong to the SALES module.
+//
+// They are therefore handled by:
+//
+//     salesController
+//
+// and NOT milkController.
+// ==========================================================
+
 
 /*
- * Add a new standing order
+ * Add a standing order
  *
  * POST /sales/standing
  */
@@ -259,7 +312,7 @@ router.post(
 
 
 /*
- * Submit today's sale for a standing order
+ * Process today's standing-order sale
  *
  * POST /sales/standing/submit
  */
@@ -272,7 +325,7 @@ router.post(
 
 
 /*
- * Omit a standing order
+ * Omit/deactivate a standing order
  *
  * POST /sales/standing/omit
  */
@@ -285,7 +338,7 @@ router.post(
 
 
 // ==========================================================
-// EXPORT
+// EXPORT ROUTER
 // ==========================================================
 
 module.exports = router;
