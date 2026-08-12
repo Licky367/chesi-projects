@@ -9,54 +9,21 @@ PURPOSE:
 Displays properties belonging ONLY to the currently
 viewed Dairy Farm.
 
-IMPORTANT:
-
-The "View Assets" button belongs to the parent page.
-
-Parent button:
-
- #viewPropertyButton
-
-This partial contains ONLY:
-
- • Overlay
- • Right-side asset sidebar
- • Farm information
- • Category switcher
- • Animals
- • Structures / Machines / Tools
- • Sidebar JavaScript
- • Sidebar styles
+Also allows a dairyWorker with multiple assigned
+dairy farms to switch between those farms.
 
 NAVIGATION:
 
-Every animal, structure, machine or tool displayed here
-is a Dairy record.
+Every animal, structure, machine or tool:
 
-Clicking an asset navigates to:
+    /dairy/<asset._id>
 
- /dairy/<asset._id>
+Farm switching:
 
-The /dairy/:id route determines which page to render:
-
- code < 0
-     = update.ejs
-
- code > 0
-     = dairySet.ejs
-
- code === null / undefined
-     = dairySet.ejs
-
-CLASSIFICATION:
-
- code > 0
-     = Animal
-
- code === null / undefined
-     = Structure / Machine / Tool
+    /dairy/<farm._id>
 
 ========================================================= */ %>
+
 
 <%
 /* =========================================================
@@ -68,6 +35,7 @@ Array.isArray(assetDairies)
 ? assetDairies.filter(asset => !!asset)
 : [];
 
+
 /* =========================================================
 ANIMALS
 
@@ -77,13 +45,14 @@ code > 0
 const animalDairies =
 availableAssets.filter(asset => {
 
-return (
-    asset.code !== null &&
-    asset.code !== undefined &&
-    Number(asset.code) > 0
-);
+    return (
+        asset.code !== null &&
+        asset.code !== undefined &&
+        Number(asset.code) > 0
+    );
 
 });
+
 
 /* =========================================================
 STRUCTURES / MACHINES / TOOLS
@@ -94,110 +63,289 @@ code === null / undefined
 const structureDairies =
 availableAssets.filter(asset => {
 
-return (
-    asset.code === null ||
-    asset.code === undefined
-);
+    return (
+        asset.code === null ||
+        asset.code === undefined
+    );
 
 });
 
+
+/* =========================================================
+ASSIGNED FARMS
+
+The parent page should provide:
+
+    assignedFarms
+
+Each item should be a Dairy document.
+
+If unavailable, use an empty array so that the
+asset bar does not crash.
+========================================================= */
+
+const workerAssignedFarms =
+Array.isArray(assignedFarms)
+? assignedFarms.filter(farm => !!farm)
+: [];
+
+
+/* =========================================================
+SHOW FARM SWITCHER ONLY WHEN:
+
+    More than one farm is assigned.
+========================================================= */
+
+const canSwitchFarms =
+workerAssignedFarms.length > 1;
+
 %>
+
 
 <!-- =========================================================
      ASSET BAR OVERLAY
+========================================================= -->
 
-     Hidden until the sidebar is opened.
-========================================================= --><div
+<div
     id="assetBarOverlay"
     class="asset-bar-overlay"
     aria-hidden="true"
-></div><!-- =========================================================
+></div>
+
+
+<!-- =========================================================
      ASSET SIDEBAR
+========================================================= -->
 
-     Positioned between:
-
-         top: 120px
-         bottom: 50px
-========================================================= --><aside
+<aside
     id="assetBar"
     class="asset-bar"
     aria-label="Farm Assets"
     aria-hidden="true"
-><!-- =====================================================
+>
+
+
+<!-- =====================================================
      SIDEBAR TOP AREA
-====================================================== --><div class="asset-bar-top"><!-- =================================================
-     TITLE
-================================================== -->
+====================================================== -->
 
-<div class="asset-bar-heading">
+<div class="asset-bar-top">
 
-    <span class="asset-bar-heading-label">
-        FARM ASSETS
-    </span>
+    <div class="asset-bar-heading">
 
-    <h2>
-        Your Assets
-    </h2>
+        <span class="asset-bar-heading-label">
+            FARM ASSETS
+        </span>
+
+        <h2>
+            Your Assets
+        </h2>
+
+    </div>
+
+
+    <button
+        type="button"
+        id="closeAssetBar"
+        class="asset-bar-close"
+        aria-label="Close Assets"
+        title="Close Assets"
+    >
+
+        <span aria-hidden="true">
+            ×
+        </span>
+
+    </button>
 
 </div>
 
 
-<!-- =================================================
-     CLOSE BUTTON
-================================================== -->
-
-<button
-    type="button"
-    id="closeAssetBar"
-    class="asset-bar-close"
-    aria-label="Close Assets"
-    title="Close Assets"
->
-
-    <span aria-hidden="true">
-        ×
-    </span>
-
-</button>
-
-</div><!-- =====================================================
+<!-- =====================================================
      CURRENT FARM
-====================================================== --><% if (
-dairy &&
-dairy.code !== null &&
-dairy.code !== undefined &&
-Number(dairy.code) < 0
+====================================================== -->
+
+<% if (
+    dairy &&
+    dairy.code !== null &&
+    dairy.code !== undefined &&
+    Number(dairy.code) < 0
 ) { %>
 
 <div class="asset-bar-farm">
 
 
-    <span class="asset-bar-farm-label">
-        FARM
-    </span>
+    <!-- =================================================
+         CURRENT FARM INFORMATION
+    ================================================== -->
+
+    <div class="asset-bar-current-farm">
+
+        <span class="asset-bar-farm-label">
+            CURRENT FARM
+        </span>
 
 
-    <span class="asset-bar-farm-name">
-        <%= dairy.name %>
-    </span>
+        <span class="asset-bar-farm-name">
+            <%= dairy.name %>
+        </span>
 
 
-    <span class="asset-bar-farm-code">
-        Farm #<%= dairy.code %>
-    </span>
+        <span class="asset-bar-farm-code">
+            Farm #<%= dairy.code %>
+        </span>
+
+    </div>
+
+
+    <!-- =================================================
+         FARM SWITCHER
+
+         Only appears when the worker has more than
+         one assigned farm.
+    ================================================== -->
+
+    <% if (canSwitchFarms) { %>
+
+        <div class="asset-bar-farm-switcher">
+
+
+            <!-- =========================================
+                 SWAP BUTTON
+            ========================================== -->
+
+            <button
+                type="button"
+                id="farmSwitchButton"
+                class="farm-switch-button"
+                aria-label="Switch Dairy Farm"
+                aria-expanded="false"
+                aria-controls="assignedFarmList"
+                title="Switch Dairy Farm"
+            >
+
+                <!-- Swap icon -->
+
+                <span
+                    class="farm-switch-icon"
+                    aria-hidden="true"
+                >
+                    ⇄
+                </span>
+
+                <span class="farm-switch-text">
+                    Switch Farm
+                </span>
+
+            </button>
+
+
+            <!-- =========================================
+                 ASSIGNED FARM LIST
+            ========================================== -->
+
+            <div
+                id="assignedFarmList"
+                class="assigned-farm-list"
+                hidden
+            >
+
+                <div class="assigned-farm-list-header">
+
+                    <span>
+                        YOUR ASSIGNED FARMS
+                    </span>
+
+                </div>
+
+
+                <div class="assigned-farm-options">
+
+                    <% workerAssignedFarms.forEach(farm => { %>
+
+
+                        <a
+                            href="/dairy/<%= farm._id %>"
+                            class="assigned-farm-option
+                            <%= dairy._id.toString() === farm._id.toString()
+                                ? 'current'
+                                : '' %>"
+                        >
+
+
+                            <span class="assigned-farm-option-icon">
+                                <span aria-hidden="true">
+                                    <%= dairy._id.toString() === farm._id.toString()
+                                        ? '✓'
+                                        : '⌂' %>
+                                </span>
+                            </span>
+
+
+                            <span class="assigned-farm-option-details">
+
+                                <span class="assigned-farm-option-name">
+                                    <%= farm.name %>
+                                </span>
+
+
+                                <% if (
+                                    farm.code !== null &&
+                                    farm.code !== undefined
+                                ) { %>
+
+                                    <span class="assigned-farm-option-code">
+                                        Farm #<%= farm.code %>
+                                    </span>
+
+                                <% } %>
+
+                            </span>
+
+
+                            <% if (
+                                dairy._id.toString() ===
+                                farm._id.toString()
+                            ) { %>
+
+                                <span class="assigned-farm-current">
+                                    CURRENT
+                                </span>
+
+                            <% } %>
+
+
+                        </a>
+
+
+                    <% }); %>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    <% } %>
 
 
 </div>
 
 <% } %>
 
+
 <!-- =====================================================
      CATEGORY SWITCHER
-====================================================== --><div
+====================================================== -->
+
+<div
     class="asset-bar-tabs"
     role="tablist"
     aria-label="Asset categories"
-><!-- =================================================
+>
+
+
+<!-- =================================================
      ANIMALS
 ================================================== -->
 
@@ -250,9 +398,17 @@ Number(dairy.code) < 0
 
 </button>
 
-</div><!-- =====================================================
+</div>
+
+
+<!-- =====================================================
      ASSET CONTENT
-====================================================== --><div class="asset-bar-content"><!-- =================================================
+====================================================== -->
+
+<div class="asset-bar-content">
+
+
+<!-- =================================================
      ANIMALS
 ================================================== -->
 
@@ -265,12 +421,7 @@ Number(dairy.code) < 0
 >
 
 
-    <!-- =============================================
-         SECTION HEADER
-    ============================================== -->
-
     <div class="asset-bar-section-header">
-
 
         <div>
 
@@ -289,13 +440,8 @@ Number(dairy.code) < 0
             <%= animalDairies.length %>
         </span>
 
-
     </div>
 
-
-    <!-- =============================================
-         ANIMAL LIST
-    ============================================== -->
 
     <div class="asset-bar-list">
 
@@ -305,20 +451,6 @@ Number(dairy.code) < 0
 
             <% animalDairies.forEach(animal => { %>
 
-
-                <!-- =================================
-                     ANIMAL LINK
-
-                     Every animal is a Dairy record.
-
-                     Route:
-
-                         /dairy/<animal._id>
-
-                     The controller decides whether
-                     dairySet.ejs or another page
-                     should be rendered.
-                ================================== -->
 
                 <a
                     href="/dairy/<%= animal._id %>"
@@ -330,13 +462,7 @@ Number(dairy.code) < 0
                 >
 
 
-                    <!-- =================================
-                         IMAGE
-                    ================================== -->
-
-                    <span
-                        class="asset-bar-item-image"
-                    >
+                    <span class="asset-bar-item-image">
 
                         <img
                             src="<%= animal.displayImage %>"
@@ -347,34 +473,21 @@ Number(dairy.code) < 0
                     </span>
 
 
-                    <!-- =================================
-                         DETAILS
-                    ================================== -->
+                    <span class="asset-bar-item-details">
 
-                    <span
-                        class="asset-bar-item-details"
-                    >
-
-
-                        <span
-                            class="asset-bar-item-name"
-                        >
+                        <span class="asset-bar-item-name">
                             <%= animal.name %>
                         </span>
 
 
-                        <span
-                            class="asset-bar-item-code"
-                        >
+                        <span class="asset-bar-item-code">
                             Animal #<%= animal.code %>
                         </span>
 
 
                         <% if (animal.type) { %>
 
-                            <span
-                                class="asset-bar-item-meta"
-                            >
+                            <span class="asset-bar-item-meta">
                                 <%= animal.type %>
                             </span>
 
@@ -383,21 +496,14 @@ Number(dairy.code) < 0
 
                         <% if (animal.gender) { %>
 
-                            <span
-                                class="asset-bar-item-meta"
-                            >
+                            <span class="asset-bar-item-meta">
                                 <%= animal.gender %>
                             </span>
 
                         <% } %>
 
-
                     </span>
 
-
-                    <!-- =================================
-                         ARROW
-                    ================================== -->
 
                     <span
                         class="asset-bar-item-arrow"
@@ -418,7 +524,6 @@ Number(dairy.code) < 0
 
             <div class="asset-bar-empty">
 
-
                 <span
                     class="asset-bar-empty-icon"
                     aria-hidden="true"
@@ -426,11 +531,9 @@ Number(dairy.code) < 0
                     —
                 </span>
 
-
                 <span>
                     No animals found for this dairy farm.
                 </span>
-
 
             </div>
 
@@ -439,7 +542,6 @@ Number(dairy.code) < 0
 
 
     </div>
-
 
 </section>
 
@@ -458,12 +560,7 @@ Number(dairy.code) < 0
 >
 
 
-    <!-- =============================================
-         SECTION HEADER
-    ============================================== -->
-
     <div class="asset-bar-section-header">
-
 
         <div>
 
@@ -482,13 +579,8 @@ Number(dairy.code) < 0
             <%= structureDairies.length %>
         </span>
 
-
     </div>
 
-
-    <!-- =============================================
-         STRUCTURE LIST
-    ============================================== -->
 
     <div class="asset-bar-list">
 
@@ -499,20 +591,6 @@ Number(dairy.code) < 0
             <% structureDairies.forEach(asset => { %>
 
 
-                <!-- =================================
-                     STRUCTURE / EQUIPMENT LINK
-
-                     Every item is a Dairy record.
-
-                     Route:
-
-                         /dairy/<asset._id>
-
-                     code === null is handled by
-                     the /dairy/:id controller and
-                     rendered with dairySet.ejs.
-                ================================== -->
-
                 <a
                     href="/dairy/<%= asset._id %>"
                     class="asset-bar-item asset-bar-structure"
@@ -522,13 +600,7 @@ Number(dairy.code) < 0
                 >
 
 
-                    <!-- =================================
-                         IMAGE
-                    ================================== -->
-
-                    <span
-                        class="asset-bar-item-image"
-                    >
+                    <span class="asset-bar-item-image">
 
                         <img
                             src="<%= asset.displayImage %>"
@@ -539,27 +611,16 @@ Number(dairy.code) < 0
                     </span>
 
 
-                    <!-- =================================
-                         DETAILS
-                    ================================== -->
+                    <span class="asset-bar-item-details">
 
-                    <span
-                        class="asset-bar-item-details"
-                    >
-
-
-                        <span
-                            class="asset-bar-item-name"
-                        >
+                        <span class="asset-bar-item-name">
                             <%= asset.name %>
                         </span>
 
 
                         <% if (asset.type) { %>
 
-                            <span
-                                class="asset-bar-item-meta"
-                            >
+                            <span class="asset-bar-item-meta">
                                 <%= asset.type %>
                             </span>
 
@@ -568,21 +629,14 @@ Number(dairy.code) < 0
 
                         <% if (asset.location) { %>
 
-                            <span
-                                class="asset-bar-item-meta"
-                            >
+                            <span class="asset-bar-item-meta">
                                 <%= asset.location %>
                             </span>
 
                         <% } %>
 
-
                     </span>
 
-
-                    <!-- =================================
-                         ARROW
-                    ================================== -->
 
                     <span
                         class="asset-bar-item-arrow"
@@ -603,7 +657,6 @@ Number(dairy.code) < 0
 
             <div class="asset-bar-empty">
 
-
                 <span
                     class="asset-bar-empty-icon"
                     aria-hidden="true"
@@ -611,12 +664,10 @@ Number(dairy.code) < 0
                     —
                 </span>
 
-
                 <span>
                     No structures, machines or tools
                     found for this dairy farm.
                 </span>
-
 
             </div>
 
@@ -626,23 +677,18 @@ Number(dairy.code) < 0
 
     </div>
 
-
 </section>
 
-</div></aside><!-- =========================================================
+</div>
+
+</aside>
+
+
+<!-- =========================================================
      ASSET BAR JAVASCRIPT
+========================================================= -->
 
-     Controls:
-
-         • Opening
-         • Closing
-         • Overlay
-         • Escape key
-         • Category switching
-
-     Asset navigation itself is handled by normal
-     <a href="/dairy/:id"> links.
-========================================================= --><script>
+<script>
 
 document.addEventListener(
     "DOMContentLoaded",
@@ -690,6 +736,22 @@ document.addEventListener(
 
 
         /* =================================================
+           FARM SWITCHER ELEMENTS
+        ================================================= */
+
+        const farmSwitchButton =
+            document.getElementById(
+                "farmSwitchButton"
+            );
+
+
+        const assignedFarmList =
+            document.getElementById(
+                "assignedFarmList"
+            );
+
+
+        /* =================================================
            SAFETY CHECK
         ================================================= */
 
@@ -716,11 +778,44 @@ document.addEventListener(
 
 
         /* =================================================
+           FARM SWITCHER
+        ================================================= */
+
+        if (
+            farmSwitchButton &&
+            assignedFarmList
+        ) {
+
+            farmSwitchButton.addEventListener(
+                "click",
+                function(event) {
+
+                    event.preventDefault();
+
+                    const isOpen =
+                        !assignedFarmList.hidden;
+
+
+                    assignedFarmList.hidden =
+                        isOpen;
+
+
+                    farmSwitchButton.setAttribute(
+                        "aria-expanded",
+                        String(!isOpen)
+                    );
+
+                }
+            );
+
+        }
+
+
+        /* =================================================
            CATEGORY SWITCHING
         ================================================= */
 
         function setCategory(category) {
-
 
             if (!category) {
 
@@ -731,7 +826,6 @@ document.addEventListener(
 
             tabs.forEach(
                 function(tab) {
-
 
                     const isActive =
                         tab.dataset.assetCategory ===
@@ -749,14 +843,12 @@ document.addEventListener(
                         String(isActive)
                     );
 
-
                 }
             );
 
 
             sections.forEach(
                 function(section) {
-
 
                     const isActive =
                         section.dataset.assetSection ===
@@ -772,10 +864,8 @@ document.addEventListener(
                     section.hidden =
                         !isActive;
 
-
                 }
             );
-
 
         }
 
@@ -799,8 +889,29 @@ document.addEventListener(
 
         function openAssetBar() {
 
-
             resetCategory();
+
+
+            if (
+                assignedFarmList
+            ) {
+
+                assignedFarmList.hidden =
+                    true;
+
+            }
+
+
+            if (
+                farmSwitchButton
+            ) {
+
+                farmSwitchButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+            }
 
 
             assetBar.classList.add(
@@ -857,7 +968,6 @@ document.addEventListener(
 
             }
 
-
         }
 
 
@@ -866,7 +976,6 @@ document.addEventListener(
         ================================================= */
 
         function closeAssetBar() {
-
 
             assetBar.classList.remove(
                 "active"
@@ -915,7 +1024,6 @@ document.addEventListener(
 
             }
 
-
         }
 
 
@@ -926,7 +1034,6 @@ document.addEventListener(
         openButton.addEventListener(
             "click",
             function(event) {
-
 
                 event.preventDefault();
 
@@ -945,7 +1052,6 @@ document.addEventListener(
 
                 }
 
-
             }
         );
 
@@ -960,12 +1066,9 @@ document.addEventListener(
                 "click",
                 function(event) {
 
-
                     event.preventDefault();
 
-
                     closeAssetBar();
-
 
                 }
             );
@@ -983,9 +1086,7 @@ document.addEventListener(
                 "click",
                 function() {
 
-
                     closeAssetBar();
-
 
                 }
             );
@@ -1001,7 +1102,6 @@ document.addEventListener(
             "keydown",
             function(event) {
 
-
                 if (
                     event.key === "Escape" &&
                     assetBar.classList.contains(
@@ -1012,7 +1112,6 @@ document.addEventListener(
                     closeAssetBar();
 
                 }
-
 
             }
         );
@@ -1025,11 +1124,9 @@ document.addEventListener(
         tabs.forEach(
             function(tab) {
 
-
                 tab.addEventListener(
                     "click",
                     function(event) {
-
 
                         event.preventDefault();
 
@@ -1042,10 +1139,8 @@ document.addEventListener(
                             category
                         );
 
-
                     }
                 );
-
 
             }
         );
@@ -1053,9 +1148,7 @@ document.addEventListener(
 
         /* =================================================
            INITIAL STATE
-
-           Sidebar is closed when the page loads.
-========================================================= */
+        ================================================= */
 
         assetBar.classList.remove(
             "active"
@@ -1097,14 +1190,18 @@ document.addEventListener(
             "asset-bar-open"
         );
 
-
     }
 
 );
 
-</script><!-- =========================================================
+</script>
+
+
+<!-- =========================================================
      ASSET BAR STYLES
-========================================================= --><style>
+========================================================= -->
+
+<style>
 
 /* =========================================================
    ASSET BAR OVERLAY
@@ -1228,10 +1325,6 @@ document.addEventListener(
 }
 
 
-/* =========================================================
-   HEADING
-========================================================= */
-
 .asset-bar-heading{
 
     min-width:0;
@@ -1320,15 +1413,6 @@ document.addEventListener(
 }
 
 
-.asset-bar-close:focus-visible{
-
-    outline:3px solid rgba(11,93,30,.3);
-
-    outline-offset:2px;
-
-}
-
-
 /* =========================================================
    FARM INFORMATION
 ========================================================= */
@@ -1342,6 +1426,17 @@ document.addEventListener(
     background:#f4f8f5;
 
     border-bottom:1px solid #e4ebe6;
+
+}
+
+
+/* =========================================================
+   CURRENT FARM
+========================================================= */
+
+.asset-bar-current-farm{
+
+    min-width:0;
 
 }
 
@@ -1391,6 +1486,303 @@ document.addEventListener(
     font-size:11px;
 
     color:#6b756e;
+
+}
+
+
+/* =========================================================
+   FARM SWITCHER
+========================================================= */
+
+.asset-bar-farm-switcher{
+
+    position:relative;
+
+    margin-top:9px;
+
+}
+
+
+/* =========================================================
+   SWITCH BUTTON
+========================================================= */
+
+.farm-switch-button{
+
+    width:100%;
+
+    min-height:36px;
+
+    padding:7px 10px;
+
+    border:1px solid #cfdad2;
+
+    border-radius:8px;
+
+    background:#fff;
+
+    color:#0b5d1e;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:7px;
+
+    cursor:pointer;
+
+    font-size:11px;
+
+    font-weight:700;
+
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        color .2s ease;
+
+}
+
+
+.farm-switch-button:hover{
+
+    background:#0b5d1e;
+
+    border-color:#0b5d1e;
+
+    color:#fff;
+
+}
+
+
+.farm-switch-icon{
+
+    font-size:18px;
+
+    line-height:1;
+
+}
+
+
+.farm-switch-text{
+
+    letter-spacing:.2px;
+
+}
+
+
+/* =========================================================
+   ASSIGNED FARM LIST
+========================================================= */
+
+.assigned-farm-list{
+
+    margin-top:7px;
+
+    padding:8px;
+
+    border:1px solid #dfe7e1;
+
+    border-radius:9px;
+
+    background:#fff;
+
+    box-shadow:
+        0 6px 18px rgba(0,0,0,.08);
+
+}
+
+
+.assigned-farm-list[hidden]{
+
+    display:none;
+
+}
+
+
+.assigned-farm-list-header{
+
+    padding:4px 6px 7px;
+
+    font-size:9px;
+
+    font-weight:700;
+
+    letter-spacing:1px;
+
+    color:#778079;
+
+}
+
+
+.assigned-farm-options{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:5px;
+
+}
+
+
+.assigned-farm-option{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    width:100%;
+
+    min-width:0;
+
+    padding:8px;
+
+    box-sizing:border-box;
+
+    border:1px solid transparent;
+
+    border-radius:7px;
+
+    background:#f8faf9;
+
+    color:#17351f;
+
+    text-decoration:none;
+
+    transition:
+        background .2s ease,
+        border-color .2s ease;
+
+}
+
+
+.assigned-farm-option:hover{
+
+    background:#eef6f0;
+
+    border-color:#c6d8ca;
+
+}
+
+
+.assigned-farm-option.current{
+
+    background:#e9f7ef;
+
+    border-color:#bcd5c2;
+
+}
+
+
+/* =========================================================
+   FARM OPTION ICON
+========================================================= */
+
+.assigned-farm-option-icon{
+
+    flex:0 0 27px;
+
+    width:27px;
+
+    height:27px;
+
+    border-radius:50%;
+
+    background:#e3ebe5;
+
+    color:#0b5d1e;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:13px;
+
+    font-weight:700;
+
+}
+
+
+.assigned-farm-option.current
+.assigned-farm-option-icon{
+
+    background:#0b5d1e;
+
+    color:#fff;
+
+}
+
+
+/* =========================================================
+   FARM OPTION DETAILS
+========================================================= */
+
+.assigned-farm-option-details{
+
+    min-width:0;
+
+    flex:1;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:2px;
+
+}
+
+
+.assigned-farm-option-name{
+
+    font-size:12px;
+
+    font-weight:700;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
+
+}
+
+
+.assigned-farm-option-code{
+
+    font-size:9px;
+
+    color:#6d776f;
+
+}
+
+
+/* =========================================================
+   CURRENT LABEL
+========================================================= */
+
+.assigned-farm-current{
+
+    flex:0 0 auto;
+
+    padding:4px 6px;
+
+    border-radius:5px;
+
+    background:#0b5d1e;
+
+    color:#fff;
+
+    font-size:8px;
+
+    font-weight:700;
+
+    letter-spacing:.5px;
 
 }
 
@@ -1555,10 +1947,6 @@ document.addEventListener(
 }
 
 
-/* =========================================================
-   SECTION
-========================================================= */
-
 .asset-bar-section{
 
     padding-top:14px;
@@ -1572,10 +1960,6 @@ document.addEventListener(
 
 }
 
-
-/* =========================================================
-   SECTION HEADER
-========================================================= */
 
 .asset-bar-section-header{
 
@@ -1660,13 +2044,6 @@ document.addEventListener(
 }
 
 
-/* =========================================================
-   ASSET ITEM
-
-   These are now <a> elements rather than <button>
-   elements because they navigate to /dairy/:id.
-========================================================= */
-
 .asset-bar-item{
 
     width:100%;
@@ -1721,10 +2098,6 @@ document.addEventListener(
 }
 
 
-/* =========================================================
-   IMAGE
-========================================================= */
-
 .asset-bar-item-image{
 
     flex:0 0 48px;
@@ -1754,10 +2127,6 @@ document.addEventListener(
 
 }
 
-
-/* =========================================================
-   DETAILS
-========================================================= */
 
 .asset-bar-item-details{
 
@@ -1817,10 +2186,6 @@ document.addEventListener(
 }
 
 
-/* =========================================================
-   ARROW
-========================================================= */
-
 .asset-bar-item-arrow{
 
     flex:0 0 auto;
@@ -1833,10 +2198,6 @@ document.addEventListener(
 
 }
 
-
-/* =========================================================
-   EMPTY STATE
-========================================================= */
 
 .asset-bar-empty{
 
@@ -1875,10 +2236,6 @@ document.addEventListener(
 
 }
 
-
-/* =========================================================
-   BODY LOCK
-========================================================= */
 
 body.asset-bar-open{
 
