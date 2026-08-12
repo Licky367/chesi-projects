@@ -1,289 +1,577 @@
+// ==========================================================
+// models/milk.js
+// ==========================================================
+
 const mongoose = require("mongoose");
 
-// ==================================================
+
+// ==========================================================
 // MAIN MILK SCHEMA
-// ==================================================
+// ==========================================================
 
 const milkSchema = new mongoose.Schema(
-  {
 
-    // =========================
-    // PRODUCTION RECORD
-    // =========================
+    {
 
-    dairy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Dairy",
-      required: true,
-      index: true
+        // ==================================================
+        // COW / ANIMAL
+        //
+        // This references the individual animal that
+        // produced the milk.
+        // ==================================================
+
+        dairy: {
+
+            type:
+                mongoose.Schema.Types.ObjectId,
+
+            ref:
+                "Dairy",
+
+            required:
+                true,
+
+            index:
+                true
+
+        },
+
+
+        // ==================================================
+        // WHO RECORDED IT
+        // ==================================================
+
+        recordedBy: {
+
+            type:
+                mongoose.Schema.Types.ObjectId,
+
+            ref:
+                "User",
+
+            default:
+                null,
+
+            index:
+                true
+
+        },
+
+
+        // ==================================================
+        // RECORDER TYPE
+        // ==================================================
+
+        recordedByType: {
+
+            type:
+                String,
+
+            enum: [
+                "user",
+                "system"
+            ],
+
+            default:
+                "user",
+
+            index:
+                true
+
+        },
+
+
+        // ==================================================
+        // BACKWARDS COMPATIBILITY
+        //
+        // Existing service code may still use
+        // recordedBySystem.
+        // ==================================================
+
+        recordedBySystem: {
+
+            type:
+                Boolean,
+
+            default:
+                false
+
+        },
+
+
+        // ==================================================
+        // MILK QUANTITY
+        // ==================================================
+
+        liters: {
+
+            type:
+                Number,
+
+            required:
+                true,
+
+            min:
+                0
+
+        },
+
+
+        // ==================================================
+        // REMARKS
+        // ==================================================
+
+        remarks: {
+
+            type:
+                String,
+
+            default:
+                "",
+
+            trim:
+                true
+
+        },
+
+
+        // ==================================================
+        // DATE
+        // ==================================================
+
+        date: {
+
+            type:
+                Date,
+
+            default:
+                Date.now,
+
+            index:
+                true
+
+        },
+
+
+        // ==================================================
+        // KENYA DAY
+        //
+        // YYYY-MM-DD
+        // ==================================================
+
+        day: {
+
+            type:
+                String,
+
+            index:
+                true
+
+        },
+
+
+        // ==================================================
+        // KENYA MONTH
+        //
+        // YYYY-MM
+        // ==================================================
+
+        month: {
+
+            type:
+                String,
+
+            index:
+                true
+
+        },
+
+
+        // ==================================================
+        // MILKING SESSION
+        // ==================================================
+
+        session: {
+
+            type:
+                String,
+
+            enum: [
+                "morning",
+                "evening"
+            ],
+
+            required:
+                true,
+
+            index:
+                true
+
+        }
+
     },
 
-    // =========================
-    // WHO RECORDED IT
-    // =========================
+    {
 
-    recordedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-      index: true
-    },
+        timestamps:
+            true,
 
-    recordedByType: {
-      type: String,
-      enum: ["user", "system"],
-      default: "user",
-      index: true
-    },
+        minimize:
+            false
 
-    // =========================
-    // MILK DATA
-    // =========================
-
-    liters: {
-      type: Number,
-      required: true,
-      min: 0
-    },
-
-    remarks: {
-      type: String,
-      default: "",
-      trim: true
-    },
-
-    // =========================
-    // DATE
-    // =========================
-
-    date: {
-      type: Date,
-      default: Date.now,
-      index: true
-    },
-
-    day: {
-      type: String,
-      index: true
-    },
-
-    month: {
-      type: String,
-      index: true
-    },
-
-    // =========================
-    // MILKING SESSION
-    // =========================
-
-    session: {
-      type: String,
-      enum: ["morning", "evening"],
-      required: true,
-      index: true
     }
 
-  },
-  {
-    timestamps: true,
-    minimize: false
-  }
 );
 
-// ==================================================
-// NORMALIZE DATE KEYS
-// USING AFRICA/NAIROBI / EAT
-// ==================================================
 
-milkSchema.pre("save", function(next) {
+// ==========================================================
+// NORMALIZE RECORDER TYPE
+// ==========================================================
 
-  const d = new Date(this.date);
+milkSchema.pre(
+    "validate",
+    function(next) {
 
-  const formatter =
-    new Intl.DateTimeFormat(
-      "en-CA",
-      {
-        timeZone: "Africa/Nairobi",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      }
-    );
+        if (
+            this.recordedBySystem === true
+        ) {
 
-  const day =
-    formatter.format(d);
+            this.recordedByType =
+                "system";
 
-  this.day = day;
+        }
 
-  this.month =
-    day.slice(0, 7);
+        else {
 
-  next();
+            this.recordedByType =
+                "user";
 
-});
+        }
 
-// ==================================================
-// DAILY REPORT
-// ==================================================
 
-milkSchema.statics.getDailyReport = async function(day) {
-
-  const records =
-    await this.find({
-      day
-    })
-      .populate("dairy")
-      .populate("recordedBy", "name")
-      .lean();
-
-  const total =
-    records.reduce(
-
-      (sum, record) =>
-
-        sum +
-        Number(record.liters || 0),
-
-      0
-
-    );
-
-  return {
-
-    records,
-
-    stats: {
-
-      total
+        next();
 
     }
+);
 
-  };
+
+// ==========================================================
+// NORMALIZE DATE KEYS
+//
+// AFRICA/NAIROBI
+// ==========================================================
+
+milkSchema.pre(
+    "save",
+    function(next) {
+
+        const d =
+            new Date(
+                this.date
+            );
+
+
+        const formatter =
+            new Intl.DateTimeFormat(
+                "en-CA",
+                {
+
+                    timeZone:
+                        "Africa/Nairobi",
+
+                    year:
+                        "numeric",
+
+                    month:
+                        "2-digit",
+
+                    day:
+                        "2-digit"
+
+                }
+            );
+
+
+        const day =
+            formatter.format(d);
+
+
+        this.day =
+            day;
+
+
+        this.month =
+            day.slice(0, 7);
+
+
+        next();
+
+    }
+);
+
+
+// ==========================================================
+// DAILY REPORT
+// ==========================================================
+
+milkSchema.statics.getDailyReport =
+async function(day) {
+
+    const records =
+        await this.find({
+
+            day
+
+        })
+
+        .populate(
+            "dairy"
+        )
+
+        .populate(
+            "recordedBy",
+            "name"
+        )
+
+        .lean();
+
+
+    const total =
+        records.reduce(
+
+            (
+                sum,
+                record
+            ) =>
+
+                sum +
+                Number(
+                    record.liters ||
+                    0
+                ),
+
+            0
+
+        );
+
+
+    return {
+
+        records,
+
+        stats: {
+
+            total
+
+        }
+
+    };
 
 };
 
-// ==================================================
+
+// ==========================================================
 // MONTHLY REPORT
-// ==================================================
+// ==========================================================
 
-milkSchema.statics.getMonthlyReport = async function(month) {
+milkSchema.statics.getMonthlyReport =
+async function(month) {
 
-  const grouped =
-    await this.aggregate([
+    const grouped =
+        await this.aggregate([
 
-      {
-        $match: {
-          month
-        }
-      },
+            {
 
-      {
-        $group: {
+                $match: {
 
-          _id: "$dairy",
+                    month
 
-          total: {
-            $sum: "$liters"
-          },
+                }
 
-          days: {
-            $addToSet: "$day"
-          }
+            },
 
-        }
-      },
+            {
 
-      {
-        $project: {
+                $group: {
 
-          dairy: "$_id",
+                    _id:
+                        "$dairy",
 
-          total: 1,
+                    total: {
 
-          avg: {
+                        $sum:
+                            "$liters"
 
-            $cond: [
+                    },
 
-              {
-                $gt: [
-                  {
-                    $size: "$days"
-                  },
-                  0
-                ]
-              },
+                    days: {
 
-              {
-                $divide: [
-                  "$total",
-                  {
-                    $size: "$days"
-                  }
-                ]
-              },
+                        $addToSet:
+                            "$day"
 
-              0
+                    }
 
-            ]
+                }
 
-          }
+            },
 
-        }
+            {
 
-      }
+                $project: {
 
-    ]);
+                    _id:
+                        0,
 
-  return {
+                    dairy:
+                        "$_id",
 
-    records: grouped
+                    total:
+                        1,
 
-  };
+                    avg: {
+
+                        $cond: [
+
+                            {
+
+                                $gt: [
+
+                                    {
+                                        $size:
+                                            "$days"
+                                    },
+
+                                    0
+
+                                ]
+
+                            },
+
+                            {
+
+                                $divide: [
+
+                                    "$total",
+
+                                    {
+                                        $size:
+                                            "$days"
+                                    }
+
+                                ]
+
+                            },
+
+                            0
+
+                        ]
+
+                    }
+
+                }
+
+            }
+
+        ]);
+
+
+    return {
+
+        records:
+            grouped
+
+    };
 
 };
 
-// ==================================================
+
+// ==========================================================
 // INDEXES
-// ==================================================
+// ==========================================================
 
 // One morning record and one evening record
-// per animal per day.
+// per cow per day.
 
 milkSchema.index(
-  {
-    dairy: 1,
-    day: 1,
-    session: 1
-  },
-  {
-    unique: true
-  }
+
+    {
+
+        dairy:
+            1,
+
+        day:
+            1,
+
+        session:
+            1
+
+    },
+
+    {
+
+        unique:
+            true
+
+    }
+
 );
 
-// ==================================================
+
+// ==========================================================
+// MONTHLY COW LOOKUP
+// ==========================================================
 
 milkSchema.index({
 
-  dairy: 1,
+    dairy:
+        1,
 
-  month: 1
+    month:
+        1
 
 });
 
-// ==================================================
+
+// ==========================================================
+// DATE LOOKUP
+// ==========================================================
 
 milkSchema.index({
 
-  date: -1
+    date:
+        -1
 
 });
 
-// ==================================================
+
+// ==========================================================
+// DAY LOOKUP
+// ==========================================================
+
+milkSchema.index({
+
+    day:
+        1
+
+});
+
+
+// ==========================================================
+// MODEL
+// ==========================================================
+
+const Milk =
+    mongoose.models.Milk ||
+
+    mongoose.model(
+        "Milk",
+        milkSchema
+    );
+
+
+// ==========================================================
 // EXPORT
-// ==================================================
+// ==========================================================
 
 module.exports =
-  mongoose.model(
-    "Milk",
-    milkSchema
-  );
+    Milk;
