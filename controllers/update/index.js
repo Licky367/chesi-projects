@@ -1,5 +1,5 @@
 // ==========================================================
-// controllers/update.js
+// controllers/update/index.js
 // ==========================================================
 
 module.exports = {
@@ -16,8 +16,6 @@ module.exports = {
 
     ...require("./medicalController"),
 
-    ...require("./maintenanceController"),
-
-    ...require("./farmController")
+    ...require("./maintenanceController")
 
 };
