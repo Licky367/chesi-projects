@@ -7,7 +7,8 @@ views/update/h1.ejs
 PURPOSE:
 Editorial-style introductory hero section for a Dairy Farm.
 
-The background consists of repeated diagonal green typography.
+The background consists of one large diagonal green
+typographic treatment.
 
 DATA REQUIRED:
 dairy
@@ -22,7 +23,7 @@ dairy
 
 
     <!-- =====================================================
-         DIAGONAL TYPOGRAPHIC BACKGROUND
+         SINGLE DIAGONAL TYPOGRAPHIC BACKGROUND
     ====================================================== -->
 
     <div
@@ -30,32 +31,16 @@ dairy
         aria-hidden="true"
     >
 
-        <div class="dairy-h1-bg-row dairy-h1-bg-row-1">
-            CFP <%= dairy.name || "DAIRY FARM" %>
-        </div>
+        <div class="dairy-h1-diagonal-text">
 
-        <div class="dairy-h1-bg-row dairy-h1-bg-row-2">
-            CFP <%= dairy.name || "DAIRY FARM" %>
-        </div>
+            <span class="dairy-h1-cfp">
+                CFP
+            </span>
 
-        <div class="dairy-h1-bg-row dairy-h1-bg-row-3">
-            CFP <%= dairy.name || "DAIRY FARM" %>
-        </div>
+            <span class="dairy-h1-dairy-name">
+                <%= dairy.name || "DAIRY FARM" %>
+            </span>
 
-        <div class="dairy-h1-bg-row dairy-h1-bg-row-4">
-            CFP <%= dairy.name || "DAIRY FARM" %>
-        </div>
-
-        <div class="dairy-h1-bg-row dairy-h1-bg-row-5">
-            CFP <%= dairy.name || "DAIRY FARM" %>
-        </div>
-
-        <div class="dairy-h1-bg-row dairy-h1-bg-row-6">
-            CFP <%= dairy.name || "DAIRY FARM" %>
-        </div>
-
-        <div class="dairy-h1-bg-row dairy-h1-bg-row-7">
-            CFP <%= dairy.name || "DAIRY FARM" %>
         </div>
 
     </div>
@@ -256,9 +241,8 @@ dairy
 
    No card.
    No image.
-   No outer shadow.
-   No border.
    No rounded container.
+   No outer shadow.
 ========================================================= */
 
 .dairy-h1 {
@@ -280,12 +264,6 @@ dairy
 
 /* =========================================================
    TYPOGRAPHIC BACKGROUND
-
-   The background itself NEVER leaves the hero.
-
-   Only the individual text rows are rotated.
-   This keeps the diagonal typography visible on
-   both phones and large screens.
 ========================================================= */
 
 .dairy-h1-background {
@@ -304,102 +282,121 @@ dairy
 
 
 /* =========================================================
-   BACKGROUND TEXT ROWS
+   SINGLE DIAGONAL TEXT
+
+   The entire phrase runs from bottom-left toward
+   top-right.
+
+   It is intentionally oversized so that the
+   typography becomes part of the visual design.
 ========================================================= */
 
-.dairy-h1-bg-row {
+.dairy-h1-diagonal-text {
 
     position: absolute;
 
-    left: -20%;
+    left: -9%;
 
-    width: 140%;
+    bottom: 2%;
+
+    display: flex;
+
+    align-items: baseline;
+
+    gap: 22px;
 
     white-space: nowrap;
+
+    transform:
+        rotate(-18deg);
+
+    transform-origin:
+        left bottom;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size:
-        clamp(
-            58px,
-            8vw,
-            120px
-        );
-
-    line-height: 1;
-
     font-weight: 900;
 
-    letter-spacing: -3px;
-
-    text-transform: uppercase;
+    line-height: .85;
 
     color:
-        rgba(46, 92, 57, .14);
-
-    transform:
-        rotate(-18deg);
-
-    user-select: none;
+        rgba(46, 92, 57, .13);
 
 }
 
 
 /* =========================================================
-   ROW POSITIONS
+   CFP
 
-   These are deliberately spread across the visible
-   hero itself so the text remains visible on phones.
+   Slightly smaller than the farm name to create
+   a refined typographic hierarchy.
 ========================================================= */
 
-.dairy-h1-bg-row-1 {
+.dairy-h1-cfp {
 
-    top: -8%;
+    font-size:
+        clamp(
+            72px,
+            11vw,
+            155px
+        );
 
-}
-
-
-.dairy-h1-bg-row-2 {
-
-    top: 10%;
-
-}
-
-
-.dairy-h1-bg-row-3 {
-
-    top: 28%;
+    letter-spacing:
+        -5px;
 
 }
 
 
-.dairy-h1-bg-row-4 {
+/* =========================================================
+   FARM NAME
 
-    top: 46%;
+   This is the dominant part of the diagonal.
+========================================================= */
+
+.dairy-h1-dairy-name {
+
+    font-size:
+        clamp(
+            82px,
+            13vw,
+            185px
+        );
+
+    letter-spacing:
+        -6px;
+
+    text-transform:
+        uppercase;
 
 }
 
 
-.dairy-h1-bg-row-5 {
+/* =========================================================
+   SUBTLE TYPOGRAPHIC DEPTH
 
-    top: 64%;
+   Keeps the text visible without competing heavily
+   with the actual introduction.
+========================================================= */
 
-}
+.dairy-h1-diagonal-text::after {
 
+    content: "";
 
-.dairy-h1-bg-row-6 {
+    position: absolute;
 
-    top: 82%;
+    left: 4%;
 
-}
+    bottom: -10px;
 
+    width: 55%;
 
-.dairy-h1-bg-row-7 {
+    height: 2px;
 
-    top: 100%;
+    background:
+        rgba(46, 92, 57, .10);
 
 }
 
@@ -407,7 +404,7 @@ dairy
 /* =========================================================
    MAIN CONTENT
 
-   Sits above the typography.
+   Content remains above the diagonal typography.
 ========================================================= */
 
 .dairy-h1-content {
@@ -757,9 +754,11 @@ dairy
     }
 
 
-    .dairy-h1-bg-row {
+    .dairy-h1-diagonal-text {
 
-        font-size: 120px;
+        left: -5%;
+
+        bottom: 4%;
 
     }
 
@@ -786,20 +785,27 @@ dairy
     }
 
 
-    .dairy-h1-bg-row {
+    .dairy-h1-diagonal-text {
 
-        left: -25%;
+        left: -16%;
 
-        width: 150%;
+        bottom: 5%;
 
-        font-size:
-            clamp(
-                52px,
-                9vw,
-                90px
-            );
+        gap: 15px;
 
-        letter-spacing: -2px;
+    }
+
+
+    .dairy-h1-cfp {
+
+        font-size: 80px;
+
+    }
+
+
+    .dairy-h1-dairy-name {
+
+        font-size: 100px;
 
     }
 
@@ -822,91 +828,40 @@ dairy
 
 
     /* ================================================
-       KEEP BACKGROUND INSIDE THE HERO
+       DIAGONAL TYPOGRAPHY
+
+       Kept deliberately large so that the phrase
+       crosses the visible center of the phone.
     ================================================= */
 
-    .dairy-h1-background {
+    .dairy-h1-diagonal-text {
 
-        inset: 0;
+        left: -42%;
 
-    }
+        bottom: 8%;
 
-
-    /* ================================================
-       MOBILE TYPOGRAPHY
-
-       Wider rows ensure the diagonal text crosses
-       through the center of the phone screen.
-    ================================================= */
-
-    .dairy-h1-bg-row {
-
-        left: -65%;
-
-        width: 230%;
-
-        font-size: 58px;
-
-        letter-spacing: -2px;
+        gap: 10px;
 
         transform:
             rotate(-18deg);
 
-        color:
-            rgba(46, 92, 57, .13);
+    }
+
+
+    .dairy-h1-cfp {
+
+        font-size: 72px;
+
+        letter-spacing: -4px;
 
     }
 
 
-    /* ================================================
-       MOBILE ROW POSITIONS
-    ================================================= */
+    .dairy-h1-dairy-name {
 
-    .dairy-h1-bg-row-1 {
+        font-size: 82px;
 
-        top: -3%;
-
-    }
-
-
-    .dairy-h1-bg-row-2 {
-
-        top: 14%;
-
-    }
-
-
-    .dairy-h1-bg-row-3 {
-
-        top: 31%;
-
-    }
-
-
-    .dairy-h1-bg-row-4 {
-
-        top: 48%;
-
-    }
-
-
-    .dairy-h1-bg-row-5 {
-
-        top: 65%;
-
-    }
-
-
-    .dairy-h1-bg-row-6 {
-
-        top: 82%;
-
-    }
-
-
-    .dairy-h1-bg-row-7 {
-
-        top: 99%;
+        letter-spacing: -4px;
 
     }
 
@@ -1071,13 +1026,27 @@ dairy
     }
 
 
-    .dairy-h1-bg-row {
+    .dairy-h1-diagonal-text {
 
-        left: -75%;
+        left: -48%;
 
-        width: 250%;
+        bottom: 9%;
 
-        font-size: 50px;
+        gap: 7px;
+
+    }
+
+
+    .dairy-h1-cfp {
+
+        font-size: 62px;
+
+    }
+
+
+    .dairy-h1-dairy-name {
+
+        font-size: 70px;
 
     }
 
