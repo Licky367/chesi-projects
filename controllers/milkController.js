@@ -2,7 +2,7 @@
 // controllers/milkController.js
 // ==========================================================
 
-const milkService = require("../services/milkservice");
+const milkService = require("../services/milkService");
 
 
 // ==========================================================
