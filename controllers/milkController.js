@@ -26,14 +26,39 @@
 // Existing routes remain responsible for deciding which
 // controller method is called.
 //
-// Statistics route is:
-//      /stats
+// SALES
+// ----------------------------------------------------------
+//
+// GET
+//      /sales
+//
+// ADMIN
+//      /sales
+//          -> all-farm overview
+//
+//      /sales?farmId=<FARM_ID>
+//          -> selected farm
+//
+// WORKER
+//      /sales
+//          -> automatically assigned farm
+//
+// SALES ACTIONS
+// ----------------------------------------------------------
+//
+// POST /sales/price
+// POST /sales/manual
+// POST /sales/standing
+// POST /sales/standing/submit
+// POST /sales/standing/omit
+//
+// STATISTICS
+// ----------------------------------------------------------
+//
+// GET /stats
 //
 // NOT:
 //      /milkStats
-//
-// Farm selection is handled through:
-//      /sales?farmId=<FARM_ID>
 //
 // ==========================================================
 
@@ -66,9 +91,9 @@ function toNumber(
 
 
 /**
- * Safely normalize a farm ID.
+ * Safely normalize an ID.
  */
-function normalizeFarmId(
+function normalizeId(
     value
 ) {
 
@@ -94,8 +119,51 @@ function normalizeFarmId(
 
 
 /**
- * Build a sales redirect while preserving
- * the selected farm.
+ * Normalize farm ID.
+ */
+function normalizeFarmId(
+    value
+) {
+
+    return normalizeId(value);
+
+}
+
+
+/**
+ * Safely obtain the logged-in user's ID.
+ */
+function getUserId(
+    user
+) {
+
+    return normalizeId(
+        user?._id
+    );
+
+}
+
+
+/**
+ * Determine whether the user is an administrator.
+ */
+function isAdminUser(
+    user
+) {
+
+    return user?.role === "admin";
+
+}
+
+
+/**
+ * Build a redirect back to the sales page while
+ * preserving the selected farm.
+ *
+ * Example:
+ *
+ * /sales?farmId=123&success=1
+ *
  */
 function salesRedirect(
     farmId,
@@ -155,6 +223,145 @@ function salesRedirect(
 }
 
 
+/**
+ * Render the sales page with safe defaults.
+ *
+ * This prevents EJS from crashing if the service
+ * fails or returns incomplete data.
+ */
+function renderSalesPage(
+    res,
+    {
+
+        status = 200,
+
+        user = null,
+
+        isAdmin = false,
+
+        farms = [],
+
+        selectedFarm = null,
+
+        selectedFarmId = null,
+
+        canSell = false,
+
+        standingOrders = [],
+
+        manualSales = [],
+
+        currentPrice = 50,
+
+        availableMilk = 0,
+
+        totalSales = 0,
+
+        revenue = 0,
+
+        allFarmAvailableMilk = 0,
+
+        allFarmRevenue = 0,
+
+        allFarmTotalSales = 0,
+
+        success = false,
+
+        error = ""
+
+    } = {}
+) {
+
+    return res
+        .status(status)
+        .render(
+            "sales",
+            {
+
+                // --------------------------------------------------
+                // USER
+                // --------------------------------------------------
+
+                user,
+
+                isAdmin,
+
+
+                // --------------------------------------------------
+                // FARM SELECTION
+                // --------------------------------------------------
+
+                farms,
+
+                selectedFarm,
+
+                selectedFarmId,
+
+
+                // --------------------------------------------------
+                // PERMISSIONS
+                // --------------------------------------------------
+
+                canSell,
+
+
+                // --------------------------------------------------
+                // STANDING ORDERS
+                // --------------------------------------------------
+
+                standingOrders,
+
+
+                // --------------------------------------------------
+                // MANUAL SALES
+                // --------------------------------------------------
+
+                manualSales,
+
+
+                // --------------------------------------------------
+                // PRICE
+                // --------------------------------------------------
+
+                currentPrice,
+
+
+                // --------------------------------------------------
+                // FARM TOTALS
+                // --------------------------------------------------
+
+                availableMilk,
+
+                totalSales,
+
+                revenue,
+
+
+                // --------------------------------------------------
+                // GLOBAL ADMIN TOTALS
+                // --------------------------------------------------
+
+                allFarmAvailableMilk,
+
+                allFarmRevenue,
+
+                allFarmTotalSales,
+
+
+                // --------------------------------------------------
+                // FLASH MESSAGES
+                // --------------------------------------------------
+
+                success,
+
+                error
+
+            }
+        );
+
+}
+
+
 // ==========================================================
 // GET MILK PAGE
 // ==========================================================
@@ -176,7 +383,9 @@ exports.getMilkPage = async (
 
 
         const isAdmin =
-            req.user?.role === "admin";
+            isAdminUser(
+                req.user
+            );
 
 
         return res.render(
@@ -197,11 +406,6 @@ exports.getMilkPage = async (
 
                 // --------------------------------------------------
                 // FARMS
-                // --------------------------------------------------
-                //
-                // Included so the view can receive farm data when
-                // the service supplies it.
-                //
                 // --------------------------------------------------
 
                 farms:
@@ -247,7 +451,6 @@ exports.getMilkPage = async (
                 session:
                     currentSession,
 
-
                 sessionInfo:
                     data?.sessionInfo ||
                     null,
@@ -262,18 +465,15 @@ exports.getMilkPage = async (
                         data?.canSubmit
                     ),
 
-
                 canEditMorning:
                     Boolean(
                         data?.canEditMorning
                     ),
 
-
                 canEditEvening:
                     Boolean(
                         data?.canEditEvening
                     ),
-
 
                 isAdmin,
 
@@ -287,17 +487,15 @@ exports.getMilkPage = async (
 
 
                 // --------------------------------------------------
-                // FLASH MESSAGES
+                // FLASH
                 // --------------------------------------------------
 
                 success:
                     req.query.success === "1",
 
-
                 error:
                     req.query.error ||
                     "",
-
 
                 edit:
                     req.query.edit ||
@@ -346,7 +544,9 @@ exports.getMilkPage = async (
                         false,
 
                     isAdmin:
-                        req.user?.role === "admin",
+                        isAdminUser(
+                            req.user
+                        ),
 
                     user:
                         req.user,
@@ -380,8 +580,9 @@ exports.submitMilk = async (
     try {
 
         if (
-            !req.user ||
-            !req.user._id
+            !getUserId(
+                req.user
+            )
         ) {
 
             throw new Error(
@@ -529,7 +730,9 @@ exports.getEditMilk = async (
 
 
         if (
-            req.user?.role !== "admin"
+            !isAdminUser(
+                req.user
+            )
         ) {
 
             return res.redirect(
@@ -544,7 +747,9 @@ exports.getEditMilk = async (
 
         return res.redirect(
             "/milk?edit=" +
-            encodeURIComponent(id)
+            encodeURIComponent(
+                id
+            )
         );
 
     } catch (err) {
@@ -580,7 +785,9 @@ exports.updateMilkRecord = async (
     try {
 
         if (
-            req.user?.role !== "admin"
+            !isAdminUser(
+                req.user
+            )
         ) {
 
             return res.redirect(
@@ -695,16 +902,7 @@ exports.updateMilkRecord = async (
 
 
 // ==========================================================
-// GET MILK STATS
-// ==========================================================
-//
-// IMPORTANT
-// ----------------------------------------------------------
-// The application route is:
-//
-//      /stats
-//
-// This controller does NOT redirect to /milkStats.
+// GET MILK STATISTICS
 // ==========================================================
 
 exports.getMilkStats = async (
@@ -722,7 +920,7 @@ exports.getMilkStats = async (
 
 
         // ==================================================
-        // DAILY STATISTICS
+        // DAILY
         // ==================================================
 
         if (type === "day") {
@@ -794,7 +992,7 @@ exports.getMilkStats = async (
 
 
         // ==================================================
-        // MONTHLY STATISTICS
+        // MONTHLY
         // ==================================================
 
         if (type === "month") {
@@ -875,14 +1073,11 @@ exports.getMilkStats = async (
             "milkStats",
             {
 
-                type:
-                    "",
+                type: "",
 
-                date:
-                    "",
+                date: "",
 
-                month:
-                    "",
+                month: "",
 
                 records: [],
 
@@ -966,11 +1161,6 @@ exports.saveDailyStats = async (
         });
 
 
-        // --------------------------------------------------
-        // IMPORTANT:
-        // Existing statistics route is /stats.
-        // --------------------------------------------------
-
         return res.redirect(
             `/stats?type=day&date=${encodeURIComponent(day)}`
         );
@@ -1000,17 +1190,19 @@ exports.saveDailyStats = async (
 // ==========================================================
 //
 // ADMIN
+// ----------------------------------------------------------
 //
 // /sales
-//      -> all-farm overview
+//      -> all farm overview
 //
 // /sales?farmId=<ID>
 //      -> selected farm
 //
 // WORKER
+// ----------------------------------------------------------
 //
 // /sales
-//      -> automatically uses assigned farm
+//      -> automatically assigned farm
 //
 // ==========================================================
 
@@ -1026,8 +1218,9 @@ exports.getSalesPage = async (
         // ==================================================
 
         if (
-            !req.user ||
-            !req.user._id
+            !getUserId(
+                req.user
+            )
         ) {
 
             return res
@@ -1040,7 +1233,9 @@ exports.getSalesPage = async (
 
 
         const isAdmin =
-            req.user.role === "admin";
+            isAdminUser(
+                req.user
+            );
 
 
         // ==================================================
@@ -1054,21 +1249,7 @@ exports.getSalesPage = async (
 
 
         // ==================================================
-        // GET SALES DATA FROM SERVICE
-        // ==================================================
-        //
-        // The service is responsible for:
-        //
-        // • loading actual farms
-        // • determining worker's assigned farm
-        // • finding selected farm
-        // • calculating farm milk
-        // • calculating sales
-        // • calculating revenue
-        // • loading standing orders
-        // • loading manual sales
-        // • calculating global admin totals
-        //
+        // SERVICE
         // ==================================================
 
         const data =
@@ -1086,14 +1267,6 @@ exports.getSalesPage = async (
         // ==================================================
         // FARMS
         // ==================================================
-        //
-        // IMPORTANT:
-        // The farms array MUST be passed to EJS.
-        //
-        // The service should return the actual farm
-        // documents here.
-        //
-        // ==================================================
 
         const farms =
             Array.isArray(
@@ -1104,7 +1277,15 @@ exports.getSalesPage = async (
 
 
         // ==================================================
-        // RESOLVE SELECTED FARM
+        // SELECTED FARM ID
+        // ==================================================
+        //
+        // Admin:
+        //   Uses explicitly selected farm.
+        //
+        // Worker:
+        //   Uses assigned farm supplied by service.
+        //
         // ==================================================
 
         let selectedFarmId =
@@ -1114,24 +1295,20 @@ exports.getSalesPage = async (
         if (isAdmin) {
 
             selectedFarmId =
-                data?.selectedFarmId ||
-                requestedFarmId ||
-                null;
+                normalizeFarmId(
+                    data?.selectedFarmId ||
+                    requestedFarmId
+                );
 
         } else {
 
             selectedFarmId =
-                data?.selectedFarmId ||
-                data?.workerFarmId ||
-                null;
+                normalizeFarmId(
+                    data?.selectedFarmId ||
+                    data?.workerFarmId
+                );
 
         }
-
-
-        selectedFarmId =
-            normalizeFarmId(
-                selectedFarmId
-            );
 
 
         // ==================================================
@@ -1144,30 +1321,29 @@ exports.getSalesPage = async (
 
 
         // ==================================================
-        // FARM SELECTED?
+        // CAN SELL
         // ==================================================
-
-        const farmSelected =
-            Boolean(
-                selectedFarmId
-            );
-
-
-        // ==================================================
-        // SELLING PERMISSION
+        //
+        // Admin can sell only after selecting a farm.
+        //
+        // Worker can sell when the service has assigned
+        // a farm.
+        //
         // ==================================================
 
         const canSell =
             isAdmin
-                ? farmSelected
+                ? Boolean(
+                    selectedFarmId &&
+                    selectedFarm
+                )
                 : Boolean(
-                    data?.workerFarmId ||
-                    data?.selectedFarmId
+                    selectedFarmId
                 );
 
 
         // ==================================================
-        // FARM-SPECIFIC VALUES
+        // FARM VALUES
         // ==================================================
 
         const availableMilk =
@@ -1204,7 +1380,31 @@ exports.getSalesPage = async (
 
 
         // ==================================================
-        // GLOBAL ADMIN VALUES
+        // MANUAL SALES
+        // ==================================================
+
+        const manualSales =
+            Array.isArray(
+                data?.manualSales
+            )
+                ? data.manualSales
+                : [];
+
+
+        // ==================================================
+        // STANDING ORDERS
+        // ==================================================
+
+        const standingOrders =
+            Array.isArray(
+                data?.standingOrders
+            )
+                ? data.standingOrders
+                : [];
+
+
+        // ==================================================
+        // GLOBAL ADMIN TOTALS
         // ==================================================
 
         const allFarmAvailableMilk =
@@ -1229,45 +1429,31 @@ exports.getSalesPage = async (
 
 
         // ==================================================
-        // RENDER SALES PAGE
+        // RENDER
         // ==================================================
 
-        return res.render(
-            "sales",
+        return renderSalesPage(
+            res,
             {
-
-                // ==================================================
-                // USER
-                // ==================================================
 
                 user:
                     req.user,
 
                 isAdmin,
 
-
-                // ==================================================
-                // FARMS
-                // ==================================================
-
                 farms,
-
 
                 selectedFarm,
 
                 selectedFarmId,
 
-
-                // ==================================================
-                // PERMISSIONS
-                // ==================================================
-
                 canSell,
 
+                standingOrders,
 
-                // ==================================================
-                // FARM SALES DATA
-                // ==================================================
+                manualSales,
+
+                currentPrice,
 
                 availableMilk,
 
@@ -1275,39 +1461,11 @@ exports.getSalesPage = async (
 
                 revenue,
 
-                currentPrice,
-
-
-                manualSales:
-                    Array.isArray(
-                        data?.manualSales
-                    )
-                        ? data.manualSales
-                        : [],
-
-
-                standingOrders:
-                    Array.isArray(
-                        data?.standingOrders
-                    )
-                        ? data.standingOrders
-                        : [],
-
-
-                // ==================================================
-                // ADMIN GLOBAL DATA
-                // ==================================================
-
                 allFarmAvailableMilk,
 
                 allFarmRevenue,
 
                 allFarmTotalSales,
-
-
-                // ==================================================
-                // FLASH MESSAGES
-                // ==================================================
 
                 success:
                     req.query.success === "1",
@@ -1327,79 +1485,66 @@ exports.getSalesPage = async (
         );
 
 
-        // --------------------------------------------------
-        // Render safe defaults instead of allowing EJS
-        // to fail because expected variables are missing.
-        // --------------------------------------------------
+        return renderSalesPage(
+            res,
+            {
 
-        return res
-            .status(500)
-            .render(
-                "sales",
-                {
+                status:
+                    500,
 
-                    user:
-                        req.user,
+                user:
+                    req.user,
 
-                    isAdmin:
-                        req.user?.role === "admin",
+                isAdmin:
+                    isAdminUser(
+                        req.user
+                    ),
 
+                farms: [],
 
-                    // IMPORTANT:
-                    // farms is always supplied.
-                    farms: [],
+                selectedFarm:
+                    null,
 
+                selectedFarmId:
+                    null,
 
-                    selectedFarm:
-                        null,
+                canSell:
+                    false,
 
-                    selectedFarmId:
-                        null,
+                standingOrders: [],
 
+                manualSales: [],
 
-                    canSell:
-                        false,
+                currentPrice:
+                    50,
 
+                availableMilk:
+                    0,
 
-                    availableMilk:
-                        0,
+                totalSales:
+                    0,
 
-                    totalSales:
-                        0,
+                revenue:
+                    0,
 
-                    revenue:
-                        0,
+                allFarmAvailableMilk:
+                    0,
 
-                    currentPrice:
-                        50,
+                allFarmRevenue:
+                    0,
 
+                allFarmTotalSales:
+                    0,
 
-                    manualSales:
-                        [],
+                success:
+                    false,
 
-                    standingOrders:
-                        [],
+                error:
+                    err.message ||
+                    "Error loading sales page."
 
-
-                    allFarmAvailableMilk:
-                        0,
-
-                    allFarmRevenue:
-                        0,
-
-                    allFarmTotalSales:
-                        0,
-
-
-                    success:
-                        false,
-
-                    error:
-                        err.message ||
-                        "Error loading sales page."
-
-                }
-            );
+            }
+        );
 
     }
 
@@ -1409,6 +1554,20 @@ exports.getSalesPage = async (
 // ==========================================================
 // SUBMIT MANUAL SALE
 // ==========================================================
+//
+// EJS FORM:
+//
+// POST /sales/manual
+//
+// Fields:
+//
+// customerName
+// liters
+// farmId -> admin only
+//
+// Workers do not need farmId because the service resolves
+// their assigned farm.
+// ==========================================================
 
 exports.submitManualSale = async (
     req,
@@ -1416,14 +1575,21 @@ exports.submitManualSale = async (
 ) => {
 
     let farmId =
-        null;
+        normalizeFarmId(
+            req.body.farmId
+        );
 
 
     try {
 
+        // ==================================================
+        // AUTHENTICATION
+        // ==================================================
+
         if (
-            !req.user ||
-            !req.user._id
+            !getUserId(
+                req.user
+            )
         ) {
 
             throw new Error(
@@ -1432,6 +1598,10 @@ exports.submitManualSale = async (
 
         }
 
+
+        // ==================================================
+        // INPUT
+        // ==================================================
 
         const customerName =
             typeof req.body.customerName === "string"
@@ -1445,11 +1615,9 @@ exports.submitManualSale = async (
             );
 
 
-        farmId =
-            normalizeFarmId(
-                req.body.farmId
-            );
-
+        // ==================================================
+        // VALIDATION
+        // ==================================================
 
         if (!customerName) {
 
@@ -1472,8 +1640,14 @@ exports.submitManualSale = async (
         }
 
 
+        // ==================================================
+        // ADMIN FARM REQUIREMENT
+        // ==================================================
+
         if (
-            req.user.role === "admin" &&
+            isAdminUser(
+                req.user
+            ) &&
             !farmId
         ) {
 
@@ -1483,6 +1657,10 @@ exports.submitManualSale = async (
 
         }
 
+
+        // ==================================================
+        // SERVICE
+        // ==================================================
 
         const saved =
             await milkService.submitManualSale({
@@ -1508,9 +1686,14 @@ exports.submitManualSale = async (
         }
 
 
+        // ==================================================
+        // REDIRECT
+        // ==================================================
+
         const redirectFarm =
             normalizeFarmId(
                 saved?.farmId ||
+                saved?.farm?._id ||
                 farmId
             );
 
@@ -1554,6 +1737,22 @@ exports.submitManualSale = async (
 // ==========================================================
 // SUBMIT STANDING ORDER SALE
 // ==========================================================
+//
+// EJS FORM:
+//
+// POST /sales/standing/submit
+//
+// Fields:
+//
+// standingOrderId
+// customerName
+// liters
+// farmId -> admin only
+//
+// The service should use standingOrderId as the authoritative
+// standing order and should not trust the hidden customerName
+// or liters values for database integrity.
+// ==========================================================
 
 exports.submitStandingOrderSale = async (
     req,
@@ -1561,14 +1760,21 @@ exports.submitStandingOrderSale = async (
 ) => {
 
     let farmId =
-        null;
+        normalizeFarmId(
+            req.body.farmId
+        );
 
 
     try {
 
+        // ==================================================
+        // AUTHENTICATION
+        // ==================================================
+
         if (
-            !req.user ||
-            !req.user._id
+            !getUserId(
+                req.user
+            )
         ) {
 
             throw new Error(
@@ -1578,9 +1784,14 @@ exports.submitStandingOrderSale = async (
         }
 
 
-        const {
-            standingOrderId
-        } = req.body;
+        // ==================================================
+        // INPUT
+        // ==================================================
+
+        const standingOrderId =
+            normalizeId(
+                req.body.standingOrderId
+            );
 
 
         if (!standingOrderId) {
@@ -1592,14 +1803,14 @@ exports.submitStandingOrderSale = async (
         }
 
 
-        farmId =
-            normalizeFarmId(
-                req.body.farmId
-            );
-
+        // ==================================================
+        // ADMIN FARM REQUIREMENT
+        // ==================================================
 
         if (
-            req.user.role === "admin" &&
+            isAdminUser(
+                req.user
+            ) &&
             !farmId
         ) {
 
@@ -1609,6 +1820,10 @@ exports.submitStandingOrderSale = async (
 
         }
 
+
+        // ==================================================
+        // SERVICE
+        // ==================================================
 
         const saved =
             await milkService.submitStandingOrderSale({
@@ -1632,9 +1847,14 @@ exports.submitStandingOrderSale = async (
         }
 
 
+        // ==================================================
+        // REDIRECT
+        // ==================================================
+
         const redirectFarm =
             normalizeFarmId(
                 saved?.farmId ||
+                saved?.farm?._id ||
                 farmId
             );
 
@@ -1677,7 +1897,18 @@ exports.submitStandingOrderSale = async (
 
 // ==========================================================
 // UPDATE MILK PRICE
-// ADMIN ONLY
+// ==========================================================
+//
+// EJS FORM:
+//
+// POST /sales/price
+//
+// Fields:
+//
+// farmId
+// price
+//
+// ADMIN ONLY.
 // ==========================================================
 
 exports.updateMilkPrice = async (
@@ -1686,27 +1917,36 @@ exports.updateMilkPrice = async (
 ) => {
 
     let farmId =
-        null;
+        normalizeFarmId(
+            req.body.farmId
+        );
 
 
     try {
 
+        // ==================================================
+        // ADMIN CHECK
+        // ==================================================
+
         if (
-            req.user?.role !== "admin"
+            !isAdminUser(
+                req.user
+            )
         ) {
 
             return res.redirect(
-                "/sales"
+                "/sales?error=" +
+                encodeURIComponent(
+                    "Only administrators can change the milk price."
+                )
             );
 
         }
 
 
-        farmId =
-            normalizeFarmId(
-                req.body.farmId
-            );
-
+        // ==================================================
+        // FARM
+        // ==================================================
 
         if (!farmId) {
 
@@ -1716,6 +1956,10 @@ exports.updateMilkPrice = async (
 
         }
 
+
+        // ==================================================
+        // PRICE
+        // ==================================================
 
         const price =
             Number(
@@ -1729,11 +1973,15 @@ exports.updateMilkPrice = async (
         ) {
 
             throw new Error(
-                "Milk price must be a valid number."
+                "Milk price must be a valid number greater than or equal to zero."
             );
 
         }
 
+
+        // ==================================================
+        // SERVICE
+        // ==================================================
 
         await milkService.updateMilkPrice({
 
@@ -1746,6 +1994,10 @@ exports.updateMilkPrice = async (
 
         });
 
+
+        // ==================================================
+        // REDIRECT
+        // ==================================================
 
         return res.redirect(
             salesRedirect(
@@ -1760,7 +2012,7 @@ exports.updateMilkPrice = async (
     } catch (err) {
 
         console.error(
-            "Price update error:",
+            "Milk price update error:",
             err
         );
 
@@ -1786,6 +2038,18 @@ exports.updateMilkPrice = async (
 // ==========================================================
 // ADD STANDING ORDER
 // ==========================================================
+//
+// EJS FORM:
+//
+// POST /sales/standing
+//
+// Fields:
+//
+// farmId
+// customerName
+// liters
+//
+// ==========================================================
 
 exports.addStandingOrder = async (
     req,
@@ -1793,14 +2057,21 @@ exports.addStandingOrder = async (
 ) => {
 
     let farmId =
-        null;
+        normalizeFarmId(
+            req.body.farmId
+        );
 
 
     try {
 
+        // ==================================================
+        // AUTHENTICATION
+        // ==================================================
+
         if (
-            !req.user ||
-            !req.user._id
+            !getUserId(
+                req.user
+            )
         ) {
 
             throw new Error(
@@ -1809,6 +2080,10 @@ exports.addStandingOrder = async (
 
         }
 
+
+        // ==================================================
+        // INPUT
+        // ==================================================
 
         const customerName =
             typeof req.body.customerName === "string"
@@ -1822,11 +2097,9 @@ exports.addStandingOrder = async (
             );
 
 
-        farmId =
-            normalizeFarmId(
-                req.body.farmId
-            );
-
+        // ==================================================
+        // VALIDATION
+        // ==================================================
 
         if (!customerName) {
 
@@ -1849,8 +2122,14 @@ exports.addStandingOrder = async (
         }
 
 
+        // ==================================================
+        // ADMIN FARM REQUIREMENT
+        // ==================================================
+
         if (
-            req.user.role === "admin" &&
+            isAdminUser(
+                req.user
+            ) &&
             !farmId
         ) {
 
@@ -1860,6 +2139,10 @@ exports.addStandingOrder = async (
 
         }
 
+
+        // ==================================================
+        // SERVICE
+        // ==================================================
 
         const order =
             await milkService.addStandingOrder({
@@ -1885,9 +2168,14 @@ exports.addStandingOrder = async (
         }
 
 
+        // ==================================================
+        // REDIRECT
+        // ==================================================
+
         const redirectFarm =
             normalizeFarmId(
                 order?.farmId ||
+                order?.farm?._id ||
                 farmId
             );
 
@@ -1930,7 +2218,18 @@ exports.addStandingOrder = async (
 
 // ==========================================================
 // OMIT STANDING ORDER
-// ADMIN ONLY
+// ==========================================================
+//
+// EJS FORM:
+//
+// POST /sales/standing/omit
+//
+// Fields:
+//
+// id
+// farmId
+//
+// ADMIN ONLY.
 // ==========================================================
 
 exports.omitStandingOrder = async (
@@ -1939,30 +2238,49 @@ exports.omitStandingOrder = async (
 ) => {
 
     let farmId =
-        null;
+        normalizeFarmId(
+            req.body.farmId
+        );
 
 
     try {
 
+        // ==================================================
+        // ADMIN CHECK
+        // ==================================================
+
         if (
-            req.user?.role !== "admin"
+            !isAdminUser(
+                req.user
+            )
         ) {
 
-            return res
-                .status(403)
-                .send(
-                    "Only administrators can omit standing orders."
-                );
+            return res.redirect(
+                salesRedirect(
+                    farmId,
+                    {
+
+                        error:
+                            "Only administrators can omit standing orders."
+
+                    }
+                )
+            );
 
         }
 
 
-        const {
-            id
-        } = req.body;
+        // ==================================================
+        // ORDER ID
+        // ==================================================
+
+        const orderId =
+            normalizeId(
+                req.body.id
+            );
 
 
-        if (!id) {
+        if (!orderId) {
 
             throw new Error(
                 "Standing order ID is required."
@@ -1971,11 +2289,9 @@ exports.omitStandingOrder = async (
         }
 
 
-        farmId =
-            normalizeFarmId(
-                req.body.farmId
-            );
-
+        // ==================================================
+        // FARM
+        // ==================================================
 
         if (!farmId) {
 
@@ -1986,10 +2302,13 @@ exports.omitStandingOrder = async (
         }
 
 
+        // ==================================================
+        // SERVICE
+        // ==================================================
+
         await milkService.omitStandingOrder({
 
-            orderId:
-                id,
+            orderId,
 
             farmId,
 
@@ -1998,6 +2317,10 @@ exports.omitStandingOrder = async (
 
         });
 
+
+        // ==================================================
+        // REDIRECT
+        // ==================================================
 
         return res.redirect(
             salesRedirect(
@@ -2037,6 +2360,12 @@ exports.omitStandingOrder = async (
 
 // ==========================================================
 // MILKING HISTORY
+// ==========================================================
+//
+// ROUTE:
+//
+// /milk/history/:dairyId
+//
 // ==========================================================
 
 exports.getMilkingHistory = async (
@@ -2153,7 +2482,9 @@ exports.toggleMilkingStatus = async (
 
 
         if (
-            req.user?.role !== "admin"
+            !isAdminUser(
+                req.user
+            )
         ) {
 
             return res
@@ -2222,7 +2553,9 @@ exports.lockDay = async (
     try {
 
         if (
-            req.user?.role !== "admin"
+            !isAdminUser(
+                req.user
+            )
         ) {
 
             return res
@@ -2252,11 +2585,6 @@ exports.lockDay = async (
             day
         );
 
-
-        // --------------------------------------------------
-        // IMPORTANT:
-        // Statistics route is /stats.
-        // --------------------------------------------------
 
         return res.redirect(
             `/stats?type=day&date=${encodeURIComponent(day)}`
@@ -2295,7 +2623,9 @@ exports.unlockDay = async (
     try {
 
         if (
-            req.user?.role !== "admin"
+            !isAdminUser(
+                req.user
+            )
         ) {
 
             return res
@@ -2326,11 +2656,6 @@ exports.unlockDay = async (
         );
 
 
-        // --------------------------------------------------
-        // IMPORTANT:
-        // Statistics route is /stats.
-        // --------------------------------------------------
-
         return res.redirect(
             `/stats?type=day&date=${encodeURIComponent(day)}`
         );
@@ -2359,8 +2684,8 @@ exports.unlockDay = async (
 // SESSION HELPERS
 // ==========================================================
 //
-// Exported so the routes or other parts of the application
-// can continue using the service-level session helpers.
+// These remain exported so existing routes/controllers can
+// continue using the service-level session helpers.
 // ==========================================================
 
 exports.getMilkSession =
@@ -2381,3 +2706,8 @@ exports.canSubmitSession =
 
 exports.canAdminEditRecord =
     milkService.canAdminEditRecord;
+
+
+// ==========================================================
+// END OF milkController.js
+// ==========================================================
