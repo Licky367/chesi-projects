@@ -11,7 +11,6 @@ const Update =
 const ProjectUser =
     require("../../models/projectUser");
 
-
 const {
     formatFeed,
     buildWeeklyMilkFeeds
@@ -22,11 +21,12 @@ const {
 // GET COMPLETE DAIRY PAGE
 // ==========================================================
 
-exports.getDairyPage = async (id) => {
+exports.getDairyPage =
+async (id) => {
 
 
     // ======================================================
-    // GET CURRENT DAIRY
+    // GET CURRENT DAIRY / ASSET
     // ======================================================
 
     const dairy =
@@ -45,23 +45,27 @@ exports.getDairyPage = async (id) => {
     // ======================================================
     // GET ASSETS BELONGING TO THIS DAIRY FARM
     //
-    // Dairy Farm:
+    // A Dairy Farm has:
+    //
     //     code < 0
     //
-    // Child assets:
+    // Its child assets have:
+    //
     //     assetCode === dairy.code
     //
-    // Includes:
-    //     Animals
-    //     Structures
-    //     Machines
-    //     Tools
-    //     Other farm property
+    // This includes:
     //
-    // Does NOT include:
-    //     Other Dairy Farms
-    //     Other farm assets
-    //     Standalone assets
+    //     - Animals
+    //     - Structures
+    //     - Machines
+    //     - Tools
+    //     - Other farm property
+    //
+    // It does NOT include:
+    //
+    //     - Other Dairy Farms
+    //     - Assets belonging to another farm
+    //     - Standalone assets
     // ======================================================
 
     let assetDairies = [];
@@ -84,6 +88,7 @@ exports.getDairyPage = async (id) => {
                     Number(dairy.code)
 
             })
+
             .sort({
 
                 code: 1,
@@ -105,6 +110,7 @@ exports.getDairyPage = async (id) => {
             dairy: id
 
         })
+
         .sort({
 
             createdAt: -1
@@ -117,7 +123,9 @@ exports.getDairyPage = async (id) => {
     // ======================================================
 
     const feed =
-        updates.map(formatFeed);
+        updates.map(
+            formatFeed
+        );
 
 
     // ======================================================
@@ -139,6 +147,8 @@ exports.getDairyPage = async (id) => {
 
     // ======================================================
     // SORT COMPLETE FEED
+    //
+    // Newest items first.
     // ======================================================
 
     feed.sort(
@@ -163,7 +173,9 @@ exports.getDairyPage = async (id) => {
     ) {
 
         if (
-            Array.isArray(item.comments)
+            Array.isArray(
+                item.comments
+            )
         ) {
 
             commentCount +=
@@ -196,29 +208,30 @@ exports.getDairyPage = async (id) => {
 
 
 // ==========================================================
-// GET ASSIGNED FARMS
+// GET ASSIGNED FARM FOR USER
 //
-// Returns the Dairy Farm records assigned to a dairyWorker.
+// Used by the farm-switching functionality.
 //
-// IMPORTANT:
-// The order of assignedFarm is preserved.
+// The method verifies:
 //
-// Therefore:
+// 1. User exists.
+// 2. User is a dairyWorker.
+// 3. Farm ID exists in assignedFarm.
+// 4. Farm actually exists.
 //
-// assignedFarm[0]
-//     = first farm
+// Returns:
+//     Dairy document
 //
-// assignedFarm[1]
-//     = second farm
+// Or:
+//     null
 //
-// etc.
-//
-// This is important because the first assigned farm is also
-// the farm used by authController after login.
 // ==========================================================
 
-exports.getAssignedFarms =
-async (userId) => {
+exports.getAssignedFarmForUser =
+async (
+    userId,
+    farmId
+) => {
 
 
     // ======================================================
@@ -230,29 +243,25 @@ async (userId) => {
             .findById(userId)
             .select(
                 "role assignedFarm"
-            )
-            .lean();
+            );
 
 
     if (!user) {
 
-        throw new Error(
-            "User not found."
-        );
+        return null;
 
     }
 
 
     // ======================================================
-    // ONLY DAIRY WORKERS
+    // ROLE CHECK
     // ======================================================
 
     if (
-        user.role !==
-        "dairyWorker"
+        user.role !== "dairyWorker"
     ) {
 
-        return [];
+        return null;
 
     }
 
@@ -270,159 +279,18 @@ async (userId) => {
 
 
     // ======================================================
-    // NO ASSIGNED FARMS
-    // ======================================================
-
-    if (
-        assignedFarmIds.length === 0
-    ) {
-
-        return [];
-
-    }
-
-
-    // ======================================================
-    // GET FARM RECORDS
-    // ======================================================
-
-    const farms =
-        await Dairy.find({
-
-            _id: {
-
-                $in:
-                    assignedFarmIds
-
-            }
-
-        }).lean();
-
-
-    // ======================================================
-    // CREATE FARM LOOKUP
-    // ======================================================
-
-    const farmMap =
-        new Map(
-
-            farms.map(
-                farm => [
-
-                    farm._id.toString(),
-
-                    farm
-
-                ]
-            )
-
-        );
-
-
-    // ======================================================
-    // PRESERVE assignedFarm ORDER
-    // ======================================================
-
-    const orderedFarms =
-        assignedFarmIds
-            .map(
-
-                farmId =>
-                    farmMap.get(
-                        farmId.toString()
-                    )
-
-            )
-            .filter(Boolean);
-
-
-    return orderedFarms;
-
-};
-
-
-// ==========================================================
-// GET ONE ASSIGNED FARM
-//
-// Returns the farm only when it is actually assigned to
-// the specified dairy worker.
-//
-// Returns:
-//     Dairy document
-//
-// or:
-//     null
-// ==========================================================
-
-exports.getAssignedFarm =
-async (
-    userId,
-    farmId
-) => {
-
-
-    // ======================================================
-    // FIND USER
-    // ======================================================
-
-    const user =
-        await ProjectUser
-            .findById(userId)
-            .select(
-                "role assignedFarm"
-            )
-            .lean();
-
-
-    if (!user) {
-
-        throw new Error(
-            "User not found."
-        );
-
-    }
-
-
-    // ======================================================
-    // ONLY DAIRY WORKERS
-    // ======================================================
-
-    if (
-        user.role !==
-        "dairyWorker"
-    ) {
-
-        return null;
-
-    }
-
-
-    // ======================================================
-    // ASSIGNED FARMS
-    // ======================================================
-
-    const assignedFarmIds =
-        Array.isArray(
-            user.assignedFarm
-        )
-            ? user.assignedFarm
-            : [];
-
-
-    // ======================================================
-    // CHECK WHETHER FARM IS ASSIGNED
+    // CHECK WHETHER REQUESTED FARM
+    // BELONGS TO THE USER
     // ======================================================
 
     const isAssigned =
         assignedFarmIds.some(
-
             assignedId =>
 
                 assignedId
                     .toString() ===
                 farmId
                     .toString()
-
         );
 
 
@@ -438,11 +306,22 @@ async (
     // ======================================================
 
     const farm =
-        await Dairy
-            .findById(farmId)
-            .lean();
+        await Dairy.findById(
+            farmId
+        );
 
 
-    return farm || null;
+    if (!farm) {
+
+        return null;
+
+    }
+
+
+    // ======================================================
+    // RETURN FARM
+    // ======================================================
+
+    return farm;
 
 };
