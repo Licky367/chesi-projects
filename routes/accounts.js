@@ -1,6 +1,13 @@
+// ==========================================================
+// routes/accounts.js
+// ==========================================================
+
 const express = require("express");
+
 const router = express.Router();
-const controller = require("../controllers/accountsController");
+
+const controller =
+  require("../controllers/accountsController");
 
 
 // ==========================================================
@@ -37,13 +44,19 @@ router.post(
 
 
 // ==========================================================
-// ASSIGN DAIRY FARM
+// ASSIGN DAIRY FARMS
 // POST /accounts/:id/farms
+//
+// The controller accepts:
+//
+// assignedFarms
+//
+// It can be one farm or multiple farms.
 // ==========================================================
 
 router.post(
   "/:id/farms",
-  controller.assignDairyFarm
+  controller.assignDairyFarms
 );
 
 
