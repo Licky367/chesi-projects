@@ -133,23 +133,6 @@ exports.getMilkPage = async (
 // ==========================================================
 // SUBMIT MILK
 // ==========================================================
-//
-// NORMAL USER SUBMISSION
-//
-// The service accepts:
-//
-// [
-//   {
-//     dairy,
-//     liters,
-//     remarks
-//   }
-// ]
-//
-// The service itself determines the current session,
-// current Kenya date and whether submission is open.
-//
-// ==========================================================
 
 exports.submitMilk = async (
   req,
@@ -157,10 +140,6 @@ exports.submitMilk = async (
 ) => {
 
   try {
-
-    // ------------------------------------------------------
-    // USER CHECK
-    // ------------------------------------------------------
 
     if (
       !req.user ||
@@ -174,24 +153,9 @@ exports.submitMilk = async (
     }
 
 
-    // ------------------------------------------------------
-    // BUILD RECORDS
-    // ------------------------------------------------------
-
     let records =
       req.body.records;
 
-
-    /*
-     * Support the individual-animal form format:
-     *
-     * dairy
-     * liters
-     * remarks
-     *
-     * This is also compatible with the service's
-     * normalized record format.
-     */
 
     if (
       !records &&
@@ -218,10 +182,6 @@ exports.submitMilk = async (
     }
 
 
-    // ------------------------------------------------------
-    // VALIDATE THAT SOMETHING WAS SUBMITTED
-    // ------------------------------------------------------
-
     if (!records) {
 
       throw new Error(
@@ -231,20 +191,12 @@ exports.submitMilk = async (
     }
 
 
-    // ------------------------------------------------------
-    // SAVE
-    // ------------------------------------------------------
-
     const saved =
       await milkService.saveMilkRecords(
         records,
         req.user
       );
 
-
-    // ------------------------------------------------------
-    // VERIFY SAVE
-    // ------------------------------------------------------
 
     if (
       !Array.isArray(saved) ||
@@ -257,10 +209,6 @@ exports.submitMilk = async (
 
     }
 
-
-    // ------------------------------------------------------
-    // SUCCESS
-    // ------------------------------------------------------
 
     return res.redirect(
       "/milk?success=1"
@@ -290,15 +238,6 @@ exports.submitMilk = async (
 // ==========================================================
 // GET EDIT MILK
 // ==========================================================
-//
-// GET /milk/edit/:id
-//
-// The actual editing is performed through the edit modal
-// on the milk page.
-//
-// This route simply opens the milk page with ?edit=<id>.
-//
-// ==========================================================
 
 exports.getEditMilk = async (
   req,
@@ -312,10 +251,6 @@ exports.getEditMilk = async (
     } = req.params;
 
 
-    // ------------------------------------------------------
-    // VALIDATE ID
-    // ------------------------------------------------------
-
     if (!id) {
 
       return res.redirect(
@@ -327,10 +262,6 @@ exports.getEditMilk = async (
 
     }
 
-
-    // ------------------------------------------------------
-    // ADMIN ONLY
-    // ------------------------------------------------------
 
     if (
       req.user?.role !== "admin"
@@ -375,20 +306,6 @@ exports.getEditMilk = async (
 // ==========================================================
 // UPDATE MILK RECORD
 // ==========================================================
-//
-// POST /milk/:id
-//
-// ADMIN ONLY
-//
-// The service is responsible for enforcing:
-//
-// • administrator permission
-// • valid record ID
-// • same-day restriction
-// • morning/evening time restriction
-// • valid quantity
-//
-// ==========================================================
 
 exports.updateMilkRecord = async (
   req,
@@ -401,10 +318,6 @@ exports.updateMilkRecord = async (
       id
     } = req.params;
 
-
-    // ------------------------------------------------------
-    // ADMIN AUTHORIZATION
-    // ------------------------------------------------------
 
     if (
       req.user?.role !== "admin"
@@ -420,10 +333,6 @@ exports.updateMilkRecord = async (
     }
 
 
-    // ------------------------------------------------------
-    // VALIDATE ID
-    // ------------------------------------------------------
-
     if (!id) {
 
       throw new Error(
@@ -432,10 +341,6 @@ exports.updateMilkRecord = async (
 
     }
 
-
-    // ------------------------------------------------------
-    // VALIDATE QUANTITY
-    // ------------------------------------------------------
 
     if (
       req.body.liters === undefined ||
@@ -470,10 +375,6 @@ exports.updateMilkRecord = async (
     }
 
 
-    // ------------------------------------------------------
-    // UPDATE
-    // ------------------------------------------------------
-
     const updated =
       await milkService.editMilkRecord({
 
@@ -493,10 +394,6 @@ exports.updateMilkRecord = async (
 
       });
 
-
-    // ------------------------------------------------------
-    // VERIFY UPDATE
-    // ------------------------------------------------------
 
     if (!updated) {
 
@@ -535,16 +432,6 @@ exports.updateMilkRecord = async (
 // ==========================================================
 // GET MILK STATS
 // ==========================================================
-//
-// GET /milkStats
-//
-// Supported:
-//
-// /milkStats?type=day&date=YYYY-MM-DD
-//
-// /milkStats?type=month&month=YYYY-MM
-//
-// ==========================================================
 
 exports.getMilkStats = async (
   req,
@@ -559,10 +446,6 @@ exports.getMilkStats = async (
       month
     } = req.query;
 
-
-    // ======================================================
-    // DAILY REPORT
-    // ======================================================
 
     if (
       type === "day"
@@ -600,15 +483,10 @@ exports.getMilkStats = async (
             data?.stats || {
 
               total: 0,
-
               consumed: 0,
-
               available: 0,
-
               price: 50,
-
               cash: 0,
-
               locked: false
 
             },
@@ -624,10 +502,6 @@ exports.getMilkStats = async (
 
     }
 
-
-    // ======================================================
-    // MONTHLY REPORT
-    // ======================================================
 
     if (
       type === "month"
@@ -665,17 +539,11 @@ exports.getMilkStats = async (
             data?.stats || {
 
               total: 0,
-
               consumed: 0,
-
               available: 0,
-
               price: 50,
-
               cash: 0,
-
               locked: false,
-
               avg: 0
 
             },
@@ -692,10 +560,6 @@ exports.getMilkStats = async (
     }
 
 
-    // ======================================================
-    // INVALID TYPE
-    // ======================================================
-
     return res.render(
       "milkStats",
       {
@@ -711,17 +575,11 @@ exports.getMilkStats = async (
         stats: {
 
           total: 0,
-
           consumed: 0,
-
           available: 0,
-
           price: 50,
-
           cash: 0,
-
           locked: false,
-
           avg: 0
 
         },
@@ -756,10 +614,6 @@ exports.getMilkStats = async (
 // ==========================================================
 // SAVE DAILY STATS
 // ==========================================================
-//
-// POST /milkStats/day
-//
-// ==========================================================
 
 exports.saveDailyStats = async (
   req,
@@ -786,7 +640,6 @@ exports.saveDailyStats = async (
     await milkService.saveDailyStats({
 
       day,
-
       price
 
     });
@@ -817,7 +670,29 @@ exports.saveDailyStats = async (
 
 
 // ==========================================================
-// GET SALES PAGE
+// SALES PAGE
+// ==========================================================
+//
+// FARM SCOPE
+//
+// ADMIN:
+//
+//   /sales
+//       -> ALL FARMS SUMMARY
+//       -> CANNOT RECORD SALES
+//
+//   /sales?farmId=<ID>
+//       -> SELECTED FARM
+//       -> CAN RECORD SALES
+//
+// DAIRY WORKER:
+//
+//   /sales
+//       -> AUTOMATICALLY USES THEIR FARM
+//       -> CAN RECORD SALES
+//
+// The service must independently verify the user's authority
+// over the requested farm.
 // ==========================================================
 
 exports.getSalesPage = async (
@@ -827,13 +702,127 @@ exports.getSalesPage = async (
 
   try {
 
+    // ------------------------------------------------------
+    // AUTHENTICATION
+    // ------------------------------------------------------
+
+    if (
+      !req.user ||
+      !req.user._id
+    ) {
+
+      return res
+        .status(401)
+        .send(
+          "You must be logged in to access sales."
+        );
+
+    }
+
+
+    const isAdmin =
+      req.user.role === "admin";
+
+
+    // ------------------------------------------------------
+    // REQUESTED FARM
+    // ------------------------------------------------------
+
+    const requestedFarmId =
+      typeof req.query.farmId === "string" &&
+      req.query.farmId.trim()
+        ? req.query.farmId.trim()
+        : null;
+
+
+    /*
+     * For administrators:
+     *
+     * null farmId = all farms
+     * farmId       = selected farm
+     *
+     * For dairy workers:
+     *
+     * the service ignores any farmId supplied by the
+     * browser and resolves the worker's own farm.
+     */
+
     const data =
-      await milkService.getSalesPageData();
+      await milkService.getSalesPageData({
+
+        user:
+          req.user,
+
+        farmId:
+          requestedFarmId
+
+      });
+
+
+    const selectedFarmId =
+      data?.selectedFarmId ||
+      (
+        isAdmin
+          ? requestedFarmId
+          : data?.workerFarmId || null
+      );
+
+
+    const farmSelected =
+      Boolean(
+        selectedFarmId
+      );
+
+
+    /*
+     * Admin may only sell when a farm has been selected.
+     *
+     * Dairy workers can sell because their farm is
+     * automatically selected by the service.
+     */
+
+    const canSell =
+      isAdmin
+        ? farmSelected
+        : Boolean(
+            data?.workerFarmId
+          );
 
 
     return res.render(
       "sales",
       {
+
+        // --------------------------------------------------
+        // FARM LIST
+        // --------------------------------------------------
+
+        farms:
+          data?.farms || [],
+
+
+        // --------------------------------------------------
+        // SELECTED FARM
+        // --------------------------------------------------
+
+        selectedFarm:
+          data?.selectedFarm || null,
+
+        selectedFarmId,
+
+
+        // --------------------------------------------------
+        // PERMISSION STATE
+        // --------------------------------------------------
+
+        isAdmin,
+
+        canSell,
+
+
+        // --------------------------------------------------
+        // SALES DATA
+        // --------------------------------------------------
 
         standingOrders:
           data?.standingOrders || [],
@@ -841,17 +830,66 @@ exports.getSalesPage = async (
         manualSales:
           data?.manualSales || [],
 
+
+        // --------------------------------------------------
+        // FINANCIAL DATA
+        // --------------------------------------------------
+
         currentPrice:
           data?.currentPrice ?? 50,
 
-        totalSales:
-          data?.totalSales || 0,
-
         availableMilk:
-          data?.availableMilk || 0,
+          Number(
+            data?.availableMilk || 0
+          ),
+
+        totalSales:
+          Number(
+            data?.totalSales || 0
+          ),
+
+        revenue:
+          Number(
+            data?.revenue || 0
+          ),
+
+
+        // --------------------------------------------------
+        // ALL-FARM ADMIN SUMMARY
+        // --------------------------------------------------
+
+        allFarmAvailableMilk:
+          Number(
+            data?.allFarmAvailableMilk || 0
+          ),
+
+        allFarmRevenue:
+          Number(
+            data?.allFarmRevenue || 0
+          ),
+
+        allFarmTotalSales:
+          Number(
+            data?.allFarmTotalSales || 0
+          ),
+
+
+        // --------------------------------------------------
+        // USER
+        // --------------------------------------------------
 
         user:
-          req.user
+          req.user,
+
+        // --------------------------------------------------
+        // FEEDBACK
+        // --------------------------------------------------
+
+        success:
+          req.query.success === "1",
+
+        error:
+          req.query.error || ""
 
       }
     );
@@ -867,6 +905,7 @@ exports.getSalesPage = async (
     return res
       .status(500)
       .send(
+        err.message ||
         "Error loading sales page."
       );
 
@@ -879,10 +918,22 @@ exports.getSalesPage = async (
 // SUBMIT MANUAL SALE
 // ==========================================================
 //
-// The service currently accepts:
+// IMPORTANT:
 //
-// customerName
-// liters
+// The controller does NOT trust a farm ID merely because
+// the browser supplied it.
+//
+// The service must resolve:
+//
+// ADMIN
+//   -> selected farm
+//
+// DAIRY WORKER
+//   -> worker's own farm
+//
+// The service must also verify:
+//
+// liters <= available milk for THAT farm
 //
 // ==========================================================
 
@@ -893,19 +944,99 @@ exports.submitManualSale = async (
 
   try {
 
-    await milkService.submitManualSale({
+    if (
+      !req.user ||
+      !req.user._id
+    ) {
 
-      customerName:
-        req.body.customerName,
+      throw new Error(
+        "You must be logged in to record a sale."
+      );
 
-      liters:
-        req.body.liters
+    }
 
-    });
+
+    const {
+      customerName,
+      liters
+    } = req.body;
+
+
+    // ------------------------------------------------------
+    // ADMIN FARM SELECTION
+    // ------------------------------------------------------
+
+    let farmId =
+      typeof req.body.farmId === "string" &&
+      req.body.farmId.trim()
+        ? req.body.farmId.trim()
+        : null;
+
+
+    /*
+     * An administrator MUST select a farm before selling.
+     */
+
+    if (
+      req.user.role === "admin" &&
+      !farmId
+    ) {
+
+      throw new Error(
+        "Select a farm before recording a sale."
+      );
+
+    }
+
+
+    /*
+     * For a dairy worker, the service MUST ignore any
+     * browser-supplied farmId and use the worker's
+     * assigned farm.
+     */
+
+
+    const saved =
+      await milkService.submitManualSale({
+
+        customerName,
+
+        liters,
+
+        farmId,
+
+        user:
+          req.user
+
+      });
+
+
+    if (!saved) {
+
+      throw new Error(
+        "Manual sale could not be recorded."
+      );
+
+    }
+
+
+    /*
+     * Preserve the selected farm after redirecting.
+     */
+
+    const redirectFarm =
+      saved.farmId ||
+      farmId;
+
+
+    const redirectUrl =
+      redirectFarm
+        ? `/sales?farmId=${encodeURIComponent(redirectFarm)}&success=1`
+        : "/sales?success=1";
 
 
     return res.redirect(
-      "/sales"
+      redirectUrl
     );
 
   } catch (err) {
@@ -916,12 +1047,22 @@ exports.submitManualSale = async (
     );
 
 
-    return res
-      .status(500)
-      .send(
-        err.message ||
-        "Unable to save manual sale."
-      );
+    const farmId =
+      typeof req.body.farmId === "string" &&
+      req.body.farmId.trim()
+        ? req.body.farmId.trim()
+        : "";
+
+
+    const redirect =
+      farmId
+        ? `/sales?farmId=${encodeURIComponent(farmId)}&error=${encodeURIComponent(err.message || "Unable to save manual sale.")}`
+        : `/sales?error=${encodeURIComponent(err.message || "Unable to save manual sale.")}`;
+
+
+    return res.redirect(
+      redirect
+    );
 
   }
 
@@ -932,9 +1073,19 @@ exports.submitManualSale = async (
 // SUBMIT STANDING ORDER SALE
 // ==========================================================
 //
-// The service currently uses only:
+// The standing order already belongs to a farm.
 //
-// standingOrderId
+// Therefore the controller does NOT allow the browser to
+// change the farm by posting another farm ID.
+//
+// The service verifies:
+//
+// • standing order exists
+// • standing order belongs to the permitted farm
+// • admin selected that farm
+// • dairy worker owns/works that farm
+// • today's sale has not already been recorded
+// • liters <= that farm's available milk
 //
 // ==========================================================
 
@@ -945,16 +1096,98 @@ exports.submitStandingOrderSale = async (
 
   try {
 
-    await milkService.submitStandingOrderSale({
+    if (
+      !req.user ||
+      !req.user._id
+    ) {
 
-      standingOrderId:
-        req.body.standingOrderId
+      throw new Error(
+        "You must be logged in to record a sale."
+      );
 
-    });
+    }
+
+
+    const {
+      standingOrderId
+    } = req.body;
+
+
+    if (!standingOrderId) {
+
+      throw new Error(
+        "Standing order ID is required."
+      );
+
+    }
+
+
+    /*
+     * farmId is used only by an administrator to indicate
+     * which farm is currently selected.
+     *
+     * The service must verify that the standing order
+     * actually belongs to that farm.
+     */
+
+    const farmId =
+      req.user.role === "admin"
+        ? (
+            typeof req.body.farmId === "string" &&
+            req.body.farmId.trim()
+              ? req.body.farmId.trim()
+              : null
+          )
+        : null;
+
+
+    if (
+      req.user.role === "admin" &&
+      !farmId
+    ) {
+
+      throw new Error(
+        "Select a farm before recording a standing order sale."
+      );
+
+    }
+
+
+    const saved =
+      await milkService.submitStandingOrderSale({
+
+        standingOrderId,
+
+        farmId,
+
+        user:
+          req.user
+
+      });
+
+
+    if (!saved) {
+
+      throw new Error(
+        "Standing order sale could not be recorded."
+      );
+
+    }
+
+
+    const redirectFarm =
+      saved.farmId ||
+      farmId;
+
+
+    const redirectUrl =
+      redirectFarm
+        ? `/sales?farmId=${encodeURIComponent(redirectFarm)}&success=1`
+        : "/sales?success=1";
 
 
     return res.redirect(
-      "/sales"
+      redirectUrl
     );
 
   } catch (err) {
@@ -965,12 +1198,22 @@ exports.submitStandingOrderSale = async (
     );
 
 
-    return res
-      .status(500)
-      .send(
-        err.message ||
-        "Unable to save standing order sale."
-      );
+    const farmId =
+      typeof req.body.farmId === "string" &&
+      req.body.farmId.trim()
+        ? req.body.farmId.trim()
+        : "";
+
+
+    const redirect =
+      farmId
+        ? `/sales?farmId=${encodeURIComponent(farmId)}&error=${encodeURIComponent(err.message || "Unable to save standing order sale.")}`
+        : `/sales?error=${encodeURIComponent(err.message || "Unable to save standing order sale.")}`;
+
+
+    return res.redirect(
+      redirect
+    );
 
   }
 
@@ -989,10 +1232,6 @@ exports.updateMilkPrice = async (
 
   try {
 
-    // ------------------------------------------------------
-    // ADMIN CHECK
-    // ------------------------------------------------------
-
     if (
       req.user?.role !== "admin"
     ) {
@@ -1003,10 +1242,6 @@ exports.updateMilkPrice = async (
 
     }
 
-
-    // ------------------------------------------------------
-    // VALIDATE PRICE
-    // ------------------------------------------------------
 
     const price =
       Number(
@@ -1026,17 +1261,22 @@ exports.updateMilkPrice = async (
     }
 
 
-    // ------------------------------------------------------
-    // UPDATE
-    // ------------------------------------------------------
-
     await milkService.updateMilkPrice(
       price
     );
 
 
+    const farmId =
+      typeof req.body.farmId === "string" &&
+      req.body.farmId.trim()
+        ? req.body.farmId.trim()
+        : "";
+
+
     return res.redirect(
-      "/sales"
+      farmId
+        ? `/sales?farmId=${encodeURIComponent(farmId)}&success=1`
+        : "/sales?success=1"
     );
 
   } catch (err) {
@@ -1062,6 +1302,19 @@ exports.updateMilkPrice = async (
 // ==========================================================
 // ADD STANDING ORDER
 // ==========================================================
+//
+// ADMIN:
+//
+//   MUST supply farmId.
+//
+// DAIRY WORKER:
+//
+//   farmId is automatically resolved by the service.
+//
+// The worker must NOT be allowed to create an order for
+// another farm by manipulating the form.
+//
+// ==========================================================
 
 exports.addStandingOrder = async (
   req,
@@ -1070,23 +1323,80 @@ exports.addStandingOrder = async (
 
   try {
 
+    if (
+      !req.user ||
+      !req.user._id
+    ) {
+
+      throw new Error(
+        "You must be logged in to create a standing order."
+      );
+
+    }
+
+
     const {
       customerName,
       liters
     } = req.body;
 
 
-    await milkService.addStandingOrder({
+    let farmId =
+      typeof req.body.farmId === "string" &&
+      req.body.farmId.trim()
+        ? req.body.farmId.trim()
+        : null;
 
-      customerName,
 
-      liters
+    /*
+     * Admin must explicitly select a farm.
+     */
 
-    });
+    if (
+      req.user.role === "admin" &&
+      !farmId
+    ) {
+
+      throw new Error(
+        "Select a farm before creating a standing order."
+      );
+
+    }
+
+
+    const order =
+      await milkService.addStandingOrder({
+
+        customerName,
+
+        liters,
+
+        farmId,
+
+        user:
+          req.user
+
+      });
+
+
+    if (!order) {
+
+      throw new Error(
+        "Standing order could not be created."
+      );
+
+    }
+
+
+    const redirectFarm =
+      order.farmId ||
+      farmId;
 
 
     return res.redirect(
-      "/sales"
+      redirectFarm
+        ? `/sales?farmId=${encodeURIComponent(redirectFarm)}&success=1`
+        : "/sales?success=1"
     );
 
   } catch (err) {
@@ -1097,12 +1407,22 @@ exports.addStandingOrder = async (
     );
 
 
-    return res
-      .status(500)
-      .send(
-        err.message ||
-        "Unable to add standing order."
-      );
+    const farmId =
+      typeof req.body.farmId === "string" &&
+      req.body.farmId.trim()
+        ? req.body.farmId.trim()
+        : "";
+
+
+    const redirect =
+      farmId
+        ? `/sales?farmId=${encodeURIComponent(farmId)}&error=${encodeURIComponent(err.message || "Unable to add standing order.")}`
+        : `/sales?error=${encodeURIComponent(err.message || "Unable to add standing order.")}`;
+
+
+    return res.redirect(
+      redirect
+    );
 
   }
 
@@ -1121,6 +1441,19 @@ exports.omitStandingOrder = async (
 
   try {
 
+    if (
+      req.user?.role !== "admin"
+    ) {
+
+      return res
+        .status(403)
+        .send(
+          "Only administrators can omit standing orders."
+        );
+
+    }
+
+
     const {
       id
     } = req.body;
@@ -1135,10 +1468,19 @@ exports.omitStandingOrder = async (
     }
 
 
+    const farmId =
+      typeof req.body.farmId === "string" &&
+      req.body.farmId.trim()
+        ? req.body.farmId.trim()
+        : null;
+
+
     await milkService.omitStandingOrder({
 
       orderId:
         id,
+
+      farmId,
 
       user:
         req.user
@@ -1147,7 +1489,9 @@ exports.omitStandingOrder = async (
 
 
     return res.redirect(
-      "/sales"
+      farmId
+        ? `/sales?farmId=${encodeURIComponent(farmId)}&success=1`
+        : "/sales?success=1"
     );
 
   } catch (err) {
@@ -1172,14 +1516,6 @@ exports.omitStandingOrder = async (
 
 // ==========================================================
 // MILKING HISTORY
-// ==========================================================
-//
-// GET /milk/history/:dairyId
-//
-// Optional:
-//
-// /milk/history/:dairyId?month=YYYY-MM
-//
 // ==========================================================
 
 exports.getMilkingHistory = async (
@@ -1269,10 +1605,6 @@ exports.getMilkingHistory = async (
 // TOGGLE MILKING STATUS
 // ADMIN ONLY
 // ==========================================================
-//
-// POST /milk/history/:id/toggle
-//
-// ==========================================================
 
 exports.toggleMilkingStatus = async (
   req,
@@ -1285,10 +1617,6 @@ exports.toggleMilkingStatus = async (
       id
     } = req.params;
 
-
-    // ------------------------------------------------------
-    // ADMIN CHECK
-    // ------------------------------------------------------
 
     if (
       req.user?.role !== "admin"
@@ -1485,12 +1813,6 @@ exports.unlockDay = async (
 
 // ==========================================================
 // EXPORT SESSION HELPERS
-// ==========================================================
-//
-// These are optional, but keeping them available makes the
-// controller compatible with routes or other modules that
-// may already use them.
-//
 // ==========================================================
 
 exports.getMilkSession =
