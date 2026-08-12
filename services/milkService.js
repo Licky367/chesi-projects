@@ -13,13 +13,23 @@
 // • Automatic session finalization
 // • Milking status
 // • Milk statistics
-// • Milk sales
 // • Milk pricing
-// • Standing orders
 // • Milking history
 // • Daily summary locking
 // • Cow-level milk summaries
 // • Farm-level milk summaries
+//
+// SALES LOGIC
+// ----------------------------------------------------------
+// Sales logic has been intentionally removed from this service.
+//
+// Sales should be handled independently by:
+//
+//     services/salesService.js
+//
+// and:
+//
+//     controllers/salesController.js
 //
 // IMPORTANT DATA RELATIONSHIP
 // ----------------------------------------------------------
@@ -54,7 +64,6 @@ const mongoose = require("mongoose");
 const Milk = require("../models/milk");
 const Dairy = require("../models/dairy");
 const MilkSummary = require("../models/milkSummary");
-const StandingOrder = require("../models/standingOrder");
 
 
 // ==========================================================
@@ -108,29 +117,31 @@ function isValidObjectId(id) {
 
 function getKenyaDateParts() {
 
-    const parts = new Intl.DateTimeFormat(
-        "en-GB",
-        {
-            timeZone: TIME_ZONE,
+    const parts =
+        new Intl.DateTimeFormat(
+            "en-GB",
+            {
+                timeZone: TIME_ZONE,
 
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
 
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
 
-            hourCycle: "h23"
-        }
-    ).formatToParts(new Date());
+                hourCycle: "h23"
+            }
+        ).formatToParts(new Date());
 
 
     const get = (type) => {
 
-        const part = parts.find(
-            item => item.type === type
-        );
+        const part =
+            parts.find(
+                item => item.type === type
+            );
 
         return Number(
             part?.value || 0
@@ -149,6 +160,7 @@ function getKenyaDateParts() {
 
     const paddedMonth =
         String(month).padStart(2, "0");
+
 
     const paddedDay =
         String(day).padStart(2, "0");
@@ -540,6 +552,19 @@ function canAdminEditRecord(record) {
 // ==========================================================
 // CREATE EMPTY DAILY SUMMARY
 // ==========================================================
+//
+// NOTE:
+// ----------------------------------------------------------
+// This summary contains ONLY milk-production data.
+//
+// Sales fields such as:
+//
+//     sales
+//     consumed
+//     cash
+//
+// are intentionally NOT maintained here.
+// ==========================================================
 
 function createEmptySummaryData(
     day,
@@ -557,19 +582,13 @@ function createEmptySummaryData(
 
         produced: 0,
 
-        consumed: 0,
-
         available: 0,
-
-        cash: 0,
 
         locked: false,
 
         cowProduction: [],
 
-        farmProduction: [],
-
-        sales: []
+        farmProduction: []
     };
 }
 
@@ -608,84 +627,6 @@ async function getOrCreateDailySummary(day) {
 
 
 // ==========================================================
-// CALCULATE SALES TOTALS
-// ==========================================================
-
-function calculateSalesTotals(sales) {
-
-    const safeSales =
-        Array.isArray(sales)
-            ? sales
-            : [];
-
-
-    let consumed = 0;
-    let cash = 0;
-
-
-    for (
-        const sale of safeSales
-    ) {
-
-        const liters =
-            Number(
-                sale?.liters || 0
-            );
-
-
-        const saleCash =
-            Number(
-                sale?.cash || 0
-            );
-
-
-        if (
-            Number.isFinite(liters) &&
-            liters > 0
-        ) {
-
-            consumed += liters;
-        }
-
-
-        if (
-            Number.isFinite(saleCash) &&
-            saleCash > 0
-        ) {
-
-            cash += saleCash;
-        }
-    }
-
-
-    return {
-
-        consumed,
-
-        cash
-    };
-}
-
-
-// ==========================================================
-// GET DAILY SUMMARY SALES
-// ==========================================================
-
-async function getDailySales(day) {
-
-    const summary =
-        await MilkSummary
-            .findOne({ day })
-            .lean();
-
-
-    return Array.isArray(summary?.sales)
-        ? summary.sales
-        : [];
-}
-
-
-// ==========================================================
 // SYNCHRONIZE DAILY MILK SUMMARY
 // ==========================================================
 //
@@ -693,7 +634,7 @@ async function getDailySales(day) {
 //
 // MilkSummary = cached daily production/statistical data.
 //
-// Sales remain inside MilkSummary and are preserved.
+// SALES ARE NOT HANDLED HERE.
 // ==========================================================
 
 async function synchronizeDailyMilkSummary(day) {
@@ -718,21 +659,6 @@ async function synchronizeDailyMilkSummary(day) {
         });
 
 
-    const sales =
-        Array.isArray(summary?.sales)
-            ? summary.sales
-            : [];
-
-
-    const {
-        consumed,
-        cash
-    } =
-        calculateSalesTotals(
-            sales
-        );
-
-
     // ------------------------------------------------------
     // NO MILK RECORDS
     // ------------------------------------------------------
@@ -744,14 +670,9 @@ async function synchronizeDailyMilkSummary(day) {
         if (!summary) {
 
             summary =
-                await MilkSummary.create({
-
-                    ...createEmptySummaryData(day),
-
-                    consumed,
-
-                    cash
-                });
+                await MilkSummary.create(
+                    createEmptySummaryData(day)
+                );
 
         }
 
@@ -760,19 +681,17 @@ async function synchronizeDailyMilkSummary(day) {
             summary.month =
                 day.slice(0, 7);
 
-            summary.produced = 0;
+            summary.produced =
+                0;
 
-            summary.cowProduction = [];
+            summary.cowProduction =
+                [];
 
-            summary.farmProduction = [];
+            summary.farmProduction =
+                [];
 
-            summary.consumed =
-                consumed;
-
-            summary.cash =
-                cash;
-
-            summary.available = 0;
+            summary.available =
+                0;
 
             await summary.save();
         }
@@ -1084,23 +1003,14 @@ async function synchronizeDailyMilkSummary(day) {
 
                 produced,
 
-                consumed,
-
                 available:
-                    Math.max(
-                        0,
-                        produced - consumed
-                    ),
-
-                cash,
+                    produced,
 
                 locked: false,
 
                 cowProduction,
 
-                farmProduction,
-
-                sales
+                farmProduction
             });
 
 
@@ -1128,19 +1038,8 @@ async function synchronizeDailyMilkSummary(day) {
         farmProduction;
 
 
-    summary.consumed =
-        consumed;
-
-
-    summary.cash =
-        cash;
-
-
     summary.available =
-        Math.max(
-            0,
-            produced - consumed
-        );
+        produced;
 
 
     await summary.save();
@@ -2353,21 +2252,6 @@ async function getDailyStats(day) {
     }
 
 
-    const sales =
-        Array.isArray(summary.sales)
-            ? summary.sales
-            : [];
-
-
-    const {
-        consumed,
-        cash
-    } =
-        calculateSalesTotals(
-            sales
-        );
-
-
     const total =
         Number(
             report?.stats?.total || 0
@@ -2377,28 +2261,20 @@ async function getDailyStats(day) {
     const available =
         Math.max(
             0,
-            total - consumed
+            total
         );
 
 
     if (
         Number(summary.produced || 0) !== total ||
-        Number(summary.consumed || 0) !== consumed ||
-        Number(summary.available || 0) !== available ||
-        Number(summary.cash || 0) !== cash
+        Number(summary.available || 0) !== available
     ) {
 
         summary.produced =
             total;
 
-        summary.consumed =
-            consumed;
-
         summary.available =
             available;
-
-        summary.cash =
-            cash;
 
 
         await summary.save();
@@ -2410,8 +2286,6 @@ async function getDailyStats(day) {
         records:
             report?.records || [],
 
-        sales,
-
         stats: {
 
             total,
@@ -2419,15 +2293,11 @@ async function getDailyStats(day) {
             produced:
                 total,
 
-            consumed,
-
             available,
 
             price:
                 Number(summary.price) ||
                 DEFAULT_MILK_PRICE,
-
-            cash,
 
             locked:
                 Boolean(summary.locked),
@@ -2538,16 +2408,13 @@ async function getMonthlyStats(month) {
             .lean();
 
 
-    let totalConsumed = 0;
-    let totalCash = 0;
     let totalProduced = 0;
     let totalPrice = 0;
 
 
-    const sales = [];
-
     const farmProductionMap =
         new Map();
+
 
     const cowProductionMap =
         new Map();
@@ -2571,49 +2438,6 @@ async function getMonthlyStats(month) {
             Number(
                 summary.price || 0
             );
-
-
-        // --------------------------------------------------
-        // SALES
-        // --------------------------------------------------
-
-        for (
-            const sale of
-            summary.sales || []
-        ) {
-
-            const liters =
-                Number(
-                    sale.liters || 0
-                );
-
-
-            const cash =
-                Number(
-                    sale.cash || 0
-                );
-
-
-            if (
-                Number.isFinite(liters)
-            ) {
-
-                totalConsumed +=
-                    liters;
-            }
-
-
-            if (
-                Number.isFinite(cash)
-            ) {
-
-                totalCash +=
-                    cash;
-            }
-
-
-            sales.push(sale);
-        }
 
 
         // --------------------------------------------------
@@ -2753,8 +2577,6 @@ async function getMonthlyStats(month) {
 
         records,
 
-        sales,
-
         farmProduction:
             [
                 ...farmProductionMap.values()
@@ -2773,24 +2595,14 @@ async function getMonthlyStats(month) {
             produced:
                 totalProduced,
 
-            consumed:
-                totalConsumed,
-
             available:
-                Math.max(
-                    0,
-                    totalProduced -
-                    totalConsumed
-                ),
+                totalProduced,
 
             price:
                 summaries.length > 0
                     ? totalPrice /
                       summaries.length
                     : DEFAULT_MILK_PRICE,
-
-            cash:
-                totalCash,
 
             locked:
                 false,
@@ -2850,685 +2662,20 @@ async function saveDailyStats({
         );
 
 
-    const sales =
-        Array.isArray(summary.sales)
-            ? summary.sales
-            : [];
-
-
-    const {
-        consumed,
-        cash
-    } =
-        calculateSalesTotals(
-            sales
-        );
-
-
     summary.price =
         numericPrice;
 
 
-    summary.consumed =
-        consumed;
-
-
     summary.available =
-        Math.max(
-            0,
-            Number(summary.produced || 0) -
-            consumed
-        );
-
-
-    summary.cash =
-        cash;
-
-
-    await summary.save();
-
-
-    return summary;
-}
-
-
-// ==========================================================
-// GET SALES PAGE DATA
-// ==========================================================
-
-async function getSalesPageData() {
-
-    const today =
-        getKenyaDateParts().date;
-
-
-    await synchronizeDailyMilkSummary(
-        today
-    );
-
-
-    const summary =
-        await getOrCreateDailySummary(
-            today
-        );
-
-
-    // ------------------------------------------------------
-    // ACTUAL FARMS
-    // ------------------------------------------------------
-
-    const farms =
-        await getFarms();
-
-
-    // ------------------------------------------------------
-    // STANDING ORDERS
-    // ------------------------------------------------------
-
-    const standingOrders =
-        await StandingOrder
-            .find({
-
-                omitted: false,
-
-                isActive: true,
-
-                effectiveDate: {
-                    $lte: new Date()
-                }
-            })
-            .sort({
-                customerName: 1
-            })
-            .lean();
-
-
-    const sales =
-        Array.isArray(summary.sales)
-            ? summary.sales
-            : [];
-
-
-    for (
-        const order of standingOrders
-    ) {
-
-        order.saleRecordedToday =
-            sales.some(
-                sale =>
-
-                    sale.standingOrderId &&
-
-                    sale.standingOrderId
-                        .toString() ===
-                    order._id.toString()
-            );
-
-
-        order.isFuture =
-            order.effectiveDate &&
-            new Date(order.effectiveDate) >
-            new Date();
-    }
-
-
-    // ------------------------------------------------------
-    // MANUAL SALES
-    // ------------------------------------------------------
-
-    const manualSales =
-        sales.filter(
-            sale =>
-                !sale.standingOrderId
-        );
-
-
-    // ------------------------------------------------------
-    // PRODUCTION
-    // ------------------------------------------------------
-
-    const totalProduced =
         Number(
             summary.produced || 0
         );
 
 
-    // ------------------------------------------------------
-    // SALES
-    // ------------------------------------------------------
-
-    const {
-        consumed: totalSales
-    } =
-        calculateSalesTotals(
-            sales
-        );
-
-
-    const availableMilk =
-        Math.max(
-            0,
-            totalProduced -
-            totalSales
-        );
-
-
-    return {
-
-        farms,
-
-        standingOrders,
-
-        manualSales,
-
-        currentPrice:
-            Number(summary.price) ||
-            DEFAULT_MILK_PRICE,
-
-        totalSales,
-
-        availableMilk,
-
-        totalProduced,
-
-        cowProduction:
-            summary.cowProduction || [],
-
-        farmProduction:
-            summary.farmProduction || []
-    };
-}
-
-
-// ==========================================================
-// SUBMIT MANUAL SALE
-// ==========================================================
-
-async function submitManualSale({
-    customerName,
-    liters
-}) {
-
-    if (
-        typeof customerName !== "string" ||
-        !customerName.trim()
-    ) {
-
-        throw new Error(
-            "Customer name is required."
-        );
-    }
-
-
-    const quantity =
-        Number(liters);
-
-
-    if (
-        !Number.isFinite(quantity) ||
-        quantity <= 0
-    ) {
-
-        throw new Error(
-            "Invalid milk quantity."
-        );
-    }
-
-
-    const today =
-        getKenyaDateParts().date;
-
-
-    await synchronizeDailyMilkSummary(
-        today
-    );
-
-
-    const summary =
-        await getOrCreateDailySummary(
-            today
-        );
-
-
-    const produced =
-        Number(
-            summary.produced || 0
-        );
-
-
-    const {
-        consumed
-    } =
-        calculateSalesTotals(
-            summary.sales
-        );
-
-
-    const available =
-        Math.max(
-            0,
-            produced - consumed
-        );
-
-
-    if (
-        quantity > available
-    ) {
-
-        throw new Error(
-            `Insufficient milk available. Only ${available.toFixed(2)} L remaining.`
-        );
-    }
-
-
-    const price =
-        Number(summary.price) ||
-        DEFAULT_MILK_PRICE;
-
-
-    if (
-        !Array.isArray(summary.sales)
-    ) {
-
-        summary.sales = [];
-    }
-
-
-    summary.sales.push({
-
-        customerName:
-            customerName.trim(),
-
-        liters:
-            quantity,
-
-        price,
-
-        cash:
-            quantity * price
-    });
-
-
-    const totals =
-        calculateSalesTotals(
-            summary.sales
-        );
-
-
-    summary.consumed =
-        totals.consumed;
-
-
-    summary.cash =
-        totals.cash;
-
-
-    summary.available =
-        Math.max(
-            0,
-            produced -
-            totals.consumed
-        );
-
-
     await summary.save();
 
 
     return summary;
-}
-
-
-// ==========================================================
-// SUBMIT STANDING ORDER SALE
-// ==========================================================
-
-async function submitStandingOrderSale({
-    standingOrderId
-}) {
-
-    if (
-        !isValidObjectId(standingOrderId)
-    ) {
-
-        throw new Error(
-            "Invalid standing order ID."
-        );
-    }
-
-
-    const order =
-        await StandingOrder.findById(
-            standingOrderId
-        );
-
-
-    if (!order) {
-
-        throw new Error(
-            "Standing order not found."
-        );
-    }
-
-
-    if (
-        order.omitted === true ||
-        order.isActive === false
-    ) {
-
-        throw new Error(
-            "This standing order is no longer active."
-        );
-    }
-
-
-    if (
-        order.effectiveDate &&
-        new Date(order.effectiveDate) >
-        new Date()
-    ) {
-
-        throw new Error(
-            "This standing order has not become effective yet."
-        );
-    }
-
-
-    const today =
-        getKenyaDateParts().date;
-
-
-    await synchronizeDailyMilkSummary(
-        today
-    );
-
-
-    const summary =
-        await getOrCreateDailySummary(
-            today
-        );
-
-
-    const sales =
-        Array.isArray(summary.sales)
-            ? summary.sales
-            : [];
-
-
-    // ------------------------------------------------------
-    // PREVENT DUPLICATE DAILY SALE
-    // ------------------------------------------------------
-
-    const alreadyProcessed =
-        sales.some(
-            sale =>
-
-                sale.standingOrderId &&
-
-                sale.standingOrderId
-                    .toString() ===
-                standingOrderId.toString()
-        );
-
-
-    if (
-        alreadyProcessed
-    ) {
-
-        throw new Error(
-            "Standing order has already been processed today."
-        );
-    }
-
-
-    const orderLiters =
-        Number(order.liters);
-
-
-    if (
-        !Number.isFinite(orderLiters) ||
-        orderLiters <= 0
-    ) {
-
-        throw new Error(
-            "Invalid standing order quantity."
-        );
-    }
-
-
-    const price =
-        Number(summary.price) ||
-        DEFAULT_MILK_PRICE;
-
-
-    const produced =
-        Number(
-            summary.produced || 0
-        );
-
-
-    const {
-        consumed
-    } =
-        calculateSalesTotals(
-            sales
-        );
-
-
-    const available =
-        Math.max(
-            0,
-            produced - consumed
-        );
-
-
-    if (
-        orderLiters > available
-    ) {
-
-        throw new Error(
-            `Insufficient milk available. Only ${available.toFixed(2)} L remaining.`
-        );
-    }
-
-
-    sales.push({
-
-        customerName:
-            order.customerName,
-
-        liters:
-            orderLiters,
-
-        price,
-
-        cash:
-            orderLiters * price,
-
-        standingOrderId:
-            order._id
-    });
-
-
-    summary.sales =
-        sales;
-
-
-    const totals =
-        calculateSalesTotals(
-            summary.sales
-        );
-
-
-    summary.consumed =
-        totals.consumed;
-
-
-    summary.cash =
-        totals.cash;
-
-
-    summary.available =
-        Math.max(
-            0,
-            produced -
-            totals.consumed
-        );
-
-
-    await summary.save();
-
-
-    return summary;
-}
-
-
-// ==========================================================
-// UPDATE MILK PRICE
-// ==========================================================
-
-async function updateMilkPrice(price) {
-
-    const numericPrice =
-        Number(price);
-
-
-    if (
-        !Number.isFinite(numericPrice) ||
-        numericPrice < 0
-    ) {
-
-        throw new Error(
-            "Invalid milk price."
-        );
-    }
-
-
-    const today =
-        getKenyaDateParts().date;
-
-
-    await synchronizeDailyMilkSummary(
-        today
-    );
-
-
-    const summary =
-        await getOrCreateDailySummary(
-            today
-        );
-
-
-    summary.price =
-        numericPrice;
-
-
-    await summary.save();
-
-
-    return summary;
-}
-
-
-// ==========================================================
-// ADD STANDING ORDER
-// ==========================================================
-
-async function addStandingOrder({
-    customerName,
-    liters
-}) {
-
-    if (
-        typeof customerName !== "string" ||
-        !customerName.trim()
-    ) {
-
-        throw new Error(
-            "Customer name is required."
-        );
-    }
-
-
-    const quantity =
-        Number(liters);
-
-
-    if (
-        !Number.isFinite(quantity) ||
-        quantity <= 0
-    ) {
-
-        throw new Error(
-            "Invalid standing order quantity."
-        );
-    }
-
-
-    return StandingOrder.create({
-
-        customerName:
-            customerName.trim(),
-
-        liters:
-            quantity
-    });
-}
-
-
-// ==========================================================
-// OMIT STANDING ORDER
-// ==========================================================
-
-async function omitStandingOrder({
-    orderId,
-    user
-}) {
-
-    if (
-        !user ||
-        user.role !== "admin"
-    ) {
-
-        throw milkError(
-            "MILK_ADMIN_REQUIRED",
-            "Only administrators can omit standing orders."
-        );
-    }
-
-
-    if (
-        !isValidObjectId(orderId)
-    ) {
-
-        throw new Error(
-            "Invalid standing order ID."
-        );
-    }
-
-
-    const order =
-        await StandingOrder.findById(
-            orderId
-        );
-
-
-    if (!order) {
-
-        throw new Error(
-            "Standing order not found."
-        );
-    }
-
-
-    order.omitted = true;
-
-    order.isActive = false;
-
-
-    await order.save();
-
-
-    return order;
 }
 
 
@@ -3820,26 +2967,6 @@ module.exports = {
     // ------------------------------------------------------
 
     toggleMilkingStatus,
-
-
-    // ------------------------------------------------------
-    // Sales
-    // ------------------------------------------------------
-
-    getSalesPageData,
-
-    submitManualSale,
-
-    submitStandingOrderSale,
-
-
-    // ------------------------------------------------------
-    // Standing orders
-    // ------------------------------------------------------
-
-    addStandingOrder,
-
-    omitStandingOrder,
 
 
     // ------------------------------------------------------
