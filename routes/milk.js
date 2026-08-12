@@ -5,6 +5,9 @@ const router = express.Router();
 const milkController =
   require("../controllers/milkController");
 
+const salesController =
+  require("../controllers/salesController");
+
 
 // ==========================================================
 // AUTHENTICATION MIDDLEWARE
@@ -76,20 +79,9 @@ router.post(
 // ==========================================================
 
 /*
- * IMPORTANT:
+ * Edit a milk record
  *
- * The edit modal in milk.ejs uses:
- *
- *     POST /milk/:recordId
- *
- * Therefore this route MUST exist.
- *
- * Example:
- *
- *     POST /milk/68abc123...
- *
- * This is the route used when the administrator
- * taps "Edit" and saves the modal.
+ * POST /milk/:id
  */
 
 router.post(
@@ -100,14 +92,9 @@ router.post(
 
 
 /*
- * Compatibility route.
+ * Compatibility route
  *
- * Keeps the older URL working if any existing page,
- * bookmark, form, or JavaScript still uses:
- *
- *     POST /milk/edit/:id
- *
- * It uses the same controller.
+ * POST /milk/edit/:id
  */
 
 router.post(
@@ -118,13 +105,9 @@ router.post(
 
 
 /*
- * Compatibility GET route.
+ * Compatibility GET route
  *
- * If anything still links to:
- *
- *     /milk/edit/:id
- *
- * the controller redirects back to the milk page.
+ * GET /milk/edit/:id
  */
 
 router.get(
@@ -173,10 +156,6 @@ router.post(
  * History for one dairy animal
  *
  * GET /milk/history/:dairyId
- *
- * Example:
- *
- * /milk/history/64abc123
  */
 
 router.get(
@@ -188,7 +167,6 @@ router.get(
 
 // ==========================================================
 // TOGGLE MILKING STATUS
-// ADMIN
 // ==========================================================
 
 /*
@@ -206,23 +184,34 @@ router.post(
 
 // ==========================================================
 // SALES
+// SALES CONTROLLER
 // ==========================================================
 
 /*
- * Sales page
+ * Display sales page
+ *
+ * ADMIN:
  *
  * GET /sales
+ * GET /sales?farmId=<ID>
+ *
+ * DAIRY WORKER:
+ *
+ * GET /sales
+ *
+ * The controller determines the appropriate farm
+ * based on the logged-in user.
  */
 
 router.get(
   "/sales",
   requireLogin,
-  milkController.getSalesPage
+  salesController.getSalesPage
 );
 
 
 /*
- * Manual sale
+ * Record a manual milk sale
  *
  * POST /sales/manual
  */
@@ -230,7 +219,7 @@ router.get(
 router.post(
   "/sales/manual",
   requireLogin,
-  milkController.submitManualSale
+  salesController.submitManualSale
 );
 
 
@@ -238,25 +227,17 @@ router.post(
  * Update milk selling price
  *
  * POST /sales/price
+ *
+ * Administrator only.
+ *
+ * The controller is responsible for enforcing
+ * the administrator permission.
  */
 
 router.post(
   "/sales/price",
   requireLogin,
-  milkController.updateMilkPrice
-);
-
-
-/*
- * Submit a standing-order sale
- *
- * POST /sales/standing/submit
- */
-
-router.post(
-  "/sales/standing/submit",
-  requireLogin,
-  milkController.submitStandingOrderSale
+  salesController.updateMilkPrice
 );
 
 
@@ -265,7 +246,7 @@ router.post(
 // ==========================================================
 
 /*
- * Add standing order
+ * Add a new standing order
  *
  * POST /sales/standing
  */
@@ -273,12 +254,25 @@ router.post(
 router.post(
   "/sales/standing",
   requireLogin,
-  milkController.addStandingOrder
+  salesController.addStandingOrder
 );
 
 
 /*
- * Omit standing order
+ * Submit today's sale for a standing order
+ *
+ * POST /sales/standing/submit
+ */
+
+router.post(
+  "/sales/standing/submit",
+  requireLogin,
+  salesController.submitStandingOrderSale
+);
+
+
+/*
+ * Omit a standing order
  *
  * POST /sales/standing/omit
  */
@@ -286,7 +280,7 @@ router.post(
 router.post(
   "/sales/standing/omit",
   requireLogin,
-  milkController.omitStandingOrder
+  salesController.omitStandingOrder
 );
 
 
