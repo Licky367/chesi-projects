@@ -1,6 +1,6 @@
 <%
 /* ==========================================================
-MILK COLLECTION PAGE
+   MILK COLLECTION PAGE
 ========================================================== */
 
 const pageError =
@@ -13,28 +13,313 @@ typeof success !== "undefined"
 ? Boolean(success)
 : false;
 
+
+/* ==========================================================
+   SESSION
+========================================================== */
+
 const currentSession =
 typeof session !== "undefined"
 ? session
 : "";
 
-const adminUser =
-typeof isAdmin !== "undefined"
-? Boolean(isAdmin)
-: (
-typeof user !== "undefined" &&
-user &&
-user.role === "admin"
-);
-
-const milkDairies =
-typeof dairies !== "undefined" &&
-Array.isArray(dairies)
-? dairies
-: [];
 
 /* ==========================================================
-SESSION PERMISSIONS
+   USER
+========================================================== */
+
+const currentUser =
+typeof user !== "undefined" &&
+user
+? user
+: null;
+
+
+const adminUser =
+currentUser &&
+currentUser.role === "admin";
+
+
+const dairyWorker =
+currentUser &&
+currentUser.role === "dairyWorker";
+
+
+/* ==========================================================
+   CURRENT SWITCHED FARM
+==========================================================
+
+   The controller/service should provide the currently
+   selected Dairy Farm.
+
+   Supported variables:
+
+       currentDairy
+       currentFarm
+
+   We use whichever exists.
+========================================================== */
+
+const activeFarm =
+typeof currentDairy !== "undefined" &&
+currentDairy
+    ? currentDairy
+    : (
+        typeof currentFarm !== "undefined" &&
+        currentFarm
+            ? currentFarm
+            : null
+    );
+
+
+/* ==========================================================
+   FARM TABLE DATA
+==========================================================
+
+   Preferred variable:
+
+       milkDairyTables
+
+   Expected structure:
+
+       [
+           {
+               farm: Dairy Farm,
+               animals: [ Dairy animals ]
+           }
+       ]
+
+   A fallback is also provided for the old `dairies`
+   variable so the page does not immediately break if
+   the controller has not yet been updated.
+========================================================== */
+
+let milkTables = [];
+
+
+if (
+    typeof milkDairyTables !== "undefined" &&
+    Array.isArray(milkDairyTables)
+) {
+
+    milkTables =
+        milkDairyTables;
+
+}
+
+
+/* ==========================================================
+   FALLBACK FOR OLD DATA
+========================================================== */
+
+else if (
+    typeof dairies !== "undefined" &&
+    Array.isArray(dairies)
+) {
+
+    /*
+     * Old system supplied one flat array of animals.
+     *
+     * Group them using:
+     *
+     *     animal.assetCode === farm.code
+     *
+     * Farm information may already be attached to the
+     * animal as `farm`, `dairyFarm`, or `farmInfo`.
+     */
+
+    const grouped =
+        new Map();
+
+
+    dairies.forEach(function (animal) {
+
+        if (!animal) {
+            return;
+        }
+
+
+        /*
+         * Only animals currently being milked.
+         */
+
+        if (
+            animal.isMilking !== true
+        ) {
+            return;
+        }
+
+
+        const farm =
+            animal.farm ||
+            animal.dairyFarm ||
+            animal.farmInfo ||
+            null;
+
+
+        const farmCode =
+            farm &&
+            farm.code !== undefined &&
+            farm.code !== null
+                ? String(farm.code)
+                : (
+                    animal.assetCode !== undefined &&
+                    animal.assetCode !== null
+                        ? String(animal.assetCode)
+                        : "unassigned"
+                );
+
+
+        if (!grouped.has(farmCode)) {
+
+            grouped.set(
+                farmCode,
+                {
+                    farm:
+                        farm,
+
+                    animals:
+                        []
+                }
+            );
+
+        }
+
+
+        grouped
+            .get(farmCode)
+            .animals
+            .push(animal);
+
+    });
+
+
+    milkTables =
+        Array.from(
+            grouped.values()
+        );
+
+}
+
+
+/* ==========================================================
+   ENSURE VALID TABLE STRUCTURE
+========================================================== */
+
+milkTables =
+Array.isArray(milkTables)
+    ? milkTables
+    : [];
+
+
+/* ==========================================================
+   DAIRY WORKER FARM FILTER
+==========================================================
+
+   ADMIN:
+       sees all farms.
+
+   DAIRY WORKER:
+       sees ONLY the currently switched farm.
+
+   The active farm can be supplied as:
+       currentDairy
+       currentFarm
+
+   The comparison supports both:
+       farm._id
+       farm.code
+========================================================== */
+
+if (dairyWorker) {
+
+    milkTables =
+        milkTables.filter(function (table) {
+
+            if (
+                !table ||
+                !table.farm ||
+                !activeFarm
+            ) {
+
+                return false;
+
+            }
+
+
+            const tableFarmId =
+                table.farm._id
+                    ? String(table.farm._id)
+                    : null;
+
+
+            const activeFarmId =
+                activeFarm._id
+                    ? String(activeFarm._id)
+                    : null;
+
+
+            if (
+                tableFarmId &&
+                activeFarmId &&
+                tableFarmId === activeFarmId
+            ) {
+
+                return true;
+
+            }
+
+
+            const tableFarmCode =
+                table.farm.code !== undefined &&
+                table.farm.code !== null
+                    ? String(table.farm.code)
+                    : null;
+
+
+            const activeFarmCode =
+                activeFarm.code !== undefined &&
+                activeFarm.code !== null
+                    ? String(activeFarm.code)
+                    : null;
+
+
+            if (
+                tableFarmCode &&
+                activeFarmCode &&
+                tableFarmCode === activeFarmCode
+            ) {
+
+                return true;
+
+            }
+
+
+            return false;
+
+        });
+
+}
+
+
+/* ==========================================================
+   REMOVE EMPTY FARM TABLES
+========================================================== */
+
+milkTables =
+milkTables.filter(function (table) {
+
+    return (
+        table &&
+        Array.isArray(table.animals) &&
+        table.animals.length > 0
+    );
+
+});
+
+
+/* ==========================================================
+   SESSION PERMISSIONS
 ========================================================== */
 
 /*
@@ -49,137 +334,196 @@ NORMAL USER:
 - Morning: morning records
 - Evening: evening records
 - Closed: no entry
-  */
+*/
 
 const adminMorningWindow =
 adminUser &&
 (
-currentSession === "morning" ||
-currentSession === "closed"
+    currentSession === "morning" ||
+    currentSession === "closed"
 );
+
 
 const adminEveningWindow =
 adminUser &&
 currentSession === "evening";
+
 
 const canSubmit =
 currentSession === "morning" ||
 currentSession === "evening" ||
 adminMorningWindow;
 
+
 /* ==========================================================
-ACTIVE ENTRY SESSION
+   ACTIVE ENTRY SESSION
 ========================================================== */
 
 const entrySession =
 currentSession === "evening"
-? "evening"
-: "morning";
+    ? "evening"
+    : "morning";
+
 
 /* ==========================================================
-SESSION DISPLAY
+   TOTAL ANIMAL COUNT
 ========================================================== */
 
-let sessionTitle = "Collection Closed";
-let sessionDescription = "";
-let sessionIcon = "🔒";
-let sessionClass = "session-card-closed";
-let sessionBadgeClass = "session-closed";
-let sessionBadgeText = "Closed";
+let totalAnimals = 0;
+
+milkTables.forEach(function (table) {
+
+    if (
+        Array.isArray(table.animals)
+    ) {
+
+        totalAnimals +=
+            table.animals.length;
+
+    }
+
+});
+
+
+/* ==========================================================
+   SESSION DISPLAY
+========================================================== */
+
+let sessionTitle =
+    "Collection Closed";
+
+let sessionDescription =
+    "";
+
+let sessionIcon =
+    "🔒";
+
+let sessionClass =
+    "session-card-closed";
+
+let sessionBadgeClass =
+    "session-closed";
+
+let sessionBadgeText =
+    "Closed";
+
 
 if (currentSession === "morning") {
 
-sessionTitle =
-    "Morning collection is open";
-
-sessionDescription =
-    "Record milk for animals individually before 10:00 AM.";
-
-sessionIcon = "🌅";
-
-sessionClass =
-    "session-card-open";
-
-sessionBadgeClass =
-    "session-morning";
-
-sessionBadgeText =
-    "Morning";
-
-} else if (currentSession === "closed") {
-
-if (adminUser) {
-
     sessionTitle =
-        "Morning collection is available to administrators";
+        "Morning collection is open";
 
     sessionDescription =
-        "Administrators can submit new or edit existing morning records until 4:00 PM.";
+        "Record milk for animals individually before 10:00 AM.";
 
-    sessionIcon = "✏️";
+    sessionIcon =
+        "🌅";
 
     sessionClass =
-        "session-card-admin";
+        "session-card-open";
 
     sessionBadgeClass =
-        "session-admin";
+        "session-morning";
 
     sessionBadgeText =
-        "Admin Access";
+        "Morning";
 
-} else {
+}
+
+
+else if (currentSession === "closed") {
+
+    if (adminUser) {
+
+        sessionTitle =
+            "Morning collection is available to administrators";
+
+        sessionDescription =
+            "Administrators can submit new or edit existing morning records until 4:00 PM.";
+
+        sessionIcon =
+            "✏️";
+
+        sessionClass =
+            "session-card-admin";
+
+        sessionBadgeClass =
+            "session-admin";
+
+        sessionBadgeText =
+            "Admin Access";
+
+    }
+
+    else {
+
+        sessionTitle =
+            "Collection is temporarily closed";
+
+        sessionDescription =
+            "Morning collection closed at 10:00 AM. Evening collection opens at 4:00 PM.";
+
+        sessionIcon =
+            "⏰";
+
+        sessionClass =
+            "session-card-closed";
+
+        sessionBadgeClass =
+            "session-closed";
+
+        sessionBadgeText =
+            "Closed";
+
+    }
+
+}
+
+
+else if (currentSession === "evening") {
 
     sessionTitle =
-        "Collection is temporarily closed";
+        "Evening collection is open";
 
     sessionDescription =
-        "Morning collection closed at 10:00 AM. Evening collection opens at 4:00 PM.";
+        "Record milk for animals individually before midnight.";
 
-    sessionIcon = "⏰";
+    sessionIcon =
+        "🌆";
 
     sessionClass =
-        "session-card-closed";
+        "session-card-evening";
 
     sessionBadgeClass =
-        "session-closed";
+        "session-evening";
 
     sessionBadgeText =
-        "Closed";
-}
-
-} else if (currentSession === "evening") {
-
-sessionTitle =
-    "Evening collection is open";
-
-sessionDescription =
-    "Record milk for animals individually before midnight.";
-
-sessionIcon = "🌆";
-
-sessionClass =
-    "session-card-evening";
-
-sessionBadgeClass =
-    "session-evening";
-
-sessionBadgeText =
-    "Evening";
-
-} else {
-
-sessionTitle =
-    "Collection window unavailable";
-
-sessionDescription =
-    "Please contact an administrator if this continues.";
+        "Evening";
 
 }
+
+
+else {
+
+    sessionTitle =
+        "Collection window unavailable";
+
+    sessionDescription =
+        "Please contact an administrator if this continues.";
+
+}
+
 %>
+
 
 <!-- ==========================================================
      MILK COLLECTION PAGE
-========================================================== --><div class="milk-page"><!-- ======================================================
+========================================================== -->
+
+<div class="milk-page">
+
+
+<!-- ======================================================
      HEADER
 ======================================================= -->
 
@@ -223,7 +567,6 @@ sessionDescription =
 </header>
 
 
-
 <!-- ======================================================
      ERROR
 ======================================================= -->
@@ -251,7 +594,6 @@ sessionDescription =
     </div>
 
 <% } %>
-
 
 
 <!-- ======================================================
@@ -283,7 +625,6 @@ sessionDescription =
 <% } %>
 
 
-
 <!-- ======================================================
      SESSION STATUS
 ======================================================= -->
@@ -305,17 +646,27 @@ sessionDescription =
 
             <%= sessionDescription %>
 
-            <% if (currentSession === "closed" && adminUser) { %>
+            <% if (
+                currentSession === "closed" &&
+                adminUser
+            ) { %>
 
                 <div class="admin-session-note">
+
                     ✏️ Admin access: morning records can still be
                     submitted or edited until 4:00 PM.
+
                 </div>
 
-            <% } else if (currentSession === "closed" && !adminUser) { %>
+            <% } else if (
+                currentSession === "closed" &&
+                !adminUser
+            ) { %>
 
                 <div class="admin-session-note">
+
                     Contact an administrator if a correction is required.
+
                 </div>
 
             <% } %>
@@ -364,12 +715,11 @@ sessionDescription =
 </div>
 
 
-
 <!-- ======================================================
      NO ANIMALS
 ======================================================= -->
 
-<% if (milkDairies.length === 0) { %>
+<% if (milkTables.length === 0) { %>
 
     <div class="milk-empty-state">
 
@@ -382,8 +732,19 @@ sessionDescription =
         </h2>
 
         <p>
-            There are currently no active dairy animals
-            available for milk collection.
+
+            <% if (dairyWorker && !activeFarm) { %>
+
+                No Dairy Farm is currently selected for
+                milk collection.
+
+            <% } else { %>
+
+                There are currently no active dairy animals
+                available for milk collection.
+
+            <% } %>
+
         </p>
 
     </div>
@@ -392,834 +753,932 @@ sessionDescription =
 <% } else { %>
 
 
+<!-- ======================================================
+     FARM TABLES
+======================================================= -->
+
+<%
+milkTables.forEach(function (table, tableIndex) {
+
+    const farm =
+        table.farm || null;
+
+    const animals =
+        Array.isArray(table.animals)
+            ? table.animals
+            : [];
+
+
+    const farmName =
+        farm &&
+        farm.name
+            ? farm.name
+            : "Dairy Farm";
+
+
+    const farmCode =
+        farm &&
+        farm.code !== undefined &&
+        farm.code !== null
+            ? farm.code
+            : null;
+
+%>
+
+
+<!-- ======================================================
+     COLLECTION CARD — ONE PER FARM
+======================================================= -->
+
+<section
+    class="collection-card farm-collection-card"
+    data-farm-id="<%= farm && farm._id ? farm._id : '' %>"
+>
+
+
     <!-- ==================================================
-         COLLECTION CARD
+         FARM HEADER
     =================================================== -->
 
-    <section class="collection-card">
+    <div class="collection-card-header">
 
+        <div>
 
-        <div class="collection-card-header">
+            <div class="collection-title">
 
-            <div>
-
-                <div class="collection-title">
-                    Today's Collection
-                </div>
-
-                <div class="collection-subtitle">
-                    <%= milkDairies.length %>
-                    <%= milkDairies.length === 1
-                        ? "animal"
-                        : "animals"
-                    %>
-                </div>
+                🐄
+                <%= farmName %>
 
             </div>
 
 
-            <% if (canSubmit) { %>
+            <div class="collection-subtitle">
 
-                <div class="collection-status">
+                <% if (farmCode !== null) { %>
 
-                    <span class="status-dot"></span>
+                    Farm Code:
+                    <strong>
+                        #<%= farmCode %>
+                    </strong>
 
-                    <% if (currentSession === "closed" && adminUser) { %>
-                        Admin Entry
-                    <% } else { %>
-                        Ready for Entry
-                    <% } %>
+                    ·
 
-                </div>
+                <% } %>
 
-            <% } else { %>
+                <%= animals.length %>
 
-                <div class="collection-status status-locked">
-                    🔒 Locked
-                </div>
+                <%= animals.length === 1
+                    ? "animal"
+                    : "animals"
+                %>
 
-            <% } %>
+            </div>
 
         </div>
 
 
+        <% if (canSubmit) { %>
 
-        <!-- ==================================================
-             TABLE
-        =================================================== -->
+            <div class="collection-status">
 
-        <div class="milk-table-wrapper">
+                <span class="status-dot"></span>
 
-            <table class="milk-table">
+                <% if (
+                    currentSession === "closed" &&
+                    adminUser
+                ) { %>
 
-                <thead>
+                    Admin Entry
 
-                    <tr>
+                <% } else { %>
 
-                        <th class="col-animal">
-                            Animal
-                        </th>
+                    Ready for Entry
 
-                        <th class="col-code">
-                            Code
-                        </th>
+                <% } %>
 
-                        <th class="col-milk">
-                            Milk
-                            <span>(Litres)</span>
-                        </th>
+            </div>
 
-                        <th class="col-remarks">
-                            Remarks
-                        </th>
+        <% } else { %>
 
-                        <th class="col-action">
-                            Action
-                        </th>
+            <div class="collection-status status-locked">
 
-                    </tr>
+                🔒 Locked
 
-                </thead>
+            </div>
+
+        <% } %>
+
+    </div>
 
 
-                <tbody>
+    <!-- ==================================================
+         FARM TABLE
+    =================================================== -->
 
-                <%
-                    milkDairies.forEach((dairy, index) => {
+    <div class="milk-table-wrapper">
 
-                        let record = null;
+        <table class="milk-table">
 
-                        if (entrySession === "morning") {
+            <thead>
 
-                            record =
-                                dairy.morning || null;
+                <tr>
 
-                        } else {
+                    <th class="col-animal">
+                        Animal
+                    </th>
 
-                            record =
-                                dairy.evening || null;
+                    <th class="col-code">
+                        Code
+                    </th>
 
-                        }
+                    <th class="col-milk">
+                        Milk
+                        <span>(Litres)</span>
+                    </th>
 
+                    <th class="col-remarks">
+                        Remarks
+                    </th>
 
-                        const canCreateRecord =
-                            !record &&
-                            canSubmit;
+                    <th class="col-action">
+                        Action
+                    </th>
 
+                </tr>
 
-                        const canEditRecord =
-                            adminUser &&
-                            record &&
-                            record._id;
-
-
-                        const formId =
-                            "milkRecordForm_" +
-                            String(dairy._id) +
-                            "_" +
-                            String(index);
-                %>
-
-
-                    <!-- ==================================================
-                         ANIMAL ROW
-                    =================================================== -->
-
-                    <tr
-                        class="<%= record
-                            ? 'has-record'
-                            : 'needs-record'
-                        %>"
-                    >
+            </thead>
 
 
-                        <!-- ==============================================
-                             ANIMAL
-                        =============================================== -->
-
-                        <td>
-
-                            <div class="animal-cell">
-
-                                <div class="animal-avatar">
-                                    🐄
-                                </div>
-
-                                <div class="animal-info">
-
-                                    <span class="animal-name">
-                                        <%= dairy.name %>
-                                    </span>
-
-                                    <span class="animal-label">
-                                        Dairy animal
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-                        </td>
+            <tbody>
 
 
+            <%
+            animals.forEach(function (dairy, animalIndex) {
 
-                        <!-- ==============================================
-                             CODE
-                        =============================================== -->
+                let record = null;
 
-                        <td>
 
-                            <span class="code-badge">
-                                #<%= dairy.code %>
+                if (entrySession === "morning") {
+
+                    record =
+                        dairy.morning || null;
+
+                }
+
+                else {
+
+                    record =
+                        dairy.evening || null;
+
+                }
+
+
+                const canCreateRecord =
+                    !record &&
+                    canSubmit;
+
+
+                const canEditRecord =
+                    adminUser &&
+                    record &&
+                    record._id;
+
+
+                const formId =
+                    "milkRecordForm_" +
+                    String(
+                        dairy._id
+                    ) +
+                    "_" +
+                    String(tableIndex) +
+                    "_" +
+                    String(animalIndex);
+
+            %>
+
+
+            <!-- ==================================================
+                 ANIMAL ROW
+            =================================================== -->
+
+            <tr
+                class="<%= record
+                    ? 'has-record'
+                    : 'needs-record'
+                %>"
+            >
+
+
+                <!-- ==============================================
+                     ANIMAL
+                =============================================== -->
+
+                <td>
+
+                    <div class="animal-cell">
+
+                        <div class="animal-avatar">
+                            🐄
+                        </div>
+
+                        <div class="animal-info">
+
+                            <span class="animal-name">
+                                <%= dairy.name %>
                             </span>
 
-                        </td>
+                            <span class="animal-label">
+                                Dairy animal
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </td>
 
 
+                <!-- ==============================================
+                     CODE
+                =============================================== -->
 
-                        <!-- ==============================================
-                             MILK
-                        =============================================== -->
+                <td>
 
-                        <td>
+                    <span class="code-badge">
+                        #<%= dairy.code %>
+                    </span>
 
-                        <% if (record) { %>
-
-
-                            <% if (canEditRecord) { %>
-
-                                <!-- ADMIN EDITABLE RECORD -->
-
-                                <button
-                                    type="button"
-                                    class="record-wrapper admin-edit-record js-edit-milk"
-                                    data-record-id="<%= record._id %>"
-                                    data-liters="<%= Number(record.liters || 0) %>"
-                                    data-remarks="<%= String(record.remarks || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') %>"
-                                    title="Tap to edit this record"
-                                    aria-label="Edit milk record"
-                                >
-
-                                    <span class="milk-value-display">
-
-                                        <span>
-                                            <%= Number(
-                                                record.liters || 0
-                                            ).toFixed(1) %>
-                                        </span>
-
-                                        <small>
-                                            L
-                                        </small>
-
-                                    </span>
-
-                                    <span class="edit-icon">
-                                        ✏️
-                                    </span>
-
-                                </button>
-
-                            <% } else { %>
-
-                                <!-- READ ONLY RECORD -->
-
-                                <div class="record-wrapper">
-
-                                    <div class="milk-value-display">
-
-                                        <span>
-                                            <%= Number(
-                                                record.liters || 0
-                                            ).toFixed(1) %>
-                                        </span>
-
-                                        <small>
-                                            L
-                                        </small>
-
-                                    </div>
-
-                                </div>
-
-                            <% } %>
+                </td>
 
 
-                        <% } else if (canCreateRecord) { %>
+                <!-- ==============================================
+                     MILK
+                =============================================== -->
+
+                <td>
+
+                <% if (record) { %>
 
 
-                            <!-- NEW RECORD -->
+                    <% if (canEditRecord) { %>
 
-                            <div class="milk-entry-wrapper">
+                        <button
+                            type="button"
+                            class="record-wrapper admin-edit-record js-edit-milk"
+                            data-record-id="<%= record._id %>"
+                            data-liters="<%= Number(record.liters || 0) %>"
+                            data-remarks="<%= String(record.remarks || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') %>"
+                            title="Tap to edit this record"
+                            aria-label="Edit milk record"
+                        >
 
-                                <input
-                                    class="milk-input"
-                                    type="number"
-                                    step="0.1"
-                                    min="0"
-                                    name="liters"
-                                    form="<%= formId %>"
-                                    placeholder="0.0"
-                                    required
-                                    inputmode="decimal"
-                                >
-
-                                <span class="input-unit">
-                                    L
-                                </span>
-
-                            </div>
-
-
-                        <% } else { %>
-
-
-                            <!-- LOCKED -->
-
-                            <div class="locked-input">
+                            <span class="milk-value-display">
 
                                 <span>
-                                    —
+                                    <%= Number(
+                                        record.liters || 0
+                                    ).toFixed(1) %>
                                 </span>
 
                                 <small>
-                                    Locked
+                                    L
+                                </small>
+
+                            </span>
+
+                            <span class="edit-icon">
+                                ✏️
+                            </span>
+
+                        </button>
+
+
+                    <% } else { %>
+
+                        <div class="record-wrapper">
+
+                            <div class="milk-value-display">
+
+                                <span>
+                                    <%= Number(
+                                        record.liters || 0
+                                    ).toFixed(1) %>
+                                </span>
+
+                                <small>
+                                    L
                                 </small>
 
                             </div>
 
+                        </div>
 
-                        <% } %>
+                    <% } %>
 
-                        </td>
 
+                <% } else if (canCreateRecord) { %>
 
 
-                        <!-- ==============================================
-                             REMARKS
-                        =============================================== -->
+                    <div class="milk-entry-wrapper">
 
-                        <td>
+                        <input
+                            class="milk-input"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            name="liters"
+                            form="<%= formId %>"
+                            placeholder="0.0"
+                            required
+                            inputmode="decimal"
+                        >
 
-                        <% if (record) { %>
+                        <span class="input-unit">
+                            L
+                        </span>
 
-                            <%
-                                const displayRemarks =
-                                    record.remarks &&
-                                    String(record.remarks).trim()
-                                        ? record.remarks
-                                        : "No remarks";
-                            %>
+                    </div>
 
 
-                            <% if (canEditRecord) { %>
+                <% } else { %>
 
-                                <button
-                                    type="button"
-                                    class="remarks-wrapper admin-edit-record js-edit-milk"
-                                    data-record-id="<%= record._id %>"
-                                    data-liters="<%= Number(record.liters || 0) %>"
-                                    data-remarks="<%= String(record.remarks || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') %>"
-                                    title="Tap to edit this record"
-                                >
 
-                                    <span class="remarks-text">
-                                        <%= displayRemarks %>
-                                    </span>
+                    <div class="locked-input">
 
+                        <span>
+                            —
+                        </span>
 
-                                    <% if (
-                                        record.recordedByType === "system" ||
-                                        record.recordedBySystem
-                                    ) { %>
+                        <small>
+                            Locked
+                        </small>
 
-                                        <span class="record-badge system-record">
+                    </div>
 
-                                            <span>
-                                                ⚙️
-                                            </span>
 
-                                            Automatically recorded
-                                            as Not Milked.
+                <% } %>
 
-                                        </span>
+                </td>
 
-                                    <% } else { %>
 
-                                        <span class="record-badge">
+                <!-- ==============================================
+                     REMARKS
+                =============================================== -->
 
-                                            <span>
-                                                ✓
-                                            </span>
+                <td>
 
-                                            Already recorded
+                <% if (record) { %>
 
-                                        </span>
+                    <%
+                    const displayRemarks =
+                        record.remarks &&
+                        String(record.remarks).trim()
+                            ? record.remarks
+                            : "No remarks";
+                    %>
 
-                                    <% } %>
 
+                    <% if (canEditRecord) { %>
 
-                                    <span class="admin-edit-hint">
-                                        ✏️ Tap to edit
-                                    </span>
+                        <button
+                            type="button"
+                            class="remarks-wrapper admin-edit-record js-edit-milk"
+                            data-record-id="<%= record._id %>"
+                            data-liters="<%= Number(record.liters || 0) %>"
+                            data-remarks="<%= String(record.remarks || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') %>"
+                            title="Tap to edit this record"
+                        >
 
-                                </button>
+                            <span class="remarks-text">
+                                <%= displayRemarks %>
+                            </span>
 
-                            <% } else { %>
 
-                                <div class="remarks-wrapper">
+                            <% if (
+                                record.recordedByType === "system" ||
+                                record.recordedBySystem
+                            ) { %>
 
-                                    <div class="remarks-text">
-                                        <%= displayRemarks %>
-                                    </div>
+                                <span class="record-badge system-record">
 
-
-                                    <% if (
-                                        record.recordedByType === "system" ||
-                                        record.recordedBySystem
-                                    ) { %>
-
-                                        <div class="record-badge system-record">
-
-                                            <span>
-                                                ⚙️
-                                            </span>
-
-                                            Automatically recorded
-                                            as Not Milked.
-
-                                        </div>
-
-                                    <% } else { %>
-
-                                        <div class="record-badge">
-
-                                            <span>
-                                                ✓
-                                            </span>
-
-                                            Already recorded
-
-                                        </div>
-
-                                    <% } %>
-
-                                </div>
-
-                            <% } %>
-
-
-                        <% } else if (canCreateRecord) { %>
-
-
-                            <!-- NEW REMARKS -->
-
-                            <textarea
-                                class="remarks-input"
-                                name="remarks"
-                                form="<%= formId %>"
-                                placeholder="Optional remarks..."
-                                rows="2"
-                            ></textarea>
-
-
-                        <% } else { %>
-
-
-                            <!-- LOCKED REMARKS -->
-
-                            <div class="closed-remarks">
-
-                                <span>
-                                    🔒
-                                </span>
-
-                                <span>
-                                    No new record can be
-                                    submitted at this time.
-                                </span>
-
-                            </div>
-
-
-                        <% } %>
-
-                        </td>
-
-
-
-                        <!-- ==============================================
-                             ACTION
-                        =============================================== -->
-
-                        <td class="action-cell">
-
-                        <% if (record) { %>
-
-
-                            <% if (canEditRecord) { %>
-
-                                <button
-                                    type="button"
-                                    class="row-action-btn admin-action js-edit-milk"
-                                    data-record-id="<%= record._id %>"
-                                    data-liters="<%= Number(record.liters || 0) %>"
-                                    data-remarks="<%= String(record.remarks || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') %>"
-                                >
-
-                                    ✏️
                                     <span>
-                                        Edit
+                                        ⚙️
                                     </span>
 
-                                </button>
+                                    Automatically recorded
+                                    as Not Milked.
+
+                                </span>
 
                             <% } else { %>
 
-                                <div class="read-only-label">
+                                <span class="record-badge">
 
                                     <span>
                                         ✓
                                     </span>
 
+                                    Already recorded
+
+                                </span>
+
+                            <% } %>
+
+
+                            <span class="admin-edit-hint">
+                                ✏️ Tap to edit
+                            </span>
+
+                        </button>
+
+
+                    <% } else { %>
+
+                        <div class="remarks-wrapper">
+
+                            <div class="remarks-text">
+                                <%= displayRemarks %>
+                            </div>
+
+
+                            <% if (
+                                record.recordedByType === "system" ||
+                                record.recordedBySystem
+                            ) { %>
+
+                                <div class="record-badge system-record">
+
                                     <span>
-                                        Read-only
+                                        ⚙️
                                     </span>
+
+                                    Automatically recorded
+                                    as Not Milked.
+
+                                </div>
+
+                            <% } else { %>
+
+                                <div class="record-badge">
+
+                                    <span>
+                                        ✓
+                                    </span>
+
+                                    Already recorded
 
                                 </div>
 
                             <% } %>
 
-
-                        <% } else if (canCreateRecord) { %>
-
-
-                            <button
-                                type="submit"
-                                form="<%= formId %>"
-                                class="row-action-btn save-action"
-                            >
-
-                                ✓
-
-                                <span>
-                                    Save
-                                </span>
-
-                            </button>
-
-
-                        <% } else { %>
-
-
-                            <div class="read-only-label locked-label">
-
-                                <span>
-                                    🔒
-                                </span>
-
-                                <span>
-                                    Locked
-                                </span>
-
-                            </div>
-
-
-                        <% } %>
-
-                        </td>
-
-                    </tr>
-
-
-                    <!-- ==================================================
-                         INDIVIDUAL FORM
-                    =================================================== -->
-
-                    <% if (canCreateRecord) { %>
-
-                        <form
-                            id="<%= formId %>"
-                            action="/milk"
-                            method="POST"
-                            class="individual-milk-form"
-                        >
-
-                            <input
-                                type="hidden"
-                                name="dairy"
-                                value="<%= dairy._id %>"
-                            >
-
-                            <input
-                                type="hidden"
-                                name="session"
-                                value="<%= entrySession %>"
-                            >
-
-                        </form>
+                        </div>
 
                     <% } %>
 
 
-                <%
-                    });
-                %>
+                <% } else if (canCreateRecord) { %>
 
-                </tbody>
 
-            </table>
+                    <textarea
+                        class="remarks-input"
+                        name="remarks"
+                        form="<%= formId %>"
+                        placeholder="Optional remarks..."
+                        rows="2"
+                    ></textarea>
+
+
+                <% } else { %>
+
+
+                    <div class="closed-remarks">
+
+                        <span>
+                            🔒
+                        </span>
+
+                        <span>
+                            No new record can be
+                            submitted at this time.
+                        </span>
+
+                    </div>
+
+
+                <% } %>
+
+                </td>
+
+
+                <!-- ==============================================
+                     ACTION
+                =============================================== -->
+
+                <td class="action-cell">
+
+                <% if (record) { %>
+
+
+                    <% if (canEditRecord) { %>
+
+                        <button
+                            type="button"
+                            class="row-action-btn admin-action js-edit-milk"
+                            data-record-id="<%= record._id %>"
+                            data-liters="<%= Number(record.liters || 0) %>"
+                            data-remarks="<%= String(record.remarks || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') %>"
+                        >
+
+                            ✏️
+
+                            <span>
+                                Edit
+                            </span>
+
+                        </button>
+
+
+                    <% } else { %>
+
+                        <div class="read-only-label">
+
+                            <span>
+                                ✓
+                            </span>
+
+                            <span>
+                                Read-only
+                            </span>
+
+                        </div>
+
+                    <% } %>
+
+
+                <% } else if (canCreateRecord) { %>
+
+
+                    <button
+                        type="submit"
+                        form="<%= formId %>"
+                        class="row-action-btn save-action"
+                    >
+
+                        ✓
+
+                        <span>
+                            Save
+                        </span>
+
+                    </button>
+
+
+                <% } else { %>
+
+
+                    <div class="read-only-label locked-label">
+
+                        <span>
+                            🔒
+                        </span>
+
+                        <span>
+                            Locked
+                        </span>
+
+                    </div>
+
+
+                <% } %>
+
+                </td>
+
+            </tr>
+
+
+            <!-- ==================================================
+                 INDIVIDUAL FORM
+            =================================================== -->
+
+            <% if (canCreateRecord) { %>
+
+                <form
+                    id="<%= formId %>"
+                    action="/milk"
+                    method="POST"
+                    class="individual-milk-form"
+                >
+
+                    <input
+                        type="hidden"
+                        name="dairy"
+                        value="<%= dairy._id %>"
+                    >
+
+                    <input
+                        type="hidden"
+                        name="session"
+                        value="<%= entrySession %>"
+                    >
+
+                </form>
+
+            <% } %>
+
+
+            <%
+            });
+            %>
+
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+
+<%
+});
+%>
+
+
+<!-- ======================================================
+     INFORMATION CARD
+======================================================= -->
+
+<div class="milk-submit-card">
+
+    <div class="submit-information">
+
+        <div class="submit-info-icon">
+
+            <% if (canSubmit) { %>
+                ✓
+            <% } else { %>
+                🔒
+            <% } %>
 
         </div>
 
-    </section>
+
+        <div>
+
+            <% if (currentSession === "morning") { %>
+
+                <strong>
+                    Morning collection is open
+                </strong>
+
+                <span>
+                    Enter and save each animal individually.
+                    Once saved, the record becomes read-only
+                    for normal users.
+                </span>
 
 
+            <% } else if (
+                currentSession === "closed" &&
+                adminUser
+            ) { %>
 
-    <!-- ==================================================
-         INFORMATION CARD
-    =================================================== -->
+                <strong>
+                    Administrator morning access
+                </strong>
 
-    <div class="milk-submit-card">
-
-        <div class="submit-information">
-
-            <div class="submit-info-icon">
-
-                <% if (canSubmit) { %>
-                    ✓
-                <% } else { %>
-                    🔒
-                <% } %>
-
-            </div>
+                <span>
+                    You can submit new morning records or edit
+                    existing morning records until
+                    <strong>4:00 PM</strong>.
+                </span>
 
 
-            <div>
+            <% } else if (
+                currentSession === "closed"
+            ) { %>
 
-                <% if (currentSession === "morning") { %>
+                <strong>
+                    Collection is currently closed
+                </strong>
 
-                    <strong>
-                        Morning collection is open
-                    </strong>
-
-                    <span>
-                        Enter and save each animal individually.
-                        Once saved, the record becomes read-only
-                        for normal users.
-                    </span>
-
-
-                <% } else if (
-                    currentSession === "closed" &&
-                    adminUser
-                ) { %>
-
-                    <strong>
-                        Administrator morning access
-                    </strong>
-
-                    <span>
-                        You can submit new morning records or edit
-                        existing morning records until
-                        <strong>4:00 PM</strong>.
-                    </span>
+                <span>
+                    Evening collection becomes available
+                    at <strong>4:00 PM</strong>.
+                </span>
 
 
-                <% } else if (
-                    currentSession === "closed"
-                ) { %>
+            <% } else if (
+                currentSession === "evening"
+            ) { %>
 
-                    <strong>
-                        Collection is currently closed
-                    </strong>
+                <strong>
+                    Evening collection is open
+                </strong>
 
-                    <span>
-                        Evening collection becomes available
-                        at <strong>4:00 PM</strong>.
-                    </span>
-
-
-                <% } else if (
-                    currentSession === "evening"
-                ) { %>
-
-                    <strong>
-                        Evening collection is open
-                    </strong>
-
-                    <span>
-                        Enter and save each animal individually.
-                        Administrators can also edit existing
-                        evening records.
-                    </span>
+                <span>
+                    Enter and save each animal individually.
+                    Administrators can also edit existing
+                    evening records.
+                </span>
 
 
-                <% } else { %>
+            <% } else { %>
 
-                    <strong>
-                        Collection unavailable
-                    </strong>
+                <strong>
+                    Collection unavailable
+                </strong>
 
-                    <span>
-                        Please contact an administrator.
-                    </span>
+                <span>
+                    Please contact an administrator.
+                </span>
 
-                <% } %>
-
-            </div>
+            <% } %>
 
         </div>
 
     </div>
+
+</div>
 
 
 <% } %>
 
-</div><!-- ==========================================================
+</div>
+
+
+<!-- ==========================================================
      ADMIN EDIT MODAL
-========================================================== --><div
+========================================================== -->
+
+<div
     id="milkEditModal"
     class="milk-edit-modal"
     aria-hidden="true"
-><div
-    class="milk-edit-backdrop"
-    data-close-edit-modal
-></div>
-
-
-<div
-    class="milk-edit-dialog"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="milkEditTitle"
 >
 
-    <div class="edit-modal-header">
+    <div
+        class="milk-edit-backdrop"
+        data-close-edit-modal
+    ></div>
 
-        <div>
 
-            <div class="edit-modal-eyebrow">
-                ADMINISTRATOR
+    <div
+        class="milk-edit-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="milkEditTitle"
+    >
+
+        <div class="edit-modal-header">
+
+            <div>
+
+                <div class="edit-modal-eyebrow">
+                    ADMINISTRATOR
+                </div>
+
+                <h2 id="milkEditTitle">
+                    Edit Milk Record
+                </h2>
+
+                <p>
+                    Update the litres or remarks for this record.
+                </p>
+
             </div>
 
-            <h2 id="milkEditTitle">
-                Edit Milk Record
-            </h2>
 
-            <p>
-                Update the litres or remarks for this record.
-            </p>
+            <button
+                type="button"
+                class="modal-close-btn"
+                id="closeMilkEditButton"
+                aria-label="Close"
+            >
+                ×
+            </button>
 
         </div>
 
 
-        <button
-            type="button"
-            class="modal-close-btn"
-            id="closeMilkEditButton"
-            aria-label="Close"
+        <form
+            id="milkEditForm"
+            method="POST"
+            action=""
         >
-            ×
-        </button>
 
-    </div>
+            <div class="edit-modal-body">
+
+                <div class="edit-field">
+
+                    <label for="editLiters">
+                        Milk
+                    </label>
+
+                    <div class="edit-input-wrapper">
+
+                        <input
+                            id="editLiters"
+                            name="liters"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            required
+                            inputmode="decimal"
+                        >
+
+                        <span>
+                            Litres
+                        </span>
+
+                    </div>
+
+                </div>
 
 
-    <!-- ======================================================
-         UPDATE FORM
+                <div class="edit-field">
 
-         Matches controller:
+                    <label for="editRemarks">
+                        Remarks
+                    </label>
 
-         exports.updateMilkRecord = async (req, res) => ...
-
-         Expected route:
-
-         POST /milk/:id
-    ======================================================= -->
-
-    <form
-        id="milkEditForm"
-        method="POST"
-        action=""
-    >
-
-        <div class="edit-modal-body">
-
-
-            <div class="edit-field">
-
-                <label for="editLiters">
-                    Milk
-                </label>
-
-                <div class="edit-input-wrapper">
-
-                    <input
-                        id="editLiters"
-                        name="liters"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        required
-                        inputmode="decimal"
-                    >
-
-                    <span>
-                        Litres
-                    </span>
+                    <textarea
+                        id="editRemarks"
+                        name="remarks"
+                        rows="4"
+                        placeholder="Optional remarks..."
+                    ></textarea>
 
                 </div>
 
             </div>
 
 
-            <div class="edit-field">
+            <div class="edit-modal-footer">
 
-                <label for="editRemarks">
-                    Remarks
-                </label>
+                <button
+                    type="button"
+                    class="modal-cancel-btn"
+                    id="cancelMilkEditButton"
+                >
+                    Cancel
+                </button>
 
-                <textarea
-                    id="editRemarks"
-                    name="remarks"
-                    rows="4"
-                    placeholder="Optional remarks..."
-                ></textarea>
+                <button
+                    type="submit"
+                    class="modal-save-btn"
+                    id="saveMilkEditButton"
+                >
+                    ✓ Save Changes
+                </button>
 
             </div>
 
+        </form>
 
-        </div>
-
-
-        <div class="edit-modal-footer">
-
-            <button
-                type="button"
-                class="modal-cancel-btn"
-                id="cancelMilkEditButton"
-            >
-                Cancel
-            </button>
-
-            <button
-                type="submit"
-                class="modal-save-btn"
-                id="saveMilkEditButton"
-            >
-                ✓ Save Changes
-            </button>
-
-        </div>
-
-    </form>
+    </div>
 
 </div>
 
-</div><!-- ==========================================================
-     STYLES
-========================================================== --><style>
+
+<!-- ==========================================================
+     FARM TABLE ADDITIONAL STYLES
+========================================================== -->
+
+<style>
+
+.farm-collection-card {
+    margin-bottom: 18px;
+}
+
+.farm-collection-card:last-of-type {
+    margin-bottom: 0;
+}
+
+.farm-collection-card .collection-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.farm-collection-card .collection-subtitle strong {
+    color: #536159;
+    font-weight: 750;
+}
+
+.milk-modal-open {
+    overflow: hidden;
+}
+
+</style>
+
+
+<!-- ==========================================================
+     EXISTING PAGE STYLES
+========================================================== -->
+
+<style>
 
 /* ==========================================================
    PAGE
@@ -1720,10 +2179,6 @@ sessionDescription =
     color: #243128;
     font-size: 15px;
     font-weight: 700;
-    transition:
-        border-color .15s ease,
-        box-shadow .15s ease,
-        background .15s ease;
 }
 
 .milk-input:focus {
@@ -1758,13 +2213,6 @@ sessionDescription =
     gap: 8px;
 }
 
-
-/*
-   IMPORTANT:
-   Buttons are reset here so the editable milk record
-   looks like the original display.
-*/
-
 button.record-wrapper,
 button.remarks-wrapper {
     border: none;
@@ -1785,9 +2233,6 @@ button.remarks-wrapper {
     color: #315d3b;
     font-size: 16px;
     font-weight: 800;
-    transition:
-        background .15s ease,
-        transform .15s ease;
 }
 
 .milk-value-display small {
@@ -1798,11 +2243,11 @@ button.remarks-wrapper {
 
 .admin-edit-record {
     cursor: pointer;
+    background: transparent;
 }
 
 .admin-edit-record:hover .milk-value-display {
     background: #e9f6ed;
-    transform: translateY(-1px);
 }
 
 .admin-edit-record:focus-visible {
@@ -1858,9 +2303,6 @@ button.remarks-wrapper {
     font-family: inherit;
     font-size: 13px;
     line-height: 1.45;
-    transition:
-        border-color .15s ease,
-        box-shadow .15s ease;
 }
 
 .remarks-input:focus {
@@ -1920,7 +2362,7 @@ button.remarks-wrapper {
 
 
 /* ==========================================================
-   ACTION COLUMN
+   ACTION
 ========================================================== */
 
 .action-cell {
@@ -1941,36 +2383,16 @@ button.remarks-wrapper {
     font-size: 12px;
     font-weight: 750;
     cursor: pointer;
-    transition:
-        transform .15s ease,
-        background .15s ease,
-        box-shadow .15s ease;
-}
-
-.row-action-btn:disabled {
-    opacity: .65;
-    cursor: wait;
 }
 
 .save-action {
     background: #2e7d32;
     color: #ffffff;
-    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.16);
-}
-
-.save-action:hover {
-    background: #256b2a;
-    transform: translateY(-1px);
 }
 
 .admin-action {
     background: #eaf7ef;
     color: #28723a;
-}
-
-.admin-action:hover {
-    background: #dcefe1;
-    transform: translateY(-1px);
 }
 
 .read-only-label {
@@ -2039,11 +2461,6 @@ button.remarks-wrapper {
 .submit-information span {
     display: block;
 }
-
-
-/* ==========================================================
-   HIDDEN FORMS
-========================================================== */
 
 .individual-milk-form {
     display: none;
@@ -2232,7 +2649,7 @@ button.remarks-wrapper {
 
 
 /* ==========================================================
-   TABLET
+   RESPONSIVE
 ========================================================== */
 
 @media (max-width: 900px) {
@@ -2260,10 +2677,6 @@ button.remarks-wrapper {
 
 }
 
-
-/* ==========================================================
-   MOBILE
-========================================================== */
 
 @media (max-width: 650px) {
 
@@ -2329,10 +2742,6 @@ button.remarks-wrapper {
         font-size: 10px;
     }
 
-    .admin-session-note {
-        font-size: 10px;
-    }
-
     .session-time {
         display: none;
     }
@@ -2356,10 +2765,6 @@ button.remarks-wrapper {
     .collection-status {
         padding: 6px 8px;
         font-size: 9px;
-    }
-
-    .milk-table-wrapper {
-        overflow-x: auto;
     }
 
     .milk-table {
@@ -2408,11 +2813,6 @@ button.remarks-wrapper {
         font-size: 14px;
     }
 
-    .input-unit {
-        right: 9px;
-        font-size: 11px;
-    }
-
     .milk-value-display {
         min-width: 78px;
         padding: 10px 11px;
@@ -2432,10 +2832,6 @@ button.remarks-wrapper {
         font-size: 10px;
     }
 
-    .admin-edit-hint {
-        font-size: 10px;
-    }
-
     .row-action-btn {
         min-width: 78px;
         min-height: 38px;
@@ -2448,36 +2844,14 @@ button.remarks-wrapper {
         border-radius: 13px;
     }
 
-    .submit-information {
-        font-size: 10px;
-    }
-
 }
 
-
-/* ==========================================================
-   SMALL PHONES
-========================================================== */
 
 @media (max-width: 420px) {
 
     .milk-page {
         padding-left: 7px;
         padding-right: 7px;
-    }
-
-    .milk-header {
-        gap: 7px;
-    }
-
-    .milk-header-icon {
-        width: 39px;
-        height: 39px;
-        font-size: 18px;
-    }
-
-    .milk-eyebrow {
-        font-size: 8px;
     }
 
     .milk-header h1 {
@@ -2487,11 +2861,6 @@ button.remarks-wrapper {
     .milk-header p {
         max-width: 170px;
         font-size: 10px;
-    }
-
-    .milk-session-badge {
-        padding: 6px 7px;
-        font-size: 9px;
     }
 
     .milk-table {
@@ -2506,55 +2875,8 @@ button.remarks-wrapper {
         padding: 13px 10px;
     }
 
-    .animal-name {
-        font-size: 13px;
-    }
-
-    .animal-label {
-        font-size: 9px;
-    }
-
-    .animal-avatar {
-        width: 35px;
-        height: 35px;
-        font-size: 16px;
-    }
-
-    .code-badge {
-        font-size: 11px;
-    }
-
-    .milk-entry-wrapper {
-        width: 105px;
-    }
-
-    .milk-input {
-        font-size: 13px;
-    }
-
-    .milk-value-display {
-        font-size: 13px;
-    }
-
-    .remarks-text {
-        font-size: 11px;
-    }
-
-    .remarks-input {
-        font-size: 11px;
-    }
-
-    .row-action-btn {
-        min-width: 72px;
-        font-size: 10px;
-    }
-
 }
 
-
-/* ==========================================================
-   VERY SMALL PHONES
-========================================================== */
 
 @media (max-width: 360px) {
 
@@ -2562,30 +2884,8 @@ button.remarks-wrapper {
         min-width: 700px;
     }
 
-    .milk-table th,
-    .milk-table td {
-        padding-left: 9px;
-        padding-right: 9px;
-    }
-
-    .animal-name {
-        font-size: 13px;
-    }
-
-    .animal-label {
-        font-size: 9px;
-    }
-
-    .remarks-text {
-        font-size: 11px;
-    }
-
 }
 
-
-/* ==========================================================
-   TOUCH DEVICES
-========================================================== */
 
 @media (hover: none) {
 
@@ -2595,10 +2895,6 @@ button.remarks-wrapper {
 
 }
 
-
-/* ==========================================================
-   MODAL MOBILE
-========================================================== */
 
 @media (max-width: 520px) {
 
@@ -2629,9 +2925,14 @@ button.remarks-wrapper {
 
 }
 
-</style><!-- ==========================================================
+</style>
+
+
+<!-- ==========================================================
      JAVASCRIPT
-========================================================== --><script>
+========================================================== -->
+
+<script>
 
 (function () {
 
@@ -2643,28 +2944,51 @@ button.remarks-wrapper {
     ====================================================== */
 
     const modal =
-        document.getElementById("milkEditModal");
+        document.getElementById(
+            "milkEditModal"
+        );
+
 
     const form =
-        document.getElementById("milkEditForm");
+        document.getElementById(
+            "milkEditForm"
+        );
+
 
     const litersInput =
-        document.getElementById("editLiters");
+        document.getElementById(
+            "editLiters"
+        );
+
 
     const remarksInput =
-        document.getElementById("editRemarks");
+        document.getElementById(
+            "editRemarks"
+        );
+
 
     const closeButton =
-        document.getElementById("closeMilkEditButton");
+        document.getElementById(
+            "closeMilkEditButton"
+        );
+
 
     const cancelButton =
-        document.getElementById("cancelMilkEditButton");
+        document.getElementById(
+            "cancelMilkEditButton"
+        );
+
 
     const backdrop =
-        document.querySelector("[data-close-edit-modal]");
+        document.querySelector(
+            "[data-close-edit-modal]"
+        );
+
 
     const saveButton =
-        document.getElementById("saveMilkEditButton");
+        document.getElementById(
+            "saveMilkEditButton"
+        );
 
 
     if (
@@ -2673,7 +2997,9 @@ button.remarks-wrapper {
         !litersInput ||
         !remarksInput
     ) {
+
         return;
+
     }
 
 
@@ -2681,7 +3007,11 @@ button.remarks-wrapper {
        OPEN EDIT MODAL
     ====================================================== */
 
-    function openEditModal(recordId, liters, remarks) {
+    function openEditModal(
+        recordId,
+        liters,
+        remarks
+    ) {
 
         if (!recordId) {
 
@@ -2690,38 +3020,31 @@ button.remarks-wrapper {
             );
 
             return;
+
         }
 
 
-        /*
-         * This exactly matches the controller:
-         *
-         * exports.updateMilkRecord = async (req, res) => {
-         *
-         *     const { id } = req.params;
-         *
-         *     await milkService.editMilkRecord({
-         *         recordId: id,
-         *         ...
-         *     });
-         *
-         * }
-         */
-
         form.action =
             "/milk/" +
-            encodeURIComponent(recordId);
+            encodeURIComponent(
+                recordId
+            );
 
 
         litersInput.value =
-            Number(liters || 0);
+            Number(
+                liters || 0
+            );
 
 
         remarksInput.value =
             remarks || "";
 
 
-        modal.classList.add("open");
+        modal.classList.add(
+            "open"
+        );
+
 
         modal.setAttribute(
             "aria-hidden",
@@ -2734,13 +3057,17 @@ button.remarks-wrapper {
         );
 
 
-        setTimeout(function () {
+        setTimeout(
+            function () {
 
-            litersInput.focus();
+                litersInput.focus();
 
-            litersInput.select();
+                litersInput.select();
 
-        }, 50);
+            },
+            50
+        );
+
     }
 
 
@@ -2750,7 +3077,10 @@ button.remarks-wrapper {
 
     function closeEditModal() {
 
-        modal.classList.remove("open");
+        modal.classList.remove(
+            "open"
+        );
+
 
         modal.setAttribute(
             "aria-hidden",
@@ -2772,11 +3102,14 @@ button.remarks-wrapper {
 
         if (saveButton) {
 
-            saveButton.disabled = false;
+            saveButton.disabled =
+                false;
 
             saveButton.textContent =
                 "✓ Save Changes";
+
         }
+
     }
 
 
@@ -2790,60 +3123,47 @@ button.remarks-wrapper {
         );
 
 
-    editButtons.forEach(function (button) {
+    editButtons.forEach(
+        function (button) {
 
-        button.addEventListener(
-            "click",
-            function () {
+            button.addEventListener(
+                "click",
+                function () {
 
-                const recordId =
-                    button.dataset.recordId;
+                    openEditModal(
+                        button.dataset.recordId,
+                        button.dataset.liters,
+                        button.dataset.remarks || ""
+                    );
 
-
-                const liters =
-                    button.dataset.liters;
-
-
-                const remarks =
-                    button.dataset.remarks || "";
-
-
-                openEditModal(
-                    recordId,
-                    liters,
-                    remarks
-                );
-
-            }
-        );
-
-
-        /*
-         * Keyboard accessibility.
-         */
-
-        button.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key === "Enter" ||
-                    event.key === " "
-                ) {
-
-                    event.preventDefault();
-
-                    button.click();
                 }
+            );
 
-            }
-        );
 
-    });
+            button.addEventListener(
+                "keydown",
+                function (event) {
+
+                    if (
+                        event.key === "Enter" ||
+                        event.key === " "
+                    ) {
+
+                        event.preventDefault();
+
+                        button.click();
+
+                    }
+
+                }
+            );
+
+        }
+    );
 
 
     /* ======================================================
-       CLOSE BUTTONS
+       CLOSE
     ====================================================== */
 
     if (closeButton) {
@@ -2877,7 +3197,7 @@ button.remarks-wrapper {
 
 
     /* ======================================================
-       ESC KEY
+       ESCAPE
     ====================================================== */
 
     document.addEventListener(
@@ -2886,7 +3206,9 @@ button.remarks-wrapper {
 
             if (
                 event.key === "Escape" &&
-                modal.classList.contains("open")
+                modal.classList.contains(
+                    "open"
+                )
             ) {
 
                 closeEditModal();
@@ -2903,18 +3225,12 @@ button.remarks-wrapper {
 
     form.addEventListener(
         "submit",
-        function (event) {
-
-            /*
-             * Do not prevent the submission.
-             *
-             * We only disable the button so that the
-             * administrator cannot submit twice.
-             */
+        function () {
 
             if (saveButton) {
 
-                saveButton.disabled = true;
+                saveButton.disabled =
+                    true;
 
                 saveButton.textContent =
                     "Saving...";
@@ -2926,7 +3242,8 @@ button.remarks-wrapper {
 
 
     /* ======================================================
-       PREVENT DOUBLE SUBMISSION FOR NEW RECORDS
+       PREVENT DOUBLE SUBMISSION
+       FOR NEW RECORDS
     ====================================================== */
 
     document.addEventListener(
@@ -2944,7 +3261,9 @@ button.remarks-wrapper {
                     "individual-milk-form"
                 )
             ) {
+
                 return;
+
             }
 
 
@@ -2960,32 +3279,39 @@ button.remarks-wrapper {
                 );
 
 
-            buttons.forEach(function (button) {
+            buttons.forEach(
+                function (button) {
 
-                button.disabled = true;
+                    button.disabled =
+                        true;
 
-                button.classList.add(
-                    "is-submitting"
-                );
-
-
-                const span =
-                    button.querySelector("span");
+                    button.classList.add(
+                        "is-submitting"
+                    );
 
 
-                if (span) {
+                    const span =
+                        button.querySelector(
+                            "span"
+                        );
 
-                    span.textContent =
-                        "Saving...";
 
-                } else {
+                    if (span) {
 
-                    button.textContent =
-                        "Saving...";
+                        span.textContent =
+                            "Saving...";
+
+                    }
+
+                    else {
+
+                        button.textContent =
+                            "Saving...";
+
+                    }
 
                 }
-
-            });
+            );
 
         }
     );
