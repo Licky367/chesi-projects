@@ -23,10 +23,13 @@ form{
   gap:12px;
 }
 
-input, select{
+input,
+select{
   padding:10px;
   border-radius:8px;
   border:1px solid #ccc;
+  box-sizing:border-box;
+  width:100%;
 }
 
 button{
@@ -36,6 +39,10 @@ button{
   border:none;
   border-radius:8px;
   cursor:pointer;
+}
+
+button:hover{
+  opacity:0.9;
 }
 
 .message{
@@ -53,38 +60,251 @@ button{
   background:#e5ffe5;
   color:#0a7a0a;
 }
+
+
+/* ==========================================================
+   ASSIGNED FARM
+========================================================== */
+
+.assigned-farm-section{
+  display:none;
+  flex-direction:column;
+  gap:8px;
+  padding:12px;
+  border:1px solid #ddd;
+  border-radius:8px;
+  background:#fafafa;
+}
+
+.assigned-farm-section.visible{
+  display:flex;
+}
+
+.assigned-farm-section label{
+  font-weight:600;
+  color:#333;
+}
+
+.assigned-farm-section small{
+  color:#666;
+}
 </style>
 
+
 <div class="container">
+
   <div class="card">
+
     <h2>Create User Invitation</h2>
 
+
     <% if (error) { %>
-      <div class="message error"><%= error %></div>
+
+      <div class="message error">
+        <%= error %>
+      </div>
+
     <% } %>
+
 
     <% if (success) { %>
-      <div class="message success"><%= success %></div>
+
+      <div class="message success">
+        <%= success %>
+      </div>
+
     <% } %>
 
-    <form method="POST" action="/create-invite">
-      
-      <input 
-        type="email" 
-        name="email" 
-        placeholder="Enter email" 
-        required 
+
+    <form
+      method="POST"
+      action="/create-invite"
+    >
+
+
+      <!-- ==================================================
+           EMAIL
+      =================================================== -->
+
+      <input
+        type="email"
+        name="email"
+        placeholder="Enter email"
+        required
       />
 
-      <select name="role" required>
-        <option value="">Select Role</option>
-        <option value="dairyWorker">Dairy Worker</option>
-        <option value="poultryWorker">Poultry Worker</option>
-        <option value="admin">Admin</option>
+
+      <!-- ==================================================
+           ROLE
+      =================================================== -->
+
+      <select
+        name="role"
+        id="roleSelect"
+        required
+      >
+
+        <option value="">
+          Select Role
+        </option>
+
+        <option value="dairyWorker">
+          Dairy Worker
+        </option>
+
+        <option value="poultryWorker">
+          Poultry Worker
+        </option>
+
+        <option value="admin">
+          Admin
+        </option>
+
       </select>
 
-      <button type="submit">Create Invitation</button>
+
+      <!-- ==================================================
+           ASSIGNED FARM
+           
+           Appears ONLY for dairyWorker.
+           
+           This is the worker's first assigned farm.
+      =================================================== -->
+
+      <div
+        class="assigned-farm-section"
+        id="assignedFarmSection"
+      >
+
+        <label for="assignedFarm">
+          Assign Dairy Farm
+        </label>
+
+        <small>
+          Select the first Dairy Farm to assign to this worker.
+        </small>
+
+
+        <select
+          name="assignedFarm"
+          id="assignedFarm"
+        >
+
+          <option value="">
+            Select Dairy Farm
+          </option>
+
+
+          <% if (typeof dairies !== "undefined" && dairies.length) { %>
+
+            <% dairies
+              .filter(dairy =>
+                dairy.code !== null &&
+                dairy.code !== undefined &&
+                Number(dairy.code) < 0
+              )
+              .forEach(dairy => {
+            %>
+
+              <option value="<%= dairy._id %>">
+
+                <%= dairy.name %>
+
+                <% if (dairy.code !== null && dairy.code !== undefined) { %>
+                  — <%= dairy.code %>
+                <% } %>
+
+              </option>
+
+            <% }) %>
+
+          <% } %>
+
+
+        </select>
+
+      </div>
+
+
+      <!-- ==================================================
+           SUBMIT
+      =================================================== -->
+
+      <button
+        type="submit"
+      >
+        Create Invitation
+      </button>
+
 
     </form>
+
   </div>
+
 </div>
+
+
+<script>
+
+document.addEventListener(
+  "DOMContentLoaded",
+  function() {
+
+    const roleSelect =
+      document.getElementById(
+        "roleSelect"
+      );
+
+    const assignedFarmSection =
+      document.getElementById(
+        "assignedFarmSection"
+      );
+
+    const assignedFarm =
+      document.getElementById(
+        "assignedFarm"
+      );
+
+
+    function updateFarmField() {
+
+      const isDairyWorker =
+        roleSelect.value === "dairyWorker";
+
+
+      if (isDairyWorker) {
+
+        assignedFarmSection.classList.add(
+          "visible"
+        );
+
+        assignedFarm.required = true;
+
+      } else {
+
+        assignedFarmSection.classList.remove(
+          "visible"
+        );
+
+        assignedFarm.required = false;
+
+        assignedFarm.value = "";
+
+      }
+
+    }
+
+
+    roleSelect.addEventListener(
+      "change",
+      updateFarmField
+    );
+
+
+    updateFarmField();
+
+  }
+
+);
+
+</script>
