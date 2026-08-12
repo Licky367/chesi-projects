@@ -19,11 +19,23 @@ const {
 
 // ==========================================================
 // GET COMPLETE DAIRY PAGE
+//
+// Loads:
+//
+// - Current Dairy Farm / Asset
+// - Farm assets
+// - Updates
+// - Weekly milk feeds
+// - Comment count
+// - Assigned farms for the logged-in dairy worker
+//
 // ==========================================================
 
 exports.getDairyPage =
-async (id) => {
-
+async (
+    id,
+    userId
+) => {
 
     // ======================================================
     // GET CURRENT DAIRY / ASSET
@@ -45,27 +57,28 @@ async (id) => {
     // ======================================================
     // GET ASSETS BELONGING TO THIS DAIRY FARM
     //
-    // A Dairy Farm has:
+    // Dairy Farm:
     //
     //     code < 0
     //
-    // Its child assets have:
+    // Child assets:
     //
     //     assetCode === dairy.code
     //
     // This includes:
     //
-    //     - Animals
-    //     - Structures
-    //     - Machines
-    //     - Tools
-    //     - Other farm property
+    // - Animals
+    // - Structures
+    // - Machines
+    // - Tools
+    // - Other farm property
     //
     // It does NOT include:
     //
-    //     - Other Dairy Farms
-    //     - Assets belonging to another farm
-    //     - Standalone assets
+    // - Other Dairy Farms
+    // - Assets belonging to other farms
+    // - Standalone assets
+    //
     // ======================================================
 
     let assetDairies = [];
@@ -88,7 +101,6 @@ async (id) => {
                     Number(dairy.code)
 
             })
-
             .sort({
 
                 code: 1,
@@ -96,6 +108,123 @@ async (id) => {
                 name: 1
 
             });
+
+    }
+
+
+    // ======================================================
+    // GET ASSIGNED FARMS
+    //
+    // Only dairyWorkers need this.
+    //
+    // The IDs come from:
+    //
+    //     ProjectUser.assignedFarm
+    //
+    // We then retrieve the actual Dairy documents.
+    //
+    // ======================================================
+
+    let assignedFarms = [];
+
+
+    if (userId) {
+
+        const user =
+            await ProjectUser
+                .findById(userId)
+                .select(
+                    "role assignedFarm"
+                );
+
+
+        if (
+
+            user &&
+
+            user.role === "dairyWorker" &&
+
+            Array.isArray(
+                user.assignedFarm
+            ) &&
+
+            user.assignedFarm.length > 0
+
+        ) {
+
+            assignedFarms =
+                await Dairy.find({
+
+                    _id: {
+                        $in:
+                            user.assignedFarm
+                    }
+
+                });
+
+        }
+
+    }
+
+
+    // ======================================================
+    // PRESERVE ASSIGNED FARM ORDER
+    //
+    // MongoDB $in does not guarantee that the returned
+    // documents will have the same order as assignedFarm.
+    //
+    // The invitation/assignment order matters because:
+    //
+    //     assignedFarm[0]
+    //
+    // is the first assigned farm.
+    //
+    // ======================================================
+
+    if (
+        assignedFarms.length > 1 &&
+        userId
+    ) {
+
+        const user =
+            await ProjectUser
+                .findById(userId)
+                .select(
+                    "assignedFarm"
+                );
+
+
+        if (
+            user &&
+            Array.isArray(
+                user.assignedFarm
+            )
+        ) {
+
+            const farmMap =
+                new Map(
+                    assignedFarms.map(
+                        farm => [
+                            farm._id.toString(),
+                            farm
+                        ]
+                    )
+                );
+
+
+            assignedFarms =
+                user.assignedFarm
+                    .map(
+                        farmId =>
+                            farmMap.get(
+                                farmId.toString()
+                            )
+                    )
+                    .filter(
+                        Boolean
+                    );
+
+        }
 
     }
 
@@ -110,7 +239,6 @@ async (id) => {
             dairy: id
 
         })
-
         .sort({
 
             createdAt: -1
@@ -133,7 +261,9 @@ async (id) => {
     // ======================================================
 
     const weeklyFeeds =
-        await buildWeeklyMilkFeeds(id);
+        await buildWeeklyMilkFeeds(
+            id
+        );
 
 
     // ======================================================
@@ -147,8 +277,6 @@ async (id) => {
 
     // ======================================================
     // SORT COMPLETE FEED
-    //
-    // Newest items first.
     // ======================================================
 
     feed.sort(
@@ -200,7 +328,9 @@ async (id) => {
 
         commentCount,
 
-        assetDairies
+        assetDairies,
+
+        assignedFarms
 
     };
 
@@ -210,20 +340,12 @@ async (id) => {
 // ==========================================================
 // GET ASSIGNED FARM FOR USER
 //
-// Used by the farm-switching functionality.
+// Used when a dairyWorker switches farms.
 //
-// The method verifies:
+// Security:
 //
-// 1. User exists.
-// 2. User is a dairyWorker.
-// 3. Farm ID exists in assignedFarm.
-// 4. Farm actually exists.
-//
-// Returns:
-//     Dairy document
-//
-// Or:
-//     null
+// The requested farm MUST exist inside the logged-in
+// user's assignedFarm array.
 //
 // ==========================================================
 
@@ -232,7 +354,6 @@ async (
     userId,
     farmId
 ) => {
-
 
     // ======================================================
     // FIND USER
@@ -267,7 +388,7 @@ async (
 
 
     // ======================================================
-    // GET ASSIGNED FARM IDS
+    // ASSIGNED FARM IDS
     // ======================================================
 
     const assignedFarmIds =
@@ -279,8 +400,7 @@ async (
 
 
     // ======================================================
-    // CHECK WHETHER REQUESTED FARM
-    // BELONGS TO THE USER
+    // CHECK ASSIGNMENT
     // ======================================================
 
     const isAssigned =
@@ -302,7 +422,7 @@ async (
 
 
     // ======================================================
-    // GET FARM
+    // FIND FARM
     // ======================================================
 
     const farm =
