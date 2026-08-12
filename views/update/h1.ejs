@@ -5,10 +5,18 @@ FILE:
 views/update/h1.ejs
 
 PURPOSE:
-Editorial-style introductory hero section for a Dairy Farm.
+Editorial-style introductory section for a Dairy Farm.
 
-The background consists of one large diagonal green
-typographic treatment.
+BACKGROUND:
+One centered diagonal typographic treatment:
+
+    CFP <%= dairy.name %>
+
+The entire phrase remains visible on:
+    • Phones
+    • Tablets
+    • Desktop
+    • Large screens
 
 DATA REQUIRED:
 dairy
@@ -23,7 +31,7 @@ dairy
 
 
     <!-- =====================================================
-         SINGLE DIAGONAL TYPOGRAPHIC BACKGROUND
+         DIAGONAL TYPOGRAPHIC BACKGROUND
     ====================================================== -->
 
     <div
@@ -31,13 +39,13 @@ dairy
         aria-hidden="true"
     >
 
-        <div class="dairy-h1-diagonal-text">
+        <div class="dairy-h1-diagonal">
 
-            <span class="dairy-h1-cfp">
+            <span class="dairy-h1-diagonal-cfp">
                 CFP
             </span>
 
-            <span class="dairy-h1-dairy-name">
+            <span class="dairy-h1-diagonal-name">
                 <%= dairy.name || "DAIRY FARM" %>
             </span>
 
@@ -54,7 +62,7 @@ dairy
 
 
         <!-- =================================================
-             SMALL LABEL
+             LABEL
         ================================================== -->
 
         <div class="dairy-h1-label">
@@ -71,7 +79,7 @@ dairy
 
 
         <!-- =================================================
-             FARM NAME
+             TITLE
         ================================================== -->
 
         <h1 class="dairy-h1-title">
@@ -96,7 +104,9 @@ dairy
         ) { %>
 
             <div class="dairy-h1-code">
+
                 FARM #<%= dairy.code %>
+
             </div>
 
         <% } %>
@@ -109,22 +119,32 @@ dairy
         <div class="dairy-h1-message">
 
             <p>
+
                 Welcome to
+
                 <strong>
                     <%= dairy.name || "this dairy farm" %>
                 </strong>.
+
                 We're glad to have you here.
+
             </p>
 
+
             <p>
+
                 Support the activities here by updating
                 us about the welfare of all assets within
                 the dairy farm.
+
             </p>
 
+
             <p>
+
                 In case of any inconveniences, keep us
                 updated on this site.
+
             </p>
 
         </div>
@@ -237,12 +257,9 @@ dairy
 
 
 /* =========================================================
-   MAIN HERO
+   MAIN SECTION
 
-   No card.
-   No image.
-   No rounded container.
-   No outer shadow.
+   This is NOT a card.
 ========================================================= */
 
 .dairy-h1 {
@@ -263,7 +280,7 @@ dairy
 
 
 /* =========================================================
-   TYPOGRAPHIC BACKGROUND
+   TYPOGRAPHIC BACKGROUND AREA
 ========================================================= */
 
 .dairy-h1-background {
@@ -274,6 +291,12 @@ dairy
 
     z-index: 0;
 
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
     overflow: hidden;
 
     pointer-events: none;
@@ -282,48 +305,58 @@ dairy
 
 
 /* =========================================================
-   SINGLE DIAGONAL TEXT
+   SINGLE DIAGONAL TYPOGRAPHY
 
-   The entire phrase runs from bottom-left toward
-   top-right.
+   IMPORTANT:
 
-   It is intentionally oversized so that the
-   typography becomes part of the visual design.
+   The element itself is centered first.
+
+   It is then rotated around its own CENTER.
+
+   This prevents the text from disappearing outside
+   the section on mobile screens.
 ========================================================= */
 
-.dairy-h1-diagonal-text {
+.dairy-h1-diagonal {
 
     position: absolute;
 
-    left: -9%;
+    left: 50%;
 
-    bottom: 2%;
+    top: 50%;
+
+    width: max-content;
+
+    max-width: 90%;
 
     display: flex;
 
     align-items: baseline;
 
-    gap: 22px;
+    justify-content: center;
+
+    gap: clamp(10px, 1.8vw, 26px);
 
     white-space: nowrap;
 
     transform:
+        translate(-50%, -50%)
         rotate(-18deg);
 
-    transform-origin:
-        left bottom;
+    transform-origin: center center;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-weight: 900;
+    font-weight: 700;
 
-    line-height: .85;
+    line-height: .9;
 
-    color:
-        rgba(46, 92, 57, .13);
+    text-transform: uppercase;
+
+    opacity: 1;
 
 }
 
@@ -331,21 +364,27 @@ dairy
 /* =========================================================
    CFP
 
-   Slightly smaller than the farm name to create
-   a refined typographic hierarchy.
+   Green typography.
 ========================================================= */
 
-.dairy-h1-cfp {
+.dairy-h1-diagonal-cfp {
 
     font-size:
         clamp(
-            72px,
-            11vw,
-            155px
+            55px,
+            8vw,
+            130px
         );
 
     letter-spacing:
-        -5px;
+        clamp(
+            -3px,
+            -.35vw,
+            -6px
+        );
+
+    color:
+        rgba(45, 91, 57, .12);
 
 }
 
@@ -353,58 +392,41 @@ dairy
 /* =========================================================
    FARM NAME
 
-   This is the dominant part of the diagonal.
+   Slightly larger than CFP.
 ========================================================= */
 
-.dairy-h1-dairy-name {
+.dairy-h1-diagonal-name {
+
+    max-width: 70vw;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
 
     font-size:
         clamp(
-            82px,
-            13vw,
-            185px
+            62px,
+            10vw,
+            165px
         );
 
     letter-spacing:
-        -6px;
+        clamp(
+            -3px,
+            -.45vw,
+            -7px
+        );
 
-    text-transform:
-        uppercase;
-
-}
-
-
-/* =========================================================
-   SUBTLE TYPOGRAPHIC DEPTH
-
-   Keeps the text visible without competing heavily
-   with the actual introduction.
-========================================================= */
-
-.dairy-h1-diagonal-text::after {
-
-    content: "";
-
-    position: absolute;
-
-    left: 4%;
-
-    bottom: -10px;
-
-    width: 55%;
-
-    height: 2px;
-
-    background:
-        rgba(46, 92, 57, .10);
+    color:
+        rgba(45, 91, 57, .15);
 
 }
 
 
 /* =========================================================
-   MAIN CONTENT
+   CONTENT
 
-   Content remains above the diagonal typography.
+   Content sits above the typography.
 ========================================================= */
 
 .dairy-h1-content {
@@ -453,11 +475,16 @@ dairy
 
     margin-bottom: 16px;
 
-    color: #456b4d;
+    color: #426b4d;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
     font-size: 10px;
 
-    font-weight: 900;
+    font-weight: 800;
 
     letter-spacing: 2.8px;
 
@@ -473,13 +500,15 @@ dairy
     height: 1px;
 
     background:
-        rgba(69, 107, 77, .70);
+        rgba(66, 107, 77, .70);
 
 }
 
 
 /* =========================================================
-   TITLE
+   MAIN TITLE
+
+   Georgia gives the heading an editorial character.
 ========================================================= */
 
 .dairy-h1-title {
@@ -504,9 +533,9 @@ dairy
 
     letter-spacing: -1.5px;
 
-    font-weight: 800;
+    font-weight: 700;
 
-    color: #243b2b;
+    color: #263d2d;
 
 }
 
@@ -521,7 +550,7 @@ dairy
 
     margin-top: 6px;
 
-    color: #3e6949;
+    color: #3d6849;
 
 }
 
@@ -534,11 +563,16 @@ dairy
 
     margin-top: 13px;
 
-    color: #4f7658;
+    color: #55765c;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
     font-size: 9px;
 
-    font-weight: 900;
+    font-weight: 800;
 
     letter-spacing: 1.7px;
 
@@ -565,7 +599,12 @@ dairy
     margin: 0 0 10px;
 
     color:
-        rgba(39, 59, 45, .84);
+        rgba(39, 58, 45, .86);
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
 
     font-size:
         clamp(
@@ -590,9 +629,9 @@ dairy
 
 .dairy-h1-message strong {
 
-    color: #3d6948;
+    color: #3f6848;
 
-    font-weight: 800;
+    font-weight: 700;
 
 }
 
@@ -618,7 +657,7 @@ dairy
 
 
 /* =========================================================
-   VALUE ITEM
+   VALUE
 ========================================================= */
 
 .dairy-h1-value {
@@ -638,7 +677,7 @@ dairy
 
 
 /* =========================================================
-   SEPARATOR
+   VALUE SEPARATOR
 ========================================================= */
 
 .dairy-h1-value + .dairy-h1-value {
@@ -647,7 +686,7 @@ dairy
 
     border-left:
         1px solid
-        rgba(60, 100, 70, .22);
+        rgba(62, 101, 70, .22);
 
 }
 
@@ -674,9 +713,13 @@ dairy
 
     border:
         1px solid
-        rgba(60, 100, 70, .35);
+        rgba(62, 101, 70, .35);
 
     color: #477451;
+
+    font-family:
+        Georgia,
+        serif;
 
     font-size: 17px;
 
@@ -702,9 +745,14 @@ dairy
 
     color: #365d40;
 
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
     font-size: 11px;
 
-    font-weight: 900;
+    font-weight: 800;
 
 }
 
@@ -716,6 +764,11 @@ dairy
     color:
         rgba(53, 78, 59, .66);
 
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
     font-size: 9px;
 
     line-height: 1.35;
@@ -724,7 +777,7 @@ dairy
 
 
 /* =========================================================
-   LARGE SCREENS
+   LARGE DESKTOP
 ========================================================= */
 
 @media (min-width: 1400px) {
@@ -754,11 +807,9 @@ dairy
     }
 
 
-    .dairy-h1-diagonal-text {
+    .dairy-h1-diagonal {
 
-        left: -5%;
-
-        bottom: 4%;
+        gap: 28px;
 
     }
 
@@ -785,27 +836,25 @@ dairy
     }
 
 
-    .dairy-h1-diagonal-text {
+    .dairy-h1-diagonal {
 
-        left: -16%;
+        max-width: none;
 
-        bottom: 5%;
-
-        gap: 15px;
+        gap: 12px;
 
     }
 
 
-    .dairy-h1-cfp {
+    .dairy-h1-diagonal-cfp {
 
-        font-size: 80px;
+        font-size: 70px;
 
     }
 
 
-    .dairy-h1-dairy-name {
+    .dairy-h1-diagonal-name {
 
-        font-size: 100px;
+        font-size: 86px;
 
     }
 
@@ -827,48 +876,54 @@ dairy
     }
 
 
-    /* ================================================
-       DIAGONAL TYPOGRAPHY
+    /* =====================================================
+       MOBILE TYPOGRAPHY
 
-       Kept deliberately large so that the phrase
-       crosses the visible center of the phone.
-    ================================================= */
+       The entire phrase remains centered.
 
-    .dairy-h1-diagonal-text {
+       We reduce the scale instead of moving the
+       phrase outside the viewport.
+    ===================================================== */
 
-        left: -42%;
+    .dairy-h1-diagonal {
 
-        bottom: 8%;
+        width: max-content;
 
-        gap: 10px;
+        max-width: none;
+
+        gap: 8px;
 
         transform:
-            rotate(-18deg);
+            translate(-50%, -50%)
+            rotate(-18deg)
+            scale(.72);
 
     }
 
 
-    .dairy-h1-cfp {
+    .dairy-h1-diagonal-cfp {
 
-        font-size: 72px;
+        font-size: 88px;
 
         letter-spacing: -4px;
 
     }
 
 
-    .dairy-h1-dairy-name {
+    .dairy-h1-diagonal-name {
 
-        font-size: 82px;
+        max-width: none;
 
-        letter-spacing: -4px;
+        font-size: 104px;
+
+        letter-spacing: -5px;
 
     }
 
 
-    /* ================================================
+    /* =====================================================
        CONTENT
-    ================================================= */
+    ===================================================== */
 
     .dairy-h1-content {
 
@@ -884,9 +939,9 @@ dairy
     }
 
 
-    /* ================================================
+    /* =====================================================
        LABEL
-    ================================================= */
+    ===================================================== */
 
     .dairy-h1-label {
 
@@ -897,9 +952,9 @@ dairy
     }
 
 
-    /* ================================================
+    /* =====================================================
        TITLE
-    ================================================= */
+    ===================================================== */
 
     .dairy-h1-title {
 
@@ -915,9 +970,9 @@ dairy
     }
 
 
-    /* ================================================
+    /* =====================================================
        MESSAGE
-    ================================================= */
+    ===================================================== */
 
     .dairy-h1-message {
 
@@ -937,9 +992,9 @@ dairy
     }
 
 
-    /* ================================================
+    /* =====================================================
        VALUES
-    ================================================= */
+    ===================================================== */
 
     .dairy-h1-values {
 
@@ -968,7 +1023,7 @@ dairy
 
         border-top:
             1px solid
-            rgba(60, 100, 70, .18);
+            rgba(62, 101, 70, .18);
 
     }
 
@@ -1026,27 +1081,14 @@ dairy
     }
 
 
-    .dairy-h1-diagonal-text {
+    /* Keep the whole phrase visible */
 
-        left: -48%;
+    .dairy-h1-diagonal {
 
-        bottom: 9%;
-
-        gap: 7px;
-
-    }
-
-
-    .dairy-h1-cfp {
-
-        font-size: 62px;
-
-    }
-
-
-    .dairy-h1-dairy-name {
-
-        font-size: 70px;
+        transform:
+            translate(-50%, -50%)
+            rotate(-18deg)
+            scale(.58);
 
     }
 
