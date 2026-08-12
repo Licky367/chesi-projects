@@ -33,11 +33,9 @@ const currentUser =
         ? user
         : null;
 
-
 const adminUser =
     currentUser &&
     currentUser.role === "admin";
-
 
 const dairyWorker =
     currentUser &&
@@ -49,26 +47,25 @@ const dairyWorker =
 ========================================================== */
 
 const activeFarm =
-    typeof currentDairy !== "undefined" &&
-    currentDairy
+    typeof currentDairy !== "undefined" && currentDairy
         ? currentDairy
         : (
-            typeof currentFarm !== "undefined" &&
-            currentFarm
+            typeof currentFarm !== "undefined" && currentFarm
                 ? currentFarm
                 : null
         );
 
 
-/* ==========================================================
-   ACTIVE FARM NAME
-========================================================== */
-
 const activeFarmName =
-    activeFarm &&
-    activeFarm.name
+    activeFarm && activeFarm.name
         ? activeFarm.name
         : "Dairy Farm";
+
+
+const activeFarmId =
+    activeFarm && activeFarm._id
+        ? String(activeFarm._id)
+        : "";
 
 
 /* ==========================================================
@@ -79,9 +76,7 @@ let milkTables = [];
 
 
 /*
- * Preferred source.
- *
- * The backend should eventually provide:
+ * Expected structure:
  *
  * milkDairyTables = [
  *
@@ -92,7 +87,15 @@ let milkTables = [];
  *             code
  *         },
  *
- *         animals: [...]
+ *         animals: [
+ *             {
+ *                 _id,
+ *                 name,
+ *                 code,
+ *                 morning,
+ *                 evening
+ *             }
+ *         ]
  *     }
  *
  * ]
@@ -104,14 +107,13 @@ if (
     Array.isArray(milkDairyTables)
 ) {
 
-    milkTables =
-        milkDairyTables;
+    milkTables = milkDairyTables;
 
 }
 
 
 /* ==========================================================
-   FALLBACK FOR EXISTING / OLD DATA
+   FALLBACK DATA
 ========================================================== */
 
 else if (
@@ -130,9 +132,7 @@ else if (
         }
 
 
-        if (
-            animal.isMilking !== true
-        ) {
+        if (animal.isMilking !== true) {
             return;
         }
 
@@ -145,43 +145,15 @@ else if (
 
 
         const farmId =
-            farm &&
-            farm._id
+            farm && farm._id
                 ? String(farm._id)
-                : null;
+                : "unassigned";
 
 
-        const farmCode =
-            farm &&
-            farm.code !== undefined &&
-            farm.code !== null
-                ? String(farm.code)
-                : (
-                    animal.assetCode !== undefined &&
-                    animal.assetCode !== null
-                        ? String(animal.assetCode)
-                        : "unassigned"
-                );
-
-
-        /*
-         * Prefer farm ID when available.
-         *
-         * This prevents two farms with different
-         * internal IDs from accidentally being
-         * grouped together.
-         */
-
-        const groupKey =
-            farmId
-                ? "farm_" + farmId
-                : "code_" + farmCode;
-
-
-        if (!grouped.has(groupKey)) {
+        if (!grouped.has(farmId)) {
 
             grouped.set(
-                groupKey,
+                farmId,
                 {
                     farm: farm,
                     animals: []
@@ -192,7 +164,7 @@ else if (
 
 
         grouped
-            .get(groupKey)
+            .get(farmId)
             .animals
             .push(animal);
 
@@ -227,76 +199,22 @@ if (dairyWorker) {
     milkTables =
         milkTables.filter(function (table) {
 
-            if (
-                !table ||
-                !table.farm ||
-                !activeFarm
-            ) {
-
+            if (!table || !table.farm) {
                 return false;
-
             }
 
 
             const tableFarmId =
                 table.farm._id
                     ? String(table.farm._id)
-                    : null;
+                    : "";
 
 
-            const activeFarmId =
-                activeFarm._id
-                    ? String(activeFarm._id)
-                    : null;
-
-
-            /*
-             * First attempt:
-             * compare MongoDB IDs.
-             */
-
-            if (
-                tableFarmId &&
+            return (
                 activeFarmId &&
+                tableFarmId &&
                 tableFarmId === activeFarmId
-            ) {
-
-                return true;
-
-            }
-
-
-            /*
-             * Fallback:
-             * compare farm codes.
-             */
-
-            const tableFarmCode =
-                table.farm.code !== undefined &&
-                table.farm.code !== null
-                    ? String(table.farm.code)
-                    : null;
-
-
-            const activeFarmCode =
-                activeFarm.code !== undefined &&
-                activeFarm.code !== null
-                    ? String(activeFarm.code)
-                    : null;
-
-
-            if (
-                tableFarmCode &&
-                activeFarmCode &&
-                tableFarmCode === activeFarmCode
-            ) {
-
-                return true;
-
-            }
-
-
-            return false;
+            );
 
         });
 
@@ -353,7 +271,7 @@ const entrySession =
 
 
 /* ==========================================================
-   TOTAL ANIMAL COUNT
+   TOTAL ANIMALS
 ========================================================== */
 
 let totalAnimals = 0;
@@ -361,9 +279,7 @@ let totalAnimals = 0;
 
 milkTables.forEach(function (table) {
 
-    if (
-        Array.isArray(table.animals)
-    ) {
+    if (Array.isArray(table.animals)) {
 
         totalAnimals +=
             table.animals.length;
@@ -493,892 +409,856 @@ else {
 <div class="milk-page">
 
 
-<!-- ==========================================================
-     HEADER
-========================================================== -->
-
-<header class="milk-header">
-
-    <div class="milk-header-content">
-
-        <div class="milk-header-icon">
-            🥛
-        </div>
-
-
-        <div class="milk-header-text">
-
-            <% if (adminUser) { %>
-
-                <div class="milk-eyebrow">
-                    ALL DAIRY FARMS
-                </div>
-
-            <% } else { %>
-
-                <div class="milk-eyebrow">
-                    <%= activeFarmName %>
-                </div>
-
-            <% } %>
-
-
-            <h1>
-                Milk Collection
-            </h1>
-
-        </div>
-
-    </div>
-
-
-    <div class="milk-session-badge <%= sessionBadgeClass %>">
-
-        <span class="session-dot"></span>
-
-        <span>
-            <%= sessionBadgeText %>
-        </span>
-
-    </div>
-
-</header>
-
-
-<!-- ==========================================================
-     ADMIN FARM SUMMARY
-========================================================== -->
-
-<% if (adminUser && milkTables.length > 0) { %>
-
-    <div class="admin-farm-summary">
-
-        <div class="admin-farm-summary-icon">
-            🏡
-        </div>
-
-        <div class="admin-farm-summary-content">
-
-            <strong>
-                Dairy farm collections
-            </strong>
-
-            <span>
-                <%= milkTables.length %>
-                <%= milkTables.length === 1
-                    ? "farm"
-                    : "farms"
-                %>
-                ·
-                <%= totalAnimals %>
-                <%= totalAnimals === 1
-                    ? "milking animal"
-                    : "milking animals"
-                %>
-            </span>
-
-        </div>
-
-    </div>
-
-<% } %>
-
-
-<!-- ==========================================================
-     SESSION STATUS
-========================================================== -->
-
-<div class="milk-session-card <%= sessionClass %>">
-
-    <div class="session-card-icon">
-        <%= sessionIcon %>
-    </div>
-
-
-    <div class="session-card-content">
-
-        <div class="session-card-title">
-            <%= sessionTitle %>
-        </div>
-
-    </div>
-
-
-    <div class="session-time">
-
-        <% if (currentSession === "morning") { %>
-
-            <span>
-                Closes
-            </span>
-
-            <strong>
-                10:00 AM
-            </strong>
-
-        <% } else if (currentSession === "closed") { %>
-
-            <span>
-                Evening
-            </span>
-
-            <strong>
-                4:00 PM
-            </strong>
-
-        <% } else if (currentSession === "evening") { %>
-
-            <span>
-                Closes
-            </span>
-
-            <strong>
-                Midnight
-            </strong>
-
-        <% } %>
-
-    </div>
-
-</div>
-
-
-<!-- ==========================================================
-     NO ANIMALS
-========================================================== -->
-
-<% if (milkTables.length === 0) { %>
-
-    <div class="milk-empty-state">
-
-        <div class="empty-animal-icon">
-            🐄
-        </div>
-
-        <h2>
-            No Animals Currently Being Milked
-        </h2>
-
-        <% if (adminUser) { %>
-
-            <p>
-                No dairy farms currently have animals marked
-                as being milked.
-            </p>
-
-        <% } %>
-
-    </div>
-
-
-<% } else { %>
-
-
-<!-- ==========================================================
-     FARM TABLES
-========================================================== -->
-
-<%
-milkTables.forEach(function (table, tableIndex) {
-
-    const farm =
-        table.farm || null;
-
-
-    const animals =
-        Array.isArray(table.animals)
-            ? table.animals
-            : [];
-
-
-    /*
-     * IMPORTANT:
-     *
-     * For admins this is the title of each
-     * individual milk table.
-     *
-     * For workers it is their farm name.
-     */
-
-    const farmName =
-        farm &&
-        farm.name
-            ? farm.name
-            : "Dairy Farm";
-
-
-    const farmCode =
-        farm &&
-        farm.code !== undefined &&
-        farm.code !== null
-            ? farm.code
-            : null;
-
-
-    const farmId =
-        farm &&
-        farm._id
-            ? String(farm._id)
-            : "";
-
-
-    /*
-     * Admin-specific table title.
-     *
-     * This guarantees every table clearly
-     * identifies the dairy farm it belongs to.
-     */
-
-    const tableTitle =
-        adminUser
-            ? farmName
-            : farmName;
-
-%>
-
-
-<!-- ==========================================================
-     COLLECTION CARD — ONE PER FARM
-========================================================== -->
-
-<section
-    class="collection-card farm-collection-card <%= adminUser ? 'admin-farm-card' : '' %>"
-    data-farm-id="<%= farmId %>"
-    data-farm-name="<%= farmName %>"
->
-
-
     <!-- ======================================================
-         FARM HEADER
+         HEADER
     ======================================================= -->
 
-    <div class="collection-card-header">
+    <header class="milk-header">
 
+        <div class="milk-header-content">
 
-        <div class="farm-title-area">
-
-
-            <% if (adminUser) { %>
-
-                <!-- ADMIN FARM TITLE -->
-
-                <div class="admin-farm-label">
-                    DAIRY FARM
-                </div>
-
-            <% } %>
-
-
-            <div class="collection-title">
-
-                <span class="farm-title-icon">
-                    🐄
-                </span>
-
-                <span>
-                    <%= tableTitle %>
-                </span>
-
+            <div class="milk-header-icon">
+                🥛
             </div>
 
+            <div class="milk-header-text">
 
-            <div class="collection-subtitle">
+                <% if (adminUser) { %>
 
-                <% if (farmCode !== null) { %>
-
-                    <span>
-                        Farm #<%= farmCode %>
-                    </span>
-
-                    <span class="subtitle-separator">
-                        ·
-                    </span>
-
-                <% } %>
-
-
-                <span>
-                    <%= animals.length %>
-                    <%= animals.length === 1
-                        ? "milking animal"
-                        : "milking animals"
-                    %>
-                </span>
-
-            </div>
-
-        </div>
-
-
-        <% if (canSubmit) { %>
-
-            <div class="collection-status">
-
-                <span class="status-dot"></span>
-
-                <% if (
-                    currentSession === "closed" &&
-                    adminUser
-                ) { %>
-
-                    Admin Entry
+                    <div class="milk-eyebrow">
+                        All Dairy Farms
+                    </div>
 
                 <% } else { %>
 
-                    Ready
+                    <div class="milk-eyebrow">
+                        <%= activeFarmName %>
+                    </div>
 
                 <% } %>
 
-            </div>
 
-        <% } else { %>
-
-            <div class="collection-status status-locked">
-
-                🔒 Locked
+                <h1>
+                    Milk Collection
+                </h1>
 
             </div>
 
-        <% } %>
+        </div>
+
+
+        <div class="milk-session-badge <%= sessionBadgeClass %>">
+
+            <span class="session-dot"></span>
+
+            <span>
+                <%= sessionBadgeText %>
+            </span>
+
+        </div>
+
+    </header>
+
+
+    <!-- ======================================================
+         SESSION STATUS
+    ======================================================= -->
+
+    <div class="milk-session-card <%= sessionClass %>">
+
+        <div class="session-card-icon">
+            <%= sessionIcon %>
+        </div>
+
+
+        <div class="session-card-content">
+
+            <div class="session-card-title">
+                <%= sessionTitle %>
+            </div>
+
+        </div>
+
+
+        <div class="session-time">
+
+            <% if (currentSession === "morning") { %>
+
+                <span>
+                    Closes
+                </span>
+
+                <strong>
+                    10:00 AM
+                </strong>
+
+            <% } else if (currentSession === "closed") { %>
+
+                <span>
+                    Evening
+                </span>
+
+                <strong>
+                    4:00 PM
+                </strong>
+
+            <% } else if (currentSession === "evening") { %>
+
+                <span>
+                    Closes
+                </span>
+
+                <strong>
+                    Midnight
+                </strong>
+
+            <% } %>
+
+        </div>
 
     </div>
 
 
     <!-- ======================================================
-         FARM TABLE
+         NO ANIMALS
     ======================================================= -->
 
-    <div class="milk-table-wrapper">
+    <% if (milkTables.length === 0) { %>
 
-        <table
-            class="milk-table"
-            data-farm-id="<%= farmId %>"
-        >
+        <div class="milk-empty-state">
 
-            <thead>
+            <div class="empty-animal-icon">
+                🐄
+            </div>
 
-                <tr>
+            <h2>
+                No Animals Currently Being Milked
+            </h2>
 
-                    <th class="col-animal">
-                        Animal
-                    </th>
+            <% if (adminUser) { %>
 
-                    <th class="col-code">
-                        Code
-                    </th>
+                <p>
+                    There are currently no milking animals
+                    available across the dairy farms.
+                </p>
 
-                    <th class="col-milk">
-                        Milk
-                        <span>(Litres)</span>
-                    </th>
+            <% } else { %>
 
-                    <th class="col-remarks">
-                        Remarks
-                    </th>
+                <p>
+                    There are currently no milking animals
+                    available for <%= activeFarmName %>.
+                </p>
 
-                    <th class="col-action">
-                        Action
-                    </th>
+            <% } %>
 
-                </tr>
-
-            </thead>
+        </div>
 
 
-            <tbody>
+    <% } else { %>
 
 
-            <%
-            animals.forEach(function (dairy, animalIndex) {
+        <!-- ==================================================
+             FARM TABLES
+        =================================================== -->
 
-                let record = null;
+        <%
+        milkTables.forEach(function (table, tableIndex) {
 
-
-                if (entrySession === "morning") {
-
-                    record =
-                        dairy.morning || null;
-
-                }
-
-                else {
-
-                    record =
-                        dairy.evening || null;
-
-                }
+            const farm =
+                table.farm || null;
 
 
-                const canCreateRecord =
-                    !record &&
-                    canSubmit;
+            const animals =
+                Array.isArray(table.animals)
+                    ? table.animals
+                    : [];
 
 
-                const canEditRecord =
-                    adminUser &&
-                    record &&
-                    record._id;
+            const farmName =
+                farm && farm.name
+                    ? farm.name
+                    : "Dairy Farm";
 
 
-                const formId =
-                    "milkRecordForm_" +
-                    String(dairy._id) +
-                    "_" +
-                    String(tableIndex) +
-                    "_" +
-                    String(animalIndex);
+            const farmCode =
+                farm &&
+                farm.code !== undefined &&
+                farm.code !== null
+                    ? farm.code
+                    : null;
 
-            %>
+
+            const farmId =
+                farm && farm._id
+                    ? String(farm._id)
+                    : "";
+
+        %>
 
 
             <!-- ==================================================
-                 ANIMAL ROW
+                 FARM COLLECTION CARD
             =================================================== -->
 
-            <tr
-                class="<%= record
-                    ? 'has-record'
-                    : 'needs-record'
-                %>"
+            <section
+                class="collection-card farm-collection-card"
+                data-farm-id="<%= farmId %>"
             >
 
 
                 <!-- ==============================================
-                     ANIMAL
+                     FARM HEADER
                 =============================================== -->
 
-                <td>
+                <div class="collection-card-header">
 
-                    <div class="animal-cell">
+                    <div>
 
-                        <div class="animal-avatar">
-                            🐄
-                        </div>
+                        <div class="collection-title">
 
-                        <div class="animal-info">
-
-                            <span class="animal-name">
-                                <%= dairy.name %>
+                            <span class="farm-title-icon">
+                                🐄
                             </span>
 
-                            <span class="animal-label">
-                                Dairy animal
+                            <span>
+                                <%= farmName %>
                             </span>
 
                         </div>
 
-                    </div>
 
-                </td>
+                        <div class="collection-subtitle">
 
+                            <% if (farmCode !== null) { %>
 
-                <!-- ==============================================
-                     CODE
-                =============================================== -->
+                                Farm #<%= farmCode %>
 
-                <td>
-
-                    <span class="code-badge">
-                        #<%= dairy.code %>
-                    </span>
-
-                </td>
-
-
-                <!-- ==============================================
-                     MILK
-                =============================================== -->
-
-                <td>
-
-                <% if (record) { %>
-
-
-                    <% if (canEditRecord) { %>
-
-                        <button
-                            type="button"
-                            class="record-wrapper admin-edit-record js-edit-milk"
-                            data-record-id="<%= record._id %>"
-                            data-liters="<%= Number(record.liters || 0) %>"
-                            data-remarks="<%= String(record.remarks || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') %>"
-                            title="Edit milk record"
-                            aria-label="Edit milk record"
-                        >
-
-                            <span class="milk-value-display">
-
-                                <span>
-                                    <%= Number(
-                                        record.liters || 0
-                                    ).toFixed(1) %>
-                                </span>
-
-                                <small>
-                                    L
-                                </small>
-
-                            </span>
-
-                            <span class="edit-icon">
-                                ✏️
-                            </span>
-
-                        </button>
-
-
-                    <% } else { %>
-
-                        <div class="record-wrapper">
-
-                            <div class="milk-value-display">
-
-                                <span>
-                                    <%= Number(
-                                        record.liters || 0
-                                    ).toFixed(1) %>
-                                </span>
-
-                                <small>
-                                    L
-                                </small>
-
-                            </div>
-
-                        </div>
-
-                    <% } %>
-
-
-                <% } else if (canCreateRecord) { %>
-
-
-                    <div class="milk-entry-wrapper">
-
-                        <input
-                            class="milk-input"
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            name="liters"
-                            form="<%= formId %>"
-                            placeholder="0.0"
-                            required
-                            inputmode="decimal"
-                        >
-
-                        <span class="input-unit">
-                            L
-                        </span>
-
-                    </div>
-
-
-                <% } else { %>
-
-
-                    <div class="locked-input">
-
-                        <span>
-                            —
-                        </span>
-
-                        <small>
-                            Locked
-                        </small>
-
-                    </div>
-
-
-                <% } %>
-
-                </td>
-
-
-                <!-- ==============================================
-                     REMARKS
-                =============================================== -->
-
-                <td>
-
-                <% if (record) { %>
-
-                    <%
-                    const displayRemarks =
-                        record.remarks &&
-                        String(record.remarks).trim()
-                            ? record.remarks
-                            : "No remarks";
-                    %>
-
-
-                    <% if (canEditRecord) { %>
-
-                        <button
-                            type="button"
-                            class="remarks-wrapper admin-edit-record js-edit-milk"
-                            data-record-id="<%= record._id %>"
-                            data-liters="<%= Number(record.liters || 0) %>"
-                            data-remarks="<%= String(record.remarks || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') %>"
-                            title="Edit milk record"
-                        >
-
-                            <span class="remarks-text">
-                                <%= displayRemarks %>
-                            </span>
-
-
-                            <% if (
-                                record.recordedByType === "system" ||
-                                record.recordedBySystem
-                            ) { %>
-
-                                <span class="record-badge system-record">
-
-                                    <span>
-                                        ⚙️
-                                    </span>
-
-                                    Automatically recorded
-                                    as Not Milked.
-
-                                </span>
-
-                            <% } else { %>
-
-                                <span class="record-badge">
-
-                                    <span>
-                                        ✓
-                                    </span>
-
-                                    Already recorded
-
+                                <span class="subtitle-separator">
+                                    ·
                                 </span>
 
                             <% } %>
 
+                            <%= animals.length %>
 
-                            <span class="admin-edit-hint">
-                                ✏️ Tap to edit
-                            </span>
+                            <%= animals.length === 1
+                                ? "animal"
+                                : "animals"
+                            %>
 
-                        </button>
+                        </div>
+
+                    </div>
 
 
-                    <% } else { %>
+                    <% if (canSubmit) { %>
 
-                        <div class="remarks-wrapper">
+                        <div class="collection-status">
 
-                            <div class="remarks-text">
-                                <%= displayRemarks %>
-                            </div>
-
+                            <span class="status-dot"></span>
 
                             <% if (
-                                record.recordedByType === "system" ||
-                                record.recordedBySystem
+                                currentSession === "closed" &&
+                                adminUser
                             ) { %>
 
-                                <div class="record-badge system-record">
-
-                                    <span>
-                                        ⚙️
-                                    </span>
-
-                                    Automatically recorded
-                                    as Not Milked.
-
-                                </div>
+                                Admin Entry
 
                             <% } else { %>
 
-                                <div class="record-badge">
-
-                                    <span>
-                                        ✓
-                                    </span>
-
-                                    Already recorded
-
-                                </div>
+                                Ready
 
                             <% } %>
 
                         </div>
 
-                    <% } %>
-
-
-                <% } else if (canCreateRecord) { %>
-
-
-                    <textarea
-                        class="remarks-input"
-                        name="remarks"
-                        form="<%= formId %>"
-                        placeholder="Optional remarks..."
-                        rows="2"
-                    ></textarea>
-
-
-                <% } else { %>
-
-
-                    <div class="closed-remarks">
-
-                        🔒
-
-                    </div>
-
-
-                <% } %>
-
-                </td>
-
-
-                <!-- ==============================================
-                     ACTION
-                =============================================== -->
-
-                <td class="action-cell">
-
-                <% if (record) { %>
-
-
-                    <% if (canEditRecord) { %>
-
-                        <button
-                            type="button"
-                            class="row-action-btn admin-action js-edit-milk"
-                            data-record-id="<%= record._id %>"
-                            data-liters="<%= Number(record.liters || 0) %>"
-                            data-remarks="<%= String(record.remarks || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') %>"
-                        >
-
-                            ✏️
-
-                            <span>
-                                Edit
-                            </span>
-
-                        </button>
-
-
                     <% } else { %>
 
-                        <div class="read-only-label">
+                        <div class="collection-status status-locked">
 
-                            <span>
-                                ✓
-                            </span>
-
-                            <span>
-                                Read-only
-                            </span>
+                            🔒 Locked
 
                         </div>
 
                     <% } %>
 
-
-                <% } else if (canCreateRecord) { %>
-
-
-                    <button
-                        type="submit"
-                        form="<%= formId %>"
-                        class="row-action-btn save-action"
-                    >
-
-                        ✓
-
-                        <span>
-                            Save
-                        </span>
-
-                    </button>
+                </div>
 
 
-                <% } else { %>
+                <!-- ==============================================
+                     FARM TABLE
+                =============================================== -->
+
+                <div class="milk-table-wrapper">
+
+                    <table class="milk-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th class="col-animal">
+                                    Animal
+                                </th>
+
+                                <th class="col-code">
+                                    Code
+                                </th>
+
+                                <th class="col-milk">
+                                    Milk
+                                    <span>(Litres)</span>
+                                </th>
+
+                                <th class="col-remarks">
+                                    Remarks
+                                </th>
+
+                                <th class="col-action">
+                                    Action
+                                </th>
+
+                            </tr>
+
+                        </thead>
 
 
-                    <div class="read-only-label locked-label">
-
-                        <span>
-                            🔒
-                        </span>
-
-                        <span>
-                            Locked
-                        </span>
-
-                    </div>
+                        <tbody>
 
 
-                <% } %>
+                        <%
+                        animals.forEach(function (dairy, animalIndex) {
 
-                </td>
-
-            </tr>
-
-
-            <!-- ==================================================
-                 INDIVIDUAL FORM
-            =================================================== -->
-
-            <% if (canCreateRecord) { %>
-
-                <form
-                    id="<%= formId %>"
-                    action="/milk"
-                    method="POST"
-                    class="individual-milk-form"
-                >
-
-                    <input
-                        type="hidden"
-                        name="dairy"
-                        value="<%= dairy._id %>"
-                    >
-
-                    <input
-                        type="hidden"
-                        name="session"
-                        value="<%= entrySession %>"
-                    >
-
-                    <input
-                        type="hidden"
-                        name="farm"
-                        value="<%= farmId %>"
-                    >
-
-                </form>
-
-            <% } %>
+                            let record = null;
 
 
-            <%
-            });
-            %>
+                            if (entrySession === "morning") {
+
+                                record =
+                                    dairy.morning || null;
+
+                            } else {
+
+                                record =
+                                    dairy.evening || null;
+
+                            }
 
 
-            </tbody>
-
-        </table>
-
-    </div>
-
-</section>
+                            const canCreateRecord =
+                                !record &&
+                                canSubmit;
 
 
-<%
-});
-%>
+                            const canEditRecord =
+                                adminUser &&
+                                record &&
+                                record._id;
 
 
-<% } %>
+                            const formId =
+                                "milkRecordForm_" +
+                                String(
+                                    dairy._id
+                                ) +
+                                "_" +
+                                String(tableIndex) +
+                                "_" +
+                                String(animalIndex);
+
+
+                            const animalId =
+                                dairy && dairy._id
+                                    ? String(dairy._id)
+                                    : "";
+
+
+                            const recordId =
+                                record && record._id
+                                    ? String(record._id)
+                                    : "";
+
+
+                            const safeRemarks =
+                                String(
+                                    record &&
+                                    record.remarks
+                                        ? record.remarks
+                                        : ""
+                                )
+                                .replace(/&/g, "&amp;")
+                                .replace(/"/g, "&quot;")
+                                .replace(/</g, "&lt;")
+                                .replace(/>/g, "&gt;");
+
+                        %>
+
+
+                            <!-- ==================================
+                                 ANIMAL ROW
+                            =================================== -->
+
+                            <tr
+                                class="<%= record
+                                    ? 'has-record'
+                                    : 'needs-record'
+                                %>"
+                                data-animal-id="<%= animalId %>"
+                                data-farm-id="<%= farmId %>"
+                            >
+
+
+                                <!-- =================================
+                                     ANIMAL
+                                ================================== -->
+
+                                <td>
+
+                                    <div class="animal-cell">
+
+                                        <div class="animal-avatar">
+                                            🐄
+                                        </div>
+
+                                        <div class="animal-info">
+
+                                            <span class="animal-name">
+                                                <%= dairy.name || "Unnamed Animal" %>
+                                            </span>
+
+                                            <span class="animal-label">
+                                                Dairy animal
+                                            </span>
+
+                                        </div>
+
+                                    </div>
+
+                                </td>
+
+
+                                <!-- =================================
+                                     CODE
+                                ================================== -->
+
+                                <td>
+
+                                    <span class="code-badge">
+                                        #<%= dairy.code %>
+                                    </span>
+
+                                </td>
+
+
+                                <!-- =================================
+                                     MILK
+                                ================================== -->
+
+                                <td>
+
+                                    <% if (record) { %>
+
+
+                                        <% if (canEditRecord) { %>
+
+                                            <button
+                                                type="button"
+                                                class="record-wrapper admin-edit-record js-edit-milk"
+                                                data-record-id="<%= recordId %>"
+                                                data-animal-id="<%= animalId %>"
+                                                data-farm-id="<%= farmId %>"
+                                                data-liters="<%= Number(record.liters || 0) %>"
+                                                data-remarks="<%= safeRemarks %>"
+                                                title="Edit milk record"
+                                                aria-label="Edit milk record"
+                                            >
+
+                                                <span class="milk-value-display">
+
+                                                    <span>
+                                                        <%= Number(
+                                                            record.liters || 0
+                                                        ).toFixed(1) %>
+                                                    </span>
+
+                                                    <small>
+                                                        L
+                                                    </small>
+
+                                                </span>
+
+                                                <span class="edit-icon">
+                                                    ✏️
+                                                </span>
+
+                                            </button>
+
+
+                                        <% } else { %>
+
+
+                                            <div class="record-wrapper">
+
+                                                <div class="milk-value-display">
+
+                                                    <span>
+                                                        <%= Number(
+                                                            record.liters || 0
+                                                        ).toFixed(1) %>
+                                                    </span>
+
+                                                    <small>
+                                                        L
+                                                    </small>
+
+                                                </div>
+
+                                            </div>
+
+
+                                        <% } %>
+
+
+                                    <% } else if (canCreateRecord) { %>
+
+
+                                        <div class="milk-entry-wrapper">
+
+                                            <input
+                                                class="milk-input"
+                                                type="number"
+                                                step="0.1"
+                                                min="0"
+                                                name="liters"
+                                                form="<%= formId %>"
+                                                placeholder="0.0"
+                                                required
+                                                inputmode="decimal"
+                                            >
+
+                                            <span class="input-unit">
+                                                L
+                                            </span>
+
+                                        </div>
+
+
+                                    <% } else { %>
+
+
+                                        <div class="locked-input">
+
+                                            <span>
+                                                —
+                                            </span>
+
+                                            <small>
+                                                Locked
+                                            </small>
+
+                                        </div>
+
+
+                                    <% } %>
+
+                                </td>
+
+
+                                <!-- =================================
+                                     REMARKS
+                                ================================== -->
+
+                                <td>
+
+                                    <% if (record) { %>
+
+                                        <%
+                                        const displayRemarks =
+                                            record.remarks &&
+                                            String(record.remarks).trim()
+                                                ? record.remarks
+                                                : "No remarks";
+                                        %>
+
+
+                                        <% if (canEditRecord) { %>
+
+                                            <button
+                                                type="button"
+                                                class="remarks-wrapper admin-edit-record js-edit-milk"
+                                                data-record-id="<%= recordId %>"
+                                                data-animal-id="<%= animalId %>"
+                                                data-farm-id="<%= farmId %>"
+                                                data-liters="<%= Number(record.liters || 0) %>"
+                                                data-remarks="<%= safeRemarks %>"
+                                                title="Edit milk record"
+                                            >
+
+                                                <span class="remarks-text">
+                                                    <%= displayRemarks %>
+                                                </span>
+
+
+                                                <% if (
+                                                    record.recordedByType === "system" ||
+                                                    record.recordedBySystem
+                                                ) { %>
+
+                                                    <span class="record-badge system-record">
+
+                                                        <span>
+                                                            ⚙️
+                                                        </span>
+
+                                                        Automatically recorded
+                                                        as Not Milked.
+
+                                                    </span>
+
+                                                <% } else { %>
+
+                                                    <span class="record-badge">
+
+                                                        <span>
+                                                            ✓
+                                                        </span>
+
+                                                        Already recorded
+
+                                                    </span>
+
+                                                <% } %>
+
+
+                                                <span class="admin-edit-hint">
+                                                    ✏️ Tap to edit
+                                                </span>
+
+                                            </button>
+
+
+                                        <% } else { %>
+
+
+                                            <div class="remarks-wrapper">
+
+                                                <div class="remarks-text">
+                                                    <%= displayRemarks %>
+                                                </div>
+
+
+                                                <% if (
+                                                    record.recordedByType === "system" ||
+                                                    record.recordedBySystem
+                                                ) { %>
+
+                                                    <div class="record-badge system-record">
+
+                                                        <span>
+                                                            ⚙️
+                                                        </span>
+
+                                                        Automatically recorded
+                                                        as Not Milked.
+
+                                                    </div>
+
+                                                <% } else { %>
+
+                                                    <div class="record-badge">
+
+                                                        <span>
+                                                            ✓
+                                                        </span>
+
+                                                        Already recorded
+
+                                                    </div>
+
+                                                <% } %>
+
+                                            </div>
+
+
+                                        <% } %>
+
+
+                                    <% } else if (canCreateRecord) { %>
+
+
+                                        <textarea
+                                            class="remarks-input"
+                                            name="remarks"
+                                            form="<%= formId %>"
+                                            placeholder="Optional remarks..."
+                                            rows="2"
+                                        ></textarea>
+
+
+                                    <% } else { %>
+
+
+                                        <div class="closed-remarks">
+                                            🔒
+                                        </div>
+
+
+                                    <% } %>
+
+                                </td>
+
+
+                                <!-- =================================
+                                     ACTION
+                                ================================== -->
+
+                                <td class="action-cell">
+
+                                    <% if (record) { %>
+
+
+                                        <% if (canEditRecord) { %>
+
+                                            <button
+                                                type="button"
+                                                class="row-action-btn admin-action js-edit-milk"
+                                                data-record-id="<%= recordId %>"
+                                                data-animal-id="<%= animalId %>"
+                                                data-farm-id="<%= farmId %>"
+                                                data-liters="<%= Number(record.liters || 0) %>"
+                                                data-remarks="<%= safeRemarks %>"
+                                            >
+
+                                                ✏️
+
+                                                <span>
+                                                    Edit
+                                                </span>
+
+                                            </button>
+
+
+                                        <% } else { %>
+
+
+                                            <div class="read-only-label">
+
+                                                <span>
+                                                    ✓
+                                                </span>
+
+                                                <span>
+                                                    Read-only
+                                                </span>
+
+                                            </div>
+
+
+                                        <% } %>
+
+
+                                    <% } else if (canCreateRecord) { %>
+
+
+                                        <button
+                                            type="submit"
+                                            form="<%= formId %>"
+                                            class="row-action-btn save-action"
+                                        >
+
+                                            ✓
+
+                                            <span>
+                                                Save
+                                            </span>
+
+                                        </button>
+
+
+                                    <% } else { %>
+
+
+                                        <div class="read-only-label locked-label">
+
+                                            <span>
+                                                🔒
+                                            </span>
+
+                                            <span>
+                                                Locked
+                                            </span>
+
+                                        </div>
+
+
+                                    <% } %>
+
+                                </td>
+
+                            </tr>
+
+
+                            <!-- ==================================
+                                 INDIVIDUAL RECORD FORM
+                            =================================== -->
+
+                            <% if (canCreateRecord) { %>
+
+                                <form
+                                    id="<%= formId %>"
+                                    action="/milk"
+                                    method="POST"
+                                    class="individual-milk-form"
+                                >
+
+                                    <!-- FARM ID -->
+                                    <input
+                                        type="hidden"
+                                        name="farm"
+                                        value="<%= farmId %>"
+                                    >
+
+
+                                    <!-- ANIMAL ID -->
+                                    <input
+                                        type="hidden"
+                                        name="dairy"
+                                        value="<%= animalId %>"
+                                    >
+
+
+                                    <!-- COLLECTION SESSION -->
+                                    <input
+                                        type="hidden"
+                                        name="session"
+                                        value="<%= entrySession %>"
+                                    >
+
+                                </form>
+
+                            <% } %>
+
+
+                        <%
+                        });
+                        %>
+
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </section>
+
+
+        <%
+        });
+        %>
+
+
+    <% } %>
 
 </div>
 
@@ -1594,33 +1474,20 @@ milkTables.forEach(function (table, tableIndex) {
 
 
 <!-- ==========================================================
-     FARM TABLE STYLES
+     ADDITIONAL FARM STYLES
 ========================================================== -->
 
 <style>
 
-/* ==========================================================
-   FARM CARD
-========================================================== */
-
 .farm-collection-card {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .farm-collection-card:last-of-type {
     margin-bottom: 0;
 }
 
-
-/* ==========================================================
-   FARM TITLE
-========================================================== */
-
-.farm-title-area {
-    min-width: 0;
-}
-
-.collection-title {
+.farm-collection-card .collection-title {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1630,101 +1497,18 @@ milkTables.forEach(function (table, tableIndex) {
     flex-shrink: 0;
 }
 
-
-.admin-farm-card {
-    border-color: #dce9df;
-}
-
-
-.admin-farm-card .collection-card-header {
-    background: linear-gradient(
-        180deg,
-        #fbfefc 0%,
-        #ffffff 100%
-    );
-}
-
-
-.admin-farm-label {
-    margin-bottom: 4px;
-    color: #4b8d59;
-    font-size: 9px;
-    font-weight: 850;
-    letter-spacing: 1.3px;
-}
-
-
-.admin-farm-card .collection-title {
-    color: #1f3024;
-    font-size: 18px;
-}
-
-
-.admin-farm-card .collection-subtitle {
+.farm-collection-card .collection-subtitle {
     display: flex;
     align-items: center;
-    gap: 7px;
-    flex-wrap: wrap;
+    gap: 6px;
 }
-
 
 .subtitle-separator {
-    color: #aab3ad;
+    color: #b0b8b3;
 }
-
 
 .milk-modal-open {
     overflow: hidden;
-}
-
-
-/* ==========================================================
-   ADMIN FARM SUMMARY
-========================================================== */
-
-.admin-farm-summary {
-    display: flex;
-    align-items: center;
-    gap: 13px;
-    margin-bottom: 18px;
-    padding: 14px 16px;
-    border: 1px solid #dce9df;
-    border-radius: 14px;
-    background: #f5fbf7;
-}
-
-
-.admin-farm-summary-icon {
-    width: 42px;
-    height: 42px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 11px;
-    background: #e5f4e9;
-    font-size: 20px;
-}
-
-
-.admin-farm-summary-content {
-    min-width: 0;
-}
-
-
-.admin-farm-summary-content strong {
-    display: block;
-    color: #294632;
-    font-size: 13px;
-    font-weight: 800;
-}
-
-
-.admin-farm-summary-content span {
-    display: block;
-    margin-top: 2px;
-    color: #718078;
-    font-size: 11px;
 }
 
 
@@ -1821,14 +1605,10 @@ milkTables.forEach(function (table, tableIndex) {
     transform: translateY(1px);
 }
 
-</style>
 
-
-<!-- ==========================================================
-     EXISTING PAGE STYLES
-========================================================== -->
-
-<style>
+/* ==========================================================
+   PAGE
+========================================================== */
 
 .milk-page {
     width: 100%;
@@ -1839,6 +1619,10 @@ milkTables.forEach(function (table, tableIndex) {
 }
 
 
+/* ==========================================================
+   HEADER
+========================================================== */
+
 .milk-header {
     display: flex;
     align-items: center;
@@ -1847,14 +1631,12 @@ milkTables.forEach(function (table, tableIndex) {
     margin-bottom: 24px;
 }
 
-
 .milk-header-content {
     display: flex;
     align-items: center;
     gap: 16px;
     min-width: 0;
 }
-
 
 .milk-header-icon {
     width: 58px;
@@ -1870,7 +1652,6 @@ milkTables.forEach(function (table, tableIndex) {
     box-shadow: 0 6px 18px rgba(27, 94, 32, 0.08);
 }
 
-
 .milk-eyebrow {
     margin-bottom: 3px;
     color: #2e7d32;
@@ -1878,7 +1659,6 @@ milkTables.forEach(function (table, tableIndex) {
     font-weight: 800;
     letter-spacing: 1.4px;
 }
-
 
 .milk-header h1 {
     margin: 0;
@@ -1888,6 +1668,10 @@ milkTables.forEach(function (table, tableIndex) {
     line-height: 1.15;
 }
 
+
+/* ==========================================================
+   SESSION BADGE
+========================================================== */
 
 .milk-session-badge {
     display: inline-flex;
@@ -1900,7 +1684,6 @@ milkTables.forEach(function (table, tableIndex) {
     white-space: nowrap;
 }
 
-
 .session-morning,
 .session-evening,
 .session-admin {
@@ -1908,12 +1691,10 @@ milkTables.forEach(function (table, tableIndex) {
     color: #277437;
 }
 
-
 .session-closed {
     background: #f4f5f4;
     color: #707873;
 }
-
 
 .session-dot {
     width: 8px;
@@ -1922,6 +1703,10 @@ milkTables.forEach(function (table, tableIndex) {
     background: currentColor;
 }
 
+
+/* ==========================================================
+   SESSION CARD
+========================================================== */
 
 .milk-session-card {
     display: flex;
@@ -1934,30 +1719,25 @@ milkTables.forEach(function (table, tableIndex) {
     box-shadow: 0 5px 18px rgba(0, 0, 0, 0.035);
 }
 
-
 .session-card-open {
     background: #f3fbf5;
     border-color: #d8eddd;
 }
-
 
 .session-card-evening {
     background: #f4fbf7;
     border-color: #d9ede0;
 }
 
-
 .session-card-admin {
     background: #f0faf3;
     border-color: #cce6d2;
 }
 
-
 .session-card-closed {
     background: #fafafa;
     border-color: #e7e9e7;
 }
-
 
 .session-card-icon {
     width: 45px;
@@ -1971,12 +1751,10 @@ milkTables.forEach(function (table, tableIndex) {
     font-size: 21px;
 }
 
-
 .session-card-content {
     flex: 1;
     min-width: 0;
 }
-
 
 .session-card-title {
     color: #253129;
@@ -1984,12 +1762,10 @@ milkTables.forEach(function (table, tableIndex) {
     font-weight: 800;
 }
 
-
 .session-time {
     min-width: 82px;
     text-align: right;
 }
-
 
 .session-time span {
     display: block;
@@ -2001,12 +1777,15 @@ milkTables.forEach(function (table, tableIndex) {
     letter-spacing: .7px;
 }
 
-
 .session-time strong {
     color: #315b3b;
     font-size: 13px;
 }
 
+
+/* ==========================================================
+   EMPTY STATE
+========================================================== */
 
 .milk-empty-state {
     padding: 70px 25px;
@@ -2016,7 +1795,6 @@ milkTables.forEach(function (table, tableIndex) {
     border-radius: 20px;
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.04);
 }
-
 
 .empty-animal-icon {
     width: 74px;
@@ -2030,20 +1808,24 @@ milkTables.forEach(function (table, tableIndex) {
     font-size: 35px;
 }
 
-
 .milk-empty-state h2 {
     margin: 0;
     color: #26322a;
     font-size: 19px;
 }
 
-
 .milk-empty-state p {
-    margin: 8px 0 0;
-    color: #818b85;
+    max-width: 500px;
+    margin: 9px auto 0;
+    color: #89928d;
     font-size: 13px;
+    line-height: 1.5;
 }
 
+
+/* ==========================================================
+   COLLECTION CARD
+========================================================== */
 
 .collection-card {
     overflow: hidden;
@@ -2053,16 +1835,13 @@ milkTables.forEach(function (table, tableIndex) {
     box-shadow: 0 8px 30px rgba(27, 55, 35, 0.055);
 }
 
-
 .collection-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 15px;
     padding: 18px 20px;
     border-bottom: 1px solid #edf0ed;
 }
-
 
 .collection-title {
     color: #27332b;
@@ -2070,19 +1849,11 @@ milkTables.forEach(function (table, tableIndex) {
     font-weight: 800;
 }
 
-
 .collection-subtitle {
     margin-top: 3px;
     color: #89928d;
     font-size: 13px;
 }
-
-
-.collection-subtitle strong {
-    color: #536159;
-    font-weight: 750;
-}
-
 
 .collection-status {
     display: inline-flex;
@@ -2094,15 +1865,12 @@ milkTables.forEach(function (table, tableIndex) {
     color: #357a43;
     font-size: 12px;
     font-weight: 700;
-    white-space: nowrap;
 }
-
 
 .collection-status.status-locked {
     background: #f3f4f3;
     color: #7c847f;
 }
-
 
 .status-dot {
     width: 7px;
@@ -2112,12 +1880,15 @@ milkTables.forEach(function (table, tableIndex) {
 }
 
 
+/* ==========================================================
+   TABLE
+========================================================== */
+
 .milk-table-wrapper {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
-
 
 .milk-table {
     width: 100%;
@@ -2125,7 +1896,6 @@ milkTables.forEach(function (table, tableIndex) {
     border-collapse: collapse;
     table-layout: fixed;
 }
-
 
 .milk-table th {
     padding: 15px 16px;
@@ -2139,53 +1909,53 @@ milkTables.forEach(function (table, tableIndex) {
     text-align: left;
 }
 
-
 .milk-table td {
     padding: 16px;
     border-bottom: 1px solid #eef1ef;
     vertical-align: middle;
 }
 
-
 .milk-table tbody tr:last-child td {
     border-bottom: none;
 }
 
-
 .milk-table tbody tr {
     transition: background .15s ease;
 }
-
 
 .milk-table tbody tr:hover {
     background: #fbfdfb;
 }
 
 
+/* ==========================================================
+   COLUMN WIDTHS
+========================================================== */
+
 .col-animal {
     width: 25%;
 }
-
 
 .col-code {
     width: 12%;
 }
 
-
 .col-milk {
     width: 18%;
 }
-
 
 .col-remarks {
     width: 31%;
 }
 
-
 .col-action {
     width: 14%;
 }
 
+
+/* ==========================================================
+   ANIMAL
+========================================================== */
 
 .animal-cell {
     display: flex;
@@ -2193,7 +1963,6 @@ milkTables.forEach(function (table, tableIndex) {
     gap: 12px;
     min-width: 0;
 }
-
 
 .animal-avatar {
     width: 43px;
@@ -2207,11 +1976,9 @@ milkTables.forEach(function (table, tableIndex) {
     font-size: 21px;
 }
 
-
 .animal-info {
     min-width: 0;
 }
-
 
 .animal-name {
     display: block;
@@ -2223,7 +1990,6 @@ milkTables.forEach(function (table, tableIndex) {
     white-space: nowrap;
 }
 
-
 .animal-label {
     display: block;
     margin-top: 3px;
@@ -2231,6 +1997,10 @@ milkTables.forEach(function (table, tableIndex) {
     font-size: 11px;
 }
 
+
+/* ==========================================================
+   CODE
+========================================================== */
 
 .code-badge {
     display: inline-flex;
@@ -2245,11 +2015,14 @@ milkTables.forEach(function (table, tableIndex) {
 }
 
 
+/* ==========================================================
+   MILK INPUT
+========================================================== */
+
 .milk-entry-wrapper {
     position: relative;
     width: 125px;
 }
-
 
 .milk-input {
     width: 100%;
@@ -2264,18 +2037,15 @@ milkTables.forEach(function (table, tableIndex) {
     font-weight: 700;
 }
 
-
 .milk-input:focus {
     border-color: #55a666;
     box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.10);
     background: #fbfefc;
 }
 
-
 .milk-input::placeholder {
     color: #b4bcb7;
 }
-
 
 .input-unit {
     position: absolute;
@@ -2288,13 +2058,16 @@ milkTables.forEach(function (table, tableIndex) {
 }
 
 
+/* ==========================================================
+   EXISTING RECORD
+========================================================== */
+
 .record-wrapper {
     position: relative;
     display: inline-flex;
     align-items: center;
     gap: 8px;
 }
-
 
 button.record-wrapper,
 button.remarks-wrapper {
@@ -2303,7 +2076,6 @@ button.remarks-wrapper {
     font-family: inherit;
     text-align: left;
 }
-
 
 .milk-value-display {
     min-width: 86px;
@@ -2319,24 +2091,20 @@ button.remarks-wrapper {
     font-weight: 800;
 }
 
-
 .milk-value-display small {
     color: #7d8b82;
     font-size: 11px;
     font-weight: 700;
 }
 
-
 .admin-edit-record {
     cursor: pointer;
     background: transparent;
 }
 
-
 .admin-edit-record:hover .milk-value-display {
     background: #e9f6ed;
 }
-
 
 .admin-edit-record:focus-visible {
     outline: 3px solid rgba(76, 175, 80, .25);
@@ -2344,11 +2112,14 @@ button.remarks-wrapper {
     border-radius: 10px;
 }
 
-
 .edit-icon {
     font-size: 14px;
 }
 
+
+/* ==========================================================
+   LOCKED
+========================================================== */
 
 .locked-input {
     width: 90px;
@@ -2364,12 +2135,15 @@ button.remarks-wrapper {
     color: #9aa19c;
 }
 
-
 .locked-input small {
     font-size: 10px;
     font-weight: 700;
 }
 
+
+/* ==========================================================
+   REMARKS
+========================================================== */
 
 .remarks-input {
     width: 100%;
@@ -2387,24 +2161,20 @@ button.remarks-wrapper {
     line-height: 1.45;
 }
 
-
 .remarks-input:focus {
     border-color: #55a666;
     box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.09);
 }
 
-
 .remarks-input::placeholder {
     color: #adb5b0;
 }
-
 
 .remarks-wrapper {
     display: block;
     padding: 3px 0;
     background: transparent;
 }
-
 
 .remarks-text {
     display: block;
@@ -2414,7 +2184,6 @@ button.remarks-wrapper {
     line-height: 1.5;
     word-break: break-word;
 }
-
 
 .record-badge {
     display: inline-flex;
@@ -2426,11 +2195,9 @@ button.remarks-wrapper {
     font-weight: 600;
 }
 
-
 .system-record {
     color: #8a7952;
 }
-
 
 .admin-edit-hint {
     display: block;
@@ -2440,17 +2207,19 @@ button.remarks-wrapper {
     font-weight: 700;
 }
 
-
 .closed-remarks {
     color: #9ba29d;
     font-size: 12px;
 }
 
 
+/* ==========================================================
+   ACTION
+========================================================== */
+
 .action-cell {
     text-align: left;
 }
-
 
 .row-action-btn {
     min-width: 82px;
@@ -2468,18 +2237,15 @@ button.remarks-wrapper {
     cursor: pointer;
 }
 
-
 .save-action {
     background: #2e7d32;
     color: #ffffff;
 }
 
-
 .admin-action {
     background: #eaf7ef;
     color: #28723a;
 }
-
 
 .read-only-label {
     display: inline-flex;
@@ -2490,16 +2256,18 @@ button.remarks-wrapper {
     font-weight: 650;
 }
 
-
 .locked-label {
     color: #969e99;
 }
-
 
 .individual-milk-form {
     display: none;
 }
 
+
+/* ==========================================================
+   EDIT MODAL
+========================================================== */
 
 .milk-edit-modal {
     position: fixed;
@@ -2512,11 +2280,9 @@ button.remarks-wrapper {
     box-sizing: border-box;
 }
 
-
 .milk-edit-modal.open {
     display: flex;
 }
-
 
 .milk-edit-backdrop {
     position: absolute;
@@ -2524,7 +2290,6 @@ button.remarks-wrapper {
     background: rgba(15, 30, 20, 0.42);
     backdrop-filter: blur(3px);
 }
-
 
 .milk-edit-dialog {
     position: relative;
@@ -2537,7 +2302,6 @@ button.remarks-wrapper {
     z-index: 1;
 }
 
-
 .edit-modal-header {
     display: flex;
     align-items: flex-start;
@@ -2547,7 +2311,6 @@ button.remarks-wrapper {
     border-bottom: 1px solid #edf0ed;
 }
 
-
 .edit-modal-eyebrow {
     margin-bottom: 4px;
     color: #2e7d32;
@@ -2556,13 +2319,11 @@ button.remarks-wrapper {
     letter-spacing: 1.2px;
 }
 
-
 .edit-modal-header h2 {
     margin: 0;
     color: #26322a;
     font-size: 20px;
 }
-
 
 .modal-close-btn {
     width: 34px;
@@ -2578,21 +2339,17 @@ button.remarks-wrapper {
     cursor: pointer;
 }
 
-
 .edit-modal-body {
     padding: 20px 22px;
 }
-
 
 .edit-field {
     margin-bottom: 17px;
 }
 
-
 .edit-field:last-child {
     margin-bottom: 0;
 }
-
 
 .edit-field label {
     display: block;
@@ -2602,11 +2359,9 @@ button.remarks-wrapper {
     font-weight: 750;
 }
 
-
 .edit-input-wrapper {
     position: relative;
 }
-
 
 .edit-input-wrapper input {
     width: 100%;
@@ -2619,7 +2374,6 @@ button.remarks-wrapper {
     font-weight: 700;
 }
 
-
 .edit-input-wrapper span {
     position: absolute;
     top: 50%;
@@ -2629,7 +2383,6 @@ button.remarks-wrapper {
     font-size: 11px;
     font-weight: 700;
 }
-
 
 .edit-field textarea {
     width: 100%;
@@ -2644,13 +2397,11 @@ button.remarks-wrapper {
     line-height: 1.45;
 }
 
-
 .edit-input-wrapper input:focus,
 .edit-field textarea:focus {
     border-color: #55a666;
     box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.09);
 }
-
 
 .edit-modal-footer {
     display: flex;
@@ -2660,7 +2411,6 @@ button.remarks-wrapper {
     background: #fafcfb;
     border-top: 1px solid #edf0ed;
 }
-
 
 .modal-cancel-btn,
 .modal-save-btn {
@@ -2674,18 +2424,15 @@ button.remarks-wrapper {
     cursor: pointer;
 }
 
-
 .modal-cancel-btn {
     background: #eef1ef;
     color: #59645d;
 }
 
-
 .modal-save-btn {
     background: #2e7d32;
     color: #ffffff;
 }
-
 
 .modal-save-btn:disabled {
     opacity: .65;
@@ -2756,25 +2503,6 @@ button.remarks-wrapper {
         font-size: 10px;
     }
 
-    .admin-farm-summary {
-        margin-bottom: 14px;
-        padding: 11px 12px;
-    }
-
-    .admin-farm-summary-icon {
-        width: 37px;
-        height: 37px;
-        font-size: 17px;
-    }
-
-    .admin-farm-summary-content strong {
-        font-size: 12px;
-    }
-
-    .admin-farm-summary-content span {
-        font-size: 10px;
-    }
-
     .milk-session-card {
         align-items: flex-start;
         gap: 10px;
@@ -2807,14 +2535,6 @@ button.remarks-wrapper {
 
     .collection-title {
         font-size: 14px;
-    }
-
-    .admin-farm-card .collection-title {
-        font-size: 15px;
-    }
-
-    .admin-farm-label {
-        font-size: 8px;
     }
 
     .collection-subtitle {
@@ -3048,9 +2768,7 @@ button.remarks-wrapper {
             "keydown",
             function (event) {
 
-                if (
-                    event.key === "Escape"
-                ) {
+                if (event.key === "Escape") {
 
                     closeResultPopup();
 
@@ -3060,13 +2778,18 @@ button.remarks-wrapper {
         );
 
 
-        resultCloseButton.focus();
+        setTimeout(function () {
+
+            resultCloseButton &&
+            resultCloseButton.focus();
+
+        }, 50);
 
     }
 
 
     /* ======================================================
-       ELEMENTS
+       EDIT MODAL ELEMENTS
     ====================================================== */
 
     const modal =
@@ -3150,6 +2873,14 @@ button.remarks-wrapper {
         }
 
 
+        /*
+         * Router is mounted at /
+         *
+         * Therefore the edit route is:
+         *
+         * POST /milk/:recordId
+         */
+
         form.action =
             "/milk/" +
             encodeURIComponent(
@@ -3183,16 +2914,13 @@ button.remarks-wrapper {
         );
 
 
-        setTimeout(
-            function () {
+        setTimeout(function () {
 
-                litersInput.focus();
+            litersInput.focus();
 
-                litersInput.select();
+            litersInput.select();
 
-            },
-            50
-        );
+        }, 50);
 
     }
 
@@ -3289,7 +3017,7 @@ button.remarks-wrapper {
 
 
     /* ======================================================
-       CLOSE
+       CLOSE BUTTONS
     ====================================================== */
 
     if (closeButton) {
@@ -3332,9 +3060,7 @@ button.remarks-wrapper {
 
             if (
                 event.key === "Escape" &&
-                modal.classList.contains(
-                    "open"
-                )
+                modal.classList.contains("open")
             ) {
 
                 closeEditModal();
@@ -3346,7 +3072,7 @@ button.remarks-wrapper {
 
 
     /* ======================================================
-       PREVENT MODAL DOUBLE SUBMISSION
+       PREVENT EDIT DOUBLE SUBMISSION
     ====================================================== */
 
     form.addEventListener(
@@ -3368,8 +3094,7 @@ button.remarks-wrapper {
 
 
     /* ======================================================
-       PREVENT DOUBLE SUBMISSION
-       FOR NEW RECORDS
+       PREVENT NEW RECORD DOUBLE SUBMISSION
     ====================================================== */
 
     document.addEventListener(
@@ -3427,9 +3152,7 @@ button.remarks-wrapper {
                         span.textContent =
                             "Saving...";
 
-                    }
-
-                    else {
+                    } else {
 
                         button.textContent =
                             "Saving...";
