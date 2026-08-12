@@ -49,7 +49,6 @@
 //
 // ==========================================================
 
-
 const mongoose = require("mongoose");
 
 const Milk = require("../models/milk");
@@ -94,6 +93,16 @@ function milkError(code, message) {
 
 
 // ==========================================================
+// OBJECT ID VALIDATION
+// ==========================================================
+
+function isValidObjectId(id) {
+
+    return mongoose.Types.ObjectId.isValid(id);
+}
+
+
+// ==========================================================
 // GET CURRENT KENYA DATE / TIME
 // ==========================================================
 
@@ -123,7 +132,9 @@ function getKenyaDateParts() {
             item => item.type === type
         );
 
-        return Number(part?.value || 0);
+        return Number(
+            part?.value || 0
+        );
     };
 
 
@@ -174,7 +185,7 @@ function getKenyaDateParts() {
 
 
 // ==========================================================
-// VALIDATE DATE
+// VALIDATE DAY
 // ==========================================================
 
 function isValidDay(day) {
@@ -220,11 +231,22 @@ function isValidDay(day) {
 
 function isValidMonth(month) {
 
+    if (
+        typeof month !== "string" ||
+        !/^\d{4}-\d{2}$/.test(month)
+    ) {
+
+        return false;
+    }
+
+
+    const numericMonth =
+        Number(month.slice(5));
+
+
     return (
-        typeof month === "string" &&
-        /^\d{4}-\d{2}$/.test(month) &&
-        Number(month.slice(5)) >= 1 &&
-        Number(month.slice(5)) <= 12
+        numericMonth >= 1 &&
+        numericMonth <= 12
     );
 }
 
@@ -237,7 +259,9 @@ function getPreviousKenyaDate(dateString) {
 
     if (!isValidDay(dateString)) {
 
-        throw new Error("Invalid day.");
+        throw new Error(
+            "Invalid day."
+        );
     }
 
 
@@ -264,25 +288,17 @@ function getPreviousKenyaDate(dateString) {
     );
 
 
-    const previousYear =
-        date.getUTCFullYear();
+    return [
+        date.getUTCFullYear(),
 
-
-    const previousMonth =
         String(
             date.getUTCMonth() + 1
-        ).padStart(2, "0");
+        ).padStart(2, "0"),
 
-
-    const previousDay =
         String(
             date.getUTCDate()
-        ).padStart(2, "0");
-
-
-    return (
-        `${previousYear}-${previousMonth}-${previousDay}`
-    );
+        ).padStart(2, "0")
+    ].join("-");
 }
 
 
@@ -564,6 +580,14 @@ function createEmptySummaryData(
 
 async function getOrCreateDailySummary(day) {
 
+    if (!isValidDay(day)) {
+
+        throw new Error(
+            "A valid day is required."
+        );
+    }
+
+
     let summary =
         await MilkSummary.findOne({
             day
@@ -603,16 +627,34 @@ function calculateSalesTotals(sales) {
         const sale of safeSales
     ) {
 
-        consumed +=
+        const liters =
             Number(
                 sale?.liters || 0
             );
 
 
-        cash +=
+        const saleCash =
             Number(
                 sale?.cash || 0
             );
+
+
+        if (
+            Number.isFinite(liters) &&
+            liters > 0
+        ) {
+
+            consumed += liters;
+        }
+
+
+        if (
+            Number.isFinite(saleCash) &&
+            saleCash > 0
+        ) {
+
+            cash += saleCash;
+        }
     }
 
 
@@ -626,14 +668,32 @@ function calculateSalesTotals(sales) {
 
 
 // ==========================================================
+// GET DAILY SUMMARY SALES
+// ==========================================================
+
+async function getDailySales(day) {
+
+    const summary =
+        await MilkSummary
+            .findOne({ day })
+            .lean();
+
+
+    return Array.isArray(summary?.sales)
+        ? summary.sales
+        : [];
+}
+
+
+// ==========================================================
 // SYNCHRONIZE DAILY MILK SUMMARY
 // ==========================================================
 //
-// Milk is the source of truth for production.
+// Milk = source of truth for production.
 //
-// MilkSummary is rebuilt from Milk records.
+// MilkSummary = cached daily production/statistical data.
 //
-// Sales are preserved.
+// Sales remain inside MilkSummary and are preserved.
 // ==========================================================
 
 async function synchronizeDailyMilkSummary(day) {
@@ -727,12 +787,21 @@ async function synchronizeDailyMilkSummary(day) {
     // ------------------------------------------------------
 
     const cowIds =
-        milkRecords
-            .map(
-                record =>
-                    record.dairy
+        [
+            ...new Set(
+
+                milkRecords
+                    .map(
+                        record =>
+                            record.dairy
+                    )
+                    .filter(Boolean)
+                    .map(
+                        id =>
+                            id.toString()
+                    )
             )
-            .filter(Boolean);
+        ];
 
 
     // ------------------------------------------------------
@@ -740,16 +809,20 @@ async function synchronizeDailyMilkSummary(day) {
     // ------------------------------------------------------
 
     const cows =
-        await Dairy
-            .find({
-                _id: {
-                    $in: cowIds
-                }
-            })
-            .select(
-                "_id code assetCode name"
-            )
-            .lean();
+        cowIds.length > 0
+
+            ? await Dairy
+                .find({
+                    _id: {
+                        $in: cowIds
+                    }
+                })
+                .select(
+                    "_id code assetCode name"
+                )
+                .lean()
+
+            : [];
 
 
     const cowMap =
@@ -842,15 +915,6 @@ async function synchronizeDailyMilkSummary(day) {
     // ------------------------------------------------------
     // GET FARM CODES
     // ------------------------------------------------------
-    //
-    // Animal:
-    //
-    //     assetCode = farm.code
-    //
-    // Farm:
-    //
-    //     code < 0
-    // ------------------------------------------------------
 
     const farmCodes =
         [
@@ -859,17 +923,10 @@ async function synchronizeDailyMilkSummary(day) {
                 cows
                     .map(
                         cow =>
-                            cow.assetCode
+                            Number(
+                                cow.assetCode
+                            )
                     )
-
-                    .filter(
-                        code =>
-                            code !== null &&
-                            code !== undefined
-                    )
-
-                    .map(Number)
-
                     .filter(
                         code =>
                             Number.isFinite(code) &&
@@ -982,22 +1039,6 @@ async function synchronizeDailyMilkSummary(day) {
     // TOTAL PRODUCTION
     // ------------------------------------------------------
 
-    const produced =
-        [
-            ...cowTotals.values()
-        ].reduce(
-            (
-                total,
-                cow
-            ) =>
-                total +
-                Number(
-                    cow.liters || 0
-                ),
-            0
-        );
-
-
     const cowProduction =
         [
             ...cowTotals.values()
@@ -1008,6 +1049,20 @@ async function synchronizeDailyMilkSummary(day) {
         [
             ...farmTotals.values()
         ];
+
+
+    const produced =
+        cowProduction.reduce(
+            (
+                total,
+                cow
+            ) =>
+                total +
+                Number(
+                    cow.liters || 0
+                ),
+            0
+        );
 
 
     // ------------------------------------------------------
@@ -1123,11 +1178,9 @@ async function getMilkingAnimals() {
                 ]
             }
         })
-
         .sort({
             code: 1
         })
-
         .lean();
 }
 
@@ -1136,13 +1189,11 @@ async function getMilkingAnimals() {
 // GET FARMS
 // ==========================================================
 //
-// Farms are Dairy documents whose code is negative.
+// Actual farm records are Dairy documents with:
 //
-// This is intentionally separate from farmProduction.
+//     code < 0
 //
-// farmProduction = production statistics.
-//
-// farms = actual farm records available to the application.
+// These are separate from farmProduction.
 // ==========================================================
 
 async function getFarms() {
@@ -1154,15 +1205,12 @@ async function getFarms() {
                 $lt: 0
             }
         })
-
         .select(
             "_id code name"
         )
-
         .sort({
             code: 1
         })
-
         .lean();
 }
 
@@ -1177,7 +1225,16 @@ async function finalizeExpiredMilkSession(
 ) {
 
     if (
-        !sessionName ||
+        !["morning", "evening"].includes(
+            sessionName
+        )
+    ) {
+
+        return [];
+    }
+
+
+    if (
         !isValidDay(day)
     ) {
 
@@ -1192,6 +1249,10 @@ async function finalizeExpiredMilkSession(
     if (
         dairies.length === 0
     ) {
+
+        await synchronizeDailyMilkSummary(
+            day
+        );
 
         return [];
     }
@@ -1338,7 +1399,7 @@ async function finalizeExpiredMilkSessions() {
 
 
     // ------------------------------------------------------
-    // MORNING SESSION
+    // MORNING EXPIRED
     // ------------------------------------------------------
 
     if (
@@ -1360,7 +1421,7 @@ async function finalizeExpiredMilkSessions() {
 
 
     // ------------------------------------------------------
-    // PREVIOUS EVENING SESSION
+    // PREVIOUS EVENING EXPIRED
     // ------------------------------------------------------
 
     if (
@@ -1412,10 +1473,6 @@ async function getMilkPageData() {
         current.day;
 
 
-    // ------------------------------------------------------
-    // MORNING RECORDS
-    // ------------------------------------------------------
-
     const morningRecords =
         await Milk
             .find({
@@ -1431,10 +1488,6 @@ async function getMilkPageData() {
             })
             .lean();
 
-
-    // ------------------------------------------------------
-    // EVENING RECORDS
-    // ------------------------------------------------------
 
     const eveningRecords =
         await Milk
@@ -1492,10 +1545,6 @@ async function getMilkPageData() {
     }
 
 
-    // ------------------------------------------------------
-    // ATTACH RECORDS
-    // ------------------------------------------------------
-
     const dairiesWithRecords =
         dairies.map(
             dairy => {
@@ -1525,10 +1574,10 @@ async function getMilkPageData() {
                     evening,
 
                     morningRecorded:
-                        !!morning,
+                        Boolean(morning),
 
                     eveningRecorded:
-                        !!evening,
+                        Boolean(evening),
 
                     morningLiters:
                         morning
@@ -1548,10 +1597,6 @@ async function getMilkPageData() {
         );
 
 
-    // ------------------------------------------------------
-    // DISPLAY RECORDS
-    // ------------------------------------------------------
-
     let displayRecords = [];
 
 
@@ -1561,7 +1606,6 @@ async function getMilkPageData() {
 
         displayRecords =
             morningRecords;
-
     }
 
     else if (
@@ -1570,7 +1614,6 @@ async function getMilkPageData() {
 
         displayRecords =
             morningRecords;
-
     }
 
     else if (
@@ -1643,7 +1686,7 @@ async function saveMilkRecords(
     }
 
 
-    let normalizedRecords = [];
+    let normalizedRecords;
 
 
     if (
@@ -1661,6 +1704,15 @@ async function saveMilkRecords(
 
         normalizedRecords =
             Object.values(records);
+
+    }
+
+    else {
+
+        throw milkError(
+            "MILK_NO_RECORDS",
+            "No valid milk records were submitted."
+        );
     }
 
 
@@ -1721,9 +1773,7 @@ async function saveMilkRecords(
 
 
         if (
-            !mongoose.Types.ObjectId.isValid(
-                dairyId
-            )
+            !isValidObjectId(dairyId)
         ) {
 
             throw milkError(
@@ -1762,17 +1812,22 @@ async function saveMilkRecords(
         }
 
 
+        const remarks =
+            typeof record.remarks === "string"
+                ? record.remarks.trim()
+                : "";
+
+
         cleanedRecords.push({
 
             dairy:
-                dairyId,
+                new mongoose.Types.ObjectId(
+                    dairyId
+                ),
 
             liters,
 
-            remarks:
-                typeof record.remarks === "string"
-                    ? record.remarks.trim()
-                    : ""
+            remarks
         });
     }
 
@@ -1783,13 +1838,13 @@ async function saveMilkRecords(
 
         throw milkError(
             "MILK_NO_RECORDS",
-            "No valid milk records were submitted. Please enter a milk quantity before saving."
+            "No valid milk records were submitted."
         );
     }
 
 
     // ------------------------------------------------------
-    // DUPLICATES
+    // DUPLICATE ANIMALS IN REQUEST
     // ------------------------------------------------------
 
     const submittedIds =
@@ -1800,12 +1855,12 @@ async function saveMilkRecords(
         const record of cleanedRecords
     ) {
 
-        const dairyId =
+        const id =
             record.dairy.toString();
 
 
         if (
-            submittedIds.has(dairyId)
+            submittedIds.has(id)
         ) {
 
             throw milkError(
@@ -1815,7 +1870,7 @@ async function saveMilkRecords(
         }
 
 
-        submittedIds.add(dairyId);
+        submittedIds.add(id);
     }
 
 
@@ -1910,7 +1965,7 @@ async function saveMilkRecords(
 
 
     // ------------------------------------------------------
-    // BUILD DOCUMENTS
+    // CREATE RECORDS
     // ------------------------------------------------------
 
     const documents =
@@ -1947,10 +2002,6 @@ async function saveMilkRecords(
             })
         );
 
-
-    // ------------------------------------------------------
-    // INSERT
-    // ------------------------------------------------------
 
     let saved;
 
@@ -1997,7 +2048,7 @@ async function saveMilkRecords(
 
         throw milkError(
             "MILK_SAVE_FAILED",
-            "The milk records could not be saved. Please try again."
+            "The milk records could not be saved."
         );
     }
 
@@ -2035,9 +2086,7 @@ async function editMilkRecord({
 
 
     if (
-        !mongoose.Types.ObjectId.isValid(
-            recordId
-        )
+        !isValidObjectId(recordId)
     ) {
 
         throw milkError(
@@ -2181,7 +2230,7 @@ async function getCurrentPrice() {
 
 
     return (
-        latest?.price ||
+        Number(latest?.price) ||
         DEFAULT_MILK_PRICE
     );
 }
@@ -2209,9 +2258,7 @@ async function toggleMilkingStatus({
 
 
     if (
-        !mongoose.Types.ObjectId.isValid(
-            dairyId
-        )
+        !isValidObjectId(dairyId)
     ) {
 
         throw milkError(
@@ -2270,7 +2317,9 @@ async function toggleMilkingStatus({
 
 async function getDailyStats(day) {
 
-    if (!isValidDay(day)) {
+    if (
+        !isValidDay(day)
+    ) {
 
         throw new Error(
             "A valid day is required."
@@ -2298,8 +2347,8 @@ async function getDailyStats(day) {
     if (!summary) {
 
         summary =
-            await MilkSummary.create(
-                createEmptySummaryData(day)
+            await getOrCreateDailySummary(
+                day
             );
     }
 
@@ -2351,6 +2400,7 @@ async function getDailyStats(day) {
         summary.cash =
             cash;
 
+
         await summary.save();
     }
 
@@ -2374,13 +2424,13 @@ async function getDailyStats(day) {
             available,
 
             price:
-                summary.price ||
+                Number(summary.price) ||
                 DEFAULT_MILK_PRICE,
 
             cash,
 
             locked:
-                !!summary.locked,
+                Boolean(summary.locked),
 
             cowProduction:
                 summary.cowProduction || [],
@@ -2415,7 +2465,7 @@ async function getMonthlyStats(month) {
 
 
     // ------------------------------------------------------
-    // ALL DAIRY DOCUMENTS
+    // GET DAIRY RECORDS
     // ------------------------------------------------------
 
     const dairies =
@@ -2440,7 +2490,7 @@ async function getMonthlyStats(month) {
 
 
     // ------------------------------------------------------
-    // MONTHLY ANIMAL REPORT
+    // ANIMAL REPORT
     // ------------------------------------------------------
 
     const records =
@@ -2490,16 +2540,14 @@ async function getMonthlyStats(month) {
 
     let totalConsumed = 0;
     let totalCash = 0;
-    let totalPrice = 0;
     let totalProduced = 0;
+    let totalPrice = 0;
 
 
     const sales = [];
 
-
     const farmProductionMap =
         new Map();
-
 
     const cowProductionMap =
         new Map();
@@ -2513,15 +2561,15 @@ async function getMonthlyStats(month) {
         const summary of summaries
     ) {
 
-        totalPrice +=
-            Number(
-                summary.price || 0
-            );
-
-
         totalProduced +=
             Number(
                 summary.produced || 0
+            );
+
+
+        totalPrice +=
+            Number(
+                summary.price || 0
             );
 
 
@@ -2534,16 +2582,34 @@ async function getMonthlyStats(month) {
             summary.sales || []
         ) {
 
-            totalConsumed +=
+            const liters =
                 Number(
                     sale.liters || 0
                 );
 
 
-            totalCash +=
+            const cash =
                 Number(
                     sale.cash || 0
                 );
+
+
+            if (
+                Number.isFinite(liters)
+            ) {
+
+                totalConsumed +=
+                    liters;
+            }
+
+
+            if (
+                Number.isFinite(cash)
+            ) {
+
+                totalCash +=
+                    cash;
+            }
 
 
             sales.push(sale);
@@ -2661,7 +2727,7 @@ async function getMonthlyStats(month) {
 
 
     // ------------------------------------------------------
-    // FALLBACK PRODUCTION
+    // FALLBACK TOTAL
     // ------------------------------------------------------
 
     if (
@@ -2778,22 +2844,10 @@ async function saveDailyStats({
     );
 
 
-    let summary =
-        await MilkSummary.findOne({
+    const summary =
+        await getOrCreateDailySummary(
             day
-        });
-
-
-    if (!summary) {
-
-        summary =
-            await MilkSummary.create(
-                createEmptySummaryData(
-                    day,
-                    numericPrice
-                )
-            );
-    }
+        );
 
 
     const sales =
@@ -2860,19 +2914,7 @@ async function getSalesPageData() {
 
 
     // ------------------------------------------------------
-    // GET ACTUAL FARM RECORDS
-    // ------------------------------------------------------
-    //
-    // IMPORTANT:
-    //
-    // These are NOT taken from farmProduction.
-    //
-    // farmProduction contains statistical production data.
-    //
-    // farms contains the actual Dairy documents representing
-    // farms.
-    //
-    // Farms are identified by negative code.
+    // ACTUAL FARMS
     // ------------------------------------------------------
 
     const farms =
@@ -2945,33 +2987,21 @@ async function getSalesPageData() {
     // PRODUCTION
     // ------------------------------------------------------
 
-    const report =
-        await Milk.getDailyReport(
-            today
-        );
-
-
     const totalProduced =
         Number(
-            report?.stats?.total || 0
+            summary.produced || 0
         );
 
 
     // ------------------------------------------------------
-    // SALES TOTAL
+    // SALES
     // ------------------------------------------------------
 
-    const totalSales =
-        sales.reduce(
-            (
-                total,
-                sale
-            ) =>
-                total +
-                Number(
-                    sale.liters || 0
-                ),
-            0
+    const {
+        consumed: totalSales
+    } =
+        calculateSalesTotals(
+            sales
         );
 
 
@@ -2985,45 +3015,21 @@ async function getSalesPageData() {
 
     return {
 
-        // --------------------------------------------------
-        // ACTUAL FARMS
-        // --------------------------------------------------
-
         farms,
-
-        // --------------------------------------------------
-        // STANDING ORDERS
-        // --------------------------------------------------
 
         standingOrders,
 
-        // --------------------------------------------------
-        // MANUAL SALES
-        // --------------------------------------------------
-
         manualSales,
 
-        // --------------------------------------------------
-        // PRICE
-        // --------------------------------------------------
-
         currentPrice:
-            summary.price ||
+            Number(summary.price) ||
             DEFAULT_MILK_PRICE,
-
-        // --------------------------------------------------
-        // SALES / MILK
-        // --------------------------------------------------
 
         totalSales,
 
         availableMilk,
 
         totalProduced,
-
-        // --------------------------------------------------
-        // PRODUCTION BREAKDOWN
-        // --------------------------------------------------
 
         cowProduction:
             summary.cowProduction || [],
@@ -3084,11 +3090,6 @@ async function submitManualSale({
         );
 
 
-    const price =
-        summary.price ||
-        DEFAULT_MILK_PRICE;
-
-
     const produced =
         Number(
             summary.produced || 0
@@ -3118,6 +3119,11 @@ async function submitManualSale({
             `Insufficient milk available. Only ${available.toFixed(2)} L remaining.`
         );
     }
+
+
+    const price =
+        Number(summary.price) ||
+        DEFAULT_MILK_PRICE;
 
 
     if (
@@ -3161,7 +3167,7 @@ async function submitManualSale({
         Math.max(
             0,
             produced -
-            summary.consumed
+            totals.consumed
         );
 
 
@@ -3181,9 +3187,7 @@ async function submitStandingOrderSale({
 }) {
 
     if (
-        !mongoose.Types.ObjectId.isValid(
-            standingOrderId
-        )
+        !isValidObjectId(standingOrderId)
     ) {
 
         throw new Error(
@@ -3213,6 +3217,18 @@ async function submitStandingOrderSale({
 
         throw new Error(
             "This standing order is no longer active."
+        );
+    }
+
+
+    if (
+        order.effectiveDate &&
+        new Date(order.effectiveDate) >
+        new Date()
+    ) {
+
+        throw new Error(
+            "This standing order has not become effective yet."
         );
     }
 
@@ -3264,10 +3280,6 @@ async function submitStandingOrderSale({
     }
 
 
-    // ------------------------------------------------------
-    // VALIDATE QUANTITY
-    // ------------------------------------------------------
-
     const orderLiters =
         Number(order.liters);
 
@@ -3284,7 +3296,7 @@ async function submitStandingOrderSale({
 
 
     const price =
-        summary.price ||
+        Number(summary.price) ||
         DEFAULT_MILK_PRICE;
 
 
@@ -3318,10 +3330,6 @@ async function submitStandingOrderSale({
         );
     }
 
-
-    // ------------------------------------------------------
-    // ADD SALE
-    // ------------------------------------------------------
 
     sales.push({
 
@@ -3363,7 +3371,7 @@ async function submitStandingOrderSale({
         Math.max(
             0,
             produced -
-            summary.consumed
+            totals.consumed
         );
 
 
@@ -3489,9 +3497,7 @@ async function omitStandingOrder({
 
 
     if (
-        !mongoose.Types.ObjectId.isValid(
-            orderId
-        )
+        !isValidObjectId(orderId)
     ) {
 
         throw new Error(
@@ -3536,9 +3542,7 @@ async function getMilkingHistory({
 }) {
 
     if (
-        !mongoose.Types.ObjectId.isValid(
-            dairyId
-        )
+        !isValidObjectId(dairyId)
     ) {
 
         throw new Error(
@@ -3594,14 +3598,11 @@ async function getMilkingHistory({
                 "name"
             )
             .sort({
+                day: -1,
                 date: -1
             })
             .lean();
 
-
-    // ------------------------------------------------------
-    // GROUP BY DAY
-    // ------------------------------------------------------
 
     const grouped = {};
 
@@ -3625,22 +3626,17 @@ async function getMilkingHistory({
         }
 
 
-        grouped[day]
-            .entries
-            .push(record);
+        grouped[day].entries.push(
+            record
+        );
 
 
-        grouped[day]
-            .total +=
+        grouped[day].total +=
             Number(
                 record.liters || 0
             );
     }
 
-
-    // ------------------------------------------------------
-    // MONTHLY TOTAL
-    // ------------------------------------------------------
 
     const monthlyTotal =
         records.reduce(
@@ -3678,7 +3674,9 @@ async function getMilkingHistory({
 
 async function lockDay(day) {
 
-    if (!isValidDay(day)) {
+    if (
+        !isValidDay(day)
+    ) {
 
         throw new Error(
             "A valid day is required."
@@ -3716,7 +3714,9 @@ async function lockDay(day) {
 
 async function unlockDay(day) {
 
-    if (!isValidDay(day)) {
+    if (
+        !isValidDay(day)
+    ) {
 
         throw new Error(
             "A valid day is required."
