@@ -1,15 +1,102 @@
 // ==========================================================
 // controllers/milkController.js
 // ==========================================================
+//
+// PURPOSE
+// ----------------------------------------------------------
+// Controller layer for:
+//
+// • Milk collection
+// • Morning / evening sessions
+// • Milk record creation
+// • Milk record editing
+// • Milk statistics
+// • Daily summary locking
+// • Milk sales
+// • Standing orders
+// • Farm selection
+// • Milk price management
+// • Milking history
+// • Milking status
+//
+// IMPORTANT
+// ----------------------------------------------------------
+// This controller does NOT define or modify routes.
+//
+// Existing routes remain responsible for deciding which
+// controller method is called.
+//
+// Statistics route is:
+//      /stats
+//
+// NOT:
+//      /milkStats
+//
+// Farm selection is handled through:
+//      /sales?farmId=<FARM_ID>
+//
+// ==========================================================
+
 
 const milkService =
     require("../services/milkService");
 
 
 // ==========================================================
-// SMALL HELPER
+// SMALL HELPERS
 // ==========================================================
 
+
+/**
+ * Safely convert a value to a number.
+ */
+function toNumber(
+    value,
+    fallback = 0
+) {
+
+    const number =
+        Number(value);
+
+    return Number.isFinite(number)
+        ? number
+        : fallback;
+
+}
+
+
+/**
+ * Safely normalize a farm ID.
+ */
+function normalizeFarmId(
+    value
+) {
+
+    if (
+        value === undefined ||
+        value === null
+    ) {
+
+        return null;
+
+    }
+
+
+    const id =
+        String(value).trim();
+
+
+    return id
+        ? id
+        : null;
+
+}
+
+
+/**
+ * Build a sales redirect while preserving
+ * the selected farm.
+ */
 function salesRedirect(
     farmId,
     query = {}
@@ -19,17 +106,25 @@ function salesRedirect(
         new URLSearchParams();
 
 
-    if (farmId) {
+    const normalizedFarmId =
+        normalizeFarmId(
+            farmId
+        );
+
+
+    if (normalizedFarmId) {
 
         params.set(
             "farmId",
-            String(farmId)
+            normalizedFarmId
         );
 
     }
 
 
-    Object.entries(query).forEach(
+    Object.entries(
+        query || {}
+    ).forEach(
         ([key, value]) => {
 
             if (
@@ -76,7 +171,8 @@ exports.getMilkPage = async (
 
 
         const currentSession =
-            data?.session || "closed";
+            data?.session ||
+            "closed";
 
 
         const isAdmin =
@@ -87,52 +183,125 @@ exports.getMilkPage = async (
             "milk",
             {
 
+                // --------------------------------------------------
+                // ANIMALS
+                // --------------------------------------------------
+
                 dairies:
-                    data?.dairies || [],
+                    Array.isArray(
+                        data?.dairies
+                    )
+                        ? data.dairies
+                        : [],
+
+
+                // --------------------------------------------------
+                // FARMS
+                // --------------------------------------------------
+                //
+                // Included so the view can receive farm data when
+                // the service supplies it.
+                //
+                // --------------------------------------------------
+
+                farms:
+                    Array.isArray(
+                        data?.farms
+                    )
+                        ? data.farms
+                        : [],
+
+
+                // --------------------------------------------------
+                // MILK RECORDS
+                // --------------------------------------------------
 
                 milkRecords:
-                    data?.milkRecords || [],
+                    Array.isArray(
+                        data?.milkRecords
+                    )
+                        ? data.milkRecords
+                        : [],
+
 
                 morningRecords:
-                    data?.morningRecords || [],
+                    Array.isArray(
+                        data?.morningRecords
+                    )
+                        ? data.morningRecords
+                        : [],
+
 
                 eveningRecords:
-                    data?.eveningRecords || [],
+                    Array.isArray(
+                        data?.eveningRecords
+                    )
+                        ? data.eveningRecords
+                        : [],
+
+
+                // --------------------------------------------------
+                // SESSION
+                // --------------------------------------------------
 
                 session:
                     currentSession,
 
+
                 sessionInfo:
-                    data?.sessionInfo || null,
+                    data?.sessionInfo ||
+                    null,
+
+
+                // --------------------------------------------------
+                // PERMISSIONS
+                // --------------------------------------------------
 
                 canSubmit:
                     Boolean(
                         data?.canSubmit
                     ),
 
+
                 canEditMorning:
                     Boolean(
                         data?.canEditMorning
                     ),
+
 
                 canEditEvening:
                     Boolean(
                         data?.canEditEvening
                     ),
 
+
                 isAdmin,
+
+
+                // --------------------------------------------------
+                // USER
+                // --------------------------------------------------
 
                 user:
                     req.user,
 
+
+                // --------------------------------------------------
+                // FLASH MESSAGES
+                // --------------------------------------------------
+
                 success:
                     req.query.success === "1",
 
+
                 error:
-                    req.query.error || "",
+                    req.query.error ||
+                    "",
+
 
                 edit:
-                    req.query.edit || ""
+                    req.query.edit ||
+                    ""
 
             }
         );
@@ -153,21 +322,28 @@ exports.getMilkPage = async (
 
                     dairies: [],
 
+                    farms: [],
+
                     milkRecords: [],
 
                     morningRecords: [],
 
                     eveningRecords: [],
 
-                    session: "closed",
+                    session:
+                        "closed",
 
-                    sessionInfo: null,
+                    sessionInfo:
+                        null,
 
-                    canSubmit: false,
+                    canSubmit:
+                        false,
 
-                    canEditMorning: false,
+                    canEditMorning:
+                        false,
 
-                    canEditEvening: false,
+                    canEditEvening:
+                        false,
 
                     isAdmin:
                         req.user?.role === "admin",
@@ -175,12 +351,14 @@ exports.getMilkPage = async (
                     user:
                         req.user,
 
-                    success: false,
+                    success:
+                        false,
 
                     error:
                         "Error loading milk collection page.",
 
-                    edit: ""
+                    edit:
+                        ""
 
                 }
             );
@@ -218,7 +396,7 @@ exports.submitMilk = async (
 
 
         // --------------------------------------------------
-        // SINGLE RECORD SUPPORT
+        // SUPPORT A SINGLE RECORD
         // --------------------------------------------------
 
         if (
@@ -237,7 +415,8 @@ exports.submitMilk = async (
                         req.body.liters,
 
                     remarks:
-                        req.body.remarks || ""
+                        req.body.remarks ||
+                        ""
 
                 }
 
@@ -400,11 +579,6 @@ exports.updateMilkRecord = async (
 
     try {
 
-        const {
-            id
-        } = req.params;
-
-
         if (
             req.user?.role !== "admin"
         ) {
@@ -417,6 +591,11 @@ exports.updateMilkRecord = async (
             );
 
         }
+
+
+        const {
+            id
+        } = req.params;
 
 
         if (!id) {
@@ -441,17 +620,15 @@ exports.updateMilkRecord = async (
         }
 
 
-        const numericLiters =
+        const liters =
             Number(
                 req.body.liters
             );
 
 
         if (
-            !Number.isFinite(
-                numericLiters
-            ) ||
-            numericLiters < 0
+            !Number.isFinite(liters) ||
+            liters < 0
         ) {
 
             throw new Error(
@@ -461,19 +638,21 @@ exports.updateMilkRecord = async (
         }
 
 
+        const remarks =
+            typeof req.body.remarks === "string"
+                ? req.body.remarks.trim()
+                : "";
+
+
         const updated =
             await milkService.editMilkRecord({
 
                 recordId:
                     id,
 
-                liters:
-                    numericLiters,
+                liters,
 
-                remarks:
-                    typeof req.body.remarks === "string"
-                        ? req.body.remarks
-                        : "",
+                remarks,
 
                 user:
                     req.user
@@ -518,6 +697,15 @@ exports.updateMilkRecord = async (
 // ==========================================================
 // GET MILK STATS
 // ==========================================================
+//
+// IMPORTANT
+// ----------------------------------------------------------
+// The application route is:
+//
+//      /stats
+//
+// This controller does NOT redirect to /milkStats.
+// ==========================================================
 
 exports.getMilkStats = async (
     req,
@@ -532,6 +720,10 @@ exports.getMilkStats = async (
             month
         } = req.query;
 
+
+        // ==================================================
+        // DAILY STATISTICS
+        // ==================================================
 
         if (type === "day") {
 
@@ -552,30 +744,45 @@ exports.getMilkStats = async (
                 "milkStats",
                 {
 
-                    type: "day",
+                    type:
+                        "day",
 
                     date:
                         selectedDate,
 
-                    month: "",
+                    month:
+                        "",
 
                     records:
-                        data?.records || [],
+                        Array.isArray(
+                            data?.records
+                        )
+                            ? data.records
+                            : [],
 
                     stats:
                         data?.stats || {
 
                             total: 0,
+
                             consumed: 0,
+
                             available: 0,
+
                             price: 50,
+
                             cash: 0,
+
                             locked: false
 
                         },
 
                     sales:
-                        data?.sales || [],
+                        Array.isArray(
+                            data?.sales
+                        )
+                            ? data.sales
+                            : [],
 
                     user:
                         req.user
@@ -585,6 +792,10 @@ exports.getMilkStats = async (
 
         }
 
+
+        // ==================================================
+        // MONTHLY STATISTICS
+        // ==================================================
 
         if (type === "month") {
 
@@ -605,31 +816,47 @@ exports.getMilkStats = async (
                 "milkStats",
                 {
 
-                    type: "month",
+                    type:
+                        "month",
 
-                    date: "",
+                    date:
+                        "",
 
                     month:
                         selectedMonth,
 
                     records:
-                        data?.records || [],
+                        Array.isArray(
+                            data?.records
+                        )
+                            ? data.records
+                            : [],
 
                     stats:
                         data?.stats || {
 
                             total: 0,
+
                             consumed: 0,
+
                             available: 0,
+
                             price: 50,
+
                             cash: 0,
+
                             locked: false,
+
                             avg: 0
 
                         },
 
                     sales:
-                        data?.sales || [],
+                        Array.isArray(
+                            data?.sales
+                        )
+                            ? data.sales
+                            : [],
 
                     user:
                         req.user
@@ -640,26 +867,39 @@ exports.getMilkStats = async (
         }
 
 
+        // ==================================================
+        // UNKNOWN TYPE
+        // ==================================================
+
         return res.render(
             "milkStats",
             {
 
-                type: "",
+                type:
+                    "",
 
-                date: "",
+                date:
+                    "",
 
-                month: "",
+                month:
+                    "",
 
                 records: [],
 
                 stats: {
 
                     total: 0,
+
                     consumed: 0,
+
                     available: 0,
+
                     price: 50,
+
                     cash: 0,
+
                     locked: false,
+
                     avg: 0
 
                 },
@@ -726,8 +966,13 @@ exports.saveDailyStats = async (
         });
 
 
+        // --------------------------------------------------
+        // IMPORTANT:
+        // Existing statistics route is /stats.
+        // --------------------------------------------------
+
         return res.redirect(
-            `/milkStats?type=day&date=${encodeURIComponent(day)}`
+            `/stats?type=day&date=${encodeURIComponent(day)}`
         );
 
     } catch (err) {
@@ -751,7 +996,7 @@ exports.saveDailyStats = async (
 
 
 // ==========================================================
-// SALES PAGE
+// GET SALES PAGE
 // ==========================================================
 //
 // ADMIN
@@ -762,7 +1007,7 @@ exports.saveDailyStats = async (
 // /sales?farmId=<ID>
 //      -> selected farm
 //
-// DAIRY WORKER
+// WORKER
 //
 // /sales
 //      -> automatically uses assigned farm
@@ -776,9 +1021,9 @@ exports.getSalesPage = async (
 
     try {
 
-        // --------------------------------------------------
+        // ==================================================
         // AUTHENTICATION
-        // --------------------------------------------------
+        // ==================================================
 
         if (
             !req.user ||
@@ -798,35 +1043,33 @@ exports.getSalesPage = async (
             req.user.role === "admin";
 
 
-        // --------------------------------------------------
+        // ==================================================
         // REQUESTED FARM
-        // --------------------------------------------------
+        // ==================================================
 
-        let requestedFarmId =
-            null;
-
-
-        if (
-            typeof req.query.farmId === "string"
-        ) {
-
-            const value =
-                req.query.farmId.trim();
+        const requestedFarmId =
+            normalizeFarmId(
+                req.query.farmId
+            );
 
 
-            if (value) {
-
-                requestedFarmId =
-                    value;
-
-            }
-
-        }
-
-
-        // --------------------------------------------------
-        // ASK SERVICE FOR SALES DATA
-        // --------------------------------------------------
+        // ==================================================
+        // GET SALES DATA FROM SERVICE
+        // ==================================================
+        //
+        // The service is responsible for:
+        //
+        // • loading actual farms
+        // • determining worker's assigned farm
+        // • finding selected farm
+        // • calculating farm milk
+        // • calculating sales
+        // • calculating revenue
+        // • loading standing orders
+        // • loading manual sales
+        // • calculating global admin totals
+        //
+        // ==================================================
 
         const data =
             await milkService.getSalesPageData({
@@ -840,9 +1083,29 @@ exports.getSalesPage = async (
             });
 
 
-        // --------------------------------------------------
+        // ==================================================
+        // FARMS
+        // ==================================================
+        //
+        // IMPORTANT:
+        // The farms array MUST be passed to EJS.
+        //
+        // The service should return the actual farm
+        // documents here.
+        //
+        // ==================================================
+
+        const farms =
+            Array.isArray(
+                data?.farms
+            )
+                ? data.farms
+                : [];
+
+
+        // ==================================================
         // RESOLVE SELECTED FARM
-        // --------------------------------------------------
+        // ==================================================
 
         let selectedFarmId =
             null;
@@ -865,25 +1128,24 @@ exports.getSalesPage = async (
         }
 
 
-        // --------------------------------------------------
-        // NORMALIZE FARM ID
-        // --------------------------------------------------
-
-        if (
-            selectedFarmId
-        ) {
-
-            selectedFarmId =
-                String(
-                    selectedFarmId
-                );
-
-        }
+        selectedFarmId =
+            normalizeFarmId(
+                selectedFarmId
+            );
 
 
-        // --------------------------------------------------
-        // DETERMINE WHETHER FARM IS SELECTED
-        // --------------------------------------------------
+        // ==================================================
+        // SELECTED FARM
+        // ==================================================
+
+        const selectedFarm =
+            data?.selectedFarm ||
+            null;
+
+
+        // ==================================================
+        // FARM SELECTED?
+        // ==================================================
 
         const farmSelected =
             Boolean(
@@ -891,16 +1153,9 @@ exports.getSalesPage = async (
             );
 
 
-        // --------------------------------------------------
+        // ==================================================
         // SELLING PERMISSION
-        // --------------------------------------------------
-        //
-        // Admin:
-        //      can sell only after selecting a farm.
-        //
-        // Worker:
-        //      can sell if assigned farm exists.
-        // --------------------------------------------------
+        // ==================================================
 
         const canSell =
             isAdmin
@@ -911,25 +1166,28 @@ exports.getSalesPage = async (
                 );
 
 
-        // --------------------------------------------------
+        // ==================================================
         // FARM-SPECIFIC VALUES
-        // --------------------------------------------------
+        // ==================================================
 
         const availableMilk =
-            Number(
-                data?.availableMilk || 0
+            toNumber(
+                data?.availableMilk,
+                0
             );
 
 
         const totalSales =
-            Number(
-                data?.totalSales || 0
+            toNumber(
+                data?.totalSales,
+                0
             );
 
 
         const revenue =
-            Number(
-                data?.revenue || 0
+            toNumber(
+                data?.revenue,
+                0
             );
 
 
@@ -945,76 +1203,71 @@ exports.getSalesPage = async (
                 : 50;
 
 
-        // --------------------------------------------------
+        // ==================================================
         // GLOBAL ADMIN VALUES
-        // --------------------------------------------------
+        // ==================================================
 
         const allFarmAvailableMilk =
-            Number(
-                data?.allFarmAvailableMilk || 0
+            toNumber(
+                data?.allFarmAvailableMilk,
+                0
             );
 
 
         const allFarmRevenue =
-            Number(
-                data?.allFarmRevenue || 0
+            toNumber(
+                data?.allFarmRevenue,
+                0
             );
 
 
         const allFarmTotalSales =
-            Number(
-                data?.allFarmTotalSales || 0
+            toNumber(
+                data?.allFarmTotalSales,
+                0
             );
 
 
-        // --------------------------------------------------
-        // RENDER
-        // --------------------------------------------------
+        // ==================================================
+        // RENDER SALES PAGE
+        // ==================================================
 
         return res.render(
             "sales",
             {
 
-                // ==========================================
+                // ==================================================
                 // USER
-                // ==========================================
+                // ==================================================
 
                 user:
                     req.user,
 
-
                 isAdmin,
 
 
-                // ==========================================
-                // FARM SELECTION
-                // ==========================================
+                // ==================================================
+                // FARMS
+                // ==================================================
 
-                farms:
-                    Array.isArray(
-                        data?.farms
-                    )
-                        ? data.farms
-                        : [],
+                farms,
 
 
-                selectedFarm:
-                    data?.selectedFarm || null,
-
+                selectedFarm,
 
                 selectedFarmId,
 
 
-                // ==========================================
+                // ==================================================
                 // PERMISSIONS
-                // ==========================================
+                // ==================================================
 
                 canSell,
 
 
-                // ==========================================
+                // ==================================================
                 // FARM SALES DATA
-                // ==========================================
+                // ==================================================
 
                 availableMilk,
 
@@ -1041,9 +1294,9 @@ exports.getSalesPage = async (
                         : [],
 
 
-                // ==========================================
+                // ==================================================
                 // ADMIN GLOBAL DATA
-                // ==========================================
+                // ==================================================
 
                 allFarmAvailableMilk,
 
@@ -1052,15 +1305,16 @@ exports.getSalesPage = async (
                 allFarmTotalSales,
 
 
-                // ==========================================
+                // ==================================================
                 // FLASH MESSAGES
-                // ==========================================
+                // ==================================================
 
                 success:
                     req.query.success === "1",
 
                 error:
-                    req.query.error || ""
+                    req.query.error ||
+                    ""
 
             }
         );
@@ -1074,10 +1328,8 @@ exports.getSalesPage = async (
 
 
         // --------------------------------------------------
-        // IMPORTANT:
-        // Render the page with safe defaults instead of
-        // allowing an EJS rendering failure to produce an
-        // apparently blank page.
+        // Render safe defaults instead of allowing EJS
+        // to fail because expected variables are missing.
         // --------------------------------------------------
 
         return res
@@ -1086,39 +1338,61 @@ exports.getSalesPage = async (
                 "sales",
                 {
 
-                    farms: [],
-
-                    selectedFarm: null,
-
-                    selectedFarmId: null,
+                    user:
+                        req.user,
 
                     isAdmin:
                         req.user?.role === "admin",
 
-                    canSell: false,
 
-                    standingOrders: [],
+                    // IMPORTANT:
+                    // farms is always supplied.
+                    farms: [],
 
-                    manualSales: [],
 
-                    currentPrice: 50,
+                    selectedFarm:
+                        null,
 
-                    availableMilk: 0,
+                    selectedFarmId:
+                        null,
 
-                    totalSales: 0,
 
-                    revenue: 0,
+                    canSell:
+                        false,
 
-                    allFarmAvailableMilk: 0,
 
-                    allFarmRevenue: 0,
+                    availableMilk:
+                        0,
 
-                    allFarmTotalSales: 0,
+                    totalSales:
+                        0,
 
-                    user:
-                        req.user,
+                    revenue:
+                        0,
 
-                    success: false,
+                    currentPrice:
+                        50,
+
+
+                    manualSales:
+                        [],
+
+                    standingOrders:
+                        [],
+
+
+                    allFarmAvailableMilk:
+                        0,
+
+                    allFarmRevenue:
+                        0,
+
+                    allFarmTotalSales:
+                        0,
+
+
+                    success:
+                        false,
 
                     error:
                         err.message ||
@@ -1172,10 +1446,9 @@ exports.submitManualSale = async (
 
 
         farmId =
-            typeof req.body.farmId === "string" &&
-            req.body.farmId.trim()
-                ? req.body.farmId.trim()
-                : null;
+            normalizeFarmId(
+                req.body.farmId
+            );
 
 
         if (!customerName) {
@@ -1236,15 +1509,18 @@ exports.submitManualSale = async (
 
 
         const redirectFarm =
-            saved?.farmId ||
-            farmId;
+            normalizeFarmId(
+                saved?.farmId ||
+                farmId
+            );
 
 
         return res.redirect(
             salesRedirect(
                 redirectFarm,
                 {
-                    success: "1"
+                    success:
+                        "1"
                 }
             )
         );
@@ -1261,9 +1537,11 @@ exports.submitManualSale = async (
             salesRedirect(
                 farmId,
                 {
+
                     error:
                         err.message ||
                         "Unable to save manual sale."
+
                 }
             )
         );
@@ -1315,10 +1593,9 @@ exports.submitStandingOrderSale = async (
 
 
         farmId =
-            typeof req.body.farmId === "string" &&
-            req.body.farmId.trim()
-                ? req.body.farmId.trim()
-                : null;
+            normalizeFarmId(
+                req.body.farmId
+            );
 
 
         if (
@@ -1356,15 +1633,18 @@ exports.submitStandingOrderSale = async (
 
 
         const redirectFarm =
-            saved?.farmId ||
-            farmId;
+            normalizeFarmId(
+                saved?.farmId ||
+                farmId
+            );
 
 
         return res.redirect(
             salesRedirect(
                 redirectFarm,
                 {
-                    success: "1"
+                    success:
+                        "1"
                 }
             )
         );
@@ -1381,9 +1661,11 @@ exports.submitStandingOrderSale = async (
             salesRedirect(
                 farmId,
                 {
+
                     error:
                         err.message ||
                         "Unable to save standing order sale."
+
                 }
             )
         );
@@ -1396,19 +1678,6 @@ exports.submitStandingOrderSale = async (
 // ==========================================================
 // UPDATE MILK PRICE
 // ADMIN ONLY
-// ==========================================================
-//
-// IMPORTANT:
-//
-// Price is now associated with the selected farm.
-//
-// Service signature expected:
-//
-// milkService.updateMilkPrice({
-//     price,
-//     farmId,
-//     user
-// });
 // ==========================================================
 
 exports.updateMilkPrice = async (
@@ -1434,10 +1703,9 @@ exports.updateMilkPrice = async (
 
 
         farmId =
-            typeof req.body.farmId === "string" &&
-            req.body.farmId.trim()
-                ? req.body.farmId.trim()
-                : null;
+            normalizeFarmId(
+                req.body.farmId
+            );
 
 
         if (!farmId) {
@@ -1483,7 +1751,8 @@ exports.updateMilkPrice = async (
             salesRedirect(
                 farmId,
                 {
-                    success: "1"
+                    success:
+                        "1"
                 }
             )
         );
@@ -1500,9 +1769,11 @@ exports.updateMilkPrice = async (
             salesRedirect(
                 farmId,
                 {
+
                     error:
                         err.message ||
                         "Unable to update milk price."
+
                 }
             )
         );
@@ -1552,10 +1823,9 @@ exports.addStandingOrder = async (
 
 
         farmId =
-            typeof req.body.farmId === "string" &&
-            req.body.farmId.trim()
-                ? req.body.farmId.trim()
-                : null;
+            normalizeFarmId(
+                req.body.farmId
+            );
 
 
         if (!customerName) {
@@ -1616,15 +1886,18 @@ exports.addStandingOrder = async (
 
 
         const redirectFarm =
-            order?.farmId ||
-            farmId;
+            normalizeFarmId(
+                order?.farmId ||
+                farmId
+            );
 
 
         return res.redirect(
             salesRedirect(
                 redirectFarm,
                 {
-                    success: "1"
+                    success:
+                        "1"
                 }
             )
         );
@@ -1641,9 +1914,11 @@ exports.addStandingOrder = async (
             salesRedirect(
                 farmId,
                 {
+
                     error:
                         err.message ||
                         "Unable to add standing order."
+
                 }
             )
         );
@@ -1697,10 +1972,9 @@ exports.omitStandingOrder = async (
 
 
         farmId =
-            typeof req.body.farmId === "string" &&
-            req.body.farmId.trim()
-                ? req.body.farmId.trim()
-                : null;
+            normalizeFarmId(
+                req.body.farmId
+            );
 
 
         if (!farmId) {
@@ -1729,7 +2003,8 @@ exports.omitStandingOrder = async (
             salesRedirect(
                 farmId,
                 {
-                    success: "1"
+                    success:
+                        "1"
                 }
             )
         );
@@ -1746,9 +2021,11 @@ exports.omitStandingOrder = async (
             salesRedirect(
                 farmId,
                 {
+
                     error:
                         err.message ||
                         "Unable to omit standing order."
+
                 }
             )
         );
@@ -1803,17 +2080,24 @@ exports.getMilkingHistory = async (
             {
 
                 dairy:
-                    data?.dairy || null,
+                    data?.dairy ||
+                    null,
 
                 records:
-                    data?.records || [],
+                    Array.isArray(
+                        data?.records
+                    )
+                        ? data.records
+                        : [],
 
                 grouped:
-                    data?.grouped || {},
+                    data?.grouped ||
+                    {},
 
                 monthlyTotal:
-                    Number(
-                        data?.monthlyTotal || 0
+                    toNumber(
+                        data?.monthlyTotal,
+                        0
                     ),
 
                 hasData:
@@ -1822,7 +2106,8 @@ exports.getMilkingHistory = async (
                     ),
 
                 selectedMonth:
-                    month || "",
+                    month ||
+                    "",
 
                 user:
                     req.user
@@ -1968,8 +2253,13 @@ exports.lockDay = async (
         );
 
 
+        // --------------------------------------------------
+        // IMPORTANT:
+        // Statistics route is /stats.
+        // --------------------------------------------------
+
         return res.redirect(
-            `/milkStats?type=day&date=${encodeURIComponent(day)}`
+            `/stats?type=day&date=${encodeURIComponent(day)}`
         );
 
     } catch (err) {
@@ -2036,8 +2326,13 @@ exports.unlockDay = async (
         );
 
 
+        // --------------------------------------------------
+        // IMPORTANT:
+        // Statistics route is /stats.
+        // --------------------------------------------------
+
         return res.redirect(
-            `/milkStats?type=day&date=${encodeURIComponent(day)}`
+            `/stats?type=day&date=${encodeURIComponent(day)}`
         );
 
     } catch (err) {
@@ -2062,6 +2357,10 @@ exports.unlockDay = async (
 
 // ==========================================================
 // SESSION HELPERS
+// ==========================================================
+//
+// Exported so the routes or other parts of the application
+// can continue using the service-level session helpers.
 // ==========================================================
 
 exports.getMilkSession =
