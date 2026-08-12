@@ -4,7 +4,7 @@
 ========================================================== */
 
 const pageError =
-    typeof error !== "undefined"
+    typeof error !== "undefined" && error
         ? error
         : "";
 
@@ -19,7 +19,7 @@ const pageSuccess =
 ========================================================== */
 
 const currentSession =
-    typeof session !== "undefined"
+    typeof session !== "undefined" && session
         ? session
         : "";
 
@@ -34,16 +34,20 @@ const currentUser =
         : null;
 
 const adminUser =
-    currentUser &&
-    currentUser.role === "admin";
+    Boolean(
+        currentUser &&
+        currentUser.role === "admin"
+    );
 
 const dairyWorker =
-    currentUser &&
-    currentUser.role === "dairyWorker";
+    Boolean(
+        currentUser &&
+        currentUser.role === "dairyWorker"
+    );
 
 
 /* ==========================================================
-   CURRENT FARM
+   ACTIVE FARM
 ========================================================== */
 
 const activeFarm =
@@ -69,38 +73,39 @@ const activeFarmId =
 
 
 /* ==========================================================
-   FARM TABLE DATA
+   MILK TABLE DATA
 ========================================================== */
 
 let milkTables = [];
 
 
 /*
- * Expected structure:
+ * Preferred structure:
  *
  * milkDairyTables = [
  *
- *     {
- *         farm: {
- *             _id,
- *             name,
- *             code
- *         },
+ *   {
+ *      farm: {
+ *          _id,
+ *          name,
+ *          code
+ *      },
  *
- *         animals: [
- *             {
- *                 _id,
- *                 name,
- *                 code,
- *                 morning,
- *                 evening
- *             }
- *         ]
- *     }
+ *      animals: [
+ *          {
+ *              _id,
+ *              name,
+ *              code,
+ *              isMilking,
+ *              morning,
+ *              evening
+ *          }
+ *      ]
+ *   }
  *
  * ]
- *
  */
+
 
 if (
     typeof milkDairyTables !== "undefined" &&
@@ -113,7 +118,7 @@ if (
 
 
 /* ==========================================================
-   FALLBACK DATA
+   FALLBACK
 ========================================================== */
 
 else if (
@@ -191,10 +196,10 @@ if (!Array.isArray(milkTables)) {
 
 
 /* ==========================================================
-   DAIRY WORKER FARM FILTER
+   DAIRY WORKER FARM RESTRICTION
 ========================================================== */
 
-if (dairyWorker) {
+if (dairyWorker && activeFarmId) {
 
     milkTables =
         milkTables.filter(function (table) {
@@ -211,8 +216,6 @@ if (dairyWorker) {
 
 
             return (
-                activeFarmId &&
-                tableFarmId &&
                 tableFarmId === activeFarmId
             );
 
@@ -241,17 +244,27 @@ milkTables =
    SESSION PERMISSIONS
 ========================================================== */
 
+/*
+ * Normal collection:
+ *
+ * morning  -> morning collection
+ * evening  -> evening collection
+ *
+ * Admin:
+ *
+ * closed -> can still enter/edit morning records
+ *
+ * Other users:
+ *
+ * closed -> locked
+ */
+
 const adminMorningWindow =
     adminUser &&
     (
         currentSession === "morning" ||
         currentSession === "closed"
     );
-
-
-const adminEveningWindow =
-    adminUser &&
-    currentSession === "evening";
 
 
 const canSubmit =
@@ -399,6 +412,22 @@ else {
 
 }
 
+
+/* ==========================================================
+   DATE LABEL
+========================================================== */
+
+const todayLabel =
+    new Date().toLocaleDateString(
+        "en-KE",
+        {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        }
+    );
+
 %>
 
 
@@ -421,12 +450,13 @@ else {
                 🥛
             </div>
 
+
             <div class="milk-header-text">
 
                 <% if (adminUser) { %>
 
                     <div class="milk-eyebrow">
-                        All Dairy Farms
+                        ALL DAIRY FARMS
                     </div>
 
                 <% } else { %>
@@ -442,12 +472,19 @@ else {
                     Milk Collection
                 </h1>
 
+
+                <div class="milk-date">
+                    <%= todayLabel %>
+                </div>
+
             </div>
 
         </div>
 
 
-        <div class="milk-session-badge <%= sessionBadgeClass %>">
+        <div
+            class="milk-session-badge <%= sessionBadgeClass %>"
+        >
 
             <span class="session-dot"></span>
 
@@ -464,7 +501,9 @@ else {
          SESSION STATUS
     ======================================================= -->
 
-    <div class="milk-session-card <%= sessionClass %>">
+    <div
+        class="milk-session-card <%= sessionClass %>"
+    >
 
         <div class="session-card-icon">
             <%= sessionIcon %>
@@ -475,6 +514,29 @@ else {
 
             <div class="session-card-title">
                 <%= sessionTitle %>
+            </div>
+
+
+            <div class="session-card-description">
+
+                <% if (currentSession === "morning") { %>
+
+                    Record today's morning milk production.
+
+                <% } else if (currentSession === "evening") { %>
+
+                    Record today's evening milk production.
+
+                <% } else if (currentSession === "closed" && adminUser) { %>
+
+                    Administrator access to morning collection records.
+
+                <% } else { %>
+
+                    Milk collection is currently closed.
+
+                <% } %>
+
             </div>
 
         </div>
@@ -520,10 +582,98 @@ else {
 
 
     <!-- ======================================================
+         SUMMARY
+    ======================================================= -->
+
+    <% if (milkTables.length > 0) { %>
+
+        <div class="milk-summary">
+
+            <div class="milk-summary-item">
+
+                <span class="summary-icon">
+                    🐄
+                </span>
+
+                <div>
+
+                    <strong>
+                        <%= totalAnimals %>
+                    </strong>
+
+                    <span>
+                        <%= totalAnimals === 1
+                            ? "Milking animal"
+                            : "Milking animals"
+                        %>
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="milk-summary-item">
+
+                <span class="summary-icon">
+                    📝
+                </span>
+
+                <div>
+
+                    <strong>
+                        <%= milkTables.length %>
+                    </strong>
+
+                    <span>
+                        <%= milkTables.length === 1
+                            ? "Dairy farm"
+                            : "Dairy farms"
+                        %>
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="milk-summary-item">
+
+                <span class="summary-icon">
+                    <%= entrySession === "morning"
+                        ? "🌅"
+                        : "🌆"
+                    %>
+                </span>
+
+                <div>
+
+                    <strong>
+                        <%= entrySession === "morning"
+                            ? "Morning"
+                            : "Evening"
+                        %>
+                    </strong>
+
+                    <span>
+                        Collection session
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- ======================================================
          NO ANIMALS
     ======================================================= -->
 
     <% if (milkTables.length === 0) { %>
+
 
         <div class="milk-empty-state">
 
@@ -531,9 +681,11 @@ else {
                 🐄
             </div>
 
+
             <h2>
                 No Animals Currently Being Milked
             </h2>
+
 
             <% if (adminUser) { %>
 
@@ -546,7 +698,8 @@ else {
 
                 <p>
                     There are currently no milking animals
-                    available for <%= activeFarmName %>.
+                    available for
+                    <strong><%= activeFarmName %></strong>.
                 </p>
 
             <% } %>
@@ -592,6 +745,9 @@ else {
                 farm && farm._id
                     ? String(farm._id)
                     : "";
+
+
+            const farmFormIds = [];
 
         %>
 
@@ -639,6 +795,7 @@ else {
 
                             <% } %>
 
+
                             <%= animals.length %>
 
                             <%= animals.length === 1
@@ -656,6 +813,7 @@ else {
                         <div class="collection-status">
 
                             <span class="status-dot"></span>
+
 
                             <% if (
                                 currentSession === "closed" &&
@@ -725,7 +883,6 @@ else {
 
                         <tbody>
 
-
                         <%
                         animals.forEach(function (dairy, animalIndex) {
 
@@ -765,6 +922,9 @@ else {
                                 String(tableIndex) +
                                 "_" +
                                 String(animalIndex);
+
+
+                            farmFormIds.push(formId);
 
 
                             const animalId =
@@ -819,6 +979,7 @@ else {
                                         <div class="animal-avatar">
                                             🐄
                                         </div>
+
 
                                         <div class="animal-info">
 
@@ -887,6 +1048,7 @@ else {
 
                                                 </span>
 
+
                                                 <span class="edit-icon">
                                                     ✏️
                                                 </span>
@@ -915,7 +1077,6 @@ else {
 
                                             </div>
 
-
                                         <% } %>
 
 
@@ -934,6 +1095,7 @@ else {
                                                 placeholder="0.0"
                                                 required
                                                 inputmode="decimal"
+                                                autocomplete="off"
                                             >
 
                                             <span class="input-unit">
@@ -957,7 +1119,6 @@ else {
                                             </small>
 
                                         </div>
-
 
                                     <% } %>
 
@@ -1102,7 +1263,6 @@ else {
                                             🔒
                                         </div>
 
-
                                     <% } %>
 
                                 </td>
@@ -1140,7 +1300,6 @@ else {
 
                                         <% } else { %>
 
-
                                             <div class="read-only-label">
 
                                                 <span>
@@ -1148,11 +1307,10 @@ else {
                                                 </span>
 
                                                 <span>
-                                                    Read-only
+                                                    Recorded
                                                 </span>
 
                                             </div>
-
 
                                         <% } %>
 
@@ -1190,7 +1348,6 @@ else {
 
                                         </div>
 
-
                                     <% } %>
 
                                 </td>
@@ -1198,55 +1355,94 @@ else {
                             </tr>
 
 
-                            <!-- ==================================
-                                 INDIVIDUAL RECORD FORM
-                            =================================== -->
-
-                            <% if (canCreateRecord) { %>
-
-                                <form
-                                    id="<%= formId %>"
-                                    action="/milk"
-                                    method="POST"
-                                    class="individual-milk-form"
-                                >
-
-                                    <!-- FARM ID -->
-                                    <input
-                                        type="hidden"
-                                        name="farm"
-                                        value="<%= farmId %>"
-                                    >
-
-
-                                    <!-- ANIMAL ID -->
-                                    <input
-                                        type="hidden"
-                                        name="dairy"
-                                        value="<%= animalId %>"
-                                    >
-
-
-                                    <!-- COLLECTION SESSION -->
-                                    <input
-                                        type="hidden"
-                                        name="session"
-                                        value="<%= entrySession %>"
-                                    >
-
-                                </form>
-
-                            <% } %>
-
-
                         <%
                         });
                         %>
 
-
                         </tbody>
 
                     </table>
+
+                </div>
+
+
+                <!-- ==================================================
+                     VALID HIDDEN FORMS
+                     These are deliberately OUTSIDE the table.
+                =================================================== -->
+
+                <div class="individual-milk-forms">
+
+                    <%
+                    animals.forEach(function (dairy, animalIndex) {
+
+                        let record = null;
+
+
+                        if (entrySession === "morning") {
+
+                            record =
+                                dairy.morning || null;
+
+                        } else {
+
+                            record =
+                                dairy.evening || null;
+
+                        }
+
+
+                        if (record || !canSubmit) {
+                            return;
+                        }
+
+
+                        const animalId =
+                            dairy && dairy._id
+                                ? String(dairy._id)
+                                : "";
+
+
+                        const formId =
+                            "milkRecordForm_" +
+                            String(dairy._id) +
+                            "_" +
+                            String(tableIndex) +
+                            "_" +
+                            String(animalIndex);
+
+                    %>
+
+                        <form
+                            id="<%= formId %>"
+                            action="/milk"
+                            method="POST"
+                            class="individual-milk-form"
+                        >
+
+                            <input
+                                type="hidden"
+                                name="farm"
+                                value="<%= farmId %>"
+                            >
+
+
+                            <input
+                                type="hidden"
+                                name="dairy"
+                                value="<%= animalId %>"
+                            >
+
+
+                            <input
+                                type="hidden"
+                                name="session"
+                                value="<%= entrySession %>"
+                            >
+
+                        </form>
+
+                    <% }); %>
 
                 </div>
 
@@ -1285,6 +1481,7 @@ else {
         %>"
         role="alertdialog"
         aria-modal="true"
+        aria-labelledby="milkResultTitle"
     >
 
         <div class="result-icon">
@@ -1300,7 +1497,7 @@ else {
 
         <div class="result-content">
 
-            <h2>
+            <h2 id="milkResultTitle">
 
                 <% if (pageSuccess) { %>
                     Milk record saved
@@ -1456,6 +1653,7 @@ else {
                     Cancel
                 </button>
 
+
                 <button
                     type="submit"
                     class="modal-save-btn"
@@ -1474,137 +1672,10 @@ else {
 
 
 <!-- ==========================================================
-     ADDITIONAL FARM STYLES
+     STYLES
 ========================================================== -->
 
 <style>
-
-.farm-collection-card {
-    margin-bottom: 18px;
-}
-
-.farm-collection-card:last-of-type {
-    margin-bottom: 0;
-}
-
-.farm-collection-card .collection-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.farm-title-icon {
-    flex-shrink: 0;
-}
-
-.farm-collection-card .collection-subtitle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.subtitle-separator {
-    color: #b0b8b3;
-}
-
-.milk-modal-open {
-    overflow: hidden;
-}
-
-
-/* ==========================================================
-   RESULT POPUP
-========================================================== */
-
-.milk-result-popup {
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    box-sizing: border-box;
-}
-
-.milk-result-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(15, 30, 20, 0.38);
-    backdrop-filter: blur(3px);
-}
-
-.milk-result-dialog {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 390px;
-    padding: 26px 24px 22px;
-    box-sizing: border-box;
-    background: #ffffff;
-    border-radius: 20px;
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.18);
-    text-align: center;
-}
-
-.result-icon {
-    width: 58px;
-    height: 58px;
-    margin: 0 auto 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    font-size: 27px;
-    font-weight: 800;
-}
-
-.result-success .result-icon {
-    background: #eaf7ef;
-    color: #2e7d32;
-}
-
-.result-error .result-icon {
-    background: #fff0f0;
-    color: #b33131;
-}
-
-.result-content h2 {
-    margin: 0 0 7px;
-    color: #26322a;
-    font-size: 19px;
-    font-weight: 800;
-}
-
-.result-content p {
-    margin: 0;
-    color: #727d76;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.result-ok-button {
-    width: 100%;
-    min-height: 43px;
-    margin-top: 20px;
-    border: none;
-    border-radius: 10px;
-    background: #2e7d32;
-    color: #ffffff;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 750;
-    cursor: pointer;
-}
-
-.result-error .result-ok-button {
-    background: #a93434;
-}
-
-.result-ok-button:active {
-    transform: translateY(1px);
-}
-
 
 /* ==========================================================
    PAGE
@@ -1641,15 +1712,15 @@ else {
 .milk-header-icon {
     width: 58px;
     height: 58px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
     background: #eaf7ef;
     border: 1px solid #d5eddd;
     border-radius: 17px;
     font-size: 29px;
-    box-shadow: 0 6px 18px rgba(27, 94, 32, 0.08);
+    box-shadow: 0 6px 18px rgba(27, 94, 32, .08);
 }
 
 .milk-eyebrow {
@@ -1666,6 +1737,12 @@ else {
     font-size: 29px;
     font-weight: 800;
     line-height: 1.15;
+}
+
+.milk-date {
+    margin-top: 4px;
+    color: #8a948e;
+    font-size: 11px;
 }
 
 
@@ -1699,6 +1776,7 @@ else {
 .session-dot {
     width: 8px;
     height: 8px;
+    flex-shrink: 0;
     border-radius: 50%;
     background: currentColor;
 }
@@ -1712,11 +1790,11 @@ else {
     display: flex;
     align-items: center;
     gap: 15px;
-    margin-bottom: 22px;
+    margin-bottom: 18px;
     padding: 17px 19px;
-    border-radius: 17px;
     border: 1px solid;
-    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.035);
+    border-radius: 17px;
+    box-shadow: 0 5px 18px rgba(0, 0, 0, .035);
 }
 
 .session-card-open {
@@ -1747,7 +1825,7 @@ else {
     align-items: center;
     justify-content: center;
     border-radius: 13px;
-    background: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,.8);
     font-size: 21px;
 }
 
@@ -1760,6 +1838,13 @@ else {
     color: #253129;
     font-size: 14px;
     font-weight: 800;
+}
+
+.session-card-description {
+    margin-top: 4px;
+    color: #7e8982;
+    font-size: 12px;
+    line-height: 1.45;
 }
 
 .session-time {
@@ -1784,16 +1869,65 @@ else {
 
 
 /* ==========================================================
+   SUMMARY
+========================================================== */
+
+.milk-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.milk-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 13px 15px;
+    background: #fff;
+    border: 1px solid #e7ebe8;
+    border-radius: 14px;
+}
+
+.summary-icon {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: #eef8f1;
+    font-size: 18px;
+}
+
+.milk-summary-item strong {
+    display: block;
+    color: #26322a;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.milk-summary-item span:not(.summary-icon) {
+    display: block;
+    margin-top: 2px;
+    color: #8a948e;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+
+/* ==========================================================
    EMPTY STATE
 ========================================================== */
 
 .milk-empty-state {
     padding: 70px 25px;
     text-align: center;
-    background: #ffffff;
+    background: #fff;
     border: 1px solid #e7ebe8;
     border-radius: 20px;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 8px 28px rgba(0,0,0,.04);
 }
 
 .empty-animal-icon {
@@ -1827,32 +1961,52 @@ else {
    COLLECTION CARD
 ========================================================== */
 
-.collection-card {
+.farm-collection-card {
+    margin-bottom: 18px;
     overflow: hidden;
-    background: #ffffff;
+    background: #fff;
     border: 1px solid #e5eae6;
     border-radius: 19px;
-    box-shadow: 0 8px 30px rgba(27, 55, 35, 0.055);
+    box-shadow: 0 8px 30px rgba(27,55,35,.055);
+}
+
+.farm-collection-card:last-child {
+    margin-bottom: 0;
 }
 
 .collection-card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 15px;
     padding: 18px 20px;
     border-bottom: 1px solid #edf0ed;
 }
 
 .collection-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     color: #27332b;
     font-size: 17px;
     font-weight: 800;
 }
 
+.farm-title-icon {
+    flex-shrink: 0;
+}
+
 .collection-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin-top: 3px;
     color: #89928d;
     font-size: 13px;
+}
+
+.subtitle-separator {
+    color: #b0b8b3;
 }
 
 .collection-status {
@@ -1865,6 +2019,7 @@ else {
     color: #357a43;
     font-size: 12px;
     font-weight: 700;
+    white-space: nowrap;
 }
 
 .collection-status.status-locked {
@@ -1926,11 +2081,6 @@ else {
 .milk-table tbody tr:hover {
     background: #fbfdfb;
 }
-
-
-/* ==========================================================
-   COLUMN WIDTHS
-========================================================== */
 
 .col-animal {
     width: 25%;
@@ -2031,7 +2181,7 @@ else {
     border: 1px solid #dce4de;
     border-radius: 10px;
     outline: none;
-    background: #ffffff;
+    background: #fff;
     color: #243128;
     font-size: 15px;
     font-weight: 700;
@@ -2039,7 +2189,7 @@ else {
 
 .milk-input:focus {
     border-color: #55a666;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.10);
+    box-shadow: 0 0 0 3px rgba(76,175,80,.10);
     background: #fbfefc;
 }
 
@@ -2071,8 +2221,8 @@ else {
 
 button.record-wrapper,
 button.remarks-wrapper {
-    border: none;
     margin: 0;
+    border: none;
     font-family: inherit;
     text-align: left;
 }
@@ -2107,7 +2257,7 @@ button.remarks-wrapper {
 }
 
 .admin-edit-record:focus-visible {
-    outline: 3px solid rgba(76, 175, 80, .25);
+    outline: 3px solid rgba(76,175,80,.25);
     outline-offset: 3px;
     border-radius: 10px;
 }
@@ -2118,7 +2268,7 @@ button.remarks-wrapper {
 
 
 /* ==========================================================
-   LOCKED
+   LOCKED INPUT
 ========================================================== */
 
 .locked-input {
@@ -2154,7 +2304,7 @@ button.remarks-wrapper {
     border: 1px solid #dce4de;
     border-radius: 10px;
     outline: none;
-    background: #ffffff;
+    background: #fff;
     color: #334039;
     font-family: inherit;
     font-size: 13px;
@@ -2163,7 +2313,7 @@ button.remarks-wrapper {
 
 .remarks-input:focus {
     border-color: #55a666;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.09);
+    box-shadow: 0 0 0 3px rgba(76,175,80,.09);
 }
 
 .remarks-input::placeholder {
@@ -2239,12 +2389,20 @@ button.remarks-wrapper {
 
 .save-action {
     background: #2e7d32;
-    color: #ffffff;
+    color: #fff;
+}
+
+.save-action:hover {
+    background: #256b2a;
 }
 
 .admin-action {
     background: #eaf7ef;
     color: #28723a;
+}
+
+.admin-action:hover {
+    background: #dff2e4;
 }
 
 .read-only-label {
@@ -2260,14 +2418,117 @@ button.remarks-wrapper {
     color: #969e99;
 }
 
+.individual-milk-forms {
+    display: none;
+}
+
 .individual-milk-form {
     display: none;
+}
+
+.is-submitting {
+    opacity: .65;
+    cursor: wait;
+}
+
+
+/* ==========================================================
+   RESULT POPUP
+========================================================== */
+
+.milk-result-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.milk-result-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15,30,20,.38);
+    backdrop-filter: blur(3px);
+}
+
+.milk-result-dialog {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 390px;
+    padding: 26px 24px 22px;
+    box-sizing: border-box;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 25px 70px rgba(0,0,0,.18);
+    text-align: center;
+}
+
+.result-icon {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 27px;
+    font-weight: 800;
+}
+
+.result-success .result-icon {
+    background: #eaf7ef;
+    color: #2e7d32;
+}
+
+.result-error .result-icon {
+    background: #fff0f0;
+    color: #b33131;
+}
+
+.result-content h2 {
+    margin: 0 0 7px;
+    color: #26322a;
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.result-content p {
+    margin: 0;
+    color: #727d76;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.result-ok-button {
+    width: 100%;
+    min-height: 43px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 10px;
+    background: #2e7d32;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.result-error .result-ok-button {
+    background: #a93434;
 }
 
 
 /* ==========================================================
    EDIT MODAL
 ========================================================== */
+
+.milk-modal-open {
+    overflow: hidden;
+}
 
 .milk-edit-modal {
     position: fixed;
@@ -2287,7 +2548,7 @@ button.remarks-wrapper {
 .milk-edit-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(15, 30, 20, 0.42);
+    background: rgba(15,30,20,.42);
     backdrop-filter: blur(3px);
 }
 
@@ -2295,9 +2556,9 @@ button.remarks-wrapper {
     position: relative;
     width: 100%;
     max-width: 520px;
-    background: #ffffff;
+    background: #fff;
     border-radius: 20px;
-    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 25px 70px rgba(0,0,0,.18);
     overflow: hidden;
     z-index: 1;
 }
@@ -2400,7 +2661,7 @@ button.remarks-wrapper {
 .edit-input-wrapper input:focus,
 .edit-field textarea:focus {
     border-color: #55a666;
-    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.09);
+    box-shadow: 0 0 0 3px rgba(76,175,80,.09);
 }
 
 .edit-modal-footer {
@@ -2431,7 +2692,7 @@ button.remarks-wrapper {
 
 .modal-save-btn {
     background: #2e7d32;
-    color: #ffffff;
+    color: #fff;
 }
 
 .modal-save-btn:disabled {
@@ -2461,6 +2722,15 @@ button.remarks-wrapper {
     .milk-table th,
     .milk-table td {
         padding: 14px 12px;
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .milk-summary {
+        grid-template-columns: 1fr;
     }
 
 }
@@ -2498,6 +2768,10 @@ button.remarks-wrapper {
         font-size: 21px;
     }
 
+    .milk-date {
+        font-size: 9px;
+    }
+
     .milk-session-badge {
         padding: 7px 9px;
         font-size: 10px;
@@ -2521,11 +2795,19 @@ button.remarks-wrapper {
         font-size: 12px;
     }
 
+    .session-card-description {
+        font-size: 10px;
+    }
+
     .session-time {
         display: none;
     }
 
-    .collection-card {
+    .milk-summary-item {
+        padding: 11px 13px;
+    }
+
+    .farm-collection-card {
         border-radius: 14px;
     }
 
@@ -2621,6 +2903,45 @@ button.remarks-wrapper {
 }
 
 
+@media (max-width: 520px) {
+
+    .milk-edit-modal {
+        padding: 12px;
+    }
+
+    .milk-edit-dialog {
+        border-radius: 16px;
+    }
+
+    .edit-modal-header {
+        padding: 18px 17px 15px;
+    }
+
+    .edit-modal-body {
+        padding: 17px;
+    }
+
+    .edit-modal-footer {
+        padding: 13px 17px;
+    }
+
+    .modal-cancel-btn,
+    .modal-save-btn {
+        flex: 1;
+    }
+
+    .milk-result-popup {
+        padding: 12px;
+    }
+
+    .milk-result-dialog {
+        padding: 23px 19px 19px;
+        border-radius: 17px;
+    }
+
+}
+
+
 @media (max-width: 420px) {
 
     .milk-page {
@@ -2664,45 +2985,6 @@ button.remarks-wrapper {
 
 }
 
-
-@media (max-width: 520px) {
-
-    .milk-edit-modal {
-        padding: 12px;
-    }
-
-    .milk-edit-dialog {
-        border-radius: 16px;
-    }
-
-    .edit-modal-header {
-        padding: 18px 17px 15px;
-    }
-
-    .edit-modal-body {
-        padding: 17px;
-    }
-
-    .edit-modal-footer {
-        padding: 13px 17px;
-    }
-
-    .modal-cancel-btn,
-    .modal-save-btn {
-        flex: 1;
-    }
-
-    .milk-result-popup {
-        padding: 12px;
-    }
-
-    .milk-result-dialog {
-        padding: 23px 19px 19px;
-        border-radius: 17px;
-    }
-
-}
-
 </style>
 
 
@@ -2739,10 +3021,8 @@ button.remarks-wrapper {
             return;
         }
 
-
         resultPopup.style.display =
             "none";
-
 
         resultPopup.setAttribute(
             "aria-hidden",
@@ -2765,10 +3045,15 @@ button.remarks-wrapper {
     if (resultPopup) {
 
         resultPopup.addEventListener(
-            "keydown",
+            "click",
             function (event) {
 
-                if (event.key === "Escape") {
+                if (
+                    event.target &&
+                    event.target.classList.contains(
+                        "milk-result-backdrop"
+                    )
+                ) {
 
                     closeResultPopup();
 
@@ -2777,19 +3062,11 @@ button.remarks-wrapper {
             }
         );
 
-
-        setTimeout(function () {
-
-            resultCloseButton &&
-            resultCloseButton.focus();
-
-        }, 50);
-
     }
 
 
     /* ======================================================
-       EDIT MODAL ELEMENTS
+       EDIT MODAL
     ====================================================== */
 
     const modal =
@@ -2874,9 +3151,9 @@ button.remarks-wrapper {
 
 
         /*
-         * Router is mounted at /
+         * Milk router is mounted at "/"
          *
-         * Therefore the edit route is:
+         * Edit endpoint:
          *
          * POST /milk/:recordId
          */
@@ -2917,7 +3194,6 @@ button.remarks-wrapper {
         setTimeout(function () {
 
             litersInput.focus();
-
             litersInput.select();
 
         }, 50);
@@ -2993,31 +3269,12 @@ button.remarks-wrapper {
                 }
             );
 
-
-            button.addEventListener(
-                "keydown",
-                function (event) {
-
-                    if (
-                        event.key === "Enter" ||
-                        event.key === " "
-                    ) {
-
-                        event.preventDefault();
-
-                        button.click();
-
-                    }
-
-                }
-            );
-
         }
     );
 
 
     /* ======================================================
-       CLOSE BUTTONS
+       CLOSE MODAL
     ====================================================== */
 
     if (closeButton) {
@@ -3072,29 +3329,30 @@ button.remarks-wrapper {
 
 
     /* ======================================================
-       PREVENT EDIT DOUBLE SUBMISSION
+       EDIT DOUBLE SUBMISSION
     ====================================================== */
 
     form.addEventListener(
         "submit",
         function () {
 
-            if (saveButton) {
-
-                saveButton.disabled =
-                    true;
-
-                saveButton.textContent =
-                    "Saving...";
-
+            if (!saveButton) {
+                return;
             }
+
+
+            saveButton.disabled =
+                true;
+
+            saveButton.textContent =
+                "Saving...";
 
         }
     );
 
 
     /* ======================================================
-       PREVENT NEW RECORD DOUBLE SUBMISSION
+       NEW RECORD DOUBLE SUBMISSION
     ====================================================== */
 
     document.addEventListener(
@@ -3122,45 +3380,44 @@ button.remarks-wrapper {
                 submittedForm.id;
 
 
-            const buttons =
-                document.querySelectorAll(
+            const button =
+                document.querySelector(
                     'button[type="submit"][form="' +
                     formId +
                     '"]'
                 );
 
 
-            buttons.forEach(
-                function (button) {
-
-                    button.disabled =
-                        true;
-
-                    button.classList.add(
-                        "is-submitting"
-                    );
+            if (!button) {
+                return;
+            }
 
 
-                    const span =
-                        button.querySelector(
-                            "span"
-                        );
+            button.disabled =
+                true;
 
-
-                    if (span) {
-
-                        span.textContent =
-                            "Saving...";
-
-                    } else {
-
-                        button.textContent =
-                            "Saving...";
-
-                    }
-
-                }
+            button.classList.add(
+                "is-submitting"
             );
+
+
+            const span =
+                button.querySelector(
+                    "span"
+                );
+
+
+            if (span) {
+
+                span.textContent =
+                    "Saving...";
+
+            } else {
+
+                button.textContent =
+                    "Saving...";
+
+            }
 
         }
     );
