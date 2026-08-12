@@ -10,11 +10,13 @@ const updateService =
 // VIEW DAIRY PROFILE PAGE
 // ==========================================================
 
-exports.viewPage = async (req, res) => {
+exports.viewPage =
+async (req, res) => {
 
     try {
 
-        const { id } = req.params;
+        const { id } =
+            req.params;
 
 
         // ==================================================
@@ -26,19 +28,16 @@ exports.viewPage = async (req, res) => {
 
 
         // ==================================================
-        // DETERMINE PAGE FROM CODE
+        // DETERMINE WHETHER THIS IS A DAIRY FARM
         //
-        // NEGATIVE CODE:
-        //     Dairy Farm
-        //     → update.ejs
+        // code < 0
+        //     = Dairy Farm
         //
-        // POSITIVE CODE:
-        //     Animal
-        //     → dairySet.ejs
+        // code > 0
+        //     = Animal
         //
-        // NULL / UNDEFINED CODE:
-        //     Structure / Facility
-        //     → dairySet.ejs
+        // code === null / undefined
+        //     = Structure / Machine / Tool
         // ==================================================
 
         const isDairyFarm =
@@ -62,63 +61,63 @@ exports.viewPage = async (req, res) => {
         // RENDER
         // ==================================================
 
-        return res.render(view, {
+        return res.render(
+            view,
+            {
 
-            title:
-                "Dairy Profile",
-
-
-            // =================================================
-            // CURRENT DAIRY
-            // =================================================
-
-            dairy:
-                data.dairy,
+                title:
+                    "Dairy Profile",
 
 
-            // =================================================
-            // FEED
-            // =================================================
+                // ------------------------------------------
+                // CURRENT DAIRY / ASSET
+                // ------------------------------------------
 
-            feed:
-                data.feed || [],
-
-
-            // =================================================
-            // WEEKLY MILK FEEDS
-            // =================================================
-
-            weeklyFeed:
-                data.weeklyFeeds || null,
+                dairy:
+                    data.dairy,
 
 
-            // =================================================
-            // COMMENT COUNT
-            // =================================================
+                // ------------------------------------------
+                // FEED
+                // ------------------------------------------
 
-            commentCount:
-                data.commentCount || 0,
-
-
-            // =================================================
-            // ASSETS BELONGING TO CURRENT FARM
-            //
-            // These are supplied to assetBar.ejs through
-            // update.ejs.
-            // =================================================
-
-            assetDairies:
-                data.assetDairies || [],
+                feed:
+                    data.feed || [],
 
 
-            // =================================================
-            // LOGGED-IN USER
-            // =================================================
+                // ------------------------------------------
+                // WEEKLY MILK FEED
+                // ------------------------------------------
 
-            user:
-                req.session.user || null
+                weeklyFeed:
+                    data.weeklyFeeds || null,
 
-        });
+
+                // ------------------------------------------
+                // COMMENT COUNT
+                // ------------------------------------------
+
+                commentCount:
+                    data.commentCount || 0,
+
+
+                // ------------------------------------------
+                // ASSETS BELONGING TO CURRENT FARM
+                // ------------------------------------------
+
+                assetDairies:
+                    data.assetDairies || [],
+
+
+                // ------------------------------------------
+                // LOGGED-IN USER
+                // ------------------------------------------
+
+                user:
+                    req.session.user || null
+
+            }
+        );
 
     } catch (err) {
 
@@ -126,6 +125,7 @@ exports.viewPage = async (req, res) => {
             "VIEW PAGE ERROR:",
             err
         );
+
 
         return res
             .status(500)
@@ -139,116 +139,21 @@ exports.viewPage = async (req, res) => {
 
 
 // ==========================================================
-// GET ASSIGNED FARMS
-//
-// Used by assetBar.ejs when the dairy worker opens the
-// farm-switcher.
-//
-// GET:
-//     /dairy/assigned-farms
-//
-// Returns only farms assigned to the logged-in dairy worker.
-// ==========================================================
-
-exports.getAssignedFarms = async (req, res) => {
-
-    try {
-
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
-        if (!req.session.user) {
-
-            return res.status(401).json({
-
-                success: false,
-
-                message:
-                    "Unauthorized"
-
-            });
-
-        }
-
-
-        // ==================================================
-        // ONLY DAIRY WORKERS
-        // ==================================================
-
-        if (
-            req.session.user.role !==
-            "dairyWorker"
-        ) {
-
-            return res.status(403).json({
-
-                success: false,
-
-                message:
-                    "Only dairy workers can access assigned farms."
-
-            });
-
-        }
-
-
-        // ==================================================
-        // GET FARMS FROM SERVICE
-        // ==================================================
-
-        const farms =
-            await farmService.getAssignedFarms(
-                req.session.user._id
-            );
-
-
-        // ==================================================
-        // RESPONSE
-        // ==================================================
-
-        return res.json({
-
-            success: true,
-
-            farms
-
-        });
-
-    } catch (err) {
-
-        console.error(
-            "GET ASSIGNED FARMS ERROR:",
-            err
-        );
-
-        return res.status(500).json({
-
-            success: false,
-
-            message:
-                err.message ||
-                "Failed to load assigned farms."
-
-        });
-
-    }
-
-};
-
-
-// ==========================================================
 // SWITCH DAIRY FARM
 //
-// Used when a dairy worker taps one of their assigned farms.
-//
 // GET:
-//     /dairy/:id/switch
 //
-// The farm MUST belong to the logged-in dairy worker.
+// /dairy/:id/switch
+//
+// Only a dairyWorker can use this.
+// The farm must exist in that worker's assignedFarm array.
+//
+// Database/assignment verification is delegated to
+// pageService.js.
 // ==========================================================
 
-exports.switchDairy = async (req, res) => {
+exports.switchDairy =
+async (req, res) => {
 
     try {
 
@@ -258,25 +163,34 @@ exports.switchDairy = async (req, res) => {
 
         if (!req.session.user) {
 
-            return res.status(401).send(
-                "Unauthorized"
-            );
+            return res
+                .status(401)
+                .send("Unauthorized");
 
         }
 
 
         // ==================================================
-        // ROLE
+        // USER
+        // ==================================================
+
+        const user =
+            req.session.user;
+
+
+        // ==================================================
+        // ROLE CHECK
         // ==================================================
 
         if (
-            req.session.user.role !==
-            "dairyWorker"
+            user.role !== "dairyWorker"
         ) {
 
-            return res.status(403).send(
-                "Only dairy workers can switch Dairy Farms."
-            );
+            return res
+                .status(403)
+                .send(
+                    "Only dairy workers can switch Dairy Farms."
+                );
 
         }
 
@@ -291,35 +205,46 @@ exports.switchDairy = async (req, res) => {
 
         if (!farmId) {
 
-            return res.status(400).send(
-                "Farm ID is required."
-            );
+            return res
+                .status(400)
+                .send(
+                    "Dairy Farm ID is required."
+                );
 
         }
 
 
         // ==================================================
         // VERIFY ASSIGNMENT
+        //
+        // pageService performs the actual database
+        // verification.
         // ==================================================
 
         const farm =
-            await farmService.getAssignedFarm(
-                req.session.user._id,
-                farmId
-            );
+            await updateService
+                .getAssignedFarmForUser(
+                    user._id,
+                    farmId
+                );
 
 
         if (!farm) {
 
-            return res.status(403).send(
-                "This Dairy Farm is not assigned to your account."
-            );
+            return res
+                .status(403)
+                .send(
+                    "This Dairy Farm is not assigned to your account."
+                );
 
         }
 
 
         // ==================================================
-        // REDIRECT TO SELECTED FARM
+        // SWITCH
+        //
+        // The selected farm becomes the page currently
+        // being viewed.
         // ==================================================
 
         return res.redirect(
@@ -333,10 +258,12 @@ exports.switchDairy = async (req, res) => {
             err
         );
 
-        return res.status(500).send(
-            err.message ||
-            "Failed to switch Dairy Farm."
-        );
+
+        return res
+            .status(500)
+            .send(
+                "Failed to switch Dairy Farm."
+            );
 
     }
 
