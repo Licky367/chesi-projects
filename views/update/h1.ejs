@@ -5,7 +5,7 @@ FILE:
 views/update/h1.ejs
 
 PURPOSE:
-Editorial-style introductory hero section for a Dairy Farm.
+Introductory hero content for a Dairy Farm.
 
 BACKGROUND:
 /images/h1.png
@@ -13,230 +13,228 @@ BACKGROUND:
 DATA REQUIRED:
 dairy
 
+NOTE:
+This is intentionally NOT presented as a card or
+boxed container. It flows naturally as part of the page.
+
 ========================================================== */ %>
 
 <section
     class="dairy-h1"
     aria-label="Dairy Farm Introduction"
->
+><!-- =====================================================
+     BACKGROUND IMAGE
+====================================================== -->
 
-    <!-- =====================================================
-         BACKGROUND IMAGE
-    ====================================================== -->
-
-    <div
-        class="dairy-h1-background"
-        aria-hidden="true"
-    ></div>
+<div
+    class="dairy-h1-background"
+    aria-hidden="true"
+></div>
 
 
-    <!-- =====================================================
-         IMAGE OVERLAY
-    ====================================================== -->
+<!-- =====================================================
+     IMAGE OVERLAY
+====================================================== -->
 
-    <div
-        class="dairy-h1-overlay"
-        aria-hidden="true"
-    ></div>
-
-
-    <!-- =====================================================
-         MAIN CONTENT
-    ====================================================== -->
-
-    <div class="dairy-h1-content">
+<div
+    class="dairy-h1-overlay"
+    aria-hidden="true"
+></div>
 
 
-        <!-- =================================================
-             SMALL LABEL
-        ================================================== -->
+<!-- =====================================================
+     CONTENT
+====================================================== -->
 
-        <div class="dairy-h1-label">
+<div class="dairy-h1-content">
 
-            <span class="dairy-h1-label-line"></span>
 
-            <span>
-                DAIRY FARM
-            </span>
+    <!-- =================================================
+         LABEL
+    ================================================== -->
 
-            <span class="dairy-h1-label-line"></span>
+    <div class="dairy-h1-label">
 
+        <span class="dairy-h1-label-line"></span>
+
+        <span>
+            DAIRY FARM
+        </span>
+
+        <span class="dairy-h1-label-line"></span>
+
+    </div>
+
+
+    <!-- =================================================
+         FARM NAME
+    ================================================== -->
+
+    <h1 class="dairy-h1-title">
+
+        Welcome to
+
+        <span>
+            <%= dairy.name || "Our Dairy Farm" %>
+        </span>
+
+    </h1>
+
+
+    <!-- =================================================
+         FARM CODE
+    ================================================== -->
+
+    <% if (
+        dairy &&
+        dairy.code !== null &&
+        dairy.code !== undefined
+    ) { %>
+
+        <div class="dairy-h1-code">
+            FARM #<%= dairy.code %>
         </div>
 
+    <% } %>
 
-        <!-- =================================================
-             FARM NAME
-        ================================================== -->
 
-        <h1 class="dairy-h1-title">
+    <!-- =================================================
+         INTRODUCTORY MESSAGE
+    ================================================== -->
 
+    <div class="dairy-h1-message">
+
+        <p>
             Welcome to
+            <strong>
+                <%= dairy.name || "this dairy farm" %>
+            </strong>.
+            We're glad to have you here.
+        </p>
 
-            <span>
-                <%= dairy.name || "Our Dairy Farm" %>
+        <p>
+            Support the activities here by updating
+            us about the welfare of all assets within
+            the dairy farm.
+        </p>
+
+        <p>
+            In case of any inconveniences, keep us
+            updated on this site.
+        </p>
+
+    </div>
+
+
+    <!-- =================================================
+         FARM VALUES
+    ================================================== -->
+
+    <div class="dairy-h1-values">
+
+
+        <!-- =============================================
+             ANIMAL WELFARE
+        ============================================== -->
+
+        <div class="dairy-h1-value">
+
+            <span
+                class="dairy-h1-value-icon"
+                aria-hidden="true"
+            >
+                ♧
             </span>
 
-        </h1>
+            <div>
 
+                <strong>
+                    Animal Welfare
+                </strong>
 
-        <!-- =================================================
-             FARM CODE
-        ================================================== -->
-
-        <% if (
-            dairy &&
-            dairy.code !== null &&
-            dairy.code !== undefined
-        ) { %>
-
-            <div class="dairy-h1-code">
-
-                FARM #<%= dairy.code %>
+                <span>
+                    Care for every animal
+                </span>
 
             </div>
-
-        <% } %>
-
-
-        <!-- =================================================
-             INTRODUCTORY MESSAGE
-        ================================================== -->
-
-        <div class="dairy-h1-message">
-
-            <p>
-                Welcome to
-                <strong>
-                    <%= dairy.name || "this dairy farm" %>
-                </strong>.
-                We're glad to have you here.
-            </p>
-
-            <p>
-                Support the activities here by updating
-                us about the welfare of all assets within
-                the dairy farm.
-            </p>
-
-            <p>
-                In case of any inconveniences, keep us
-                updated on this site.
-            </p>
 
         </div>
 
 
-        <!-- =================================================
-             FARM VALUES
-        ================================================== -->
+        <!-- =============================================
+             FARM ASSETS
+        ============================================== -->
 
-        <div class="dairy-h1-values">
+        <div class="dairy-h1-value">
 
+            <span
+                class="dairy-h1-value-icon"
+                aria-hidden="true"
+            >
+                ◈
+            </span>
 
-            <!-- =============================================
-                 ANIMAL WELFARE
-            ============================================== -->
+            <div>
 
-            <div class="dairy-h1-value">
+                <strong>
+                    Farm Assets
+                </strong>
 
-                <span
-                    class="dairy-h1-value-icon"
-                    aria-hidden="true"
-                >
-                    ♧
+                <span>
+                    Maintain every resource
                 </span>
-
-                <div>
-
-                    <strong>
-                        Animal Welfare
-                    </strong>
-
-                    <span>
-                        Care for every animal
-                    </span>
-
-                </div>
 
             </div>
 
+        </div>
 
-            <!-- =============================================
-                 FARM ASSETS
-            ============================================== -->
 
-            <div class="dairy-h1-value">
+        <!-- =============================================
+             STAY UPDATED
+        ============================================== -->
 
-                <span
-                    class="dairy-h1-value-icon"
-                    aria-hidden="true"
-                >
-                    ◈
+        <div class="dairy-h1-value">
+
+            <span
+                class="dairy-h1-value-icon"
+                aria-hidden="true"
+            >
+                ↗
+            </span>
+
+            <div>
+
+                <strong>
+                    Stay Updated
+                </strong>
+
+                <span>
+                    Keep the farm informed
                 </span>
 
-                <div>
-
-                    <strong>
-                        Farm Assets
-                    </strong>
-
-                    <span>
-                        Maintain every resource
-                    </span>
-
-                </div>
-
             </div>
-
-
-            <!-- =============================================
-                 STAY UPDATED
-            ============================================== -->
-
-            <div class="dairy-h1-value">
-
-                <span
-                    class="dairy-h1-value-icon"
-                    aria-hidden="true"
-                >
-                    ↗
-                </span>
-
-                <div>
-
-                    <strong>
-                        Stay Updated
-                    </strong>
-
-                    <span>
-                        Keep the farm informed
-                    </span>
-
-                </div>
-
-            </div>
-
 
         </div>
 
 
     </div>
 
-</section>
 
+</div>
 
-<!-- =========================================================
+</section><!-- =========================================================
      DAIRY H1 STYLES
-========================================================= -->
-
-<style>
+========================================================= --><style>
 
 /* =========================================================
-   MAIN HERO
+   H1 AREA
 
-   NO CARD
-   NO BORDER RADIUS
-   NO OUTER SHADOW
+   IMPORTANT:
+   No card appearance.
+   No border.
+   No border-radius.
+   No box-shadow.
+   No artificial outer margin.
 ========================================================= */
 
 .dairy-h1{
@@ -247,7 +245,7 @@ dairy
 
     min-height:520px;
 
-    margin:0 0 35px;
+    margin:0;
 
     overflow:hidden;
 
@@ -275,15 +273,11 @@ dairy
 
     background-position:center center;
 
-    transform:scale(1.015);
-
 }
 
 
 /* =========================================================
-   IMAGE OVERLAY
-
-   Stronger toward the text.
+   OVERLAY
 ========================================================= */
 
 .dairy-h1-overlay{
@@ -296,15 +290,15 @@ dairy
         linear-gradient(
             90deg,
 
-            rgba(20,39,22,.97) 0%,
+            rgba(24,43,24,.96) 0%,
 
-            rgba(27,46,25,.91) 25%,
+            rgba(31,48,27,.91) 25%,
 
-            rgba(47,53,28,.70) 48%,
+            rgba(54,55,29,.72) 48%,
 
-            rgba(59,52,30,.38) 72%,
+            rgba(65,53,31,.40) 70%,
 
-            rgba(39,43,26,.12) 100%
+            rgba(39,43,26,.18) 100%
         );
 
 }
@@ -313,8 +307,8 @@ dairy
 /* =========================================================
    CONTENT
 
-   The content is not a card.
-   It simply sits over the image.
+   This controls the text position only.
+   It does NOT create a card.
 ========================================================= */
 
 .dairy-h1-content{
@@ -369,16 +363,14 @@ dairy
 
     font-weight:800;
 
-    letter-spacing:2.8px;
+    letter-spacing:2.5px;
 
 }
 
 
 .dairy-h1-label-line{
 
-    display:block;
-
-    width:30px;
+    width:28px;
 
     height:1px;
 
@@ -398,6 +390,8 @@ dairy
 
     margin:0;
 
+    color:#fff;
+
     font-size:
         clamp(
             36px,
@@ -407,11 +401,9 @@ dairy
 
     line-height:1.04;
 
-    letter-spacing:-1.5px;
+    letter-spacing:-1.3px;
 
     font-weight:800;
-
-    color:#fff;
 
     text-shadow:
         0 3px 15px
@@ -434,7 +426,7 @@ dairy
 /* =========================================================
    FARM CODE
 
-   Simple text treatment rather than a card.
+   Plain text rather than a box.
 ========================================================= */
 
 .dairy-h1-code{
@@ -447,9 +439,7 @@ dairy
 
     font-weight:800;
 
-    letter-spacing:1.7px;
-
-    text-transform:uppercase;
+    letter-spacing:1.6px;
 
 }
 
@@ -462,7 +452,7 @@ dairy
 
     max-width:680px;
 
-    margin-top:26px;
+    margin-top:25px;
 
 }
 
@@ -482,8 +472,6 @@ dairy
         );
 
     line-height:1.7;
-
-    font-weight:400;
 
     text-shadow:
         0 2px 8px
@@ -511,8 +499,7 @@ dairy
 /* =========================================================
    VALUES
 
-   No cards.
-   Simple editorial information row.
+   These are information items, NOT cards.
 ========================================================= */
 
 .dairy-h1-values{
@@ -524,15 +511,15 @@ dairy
     display:grid;
 
     grid-template-columns:
-        repeat(3, minmax(0, 1fr));
+        repeat(3, minmax(0,1fr));
 
-    margin-top:34px;
+    margin-top:32px;
 
 }
 
 
 /* =========================================================
-   VALUE ITEM
+   VALUE
 ========================================================= */
 
 .dairy-h1-value{
@@ -543,7 +530,7 @@ dairy
 
     align-items:center;
 
-    gap:11px;
+    gap:10px;
 
     padding:
         4px 18px 4px 0;
@@ -552,14 +539,15 @@ dairy
 
 
 /* =========================================================
-   SEPARATORS
+   VALUE SEPARATORS
 ========================================================= */
 
 .dairy-h1-value + .dairy-h1-value{
 
     padding-left:18px;
 
-    border-left:1px solid
+    border-left:
+        1px solid
         rgba(225,211,165,.25);
 
 }
@@ -585,7 +573,8 @@ dairy
 
     border-radius:50%;
 
-    border:1px solid
+    border:
+        1px solid
         rgba(216,201,159,.38);
 
     color:#dfcf9e;
@@ -658,13 +647,6 @@ dairy
 
     }
 
-
-    .dairy-h1-message{
-
-        max-width:720px;
-
-    }
-
 }
 
 
@@ -694,11 +676,11 @@ dairy
             linear-gradient(
                 90deg,
 
-                rgba(20,39,22,.97) 0%,
+                rgba(24,43,24,.96) 0%,
 
-                rgba(29,47,26,.89) 48%,
+                rgba(31,48,27,.88) 48%,
 
-                rgba(54,53,29,.48) 100%
+                rgba(54,55,29,.48) 100%
             );
 
     }
@@ -716,8 +698,6 @@ dairy
 
         min-height:620px;
 
-        margin-bottom:25px;
-
     }
 
 
@@ -726,7 +706,7 @@ dairy
         min-height:620px;
 
         padding:
-            42px
+            40px
             20px
             35px;
 
@@ -749,11 +729,11 @@ dairy
             linear-gradient(
                 180deg,
 
-                rgba(20,39,22,.84) 0%,
+                rgba(24,43,24,.86) 0%,
 
-                rgba(27,45,25,.91) 52%,
+                rgba(27,45,25,.91) 50%,
 
-                rgba(39,40,24,.97) 100%
+                rgba(39,40,24,.96) 100%
             );
 
     }
@@ -777,7 +757,7 @@ dairy
                 43px
             );
 
-        letter-spacing:-.8px;
+        letter-spacing:-.7px;
 
     }
 
@@ -801,7 +781,7 @@ dairy
 
 
     /* ================================================
-       VALUES BECOME A SIMPLE VERTICAL LIST
+       MOBILE VALUES
     ================================================ */
 
     .dairy-h1-values{
@@ -810,7 +790,7 @@ dairy
 
         gap:0;
 
-        margin-top:25px;
+        margin-top:23px;
 
     }
 
@@ -829,7 +809,8 @@ dairy
 
         border-left:none;
 
-        border-top:1px solid
+        border-top:
+            1px solid
             rgba(225,211,165,.20);
 
     }
