@@ -4,60 +4,49 @@
 //
 // PURPOSE
 // ----------------------------------------------------------
-// Business logic for:
+// Central service for milk collection.
 //
-// • Recording milk
-// • Updating milk
-// • Deleting milk
-// • Daily milk reports
-// • Monthly milk reports
-// • Animal milk history
-// • Milking animal lookup
-// • Assigned-farm access control
-// • Morning / evening session validation
+// Handles:
 //
-// MODELS
-// ----------------------------------------------------------
-// Dairy
-// Milk
-// User
+// • Getting eligible milking animals
+// • Farm authorization
+// • Saving milk records
+// • Updating milk records
+// • Duplicate morning/evening protection
+// • Nairobi date handling
+// • User attribution
+// • Milk reporting
 //
 // ==========================================================
 
 const mongoose = require("mongoose");
 
-const Dairy = require("../../models/dairy");
-const Milk = require("../../models/milk");
-const User = require("../../models/projectUser");
+const Milk = require("../models/milk");
+const Dairy = require("../models/dairy");
+const User = require("../models/projectUser");
 
 
 // ==========================================================
 // CONSTANTS
 // ==========================================================
 
+const NAIROBI_TIMEZONE = "Africa/Nairobi";
+
 const SESSION_VALUES = [
     "morning",
     "evening"
 ];
-
-const NAIROBI_TIMEZONE =
-    "Africa/Nairobi";
 
 
 // ==========================================================
 // ERROR HELPER
 // ==========================================================
 
-function createError(
-    message,
-    statusCode = 400
-) {
+function createError(message, statusCode = 400) {
 
-    const error =
-        new Error(message);
+    const error = new Error(message);
 
-    error.statusCode =
-        statusCode;
+    error.statusCode = statusCode;
 
     return error;
 
@@ -70,9 +59,7 @@ function createError(
 
 function isValidObjectId(value) {
 
-    return mongoose.isValidObjectId(
-        value
-    );
+    return mongoose.isValidObjectId(value);
 
 }
 
@@ -81,10 +68,7 @@ function isValidObjectId(value) {
 // NUMBER PARSER
 // ==========================================================
 
-function parseNumber(
-    value,
-    fieldName
-) {
+function parseLiters(value) {
 
     if (
         value === undefined ||
@@ -93,83 +77,91 @@ function parseNumber(
     ) {
 
         throw createError(
-            `${fieldName} is required.`
+            "Milk quantity is required."
         );
 
     }
 
-
-    const number =
-        Number(value);
-
+    const liters = Number(value);
 
     if (
-        !Number.isFinite(number)
+        !Number.isFinite(liters)
     ) {
 
         throw createError(
-            `${fieldName} must be a valid number.`
+            "Milk quantity must be a valid number."
         );
 
     }
 
+    if (liters < 0) {
 
-    return number;
+        throw createError(
+            "Milk quantity cannot be negative."
+        );
+
+    }
+
+    return liters;
 
 }
 
 
 // ==========================================================
-// DATE PARSER
+// TEXT PARSER
 // ==========================================================
 
-function parseDate(value) {
+function parseRemarks(value) {
 
     if (
         value === undefined ||
-        value === null ||
-        value === ""
+        value === null
     ) {
 
-        return new Date();
+        return "";
 
     }
 
-
-    const date =
-        new Date(value);
-
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        throw createError(
-            "Invalid milk record date."
-        );
-
-    }
-
-
-    return date;
+    return String(value).trim();
 
 }
 
 
 // ==========================================================
-// NAIROBI DATE PARTS
+// SESSION VALIDATION
 // ==========================================================
 
-function getNairobiDateParts(
-    dateValue
-) {
+function parseSession(value) {
+
+    const session =
+        String(value || "")
+            .trim()
+            .toLowerCase();
+
+    if (
+        !SESSION_VALUES.includes(session)
+    ) {
+
+        throw createError(
+            "Milk session must be either morning or evening."
+        );
+
+    }
+
+    return session;
+
+}
+
+
+// ==========================================================
+// GET NAIROBI DATE
+// ==========================================================
+
+function getNairobiDay(dateValue = new Date()) {
 
     const date =
         new Date(dateValue);
 
-
     if (
         Number.isNaN(
             date.getTime()
@@ -177,17 +169,15 @@ function getNairobiDateParts(
     ) {
 
         throw createError(
-            "Invalid milk record date."
+            "Invalid date."
         );
 
     }
-
 
     const formatter =
         new Intl.DateTimeFormat(
             "en-CA",
             {
-
                 timeZone:
                     NAIROBI_TIMEZONE,
 
@@ -199,179 +189,173 @@ function getNairobiDateParts(
 
                 day:
                     "2-digit"
-
             }
         );
 
-
-    const day =
-        formatter.format(date);
-
-
-    return {
-
-        day,
-
-        month:
-            day.slice(
-                0,
-                7
-            )
-
-    };
+    return formatter.format(date);
 
 }
 
 
 // ==========================================================
-// SESSION VALIDATION
+// GET NAIROBI MONTH
 // ==========================================================
 
-function validateSession(
-    session
-) {
+function getNairobiMonth(dateValue = new Date()) {
 
-    if (
-        !SESSION_VALUES.includes(
-            session
-        )
-    ) {
-
-        throw createError(
-            "Session must be either morning or evening."
-        );
-
-    }
-
-
-    return session;
+    return getNairobiDay(
+        dateValue
+    ).slice(
+        0,
+        7
+    );
 
 }
 
 
 // ==========================================================
-// TEXT
+// GET USER ID
+// ==========================================================
+//
+// The session may store either:
+//
+// req.session.user = {
+//     _id,
+//     name,
+//     role
+// }
+//
+// or a Mongoose/ObjectId-like value.
+//
 // ==========================================================
 
-function parseText(value) {
-
-    if (
-        value === undefined ||
-        value === null
-    ) {
-
-        return "";
-
-    }
-
-
-    return String(value).trim();
-
-}
-
-
-// ==========================================================
-// USER LOOKUP
-// ==========================================================
-
-async function getUser(
-    userId
-) {
-
-    if (
-        !isValidObjectId(
-            userId
-        )
-    ) {
-
-        throw createError(
-            "Invalid user ID.",
-            400
-        );
-
-    }
-
-
-    const user =
-        await User.findById(
-            userId
-        );
-
+function getUserId(user) {
 
     if (!user) {
 
-        throw createError(
-            "User not found.",
-            404
-        );
+        return null;
 
     }
 
-
-    return user;
+    return (
+        user._id ||
+        user.id ||
+        null
+    );
 
 }
 
 
 // ==========================================================
-// FARM ACCESS
+// GET USER ROLE
+// ==========================================================
+
+function getUserRole(user) {
+
+    return String(
+        user?.role || ""
+    ).trim();
+
+}
+
+
+// ==========================================================
+// GET ASSIGNED FARM IDS
+// ==========================================================
+
+function getAssignedFarmIds(user) {
+
+    if (
+        !user ||
+        !Array.isArray(
+            user.assignedFarm
+        )
+    ) {
+
+        return [];
+
+    }
+
+    return user.assignedFarm
+        .map(farm => {
+
+            if (
+                farm &&
+                typeof farm === "object" &&
+                farm._id
+            ) {
+
+                return String(
+                    farm._id
+                );
+
+            }
+
+            return String(
+                farm
+            );
+
+        })
+        .filter(Boolean);
+
+}
+
+
+// ==========================================================
+// CHECK WHETHER USER CAN ACCESS FARM
 // ==========================================================
 //
 // Admin:
-//
 //     Can access every farm.
 //
-// Dairy worker:
+// dairyWorker:
+//     Can access only assigned farms.
 //
-//     Can only access farms contained in assignedFarm.
+// Other roles:
+//     No dairy access.
 //
 // ==========================================================
 
-function hasFarmAccess(
+function canAccessFarm(
     user,
     farmId
 ) {
 
-    if (!user) {
+    if (
+        !user ||
+        !farmId
+    ) {
 
         return false;
 
     }
 
+    const role =
+        getUserRole(user);
 
     if (
-        user.role === "admin"
+        role === "admin"
     ) {
 
         return true;
 
     }
 
-
     if (
-        user.role !== "dairyWorker"
+        role !== "dairyWorker"
     ) {
 
         return false;
 
     }
 
+    const assignedFarmIds =
+        getAssignedFarmIds(
+            user
+        );
 
-    if (
-        !Array.isArray(
-            user.assignedFarm
-        )
-    ) {
-
-        return false;
-
-    }
-
-
-    return user.assignedFarm.some(
-        assignedId =>
-            String(assignedId) ===
-            String(farmId)
+    return assignedFarmIds.includes(
+        String(farmId)
     );
 
 }
@@ -381,10 +365,7 @@ function hasFarmAccess(
 // GET FARM
 // ==========================================================
 
-async function getFarm(
-    farmId,
-    user
-) {
+async function getFarmById(farmId) {
 
     if (
         !isValidObjectId(
@@ -393,53 +374,39 @@ async function getFarm(
     ) {
 
         throw createError(
-            "Invalid Dairy Farm ID."
+            "Invalid dairy farm.",
+            400
         );
 
     }
 
-
     const farm =
         await Dairy.findById(
             farmId
-        );
-
+        ).lean();
 
     if (!farm) {
 
         throw createError(
-            "Dairy Farm not found.",
+            "Dairy farm not found.",
             404
         );
 
     }
 
+    // A Dairy Farm has a negative code.
 
     if (
-        !farm.isDairyFarm
+        farm.code === null ||
+        Number(farm.code) >= 0
     ) {
 
         throw createError(
-            "Selected Dairy record is not a Dairy Farm."
+            "Selected record is not a dairy farm.",
+            400
         );
 
     }
-
-
-    if (
-        !hasFarmAccess(
-            user,
-            farm._id
-        )
-    ) {
-
-        throw createError(
-            "You do not have access to this Dairy Farm.",
-            403
-        );
-
-    }
-
 
     return farm;
 
@@ -447,31 +414,601 @@ async function getFarm(
 
 
 // ==========================================================
-// GET ANIMAL
+// ENSURE FARM ACCESS
 // ==========================================================
 
-async function getAnimal(
-    dairyId,
-    user
+async function ensureFarmAccess(
+    user,
+    farmId
 ) {
 
+    const farm =
+        await getFarmById(
+            farmId
+        );
+
     if (
-        !isValidObjectId(
-            dairyId
+        !canAccessFarm(
+            user,
+            farm._id
         )
     ) {
 
         throw createError(
-            "Invalid animal ID."
+            "You are not authorized to access this dairy farm.",
+            403
+        );
+
+    }
+
+    return farm;
+
+}
+
+
+// ==========================================================
+// GET ELIGIBLE MILKING ANIMALS
+// ==========================================================
+//
+// Eligible animal:
+//
+// • positive Dairy.code
+// • active
+// • isMilking === true
+// • belongs to a farm
+//
+// If user is dairyWorker:
+//     only animals whose assetCode belongs to one
+//     of their assigned farms.
+//
+// Admin:
+//     all eligible animals.
+//
+// ==========================================================
+
+async function getMilkingAnimals(user) {
+
+    if (!user) {
+
+        throw createError(
+            "Authentication required.",
+            401
+        );
+
+    }
+
+    const role =
+        getUserRole(user);
+
+    const match = {
+
+        status: "active",
+
+        isMilking: true,
+
+        code: {
+            $gt: 0
+        },
+
+        assetCode: {
+            $lt: 0
+        }
+
+    };
+
+
+    // ------------------------------------------------------
+    // DAIRY WORKER RESTRICTION
+    // ------------------------------------------------------
+
+    if (
+        role === "dairyWorker"
+    ) {
+
+        const assignedFarmIds =
+            getAssignedFarmIds(
+                user
+            );
+
+        if (
+            assignedFarmIds.length === 0
+        ) {
+
+            return [];
+
+        }
+
+        const assignedFarms =
+            await Dairy.find({
+                _id: {
+                    $in:
+                        assignedFarmIds
+                },
+
+                code: {
+                    $lt: 0
+                }
+            })
+            .select("code name")
+            .lean();
+
+        const farmCodes =
+            assignedFarms
+                .map(farm =>
+                    Number(farm.code)
+                );
+
+        if (
+            farmCodes.length === 0
+        ) {
+
+            return [];
+
+        }
+
+        match.assetCode = {
+            $in: farmCodes
+        };
+
+    }
+
+
+    // ------------------------------------------------------
+    // OTHER ROLES
+    // ------------------------------------------------------
+
+    else if (
+        role !== "admin"
+    ) {
+
+        throw createError(
+            "You are not authorized to access milk collection.",
+            403
         );
 
     }
 
 
+    // ------------------------------------------------------
+    // GET ANIMALS
+    // ------------------------------------------------------
+
+    const animals =
+        await Dairy.find(
+            match
+        )
+        .select(
+            [
+                "_id",
+                "code",
+                "name",
+                "type",
+                "assetCode",
+                "profileImage",
+                "dateOfBirth",
+                "mass",
+                "isMilking",
+                "status"
+            ].join(" ")
+        )
+        .sort({
+            name: 1
+        })
+        .lean({
+            virtuals: true
+        });
+
+
+    // ------------------------------------------------------
+    // GET FARM INFORMATION
+    // ------------------------------------------------------
+
+    const farmCodes = [
+        ...new Set(
+            animals
+                .map(
+                    animal =>
+                        animal.assetCode
+                )
+                .filter(
+                    code =>
+                        code !== null &&
+                        code !== undefined
+                )
+                .map(
+                    Number
+                )
+        )
+    ];
+
+
+    let farms = [];
+
+    if (
+        farmCodes.length
+    ) {
+
+        farms =
+            await Dairy.find({
+                code: {
+                    $in:
+                        farmCodes
+                },
+
+                code: {
+                    $lt: 0
+                }
+            })
+            .select(
+                "_id code name"
+            )
+            .lean();
+
+    }
+
+
+    const farmMap =
+        new Map(
+            farms.map(
+                farm => [
+                    Number(farm.code),
+                    farm
+                ]
+            )
+        );
+
+
+    // ------------------------------------------------------
+    // ATTACH FARM
+    // ------------------------------------------------------
+
+    return animals.map(
+        animal => {
+
+            const farm =
+                farmMap.get(
+                    Number(
+                        animal.assetCode
+                    )
+                );
+
+            return {
+
+                ...animal,
+
+                farm: farm || null
+
+            };
+
+        }
+    );
+
+}
+
+
+// ==========================================================
+// GET MILK PAGE DATA
+// ==========================================================
+//
+// Returns:
+//
+// {
+//     animals,
+//     today,
+//     records,
+//     totals
+// }
+//
+// ==========================================================
+
+async function getMilkPageData(user) {
+
+    const animals =
+        await getMilkingAnimals(
+            user
+        );
+
+    const today =
+        getNairobiDay();
+
+    const animalIds =
+        animals.map(
+            animal =>
+                animal._id
+        );
+
+
+    let records = [];
+
+    if (
+        animalIds.length
+    ) {
+
+        records =
+            await Milk.find({
+                dairy: {
+                    $in:
+                        animalIds
+                },
+
+                day: today
+            })
+            .populate(
+                "dairy",
+                "name code type profileImage assetCode"
+            )
+            .sort({
+                session: 1,
+                date: 1
+            })
+            .lean();
+
+    }
+
+
+    // ------------------------------------------------------
+    // MAP RECORDS BY ANIMAL + SESSION
+    // ------------------------------------------------------
+
+    const recordMap =
+        new Map();
+
+    for (
+        const record of records
+    ) {
+
+        const key =
+            `${record.dairy._id}_${record.session}`;
+
+        recordMap.set(
+            key,
+            record
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // DECORATE ANIMALS
+    // ------------------------------------------------------
+
+    const decoratedAnimals =
+        animals.map(
+            animal => {
+
+                const morning =
+                    recordMap.get(
+                        `${animal._id}_morning`
+                    ) || null;
+
+                const evening =
+                    recordMap.get(
+                        `${animal._id}_evening`
+                    ) || null;
+
+                return {
+
+                    ...animal,
+
+                    morningRecord:
+                        morning,
+
+                    eveningRecord:
+                        evening,
+
+                    morningLiters:
+                        morning
+                            ? Number(
+                                morning.liters
+                            )
+                            : 0,
+
+                    eveningLiters:
+                        evening
+                            ? Number(
+                                evening.liters
+                            )
+                            : 0,
+
+                    morningRecorded:
+                        !!morning,
+
+                    eveningRecorded:
+                        !!evening
+
+                };
+
+            }
+        );
+
+
+    // ------------------------------------------------------
+    // TOTALS
+    // ------------------------------------------------------
+
+    const total =
+        records.reduce(
+            (
+                sum,
+                record
+            ) => {
+
+                const liters =
+                    Number(
+                        record.liters
+                    );
+
+                return (
+                    sum +
+                    (
+                        Number.isFinite(
+                            liters
+                        )
+                            ? liters
+                            : 0
+                    )
+                );
+
+            },
+            0
+        );
+
+
+    const morningTotal =
+        records
+            .filter(
+                record =>
+                    record.session ===
+                    "morning"
+            )
+            .reduce(
+                (
+                    sum,
+                    record
+                ) =>
+                    sum +
+                    (
+                        Number(
+                            record.liters
+                        ) || 0
+                    ),
+                0
+            );
+
+
+    const eveningTotal =
+        records
+            .filter(
+                record =>
+                    record.session ===
+                    "evening"
+            )
+            .reduce(
+                (
+                    sum,
+                    record
+                ) =>
+                    sum +
+                    (
+                        Number(
+                            record.liters
+                        ) || 0
+                    ),
+                0
+            );
+
+
+    return {
+
+        animals:
+            decoratedAnimals,
+
+        records,
+
+        today,
+
+        totals: {
+
+            total,
+
+            morning:
+                morningTotal,
+
+            evening:
+                eveningTotal,
+
+            animals:
+                animals.length
+
+        }
+
+    };
+
+}
+
+
+// ==========================================================
+// SAVE MILK RECORD
+// ==========================================================
+//
+// Expected:
+//
+// {
+//     dairy,
+//     session,
+//     liters,
+//     remarks,
+//     user
+// }
+//
+// ==========================================================
+
+async function createMilkRecord({
+
+    dairy,
+    session,
+    liters,
+    remarks,
+    user
+
+}) {
+
+    if (!user) {
+
+        throw createError(
+            "Authentication required.",
+            401
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // VALIDATE ANIMAL ID
+    // ------------------------------------------------------
+
+    if (
+        !isValidObjectId(
+            dairy
+        )
+    ) {
+
+        throw createError(
+            "Invalid animal.",
+            400
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // VALIDATE SESSION
+    // ------------------------------------------------------
+
+    const normalizedSession =
+        parseSession(
+            session
+        );
+
+
+    // ------------------------------------------------------
+    // VALIDATE LITERS
+    // ------------------------------------------------------
+
+    const normalizedLiters =
+        parseLiters(
+            liters
+        );
+
+
+    // ------------------------------------------------------
+    // VALIDATE FARM / ANIMAL
+    // ------------------------------------------------------
+
     const animal =
         await Dairy.findById(
-            dairyId
-        );
+            dairy
+        ).lean();
 
 
     if (!animal) {
@@ -484,522 +1021,132 @@ async function getAnimal(
     }
 
 
+    // Must be an identified animal.
+
     if (
-        !animal.isAnimal
+        animal.code === null ||
+        Number(animal.code) <= 0
     ) {
 
         throw createError(
-            "Selected Dairy record is not an animal."
-        );
-
-    }
-
-
-    if (
-        !animal.assetCode
-    ) {
-
-        throw createError(
-            "This animal does not have a parent Dairy Farm.",
+            "Milk can only be recorded for an animal.",
             400
         );
 
     }
 
 
+    // Animal must currently be milking.
+
+    if (
+        animal.isMilking !== true
+    ) {
+
+        throw createError(
+            "This animal is not currently marked as milking.",
+            400
+        );
+
+    }
+
+
+    // Animal must be active.
+
+    if (
+        animal.status !== "active"
+    ) {
+
+        throw createError(
+            "Milk cannot be recorded for an inactive animal.",
+            400
+        );
+
+    }
+
+
+    // Animal must have a parent farm.
+
+    if (
+        animal.assetCode === null ||
+        animal.assetCode === undefined
+    ) {
+
+        throw createError(
+            "This animal is not assigned to a dairy farm.",
+            400
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // FIND PARENT FARM
+    // ------------------------------------------------------
+
     const farm =
         await Dairy.findOne({
-
             code:
-                animal.assetCode
+                Number(
+                    animal.assetCode
+                ),
 
-        });
+            code: {
+                $lt: 0
+            }
+        }).lean();
 
 
     if (!farm) {
 
         throw createError(
-            "Parent Dairy Farm could not be found.",
+            "The animal's dairy farm could not be found.",
             404
         );
 
     }
 
 
-    if (
-        !farm.isDairyFarm
-    ) {
-
-        throw createError(
-            "Animal parent is not a valid Dairy Farm.",
-            400
-        );
-
-    }
-
+    // ------------------------------------------------------
+    // CHECK USER ACCESS
+    // ------------------------------------------------------
 
     if (
-        !hasFarmAccess(
+        !canAccessFarm(
             user,
             farm._id
         )
     ) {
 
         throw createError(
-            "You do not have access to this animal.",
+            "You are not authorized to record milk for this animal.",
             403
         );
 
     }
 
 
-    return {
+    // ------------------------------------------------------
+    // CURRENT NAIROBI DAY
+    // ------------------------------------------------------
 
-        animal,
+    const now =
+        new Date();
 
-        farm
+    const day =
+        getNairobiDay(
+            now
+        );
 
-    };
-
-}
-
-
-// ==========================================================
-// GET MILKING ANIMALS
-// ==========================================================
-//
-// Returns animals belonging to a farm.
-//
-// If farmId is supplied:
-//
-//     only that farm.
-//
-// If farmId is omitted:
-//
-//     all farms accessible to the user.
-//
-// ==========================================================
-
-exports.getMilkingAnimals =
-async function({
-
-    userId,
-
-    farmId
-
-} = {}) {
-
-    const user =
-        await getUser(
-            userId
+    const month =
+        day.slice(
+            0,
+            7
         );
 
 
-    let farmIds = [];
-
-
-    // ======================================================
-    // ADMIN
-    // ======================================================
-
-    if (
-        user.role === "admin"
-    ) {
-
-        if (farmId) {
-
-            const farm =
-                await getFarm(
-                    farmId,
-                    user
-                );
-
-
-            farmIds = [
-                farm._id
-            ];
-
-        }
-
-        else {
-
-            const farms =
-                await Dairy.find({
-
-                    code: {
-                        $lt: 0
-                    }
-
-                })
-
-                .sort({
-                    code: 1
-                })
-
-                .lean();
-
-
-            farmIds =
-                farms.map(
-                    farm =>
-                        farm._id
-                );
-
-        }
-
-    }
-
-
-    // ======================================================
-    // DAIRY WORKER
-    // ======================================================
-
-    else if (
-        user.role === "dairyWorker"
-    ) {
-
-        const assigned =
-            Array.isArray(
-                user.assignedFarm
-            )
-                ? user.assignedFarm
-                : [];
-
-
-        if (farmId) {
-
-            const farm =
-                await getFarm(
-                    farmId,
-                    user
-                );
-
-
-            farmIds = [
-                farm._id
-            ];
-
-        }
-
-        else {
-
-            farmIds =
-                assigned;
-
-        }
-
-    }
-
-
-    else {
-
-        throw createError(
-            "You are not authorized to access Dairy milk records.",
-            403
-        );
-
-    }
-
-
-    if (
-        farmIds.length === 0
-    ) {
-
-        return [];
-
-    }
-
-
-    // ======================================================
-    // FIND ANIMALS
-    // ======================================================
-
-    const farms =
-        await Dairy.find({
-
-            _id: {
-                $in:
-                    farmIds
-            },
-
-            code: {
-                $lt: 0
-            }
-
-        })
-
-        .lean();
-
-
-    const farmCodeMap =
-        new Map(
-            farms.map(
-                farm => [
-                    String(
-                        farm._id
-                    ),
-                    farm.code
-                ]
-            )
-        );
-
-
-    const animals =
-        await Dairy.find({
-
-            code: {
-                $gt: 0
-            },
-
-            assetCode: {
-                $in:
-                    farms.map(
-                        farm =>
-                            farm.code
-                    )
-            },
-
-            status: "active"
-
-        })
-
-        .sort({
-
-            code:
-                1
-
-        })
-
-        .lean();
-
-
-    return animals.map(
-        animal => {
-
-            const farmCode =
-                animal.assetCode;
-
-
-            const farm =
-                farms.find(
-                    farm =>
-                        farm.code ===
-                        farmCode
-                );
-
-
-            return {
-
-                ...animal,
-
-                farmCode,
-
-                farmName:
-                    farm
-                        ? farm.name
-                        : "",
-
-                isFemale:
-                    Number(
-                        animal.code
-                    ) % 2 === 0,
-
-                gender:
-                    Number(
-                        animal.code
-                    ) % 2 === 0
-                        ? "Female"
-                        : "Male"
-
-            };
-
-        }
-    );
-
-};
-
-
-// ==========================================================
-// GET FARMS
-// ==========================================================
-
-exports.getAccessibleFarms =
-async function(
-    userId
-) {
-
-    const user =
-        await getUser(
-            userId
-        );
-
-
-    let farms;
-
-
-    if (
-        user.role === "admin"
-    ) {
-
-        farms =
-            await Dairy.find({
-
-                code: {
-                    $lt: 0
-                }
-
-            })
-
-            .sort({
-                code: 1
-            })
-
-            .lean();
-
-    }
-
-    else if (
-        user.role === "dairyWorker"
-    ) {
-
-        farms =
-            await Dairy.find({
-
-                _id: {
-                    $in:
-                        Array.isArray(
-                            user.assignedFarm
-                        )
-                            ? user.assignedFarm
-                            : []
-                },
-
-                code: {
-                    $lt: 0
-                }
-
-            })
-
-            .sort({
-                code: 1
-            })
-
-            .lean();
-
-    }
-
-    else {
-
-        throw createError(
-            "You are not authorized to access Dairy Farms.",
-            403
-        );
-
-    }
-
-
-    return farms;
-
-};
-
-
-// ==========================================================
-// RECORD MILK
-// ==========================================================
-
-exports.recordMilk =
-async function({
-
-    userId,
-
-    dairyId,
-
-    liters,
-
-    session,
-
-    date,
-
-    remarks
-
-} = {}) {
-
-    const user =
-        await getUser(
-            userId
-        );
-
-
-    const {
-        animal,
-        farm
-    } =
-        await getAnimal(
-            dairyId,
-            user
-        );
-
-
-    // ======================================================
-    // VALIDATE SESSION
-    // ======================================================
-
-    session =
-        validateSession(
-            parseText(
-                session
-            )
-        );
-
-
-    // ======================================================
-    // VALIDATE LITERS
-    // ======================================================
-
-    liters =
-        parseNumber(
-            liters,
-            "Milk quantity"
-        );
-
-
-    if (
-        liters < 0
-    ) {
-
-        throw createError(
-            "Milk quantity cannot be negative."
-        );
-
-    }
-
-
-    // ======================================================
-    // DATE
-    // ======================================================
-
-    date =
-        parseDate(
-            date
-        );
-
-
-    // ======================================================
-    // NAIROBI DAY
-    // ======================================================
-
-    const {
-        day,
-        month
-    } =
-        getNairobiDateParts(
-            date
-        );
-
-
-    // ======================================================
-    // DUPLICATE CHECK
-    // ======================================================
+    // ------------------------------------------------------
+    // PREVENT DUPLICATE
+    // ------------------------------------------------------
 
     const existing =
         await Milk.findOne({
@@ -1009,7 +1156,8 @@ async function({
 
             day,
 
-            session
+            session:
+                normalizedSession
 
         });
 
@@ -1017,529 +1165,330 @@ async function({
     if (existing) {
 
         throw createError(
-
-            `A ${session} milk record already exists for ${animal.name} on ${day}.`,
-
+            `A ${normalizedSession} milk record already exists for ${animal.name} today.`,
             409
-
         );
 
     }
 
 
-    // ======================================================
+    // ------------------------------------------------------
+    // USER ID
+    // ------------------------------------------------------
+
+    const userId =
+        getUserId(
+            user
+        );
+
+
+    // ------------------------------------------------------
     // CREATE
-    // ======================================================
+    // ------------------------------------------------------
 
-    const milk =
-        await Milk.create({
+    try {
 
-            dairy:
-                animal._id,
+        const record =
+            await Milk.create({
 
-            recordedBy:
-                user._id,
+                dairy:
+                    animal._id,
 
-            recordedByType:
-                "user",
+                recordedBy:
+                    isValidObjectId(
+                        userId
+                    )
+                        ? userId
+                        : null,
 
-            recordedBySystem:
-                false,
+                recordedByType:
+                    "user",
 
-            liters,
+                recordedBySystem:
+                    false,
 
-            remarks:
-                parseText(
-                    remarks
-                ),
+                liters:
+                    normalizedLiters,
 
-            date,
+                remarks:
+                    parseRemarks(
+                        remarks
+                    ),
 
-            day,
+                date:
+                    now,
 
-            month,
+                day,
 
-            session
+                month,
 
-        });
-
-
-    return milk;
-
-};
-
-
-// ==========================================================
-// GET MILK RECORD
-// ==========================================================
-
-exports.getMilkRecord =
-async function({
-
-    userId,
-
-    milkId
-
-} = {}) {
-
-    const user =
-        await getUser(
-            userId
-        );
-
-
-    if (
-        !isValidObjectId(
-            milkId
-        )
-    ) {
-
-        throw createError(
-            "Invalid milk record ID."
-        );
-
-    }
-
-
-    const milk =
-        await Milk.findById(
-            milkId
-        )
-
-        .populate(
-            "dairy"
-        )
-
-        .populate(
-            "recordedBy",
-            "name email role"
-        );
-
-
-    if (!milk) {
-
-        throw createError(
-            "Milk record not found.",
-            404
-        );
-
-    }
-
-
-    await getAnimal(
-        milk.dairy._id,
-        user
-    );
-
-
-    return milk;
-
-};
-
-
-// ==========================================================
-// UPDATE MILK
-// ==========================================================
-
-exports.updateMilk =
-async function({
-
-    userId,
-
-    milkId,
-
-    liters,
-
-    session,
-
-    date,
-
-    remarks
-
-} = {}) {
-
-    const user =
-        await getUser(
-            userId
-        );
-
-
-    if (
-        !isValidObjectId(
-            milkId
-        )
-    ) {
-
-        throw createError(
-            "Invalid milk record ID."
-        );
-
-    }
-
-
-    const milk =
-        await Milk.findById(
-            milkId
-        );
-
-
-    if (!milk) {
-
-        throw createError(
-            "Milk record not found.",
-            404
-        );
-
-    }
-
-
-    const {
-        animal
-    } =
-        await getAnimal(
-            milk.dairy,
-            user
-        );
-
-
-    // ======================================================
-    // LITERS
-    // ======================================================
-
-    if (
-        liters !== undefined
-    ) {
-
-        liters =
-            parseNumber(
-                liters,
-                "Milk quantity"
-            );
-
-
-        if (
-            liters < 0
-        ) {
-
-            throw createError(
-                "Milk quantity cannot be negative."
-            );
-
-        }
-
-
-        milk.liters =
-            liters;
-
-    }
-
-
-    // ======================================================
-    // SESSION
-    // ======================================================
-
-    if (
-        session !== undefined
-    ) {
-
-        session =
-            validateSession(
-                parseText(
-                    session
-                )
-            );
-
-
-        milk.session =
-            session;
-
-    }
-
-
-    // ======================================================
-    // DATE
-    // ======================================================
-
-    if (
-        date !== undefined
-    ) {
-
-        milk.date =
-            parseDate(
-                date
-            );
-
-    }
-
-
-    // ======================================================
-    // REMARKS
-    // ======================================================
-
-    if (
-        remarks !== undefined
-    ) {
-
-        milk.remarks =
-            parseText(
-                remarks
-            );
-
-    }
-
-
-    // ======================================================
-    // REBUILD DAY / MONTH
-    // ======================================================
-
-    const {
-        day,
-        month
-    } =
-        getNairobiDateParts(
-            milk.date
-        );
-
-
-    milk.day =
-        day;
-
-
-    milk.month =
-        month;
-
-
-    // ======================================================
-    // CHECK DUPLICATE
-    //
-    // If session/date changed, make sure another record
-    // does not already occupy the same animal/day/session.
-    // ======================================================
-
-    const duplicate =
-        await Milk.findOne({
-
-            dairy:
-                animal._id,
-
-            day,
-
-            session,
-
-            _id: {
-                $ne:
-                    milk._id
-            }
-
-        });
-
-
-    if (duplicate) {
-
-        throw createError(
-
-            `A ${session} milk record already exists for ${animal.name} on ${day}.`,
-
-            409
-
-        );
-
-    }
-
-
-    await milk.save();
-
-
-    return milk;
-
-};
-
-
-// ==========================================================
-// DELETE MILK
-// ==========================================================
-
-exports.deleteMilk =
-async function({
-
-    userId,
-
-    milkId
-
-} = {}) {
-
-    const user =
-        await getUser(
-            userId
-        );
-
-
-    if (
-        !isValidObjectId(
-            milkId
-        )
-    ) {
-
-        throw createError(
-            "Invalid milk record ID."
-        );
-
-    }
-
-
-    const milk =
-        await Milk.findById(
-            milkId
-        );
-
-
-    if (!milk) {
-
-        throw createError(
-            "Milk record not found.",
-            404
-        );
-
-    }
-
-
-    await getAnimal(
-        milk.dairy,
-        user
-    );
-
-
-    await Milk.deleteOne({
-
-        _id:
-            milk._id
-
-    });
-
-
-    return {
-
-        success:
-            true,
-
-        message:
-            "Milk record deleted successfully."
-
-    };
-
-};
-
-
-// ==========================================================
-// DAILY REPORT
-// ==========================================================
-
-exports.getDailyReport =
-async function({
-
-    userId,
-
-    day,
-
-    farmId
-
-} = {}) {
-
-    const user =
-        await getUser(
-            userId
-        );
-
-
-    if (
-        typeof day !== "string" ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(day)
-    ) {
-
-        throw createError(
-            "Day must use YYYY-MM-DD format."
-        );
-
-    }
-
-
-    if (farmId) {
-
-        await getFarm(
-            farmId,
-            user
-        );
-
-    }
-
-
-    const query = {
-
-        day
-
-    };
-
-
-    // ======================================================
-    // FARM FILTER
-    // ======================================================
-
-    if (farmId) {
-
-        const animals =
-            await Dairy.find({
-
-                assetCode:
-                    (
-                        await Dairy.findById(
-                            farmId
-                        )
-                    ).code,
-
-                code: {
-                    $gt: 0
-                }
-
-            })
-
-            .select(
-                "_id"
-            )
-
-            .lean();
-
-
-        query.dairy = {
-
-            $in:
-                animals.map(
-                    animal =>
-                        animal._id
-                )
-
-        };
-
-    }
-
-    else if (
-        user.role === "dairyWorker"
-    ) {
-
-        const animals =
-            await this.getMilkingAnimals({
-
-                userId
+                session:
+                    normalizedSession
 
             });
 
 
-        query.dairy = {
+        return await Milk.findById(
+            record._id
+        )
+        .populate(
+            "dairy",
+            "name code type profileImage assetCode"
+        )
+        .populate(
+            "recordedBy",
+            "name"
+        )
+        .lean();
 
-            $in:
-                animals.map(
-                    animal =>
-                        animal._id
-                )
+    }
+    catch (error) {
+
+        // MongoDB duplicate-key error.
+
+        if (
+            error &&
+            error.code === 11000
+        ) {
+
+            throw createError(
+                `A ${normalizedSession} milk record already exists for ${animal.name} today.`,
+                409
+            );
+
+        }
+
+        throw error;
+
+    }
+
+}
+
+
+// ==========================================================
+// UPDATE MILK RECORD
+// ==========================================================
+//
+// Admin edit modal:
+//
+// POST /milk/:recordId
+//
+// Only liters and remarks are changed.
+//
+// The animal, day and session remain unchanged.
+//
+// ==========================================================
+
+async function updateMilkRecord({
+
+    recordId,
+    liters,
+    remarks,
+    user
+
+}) {
+
+    if (!user) {
+
+        throw createError(
+            "Authentication required.",
+            401
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // VALIDATE RECORD ID
+    // ------------------------------------------------------
+
+    if (
+        !isValidObjectId(
+            recordId
+        )
+    ) {
+
+        throw createError(
+            "Invalid milk record.",
+            400
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // VALIDATE LITERS
+    // ------------------------------------------------------
+
+    const normalizedLiters =
+        parseLiters(
+            liters
+        );
+
+
+    const normalizedRemarks =
+        parseRemarks(
+            remarks
+        );
+
+
+    // ------------------------------------------------------
+    // GET RECORD
+    // ------------------------------------------------------
+
+    const record =
+        await Milk.findById(
+            recordId
+        )
+        .populate(
+            "dairy"
+        );
+
+
+    if (!record) {
+
+        throw createError(
+            "Milk record not found.",
+            404
+        );
+
+    }
+
+
+    const animal =
+        record.dairy;
+
+
+    if (!animal) {
+
+        throw createError(
+            "The animal associated with this milk record no longer exists.",
+            404
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // FIND FARM
+    // ------------------------------------------------------
+
+    const farm =
+        await Dairy.findOne({
+            code:
+                Number(
+                    animal.assetCode
+                ),
+
+            code: {
+                $lt: 0
+            }
+        }).lean();
+
+
+    if (!farm) {
+
+        throw createError(
+            "The animal's dairy farm could not be found.",
+            404
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // CHECK ACCESS
+    // ------------------------------------------------------
+
+    if (
+        !canAccessFarm(
+            user,
+            farm._id
+        )
+    ) {
+
+        throw createError(
+            "You are not authorized to edit this milk record.",
+            403
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // UPDATE
+    // ------------------------------------------------------
+
+    record.liters =
+        normalizedLiters;
+
+    record.remarks =
+        normalizedRemarks;
+
+
+    await record.save();
+
+
+    // ------------------------------------------------------
+    // RETURN UPDATED RECORD
+    // ------------------------------------------------------
+
+    return await Milk.findById(
+        record._id
+    )
+    .populate(
+        "dairy",
+        "name code type profileImage assetCode"
+    )
+    .populate(
+        "recordedBy",
+        "name"
+    )
+    .lean();
+
+}
+
+
+// ==========================================================
+// GET DAILY REPORT
+// ==========================================================
+
+async function getDailyReport(
+    user,
+    day = getNairobiDay()
+) {
+
+    const animals =
+        await getMilkingAnimals(
+            user
+        );
+
+    const animalIds =
+        animals.map(
+            animal =>
+                animal._id
+        );
+
+
+    if (
+        !animalIds.length
+    ) {
+
+        return {
+
+            records: [],
+
+            stats: {
+
+                total: 0,
+
+                morning: 0,
+
+                evening: 0,
+
+                count: 0
+
+            }
 
         };
 
@@ -1547,62 +1496,38 @@ async function({
 
 
     const records =
-        await Milk.find(
-            query
-        )
+        await Milk.find({
 
+            dairy: {
+                $in:
+                    animalIds
+            },
+
+            day
+
+        })
         .populate(
-            "dairy"
+            "dairy",
+            "name code type profileImage assetCode"
         )
-
         .populate(
             "recordedBy",
             "name"
         )
-
         .sort({
-
-            date:
-                1,
-
-            session:
-                1
-
+            date: 1
         })
-
         .lean();
-
-
-    const total =
-        records.reduce(
-
-            (
-                sum,
-                record
-            ) =>
-                sum +
-                (
-                    Number(
-                        record.liters
-                    ) || 0
-                ),
-
-            0
-
-        );
 
 
     const morning =
         records
-
             .filter(
                 record =>
                     record.session ===
                     "morning"
             )
-
             .reduce(
-
                 (
                     sum,
                     record
@@ -1613,23 +1538,18 @@ async function({
                             record.liters
                         ) || 0
                     ),
-
                 0
-
             );
 
 
     const evening =
         records
-
             .filter(
                 record =>
                     record.session ===
                     "evening"
             )
-
             .reduce(
-
                 (
                     sum,
                     record
@@ -1640,9 +1560,7 @@ async function({
                             record.liters
                         ) || 0
                     ),
-
                 0
-
             );
 
 
@@ -1652,7 +1570,9 @@ async function({
 
         stats: {
 
-            total,
+            total:
+                morning +
+                evening,
 
             morning,
 
@@ -1665,468 +1585,121 @@ async function({
 
     };
 
-};
+}
 
 
 // ==========================================================
-// MONTHLY REPORT
+// GET ANIMAL HISTORY
 // ==========================================================
 
-exports.getMonthlyReport =
-async function({
-
-    userId,
-
-    month,
-
-    farmId
-
-} = {}) {
-
-    const user =
-        await getUser(
-            userId
-        );
-
-
-    if (
-        typeof month !== "string" ||
-        !/^\d{4}-\d{2}$/.test(month)
-    ) {
-
-        throw createError(
-            "Month must use YYYY-MM format."
-        );
-
-    }
-
-
-    if (farmId) {
-
-        await getFarm(
-            farmId,
-            user
-        );
-
-    }
-
-
-    let records;
-
-
-    // ======================================================
-    // ACCESSIBLE ANIMALS
-    // ======================================================
-
-    const animals =
-        await this.getMilkingAnimals({
-
-            userId,
-
-            farmId
-
-        });
-
-
-    const animalIds =
-        animals.map(
-            animal =>
-                animal._id
-        );
-
-
-    if (
-        animalIds.length === 0
-    ) {
-
-        return {
-
-            records: [],
-
-            stats: {
-
-                total:
-                    0,
-
-                animals:
-                    0
-
-            }
-
-        };
-
-    }
-
-
-    // ======================================================
-    // MONTH RECORDS
-    // ======================================================
-
-    records =
-        await Milk.find({
-
-            month,
-
-            dairy: {
-
-                $in:
-                    animalIds
-
-            }
-
-        })
-
-        .populate(
-            "dairy"
-        )
-
-        .populate(
-            "recordedBy",
-            "name"
-        )
-
-        .sort({
-
-            day:
-                1,
-
-            session:
-                1
-
-        })
-
-        .lean();
-
-
-    // ======================================================
-    // GROUP BY ANIMAL
-    // ======================================================
-
-    const grouped =
-        new Map();
-
-
-    for (
-        const record
-        of records
-    ) {
-
-        const id =
-            String(
-                record.dairy._id
-            );
-
-
-        if (
-            !grouped.has(id)
-        ) {
-
-            grouped.set(
-                id,
-                {
-
-                    dairy:
-                        record.dairy,
-
-                    total:
-                        0,
-
-                    days:
-                        new Set(),
-
-                    morning:
-                        0,
-
-                    evening:
-                        0,
-
-                    records:
-                        []
-
-                }
-            );
-
-        }
-
-
-        const item =
-            grouped.get(id);
-
-
-        const liters =
-            Number(
-                record.liters
-            ) || 0;
-
-
-        item.total +=
-            liters;
-
-
-        item.days.add(
-            record.day
-        );
-
-
-        if (
-            record.session ===
-            "morning"
-        ) {
-
-            item.morning +=
-                liters;
-
-        }
-
-
-        if (
-            record.session ===
-            "evening"
-        ) {
-
-            item.evening +=
-                liters;
-
-        }
-
-
-        item.records.push(
-            record
-        );
-
-    }
-
-
-    const report =
-        Array.from(
-            grouped.values()
-        )
-
-        .map(
-            item => ({
-
-                dairy:
-                    item.dairy,
-
-                total:
-                    item.total,
-
-                days:
-                    item.days.size,
-
-                avg:
-                    item.days.size
-                        ? item.total /
-                          item.days.size
-                        : 0,
-
-                morning:
-                    item.morning,
-
-                evening:
-                    item.evening,
-
-                records:
-                    item.records
-
-            })
-        )
-
-        .sort(
-
-            (
-                a,
-                b
-            ) =>
-                b.total -
-                a.total
-
-        );
-
-
-    const total =
-        records.reduce(
-
-            (
-                sum,
-                record
-            ) =>
-                sum +
-                (
-                    Number(
-                        record.liters
-                    ) || 0
-                ),
-
-            0
-
-        );
-
-
-    return {
-
-        records:
-            report,
-
-        rawRecords:
-            records,
-
-        stats: {
-
-            total,
-
-            animals:
-                report.length,
-
-            count:
-                records.length
-
-        }
-
-    };
-
-};
-
-
-// ==========================================================
-// ANIMAL MONTHLY HISTORY
-// ==========================================================
-
-exports.getAnimalMonthlyHistory =
-async function({
-
-    userId,
+async function getAnimalMonthlyHistory({
 
     dairyId,
 
-    month
+    month,
 
-} = {}) {
+    user
 
-    const user =
-        await getUser(
-            userId
-        );
-
-
-    await getAnimal(
-        dairyId,
-        user
-    );
-
+}) {
 
     if (
-        typeof month !== "string" ||
-        !/^\d{4}-\d{2}$/.test(month)
+        !isValidObjectId(
+            dairyId
+        )
     ) {
 
         throw createError(
-            "Month must use YYYY-MM format."
+            "Invalid animal.",
+            400
         );
 
     }
 
 
-    const result =
-        await Milk.getAnimalMonthlyHistory(
+    const animal =
+        await Dairy.findById(
+            dairyId
+        ).lean();
 
-            dairyId,
 
-            month
+    if (!animal) {
 
+        throw createError(
+            "Animal not found.",
+            404
         );
 
-
-    return result;
-
-};
+    }
 
 
-// ==========================================================
-// GET TODAY'S REPORT
-// ==========================================================
+    const farm =
+        await Dairy.findOne({
+            code:
+                Number(
+                    animal.assetCode
+                ),
 
-exports.getTodayReport =
-async function({
-
-    userId,
-
-    farmId
-
-} = {}) {
-
-    const now =
-        new Date();
+            code: {
+                $lt: 0
+            }
+        }).lean();
 
 
-    const {
-        day
-    } =
-        getNairobiDateParts(
-            now
+    if (!farm) {
+
+        throw createError(
+            "Animal's farm not found.",
+            404
         );
 
-
-    return this.getDailyReport({
-
-        userId,
-
-        day,
-
-        farmId
-
-    });
-
-};
+    }
 
 
-// ==========================================================
-// GET CURRENT MONTH
-// ==========================================================
+    if (
+        !canAccessFarm(
+            user,
+            farm._id
+        )
+    ) {
 
-exports.getCurrentMonthReport =
-async function({
+        throw createError(
+            "You are not authorized to view this animal's milk history.",
+            403
+        );
 
-    userId,
-
-    farmId
-
-} = {}) {
-
-    const now =
-        new Date();
+    }
 
 
-    const {
+    return Milk.getAnimalMonthlyHistory(
+        dairyId,
         month
-    } =
-        getNairobiDateParts(
-            now
-        );
+    );
+
+}
 
 
-    return this.getMonthlyReport({
+// ==========================================================
+// EXPORT
+// ==========================================================
 
-        userId,
+module.exports = {
 
-        month,
+    getMilkingAnimals,
 
-        farmId
+    getMilkPageData,
 
-    });
+    createMilkRecord,
+
+    updateMilkRecord,
+
+    getDailyReport,
+
+    getAnimalMonthlyHistory,
+
+    getNairobiDay,
+
+    getNairobiMonth,
+
+    canAccessFarm
 
 };
-
-
-// ==========================================================
-// EXPORT HELPERS
-// ==========================================================
-
-exports.getNairobiDateParts =
-    getNairobiDateParts;
-
-exports.hasFarmAccess =
-    hasFarmAccess;
-
-exports.SESSION_VALUES =
-    SESSION_VALUES;
