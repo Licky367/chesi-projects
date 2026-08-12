@@ -1,6 +1,7 @@
 <% /*
 ==========================================================
 SALES PAGE
+==========================================================
 
 FILE:
 views/sales.ejs
@@ -56,6 +57,7 @@ error
 ========================================================== */
 
 .sales-page{
+    width:100%;
     max-width:1100px;
     margin:0 auto;
     padding:20px 0 40px;
@@ -68,6 +70,7 @@ error
 ========================================================== */
 
 .sales-card{
+    width:100%;
     background:#fff;
     border-radius:18px;
     padding:24px;
@@ -94,12 +97,12 @@ error
 .sales-title-icon{
     width:42px;
     height:42px;
+    min-width:42px;
     border-radius:12px;
     background:#dcfce7;
     display:flex;
     align-items:center;
     justify-content:center;
-    flex-shrink:0;
 }
 
 .sales-title-icon i{
@@ -113,6 +116,7 @@ error
 ========================================================== */
 
 .farm-selector{
+    width:100%;
     display:flex;
     align-items:flex-end;
     gap:15px;
@@ -128,7 +132,11 @@ error
     border:none;
     border-radius:9px;
     padding:12px 18px;
-    background:linear-gradient(135deg,#16a34a,#15803d);
+    background:linear-gradient(
+        135deg,
+        #16a34a,
+        #15803d
+    );
     color:#fff;
     font-size:14px;
     font-weight:700;
@@ -138,6 +146,12 @@ error
 
 .farm-selector-btn:hover{
     transform:translateY(-1px);
+    box-shadow:
+        0 7px 16px rgba(22,163,74,.20);
+}
+
+.farm-selector-btn:active{
+    transform:translateY(0);
 }
 
 
@@ -148,7 +162,10 @@ error
 .sales-row{
     display:grid;
     grid-template-columns:
-        repeat(auto-fit,minmax(220px,1fr));
+        repeat(
+            auto-fit,
+            minmax(220px,1fr)
+        );
     gap:18px;
 }
 
@@ -170,9 +187,14 @@ error
     border:1px solid #d1d5db;
     border-radius:9px;
     background:#f9fafb;
+    color:#111827;
+    font-family:inherit;
     font-size:14px;
     outline:none;
-    transition:.25s;
+    transition:
+        border-color .25s,
+        background .25s,
+        box-shadow .25s;
     box-sizing:border-box;
 }
 
@@ -185,6 +207,13 @@ error
 
 .sales-input[readonly]{
     background:#f3f4f6;
+    color:#6b7280;
+    cursor:not-allowed;
+}
+
+.sales-input:disabled{
+    background:#f3f4f6;
+    color:#9ca3af;
     cursor:not-allowed;
 }
 
@@ -197,18 +226,30 @@ error
     border:none;
     border-radius:9px;
     padding:12px 18px;
-    background:linear-gradient(135deg,#16a34a,#15803d);
+    background:linear-gradient(
+        135deg,
+        #16a34a,
+        #15803d
+    );
     color:#fff;
     font-size:14px;
     font-weight:700;
     cursor:pointer;
     transition:.25s;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
 }
 
 .sales-btn:hover{
     transform:translateY(-2px);
     box-shadow:
         0 8px 18px rgba(22,163,74,.22);
+}
+
+.sales-btn:active{
+    transform:translateY(0);
 }
 
 .sales-btn:disabled{
@@ -227,10 +268,19 @@ error
     color:#b91c1c;
     font-weight:700;
     cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    transition:.2s;
 }
 
 .omit-btn:hover{
     background:#fecaca;
+}
+
+.omit-btn:active{
+    transform:scale(.98);
 }
 
 
@@ -248,12 +298,24 @@ error
     background:#f0fdf4;
     border:1px solid #bbf7d0;
     margin-bottom:20px;
+    box-sizing:border-box;
+}
+
+.selected-farm-details{
+    min-width:0;
 }
 
 .selected-farm-name{
+    display:flex;
+    align-items:center;
+    gap:8px;
     color:#166534;
     font-size:17px;
     font-weight:800;
+}
+
+.selected-farm-name i{
+    color:#15803d;
 }
 
 .selected-farm-label{
@@ -270,7 +332,10 @@ error
 .sales-summary{
     display:grid;
     grid-template-columns:
-        repeat(auto-fit,minmax(220px,1fr));
+        repeat(
+            auto-fit,
+            minmax(220px,1fr)
+        );
     gap:18px;
     margin-bottom:20px;
 }
@@ -281,6 +346,7 @@ error
     padding:22px;
     box-shadow:0 8px 25px rgba(0,0,0,.06);
     border-left:5px solid #16a34a;
+    box-sizing:border-box;
 }
 
 .summary-label{
@@ -301,6 +367,12 @@ error
     color:#166534;
     font-size:28px;
     font-weight:800;
+    line-height:1.2;
+}
+
+.summary-number span{
+    font-size:16px;
+    font-weight:700;
 }
 
 
@@ -309,16 +381,21 @@ error
 ========================================================== */
 
 .price-info{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:5px;
     margin-top:15px;
     background:#fefce8;
     padding:10px 14px;
     border-radius:10px;
     color:#854d0e;
     font-size:13px;
+    box-sizing:border-box;
 }
 
 .price-info i{
-    margin-right:6px;
+    margin-right:3px;
 }
 
 
@@ -338,10 +415,16 @@ error
     color:#1e40af;
     font-size:13px;
     line-height:1.5;
+    box-sizing:border-box;
 }
 
 .admin-notice i{
-    margin-top:2px;
+    margin-top:3px;
+    flex-shrink:0;
+}
+
+.admin-notice p{
+    margin:5px 0 0;
 }
 
 
@@ -358,6 +441,12 @@ error
     margin-bottom:20px;
     font-size:14px;
     line-height:1.5;
+    box-sizing:border-box;
+}
+
+.sales-alert i{
+    margin-top:3px;
+    flex-shrink:0;
 }
 
 .sales-alert-success{
@@ -380,6 +469,7 @@ error
 .sales-table-wrapper{
     width:100%;
     overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
 }
 
 .sales-table{
@@ -403,10 +493,20 @@ error
     padding:12px;
     border-bottom:1px solid #f0f0f0;
     vertical-align:middle;
+    color:#374151;
+    font-size:14px;
+}
+
+.sales-table tbody tr{
+    transition:background .2s;
 }
 
 .sales-table tbody tr:hover{
     background:#fbfffc;
+}
+
+.sales-table tbody tr:last-child td{
+    border-bottom:none;
 }
 
 
@@ -417,6 +517,7 @@ error
 .badge{
     display:inline-flex;
     align-items:center;
+    justify-content:center;
     padding:6px 10px;
     border-radius:999px;
     font-size:11px;
@@ -459,10 +560,25 @@ error
     font-weight:700;
 }
 
+.total-label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.total-label i{
+    color:#15803d;
+}
+
 .total-number{
     color:#166534;
     font-size:28px;
     font-weight:800;
+}
+
+.total-number span{
+    font-size:16px;
+    font-weight:700;
 }
 
 
@@ -476,6 +592,16 @@ error
     color:#6b7280;
 }
 
+.empty > i{
+    font-size:30px;
+    color:#9ca3af;
+}
+
+.empty-message{
+    margin-top:12px;
+    font-size:14px;
+}
+
 
 /* ==========================================================
    FORM ACTION AREA
@@ -483,11 +609,57 @@ error
 
 .sales-action{
     margin-top:18px;
+    display:flex;
+    align-items:center;
+    gap:10px;
 }
 
 
 /* ==========================================================
-   RESPONSIVE
+   STANDING ORDERS
+========================================================== */
+
+.standing-orders-wrapper{
+    margin-top:25px;
+}
+
+.standing-sale-form{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:8px;
+}
+
+.standing-sale-input{
+    width:120px;
+}
+
+.standing-submit-btn{
+    margin-top:0;
+}
+
+.standing-disabled-btn{
+    cursor:not-allowed;
+}
+
+.omit-form{
+    margin-top:8px;
+}
+
+
+/* ==========================================================
+   LOADING STATE
+========================================================== */
+
+.sales-btn.loading,
+.omit-btn.loading{
+    pointer-events:none;
+    opacity:.75;
+}
+
+
+/* ==========================================================
+   MOBILE
 ========================================================== */
 
 @media(max-width:650px){
@@ -499,19 +671,30 @@ error
             30px;
     }
 
+
     .sales-card{
         padding:18px;
         border-radius:15px;
     }
 
+
     .sales-title{
         font-size:20px;
     }
+
+
+    .sales-title-icon{
+        width:38px;
+        height:38px;
+        min-width:38px;
+    }
+
 
     .selected-farm{
         align-items:flex-start;
         flex-direction:column;
     }
+
 
     .total-box{
         flex-direction:column;
@@ -519,8 +702,107 @@ error
         gap:12px;
     }
 
+
+    .total-number{
+        font-size:25px;
+    }
+
+
+    .farm-selector{
+        flex-direction:column;
+        align-items:stretch;
+    }
+
+
+    .farm-selector .sales-field{
+        min-width:0;
+        width:100%;
+    }
+
+
     .farm-selector-btn{
         width:100%;
+    }
+
+
+    .sales-action{
+        width:100%;
+    }
+
+
+    .sales-action .sales-btn{
+        width:100%;
+    }
+
+
+    .summary-card{
+        padding:18px;
+    }
+
+
+    .summary-number{
+        font-size:24px;
+    }
+
+
+    .admin-notice{
+        padding:14px;
+    }
+
+
+    .price-info{
+        align-items:flex-start;
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL SCREENS
+========================================================== */
+
+@media(max-width:400px){
+
+    .sales-page{
+        padding-top:10px;
+    }
+
+
+    .sales-card{
+        padding:15px;
+        border-radius:13px;
+    }
+
+
+    .sales-title{
+        font-size:18px;
+    }
+
+
+    .sales-title-icon{
+        width:35px;
+        height:35px;
+        min-width:35px;
+    }
+
+
+    .sales-title-icon i{
+        font-size:16px;
+    }
+
+
+    .summary-card{
+        padding:16px;
+    }
+
+
+    .summary-number{
+        font-size:22px;
+    }
+
+
+    .sales-table{
+        min-width:650px;
     }
 
 }
@@ -580,7 +862,9 @@ error
             <div class="sales-title">
 
                 <div class="sales-title-icon">
+
                     <i class="fas fa-filter"></i>
+
                 </div>
 
                 <span>
@@ -598,11 +882,12 @@ error
 
                 <div class="sales-field">
 
-                    <label>
+                    <label for="farmId">
                         Select Dairy Farm
                     </label>
 
                     <select
+                        id="farmId"
                         name="farmId"
                         class="sales-input"
                         required
@@ -652,7 +937,9 @@ error
 
                     <i class="fas fa-arrow-right"></i>
 
-                    View Farm
+                    <span>
+                        View Farm
+                    </span>
 
                 </button>
 
@@ -682,13 +969,15 @@ error
                     Administrator Overview
                 </strong>
 
-                <br>
+                <p>
+                    These figures represent milk and revenue
+                    across <strong>all dairy farms</strong>.
+                </p>
 
-                These figures represent milk and revenue
-                across <strong>all dairy farms</strong>.
-
-                Select a specific farm above to manage
-                its customers, standing orders and sales.
+                <p>
+                    Select a specific farm above to manage
+                    its customers, standing orders and sales.
+                </p>
 
             </div>
 
@@ -697,10 +986,12 @@ error
 
         <!-- ==================================================
              ALL FARM TOTALS
-        ================================================== -->
+        =================================================== -->
 
         <div class="sales-summary">
 
+
+            <!-- AVAILABLE MILK -->
 
             <div class="summary-card">
 
@@ -708,7 +999,9 @@ error
 
                     <i class="fas fa-bottle-water"></i>
 
-                    Total Available Milk
+                    <span>
+                        Total Available Milk
+                    </span>
 
                 </div>
 
@@ -718,12 +1011,16 @@ error
                         allFarmAvailableMilk || 0
                     ).toFixed(2) %>
 
-                    L
+                    <span>
+                        L
+                    </span>
 
                 </div>
 
             </div>
 
+
+            <!-- REVENUE -->
 
             <div class="summary-card">
 
@@ -731,13 +1028,18 @@ error
 
                     <i class="fas fa-sack-dollar"></i>
 
-                    Total Revenue
+                    <span>
+                        Total Revenue
+                    </span>
 
                 </div>
 
                 <div class="summary-number">
 
-                    KES
+                    <span>
+                        KES
+                    </span>
+
                     <%= Number(
                         allFarmRevenue || 0
                     ).toFixed(2) %>
@@ -747,13 +1049,17 @@ error
             </div>
 
 
+            <!-- TOTAL SALES -->
+
             <div class="summary-card">
 
                 <div class="summary-label">
 
                     <i class="fas fa-bottle-water"></i>
 
-                    Total Sold Today
+                    <span>
+                        Total Sold Today
+                    </span>
 
                 </div>
 
@@ -763,7 +1069,9 @@ error
                         allFarmTotalSales || 0
                     ).toFixed(2) %>
 
-                    L
+                    <span>
+                        L
+                    </span>
 
                 </div>
 
@@ -771,20 +1079,11 @@ error
 
         </div>
 
-
     <% } %>
 
 
     <!-- ======================================================
          FARM-SPECIFIC VIEW
-
-         ADMIN:
-         ------------------------------------------------------
-         Only displayed after selecting a farm.
-
-         DAIRY WORKER:
-         ------------------------------------------------------
-         Displayed for their assigned farm.
     ======================================================= -->
 
     <% if (selectedFarmId) { %>
@@ -798,7 +1097,7 @@ error
 
             <div class="selected-farm">
 
-                <div>
+                <div class="selected-farm-details">
 
                     <div class="selected-farm-label">
                         Sales Farm
@@ -808,10 +1107,14 @@ error
 
                         <i class="fas fa-cow"></i>
 
-                        <%= selectedFarm.name ||
-                            selectedFarm.dairyName ||
-                            selectedFarm.title ||
-                            "Dairy Farm" %>
+                        <span>
+
+                            <%= selectedFarm.name ||
+                                selectedFarm.dairyName ||
+                                selectedFarm.title ||
+                                "Dairy Farm" %>
+
+                        </span>
 
                     </div>
 
@@ -824,7 +1127,9 @@ error
 
                         <i class="fas fa-user-shield"></i>
 
-                        Admin View
+                        <span>
+                            Admin View
+                        </span>
 
                     </span>
 
@@ -834,7 +1139,9 @@ error
 
                         <i class="fas fa-user"></i>
 
-                        Your Farm
+                        <span>
+                            Your Farm
+                        </span>
 
                     </span>
 
@@ -852,13 +1159,17 @@ error
         <div class="sales-summary">
 
 
+            <!-- AVAILABLE MILK -->
+
             <div class="summary-card">
 
                 <div class="summary-label">
 
                     <i class="fas fa-bottle-water"></i>
 
-                    Available Milk
+                    <span>
+                        Available Milk
+                    </span>
 
                 </div>
 
@@ -868,12 +1179,16 @@ error
                         availableMilk || 0
                     ).toFixed(2) %>
 
-                    L
+                    <span>
+                        L
+                    </span>
 
                 </div>
 
             </div>
 
+
+            <!-- REVENUE -->
 
             <div class="summary-card">
 
@@ -881,13 +1196,18 @@ error
 
                     <i class="fas fa-sack-dollar"></i>
 
-                    Farm Revenue
+                    <span>
+                        Farm Revenue
+                    </span>
 
                 </div>
 
                 <div class="summary-number">
 
-                    KES
+                    <span>
+                        KES
+                    </span>
+
                     <%= Number(
                         revenue || 0
                     ).toFixed(2) %>
@@ -897,13 +1217,17 @@ error
             </div>
 
 
+            <!-- SOLD TODAY -->
+
             <div class="summary-card">
 
                 <div class="summary-label">
 
                     <i class="fas fa-bottle-water"></i>
 
-                    Sold Today
+                    <span>
+                        Sold Today
+                    </span>
 
                 </div>
 
@@ -913,7 +1237,9 @@ error
                         totalSales || 0
                     ).toFixed(2) %>
 
-                    L
+                    <span>
+                        L
+                    </span>
 
                 </div>
 
@@ -931,7 +1257,9 @@ error
             <div class="sales-title">
 
                 <div class="sales-title-icon">
+
                     <i class="fas fa-sack-dollar"></i>
+
                 </div>
 
                 <span>
@@ -944,6 +1272,7 @@ error
             <form
                 method="POST"
                 action="/sales/price"
+                class="milk-price-form"
             >
 
                 <% if (isAdmin) { %>
@@ -961,11 +1290,12 @@ error
 
                     <div class="sales-field">
 
-                        <label>
+                        <label for="milkPrice">
                             Current Price (KES/L)
                         </label>
 
                         <input
+                            id="milkPrice"
                             class="sales-input"
                             type="number"
                             name="price"
@@ -995,7 +1325,9 @@ error
 
                             <i class="fas fa-floppy-disk"></i>
 
-                            Save Price
+                            <span>
+                                Save Price
+                            </span>
 
                         </button>
 
@@ -1007,8 +1339,10 @@ error
 
                         <i class="fas fa-lock"></i>
 
-                        Only administrators can change
-                        milk price.
+                        <span>
+                            Only administrators can change
+                            milk price.
+                        </span>
 
                     </div>
 
@@ -1030,7 +1364,9 @@ error
                 <div class="sales-title">
 
                     <div class="sales-title-icon">
+
                         <i class="fas fa-cart-shopping"></i>
+
                     </div>
 
                     <span>
@@ -1060,30 +1396,37 @@ error
                     <div class="sales-row">
 
 
+                        <!-- CUSTOMER -->
+
                         <div class="sales-field">
 
-                            <label>
+                            <label for="customerName">
                                 Customer Name
                             </label>
 
                             <input
+                                id="customerName"
                                 class="sales-input"
                                 type="text"
                                 name="customerName"
                                 placeholder="Customer name"
+                                autocomplete="off"
                                 required
                             >
 
                         </div>
 
 
+                        <!-- LITERS -->
+
                         <div class="sales-field">
 
-                            <label>
+                            <label for="saleLiters">
                                 Liters
                             </label>
 
                             <input
+                                id="saleLiters"
                                 class="sales-input"
                                 type="number"
                                 name="liters"
@@ -1105,13 +1448,18 @@ error
 
                         <i class="fas fa-bottle-water"></i>
 
-                        Available on this farm:
+                        <span>
+                            Available on this farm:
+                        </span>
 
                         <strong>
+
                             <%= Number(
                                 availableMilk || 0
                             ).toFixed(2) %>
+
                             L
+
                         </strong>
 
                     </div>
@@ -1126,7 +1474,9 @@ error
 
                             <i class="fas fa-circle-plus"></i>
 
-                            Record Manual Sale
+                            <span>
+                                Record Manual Sale
+                            </span>
 
                         </button>
 
@@ -1148,7 +1498,9 @@ error
             <div class="sales-title">
 
                 <div class="sales-title-icon">
+
                     <i class="fas fa-clipboard-list"></i>
+
                 </div>
 
                 <span>
@@ -1203,8 +1555,10 @@ error
                                     <td>
 
                                         <strong>
+
                                             <%= sale.customerName ||
                                                 "Customer" %>
+
                                         </strong>
 
                                     </td>
@@ -1224,6 +1578,7 @@ error
                                     <td>
 
                                         KES
+
                                         <%= Number(
                                             sale.revenue ??
                                             (
@@ -1241,15 +1596,13 @@ error
 
                                     <td>
 
-                                        <span
-                                            class="badge badge-green"
-                                        >
+                                        <span class="badge badge-green">
 
-                                            <i
-                                                class="fas fa-circle-check"
-                                            ></i>
+                                            <i class="fas fa-circle-check"></i>
 
-                                            Recorded
+                                            <span>
+                                                Recorded
+                                            </span>
 
                                         </span>
 
@@ -1271,10 +1624,12 @@ error
 
                     <i class="fas fa-box-open"></i>
 
-                    <br><br>
+                    <div class="empty-message">
 
-                    No manual sales recorded today
-                    for this farm.
+                        No manual sales recorded today
+                        for this farm.
+
+                    </div>
 
                 </div>
 
@@ -1292,7 +1647,9 @@ error
             <div class="sales-title">
 
                 <div class="sales-title-icon">
+
                     <i class="fas fa-repeat"></i>
+
                 </div>
 
                 <span>
@@ -1328,13 +1685,16 @@ error
                     <div class="sales-row">
 
 
+                        <!-- FARM -->
+
                         <div class="sales-field">
 
-                            <label>
+                            <label for="standingFarm">
                                 Dairy Farm
                             </label>
 
                             <input
+                                id="standingFarm"
                                 class="sales-input"
                                 type="text"
                                 value="<%= selectedFarm?.name ||
@@ -1347,30 +1707,37 @@ error
                         </div>
 
 
+                        <!-- CUSTOMER -->
+
                         <div class="sales-field">
 
-                            <label>
+                            <label for="standingCustomer">
                                 Customer Name
                             </label>
 
                             <input
+                                id="standingCustomer"
                                 class="sales-input"
                                 type="text"
                                 name="customerName"
                                 placeholder="Customer name"
+                                autocomplete="off"
                                 required
                             >
 
                         </div>
 
 
+                        <!-- DAILY LITERS -->
+
                         <div class="sales-field">
 
-                            <label>
+                            <label for="standingLiters">
                                 Default Liters Per Day
                             </label>
 
                             <input
+                                id="standingLiters"
                                 class="sales-input"
                                 type="number"
                                 name="liters"
@@ -1394,7 +1761,9 @@ error
 
                             <i class="fas fa-circle-plus"></i>
 
-                            Add Standing Order
+                            <span>
+                                Add Standing Order
+                            </span>
 
                         </button>
 
@@ -1415,8 +1784,7 @@ error
             ) { %>
 
                 <div
-                    class="sales-table-wrapper"
-                    style="margin-top:25px;"
+                    class="sales-table-wrapper standing-orders-wrapper"
                 >
 
                     <table class="sales-table">
@@ -1467,7 +1835,9 @@ error
                                 <tr>
 
 
-                                    <!-- FARM -->
+                                    <!-- =================================
+                                         FARM
+                                    ================================== -->
 
                                     <% if (isAdmin) { %>
 
@@ -1488,7 +1858,9 @@ error
                                     <% } %>
 
 
-                                    <!-- CUSTOMER -->
+                                    <!-- =================================
+                                         CUSTOMER
+                                    ================================== -->
 
                                     <td>
 
@@ -1502,7 +1874,9 @@ error
                                     </td>
 
 
-                                    <!-- LITERS -->
+                                    <!-- =================================
+                                         LITERS
+                                    ================================== -->
 
                                     <td>
 
@@ -1515,7 +1889,9 @@ error
                                     </td>
 
 
-                                    <!-- STATUS -->
+                                    <!-- =================================
+                                         STATUS
+                                    ================================== -->
 
                                     <td>
 
@@ -1523,15 +1899,13 @@ error
                                             order.isFuture
                                         ) { %>
 
-                                            <span
-                                                class="badge badge-blue"
-                                            >
+                                            <span class="badge badge-blue">
 
-                                                <i
-                                                    class="fas fa-clock"
-                                                ></i>
+                                                <i class="fas fa-clock"></i>
 
-                                                Effective Tomorrow
+                                                <span>
+                                                    Effective Tomorrow
+                                                </span>
 
                                             </span>
 
@@ -1540,30 +1914,26 @@ error
                                             order.saleRecordedToday
                                         ) { %>
 
-                                            <span
-                                                class="badge badge-green"
-                                            >
+                                            <span class="badge badge-green">
 
-                                                <i
-                                                    class="fas fa-circle-check"
-                                                ></i>
+                                                <i class="fas fa-circle-check"></i>
 
-                                                Recorded Today
+                                                <span>
+                                                    Recorded Today
+                                                </span>
 
                                             </span>
 
 
                                         <% } else { %>
 
-                                            <span
-                                                class="badge badge-gray"
-                                            >
+                                            <span class="badge badge-gray">
 
-                                                <i
-                                                    class="fas fa-hourglass-half"
-                                                ></i>
+                                                <i class="fas fa-hourglass-half"></i>
 
-                                                Ready
+                                                <span>
+                                                    Ready
+                                                </span>
 
                                             </span>
 
@@ -1572,7 +1942,9 @@ error
                                     </td>
 
 
-                                    <!-- DAILY SALE -->
+                                    <!-- =================================
+                                         DAILY SALE
+                                    ================================== -->
 
                                     <td>
 
@@ -1583,7 +1955,7 @@ error
 
                                             <button
                                                 type="button"
-                                                class="sales-btn"
+                                                class="sales-btn standing-disabled-btn"
                                                 disabled
                                             >
 
@@ -1591,19 +1963,19 @@ error
                                                     order.isFuture
                                                 ) { %>
 
-                                                    <i
-                                                        class="fas fa-ban"
-                                                    ></i>
+                                                    <i class="fas fa-ban"></i>
 
-                                                    Not Active
+                                                    <span>
+                                                        Not Active
+                                                    </span>
 
                                                 <% } else { %>
 
-                                                    <i
-                                                        class="fas fa-circle-check"
-                                                    ></i>
+                                                    <i class="fas fa-circle-check"></i>
 
-                                                    Recorded
+                                                    <span>
+                                                        Recorded
+                                                    </span>
 
                                                 <% } %>
 
@@ -1637,16 +2009,6 @@ error
                                                 <% } %>
 
 
-                                                <!--
-                                                These fields are retained
-                                                in the form so the request
-                                                contains the customer's
-                                                information and quantity.
-                                                The controller may ignore
-                                                them if the service obtains
-                                                them from the standing order.
-                                                -->
-
                                                 <input
                                                     type="hidden"
                                                     name="customerName"
@@ -1654,34 +2016,36 @@ error
                                                 >
 
 
-                                                <input
-                                                    class="sales-input"
-                                                    type="number"
-                                                    name="liters"
-                                                    step="0.1"
-                                                    min="0.1"
-                                                    max="<%= Number(
-                                                        availableMilk || 0
-                                                    ) %>"
-                                                    value="<%= Number(
-                                                        order.liters || 0
-                                                    ) %>"
-                                                    style="width:120px;"
-                                                    required
-                                                >
+                                                <div class="standing-sale-input">
+
+                                                    <input
+                                                        class="sales-input"
+                                                        type="number"
+                                                        name="liters"
+                                                        step="0.1"
+                                                        min="0.1"
+                                                        max="<%= Number(
+                                                            availableMilk || 0
+                                                        ) %>"
+                                                        value="<%= Number(
+                                                            order.liters || 0
+                                                        ) %>"
+                                                        required
+                                                    >
+
+                                                </div>
 
 
                                                 <button
                                                     type="submit"
-                                                    class="sales-btn"
-                                                    style="margin-top:8px;"
+                                                    class="sales-btn standing-submit-btn"
                                                 >
 
-                                                    <i
-                                                        class="fas fa-paper-plane"
-                                                    ></i>
+                                                    <i class="fas fa-paper-plane"></i>
 
-                                                    Submit Sale
+                                                    <span>
+                                                        Submit Sale
+                                                    </span>
 
                                                 </button>
 
@@ -1692,7 +2056,9 @@ error
                                     </td>
 
 
-                                    <!-- ACTION -->
+                                    <!-- =================================
+                                         ACTION
+                                    ================================== -->
 
                                     <td>
 
@@ -1702,15 +2068,13 @@ error
                                             !order.saleRecordedToday
                                         ) { %>
 
-                                            <span
-                                                class="badge badge-yellow"
-                                            >
+                                            <span class="badge badge-yellow">
 
-                                                <i
-                                                    class="fas fa-clock"
-                                                ></i>
+                                                <i class="fas fa-clock"></i>
 
-                                                Sale Pending
+                                                <span>
+                                                    Sale Pending
+                                                </span>
 
                                             </span>
 
@@ -1722,8 +2086,7 @@ error
                                             <form
                                                 method="POST"
                                                 action="/sales/standing/omit"
-                                                style="margin-top:8px;"
-                                                onsubmit="return confirm('Omit this standing order?');"
+                                                class="omit-form"
                                             >
 
                                                 <input
@@ -1743,13 +2106,14 @@ error
                                                 <button
                                                     type="submit"
                                                     class="omit-btn"
+                                                    data-confirm="Omit this standing order?"
                                                 >
 
-                                                    <i
-                                                        class="fas fa-trash-can"
-                                                    ></i>
+                                                    <i class="fas fa-trash-can"></i>
 
-                                                    Omit
+                                                    <span>
+                                                        Omit
+                                                    </span>
 
                                                 </button>
 
@@ -1775,10 +2139,12 @@ error
 
                     <i class="fas fa-box-open"></i>
 
-                    <br><br>
+                    <div class="empty-message">
 
-                    No standing orders available
-                    for this farm.
+                        No standing orders available
+                        for this farm.
+
+                    </div>
 
                 </div>
 
@@ -1793,23 +2159,28 @@ error
 
         <div class="sales-card total-box">
 
-            <span>
+            <div class="total-label">
 
                 <i class="fas fa-bottle-water"></i>
 
-                Total Sold Today
+                <span>
+                    Total Sold Today
+                </span>
 
-            </span>
+            </div>
 
-            <span class="total-number">
+
+            <div class="total-number">
 
                 <%= Number(
                     totalSales || 0
                 ).toFixed(2) %>
 
-                L
+                <span>
+                    L
+                </span>
 
-            </span>
+            </div>
 
         </div>
 
@@ -1821,7 +2192,7 @@ error
 
 
 <!-- ==========================================================
-     JAVASCRIPT
+     SALES PAGE JAVASCRIPT
 ========================================================== -->
 
 <script>
@@ -1867,15 +2238,21 @@ error
                         "[name='customerName']"
                     );
 
+
                 const liters =
                     Number(
                         litersInput?.value
                     );
 
+
                 const customer =
                     customerInput?.value?.trim() ||
                     "Customer";
 
+
+                /* ==========================================
+                   VALIDATE LITERS
+                ========================================== */
 
                 if (
                     !Number.isFinite(liters) ||
@@ -1888,10 +2265,16 @@ error
                         "Please enter a valid amount of milk."
                     );
 
+                    litersInput?.focus();
+
                     return;
 
                 }
 
+
+                /* ==========================================
+                   CHECK AVAILABLE MILK
+                ========================================== */
 
                 if (
                     liters > availableMilk
@@ -1901,15 +2284,22 @@ error
 
                     alert(
                         "Insufficient milk available on this farm.\n\n" +
+
                         "Available Milk: " +
                         availableMilk.toFixed(2) +
                         " L"
                     );
 
+                    litersInput?.focus();
+
                     return;
 
                 }
 
+
+                /* ==========================================
+                   CONFIRM SALE
+                ========================================== */
 
                 const confirmed =
                     confirm(
@@ -1939,6 +2329,10 @@ error
                 }
 
 
+                /* ==========================================
+                   PREVENT DOUBLE SUBMISSION
+                ========================================== */
+
                 const button =
                     this.querySelector(
                         "button[type='submit']"
@@ -1949,8 +2343,13 @@ error
 
                     button.disabled = true;
 
+                    button.classList.add(
+                        "loading"
+                    );
+
                     button.innerHTML =
-                        '<i class="fas fa-spinner fa-spin"></i> Recording...';
+                        '<i class="fas fa-spinner fa-spin"></i>' +
+                        '<span>Recording...</span>';
 
                 }
 
@@ -1981,20 +2380,27 @@ error
                         "[name='customerName']"
                     );
 
+
                 const litersInput =
                     this.querySelector(
                         "[name='liters']"
                     );
 
+
                 const customer =
                     customerInput?.value?.trim() ||
                     "Customer";
+
 
                 const liters =
                     Number(
                         litersInput?.value
                     );
 
+
+                /* ==========================================
+                   CUSTOMER VALIDATION
+                ========================================== */
 
                 if (
                     !customerInput?.value?.trim()
@@ -2006,10 +2412,16 @@ error
                         "Please enter the customer name."
                     );
 
+                    customerInput?.focus();
+
                     return;
 
                 }
 
+
+                /* ==========================================
+                   LITERS VALIDATION
+                ========================================== */
 
                 if (
                     !Number.isFinite(liters) ||
@@ -2022,10 +2434,16 @@ error
                         "Please enter a valid daily milk quantity."
                     );
 
+                    litersInput?.focus();
+
                     return;
 
                 }
 
+
+                /* ==========================================
+                   CONFIRM ORDER
+                ========================================== */
 
                 const confirmed =
                     confirm(
@@ -2051,6 +2469,10 @@ error
                 }
 
 
+                /* ==========================================
+                   PREVENT DOUBLE SUBMISSION
+                ========================================== */
+
                 const button =
                     this.querySelector(
                         "button[type='submit']"
@@ -2061,8 +2483,13 @@ error
 
                     button.disabled = true;
 
+                    button.classList.add(
+                        "loading"
+                    );
+
                     button.innerHTML =
-                        '<i class="fas fa-spinner fa-spin"></i> Adding...';
+                        '<i class="fas fa-spinner fa-spin"></i>' +
+                        '<span>Adding...</span>';
 
                 }
 
@@ -2091,20 +2518,27 @@ error
                             "[name='liters']"
                         );
 
+
                     const customerInput =
                         this.querySelector(
                             "[name='customerName']"
                         );
+
 
                     const liters =
                         Number(
                             litersInput?.value
                         );
 
+
                     const customer =
                         customerInput?.value?.trim() ||
                         "Customer";
 
+
+                    /* ======================================
+                       VALIDATE LITERS
+                    ====================================== */
 
                     if (
                         !Number.isFinite(liters) ||
@@ -2117,10 +2551,16 @@ error
                             "Please enter a valid amount of milk."
                         );
 
+                        litersInput?.focus();
+
                         return;
 
                     }
 
+
+                    /* ======================================
+                       CHECK AVAILABLE MILK
+                    ====================================== */
 
                     if (
                         liters > availableMilk
@@ -2136,10 +2576,16 @@ error
                             " L"
                         );
 
+                        litersInput?.focus();
+
                         return;
 
                     }
 
+
+                    /* ======================================
+                       CONFIRM SALE
+                    ====================================== */
 
                     const confirmed =
                         confirm(
@@ -2169,6 +2615,10 @@ error
                     }
 
 
+                    /* ======================================
+                       PREVENT DOUBLE SUBMISSION
+                    ====================================== */
+
                     const button =
                         this.querySelector(
                             "button[type='submit']"
@@ -2179,8 +2629,329 @@ error
 
                         button.disabled = true;
 
+                        button.classList.add(
+                            "loading"
+                        );
+
                         button.innerHTML =
-                            '<i class="fas fa-spinner fa-spin"></i> Recording...';
+                            '<i class="fas fa-spinner fa-spin"></i>' +
+                            '<span>Recording...</span>';
+
+                    }
+
+                }
+            );
+
+        });
+
+
+    /* ========================================================
+       OMIT STANDING ORDERS
+    ======================================================== */
+
+    document
+        .querySelectorAll(
+            ".omit-form"
+        )
+        .forEach(function(form){
+
+            form.addEventListener(
+                "submit",
+                function(event){
+
+                    const button =
+                        this.querySelector(
+                            ".omit-btn"
+                        );
+
+
+                    const message =
+                        button?.dataset?.confirm ||
+                        "Omit this standing order?";
+
+
+                    const confirmed =
+                        confirm(
+                            message
+                        );
+
+
+                    if (!confirmed){
+
+                        event.preventDefault();
+
+                        return;
+
+                    }
+
+
+                    if (button){
+
+                        button.disabled = true;
+
+                        button.classList.add(
+                            "loading"
+                        );
+
+                        button.innerHTML =
+                            '<i class="fas fa-spinner fa-spin"></i>' +
+                            '<span>Omitting...</span>';
+
+                    }
+
+                }
+            );
+
+        });
+
+
+    /* ========================================================
+       MILK PRICE FORM
+    ======================================================== */
+
+    const priceForm =
+        document.querySelector(
+            ".milk-price-form"
+        );
+
+
+    if (priceForm) {
+
+        priceForm.addEventListener(
+            "submit",
+            function(event){
+
+                const priceInput =
+                    this.querySelector(
+                        "[name='price']"
+                    );
+
+
+                if (!priceInput){
+
+                    return;
+
+                }
+
+
+                const price =
+                    Number(
+                        priceInput.value
+                    );
+
+
+                if (
+                    !Number.isFinite(price) ||
+                    price < 0
+                ){
+
+                    event.preventDefault();
+
+                    alert(
+                        "Please enter a valid milk price."
+                    );
+
+                    priceInput.focus();
+
+                    return;
+
+                }
+
+
+                const confirmed =
+                    confirm(
+                        "Save Milk Price\n\n" +
+
+                        "New Price: KES " +
+                        price.toFixed(2) +
+                        " per litre" +
+
+                        "\n\nPress OK to save."
+                    );
+
+
+                if (!confirmed){
+
+                    event.preventDefault();
+
+                    return;
+
+                }
+
+
+                const button =
+                    this.querySelector(
+                        "button[type='submit']"
+                    );
+
+
+                if (button){
+
+                    button.disabled = true;
+
+                    button.classList.add(
+                        "loading"
+                    );
+
+                    button.innerHTML =
+                        '<i class="fas fa-spinner fa-spin"></i>' +
+                        '<span>Saving...</span>';
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ========================================================
+       FARM SELECTOR
+    ======================================================== */
+
+    const farmSelector =
+        document.querySelector(
+            ".farm-selector"
+        );
+
+
+    if (farmSelector) {
+
+        farmSelector.addEventListener(
+            "submit",
+            function(event){
+
+                const select =
+                    this.querySelector(
+                        "[name='farmId']"
+                    );
+
+
+                if (
+                    !select ||
+                    !select.value
+                ){
+
+                    event.preventDefault();
+
+                    alert(
+                        "Please select a dairy farm."
+                    );
+
+                    select?.focus();
+
+                    return;
+
+                }
+
+
+                const button =
+                    this.querySelector(
+                        "button[type='submit']"
+                    );
+
+
+                if (button){
+
+                    button.disabled = true;
+
+                    button.classList.add(
+                        "loading"
+                    );
+
+                    button.innerHTML =
+                        '<i class="fas fa-spinner fa-spin"></i>' +
+                        '<span>Loading...</span>';
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ========================================================
+       PREVENT INVALID MANUAL-SALE QUANTITY
+       WHILE TYPING
+    ======================================================== */
+
+    const manualLiters =
+        document.querySelector(
+            ".manual-sale-form [name='liters']"
+        );
+
+
+    if (manualLiters) {
+
+        manualLiters.addEventListener(
+            "input",
+            function(){
+
+                const value =
+                    Number(
+                        this.value
+                    );
+
+
+                if (
+                    Number.isFinite(value) &&
+                    value > availableMilk
+                ){
+
+                    this.setCustomValidity(
+                        "The amount cannot exceed available milk."
+                    );
+
+                } else {
+
+                    this.setCustomValidity(
+                        ""
+                    );
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ========================================================
+       PREVENT INVALID STANDING-SALE QUANTITY
+       WHILE TYPING
+    ======================================================== */
+
+    document
+        .querySelectorAll(
+            ".standing-sale-form [name='liters']"
+        )
+        .forEach(function(input){
+
+            input.addEventListener(
+                "input",
+                function(){
+
+                    const value =
+                        Number(
+                            this.value
+                        );
+
+
+                    if (
+                        Number.isFinite(value) &&
+                        value > availableMilk
+                    ){
+
+                        this.setCustomValidity(
+                            "The amount cannot exceed available milk."
+                        );
+
+                    } else {
+
+                        this.setCustomValidity(
+                            ""
+                        );
 
                     }
 
