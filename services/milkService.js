@@ -2,93 +2,102 @@
 // services/milkService.js
 // ==========================================================
 
-const Dairy = require("../models/dairy");
-const Milk = require("../models/milk");
+const Dairy =
+    require("../models/dairy");
+
+const Milk =
+    require("../models/milk");
 
 
 // ==========================================================
-// NAIROBI DATE/TIME HELPERS
+// DATE HELPERS
 // ==========================================================
 
-function getNairobiParts(date = new Date()) {
+function getToday() {
 
-    const formatter =
+    return new Date();
+
+}
+
+
+function getDayKey(date = new Date()) {
+
+    return date.toLocaleDateString(
+        "en-CA",
+        {
+            timeZone: "Africa/Nairobi"
+        }
+    );
+
+}
+
+
+function getMonthKey(date = new Date()) {
+
+    const parts =
         new Intl.DateTimeFormat(
             "en-KE",
             {
                 timeZone: "Africa/Nairobi",
                 year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false
+                month: "2-digit"
             }
-        );
+        ).formatToParts(date);
 
 
-    const parts =
-        formatter.formatToParts(date);
+    const year =
+        parts.find(
+            part => part.type === "year"
+        ).value;
+
+    const month =
+        parts.find(
+            part => part.type === "month"
+        ).value;
 
 
-    const values = {};
-
-
-    parts.forEach(function (part) {
-
-        if (part.type !== "literal") {
-
-            values[part.type] =
-                part.value;
-
-        }
-
-    });
-
-
-    return {
-        year: Number(values.year),
-        month: Number(values.month),
-        day: Number(values.day),
-        hour: Number(values.hour),
-        minute: Number(values.minute),
-        second: Number(values.second)
-    };
+    return `${year}-${month}`;
 
 }
 
 
 // ==========================================================
 // CURRENT COLLECTION SESSION
+//
+// Morning: 00:00 - 09:59
+// Closed: 10:00 - 15:59
+// Evening: 16:00 - 23:59
+//
+// Admin may still make morning entries during "closed".
 // ==========================================================
 
-function getCurrentSession(date = new Date()) {
+function getCurrentSession() {
 
-    const {
-        hour
-    } = getNairobiParts(date);
+    const now =
+        new Date();
 
 
-    /*
-     * 00:00 - 09:59
-     * Morning
-     *
-     * 10:00 - 15:59
-     * Closed
-     *
-     * 16:00 - 23:59
-     * Evening
-     */
+    const hour =
+        Number(
+            new Intl.DateTimeFormat(
+                "en-KE",
+                {
+                    timeZone: "Africa/Nairobi",
+                    hour: "2-digit",
+                    hourCycle: "h23"
+                }
+            ).format(now)
+        );
 
-    if (hour >= 0 && hour < 10) {
+
+    if (hour < 10) {
 
         return "morning";
 
     }
 
 
-    if (hour >= 10 && hour < 16) {
+    if (hour < 16) {
 
         return "closed";
 
@@ -101,620 +110,518 @@ function getCurrentSession(date = new Date()) {
 
 
 // ==========================================================
-// DATE KEYS
+// GET ASSIGNED FARM DOCUMENTS
 // ==========================================================
 
-function getDayKey(date = new Date()) {
+async function getAssignedFarms(user) {
 
-    const {
-        year,
-        month,
-        day
-    } = getNairobiParts(date);
-
-
-    return (
-        String(year) +
-        "-" +
-        String(month).padStart(2, "0") +
-        "-" +
-        String(day).padStart(2, "0")
-    );
-
-}
-
-
-function getMonthKey(date = new Date()) {
-
-    const {
-        year,
-        month
-    } = getNairobiParts(date);
-
-
-    return (
-        String(year) +
-        "-" +
-        String(month).padStart(2, "0")
-    );
-
-}
-
-
-// ==========================================================
-// FARM IDENTIFICATION
-// ==========================================================
-
-function getFarmIdFromAnimal(animal) {
-
-    if (!animal) {
-        return "";
+    if (!user) {
+        return [];
     }
 
 
-    if (animal.farm) {
+    /* ======================================================
+       ADMIN
+       ====================================================== */
 
-        if (typeof animal.farm === "object") {
+    if (user.role === "admin") {
 
-            if (animal.farm._id) {
-
-                return String(
-                    animal.farm._id
-                );
-
-            }
-
-        }
-
-        else {
-
-            return String(
-                animal.farm
-            );
-
-        }
-
-    }
-
-
-    if (animal.dairyFarm) {
-
-        if (
-            typeof animal.dairyFarm === "object" &&
-            animal.dairyFarm._id
-        ) {
-
-            return String(
-                animal.dairyFarm._id
-            );
-
-        }
-
-        return String(
-            animal.dairyFarm
-        );
-
-    }
-
-
-    if (animal.farmId) {
-
-        return String(
-            animal.farmId
-        );
-
-    }
-
-
-    return "";
-
-}
-
-
-// ==========================================================
-// LOAD FARMS
-//
-// Farms are the non-animal Dairy records whose code is
-// negative. Their positive counterpart identifies animals
-// belonging to that farm.
-// ==========================================================
-
-async function getFarmRecords() {
-
-    return Dairy
-        .find({
+        return Dairy.find({
             code: {
                 $lt: 0
             }
         })
         .sort({
-            code: 1
+            name: 1
         })
         .lean();
+
+    }
+
+
+    /* ======================================================
+       DAIRY WORKER
+       ====================================================== */
+
+    if (user.role !== "dairyWorker") {
+
+        return [];
+
+    }
+
+
+    const assignedFarmIds =
+        Array.isArray(user.assignedFarm)
+            ? user.assignedFarm
+            : [];
+
+
+    if (assignedFarmIds.length === 0) {
+
+        return [];
+
+    }
+
+
+    return Dairy.find({
+        _id: {
+            $in: assignedFarmIds
+        },
+
+        code: {
+            $lt: 0
+        }
+    })
+    .sort({
+        name: 1
+    })
+    .lean();
 
 }
 
 
 // ==========================================================
-// LOAD CURRENTLY MILKING ANIMALS
+// FIND MILKING ANIMALS FOR FARM
+// ==========================================================
+//
+// Your user model tells us that assignedFarm points to
+// the farm Dairy document.
+//
+// The animal therefore needs to be associated with that
+// farm. The service supports the farm reference used by
+// the existing milk view.
+//
 // ==========================================================
 
-async function getMilkingAnimals() {
+async function getFarmAnimals(farmId) {
 
-    return Dairy
-        .find({
-            isMilking: true,
-            code: {
-                $gte: 0
-            }
-        })
-        .sort({
-            code: 1
-        })
-        .lean();
+    if (!farmId) {
 
-}
-
-
-// ==========================================================
-// FIND FARM FOR ANIMAL
-// ==========================================================
-
-function resolveAnimalFarm(
-    animal,
-    farms
-) {
-
-    const directFarmId =
-        getFarmIdFromAnimal(animal);
-
-
-    if (directFarmId) {
-
-        return farms.find(
-            function (farm) {
-
-                return (
-                    farm &&
-                    farm._id &&
-                    String(farm._id) ===
-                    directFarmId
-                );
-
-            }
-        ) || null;
+        return [];
 
     }
 
 
     /*
-     * Farm ownership is represented by
-     * the negative farm code.
+     * The current Dairy model used by the milk page may expose
+     * the farm relationship as "farm".
      *
-     * Therefore an animal's positive code
-     * is associated with the corresponding
-     * farm code.
-     *
-     * Example:
-     *
-     * farm code: -12
-     * animal code: 12
+     * We first use the schema to determine the actual path.
      */
 
-    const animalCode =
-        Number(animal.code);
+    const schemaPaths =
+        Dairy.schema.paths;
 
 
-    if (
-        Number.isFinite(animalCode)
-    ) {
+    let farmPath = null;
 
-        return farms.find(
-            function (farm) {
 
-                return (
-                    Math.abs(
-                        Number(farm.code)
-                    ) === animalCode
-                );
+    if (schemaPaths.farm) {
 
-            }
-        ) || null;
+        farmPath = "farm";
+
+    }
+
+    else if (schemaPaths.dairyFarm) {
+
+        farmPath = "dairyFarm";
+
+    }
+
+    else if (schemaPaths.farmId) {
+
+        farmPath = "farmId";
 
     }
 
 
-    return null;
+    /*
+     * A farm relationship is required in order to know
+     * which animals belong to which farm.
+     */
+
+    if (!farmPath) {
+
+        console.error(
+            "Dairy model has no farm relationship field."
+        );
+
+        return [];
+
+    }
+
+
+    const query = {
+
+        isMilking: true,
+
+        code: {
+            $gte: 0
+        }
+
+    };
+
+
+    query[farmPath] =
+        farmId;
+
+
+    return Dairy.find(query)
+        .sort({
+            name: 1,
+            code: 1
+        })
+        .lean();
 
 }
 
 
 // ==========================================================
-// LOAD EXISTING RECORDS FOR TODAY
+// GET MILK RECORDS FOR ANIMAL
 // ==========================================================
 
-async function getTodayMilkRecords() {
+async function getAnimalRecords(
+    animalId,
+    dayKey
+) {
 
-    const day =
+    const records =
+        await Milk.find({
+            dairy: animalId,
+
+            day: dayKey
+        })
+        .sort({
+            date: -1
+        })
+        .lean();
+
+
+    let morning = null;
+    let evening = null;
+
+
+    records.forEach(function(record) {
+
+        const session =
+            record.session;
+
+
+        if (
+            session === "morning" &&
+            !morning
+        ) {
+
+            morning = record;
+
+        }
+
+
+        if (
+            session === "evening" &&
+            !evening
+        ) {
+
+            evening = record;
+
+        }
+
+    });
+
+
+    /*
+     * If old records don't have session stored,
+     * don't incorrectly assign them to both sessions.
+     */
+
+    return {
+        morning,
+        evening
+    };
+
+}
+
+
+// ==========================================================
+// BUILD MILK COLLECTION PAGE
+// ==========================================================
+
+exports.getMilkCollectionPage =
+async function(user) {
+
+    const currentSession =
+        getCurrentSession();
+
+
+    const farms =
+        await getAssignedFarms(
+            user
+        );
+
+
+    const dayKey =
         getDayKey();
 
 
-    const records =
-        await Milk
-            .find({
-                day
+    const milkDairyTables = [];
+
+
+    for (const farm of farms) {
+
+        const animals =
+            await getFarmAnimals(
+                farm._id
+            );
+
+
+        const animalsWithRecords =
+            [];
+
+
+        for (const animal of animals) {
+
+            const records =
+                await getAnimalRecords(
+                    animal._id,
+                    dayKey
+                );
+
+
+            animalsWithRecords.push({
+
+                ...animal,
+
+                morning:
+                    records.morning,
+
+                evening:
+                    records.evening
+
+            });
+
+        }
+
+
+        /*
+         * Only farms with actual milking animals appear.
+         */
+
+        if (
+            animalsWithRecords.length === 0
+        ) {
+
+            continue;
+
+        }
+
+
+        milkDairyTables.push({
+
+            farm,
+
+            animals:
+                animalsWithRecords
+
+        });
+
+    }
+
+
+    return {
+
+        milkDairyTables,
+
+        session:
+            currentSession,
+
+        currentDairy:
+            farms.length === 1
+                ? farms[0]
+                : null
+
+    };
+
+};
+
+
+// ==========================================================
+// VERIFY FARM ACCESS
+// ==========================================================
+
+async function verifyFarmAccess(
+    user,
+    farmId
+) {
+
+    if (!user) {
+
+        throw new Error(
+            "Authentication required."
+        );
+
+    }
+
+
+    if (user.role === "admin") {
+
+        const farm =
+            await Dairy.findOne({
+                _id: farmId,
+                code: {
+                    $lt: 0
+                }
             })
             .lean();
 
 
-    return records;
-
-}
-
-
-// ==========================================================
-// BUILD FARM TABLES
-// ==========================================================
-
-async function buildMilkDairyTables() {
-
-    const [
-        farms,
-        animals,
-        records
-    ] = await Promise.all([
-        getFarmRecords(),
-        getMilkingAnimals(),
-        getTodayMilkRecords()
-    ]);
-
-
-    const session =
-        getCurrentSession();
-
-
-    const tables =
-        new Map();
-
-
-    /*
-     * Create farm sections first.
-     */
-
-    farms.forEach(function (farm) {
-
-        const id =
-            farm && farm._id
-                ? String(farm._id)
-                : "";
-
-
-        if (!id) {
-            return;
-        }
-
-
-        tables.set(
-            id,
-            {
-                farm,
-                animals: []
-            }
-        );
-
-    });
-
-
-    /*
-     * Add currently milking animals
-     * to their actual farms.
-     */
-
-    animals.forEach(function (animal) {
-
-        const farm =
-            resolveAnimalFarm(
-                animal,
-                farms
-            );
-
-
         if (!farm) {
-            return;
-        }
 
-
-        const farmId =
-            String(farm._id);
-
-
-        if (!tables.has(farmId)) {
-
-            tables.set(
-                farmId,
-                {
-                    farm,
-                    animals: []
-                }
+            throw new Error(
+                "The selected dairy farm does not exist."
             );
 
         }
 
 
-        /*
-         * Find today's record for the
-         * current collection session.
-         */
+        return farm;
 
-        const matchingRecord =
-            records.find(
-                function (record) {
-
-                    if (
-                        !record ||
-                        !record.dairy
-                    ) {
-                        return false;
-                    }
-
-
-                    return (
-                        String(record.dairy) ===
-                        String(animal._id) &&
-                        record.session ===
-                        session
-                    );
-
-                }
-            ) || null;
-
-
-        /*
-         * Attach records directly to
-         * the animal object.
-         */
-
-        animal.morning = null;
-        animal.evening = null;
-
-
-        records.forEach(
-            function (record) {
-
-                if (
-                    !record ||
-                    !record.dairy
-                ) {
-                    return;
-                }
-
-
-                if (
-                    String(record.dairy) !==
-                    String(animal._id)
-                ) {
-                    return;
-                }
-
-
-                if (
-                    record.session ===
-                    "morning"
-                ) {
-
-                    animal.morning =
-                        record;
-
-                }
-
-
-                if (
-                    record.session ===
-                    "evening"
-                ) {
-
-                    animal.evening =
-                        record;
-
-                }
-
-            }
-        );
-
-
-        /*
-         * matchingRecord is intentionally
-         * resolved above so the animal is
-         * prepared for the current session.
-         */
-
-        void matchingRecord;
-
-
-        tables
-            .get(farmId)
-            .animals
-            .push(animal);
-
-    });
-
-
-    return Array
-        .from(
-            tables.values()
-        )
-        .filter(
-            function (table) {
-
-                return (
-                    table.animals &&
-                    table.animals.length > 0
-                );
-
-            }
-        );
-
-}
-
-
-// ==========================================================
-// GET ACTIVE FARM
-//
-// The application stores the worker's active farm in the
-// session. Several names are supported so this service does
-// not break an existing session implementation.
-// ==========================================================
-
-async function getActiveWorkerFarm(user) {
-
-    if (!user) {
-        return null;
     }
 
 
-    const farmId =
-        user.currentFarm ||
-        user.currentDairy ||
-        user.farm ||
-        user.farmId ||
-        user.dairyFarm ||
-        null;
+    if (user.role !== "dairyWorker") {
 
+        throw new Error(
+            "You are not authorized to record milk."
+        );
 
-    if (!farmId) {
-        return null;
     }
+
+
+    const assignedFarmIds =
+        Array.isArray(user.assignedFarm)
+            ? user.assignedFarm.map(
+                id => String(id)
+            )
+            : [];
 
 
     if (
-        typeof farmId === "object" &&
-        farmId._id
+        !assignedFarmIds.includes(
+            String(farmId)
+        )
     ) {
 
-        return Dairy.findById(
-            farmId._id
-        ).lean();
+        throw new Error(
+            "This dairy farm is not assigned to you."
+        );
 
     }
 
 
-    return Dairy
-        .findById(farmId)
+    const farm =
+        await Dairy.findOne({
+            _id: farmId,
+            code: {
+                $lt: 0
+            }
+        })
         .lean();
 
-}
 
+    if (!farm) {
 
-// ==========================================================
-// FILTER TABLES FOR WORKER
-// ==========================================================
+        throw new Error(
+            "The selected dairy farm does not exist."
+        );
 
-function filterTablesForWorker(
-    tables,
-    activeFarm
-) {
-
-    if (!activeFarm) {
-        return [];
     }
 
 
-    const activeFarmId =
-        String(activeFarm._id);
-
-
-    return tables.filter(
-        function (table) {
-
-            if (
-                !table ||
-                !table.farm ||
-                !table.farm._id
-            ) {
-                return false;
-            }
-
-
-            return (
-                String(
-                    table.farm._id
-                ) === activeFarmId
-            );
-
-        }
-    );
+    return farm;
 
 }
 
 
 // ==========================================================
-// PAGE DATA
+// VERIFY ANIMAL
 // ==========================================================
 
-exports.getMilkCollectionPageData =
-    async function (user) {
+async function verifyAnimal(
+    animalId,
+    farmId
+) {
 
-        const session =
-            getCurrentSession();
-
-
-        const activeFarm =
-            user.role === "dairyWorker"
-                ? await getActiveWorkerFarm(user)
-                : null;
+    const schemaPaths =
+        Dairy.schema.paths;
 
 
-        let milkDairyTables =
-            await buildMilkDairyTables();
+    let farmPath = null;
 
 
-        if (
-            user.role ===
-            "dairyWorker"
-        ) {
+    if (schemaPaths.farm) {
 
-            milkDairyTables =
-                filterTablesForWorker(
-                    milkDairyTables,
-                    activeFarm
-                );
+        farmPath = "farm";
 
+    }
+
+    else if (schemaPaths.dairyFarm) {
+
+        farmPath = "dairyFarm";
+
+    }
+
+    else if (schemaPaths.farmId) {
+
+        farmPath = "farmId";
+
+    }
+
+
+    if (!farmPath) {
+
+        throw new Error(
+            "Dairy model has no farm relationship."
+        );
+
+    }
+
+
+    const query = {
+
+        _id: animalId,
+
+        isMilking: true,
+
+        code: {
+            $gte: 0
         }
 
-
-        /*
-         * Admin sees every farm.
-         *
-         * Dairy worker sees only the
-         * active farm.
-         */
-
-
-        const dairies =
-            milkDairyTables
-                .flatMap(
-                    function (table) {
-
-                        return table.animals;
-
-                    }
-                );
-
-
-        return {
-
-            session,
-
-            currentFarm:
-                activeFarm,
-
-            milkDairyTables,
-
-            dairies
-
-        };
-
     };
+
+
+    query[farmPath] =
+        farmId;
+
+
+    const animal =
+        await Dairy.findOne(
+            query
+        )
+        .lean();
+
+
+    if (!animal) {
+
+        throw new Error(
+            "The selected animal is not a milking animal belonging to this farm."
+        );
+
+    }
+
+
+    return animal;
+
+}
 
 
 // ==========================================================
@@ -722,216 +629,199 @@ exports.getMilkCollectionPageData =
 // ==========================================================
 
 exports.saveMilkRecord =
-    async function ({
-        dairyId,
-        farmId,
-        session,
+async function(data, user) {
+
+    const {
+        dairy,
+        farm,
         liters,
         remarks,
-        user
-    }) {
+        session
+    } = data;
 
-        if (!user) {
+
+    if (!dairy) {
+
+        throw new Error(
+            "Animal is required."
+        );
+
+    }
+
+
+    if (!farm) {
+
+        throw new Error(
+            "Dairy farm is required."
+        );
+
+    }
+
+
+    const selectedSession =
+        session === "evening"
+            ? "evening"
+            : "morning";
+
+
+    const currentSession =
+        getCurrentSession();
+
+
+    /*
+     * Worker can only enter during the appropriate open window.
+     *
+     * Admin can enter morning during the morning window
+     * and during the closed period.
+     */
+
+    if (user.role === "dairyWorker") {
+
+        if (
+            currentSession !== selectedSession
+        ) {
 
             throw new Error(
-                "You must be logged in."
+                "Milk collection is currently closed for this session."
             );
 
         }
 
-
-        if (!dairyId) {
-
-            throw new Error(
-                "Animal is required."
-            );
-
-        }
+    }
 
 
-        /*
-         * Never trust the session supplied
-         * by the browser.
-         */
-
-        const actualSession =
-            getCurrentSession();
-
-
-        /*
-         * Worker can only enter during
-         * the correct open window.
-         */
+    if (user.role === "admin") {
 
         if (
-            user.role ===
-            "dairyWorker"
+            selectedSession === "morning" &&
+            currentSession !== "morning" &&
+            currentSession !== "closed"
         ) {
-
-            if (
-                actualSession !==
-                session
-            ) {
-
-                throw new Error(
-                    "This collection window is no longer open."
-                );
-
-            }
-
-        }
-
-
-        /*
-         * Admin can enter morning during
-         * morning AND the closed period.
-         *
-         * During evening, admin enters
-         * evening records.
-         */
-
-        if (
-            user.role ===
-            "admin"
-        ) {
-
-            const allowedAdminSession =
-                actualSession === "evening"
-                    ? "evening"
-                    : "morning";
-
-
-            if (
-                session !==
-                allowedAdminSession
-            ) {
-
-                throw new Error(
-                    "This collection session is not available."
-                );
-
-            }
-
-        }
-
-
-        const dairy =
-            await Dairy.findById(
-                dairyId
-            ).lean();
-
-
-        if (!dairy) {
 
             throw new Error(
-                "Animal not found."
+                "Morning collection is no longer available."
             );
 
         }
 
 
         if (
-            dairy.isMilking !== true
+            selectedSession === "evening" &&
+            currentSession !== "evening"
         ) {
 
             throw new Error(
-                "This animal is not currently marked as being milked."
+                "Evening collection is currently closed."
             );
 
         }
 
-
-        const day =
-            getDayKey();
+    }
 
 
-        const month =
-            getMonthKey();
+    const numericLiters =
+        Number(liters);
 
 
-        /*
-         * Prevent duplicate collection
-         * records for the same animal,
-         * day and session.
-         */
+    if (
+        !Number.isFinite(
+            numericLiters
+        ) ||
+        numericLiters < 0
+    ) {
 
-        const existing =
-            await Milk.findOne({
-                dairy: dairy._id,
-                day,
-                session
-            });
+        throw new Error(
+            "Enter a valid milk quantity."
+        );
 
-
-        if (existing) {
-
-            throw new Error(
-                "A milk record already exists for this animal for this collection session."
-            );
-
-        }
+    }
 
 
-        const numericLiters =
-            Number(liters);
+    await verifyFarmAccess(
+        user,
+        farm
+    );
 
 
-        if (
-            !Number.isFinite(
-                numericLiters
-            ) ||
-            numericLiters < 0
-        ) {
-
-            throw new Error(
-                "Enter a valid milk quantity."
-            );
-
-        }
+    await verifyAnimal(
+        dairy,
+        farm
+    );
 
 
-        const cleanRemarks =
-            remarks
-                ? String(remarks).trim()
-                : "";
+    const dayKey =
+        getDayKey();
 
 
-        const record =
-            new Milk({
-
-                dairy:
-                    dairy._id,
-
-                liters:
-                    numericLiters,
-
-                remarks:
-                    cleanRemarks,
-
-                recordedBy:
-                    user._id,
-
-                recordedByType:
-                    "user",
-
-                session,
-
-                day,
-
-                month,
-
-                date:
-                    new Date()
-
-            });
+    const monthKey =
+        getMonthKey();
 
 
-        await record.save();
+    /*
+     * Prevent duplicate records for the same
+     * animal/session/day.
+     */
+
+    const existing =
+        await Milk.findOne({
+
+            dairy,
+
+            day:
+                dayKey,
+
+            session:
+                selectedSession
+
+        });
 
 
-        return record;
+    if (existing) {
 
-    };
+        throw new Error(
+            "Milk has already been recorded for this animal for this session."
+        );
+
+    }
+
+
+    const record =
+        new Milk({
+
+            dairy,
+
+            liters:
+                numericLiters,
+
+            remarks:
+                typeof remarks === "string"
+                    ? remarks.trim()
+                    : "",
+
+            recordedBy:
+                user._id,
+
+            date:
+                getToday(),
+
+            day:
+                dayKey,
+
+            month:
+                monthKey,
+
+            session:
+                selectedSession
+
+        });
+
+
+    await record.save();
+
+
+    return record;
+
+};
 
 
 // ==========================================================
@@ -940,116 +830,93 @@ exports.saveMilkRecord =
 // ==========================================================
 
 exports.updateMilkRecord =
-    async function (
-        recordId,
-        data,
-        user
+async function(
+    recordId,
+    data,
+    user
+) {
+
+    if (
+        !user ||
+        user.role !== "admin"
     ) {
 
-        if (!user) {
+        throw new Error(
+            "Only administrators can edit milk records."
+        );
 
-            throw new Error(
-                "You must be logged in."
-            );
-
-        }
+    }
 
 
-        if (
-            user.role !==
-            "admin"
-        ) {
+    if (!recordId) {
 
-            throw new Error(
-                "Only administrators can edit milk records."
-            );
+        throw new Error(
+            "Milk record ID is required."
+        );
 
-        }
+    }
 
 
-        if (!recordId) {
-
-            throw new Error(
-                "Milk record ID is required."
-            );
-
-        }
+    const numericLiters =
+        Number(data.liters);
 
 
-        const record =
-            await Milk.findById(
-                recordId
-            );
+    if (
+        !Number.isFinite(
+            numericLiters
+        ) ||
+        numericLiters < 0
+    ) {
+
+        throw new Error(
+            "Enter a valid milk quantity."
+        );
+
+    }
 
 
-        if (!record) {
-
-            throw new Error(
-                "Milk record not found."
-            );
-
-        }
+    const record =
+        await Milk.findById(
+            recordId
+        );
 
 
-        const numericLiters =
-            Number(data.liters);
+    if (!record) {
+
+        throw new Error(
+            "Milk record not found."
+        );
+
+    }
 
 
-        if (
-            !Number.isFinite(
-                numericLiters
-            ) ||
-            numericLiters < 0
-        ) {
-
-            throw new Error(
-                "Enter a valid milk quantity."
-            );
-
-        }
+    record.liters =
+        numericLiters;
 
 
-        record.liters =
-            numericLiters;
+    record.remarks =
+        typeof data.remarks === "string"
+            ? data.remarks.trim()
+            : "";
 
 
-        record.remarks =
-            data.remarks
-                ? String(
-                    data.remarks
-                ).trim()
-                : "";
+    /*
+     * Keep the original collection date/session.
+     * Editing a record should not move it into another
+     * collection period.
+     */
+
+    await record.save();
 
 
-        /*
-         * Keep the original collection
-         * session/day intact.
-         *
-         * Editing a record must NOT move
-         * it into another session.
-         */
+    return record;
 
-
-        await record.save();
-
-
-        return record;
-
-    };
+};
 
 
 // ==========================================================
-// EXPORTED HELPERS
+// EXPORT SESSION HELPER
 // ==========================================================
 
 exports.getCurrentSession =
     getCurrentSession;
-
-exports.getDayKey =
-    getDayKey;
-
-exports.getMonthKey =
-    getMonthKey;
-
-exports.getMilkingAnimals =
-    getMilkingAnimals;
