@@ -47,17 +47,6 @@ currentUser.role === "dairyWorker";
 
 /* ==========================================================
    CURRENT SWITCHED FARM
-==========================================================
-
-   The controller/service should provide the currently
-   selected Dairy Farm.
-
-   Supported variables:
-
-       currentDairy
-       currentFarm
-
-   We use whichever exists.
 ========================================================== */
 
 const activeFarm =
@@ -73,25 +62,18 @@ currentDairy
 
 
 /* ==========================================================
+   CURRENT FARM NAME
+========================================================== */
+
+const activeFarmName =
+activeFarm &&
+activeFarm.name
+    ? activeFarm.name
+    : "Dairy Farm";
+
+
+/* ==========================================================
    FARM TABLE DATA
-==========================================================
-
-   Preferred variable:
-
-       milkDairyTables
-
-   Expected structure:
-
-       [
-           {
-               farm: Dairy Farm,
-               animals: [ Dairy animals ]
-           }
-       ]
-
-   A fallback is also provided for the old `dairies`
-   variable so the page does not immediately break if
-   the controller has not yet been updated.
 ========================================================== */
 
 let milkTables = [];
@@ -117,17 +99,6 @@ else if (
     Array.isArray(dairies)
 ) {
 
-    /*
-     * Old system supplied one flat array of animals.
-     *
-     * Group them using:
-     *
-     *     animal.assetCode === farm.code
-     *
-     * Farm information may already be attached to the
-     * animal as `farm`, `dairyFarm`, or `farmInfo`.
-     */
-
     const grouped =
         new Map();
 
@@ -138,10 +109,6 @@ else if (
             return;
         }
 
-
-        /*
-         * Only animals currently being milked.
-         */
 
         if (
             animal.isMilking !== true
@@ -195,9 +162,9 @@ else if (
 
 
     milkTables =
-        Array.from(
-            grouped.values()
-        );
+    Array.from(
+        grouped.values()
+    );
 
 }
 
@@ -214,21 +181,6 @@ Array.isArray(milkTables)
 
 /* ==========================================================
    DAIRY WORKER FARM FILTER
-==========================================================
-
-   ADMIN:
-       sees all farms.
-
-   DAIRY WORKER:
-       sees ONLY the currently switched farm.
-
-   The active farm can be supplied as:
-       currentDairy
-       currentFarm
-
-   The comparison supports both:
-       farm._id
-       farm.code
 ========================================================== */
 
 if (dairyWorker) {
@@ -322,20 +274,6 @@ milkTables.filter(function (table) {
    SESSION PERMISSIONS
 ========================================================== */
 
-/*
-ADMIN:
-
-- Morning: morning records
-- Closed: morning records
-- Evening: evening records
-
-NORMAL USER:
-
-- Morning: morning records
-- Evening: evening records
-- Closed: no entry
-*/
-
 const adminMorningWindow =
 adminUser &&
 (
@@ -392,9 +330,6 @@ milkTables.forEach(function (table) {
 let sessionTitle =
     "Collection Closed";
 
-let sessionDescription =
-    "";
-
 let sessionIcon =
     "🔒";
 
@@ -411,10 +346,7 @@ let sessionBadgeText =
 if (currentSession === "morning") {
 
     sessionTitle =
-        "Morning collection is open";
-
-    sessionDescription =
-        "Record milk for animals individually before 10:00 AM.";
+        "Morning collection";
 
     sessionIcon =
         "🌅";
@@ -436,10 +368,7 @@ else if (currentSession === "closed") {
     if (adminUser) {
 
         sessionTitle =
-            "Morning collection is available to administrators";
-
-        sessionDescription =
-            "Administrators can submit new or edit existing morning records until 4:00 PM.";
+            "Morning collection";
 
         sessionIcon =
             "✏️";
@@ -458,10 +387,7 @@ else if (currentSession === "closed") {
     else {
 
         sessionTitle =
-            "Collection is temporarily closed";
-
-        sessionDescription =
-            "Morning collection closed at 10:00 AM. Evening collection opens at 4:00 PM.";
+            "Collection closed";
 
         sessionIcon =
             "⏰";
@@ -483,10 +409,7 @@ else if (currentSession === "closed") {
 else if (currentSession === "evening") {
 
     sessionTitle =
-        "Evening collection is open";
-
-    sessionDescription =
-        "Record milk for animals individually before midnight.";
+        "Evening collection";
 
     sessionIcon =
         "🌆";
@@ -506,10 +429,7 @@ else if (currentSession === "evening") {
 else {
 
     sessionTitle =
-        "Collection window unavailable";
-
-    sessionDescription =
-        "Please contact an administrator if this continues.";
+        "Collection unavailable";
 
 }
 
@@ -538,16 +458,12 @@ else {
         <div class="milk-header-text">
 
             <div class="milk-eyebrow">
-                DAILY PRODUCTION
+                <%= activeFarmName %>
             </div>
 
             <h1>
                 Milk Collection
             </h1>
-
-            <p>
-                Record today's milk production one animal at a time.
-            </p>
 
         </div>
 
@@ -568,64 +484,6 @@ else {
 
 
 <!-- ======================================================
-     ERROR
-======================================================= -->
-
-<% if (pageError) { %>
-
-    <div class="milk-alert milk-alert-error">
-
-        <div class="alert-icon">
-            ⚠️
-        </div>
-
-        <div>
-
-            <strong>
-                Unable to save record
-            </strong>
-
-            <p>
-                <%= pageError %>
-            </p>
-
-        </div>
-
-    </div>
-
-<% } %>
-
-
-<!-- ======================================================
-     SUCCESS
-======================================================= -->
-
-<% if (pageSuccess) { %>
-
-    <div class="milk-alert milk-alert-success">
-
-        <div class="alert-icon">
-            ✓
-        </div>
-
-        <div>
-
-            <strong>
-                Milk record saved
-            </strong>
-
-            <p>
-                The milk record was saved successfully.
-            </p>
-
-        </div>
-
-    </div>
-
-<% } %>
-
-
-<!-- ======================================================
      SESSION STATUS
 ======================================================= -->
 
@@ -640,37 +498,6 @@ else {
 
         <div class="session-card-title">
             <%= sessionTitle %>
-        </div>
-
-        <div class="session-card-description">
-
-            <%= sessionDescription %>
-
-            <% if (
-                currentSession === "closed" &&
-                adminUser
-            ) { %>
-
-                <div class="admin-session-note">
-
-                    ✏️ Admin access: morning records can still be
-                    submitted or edited until 4:00 PM.
-
-                </div>
-
-            <% } else if (
-                currentSession === "closed" &&
-                !adminUser
-            ) { %>
-
-                <div class="admin-session-note">
-
-                    Contact an administrator if a correction is required.
-
-                </div>
-
-            <% } %>
-
         </div>
 
     </div>
@@ -730,22 +557,6 @@ else {
         <h2>
             No Animals Currently Being Milked
         </h2>
-
-        <p>
-
-            <% if (dairyWorker && !activeFarm) { %>
-
-                No Dairy Farm is currently selected for
-                milk collection.
-
-            <% } else { %>
-
-                There are currently no active dairy animals
-                available for milk collection.
-
-            <% } %>
-
-        </p>
 
     </div>
 
@@ -816,10 +627,7 @@ milkTables.forEach(function (table, tableIndex) {
 
                 <% if (farmCode !== null) { %>
 
-                    Farm Code:
-                    <strong>
-                        #<%= farmCode %>
-                    </strong>
+                    #<%= farmCode %>
 
                     ·
 
@@ -852,7 +660,7 @@ milkTables.forEach(function (table, tableIndex) {
 
                 <% } else { %>
 
-                    Ready for Entry
+                    Ready
 
                 <% } %>
 
@@ -1028,7 +836,7 @@ milkTables.forEach(function (table, tableIndex) {
                             data-record-id="<%= record._id %>"
                             data-liters="<%= Number(record.liters || 0) %>"
                             data-remarks="<%= String(record.remarks || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') %>"
-                            title="Tap to edit this record"
+                            title="Edit milk record"
                             aria-label="Edit milk record"
                         >
 
@@ -1146,7 +954,7 @@ milkTables.forEach(function (table, tableIndex) {
                             data-record-id="<%= record._id %>"
                             data-liters="<%= Number(record.liters || 0) %>"
                             data-remarks="<%= String(record.remarks || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') %>"
-                            title="Tap to edit this record"
+                            title="Edit milk record"
                         >
 
                             <span class="remarks-text">
@@ -1253,14 +1061,7 @@ milkTables.forEach(function (table, tableIndex) {
 
                     <div class="closed-remarks">
 
-                        <span>
-                            🔒
-                        </span>
-
-                        <span>
-                            No new record can be
-                            submitted at this time.
-                        </span>
+                        🔒
 
                     </div>
 
@@ -1405,107 +1206,89 @@ milkTables.forEach(function (table, tableIndex) {
 %>
 
 
-<!-- ======================================================
-     INFORMATION CARD
-======================================================= -->
+<% } %>
 
-<div class="milk-submit-card">
+</div>
 
-    <div class="submit-information">
 
-        <div class="submit-info-icon">
+<!-- ==========================================================
+     SUCCESS / ERROR POPUP
+========================================================== -->
 
-            <% if (canSubmit) { %>
+<% if (pageSuccess || pageError) { %>
+
+<div
+    id="milkResultPopup"
+    class="milk-result-popup"
+    aria-hidden="false"
+>
+
+    <div class="milk-result-backdrop"></div>
+
+
+    <div
+        class="milk-result-dialog <%= pageSuccess
+            ? 'result-success'
+            : 'result-error'
+        %>"
+        role="alertdialog"
+        aria-modal="true"
+    >
+
+        <div class="result-icon">
+
+            <% if (pageSuccess) { %>
                 ✓
             <% } else { %>
-                🔒
+                !
             <% } %>
 
         </div>
 
 
-        <div>
+        <div class="result-content">
 
-            <% if (currentSession === "morning") { %>
+            <h2>
 
-                <strong>
-                    Morning collection is open
-                </strong>
+                <% if (pageSuccess) { %>
+                    Milk record saved
+                <% } else { %>
+                    Unable to save record
+                <% } %>
 
-                <span>
-                    Enter and save each animal individually.
-                    Once saved, the record becomes read-only
-                    for normal users.
-                </span>
+            </h2>
 
 
-            <% } else if (
-                currentSession === "closed" &&
-                adminUser
-            ) { %>
+            <p>
 
-                <strong>
-                    Administrator morning access
-                </strong>
+                <% if (pageSuccess) { %>
 
-                <span>
-                    You can submit new morning records or edit
-                    existing morning records until
-                    <strong>4:00 PM</strong>.
-                </span>
+                    Milk record saved successfully.
 
+                <% } else { %>
 
-            <% } else if (
-                currentSession === "closed"
-            ) { %>
+                    <%= pageError %>
 
-                <strong>
-                    Collection is currently closed
-                </strong>
+                <% } %>
 
-                <span>
-                    Evening collection becomes available
-                    at <strong>4:00 PM</strong>.
-                </span>
-
-
-            <% } else if (
-                currentSession === "evening"
-            ) { %>
-
-                <strong>
-                    Evening collection is open
-                </strong>
-
-                <span>
-                    Enter and save each animal individually.
-                    Administrators can also edit existing
-                    evening records.
-                </span>
-
-
-            <% } else { %>
-
-                <strong>
-                    Collection unavailable
-                </strong>
-
-                <span>
-                    Please contact an administrator.
-                </span>
-
-            <% } %>
+            </p>
 
         </div>
+
+
+        <button
+            type="button"
+            id="closeMilkResultPopup"
+            class="result-ok-button"
+        >
+            OK
+        </button>
 
     </div>
 
 </div>
 
-
 <% } %>
-
-</div>
 
 
 <!-- ==========================================================
@@ -1542,10 +1325,6 @@ milkTables.forEach(function (table, tableIndex) {
                 <h2 id="milkEditTitle">
                     Edit Milk Record
                 </h2>
-
-                <p>
-                    Update the litres or remarks for this record.
-                </p>
 
             </div>
 
@@ -1671,6 +1450,100 @@ milkTables.forEach(function (table, tableIndex) {
     overflow: hidden;
 }
 
+
+/* ==========================================================
+   RESULT POPUP
+========================================================== */
+
+.milk-result-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.milk-result-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 30, 20, 0.38);
+    backdrop-filter: blur(3px);
+}
+
+.milk-result-dialog {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 390px;
+    padding: 26px 24px 22px;
+    box-sizing: border-box;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.18);
+    text-align: center;
+}
+
+.result-icon {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 27px;
+    font-weight: 800;
+}
+
+.result-success .result-icon {
+    background: #eaf7ef;
+    color: #2e7d32;
+}
+
+.result-error .result-icon {
+    background: #fff0f0;
+    color: #b33131;
+}
+
+.result-content h2 {
+    margin: 0 0 7px;
+    color: #26322a;
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.result-content p {
+    margin: 0;
+    color: #727d76;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.result-ok-button {
+    width: 100%;
+    min-height: 43px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 10px;
+    background: #2e7d32;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.result-error .result-ok-button {
+    background: #a93434;
+}
+
+.result-ok-button:active {
+    transform: translateY(1px);
+}
+
 </style>
 
 
@@ -1742,12 +1615,6 @@ milkTables.forEach(function (table, tableIndex) {
     line-height: 1.15;
 }
 
-.milk-header p {
-    margin: 6px 0 0;
-    color: #718078;
-    font-size: 14px;
-}
-
 
 /* ==========================================================
    SESSION BADGE
@@ -1781,56 +1648,6 @@ milkTables.forEach(function (table, tableIndex) {
     height: 8px;
     border-radius: 50%;
     background: currentColor;
-}
-
-
-/* ==========================================================
-   ALERTS
-========================================================== */
-
-.milk-alert {
-    display: flex;
-    align-items: flex-start;
-    gap: 13px;
-    padding: 15px 17px;
-    margin-bottom: 18px;
-    border-radius: 14px;
-    border: 1px solid;
-}
-
-.alert-icon {
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    font-weight: 800;
-}
-
-.milk-alert strong {
-    display: block;
-    margin-bottom: 2px;
-    font-size: 14px;
-}
-
-.milk-alert p {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.milk-alert-error {
-    background: #fff5f5;
-    border-color: #ffd9d9;
-    color: #9b3030;
-}
-
-.milk-alert-success {
-    background: #f0faf3;
-    border-color: #d2ecd8;
-    color: #28723a;
 }
 
 
@@ -1887,23 +1704,9 @@ milkTables.forEach(function (table, tableIndex) {
 }
 
 .session-card-title {
-    margin-bottom: 4px;
     color: #253129;
     font-size: 14px;
     font-weight: 800;
-}
-
-.session-card-description {
-    color: #68746d;
-    font-size: 13px;
-    line-height: 1.55;
-}
-
-.admin-session-note {
-    margin-top: 7px;
-    color: #377444;
-    font-size: 12px;
-    font-weight: 600;
 }
 
 .session-time {
@@ -1953,17 +1756,9 @@ milkTables.forEach(function (table, tableIndex) {
 }
 
 .milk-empty-state h2 {
-    margin: 0 0 8px;
+    margin: 0;
     color: #26322a;
     font-size: 19px;
-}
-
-.milk-empty-state p {
-    max-width: 420px;
-    margin: 0 auto;
-    color: #7b8580;
-    font-size: 13px;
-    line-height: 1.6;
 }
 
 
@@ -2352,12 +2147,8 @@ button.remarks-wrapper {
 }
 
 .closed-remarks {
-    display: flex;
-    align-items: flex-start;
-    gap: 7px;
     color: #9ba29d;
     font-size: 12px;
-    line-height: 1.45;
 }
 
 
@@ -2406,60 +2197,6 @@ button.remarks-wrapper {
 
 .locked-label {
     color: #969e99;
-}
-
-
-/* ==========================================================
-   INFORMATION CARD
-========================================================== */
-
-.milk-submit-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    margin-top: 16px;
-    padding: 17px 19px;
-    background: #ffffff;
-    border: 1px solid #e5eae6;
-    border-radius: 17px;
-    box-shadow: 0 7px 24px rgba(27, 55, 35, 0.045);
-}
-
-.submit-information {
-    display: flex;
-    align-items: flex-start;
-    gap: 11px;
-    color: #647068;
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.submit-info-icon {
-    width: 30px;
-    height: 30px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 9px;
-    background: #edf8f0;
-    color: #378046;
-    font-size: 13px;
-    font-weight: 800;
-}
-
-.submit-information strong {
-    color: #334139;
-}
-
-.submit-information > div:last-child > strong {
-    display: block;
-    margin-bottom: 2px;
-}
-
-.submit-information span {
-    display: block;
 }
 
 .individual-milk-form {
@@ -2525,12 +2262,6 @@ button.remarks-wrapper {
     margin: 0;
     color: #26322a;
     font-size: 20px;
-}
-
-.edit-modal-header p {
-    margin: 5px 0 0;
-    color: #7b8580;
-    font-size: 12px;
 }
 
 .modal-close-btn {
@@ -2662,10 +2393,6 @@ button.remarks-wrapper {
         font-size: 25px;
     }
 
-    .milk-header p {
-        font-size: 13px;
-    }
-
     .milk-table {
         min-width: 760px;
     }
@@ -2710,11 +2437,6 @@ button.remarks-wrapper {
         font-size: 21px;
     }
 
-    .milk-header p {
-        margin-top: 4px;
-        font-size: 11px;
-    }
-
     .milk-session-badge {
         padding: 7px 9px;
         font-size: 10px;
@@ -2736,10 +2458,6 @@ button.remarks-wrapper {
 
     .session-card-title {
         font-size: 12px;
-    }
-
-    .session-card-description {
-        font-size: 10px;
     }
 
     .session-time {
@@ -2839,11 +2557,6 @@ button.remarks-wrapper {
         font-size: 11px;
     }
 
-    .milk-submit-card {
-        padding: 14px;
-        border-radius: 13px;
-    }
-
 }
 
 
@@ -2856,11 +2569,6 @@ button.remarks-wrapper {
 
     .milk-header h1 {
         font-size: 19px;
-    }
-
-    .milk-header p {
-        max-width: 170px;
-        font-size: 10px;
     }
 
     .milk-table {
@@ -2923,6 +2631,15 @@ button.remarks-wrapper {
         flex: 1;
     }
 
+    .milk-result-popup {
+        padding: 12px;
+    }
+
+    .milk-result-dialog {
+        padding: 23px 19px 19px;
+        border-radius: 17px;
+    }
+
 }
 
 </style>
@@ -2937,6 +2654,74 @@ button.remarks-wrapper {
 (function () {
 
     "use strict";
+
+
+    /* ======================================================
+       SUCCESS / ERROR POPUP
+    ====================================================== */
+
+    const resultPopup =
+        document.getElementById(
+            "milkResultPopup"
+        );
+
+
+    const resultCloseButton =
+        document.getElementById(
+            "closeMilkResultPopup"
+        );
+
+
+    function closeResultPopup() {
+
+        if (!resultPopup) {
+            return;
+        }
+
+
+        resultPopup.style.display =
+            "none";
+
+
+        resultPopup.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+    }
+
+
+    if (resultCloseButton) {
+
+        resultCloseButton.addEventListener(
+            "click",
+            closeResultPopup
+        );
+
+    }
+
+
+    if (resultPopup) {
+
+        resultPopup.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Escape"
+                ) {
+
+                    closeResultPopup();
+
+                }
+
+            }
+        );
+
+
+        resultCloseButton.focus();
+
+    }
 
 
     /* ======================================================
