@@ -1095,5 +1095,3 @@ return res
 }
 
 };
-
-Generate full code
