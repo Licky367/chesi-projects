@@ -9,56 +9,104 @@ const milkService = require("../services/milkService");
 // HELPERS
 // ==========================================================
 
-/**
- * Get the logged-in user from the session.
- *
- * The application uses req.session.user.
- */
 function getSessionUser(req) {
 
     if (
-        !req ||
-        !req.session ||
-        !req.session.user
+        req.session &&
+        req.session.user
     ) {
-
-        return null;
-
+        return req.session.user;
     }
 
-    return req.session.user;
-
+    return null;
 }
 
 
-/**
- * Get the user's ID safely.
- *
- * Supports both:
- *
- * req.session.user._id
- *
- * and
- *
- * req.session.user.id
- */
-function getUserId(user) {
+// ----------------------------------------------------------
+// GET ACTIVE FARM FROM SESSION
+//
+// The application has used different names for the currently
+// selected farm. Support them without breaking the view.
+// ----------------------------------------------------------
 
-    if (!user) {
-        return null;
+function getActiveFarm(req) {
+
+    const session =
+        req.session || {};
+
+    const user =
+        session.user || {};
+
+
+    const candidates = [
+
+        session.currentDairy,
+        session.currentFarm,
+
+        session.activeDairy,
+        session.activeFarm,
+
+        user.currentDairy,
+        user.currentFarm,
+
+        session.dairy,
+        session.farm,
+
+        user.dairy,
+        user.farm
+
+    ];
+
+
+    for (const candidate of candidates) {
+
+        if (
+            candidate &&
+            typeof candidate === "object"
+        ) {
+
+            return candidate;
+
+        }
+
     }
 
-    return (
-        user._id ||
-        user.id ||
-        null
-    );
 
+    return null;
+}
+
+
+// ----------------------------------------------------------
+// GET ACTIVE FARM ID
+// ----------------------------------------------------------
+
+function getActiveFarmId(req) {
+
+    const farm =
+        getActiveFarm(req);
+
+
+    if (!farm) {
+        return "";
+    }
+
+
+    if (farm._id) {
+        return String(farm._id);
+    }
+
+
+    if (farm.id) {
+        return String(farm.id);
+    }
+
+
+    return "";
 }
 
 
 // ==========================================================
-// GET MILK COLLECTION PAGE
+// GET MILK PAGE
 // ==========================================================
 
 exports.getMilkPage = async (req, res) => {
@@ -69,6 +117,10 @@ exports.getMilkPage = async (req, res) => {
             getSessionUser(req);
 
 
+        // --------------------------------------------------
+        // LOGIN
+        // --------------------------------------------------
+
         if (!user) {
 
             return res.redirect("/login");
@@ -76,77 +128,145 @@ exports.getMilkPage = async (req, res) => {
         }
 
 
-        /*
-         * The service is responsible for:
-         *
-         * - finding the farms available to the user
-         * - finding the animals currently being milked
-         * - grouping animals by farm
-         * - finding existing morning/evening records
-         * - preparing farm totals
-         *
-         * The controller does not duplicate any of that logic.
-         */
+        // --------------------------------------------------
+        // ROLE
+        // --------------------------------------------------
 
-        const milkData =
+        if (
+            user.role !== "admin" &&
+            user.role !== "dairyWorker"
+        ) {
+
+            return res.status(403).render(
+                "milk",
+                {
+                    user,
+                    session: "closed",
+                    currentDairy: null,
+                    currentFarm: null,
+                    milkDairyTables: [],
+                    dairies: [],
+                    error: "You are not authorized to access milk collection.",
+                    success: false
+                }
+            );
+
+        }
+
+
+        // --------------------------------------------------
+        // ACTIVE FARM
+        // --------------------------------------------------
+
+        const currentFarm =
+            getActiveFarm(req);
+
+
+        const activeFarmId =
+            getActiveFarmId(req);
+
+
+        // --------------------------------------------------
+        // QUERY RESULT
+        // --------------------------------------------------
+
+        const pageData =
             await milkService.getMilkPageData({
+
                 user,
-                session: req.session.session || req.session.collectionSession
+
+                activeFarmId,
+
+                currentFarm
+
             });
 
+
+        // --------------------------------------------------
+        // SUCCESS / ERROR FROM QUERY STRING
+        // --------------------------------------------------
+
+        const success =
+            req.query.success === "1";
+
+
+        const error =
+            req.query.error
+                ? String(req.query.error)
+                : "";
+
+
+        // --------------------------------------------------
+        // RENDER
+        // --------------------------------------------------
 
         return res.render(
             "milk",
             {
-                ...milkData,
 
+                // User expected by EJS
                 user,
 
+                // Current collection session
                 session:
-                    milkData.session ||
-                    req.session.session ||
-                    req.session.collectionSession ||
-                    "",
+                    pageData.session,
 
-                error:
-                    null,
+                // Current farm
+                currentDairy:
+                    pageData.currentFarm,
 
-                success:
-                    false
+                currentFarm:
+                    pageData.currentFarm,
+
+                // Main EJS structure
+                milkDairyTables:
+                    pageData.milkDairyTables,
+
+                // Fallback variable used by EJS
+                dairies:
+                    pageData.dairies,
+
+                // Popup
+                success,
+
+                error
+
             }
         );
 
     } catch (error) {
 
         console.error(
-            "Milk page error:",
+            "GET /milk error:",
             error
         );
-
-
-        const user =
-            getSessionUser(req);
 
 
         return res.status(500).render(
             "milk",
             {
-                user,
+
+                user:
+                    getSessionUser(req),
 
                 session:
-                    req.session &&
-                    (
-                        req.session.session ||
-                        req.session.collectionSession
-                    ) || "",
+                    "closed",
+
+                currentDairy:
+                    getActiveFarm(req),
+
+                currentFarm:
+                    getActiveFarm(req),
 
                 milkDairyTables: [],
 
-                error:
-                    "Unable to load the milk collection page.",
+                dairies: [],
 
-                success:
-                    false
+                success: false,
+
+                error:
+                    "Unable to load the milk collection page."
+
             }
         );
 
@@ -157,28 +277,8 @@ exports.getMilkPage = async (req, res) => {
 
 // ==========================================================
 // SAVE MILK RECORD
-// ==========================================================
-//
 // POST /milk
-//
-// Expected body:
-//
-// {
-//     dairy: animalId,
-//     session: "morning" | "evening",
-//     liters: "...",
-//     remarks: "..."
-// }
-//
-// IMPORTANT:
-// The controller does NOT determine the farm.
-//
-// The service receives the animal ID and resolves the animal's
-// actual farm from the database.
-//
-// This prevents the browser from being trusted to choose
-// another farm.
-//
+// ==========================================================
 
 exports.submitMilk = async (req, res) => {
 
@@ -188,6 +288,10 @@ exports.submitMilk = async (req, res) => {
             getSessionUser(req);
 
 
+        // --------------------------------------------------
+        // LOGIN
+        // --------------------------------------------------
+
         if (!user) {
 
             return res.redirect("/login");
@@ -195,57 +299,83 @@ exports.submitMilk = async (req, res) => {
         }
 
 
-        const userId =
-            getUserId(user);
+        // --------------------------------------------------
+        // ROLE
+        // --------------------------------------------------
 
+        if (
+            user.role !== "admin" &&
+            user.role !== "dairyWorker"
+        ) {
 
-        if (!userId) {
-
-            return res.status(401).send(
-                "User session is invalid."
+            return res.redirect(
+                "/milk?error=" +
+                encodeURIComponent(
+                    "You are not authorized to record milk."
+                )
             );
 
         }
 
 
+        // --------------------------------------------------
+        // REQUEST DATA
+        // --------------------------------------------------
+
         const {
+
             dairy,
-            session,
+            farm,
             liters,
-            remarks
+            remarks,
+            session
+
         } = req.body;
 
 
-        /*
-         * All validation, animal lookup, farm lookup,
-         * permission checks, duplicate-record checks,
-         * record creation and farm-total calculation
-         * belong to the service.
-         */
+        // --------------------------------------------------
+        // ACTIVE FARM
+        // --------------------------------------------------
+
+        const currentFarm =
+            getActiveFarm(req);
+
+
+        const activeFarmId =
+            getActiveFarmId(req);
+
+
+        // --------------------------------------------------
+        // SAVE
+        // --------------------------------------------------
 
         await milkService.saveMilkRecord({
 
             dairyId:
                 dairy,
 
-            session,
+            farmId:
+                farm,
 
             liters,
 
             remarks,
 
-            userId,
+            requestedSession:
+                session,
 
-            user
+            user,
+
+            activeFarmId,
+
+            currentFarm
+
         });
 
 
-        /*
-         * Keep the normal browser flow simple.
-         *
-         * The service has already saved the record and
-         * updated/recalculated the farm total.
-         */
+        // --------------------------------------------------
+        // SUCCESS
+        // --------------------------------------------------
 
         return res.redirect(
             "/milk?success=1"
@@ -254,27 +384,17 @@ exports.submitMilk = async (req, res) => {
     } catch (error) {
 
         console.error(
-            "Save milk record error:",
+            "POST /milk error:",
             error
         );
 
 
-        /*
-         * Redirect back to the milk page with an error.
-         *
-         * The message is encoded because it is placed
-         * inside the query string.
-         */
-
-        const message =
-            error && error.message
-                ? error.message
-                : "Unable to save milk record.";
-
-
         return res.redirect(
             "/milk?error=" +
-            encodeURIComponent(message)
+            encodeURIComponent(
+                error.message ||
+                "Unable to save milk record."
+            )
         );
 
     }
@@ -283,31 +403,9 @@ exports.submitMilk = async (req, res) => {
 
 
 // ==========================================================
-// UPDATE MILK RECORD
-// ==========================================================
-//
+// ADMIN EDIT MILK RECORD
 // POST /milk/:recordId
-//
-// Used by the administrator edit modal.
-//
-// Expected body:
-//
-// {
-//     liters: "...",
-//     remarks: "..."
-// }
-//
-// The service is responsible for:
-//
-// - verifying the record
-// - determining its farm
-// - determining its animal
-// - checking administrator permission
-// - updating the record
-// - recalculating the affected farm total
-//
-// The controller only coordinates the request.
-//
+// ==========================================================
 
 exports.updateMilkRecord = async (req, res) => {
 
@@ -317,6 +415,10 @@ exports.updateMilkRecord = async (req, res) => {
             getSessionUser(req);
 
 
+        // --------------------------------------------------
+        // LOGIN
+        // --------------------------------------------------
+
         if (!user) {
 
             return res.redirect("/login");
@@ -324,37 +426,47 @@ exports.updateMilkRecord = async (req, res) => {
         }
 
 
-        const userId =
-            getUserId(user);
+        // --------------------------------------------------
+        // ADMIN ONLY
+        // --------------------------------------------------
 
+        if (
+            user.role !== "admin"
+        ) {
 
-        if (!userId) {
-
-            return res.status(401).send(
-                "User session is invalid."
+            return res.redirect(
+                "/milk?error=" +
+                encodeURIComponent(
+                    "Only an administrator can edit milk records."
+                )
             );
 
         }
 
+
+        // --------------------------------------------------
+        // RECORD ID
+        // --------------------------------------------------
 
         const recordId =
             req.params.recordId;
 
 
+        // --------------------------------------------------
+        // DATA
+        // --------------------------------------------------
+
         const {
+
             liters,
             remarks
+
         } = req.body;
 
 
-        if (!recordId) {
-
-            throw new Error(
-                "Milk record ID is required."
-            );
-
-        }
-
+        // --------------------------------------------------
+        // UPDATE
+        // --------------------------------------------------
 
         await milkService.updateMilkRecord({
 
@@ -364,11 +476,14 @@ exports.updateMilkRecord = async (req, res) => {
 
             remarks,
 
-            userId,
-
             user
+
         });
 
+
+        // --------------------------------------------------
+        // SUCCESS
+        // --------------------------------------------------
 
         return res.redirect(
             "/milk?success=1"
@@ -377,20 +492,17 @@ exports.updateMilkRecord = async (req, res) => {
     } catch (error) {
 
         console.error(
-            "Update milk record error:",
+            "POST /milk/:recordId error:",
             error
         );
 
 
-        const message =
-            error && error.message
-                ? error.message
-                : "Unable to update milk record.";
-
-
         return res.redirect(
             "/milk?error=" +
-            encodeURIComponent(message)
+            encodeURIComponent(
+                error.message ||
+                "Unable to update milk record."
+            )
         );
 
     }
