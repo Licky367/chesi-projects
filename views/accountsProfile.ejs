@@ -1,138 +1,746 @@
-<!-- =====================.====================================
-     ASSIGNED DAIRY FARMS
-========================================================== -->
+<style>
 
-<% if (user.role === "dairyWorker") { %>
+/* =========================
+   PAGE
+========================= */
 
-<div class="form-section">
+.profile-page{
+  max-width:700px;
+  margin:0 auto;
+  padding:20px 0 40px;
+}
 
-  <h3 class="form-title">
-    Assigned Dairy Farms
-  </h3>
+
+/* =========================
+   CARD
+========================= */
+
+.profile-card{
+  background:#fff;
+  border-radius:20px;
+  padding:35px;
+  box-shadow:0 12px 30px rgba(0,0,0,.08);
+  border:1px solid #edf0f2;
+  text-align:center;
+}
 
 
-  <!-- =======================================================
-       CURRENTLY ASSIGNED FARMS
-  ======================================================== -->
+/* =========================
+   PROFILE IMAGE
+========================= */
 
-  <% if (user.assignedFarm && user.assignedFarm.length > 0) { %>
+.profile-img{
+  width:120px;
+  height:120px;
+  object-fit:cover;
+  border-radius:50%;
+  border:4px solid #0b5d1e;
+  margin:0 auto 18px;
+  display:block;
+}
 
-    <div class="assigned-farms-list">
+.profile-avatar{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  border:4px solid #0b5d1e;
+  background:#0b5d1e;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:48px;
+  font-weight:700;
+  text-transform:uppercase;
+  margin:0 auto 18px;
+}
 
-      <% user.assignedFarm.forEach(farm => { %>
 
-        <div class="assigned-farm-item">
+/* =========================
+   PROFILE
+========================= */
 
-          <div class="farm-info">
+.profile-name{
+  margin:0;
+  font-size:28px;
+  color:#222;
+  font-weight:700;
+}
 
-            <strong>
-              <%= farm.name || "Dairy Farm" %>
-            </strong>
+.profile-email{
+  margin:10px 0 5px;
+  color:#666;
+  font-size:15px;
+}
 
-            <% if (farm.code !== undefined && farm.code !== null) { %>
+.profile-phone{
+  color:#777;
+  font-size:15px;
+  margin-bottom:25px;
+}
 
-              <span>
-                Code: <%= farm.code %>
-              </span>
 
-            <% } %>
+/* =========================
+   INFO
+========================= */
+
+.info-grid{
+  display:grid;
+  grid-template-columns:repeat(
+    auto-fit,
+    minmax(220px,1fr)
+  );
+
+  gap:15px;
+
+  margin-bottom:25px;
+}
+
+.info-box{
+  background:#f8faf9;
+  border:1px solid #e7ece9;
+  border-radius:14px;
+  padding:18px;
+  text-align:left;
+}
+
+.info-title{
+  font-size:13px;
+  color:#888;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  margin-bottom:8px;
+}
+
+.role-badge{
+  display:inline-block;
+  padding:8px 14px;
+  background:#e9f7ef;
+  color:#0b5d1e;
+  border-radius:30px;
+  font-weight:700;
+  text-transform:capitalize;
+}
+
+
+/* =========================
+   FORM SECTION
+========================= */
+
+.form-section{
+  margin-top:25px;
+  text-align:left;
+}
+
+.form-title{
+  color:#0b5d1e;
+  font-size:22px;
+  margin-bottom:18px;
+}
+
+
+/* =========================
+   FORM
+========================= */
+
+.form-section label{
+  display:block;
+  margin-bottom:8px;
+  font-weight:600;
+  color:#444;
+}
+
+.form-section select{
+  width:100%;
+  padding:14px;
+  border:1px solid #d8d8d8;
+  border-radius:12px;
+  font-size:15px;
+  background:#fff;
+  transition:.2s;
+  box-sizing:border-box;
+}
+
+.form-section select:focus{
+  outline:none;
+  border-color:#0b5d1e;
+  box-shadow:
+    0 0 0 3px
+    rgba(11,93,30,.1);
+}
+
+
+/* =========================
+   BUTTONS
+========================= */
+
+.btn-save{
+  width:100%;
+  margin-top:20px;
+  padding:15px;
+  border:none;
+  border-radius:12px;
+  background:#0b5d1e;
+  color:#fff;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.btn-delete{
+  width:100%;
+  margin-top:20px;
+  padding:15px;
+  border:none;
+  border-radius:12px;
+  background:#c62828;
+  color:#fff;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.btn-remove{
+  border:none;
+  border-radius:8px;
+  padding:8px 12px;
+  background:#ffe5e5;
+  color:#c62828;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.btn-remove:hover{
+  background:#ffd2d2;
+}
+
+
+/* =========================
+   FARM LIST
+========================= */
+
+.assigned-farms-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.assigned-farm-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+
+  background:#f8faf9;
+
+  border:1px solid #e7ece9;
+
+  border-radius:12px;
+
+  padding:14px 16px;
+}
+
+.farm-info{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:0;
+}
+
+.farm-info strong{
+  color:#222;
+  font-size:15px;
+}
+
+.farm-code{
+  color:#777;
+  font-size:13px;
+}
+
+
+/* =========================
+   NOTICE
+========================= */
+
+.notice{
+  padding:15px;
+  border-radius:12px;
+  background:#fff8e5;
+  color:#9a6700;
+  border:1px solid #f0d58c;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:600px){
+
+  .profile-card{
+    padding:22px;
+  }
+
+  .profile-img,
+  .profile-avatar{
+    width:100px;
+    height:100px;
+  }
+
+  .profile-avatar{
+    font-size:40px;
+  }
+
+  .profile-name{
+    font-size:24px;
+  }
+
+  .info-grid{
+    grid-template-columns:1fr;
+  }
+
+  .assigned-farm-item{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .btn-remove{
+    width:100%;
+  }
+
+}
+
+</style>
+
+
+<div class="profile-page">
+
+  <div class="profile-card">
+
+
+    <!-- =====================================================
+         PROFILE IMAGE
+    ====================================================== -->
+
+    <% if(user.profileImage){ %>
+
+      <img
+        src="<%= user.profileImage %>"
+        class="profile-img"
+        alt="<%= user.name %>"
+      >
+
+    <% } else { %>
+
+      <div class="profile-avatar">
+
+        <%= (user.name || "U")
+          .charAt(0)
+          .toUpperCase() %>
+
+      </div>
+
+    <% } %>
+
+
+    <!-- =====================================================
+         USER DETAILS
+    ====================================================== -->
+
+    <h2 class="profile-name">
+      <%= user.name %>
+    </h2>
+
+    <div class="profile-email">
+      📧 <%= user.email %>
+    </div>
+
+    <div class="profile-phone">
+      📱 <%= user.phone || "No phone number available" %>
+    </div>
+
+
+    <!-- =====================================================
+         INFORMATION
+    ====================================================== -->
+
+    <div class="info-grid">
+
+
+      <div class="info-box">
+
+        <div class="info-title">
+          Current Role
+        </div>
+
+        <span class="role-badge">
+          <%= user.role %>
+        </span>
+
+      </div>
+
+
+      <div class="info-box">
+
+        <div class="info-title">
+          User ID
+        </div>
+
+        <strong>
+          <%= user._id %>
+        </strong>
+
+      </div>
+
+
+      <div class="info-box">
+
+        <div class="info-title">
+          Last Login
+        </div>
+
+        <strong>
+
+          <%= user.lastLogin
+            ? new Date(
+                user.lastLogin
+              ).toLocaleString()
+            : "Never logged in" %>
+
+        </strong>
+
+      </div>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         ASSIGNED DAIRY FARMS
+    ====================================================== -->
+
+    <% if(user.role === "dairyWorker"){ %>
+
+      <div class="form-section">
+
+        <h3 class="form-title">
+          Assigned Dairy Farms
+        </h3>
+
+
+        <!-- =================================================
+             CURRENT ASSIGNMENTS
+        ================================================== -->
+
+        <% if(
+          Array.isArray(user.assignedFarm) &&
+          user.assignedFarm.length > 0
+        ){ %>
+
+
+          <div class="assigned-farms-list">
+
+
+            <% user.assignedFarm.forEach(farm => { %>
+
+              <div class="assigned-farm-item">
+
+
+                <div class="farm-info">
+
+                  <strong>
+                    <%= farm.name || "Dairy Farm" %>
+                  </strong>
+
+                  <span class="farm-code">
+
+                    Code:
+
+                    <%= farm.code !== undefined &&
+                        farm.code !== null
+                      ? farm.code
+                      : "Unknown" %>
+
+                  </span>
+
+                </div>
+
+
+                <!-- =========================================
+                     UNASSIGN
+                ========================================== -->
+
+                <form
+                  method="POST"
+                  action="/accounts/<%= user._id %>/farms/remove"
+                  onsubmit="return confirm('Unassign this Dairy Farm from this worker?');"
+                >
+
+                  <input
+                    type="hidden"
+                    name="farmId"
+                    value="<%= farm._id %>"
+                  >
+
+                  <button
+                    type="submit"
+                    class="btn-remove"
+                  >
+                    Unassign
+                  </button>
+
+                </form>
+
+
+              </div>
+
+            <% }) %>
+
 
           </div>
 
+
+        <% } else { %>
+
+
+          <div class="notice">
+
+            This Dairy Worker currently has no assigned
+            Dairy Farms.
+
+          </div>
+
+
+        <% } %>
+
+
+        <!-- =================================================
+             ASSIGN MORE
+        ================================================== -->
+
+        <form
+          method="POST"
+          action="/accounts/<%= user._id %>/farms"
+        >
+
+          <label for="assignedFarms">
+
+            Assign Additional Dairy Farms
+
+          </label>
+
+
+          <select
+            id="assignedFarms"
+            name="assignedFarms"
+            multiple
+            size="6"
+          >
+
+            <% if(
+              Array.isArray(dairies)
+            ){ %>
+
+
+              <% dairies.forEach(dairy => {
+
+                const alreadyAssigned =
+                  Array.isArray(
+                    user.assignedFarm
+                  ) &&
+                  user.assignedFarm.some(
+                    farm =>
+                      String(farm._id) ===
+                      String(dairy._id)
+                  );
+
+              %>
+
+
+                <% if(!alreadyAssigned){ %>
+
+                  <option
+                    value="<%= dairy._id %>"
+                  >
+
+                    <%= dairy.name %>
+                    — <%= dairy.code %>
+
+                  </option>
+
+                <% } %>
+
+
+              <% }) %>
+
+
+            <% } %>
+
+          </select>
+
+
+          <button
+            type="submit"
+            class="btn-save"
+          >
+
+            Assign Selected Farms
+
+          </button>
+
+        </form>
+
+
+      </div>
+
+    <% } %>
+
+
+    <!-- =====================================================
+         CHANGE ROLE
+    ====================================================== -->
+
+    <div class="form-section">
+
+      <h3 class="form-title">
+        Change User Role
+      </h3>
+
+
+      <% if(
+        currentUser._id.toString() ===
+        user._id.toString()
+      ){ %>
+
+        <div class="notice">
+          You cannot change your own role.
         </div>
 
-      <% }) %>
 
-    </div>
-
-  <% } else { %>
-
-    <div class="notice">
-      This Dairy Worker currently has no assigned Dairy Farms.
-    </div>
-
-  <% } %>
+      <% } else { %>
 
 
-  <!-- =======================================================
-       ADD MORE FARMS
-  ======================================================== -->
+        <form
+          method="POST"
+          action="/accounts/<%= user._id %>/role"
+        >
 
-  <form
-    method="POST"
-    action="/accounts/<%= user._id %>/farms"
-  >
+          <label for="role">
+            Select New Role
+          </label>
 
-    <label for="assignedFarms">
-      Assign Additional Dairy Farms
-    </label>
 
-    <select
-      id="assignedFarms"
-      name="assignedFarms"
-      multiple
-    >
+          <select
+            id="role"
+            name="role"
+            required
+          >
 
-      <% if (typeof dairies !== "undefined" && dairies.length > 0) { %>
-
-        <% dairies
-          .filter(dairy =>
-            dairy.code !== null &&
-            dairy.code !== undefined &&
-            Number(dairy.code) < 0
-          )
-          .forEach(dairy => {
-
-            const alreadyAssigned =
-              user.assignedFarm &&
-              user.assignedFarm.some(farm => {
-
-                const farmId =
-                  farm._id
-                    ? farm._id.toString()
-                    : farm.toString();
-
-                return farmId === dairy._id.toString();
-
-              });
-
-        %>
-
-          <% if (!alreadyAssigned) { %>
-
-            <option value="<%= dairy._id %>">
-
-              <%= dairy.name %>
-
-              <% if (dairy.code !== null && dairy.code !== undefined) { %>
-                — <%= dairy.code %>
-              <% } %>
-
+            <option
+              value="dairyWorker"
+              <%= user.role === "dairyWorker"
+                ? "selected"
+                : "" %>
+            >
+              🐄 Dairy Worker
             </option>
 
-          <% } %>
 
-        <% }) %>
+            <option
+              value="poultryWorker"
+              <%= user.role === "poultryWorker"
+                ? "selected"
+                : "" %>
+            >
+              🐔 Poultry Worker
+            </option>
+
+
+            <option
+              value="admin"
+              <%= user.role === "admin"
+                ? "selected"
+                : "" %>
+            >
+              👑 Administrator
+            </option>
+
+          </select>
+
+
+          <button
+            type="submit"
+            class="btn-save"
+          >
+
+            Save Role Changes
+
+          </button>
+
+        </form>
+
 
       <% } %>
 
-    </select>
+    </div>
 
 
-    <small class="farm-help">
-      Hold Ctrl or Command to select multiple Dairy Farms.
-    </small>
+    <!-- =====================================================
+         DELETE ACCOUNT
+    ====================================================== -->
+
+    <div class="form-section">
+
+      <h3
+        class="form-title"
+        style="color:#c62828;"
+      >
+        Delete Account
+      </h3>
 
 
-    <button
-      type="submit"
-      class="btn-save"
-    >
-      Assign Selected Farms
-    </button>
+      <% if(
+        currentUser._id.toString() ===
+        user._id.toString()
+      ){ %>
 
-  </form>
+
+        <div class="notice">
+
+          You cannot permanently delete
+          your own account.
+
+        </div>
+
+
+      <% } else { %>
+
+
+        <form
+          method="POST"
+          action="/accounts/<%= user._id %>/delete"
+          onsubmit="return confirm('This account will be permanently deleted. This action cannot be undone. Continue?');"
+        >
+
+          <button
+            type="submit"
+            class="btn-delete"
+          >
+
+            🚫 Permanently Delete Account
+
+          </button>
+
+        </form>
+
+
+      <% } %>
+
+
+    </div>
+
+
+  </div>
 
 </div>
-
-<% } %>
