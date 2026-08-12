@@ -2,21 +2,21 @@
 // controllers/milkController.js
 // ==========================================================
 
-const milkService = require("../services/milkService");
+const milkService =
+    require("../services/milkService");
 
 
 // ==========================================================
 // GET MILK COLLECTION PAGE
 // ==========================================================
 
-exports.getMilkPage = async (req, res) => {
+exports.getMilkPage =
+async function(req, res) {
 
     try {
 
         const user =
-            req.session && req.session.user
-                ? req.session.user
-                : null;
+            req.session.user;
 
 
         if (!user) {
@@ -26,8 +26,8 @@ exports.getMilkPage = async (req, res) => {
         }
 
 
-        const pageData =
-            await milkService.getMilkCollectionPageData(
+        const data =
+            await milkService.getMilkCollectionPage(
                 user
             );
 
@@ -35,27 +35,12 @@ exports.getMilkPage = async (req, res) => {
         return res.render(
             "milk",
             {
-                ...pageData,
+                ...data,
 
                 user,
 
                 session:
-                    pageData.session,
-
-                currentSession:
-                    pageData.session,
-
-                currentFarm:
-                    pageData.currentFarm,
-
-                currentDairy:
-                    pageData.currentFarm,
-
-                milkDairyTables:
-                    pageData.milkDairyTables,
-
-                dairies:
-                    pageData.dairies,
+                    data.session,
 
                 success:
                     req.query.success === "1",
@@ -78,28 +63,17 @@ exports.getMilkPage = async (req, res) => {
         return res.status(500).render(
             "milk",
             {
-                user:
-                    req.session &&
-                    req.session.user
-                        ? req.session.user
-                        : null,
-
-                session: "closed",
-
-                currentSession: "closed",
-
-                currentFarm: null,
-
-                currentDairy: null,
-
                 milkDairyTables: [],
 
-                dairies: [],
+                user:
+                    req.session.user,
+
+                session: "closed",
 
                 success: false,
 
                 error:
-                    "Unable to load the milk collection page."
+                    "Unable to load milk collection."
             }
         );
 
@@ -112,14 +86,13 @@ exports.getMilkPage = async (req, res) => {
 // SAVE MILK RECORD
 // ==========================================================
 
-exports.submitMilk = async (req, res) => {
+exports.submitMilk =
+async function(req, res) {
 
     try {
 
         const user =
-            req.session && req.session.user
-                ? req.session.user
-                : null;
+            req.session.user;
 
 
         if (!user) {
@@ -129,24 +102,22 @@ exports.submitMilk = async (req, res) => {
         }
 
 
-        const {
-            dairy,
-            farm,
-            session,
-            liters,
-            remarks
-        } = req.body;
+        if (
+            user.role !== "admin" &&
+            user.role !== "dairyWorker"
+        ) {
+
+            return res.status(403).send(
+                "You are not authorized to record milk."
+            );
+
+        }
 
 
-        const result =
-            await milkService.saveMilkRecord({
-                dairyId: dairy,
-                farmId: farm,
-                session,
-                liters,
-                remarks,
-                user
-            });
+        await milkService.saveMilkRecord(
+            req.body,
+            user
+        );
 
 
         return res.redirect(
@@ -163,15 +134,12 @@ exports.submitMilk = async (req, res) => {
         );
 
 
-        const message =
-            error && error.message
-                ? error.message
-                : "Unable to save milk record.";
-
-
         return res.redirect(
             "/milk?error=" +
-            encodeURIComponent(message)
+            encodeURIComponent(
+                error.message ||
+                "Unable to save milk record."
+            )
         );
 
     }
@@ -180,18 +148,16 @@ exports.submitMilk = async (req, res) => {
 
 
 // ==========================================================
-// EDIT MILK RECORD
-// ADMIN ONLY
+// ADMIN EDIT MILK RECORD
 // ==========================================================
 
-exports.updateMilkRecord = async (req, res) => {
+exports.updateMilkRecord =
+async function(req, res) {
 
     try {
 
         const user =
-            req.session && req.session.user
-                ? req.session.user
-                : null;
+            req.session.user;
 
 
         if (!user) {
@@ -210,22 +176,9 @@ exports.updateMilkRecord = async (req, res) => {
         }
 
 
-        const recordId =
-            req.params.recordId;
-
-
-        const {
-            liters,
-            remarks
-        } = req.body;
-
-
         await milkService.updateMilkRecord(
-            recordId,
-            {
-                liters,
-                remarks
-            },
+            req.params.recordId,
+            req.body,
             user
         );
 
@@ -244,15 +197,12 @@ exports.updateMilkRecord = async (req, res) => {
         );
 
 
-        const message =
-            error && error.message
-                ? error.message
-                : "Unable to update milk record.";
-
-
         return res.redirect(
             "/milk?error=" +
-            encodeURIComponent(message)
+            encodeURIComponent(
+                error.message ||
+                "Unable to update milk record."
+            )
         );
 
     }
