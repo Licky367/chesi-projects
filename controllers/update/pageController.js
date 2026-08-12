@@ -15,8 +15,23 @@ async (req, res) => {
 
     try {
 
-        const { id } =
-            req.params;
+        const {
+            id
+        } = req.params;
+
+
+        // ==================================================
+        // LOGGED-IN USER
+        // ==================================================
+
+        const sessionUser =
+            req.session.user || null;
+
+
+        const userId =
+            sessionUser
+                ? sessionUser._id
+                : null;
 
 
         // ==================================================
@@ -24,27 +39,42 @@ async (req, res) => {
         // ==================================================
 
         const data =
-            await updateService.getDairyPage(id);
+            await updateService.getDairyPage(
+                id,
+                userId
+            );
 
 
         // ==================================================
-        // DETERMINE WHETHER THIS IS A DAIRY FARM
+        // DETERMINE PAGE FROM CODE
         //
-        // code < 0
-        //     = Dairy Farm
+        // NEGATIVE CODE:
         //
-        // code > 0
-        //     = Animal
+        //     Dairy Farm
+        //     → update.ejs
         //
-        // code === null / undefined
-        //     = Structure / Machine / Tool
+        // POSITIVE CODE:
+        //
+        //     Animal
+        //     → dairySet.ejs
+        //
+        // NULL / UNDEFINED:
+        //
+        //     Structure / Machine / Tool
+        //     → dairySet.ejs
+        //
         // ==================================================
 
         const isDairyFarm =
             data.dairy &&
+
             data.dairy.code !== null &&
+
             data.dairy.code !== undefined &&
-            Number(data.dairy.code) < 0;
+
+            Number(
+                data.dairy.code
+            ) < 0;
 
 
         // ==================================================
@@ -58,12 +88,16 @@ async (req, res) => {
 
 
         // ==================================================
-        // RENDER
+        // RENDER PAGE
         // ==================================================
 
         return res.render(
             view,
             {
+
+                // ------------------------------------------
+                // PAGE TITLE
+                // ------------------------------------------
 
                 title:
                     "Dairy Profile",
@@ -102,7 +136,11 @@ async (req, res) => {
 
 
                 // ------------------------------------------
-                // ASSETS BELONGING TO CURRENT FARM
+                // CURRENT FARM ASSETS
+                //
+                // These are the animals, structures,
+                // machines and tools belonging to the
+                // currently viewed farm.
                 // ------------------------------------------
 
                 assetDairies:
@@ -110,11 +148,24 @@ async (req, res) => {
 
 
                 // ------------------------------------------
+                // ASSIGNED FARMS
+                //
+                // These are the Dairy Farms assigned to
+                // the logged-in dairyWorker.
+                //
+                // Used by assetBar.ejs for farm switching.
+                // ------------------------------------------
+
+                assignedFarms:
+                    data.assignedFarms || [],
+
+
+                // ------------------------------------------
                 // LOGGED-IN USER
                 // ------------------------------------------
 
                 user:
-                    req.session.user || null
+                    sessionUser
 
             }
         );
@@ -143,13 +194,11 @@ async (req, res) => {
 //
 // GET:
 //
-// /dairy/:id/switch
+//     /dairy/:id/switch
 //
-// Only a dairyWorker can use this.
-// The farm must exist in that worker's assignedFarm array.
+// The requested farm must belong to the logged-in
+// dairyWorker.
 //
-// Database/assignment verification is delegated to
-// pageService.js.
 // ==========================================================
 
 exports.switchDairy =
@@ -161,11 +210,15 @@ async (req, res) => {
         // AUTHENTICATION
         // ==================================================
 
-        if (!req.session.user) {
+        if (
+            !req.session.user
+        ) {
 
             return res
                 .status(401)
-                .send("Unauthorized");
+                .send(
+                    "Unauthorized"
+                );
 
         }
 
@@ -215,10 +268,7 @@ async (req, res) => {
 
 
         // ==================================================
-        // VERIFY ASSIGNMENT
-        //
-        // pageService performs the actual database
-        // verification.
+        // VERIFY ASSIGNED FARM
         // ==================================================
 
         const farm =
@@ -228,6 +278,10 @@ async (req, res) => {
                     farmId
                 );
 
+
+        // ==================================================
+        // FARM NOT ASSIGNED
+        // ==================================================
 
         if (!farm) {
 
@@ -243,8 +297,13 @@ async (req, res) => {
         // ==================================================
         // SWITCH
         //
-        // The selected farm becomes the page currently
-        // being viewed.
+        // There is no special farm URL.
+        //
+        // The selected farm simply becomes the farm
+        // currently being viewed:
+        //
+        //     /dairy/:id
+        //
         // ==================================================
 
         return res.redirect(
