@@ -2,19 +2,64 @@
 // controllers/milkController.js
 // ==========================================================
 
-const milkService = require("../services/milkService");
+const milkService =
+  require("../services/milkService");
 
 
 // ==========================================================
 // GET MILK PAGE
+// ==========================================================
+//
+// SYSTEM RULE:
+//
+// ADMIN
+// ----------------------------------------------------------
+// Receives all Dairy Farms.
+// Each Dairy Farm contains its own array of animals
+// currently participating in milk collection.
+//
+// DAIRY WORKER
+// ----------------------------------------------------------
+// Receives ONLY the Dairy Farm currently selected/switched
+// to by that worker.
+//
+// The controller does NOT decide which farms are visible.
+// That responsibility belongs to milkService.
+//
 // ==========================================================
 
 exports.getMilkPage = async (req, res) => {
 
   try {
 
+    // ------------------------------------------------------
+    // AUTHENTICATED USER
+    // ------------------------------------------------------
+
+    const user =
+      req.user ||
+      req.session?.user ||
+      null;
+
+
+    // ------------------------------------------------------
+    // GET MILK PAGE DATA
+    //
+    // IMPORTANT:
+    //
+    // The user is passed into the service so the service
+    // can determine:
+    //
+    //     admin
+    //     dairyWorker
+    //
+    // and apply the current-farm rule.
+    // ------------------------------------------------------
+
     const data =
-      await milkService.getMilkPageData();
+      await milkService.getMilkPageData(
+        user
+      );
 
 
     const currentSession =
@@ -22,29 +67,101 @@ exports.getMilkPage = async (req, res) => {
 
 
     const isAdmin =
-      req.user?.role === "admin";
+      user?.role === "admin";
 
 
-    return res.render("milk", {
+    // ------------------------------------------------------
+    // RENDER MILK PAGE
+    // ------------------------------------------------------
 
-      dairies:
-        data?.dairies || [],
+    return res.render(
+      "milk",
+      {
 
-      session:
-        currentSession,
+        /*
+         * IMPORTANT:
+         *
+         * `dairies` is now expected to be an ARRAY OF
+         * DAIRY FARMS.
+         *
+         * Each farm contains its own animal array.
+         *
+         * Example:
+         *
+         * dairies = [
+         *
+         *     {
+         *         _id,
+         *         name,
+         *         code,
+         *
+         *         animals: [
+         *             {...},
+         *             {...}
+         *         ]
+         *     },
+         *
+         *     {
+         *         _id,
+         *         name,
+         *         code,
+         *
+         *         animals: [
+         *             {...},
+         *             {...}
+         *         ]
+         *     }
+         *
+         * ]
+         */
 
-      isAdmin,
+        dairies:
+          Array.isArray(data?.dairies)
+            ? data.dairies
+            : [],
 
-      user:
-        req.user,
 
-      success:
-        req.query.success === "1",
+        /*
+         * Current milk collection session.
+         */
 
-      error:
-        req.query.error || ""
+        session:
+          currentSession,
 
-    });
+
+        /*
+         * Administrator status.
+         */
+
+        isAdmin:
+          isAdmin,
+
+
+        /*
+         * Logged-in user.
+         */
+
+        user:
+          user,
+
+
+        /*
+         * Success message.
+         */
+
+        success:
+          req.query.success === "1",
+
+
+        /*
+         * Error message.
+         */
+
+        error:
+          req.query.error || ""
+
+      }
+    );
 
   } catch (err) {
 
@@ -54,26 +171,50 @@ exports.getMilkPage = async (req, res) => {
     );
 
 
+    const user =
+      req.user ||
+      req.session?.user ||
+      null;
+
+
     return res
       .status(500)
-      .render("milk", {
+      .render(
+        "milk",
+        {
 
-        dairies: [],
+          /*
+           * Empty farm array on failure.
+           */
 
-        session: "closed",
+          dairies: [],
 
-        isAdmin:
-          req.user?.role === "admin",
 
-        user:
-          req.user,
+          /*
+           * Close collection window if the page
+           * cannot be loaded.
+           */
 
-        success: false,
+          session: "closed",
 
-        error:
-          "Error loading milk collection page."
 
-      });
+          isAdmin:
+            user?.role === "admin",
+
+
+          user:
+            user,
+
+
+          success:
+            false,
+
+
+          error:
+            "Error loading milk collection page."
+
+        }
+      );
 
   }
 
@@ -84,14 +225,25 @@ exports.getMilkPage = async (req, res) => {
 // SUBMIT MILK
 // ==========================================================
 //
+// POST /milk
+//
 // Used when an individual animal's milk record is submitted.
 //
-// The milk.ejs page creates a separate form for each animal:
+// Form:
 //
 //     dairy
 //     session
 //     liters
 //     remarks
+//
+// IMPORTANT:
+//
+// The service must verify that the submitted animal belongs
+// to a farm the current user is allowed to work with.
+//
+// A dairy worker must NOT be able to submit milk for an
+// animal belonging to another farm simply by changing the
+// hidden `dairy` field in the browser.
 //
 // ==========================================================
 
@@ -107,6 +259,12 @@ exports.submitMilk = async (req, res) => {
       remarks
 
     } = req.body;
+
+
+    const user =
+      req.user ||
+      req.session?.user ||
+      null;
 
 
     // ------------------------------------------------------
@@ -170,18 +328,11 @@ exports.submitMilk = async (req, res) => {
     // ------------------------------------------------------
     // SAVE ONE RECORD
     // ------------------------------------------------------
-    //
-    // saveMilkRecords() supports the records format used
-    // throughout the milk module.
-    //
-    // We convert the individual form submission into one
-    // record here.
-    //
-    // ------------------------------------------------------
 
     const records = [
 
       {
+
         dairy,
 
         liters:
@@ -197,11 +348,23 @@ exports.submitMilk = async (req, res) => {
     ];
 
 
+    // ------------------------------------------------------
+    // SERVICE AUTHORIZATION
+    //
+    // milkService.saveMilkRecords() is responsible for
+    // verifying the animal/farm relationship and the user's
+    // permissions.
+    // ------------------------------------------------------
+
     await milkService.saveMilkRecords(
       records,
-      req.user
+      user
     );
 
+
+    // ------------------------------------------------------
+    // SUCCESS
+    // ------------------------------------------------------
 
     return res.redirect(
       "/milk?success=1"
@@ -232,17 +395,18 @@ exports.submitMilk = async (req, res) => {
 // GET EDIT MILK
 // ==========================================================
 //
-// Kept for compatibility with any existing link such as:
+// Compatibility endpoint:
 //
 //     /milk/edit/:id
 //
-// The actual page editing is performed by the modal on
-// milk.ejs, so this route simply sends the user back to
-// the milk page with the record ID.
+// Actual editing is performed through the modal in milk.ejs.
 //
 // ==========================================================
 
-exports.getEditMilk = async (req, res) => {
+exports.getEditMilk = async (
+  req,
+  res
+) => {
 
   try {
 
@@ -264,7 +428,7 @@ exports.getEditMilk = async (req, res) => {
 
 
     // ------------------------------------------------------
-    // ONLY ADMIN CAN EDIT
+    // ADMIN ONLY
     // ------------------------------------------------------
 
     if (
@@ -309,16 +473,20 @@ exports.getEditMilk = async (req, res) => {
 
 // ==========================================================
 // UPDATE MILK RECORD
-// ADMIN ONLY
 // ==========================================================
 //
 // POST /milk/:id
 //
-// This is the endpoint used by the edit modal.
+// ADMIN ONLY
+//
+// Used by the edit modal in milk.ejs.
 //
 // ==========================================================
 
-exports.updateMilkRecord = async (req, res) => {
+exports.updateMilkRecord = async (
+  req,
+  res
+) => {
 
   try {
 
@@ -399,6 +567,10 @@ exports.updateMilkRecord = async (req, res) => {
     });
 
 
+    // ------------------------------------------------------
+    // SUCCESS
+    // ------------------------------------------------------
+
     return res.redirect(
       "/milk?success=1"
     );
@@ -428,7 +600,10 @@ exports.updateMilkRecord = async (req, res) => {
 // GET MILK STATS
 // ==========================================================
 
-exports.getMilkStats = async (req, res) => {
+exports.getMilkStats = async (
+  req,
+  res
+) => {
 
   try {
 
@@ -458,29 +633,32 @@ exports.getMilkStats = async (req, res) => {
         );
 
 
-      return res.render("milkStats", {
+      return res.render(
+        "milkStats",
+        {
 
-        type,
+          type,
 
-        date:
-          selectedDate,
+          date:
+            selectedDate,
 
-        month:
-          "",
+          month:
+            "",
 
-        records:
-          data?.records || [],
+          records:
+            data?.records || [],
 
-        stats:
-          data?.stats || {},
+          stats:
+            data?.stats || {},
 
-        sales:
-          data?.sales || [],
+          sales:
+            data?.sales || [],
 
-        user:
-          req.user
+          user:
+            req.user
 
-      });
+        }
+      );
 
     }
 
@@ -504,29 +682,32 @@ exports.getMilkStats = async (req, res) => {
         );
 
 
-      return res.render("milkStats", {
+      return res.render(
+        "milkStats",
+        {
 
-        type,
+          type,
 
-        date:
-          "",
+          date:
+            "",
 
-        month:
-          selectedMonth,
+          month:
+            selectedMonth,
 
-        records:
-          data?.records || [],
+          records:
+            data?.records || [],
 
-        stats:
-          data?.stats || {},
+          stats:
+            data?.stats || {},
 
-        sales:
-          data?.sales || [],
+          sales:
+            data?.sales || [],
 
-        user:
-          req.user
+          user:
+            req.user
 
-      });
+        }
+      );
 
     }
 
@@ -535,40 +716,43 @@ exports.getMilkStats = async (req, res) => {
     // INVALID TYPE
     // ======================================================
 
-    return res.render("milkStats", {
+    return res.render(
+      "milkStats",
+      {
 
-      type: "",
+        type: "",
 
-      date: "",
+        date: "",
 
-      month: "",
+        month: "",
 
-      records: [],
+        records: [],
 
-      stats: {
+        stats: {
 
-        total: 0,
+          total: 0,
 
-        consumed: 0,
+          consumed: 0,
 
-        available: 0,
+          available: 0,
 
-        price: 0,
+          price: 0,
 
-        cash: 0,
+          cash: 0,
 
-        locked: false,
+          locked: false,
 
-        avg: 0
+          avg: 0
 
-      },
+        },
 
-      sales: [],
+        sales: [],
 
-      user:
-        req.user
+        user:
+          req.user
 
-    });
+      }
+    );
 
   } catch (err) {
 
@@ -593,7 +777,10 @@ exports.getMilkStats = async (req, res) => {
 // SAVE DAILY STATS
 // ==========================================================
 
-exports.saveDailyStats = async (req, res) => {
+exports.saveDailyStats = async (
+  req,
+  res
+) => {
 
   try {
 
@@ -620,12 +807,6 @@ exports.saveDailyStats = async (req, res) => {
 
     });
 
-
-    // ------------------------------------------------------
-    // IMPORTANT:
-    //
-    // The milk stats page is /milkStats, not /stats.
-    // ------------------------------------------------------
 
     return res.redirect(
       `/milkStats?type=day&date=${encodeURIComponent(day)}`
@@ -655,7 +836,10 @@ exports.saveDailyStats = async (req, res) => {
 // GET SALES PAGE
 // ==========================================================
 
-exports.getSalesPage = async (req, res) => {
+exports.getSalesPage = async (
+  req,
+  res
+) => {
 
   try {
 
@@ -663,27 +847,30 @@ exports.getSalesPage = async (req, res) => {
       await milkService.getSalesPageData();
 
 
-    return res.render("sales", {
+    return res.render(
+      "sales",
+      {
 
-      standingOrders:
-        data?.standingOrders || [],
+        standingOrders:
+          data?.standingOrders || [],
 
-      manualSales:
-        data?.manualSales || [],
+        manualSales:
+          data?.manualSales || [],
 
-      currentPrice:
-        data?.currentPrice ?? 50,
+        currentPrice:
+          data?.currentPrice ?? 50,
 
-      totalSales:
-        data?.totalSales || 0,
+        totalSales:
+          data?.totalSales || 0,
 
-      availableMilk:
-        data?.availableMilk || 0,
+        availableMilk:
+          data?.availableMilk || 0,
 
-      user:
-        req.user
+        user:
+          req.user
 
-    });
+      }
+    );
 
   } catch (err) {
 
@@ -708,7 +895,10 @@ exports.getSalesPage = async (req, res) => {
 // SUBMIT MANUAL SALE
 // ==========================================================
 
-exports.submitManualSale = async (req, res) => {
+exports.submitManualSale = async (
+  req,
+  res
+) => {
 
   try {
 
@@ -807,7 +997,10 @@ exports.submitStandingOrderSale = async (
 // ADMIN ONLY
 // ==========================================================
 
-exports.updateMilkPrice = async (req, res) => {
+exports.updateMilkPrice = async (
+  req,
+  res
+) => {
 
   try {
 
