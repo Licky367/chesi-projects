@@ -4,12 +4,19 @@
 //
 // PURPOSE
 // ----------------------------------------------------------
-// HTTP controller for all milk sales operations.
+// Handles HTTP requests for milk sales.
 //
-// BUSINESS LOGIC
+// RESPONSIBILITY
 // ----------------------------------------------------------
-// All sales business logic is handled by:
+// The controller is intentionally thin.
 //
+// It:
+//   1. Receives req/res.
+//   2. Calls salesService.
+//   3. Handles redirects.
+//   4. Renders sales.ejs.
+//
+// Business logic belongs in:
 //     services/salesService.js
 //
 // ROUTES
@@ -33,25 +40,99 @@ const salesService =
 
 
 // ==========================================================
+// HELPERS
+// ==========================================================
+
+function getFarmId(
+    req
+) {
+
+    return (
+        req.body?.farmId ||
+        req.query?.farmId ||
+        salesService.getUserFarmId(
+            req.user
+        ) ||
+        null
+    );
+
+}
+
+
+function salesRedirect(
+    res,
+    farmId,
+    message = null,
+    success = false
+) {
+
+    const params =
+        new URLSearchParams();
+
+
+    if (farmId) {
+
+        params.set(
+            "farmId",
+            farmId
+        );
+
+    }
+
+
+    if (message) {
+
+        params.set(
+            success
+                ? "success"
+                : "error",
+            success
+                ? "1"
+                : message
+        );
+
+    }
+
+
+    const query =
+        params.toString();
+
+
+    return res.redirect(
+        "/sales" +
+        (
+            query
+                ? `?${query}`
+                : ""
+        )
+    );
+
+}
+
+
+// ==========================================================
 // GET /sales
 // ==========================================================
 
-async function renderSales(req, res) {
+async function renderSales(
+    req,
+    res
+) {
 
     try {
 
         const result =
-            await salesService.getSalesPageData({
-                user: req.user,
-                farmId: req.query.farmId
-            });
+            await salesService.getSalesPageData(
+                {
+                    user: req.user,
+                    farmId: req.query.farmId
+                }
+            );
 
 
-        // ------------------------------------------------------
-        // Authentication
-        // ------------------------------------------------------
-
-        if (result.redirect) {
+        if (
+            result.redirect
+        ) {
 
             return res.redirect(
                 result.redirect
@@ -59,26 +140,6 @@ async function renderSales(req, res) {
 
         }
 
-
-        // ------------------------------------------------------
-        // Error response
-        // ------------------------------------------------------
-
-        if (result.status) {
-
-            return res
-                .status(result.status)
-                .render(
-                    "sales",
-                    result.data
-                );
-
-        }
-
-
-        // ------------------------------------------------------
-        // Render
-        // ------------------------------------------------------
 
         return res.render(
             "sales",
@@ -90,18 +151,22 @@ async function renderSales(req, res) {
     catch (error) {
 
         console.error(
-            "SALES CONTROLLER - GET /sales:",
+            "SALES PAGE ERROR:",
             error
         );
 
 
-        return res
-            .status(500)
+        return res.status(500)
             .render(
                 "sales",
-                salesService.getErrorPageData(
-                    req.user,
-                    "Unable to load the sales page."
+                salesService.getEmptySalesPageData(
+                    {
+                        user:
+                            req.user,
+
+                        error:
+                            "Unable to load the sales page."
+                    }
                 )
             );
 
@@ -114,20 +179,35 @@ async function renderSales(req, res) {
 // POST /sales/price
 // ==========================================================
 
-async function saveMilkPrice(req, res) {
+async function saveMilkPrice(
+    req,
+    res
+) {
+
+    const farmId =
+        getFarmId(req);
+
 
     try {
 
-        const result =
-            await salesService.saveMilkPrice({
-                user: req.user,
-                farmId: req.body.farmId,
-                price: req.body.price
-            });
+        await salesService.saveMilkPrice(
+            {
+                user:
+                    req.user,
+
+                farmId,
+
+                price:
+                    req.body.price
+            }
+        );
 
 
-        return res.redirect(
-            result.redirect
+        return salesRedirect(
+            res,
+            farmId,
+            null,
+            true
         );
 
     }
@@ -135,21 +215,17 @@ async function saveMilkPrice(req, res) {
     catch (error) {
 
         console.error(
-            "SALES CONTROLLER - POST /sales/price:",
+            "SAVE MILK PRICE ERROR:",
             error
         );
 
 
-        const farmId =
-            req.body?.farmId;
-
-
-        return res.redirect(
-            salesService.buildErrorRedirect(
-                farmId,
-                error.code === "SUMMARY_LOCKED"
-                    ? error.message
-                    : "Unable to save milk price."
+        return salesRedirect(
+            res,
+            farmId,
+            salesService.getErrorMessage(
+                error,
+                "Unable to save milk price."
             )
         );
 
@@ -162,21 +238,38 @@ async function saveMilkPrice(req, res) {
 // POST /sales/manual
 // ==========================================================
 
-async function recordManualSale(req, res) {
+async function recordManualSale(
+    req,
+    res
+) {
+
+    const farmId =
+        getFarmId(req);
+
 
     try {
 
-        const result =
-            await salesService.recordManualSale({
-                user: req.user,
-                farmId: req.body.farmId,
-                customerName: req.body.customerName,
-                liters: req.body.liters
-            });
+        await salesService.recordManualSale(
+            {
+                user:
+                    req.user,
+
+                farmId,
+
+                customerName:
+                    req.body.customerName,
+
+                liters:
+                    req.body.liters
+            }
+        );
 
 
-        return res.redirect(
-            result.redirect
+        return salesRedirect(
+            res,
+            farmId,
+            null,
+            true
         );
 
     }
@@ -184,25 +277,17 @@ async function recordManualSale(req, res) {
     catch (error) {
 
         console.error(
-            "SALES CONTROLLER - POST /sales/manual:",
+            "MANUAL SALE ERROR:",
             error
         );
 
 
-        const farmId =
-            req.body?.farmId ||
-            salesService.getUserFarmId(
-                req.user
-            );
-
-
-        return res.redirect(
-            salesService.buildErrorRedirect(
-                farmId,
-                error.code === "SUMMARY_LOCKED"
-                    ? error.message
-                    : error.message ||
-                      "Unable to record the milk sale."
+        return salesRedirect(
+            res,
+            farmId,
+            salesService.getErrorMessage(
+                error,
+                "Unable to record the milk sale."
             )
         );
 
@@ -215,23 +300,38 @@ async function recordManualSale(req, res) {
 // POST /sales/standing
 // ==========================================================
 
-async function createStandingOrder(req, res) {
+async function createStandingOrder(
+    req,
+    res
+) {
+
+    const farmId =
+        getFarmId(req);
+
 
     try {
 
-        const result =
-            await salesService.createStandingOrder({
-                user: req.user,
-                farmId: req.body.farmId,
+        await salesService.createStandingOrder(
+            {
+                user:
+                    req.user,
+
+                farmId,
+
                 customerName:
                     req.body.customerName,
+
                 liters:
                     req.body.liters
-            });
+            }
+        );
 
 
-        return res.redirect(
-            result.redirect
+        return salesRedirect(
+            res,
+            farmId,
+            null,
+            true
         );
 
     }
@@ -239,22 +339,16 @@ async function createStandingOrder(req, res) {
     catch (error) {
 
         console.error(
-            "SALES CONTROLLER - POST /sales/standing:",
+            "CREATE STANDING ORDER ERROR:",
             error
         );
 
 
-        const farmId =
-            req.body?.farmId ||
-            salesService.getUserFarmId(
-                req.user
-            );
-
-
-        return res.redirect(
-            salesService.buildErrorRedirect(
-                farmId,
-                error.message ||
+        return salesRedirect(
+            res,
+            farmId,
+            salesService.getErrorMessage(
+                error,
                 "Unable to create the standing order."
             )
         );
@@ -268,26 +362,42 @@ async function createStandingOrder(req, res) {
 // POST /sales/standing/submit
 // ==========================================================
 
-async function submitStandingSale(req, res) {
+async function submitStandingSale(
+    req,
+    res
+) {
+
+    const farmId =
+        getFarmId(req);
+
 
     try {
 
         const result =
-            await salesService.submitStandingSale({
-                user: req.user,
-                standingOrderId:
-                    req.body.standingOrderId,
-                farmId:
-                    req.body.farmId,
-                liters:
-                    req.body.liters,
-                customerName:
-                    req.body.customerName
-            });
+            await salesService.submitStandingSale(
+                {
+                    user:
+                        req.user,
+
+                    farmId,
+
+                    standingOrderId:
+                        req.body.standingOrderId,
+
+                    liters:
+                        req.body.liters,
+
+                    customerName:
+                        req.body.customerName
+                }
+            );
 
 
-        return res.redirect(
-            result.redirect
+        return salesRedirect(
+            res,
+            result.farmId || farmId,
+            null,
+            true
         );
 
     }
@@ -295,25 +405,17 @@ async function submitStandingSale(req, res) {
     catch (error) {
 
         console.error(
-            "SALES CONTROLLER - POST /sales/standing/submit:",
+            "STANDING SALE ERROR:",
             error
         );
 
 
-        const farmId =
-            req.body?.farmId ||
-            salesService.getUserFarmId(
-                req.user
-            );
-
-
-        return res.redirect(
-            salesService.buildErrorRedirect(
-                farmId,
-                error.code === "SUMMARY_LOCKED"
-                    ? error.message
-                    : error.message ||
-                      "Unable to record the standing-order sale."
+        return salesRedirect(
+            res,
+            farmId,
+            salesService.getErrorMessage(
+                error,
+                "Unable to record the standing-order sale."
             )
         );
 
@@ -326,20 +428,35 @@ async function submitStandingSale(req, res) {
 // POST /sales/standing/omit
 // ==========================================================
 
-async function omitStandingOrder(req, res) {
+async function omitStandingOrder(
+    req,
+    res
+) {
+
+    const farmId =
+        getFarmId(req);
+
 
     try {
 
-        const result =
-            await salesService.omitStandingOrder({
-                user: req.user,
-                id: req.body.id,
-                farmId: req.body.farmId
-            });
+        await salesService.omitStandingOrder(
+            {
+                user:
+                    req.user,
+
+                farmId,
+
+                standingOrderId:
+                    req.body.id
+            }
+        );
 
 
-        return res.redirect(
-            result.redirect
+        return salesRedirect(
+            res,
+            farmId,
+            null,
+            true
         );
 
     }
@@ -347,15 +464,16 @@ async function omitStandingOrder(req, res) {
     catch (error) {
 
         console.error(
-            "SALES CONTROLLER - POST /sales/standing/omit:",
+            "OMIT STANDING ORDER ERROR:",
             error
         );
 
 
-        return res.redirect(
-            salesService.buildErrorRedirect(
-                req.body?.farmId,
-                error.message ||
+        return salesRedirect(
+            res,
+            farmId,
+            salesService.getErrorMessage(
+                error,
                 "Unable to omit the standing order."
             )
         );
