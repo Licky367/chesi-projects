@@ -25,28 +25,104 @@
 
 .feed-card {
 
+    position: relative;
+
     width: 100%;
 
-    background: var(--card);
+    background:
+        linear-gradient(
+            145deg,
+            rgba(46, 125, 50, .055),
+            rgba(255, 255, 255, .98) 42%,
+            rgba(46, 125, 50, .025)
+        );
 
-    border-radius: var(--radius);
+    border: 1px solid rgba(46, 125, 50, .13);
 
-    box-shadow: var(--shadow-md);
+    border-radius: 16px;
+
+    box-shadow:
+        0 2px 5px rgba(0, 0, 0, .035),
+        0 8px 24px rgba(46, 125, 50, .07);
 
     overflow: hidden;
 
     box-sizing: border-box;
 
     transition:
-        box-shadow .2s ease,
-        transform .2s ease;
+        box-shadow .22s ease,
+        transform .22s ease,
+        border-color .22s ease;
+
+}
+
+
+.feed-card::before {
+
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+
+    left: 0;
+
+    width: 4px;
+
+    height: 100%;
+
+    background:
+        linear-gradient(
+            to bottom,
+            var(--primary),
+            rgba(46, 125, 50, .18)
+        );
+
+    opacity: .72;
+
+    pointer-events: none;
 
 }
 
 
 .feed-card:hover {
 
-    box-shadow: var(--shadow-lg);
+    border-color: rgba(46, 125, 50, .22);
+
+    box-shadow:
+        0 4px 8px rgba(0, 0, 0, .04),
+        0 14px 34px rgba(46, 125, 50, .10);
+
+    transform: translateY(-1px);
+
+}
+
+
+/*=========================================================
+  POST CARD
+=========================================================*/
+
+.post-card {
+
+    position: relative;
+
+    isolation: isolate;
+
+}
+
+
+/*=========================================================
+  POST CARD HEADER
+=========================================================*/
+
+.post-card .feed-header {
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(46, 125, 50, .055),
+            rgba(46, 125, 50, .018)
+        );
 
 }
 
@@ -69,7 +145,7 @@
 
     padding: 17px 18px;
 
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(46, 125, 50, .10);
 
     box-sizing: border-box;
 
@@ -94,6 +170,36 @@
 
 
 /*=========================================================
+  AVATAR
+=========================================================*/
+
+.post-card .avatar-sm {
+
+    flex: 0 0 auto;
+
+    width: 44px;
+
+    height: 44px;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+
+    border: 2px solid rgba(46, 125, 50, .16);
+
+    background: #edf6ed;
+
+    box-shadow:
+        0 2px 7px rgba(0, 0, 0, .08);
+
+    box-sizing: border-box;
+
+}
+
+
+/*=========================================================
   FEED USER INFORMATION
 =========================================================*/
 
@@ -107,17 +213,13 @@
 
     align-items: flex-start;
 
-    gap: 3px;
+    gap: 4px;
 
 }
 
 
 /*=========================================================
   POST META LINE
-
-  Example:
-
-  Nelson posted about Cow Shed C
 =========================================================*/
 
 .post-meta-line {
@@ -136,7 +238,7 @@
 
     font-size: 14px;
 
-    line-height: 1.35;
+    line-height: 1.4;
 
 }
 
@@ -153,15 +255,15 @@
 
     font-size: 15px;
 
-    font-weight: 700;
+    font-weight: 750;
 
-    line-height: 1.35;
+    line-height: 1.4;
 
 }
 
 
 /*=========================================================
-  "POSTED ABOUT"
+  META ACTION
 =========================================================*/
 
 .post-meta-action {
@@ -174,7 +276,7 @@
 
     font-weight: 500;
 
-    line-height: 1.35;
+    line-height: 1.4;
 
 }
 
@@ -184,7 +286,7 @@
 
   Example:
 
-  🏷 Cow Shed C
+  Cow Shed C
 =========================================================*/
 
 .post-subject {
@@ -197,28 +299,43 @@
 
     align-items: center;
 
-    gap: 4px;
+    gap: 5px;
+
+    padding: 3px 9px;
+
+    border: 1px solid rgba(46, 125, 50, .12);
+
+    border-radius: 999px;
+
+    background:
+        rgba(46, 125, 50, .075);
 
     color: var(--primary);
 
-    font-size: 14px;
+    font-size: 13px;
 
     font-weight: 700;
 
     line-height: 1.35;
 
+    box-sizing: border-box;
+
+    transition:
+        background-color .18s ease,
+        border-color .18s ease;
+
 }
 
 
 /*=========================================================
-  POST SUBJECT ICON
+  SUBJECT ICON
 =========================================================*/
 
 .post-subject i {
 
     flex: 0 0 auto;
 
-    font-size: 11px;
+    font-size: 10px;
 
     line-height: 1;
 
@@ -226,10 +343,7 @@
 
 
 /*=========================================================
-  POST SUBJECT NAME
-
-  Prevent extremely long asset names from destroying
-  the header layout.
+  SUBJECT NAME
 =========================================================*/
 
 .post-subject span {
@@ -243,6 +357,21 @@
     text-overflow: ellipsis;
 
     white-space: nowrap;
+
+}
+
+
+/*=========================================================
+  SUBJECT HOVER
+=========================================================*/
+
+.post-subject:hover {
+
+    background:
+        rgba(46, 125, 50, .12);
+
+    border-color:
+        rgba(46, 125, 50, .20);
 
 }
 
@@ -265,6 +394,8 @@
 
     line-height: 1.4;
 
+    letter-spacing: .01em;
+
 }
 
 
@@ -286,7 +417,7 @@
 
     justify-content: center;
 
-    border: 0;
+    border: 1px solid transparent;
 
     border-radius: 50%;
 
@@ -307,6 +438,7 @@
     transition:
         background-color .18s ease,
         color .18s ease,
+        border-color .18s ease,
         transform .15s ease;
 
 }
@@ -314,7 +446,9 @@
 
 .delete-post:hover {
 
-    background: rgba(220, 53, 69, .09);
+    background: rgba(220, 53, 69, .08);
+
+    border-color: rgba(220, 53, 69, .10);
 
     color: var(--red);
 
@@ -323,7 +457,7 @@
 
 .delete-post:active {
 
-    transform: scale(.94);
+    transform: scale(.93);
 
 }
 
@@ -355,7 +489,7 @@
 
     margin: 0;
 
-    padding: 16px 18px;
+    padding: 18px 20px;
 
     box-sizing: border-box;
 
@@ -380,7 +514,7 @@
 
     margin: 0;
 
-    padding: 16px 18px;
+    padding: 18px 20px;
 
     text-align: left;
 
@@ -409,7 +543,7 @@
 
     font-weight: 700;
 
-    line-height: 1.4;
+    line-height: 1.45;
 
     text-align: left;
 
@@ -434,7 +568,7 @@
 
     font-size: 15px;
 
-    line-height: 1.65;
+    line-height: 1.7;
 
     text-align: left;
 
@@ -455,7 +589,7 @@
 
     font-size: 15px;
 
-    line-height: 1.65;
+    line-height: 1.7;
 
     text-align: left;
 
@@ -489,15 +623,20 @@
 
     width: 100%;
 
-    margin: 14px 0 0;
+    margin: 15px 0 0;
 
     padding: 0;
 
     overflow: hidden;
 
-    border-radius: 12px;
+    border: 1px solid rgba(46, 125, 50, .10);
 
-    background: var(--border);
+    border-radius: 13px;
+
+    background: #edf5ed;
+
+    box-shadow:
+        0 3px 12px rgba(0, 0, 0, .06);
 
     box-sizing: border-box;
 
@@ -545,17 +684,14 @@
 
 
 /*=========================================================
-  IMAGE-ONLY POST
-
-  Keeps the image visually clean without unnecessary
-  spacing around it.
+  IMAGE POST BODY
 =========================================================*/
 
 .post-card .feed-body:has(.post-image) {
 
-    padding-top: 14px;
+    padding-top: 16px;
 
-    padding-bottom: 16px;
+    padding-bottom: 18px;
 
 }
 
@@ -578,7 +714,10 @@
 
     padding: 11px 18px;
 
-    border-top: 1px solid var(--border);
+    border-top: 1px solid rgba(46, 125, 50, .10);
+
+    background:
+        rgba(46, 125, 50, .018);
 
     box-sizing: border-box;
 
@@ -604,9 +743,9 @@
 
     padding: 6px 10px;
 
-    border: none;
+    border: 1px solid transparent;
 
-    border-radius: 8px;
+    border-radius: 9px;
 
     background: transparent;
 
@@ -624,7 +763,8 @@
 
     transition:
         background-color .18s ease,
-        color .18s ease;
+        color .18s ease,
+        border-color .18s ease;
 
 }
 
@@ -636,7 +776,9 @@
 .like-btn:hover,
 .toggle-comments:hover {
 
-    background: #f1f4f2;
+    background: rgba(46, 125, 50, .075);
+
+    border-color: rgba(46, 125, 50, .10);
 
     color: var(--primary);
 
@@ -699,34 +841,6 @@
 
 
 /*=========================================================
-  POST CARD SPACING
-
-  Gives the card a clean social-feed rhythm.
-=========================================================*/
-
-.post-card {
-
-    position: relative;
-
-}
-
-
-/*=========================================================
-  AVATAR FALLBACK / IMAGE SAFETY
-=========================================================*/
-
-.post-card .avatar-sm {
-
-    flex: 0 0 auto;
-
-    display: block;
-
-    object-fit: cover;
-
-}
-
-
-/*=========================================================
   EMPTY META SAFETY
 =========================================================*/
 
@@ -738,27 +852,25 @@
 
 
 /*=========================================================
-  MODERN SUBJECT HIGHLIGHT
+  MODERN CARD INNER HIGHLIGHT
 =========================================================*/
 
-.post-subject {
+.post-card::after {
 
-    padding: 2px 7px;
+    content: "";
 
-    border-radius: 6px;
+    position: absolute;
 
-    background: rgba(46, 125, 50, .08);
+    inset: 0;
 
-}
+    border-radius: inherit;
 
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .75);
 
-/*=========================================================
-  SUBJECT HOVER
-=========================================================*/
+    pointer-events: none;
 
-.post-subject:hover {
-
-    background: rgba(46, 125, 50, .13);
+    z-index: -1;
 
 }
 
@@ -779,7 +891,7 @@
 
     .feed-card {
 
-        border-radius: 12px;
+        border-radius: 13px;
 
     }
 
@@ -796,6 +908,15 @@
     .feed-user {
 
         gap: 10px;
+
+    }
+
+
+    .post-card .avatar-sm {
+
+        width: 40px;
+
+        height: 40px;
 
     }
 
@@ -834,7 +955,9 @@
 
         max-width: calc(100vw - 115px);
 
-        font-size: 13px;
+        padding: 3px 8px;
+
+        font-size: 12px;
 
     }
 
@@ -866,7 +989,7 @@
 
     .post-card .feed-body {
 
-        padding: 14px 15px;
+        padding: 15px 15px;
 
     }
 
@@ -884,7 +1007,7 @@
 
         font-size: 15px;
 
-        line-height: 1.6;
+        line-height: 1.65;
 
     }
 
@@ -893,7 +1016,7 @@
 
         margin-top: 12px;
 
-        border-radius: 10px;
+        border-radius: 11px;
 
     }
 
@@ -902,7 +1025,7 @@
 
         padding-top: 13px;
 
-        padding-bottom: 14px;
+        padding-bottom: 15px;
 
     }
 
@@ -936,6 +1059,15 @@
     .feed-header {
 
         padding: 13px 12px;
+
+    }
+
+
+    .post-card .avatar-sm {
+
+        width: 38px;
+
+        height: 38px;
 
     }
 
@@ -995,7 +1127,8 @@
     .feed-card,
     .delete-post,
     .like-btn,
-    .toggle-comments {
+    .toggle-comments,
+    .post-subject {
 
         transition: none;
 
@@ -1011,16 +1144,57 @@
 @media (prefers-color-scheme: dark) {
 
 
+    .feed-card {
+
+        background:
+            linear-gradient(
+                145deg,
+                rgba(46, 125, 50, .10),
+                rgba(30, 30, 30, .98) 45%,
+                rgba(46, 125, 50, .055)
+            );
+
+        border-color:
+            rgba(76, 175, 80, .18);
+
+    }
+
+
+    .post-card .feed-header {
+
+        background:
+            linear-gradient(
+                180deg,
+                rgba(76, 175, 80, .08),
+                rgba(76, 175, 80, .025)
+            );
+
+    }
+
+
     .post-subject {
 
-        background: rgba(76, 175, 80, .12);
+        background:
+            rgba(76, 175, 80, .12);
+
+        border-color:
+            rgba(76, 175, 80, .18);
 
     }
 
 
     .post-subject:hover {
 
-        background: rgba(76, 175, 80, .18);
+        background:
+            rgba(76, 175, 80, .18);
+
+    }
+
+
+    .feed-actions {
+
+        background:
+            rgba(76, 175, 80, .035);
 
     }
 
@@ -1028,7 +1202,8 @@
     .like-btn:hover,
     .toggle-comments:hover {
 
-        background: rgba(255, 255, 255, .06);
+        background:
+            rgba(255, 255, 255, .06);
 
     }
 
