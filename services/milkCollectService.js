@@ -4,95 +4,42 @@
 //
 // PURPOSE
 // ----------------------------------------------------------
-// Service layer for the "Record Today's Milk" module.
+// Service layer for:
 //
-// MILK RECORDING RULES
+//     /milk
+//
+// RESPONSIBILITIES
 // ----------------------------------------------------------
 //
-// MORNING SESSION
-// ----------------------------------------------------------
-// 00:00 - 10:00
+// • Determine Nairobi milk session
+// • Determine farms visible to the user
+// • Find animals where isMilking === true
+// • Group animals by assetCode
+// • Load today's milk records
+// • Build farm/animal data for milk.ejs
+// • Save milk records
+// • Automatically create zero records when sessions close
+// • Rebuild Daily MilkSummary
 //
-// EVENING SESSION
-// ----------------------------------------------------------
-// 16:00 - 00:00
-//
-// CLOSED MORNING WINDOW
-// ----------------------------------------------------------
-// 10:00 - 16:00
-//
-// During the closed morning window:
-//
-// • Morning records remain available.
-// • Dairy workers may still create/edit morning records.
-// • The evening session has not started.
-// • The active recording column remains morning.
-//
-// At exactly 16:00:
-//
-// • Morning recording input disappears.
-// • Evening recording input becomes active.
-// • Morning data is NOT deleted.
-// • Morning data is simply no longer the active input value.
-//
-// At exactly 00:00:
-//
-// • Evening session closes.
-// • The previous day's records become historical.
-// • Missing evening records are automatically recorded as:
-//
-//       liters: 0
-//       remarks: "Not Milked/recorded"
-//       recordedBySystem: true
-//
-// AUTOMATIC ZERO RECORDS
+// IMPORTANT
 // ----------------------------------------------------------
 //
-// When a session closes and a cow has no record for that
-// session, the service automatically creates:
+// FARM IDENTIFICATION:
+//     Farm code is stored in Dairy.code.
 //
-//     0 L
-//     Not Milked/recorded
+// ANIMAL IDENTIFICATION:
+//     Animal has its own Dairy.code.
 //
-// This guarantees that every eligible milking cow has a
-// complete morning + evening record for every completed day.
+// FARM OWNERSHIP:
+//     Animal.assetCode === Farm.code
 //
-// PERMISSIONS
-// ----------------------------------------------------------
+// ELIGIBLE MILKING ANIMAL:
+//     animal.isMilking === true
 //
-// ADMIN
-// ----------------------------------------------------------
-// • Can create records.
-// • Can edit records.
-// • Can edit morning records during evening.
-// • Can edit historical records.
-// • Can correct automatic zero records.
+// THERE IS NO EVEN/ODD CODE RULE.
 //
-// DAIRY WORKER
-// ----------------------------------------------------------
-//
-// MORNING:
-// • Can create/edit from 00:00 through 15:59.
-// • Cannot edit morning during evening.
-//
-// EVENING:
-// • Can create/edit from 16:00 through 23:59.
-//
-// HISTORICAL:
-// • Previous days are read-only.
-//
-// SUMMARY
-// ----------------------------------------------------------
-// Daily MilkSummary is rebuilt from Milk records.
-//
-// DOES NOT HANDLE:
-//
-// • Milk sales
-// • Standing orders
-// • Milk pricing
-// • General milk statistics
-// • Milking history
-// • Milking status
+// The milk page must NOT assume that animal codes are even,
+// odd, sequential, or any particular numeric pattern.
 //
 // ==========================================================
 
@@ -100,11 +47,14 @@
 const mongoose =
     require("mongoose");
 
+
 const Dairy =
     require("../models/dairy");
 
+
 const Milk =
     require("../models/milk");
+
 
 const MilkSummary =
     require("../models/milkSummary");
@@ -117,28 +67,31 @@ const MilkSummary =
 const NAIROBI_TIMEZONE =
     "Africa/Nairobi";
 
+
 const MORNING =
     "morning";
+
 
 const EVENING =
     "evening";
 
+
 const VALID_SESSIONS = [
+
     MORNING,
+
     EVENING
+
 ];
 
-const MORNING_START_HOUR =
-    0;
 
 const MORNING_END_HOUR =
     10;
 
+
 const EVENING_START_HOUR =
     16;
 
-const MIDNIGHT_HOUR =
-    24;
 
 const AUTO_ZERO_REMARK =
     "Not Milked/recorded";
@@ -146,19 +99,6 @@ const AUTO_ZERO_REMARK =
 
 // ==========================================================
 // GET NAIROBI DATE PARTS
-// ==========================================================
-//
-// Returns:
-//
-// {
-//     year,
-//     month,
-//     day,
-//     hour,
-//     minute,
-//     second
-// }
-//
 // ==========================================================
 
 function getNairobiDateParts(
@@ -226,22 +166,34 @@ function getNairobiDateParts(
     return {
 
         year:
-            Number(result.year),
+            Number(
+                result.year
+            ),
 
         month:
-            Number(result.month),
+            Number(
+                result.month
+            ),
 
         day:
-            Number(result.day),
+            Number(
+                result.day
+            ),
 
         hour:
-            Number(result.hour),
+            Number(
+                result.hour
+            ),
 
         minute:
-            Number(result.minute),
+            Number(
+                result.minute
+            ),
 
         second:
-            Number(result.second)
+            Number(
+                result.second
+            )
 
     };
 
@@ -297,24 +249,18 @@ function getNairobiMonth(
 
 
 // ==========================================================
-// GET CURRENT RECORDING SESSION
+// GET CURRENT SESSION
 // ==========================================================
 //
-// IMPORTANT
-// ----------------------------------------------------------
+// 00:00 - 09:59
+//     Morning open
 //
-// 00:00 - 09:59  -> morning
+// 10:00 - 15:59
+//     Morning recording remains active for the page.
+//     Workers may still edit morning records.
 //
-// 10:00 - 15:59  -> morning
-//                    but morning session is closed.
-//
-// 16:00 - 23:59  -> evening
-//
-// The service therefore distinguishes:
-//
-//     activeSession
-//     recordingAllowed
-//     sessionClosed
+// 16:00 - 23:59
+//     Evening open
 //
 // ==========================================================
 
@@ -332,12 +278,7 @@ function getCurrentSession(
         parts.hour;
 
 
-    // ======================================================
-    // MORNING
-    // ======================================================
-
     if (
-        hour >= MORNING_START_HOUR &&
         hour < EVENING_START_HOUR
     ) {
 
@@ -353,13 +294,13 @@ function getCurrentSession(
                 true,
 
             morningOpen:
-                true,
+                hour < MORNING_END_HOUR,
 
             eveningOpen:
                 false,
 
             morningClosed:
-                false,
+                hour >= MORNING_END_HOUR,
 
             eveningClosed:
                 true,
@@ -373,10 +314,6 @@ function getCurrentSession(
 
     }
 
-
-    // ======================================================
-    // EVENING
-    // ======================================================
 
     return {
 
@@ -414,12 +351,6 @@ function getCurrentSession(
 // ==========================================================
 // GET SESSION STATUS
 // ==========================================================
-//
-// This is intentionally separate from getCurrentSession()
-// because the page needs to know exactly what the UI should
-// display.
-//
-// ==========================================================
 
 function getSessionStatus(
     date = new Date()
@@ -434,6 +365,10 @@ function getSessionStatus(
     const hour =
         parts.hour;
 
+
+    // ======================================================
+    // MORNING OPEN
+    // ======================================================
 
     if (
         hour < MORNING_END_HOUR
@@ -460,12 +395,22 @@ function getSessionStatus(
                 true,
 
             eveningEditable:
+                false,
+
+            betweenSessions:
+                false,
+
+            sessionClosed:
                 false
 
         };
 
     }
 
+
+    // ======================================================
+    // MORNING CLOSED / EVENING NOT STARTED
+    // ======================================================
 
     if (
         hour < EVENING_START_HOUR
@@ -495,12 +440,19 @@ function getSessionStatus(
                 false,
 
             betweenSessions:
+                true,
+
+            sessionClosed:
                 true
 
         };
 
     }
 
+
+    // ======================================================
+    // EVENING
+    // ======================================================
 
     return {
 
@@ -523,7 +475,13 @@ function getSessionStatus(
             false,
 
         eveningEditable:
-            true
+            true,
+
+        betweenSessions:
+            false,
+
+        sessionClosed:
+            false
 
     };
 
@@ -550,7 +508,9 @@ function toNumber(
 
 
     const number =
-        Number(value);
+        Number(
+            value
+        );
 
 
     if (
@@ -578,7 +538,9 @@ function round(
 ) {
 
     const number =
-        Number(value);
+        Number(
+            value
+        );
 
 
     if (
@@ -615,9 +577,13 @@ function getUserId(
 
 
     return (
+
         user._id ||
+
         user.id ||
+
         null
+
     );
 
 }
@@ -632,8 +598,12 @@ function isAdmin(
 ) {
 
     return (
+
         !!user &&
-        user.role === "admin"
+
+        user.role ===
+            "admin"
+
     );
 
 }
@@ -648,8 +618,12 @@ function isDairyWorker(
 ) {
 
     return (
+
         !!user &&
-        user.role === "dairyWorker"
+
+        user.role ===
+            "dairyWorker"
+
     );
 
 }
@@ -695,27 +669,51 @@ function getAssignedFarmIds(
 
 
 // ==========================================================
-// GET ACTIVE FARMS FOR USER
+// GET USER FARMS
+// ==========================================================
+//
+// ADMIN
+// ----------------------------------------------------------
+// Gets every farm.
+//
+// DAIRY WORKER
+// ----------------------------------------------------------
+// Gets only assigned farms.
+//
+// IMPORTANT
+// ----------------------------------------------------------
+// We identify farms using:
+//
+//     code < 0
+//
+// We do NOT require an arbitrary animal code pattern.
+//
 // ==========================================================
 
 async function getUserFarms(
     user
 ) {
 
+    let query = {
+
+        code: {
+            $lt: 0
+        }
+
+    };
+
+
+    // ======================================================
+    // ADMIN
+    // ======================================================
+
     if (
         isAdmin(user)
     ) {
 
-        return Dairy.find({
-
-            code: {
-                $lt: 0
-            },
-
-            status:
-                "active"
-
-        })
+        return Dairy.find(
+            query
+        )
 
         .sort({
             code: 1
@@ -725,6 +723,10 @@ async function getUserFarms(
 
     }
 
+
+    // ======================================================
+    // DAIRY WORKER
+    // ======================================================
 
     if (
         isDairyWorker(user)
@@ -745,21 +747,17 @@ async function getUserFarms(
         }
 
 
-        return Dairy.find({
+        query._id = {
 
-            _id: {
-                $in:
-                    assignedFarmIds
-            },
+            $in:
+                assignedFarmIds
 
-            code: {
-                $lt: 0
-            },
+        };
 
-            status:
-                "active"
 
-        })
+        return Dairy.find(
+            query
+        )
 
         .sort({
             code: 1
@@ -790,8 +788,7 @@ async function getFarmByCode(
 
 
     if (
-        code === null ||
-        code >= 0
+        code === null
     ) {
 
         return null;
@@ -801,10 +798,7 @@ async function getFarmByCode(
 
     return Dairy.findOne({
 
-        code,
-
-        status:
-            "active"
+        code
 
     })
 
@@ -865,7 +859,9 @@ function verifyFarmAccess(
 
 
     const farmId =
-        farm._id?.toString();
+        farm._id
+            ? farm._id.toString()
+            : null;
 
 
     if (!farmId) {
@@ -886,6 +882,28 @@ function verifyFarmAccess(
 
 // ==========================================================
 // GET VALID MILKING ANIMAL
+// ==========================================================
+//
+// THIS IS IMPORTANT.
+//
+// The only eligibility condition for the animal is:
+//
+//     isMilking: true
+//
+// Plus:
+//
+//     assetCode must identify a farm.
+//
+// We do NOT require:
+//
+//     code to be even
+//
+// We do NOT require:
+//
+//     code % 2 === 0
+//
+// We do NOT invent any animal-numbering rule.
+//
 // ==========================================================
 
 async function getValidAnimal(
@@ -908,20 +926,8 @@ async function getValidAnimal(
         _id:
             animalId,
 
-        code: {
-            $gt: 0,
-
-            $mod: [
-                2,
-                0
-            ]
-        },
-
         isMilking:
-            true,
-
-        status:
-            "active"
+            true
 
     })
 
@@ -931,7 +937,15 @@ async function getValidAnimal(
 
 
 // ==========================================================
-// GET TODAY'S MILKING ANIMALS
+// GET MILKING ANIMALS
+// ==========================================================
+//
+// Finds ALL animals:
+//
+//     isMilking === true
+//
+// and whose assetCode belongs to one of the supplied farms.
+//
 // ==========================================================
 
 async function getMilkingAnimals(
@@ -939,6 +953,7 @@ async function getMilkingAnimals(
 ) {
 
     if (
+        !Array.isArray(farms) ||
         farms.length === 0
     ) {
 
@@ -952,16 +967,14 @@ async function getMilkingAnimals(
 
         .map(
             farm =>
-                Number(
+                toNumber(
                     farm.code
                 )
         )
 
         .filter(
             code =>
-                Number.isFinite(
-                    code
-                )
+                code !== null
         );
 
 
@@ -974,16 +987,21 @@ async function getMilkingAnimals(
     }
 
 
+    /*
+     * IMPORTANT:
+     *
+     * No $mod.
+     *
+     * No code > 0.
+     *
+     * No animal status requirement.
+     *
+     * isMilking is the eligibility flag.
+     *
+     * assetCode links the animal to its farm.
+     */
+
     return Dairy.find({
-
-        code: {
-            $gt: 0,
-
-            $mod: [
-                2,
-                0
-            ]
-        },
 
         isMilking:
             true,
@@ -991,15 +1009,16 @@ async function getMilkingAnimals(
         assetCode: {
             $in:
                 farmCodes
-        },
-
-        status:
-            "active"
+        }
 
     })
 
     .sort({
+
+        assetCode: 1,
+
         code: 1
+
     })
 
     .lean();
@@ -1008,7 +1027,7 @@ async function getMilkingAnimals(
 
 
 // ==========================================================
-// GET MILK RECORD
+// GET EXISTING RECORD
 // ==========================================================
 
 async function getExistingRecord(
@@ -1032,7 +1051,7 @@ async function getExistingRecord(
 
 
 // ==========================================================
-// GET TODAY'S MILK RECORDS
+// GET DAY MILK RECORDS
 // ==========================================================
 
 async function getDayMilkRecords(
@@ -1041,6 +1060,7 @@ async function getDayMilkRecords(
 ) {
 
     if (
+        !animalIds ||
         animalIds.length === 0
     ) {
 
@@ -1061,7 +1081,9 @@ async function getDayMilkRecords(
     })
 
     .sort({
+
         date: 1
+
     })
 
     .lean();
@@ -1081,10 +1103,22 @@ function indexMilkRecords(
         new Map();
 
 
+    if (
+        !Array.isArray(
+            records
+        )
+    ) {
+
+        return map;
+
+    }
+
+
     records.forEach(
         record => {
 
             if (
+                !record ||
                 !record.dairy ||
                 !record.session
             ) {
@@ -1113,22 +1147,7 @@ function indexMilkRecords(
 
 
 // ==========================================================
-// GET DISPLAY RECORD
-// ==========================================================
-//
-// The page only needs ONE active recording value.
-//
-// Morning:
-//
-//     currentRecord = morning
-//
-// Evening:
-//
-//     currentRecord = evening
-//
-// The other session remains available as historical data
-// for cumulative calculations.
-//
+// BUILD ANIMAL RECORD
 // ==========================================================
 
 function buildAnimalRecord(
@@ -1137,16 +1156,22 @@ function buildAnimalRecord(
     session
 ) {
 
+    const animalId =
+        animal._id.toString();
+
+
     const morning =
         milkMap.get(
-            `${animal._id.toString()}:${MORNING}`
-        ) || null;
+            `${animalId}:${MORNING}`
+        ) ||
+        null;
 
 
     const evening =
         milkMap.get(
-            `${animal._id.toString()}:${EVENING}`
-        ) || null;
+            `${animalId}:${EVENING}`
+        ) ||
+        null;
 
 
     const currentRecord =
@@ -1155,18 +1180,39 @@ function buildAnimalRecord(
             : evening;
 
 
+    const morningLiters =
+        Number(
+            morning?.liters
+        );
+
+
+    const eveningLiters =
+        Number(
+            evening?.liters
+        );
+
+
     const cumulative =
         round(
+
             (
-                Number(
-                    morning?.liters
-                ) || 0
-            ) +
-            (
-                Number(
-                    evening?.liters
-                ) || 0
+                Number.isFinite(
+                    morningLiters
+                )
+                    ? morningLiters
+                    : 0
             )
+
+            +
+
+            (
+                Number.isFinite(
+                    eveningLiters
+                )
+                    ? eveningLiters
+                    : 0
+            )
+
         );
 
 
@@ -1174,40 +1220,41 @@ function buildAnimalRecord(
 
         ...animal,
 
-        // --------------------------------------------------
-        // Active recording value.
-        // --------------------------------------------------
 
         currentRecord,
 
-        // --------------------------------------------------
-        // Historical/session data.
-        // Used internally and for cumulative display.
-        // --------------------------------------------------
 
         morning,
 
+
         evening,
+
 
         cumulative,
 
-        // --------------------------------------------------
-        // Convenience fields for the EJS page.
-        // --------------------------------------------------
 
         currentLiters:
+
             currentRecord
+
                 ? Number(
                     currentRecord.liters
                 ) || 0
+
                 : null,
 
+
         currentRemarks:
+
             currentRecord?.remarks ||
             "",
 
+
         currentRecorded:
-            !!currentRecord
+
+            Boolean(
+                currentRecord
+            )
 
     };
 
@@ -1215,22 +1262,10 @@ function buildAnimalRecord(
 
 
 // ==========================================================
-// GET TODAY'S MILK PAGE DATA
+// GET MILK PAGE DATA
 // ==========================================================
 //
-// Returns everything required by the milk recording page.
-//
-// The EJS page should use:
-//
-//     currentSession
-//     sessionLabel
-//     sessionStatus
-//
-// and each animal:
-//
-//     currentLiters
-//     currentRemarks
-//     cumulative
+// THIS IS THE MAIN FUNCTION USED BY THE CONTROLLER.
 //
 // ==========================================================
 
@@ -1248,17 +1283,31 @@ async function(
     }
 
 
+    const now =
+        new Date();
+
+
     const day =
-        getNairobiDay();
+        getNairobiDay(
+            now
+        );
 
 
     const month =
-        getNairobiMonth();
+        getNairobiMonth(
+            now
+        );
 
 
     const sessionStatus =
-        getSessionStatus();
+        getSessionStatus(
+            now
+        );
 
+
+    // ======================================================
+    // GET FARMS USER CAN SEE
+    // ======================================================
 
     const farms =
         await getUserFarms(
@@ -1297,11 +1346,19 @@ async function(
     }
 
 
+    // ======================================================
+    // GET ALL MILKING ANIMALS
+    // ======================================================
+
     const animals =
         await getMilkingAnimals(
             farms
         );
 
+
+    // ======================================================
+    // GET ANIMAL IDS
+    // ======================================================
 
     const animalIds =
         animals.map(
@@ -1309,6 +1366,10 @@ async function(
                 animal._id
         );
 
+
+    // ======================================================
+    // GET TODAY'S RECORDS
+    // ======================================================
 
     const milkRecords =
         await getDayMilkRecords(
@@ -1328,7 +1389,9 @@ async function(
     // ======================================================
 
     const farmData =
-        farms.map(
+        farms
+
+        .map(
             farm => {
 
                 const farmCode =
@@ -1336,6 +1399,11 @@ async function(
                         farm.code
                     );
 
+
+                /*
+                 * Every animal whose assetCode matches
+                 * this farm belongs in this table.
+                 */
 
                 const farmAnimals =
                     animals
@@ -1359,27 +1427,35 @@ async function(
 
 
                 // ==================================================
-                // CUMULATIVE FARM TOTAL
+                // FARM TOTAL
                 // ==================================================
 
                 const total =
                     round(
+
                         farmAnimals.reduce(
+
                             (
                                 sum,
                                 animal
                             ) => {
 
                                 return (
+
                                     sum +
+
                                     Number(
                                         animal.cumulative
-                                    )
+                                    ) || 0
+
                                 );
 
                             },
+
                             0
+
                         )
+
                     );
 
 
@@ -1398,6 +1474,27 @@ async function(
         );
 
 
+    // ======================================================
+    // IMPORTANT
+    // ======================================================
+    //
+    // Only farms containing at least one currently milking
+    // animal should be displayed.
+    //
+    // This prevents empty farm tables.
+    //
+    // ======================================================
+
+    const farmsWithMilkingAnimals =
+        farmData.filter(
+            farm =>
+                Array.isArray(
+                    farm.animals
+                ) &&
+                farm.animals.length > 0
+        );
+
+
     return {
 
         day,
@@ -1413,7 +1510,7 @@ async function(
         sessionStatus,
 
         farms:
-            farmData,
+            farmsWithMilkingAnimals,
 
         isAdmin:
             isAdmin(user),
@@ -1427,20 +1524,7 @@ async function(
 
 
 // ==========================================================
-// CAN WORKER MODIFY SESSION?
-// ==========================================================
-//
-// This is the central permission rule.
-//
-// ADMIN:
-//     Always true.
-//
-// WORKER:
-//     Morning -> allowed from 00:00 to 16:00.
-//     Evening -> allowed from 16:00 to midnight.
-//
-// Historical days -> false.
-//
+// CAN WORKER MODIFY SESSION
 // ==========================================================
 
 function canWorkerModifySession(
@@ -1469,10 +1553,6 @@ function canWorkerModifySession(
         parts.hour;
 
 
-    // ======================================================
-    // MORNING
-    // ======================================================
-
     if (
         session === MORNING
     ) {
@@ -1485,13 +1565,9 @@ function canWorkerModifySession(
     }
 
 
-    // ======================================================
-    // EVENING
-    // ======================================================
-
     return (
         hour >= EVENING_START_HOUR &&
-        hour < MIDNIGHT_HOUR
+        hour < 24
     );
 
 }
@@ -1539,8 +1615,6 @@ function canModifyRecord(
             now
         );
 
-
-    // Workers cannot alter historical days.
 
     if (
         day !== today
@@ -1603,10 +1677,6 @@ async function saveMilkRecord({
         );
 
 
-    // ======================================================
-    // PERMISSION
-    // ======================================================
-
     if (
         !canModifyRecord(
             user,
@@ -1639,7 +1709,7 @@ async function saveMilkRecord({
 
 
     // ======================================================
-    // EXISTING RECORD
+    // UPDATE
     // ======================================================
 
     if (
@@ -1673,11 +1743,6 @@ async function saveMilkRecord({
 
         }
 
-
-        // --------------------------------------------------
-        // A human editing an automatic zero converts the
-        // record from system-generated to human-recorded.
-        // --------------------------------------------------
 
         existing.recordedBySystem =
             false;
@@ -1791,13 +1856,7 @@ async function saveMilkRecord({
 
 
 // ==========================================================
-// AUTO-RECORD ZERO FOR ONE COW
-// ==========================================================
-//
-// Used when a session closes.
-//
-// The record is deliberately created as a system record.
-//
+// AUTO RECORD ZERO
 // ==========================================================
 
 async function autoRecordZero({
@@ -1814,10 +1873,6 @@ async function autoRecordZero({
             session
         );
 
-
-    // ------------------------------------------------------
-    // Already recorded.
-    // ------------------------------------------------------
 
     if (
         existing
@@ -1841,10 +1896,6 @@ async function autoRecordZero({
 
             dairy:
                 animal._id,
-
-            // ------------------------------------------------
-            // No human recorded this record.
-            // ------------------------------------------------
 
             recordedBy:
                 null,
@@ -1893,22 +1944,7 @@ async function autoRecordZero({
 
 
 // ==========================================================
-// FINALIZE CLOSED SESSION
-// ==========================================================
-//
-// This function ensures every eligible milking cow has a
-// record when a session closes.
-//
-// IMPORTANT
-// ----------------------------------------------------------
-// The frontend does NOT need to call this for every row.
-//
-// The controller can call:
-//
-//     finalizeClosedSessions()
-//
-// when loading the page or saving records.
-//
+// FINALIZE SESSION
 // ==========================================================
 
 async function finalizeSession(
@@ -1934,10 +1970,7 @@ async function finalizeSession(
 
             code: {
                 $lt: 0
-            },
-
-            status:
-                "active"
+            }
 
         })
 
@@ -1980,17 +2013,26 @@ async function finalizeSession(
         );
 
 
+    if (
+        farmCodes.length === 0
+    ) {
+
+        return {
+
+            day,
+
+            session,
+
+            created:
+                0
+
+        };
+
+    }
+
+
     const animals =
         await Dairy.find({
-
-            code: {
-                $gt: 0,
-
-                $mod: [
-                    2,
-                    0
-                ]
-            },
 
             isMilking:
                 true,
@@ -1998,10 +2040,7 @@ async function finalizeSession(
             assetCode: {
                 $in:
                     farmCodes
-            },
-
-            status:
-                "active"
+            }
 
         })
 
@@ -2062,21 +2101,6 @@ async function finalizeSession(
 // ==========================================================
 // FINALIZE CLOSED SESSIONS
 // ==========================================================
-//
-// For today's page:
-//
-// Morning is automatically finalized at 10:00.
-//
-// However, because workers may still edit morning records
-// until 16:00, the automatic zero record is still editable
-// during the closed-morning window.
-//
-// Evening is finalized at midnight.
-//
-// The function also allows explicit finalization for a
-// supplied day.
-//
-// ==========================================================
 
 exports.finalizeClosedSessions =
 async function(
@@ -2104,7 +2128,7 @@ async function(
 
 
     // ======================================================
-    // MORNING CLOSED FROM 10:00
+    // MORNING
     // ======================================================
 
     if (
@@ -2128,11 +2152,11 @@ async function(
     // EVENING
     // ======================================================
     //
-    // At 00:00 the date changes, so yesterday's evening
-    // session must be finalized separately.
+    // Evening belongs to the previous day once midnight
+    // has been crossed.
     //
-    // This function normally gets called before the page
-    // starts working on the new day.
+    // A scheduled job should call finalizeDaySessions()
+    // for the previous day.
     //
     // ======================================================
 
@@ -2150,15 +2174,7 @@ async function(
 
 
 // ==========================================================
-// FINALIZE A SPECIFIC DAY
-// ==========================================================
-//
-// Useful for scheduled jobs.
-//
-// Example:
-//
-//     finalizeDaySessions("2026-08-13")
-//
+// FINALIZE SPECIFIC DAY
 // ==========================================================
 
 exports.finalizeDaySessions =
@@ -2219,45 +2235,26 @@ async function(
 // SAVE TODAY'S MILK
 // ==========================================================
 //
-// Input:
-//
-// records = {
-//
-//     animalId: {
-//
-//         liters,
-//         remarks
-//
-//     }
-//
-// }
-//
 // IMPORTANT
 // ----------------------------------------------------------
-//
-// There is intentionally NO morning/evening property in
-// the request anymore.
-//
 // The server determines the session.
 //
-// During:
+// The current EJS may submit:
 //
-//     00:00 - 15:59
+// records[id][morning][liters]
+// records[id][morning][remarks]
 //
-// the record belongs to:
+// or:
 //
-//     morning
+// records[id][evening][liters]
+// records[id][evening][remarks]
 //
-// During:
+// The service accepts both that structure and a flat:
 //
-//     16:00 - 23:59
+// records[id][liters]
+// records[id][remarks]
 //
-// the record belongs to:
-//
-//     evening
-//
-// This prevents the browser from deciding which session is
-// being modified.
+// BUT the server's current session always wins.
 //
 // ==========================================================
 
@@ -2267,10 +2264,6 @@ async function(
     records
 ) {
 
-    // ======================================================
-    // AUTHENTICATION
-    // ======================================================
-
     if (!user) {
 
         throw new Error(
@@ -2279,10 +2272,6 @@ async function(
 
     }
 
-
-    // ======================================================
-    // ROLE
-    // ======================================================
 
     if (
         !isAdmin(user) &&
@@ -2295,10 +2284,6 @@ async function(
 
     }
 
-
-    // ======================================================
-    // VALIDATE INPUT
-    // ======================================================
 
     if (
         !records ||
@@ -2341,10 +2326,6 @@ async function(
         );
 
 
-    // ======================================================
-    // DETERMINE SESSION SERVER-SIDE
-    // ======================================================
-
     const session =
         getSessionStatus(
             now
@@ -2364,31 +2345,31 @@ async function(
 
 
     // ======================================================
-    // PROCESS ANIMALS
+    // PROCESS RECORDS
     // ======================================================
 
     for (
         const [
             animalId,
-            data
+            submittedData
         ]
-        of Object.entries(records)
+        of Object.entries(
+            records
+        )
     ) {
 
         if (
-            !data ||
-            typeof data !== "object" ||
-            Array.isArray(data)
+            !submittedData ||
+            typeof submittedData !== "object" ||
+            Array.isArray(
+                submittedData
+            )
         ) {
 
             continue;
 
         }
 
-
-        // ==================================================
-        // VALIDATE ANIMAL
-        // ==================================================
 
         const animal =
             await getValidAnimal(
@@ -2406,7 +2387,7 @@ async function(
 
 
         // ==================================================
-        // FIND FARM
+        // FARM
         // ==================================================
 
         const farm =
@@ -2425,7 +2406,7 @@ async function(
 
 
         // ==================================================
-        // VERIFY ACCESS
+        // FARM ACCESS
         // ==================================================
 
         if (
@@ -2443,7 +2424,7 @@ async function(
 
 
         // ==================================================
-        // VERIFY ANIMAL BELONGS TO FARM
+        // VERIFY ASSET CODE
         // ==================================================
 
         if (
@@ -2463,23 +2444,42 @@ async function(
 
 
         // ==================================================
-        // GET LITERS
+        // SUPPORT CURRENT EJS STRUCTURE
         // ==================================================
+        //
+        // Current view:
+        //
+        // records[id][morning][liters]
+        //
+        // OR:
+        //
+        // records[id][evening][liters]
+        //
+        // ==================================================
+
+        let data =
+            submittedData;
+
+
+        if (
+            submittedData[session] &&
+            typeof submittedData[session] ===
+                "object"
+        ) {
+
+            data =
+                submittedData[session];
+
+        }
+
 
         const rawLiters =
             data.liters;
 
 
-        // --------------------------------------------------
-        // Empty input means:
-        //
-        // "The user has not entered anything."
-        //
-        // Do not create a zero record here.
-        //
-        // Zero records are created automatically when the
-        // session closes.
-        // --------------------------------------------------
+        // ==================================================
+        // EMPTY INPUT
+        // ==================================================
 
         if (
             rawLiters === undefined ||
@@ -2510,19 +2510,11 @@ async function(
         }
 
 
-        // ==================================================
-        // REMARKS
-        // ==================================================
-
         const remarks =
             normalizeRemarks(
                 data.remarks
             );
 
-
-        // ==================================================
-        // SAVE
-        // ==================================================
 
         const result =
             await saveMilkRecord({
@@ -2575,22 +2567,18 @@ async function(
 
 
     // ======================================================
-    // FINALIZE MORNING IF NECESSARY
-    // ======================================================
-    //
-    // This is safe to call after every save.
-    //
-    // Before 10:00 it does nothing.
-    //
-    // From 10:00 onward it ensures missing morning records
-    // are represented by zero/system records.
-    //
+    // FINALIZE MORNING
     // ======================================================
 
-    if (
+    const parts =
         getNairobiDateParts(
             now
-        ).hour >= MORNING_END_HOUR
+        );
+
+
+    if (
+        parts.hour >=
+        MORNING_END_HOUR
     ) {
 
         await finalizeSession(
@@ -2631,13 +2619,7 @@ async function(
 
 
 // ==========================================================
-// REBUILD DAILY MILK SUMMARY
-// ==========================================================
-//
-// Summary is always calculated from Milk records.
-//
-// Browser totals are never trusted.
-//
+// REBUILD DAILY SUMMARY
 // ==========================================================
 
 async function rebuildDailySummary(
@@ -2659,25 +2641,13 @@ async function rebuildDailySummary(
         .lean();
 
 
-    // ======================================================
-    // COW PRODUCTION
-    // ======================================================
-
     const cowMap =
         new Map();
 
 
-    // ======================================================
-    // FARM PRODUCTION
-    // ======================================================
-
     const farmMap =
         new Map();
 
-
-    // ======================================================
-    // TOTAL PRODUCED
-    // ======================================================
 
     let produced =
         0;
@@ -2724,7 +2694,7 @@ async function rebuildDailySummary(
 
 
         // ==================================================
-        // COW
+        // ANIMAL
         // ==================================================
 
         const animalKey =
@@ -2850,10 +2820,7 @@ async function rebuildDailySummary(
                 code: {
                     $in:
                         farmCodes
-                },
-
-                status:
-                    "active"
+                }
 
             })
 
@@ -2922,28 +2889,32 @@ async function rebuildDailySummary(
         );
 
 
-    // ======================================================
-    // FARM TOTAL
-    // ======================================================
-
     const farmTotal =
         round(
+
             farmProduction.reduce(
+
                 (
                     total,
                     entry
                 ) => {
 
                     return (
+
                         total +
+
                         Number(
                             entry.liters
                         )
+
                     );
 
                 },
+
                 0
+
             )
+
         );
 
 
@@ -2978,7 +2949,7 @@ async function rebuildDailySummary(
 
 
     // ======================================================
-    // SUMMARY
+    // GET / CREATE SUMMARY
     // ======================================================
 
     let summary =
@@ -3025,10 +2996,6 @@ async function rebuildDailySummary(
         );
 
 
-    // ======================================================
-    // PRESERVE CONSUMED
-    // ======================================================
-
     const consumedValue =
         Number(
             summary.consumed
@@ -3045,11 +3012,16 @@ async function rebuildDailySummary(
 
     summary.available =
         Math.max(
+
             0,
+
             round(
+
                 produced -
                 consumed
+
             )
+
         );
 
 
@@ -3108,19 +3080,19 @@ async function(
 // ==========================================================
 
 exports.getCurrentSession =
-getCurrentSession;
+    getCurrentSession;
 
 
 exports.getSessionStatus =
-getSessionStatus;
+    getSessionStatus;
 
 
 // ==========================================================
-// PUBLIC PERMISSION HELPER
+// PUBLIC PERMISSION
 // ==========================================================
 
 exports.canModifyRecord =
-canModifyRecord;
+    canModifyRecord;
 
 
 // ==========================================================
@@ -3128,7 +3100,7 @@ canModifyRecord;
 // ==========================================================
 
 exports.verifyFarmAccess =
-verifyFarmAccess;
+    verifyFarmAccess;
 
 
 // ==========================================================
@@ -3136,7 +3108,7 @@ verifyFarmAccess;
 // ==========================================================
 
 exports.getNairobiDay =
-getNairobiDay;
+    getNairobiDay;
 
 
 // ==========================================================
@@ -3144,7 +3116,7 @@ getNairobiDay;
 // ==========================================================
 
 exports.getNairobiMonth =
-getNairobiMonth;
+    getNairobiMonth;
 
 
 // ==========================================================
@@ -3152,15 +3124,15 @@ getNairobiMonth;
 // ==========================================================
 
 exports.getAssignedFarmIds =
-getAssignedFarmIds;
+    getAssignedFarmIds;
 
 
 // ==========================================================
-// PUBLIC AUTO-ZERO CONSTANT
+// PUBLIC AUTO ZERO
 // ==========================================================
 
 exports.AUTO_ZERO_REMARK =
-AUTO_ZERO_REMARK;
+    AUTO_ZERO_REMARK;
 
 
 // ==========================================================
@@ -3168,11 +3140,11 @@ AUTO_ZERO_REMARK;
 // ==========================================================
 
 exports.MORNING =
-MORNING;
+    MORNING;
 
 
 exports.EVENING =
-EVENING;
+    EVENING;
 
 
 // ==========================================================
