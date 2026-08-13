@@ -14,38 +14,6 @@
 //
 // Business logic remains in milkService.js.
 //
-// IMPORTANT
-// ----------------------------------------------------------
-// The /milk page is intentionally kept separate from the
-// statistics, sales, history, and milking-status pages.
-//
-// milk.ejs expects:
-//
-//     dairies
-//     session
-//     isAdmin
-//     user
-//     success
-//     error
-//
-// Each dairy supplied to milk.ejs should already contain:
-//
-//     dairy._id
-//     dairy.name
-//     dairy.code
-//     dairy.isMilking
-//
-//     dairy.morning
-//     dairy.evening
-//
-//     dairy.morningRecorded
-//     dairy.eveningRecorded
-//
-//     dairy.morningLiters
-//     dairy.eveningLiters
-//
-// The service is responsible for preparing those values.
-//
 // ==========================================================
 
 
@@ -54,6 +22,9 @@ const mongoose =
 
 const milkService =
   require("../services/milkService");
+
+const Dairy =
+  require("../models/dairy");
 
 
 // ==========================================================
@@ -81,10 +52,58 @@ function redirectError(
 //
 // GET /milk
 //
-// This controller intentionally passes only the data required
-// by milk.ejs.
+// IMPORTANT
+// ----------------------------------------------------------
+// milk.ejs is organized by Dairy Farm.
 //
-// Business logic remains inside milkService.getMilkPageData().
+// Each table represents ONE Dairy Farm.
+//
+// Example:
+//
+//     Green Farm
+//     Farm Code: -1
+//
+//     ---------------------------------------------------
+//     Animal       Morning       Evening
+//     Cow 1        10L           12L
+//     Cow 2         8L            9L
+//
+//     Blue Farm
+//     Farm Code: -3
+//
+//     ---------------------------------------------------
+//     Animal       Morning       Evening
+//     Cow 3        15L           14L
+//
+// ----------------------------------------------------------
+//
+// Animal grouping:
+//
+//     animal.assetCode === dairyFarm.code
+//
+// Example:
+//
+//     Dairy Farm:
+//         code = -5
+//
+//     Animals:
+//         assetCode = -5
+//
+// Therefore all animals with assetCode -5 belong to
+// the Dairy Farm whose code is -5.
+//
+// ACCESS
+// ----------------------------------------------------------
+//
+// ADMIN
+//     Sees every Dairy Farm.
+//
+// DAIRY WORKER
+//     Sees only Dairy Farms contained in:
+//
+//         req.user.assignedFarm
+//
+// assignedFarm contains Dairy document ObjectIds.
 //
 // ==========================================================
 
@@ -95,6 +114,15 @@ async (
 ) => {
 
   try {
+
+    // ======================================================
+    // GET DATA FROM SERVICE
+    // ======================================================
+    //
+    // The milk service remains responsible for preparing
+    // the actual milk collection information.
+    //
+    // ======================================================
 
     const data =
       await milkService.getMilkPageData(
@@ -111,34 +139,469 @@ async (
       req.user?.role === "admin";
 
 
+    // ======================================================
+    // RAW DAIRY DATA FROM SERVICE
+    // ======================================================
+
+    const serviceDairies =
+      Array.isArray(
+        data?.dairies
+      )
+
+        ? data.dairies
+
+        : [];
+
+
+    // ======================================================
+    // GET DAIRY FARMS
+    // ======================================================
+    //
+    // Dairy farms are identified by:
+    //
+    //     code < 0
+    //
+    // We fetch the farms independently so that the controller
+    // can guarantee that every milk table has the correct
+    // parent Dairy Farm name.
+    //
+    // ======================================================
+
+    let farmQuery = {
+
+      code: {
+        $lt: 0
+      },
+
+      status: "active"
+
+    };
+
+
+    // ======================================================
+    // WORKER FARM RESTRICTION
+    // ======================================================
+    //
+    // A dairyWorker may only see farms assigned to them.
+    //
+    // assignedFarm contains Dairy document ObjectIds.
+    //
+    // ======================================================
+
+    if (!isAdmin) {
+
+      const assignedFarmIds =
+        Array.isArray(
+          req.user?.assignedFarm
+        )
+
+          ? req.user.assignedFarm
+
+          : [];
+
+
+      // ----------------------------------------------------
+      // Worker with no assigned farms
+      // ----------------------------------------------------
+
+      if (
+        assignedFarmIds.length === 0
+      ) {
+
+        return res.render(
+          "milk",
+          {
+
+            farms:
+              [],
+
+            dairies:
+              [],
+
+            session:
+              currentSession,
+
+            isAdmin,
+
+            user:
+              req.user,
+
+            success:
+              req.query.success === "1",
+
+            error:
+              req.query.error ||
+              ""
+
+          }
+        );
+
+      }
+
+
+      farmQuery._id = {
+
+        $in:
+          assignedFarmIds
+
+      };
+
+    }
+
+
+    // ======================================================
+    // LOAD FARMS
+    // ======================================================
+
+    const farms =
+      await Dairy
+        .find(
+          farmQuery
+        )
+        .sort({
+          code: 1
+        })
+        .lean();
+
+
+    // ======================================================
+    // MAP FARMS BY CODE
+    // ======================================================
+    //
+    // The important relationship is:
+    //
+    //     farm.code
+    //
+    //             =
+    //
+    //     animal.assetCode
+    //
+    // ======================================================
+
+    const farmByCode =
+      new Map();
+
+
+    for (
+      const farm
+      of farms
+    ) {
+
+      farmByCode.set(
+
+        Number(
+          farm.code
+        ),
+
+        farm
+
+      );
+
+    }
+
+
+    // ======================================================
+    // PREPARE ANIMALS
+    // ======================================================
+    //
+    // Only identified animals are relevant to milk
+    // collection.
+    //
+    // Animals have:
+    //
+    //     code > 0
+    //
+    // and must have:
+    //
+    //     assetCode < 0
+    //
+    // ======================================================
+
+    const animals =
+      serviceDairies.filter(
+        animal => {
+
+          const code =
+            Number(
+              animal?.code
+            );
+
+
+          const assetCode =
+            Number(
+              animal?.assetCode
+            );
+
+
+          return (
+
+            Number.isFinite(code) &&
+
+            code > 0 &&
+
+            Number.isFinite(assetCode) &&
+
+            assetCode < 0
+
+          );
+
+        }
+      );
+
+
+    // ======================================================
+    // GROUP ANIMALS BY FARM
+    // ======================================================
+    //
+    // Each farm gets its own table.
+    //
+    // ======================================================
+
+    const animalsByFarm =
+      new Map();
+
+
+    for (
+      const animal
+      of animals
+    ) {
+
+      const assetCode =
+        Number(
+          animal.assetCode
+        );
+
+
+      // ----------------------------------------------------
+      // Find parent farm
+      // ----------------------------------------------------
+
+      const farm =
+        farmByCode.get(
+          assetCode
+        );
+
+
+      // ----------------------------------------------------
+      // Safety:
+      //
+      // If the parent farm is not visible to the current
+      // user, do not display the animal.
+      // ----------------------------------------------------
+
+      if (!farm) {
+
+        continue;
+
+      }
+
+
+      if (
+        !animalsByFarm.has(
+          assetCode
+        )
+      ) {
+
+        animalsByFarm.set(
+
+          assetCode,
+
+          []
+
+        );
+
+      }
+
+
+      animalsByFarm
+        .get(assetCode)
+        .push(
+          animal
+        );
+
+    }
+
+
+    // ======================================================
+    // BUILD FARM TABLE DATA
+    // ======================================================
+    //
+    // milk.ejs receives:
+    //
+    //     farms
+    //
+    // Each object contains:
+    //
+    //     farm
+    //     animals
+    //
+    // Therefore EJS does not need to understand how
+    // assetCode works.
+    //
+    // ======================================================
+
+    const groupedFarms =
+      [];
+
+
+    for (
+      const farm
+      of farms
+    ) {
+
+      const farmCode =
+        Number(
+          farm.code
+        );
+
+
+      const farmAnimals =
+        animalsByFarm.get(
+          farmCode
+        ) || [];
+
+
+      // ----------------------------------------------------
+      // Only create a table when the farm has animals.
+      // ----------------------------------------------------
+
+      if (
+        farmAnimals.length === 0
+      ) {
+
+        continue;
+
+      }
+
+
+      groupedFarms.push({
+
+        // --------------------------------------------------
+        // FARM
+        // --------------------------------------------------
+
+        farm,
+
+
+        // --------------------------------------------------
+        // FARM IDENTIFICATION
+        // --------------------------------------------------
+
+        farmId:
+          farm._id,
+
+        farmName:
+          farm.name,
+
+        farmCode:
+
+
+          farm.code,
+
+
+        // --------------------------------------------------
+        // ANIMALS
+        // --------------------------------------------------
+
+        animals:
+          farmAnimals
+
+      });
+
+    }
+
+
+    // ======================================================
+    // SORT TABLES BY FARM CODE
+    // ======================================================
+    //
+    // Negative codes:
+    //
+    // -1
+    // -3
+    // -5
+    //
+    // are sorted numerically.
+    //
+    // ======================================================
+
+    groupedFarms.sort(
+      (
+        a,
+        b
+      ) => {
+
+        return (
+
+          Number(
+            a.farmCode
+          ) -
+
+          Number(
+            b.farmCode
+          )
+
+        );
+
+      }
+    );
+
+
+    // ======================================================
+    // BACKWARD COMPATIBILITY
+    // ======================================================
+    //
+    // Keep `dairies` available because other existing
+    // milk.ejs code may still reference it.
+    //
+    // The new milk.ejs should use `farms`.
+    //
+    // ======================================================
+
+    const visibleDairies =
+      groupedFarms.flatMap(
+        group =>
+          group.animals
+      );
+
+
+    // ======================================================
+    // RENDER MILK
+    // ======================================================
+
     return res.render(
       "milk",
       {
 
-        // ----------------------------------------------------
-        // DAIRIES
-        // ----------------------------------------------------
+        // --------------------------------------------------
+        // NEW PRIMARY DATA
+        // --------------------------------------------------
         //
-        // The service prepares the dairy objects with the
-        // morning/evening record information required by
-        // milk.ejs.
+        // One item = one Dairy Farm table.
         //
+        farms:
+          groupedFarms,
+
+
+        // --------------------------------------------------
+        // BACKWARD COMPATIBILITY
+        // --------------------------------------------------
+
         dairies:
-          data?.dairies ||
-          [],
+          visibleDairies,
 
 
-        // ----------------------------------------------------
+        // --------------------------------------------------
         // CURRENT SESSION
-        // ----------------------------------------------------
+        // --------------------------------------------------
 
         session:
           currentSession,
 
 
-        // ----------------------------------------------------
+        // --------------------------------------------------
         // AUTHENTICATION / ACCESS
-        // ----------------------------------------------------
+        // --------------------------------------------------
 
         isAdmin,
 
@@ -146,12 +609,10 @@ async (
           req.user,
 
 
-        // ----------------------------------------------------
+        // --------------------------------------------------
         // RESULT POPUP
-        // ----------------------------------------------------
-        //
-        // milk.ejs displays the popup when either value exists.
-        //
+        // --------------------------------------------------
+
         success:
           req.query.success === "1",
 
@@ -177,6 +638,9 @@ async (
       .render(
         "milk",
         {
+
+          farms:
+            [],
 
           dairies:
             [],
@@ -216,17 +680,6 @@ async (
 //     session
 //     liters
 //     remarks
-//
-// The controller performs only basic HTTP/input validation.
-//
-// The service remains responsible for:
-//
-// • Determining the actual collection session
-// • Checking whether the dairy can receive a record
-// • Creating the milk record
-// • Updating milk summaries
-// • Updating farmTotal
-// • Any other business rules
 //
 // ==========================================================
 
@@ -298,14 +751,6 @@ async (
     // ======================================================
     // SESSION VALIDATION
     // ======================================================
-    //
-    // The submitted session is checked only to prevent
-    // malformed requests.
-    //
-    // The service remains authoritative about the actual
-    // current collection session.
-    //
-    // ======================================================
 
     if (
       session &&
@@ -322,16 +767,6 @@ async (
 
     // ======================================================
     // SAVE MILK RECORD
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // The controller does NOT calculate farm totals here.
-    //
-    // milkService.saveMilkRecords() is responsible for saving
-    // the record and, after the record is successfully saved,
-    // updating the corresponding MilkSummary farmTotal.
-    //
     // ======================================================
 
     await milkService.saveMilkRecords(
@@ -361,11 +796,6 @@ async (
 
     // ======================================================
     // SUCCESS
-    // ======================================================
-    //
-    // milk.ejs reads ?success=1 and displays the success
-    // popup.
-    //
     // ======================================================
 
     return res.redirect(
@@ -398,9 +828,6 @@ async (
 // ==========================================================
 //
 // Compatibility route.
-//
-// The actual edit interface is the modal contained directly
-// inside milk.ejs.
 //
 // ==========================================================
 
@@ -486,11 +913,6 @@ async (
 // POST /milk/:id
 //
 // ADMIN ONLY
-//
-// This is the endpoint used by the edit modal in milk.ejs.
-//
-// The service is responsible for updating the record and
-// synchronizing the corresponding farmTotal.
 //
 // ==========================================================
 
@@ -589,11 +1011,6 @@ async (
     // ======================================================
     // UPDATE
     // ======================================================
-    //
-    // The service handles the database update and farmTotal
-    // synchronization.
-    //
-    // ======================================================
 
     await milkService.editMilkRecord({
 
@@ -646,10 +1063,7 @@ async (
 // GET MILK STATS
 // ==========================================================
 //
-// This section is intentionally unchanged.
-// It serves milkStats.ejs and must not be affected by the
-// milk collection page changes.
-//
+// This section is unchanged.
 // ==========================================================
 
 exports.getMilkStats =
