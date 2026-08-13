@@ -4,7 +4,25 @@
 //
 // PURPOSE
 // ----------------------------------------------------------
-// Complete milk module routes.
+// Routes for the complete milk module.
+//
+// Mounted in server.js as:
+//
+//     app.use("/", milkRoutes);
+//
+// Therefore:
+//
+//     /milk
+//     /stats
+//     /sales
+//     /milk/history/:dairyId
+//
+// are the final application URLs.
+//
+// Controllers:
+//
+//     controllers/milkCollectController.js
+//     controllers/milkController.js
 //
 // ==========================================================
 
@@ -17,10 +35,6 @@ const router =
     express.Router();
 
 
-// ==========================================================
-// CONTROLLERS
-// ==========================================================
-
 const milkCollectController =
     require("../controllers/milkCollectController");
 
@@ -32,16 +46,21 @@ const milkController =
 // ==========================================================
 // MILK COLLECTION
 // ==========================================================
+//
+// Controller:
+//     milkCollectController
+//
+// GET  /milk
+// POST /milk
+//
+// ==========================================================
 
-
-// GET /milk
 router.get(
     "/milk",
     milkCollectController.getMilkPage
 );
 
 
-// POST /milk
 router.post(
     "/milk",
     milkCollectController.submitMilk
@@ -49,26 +68,18 @@ router.post(
 
 
 // ==========================================================
-// MILK RECORD EDITING
-// ==========================================================
-
-
-// GET /milk/edit/:id
-router.get(
-    "/milk/edit/:id",
-    milkCollectController.getEditMilk
-);
-
-
-// POST /milk/:id
-router.post(
-    "/milk/:id",
-    milkCollectController.updateMilkRecord
-);
-
-
-// ==========================================================
 // MILK STATISTICS
+// ==========================================================
+//
+// GET  /stats
+// POST /stats/day
+//
+// Examples:
+//
+//     GET /stats
+//     GET /stats?type=day&date=2026-08-13
+//     GET /stats?type=month&month=2026-08
+//
 // ==========================================================
 
 router.get(
@@ -86,6 +97,10 @@ router.post(
 // ==========================================================
 // MILK SALES
 // ==========================================================
+//
+// GET  /sales
+//
+// ==========================================================
 
 router.get(
     "/sales",
@@ -93,17 +108,43 @@ router.get(
 );
 
 
+// ==========================================================
+// MANUAL SALE
+// ==========================================================
+//
+// POST /sales/manual
+//
+// ==========================================================
+
 router.post(
     "/sales/manual",
     milkController.submitManualSale
 );
 
 
+// ==========================================================
+// STANDING ORDER SALE
+// ==========================================================
+//
+// POST /sales/standing-order
+//
+// ==========================================================
+
 router.post(
     "/sales/standing-order",
     milkController.submitStandingOrderSale
 );
 
+
+// ==========================================================
+// MILK PRICE
+// ==========================================================
+//
+// POST /sales/price
+//
+// Admin only check is handled by controller.
+//
+// ==========================================================
 
 router.post(
     "/sales/price",
@@ -112,7 +153,11 @@ router.post(
 
 
 // ==========================================================
-// STANDING ORDERS
+// ADD STANDING ORDER
+// ==========================================================
+//
+// POST /sales/standing-order/add
+//
 // ==========================================================
 
 router.post(
@@ -120,6 +165,14 @@ router.post(
     milkController.addStandingOrder
 );
 
+
+// ==========================================================
+// OMIT STANDING ORDER
+// ==========================================================
+//
+// POST /sales/standing-order/omit
+//
+// ==========================================================
 
 router.post(
     "/sales/standing-order/omit",
@@ -130,6 +183,14 @@ router.post(
 // ==========================================================
 // MILKING HISTORY
 // ==========================================================
+//
+// GET /milk/history/:dairyId
+//
+// Optional query:
+//
+//     ?month=2026-08
+//
+// ==========================================================
 
 router.get(
     "/milk/history/:dairyId",
@@ -138,7 +199,13 @@ router.get(
 
 
 // ==========================================================
-// MILKING STATUS
+// TOGGLE MILKING STATUS
+// ==========================================================
+//
+// POST /milk/history/:id/status
+//
+// Admin only check is handled by controller.
+//
 // ==========================================================
 
 router.post(
@@ -148,8 +215,31 @@ router.post(
 
 
 // ==========================================================
-// EXPORT
+// MODULE EXPORT
 // ==========================================================
 
 module.exports =
     router;
+
+
+// ==========================================================
+// ROUTE SUMMARY
+// ==========================================================
+//
+// GET
+//     /milk
+//     /stats
+//     /sales
+//     /milk/history/:dairyId
+//
+// POST
+//     /milk
+//     /stats/day
+//     /sales/manual
+//     /sales/standing-order
+//     /sales/price
+//     /sales/standing-order/add
+//     /sales/standing-order/omit
+//     /milk/history/:id/status
+//
+// ==========================================================
