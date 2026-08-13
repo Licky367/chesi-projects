@@ -11,6 +11,7 @@
 // • Milking animals
 // • Assigned-farm access
 // • Milk record creation
+// • Farm milk totals
 // • Automatic session finalization
 // • Administrator editing
 // • Milking status
@@ -25,7 +26,8 @@
 // ==========================================================
 
 
-const mongoose = require("mongoose");
+const mongoose =
+  require("mongoose");
 
 const Milk =
   require("../models/milk");
@@ -57,10 +59,24 @@ const DEFAULT_MILK_PRICE =
 
 
 // ==========================================================
+// SESSION CONSTANTS
+// ==========================================================
+
+const MORNING_END =
+  10 * 60;
+
+const EVENING_START =
+  16 * 60;
+
+
+// ==========================================================
 // BUSINESS ERROR
 // ==========================================================
 
-function milkError(code, message) {
+function milkError(
+  code,
+  message
+) {
 
   const error =
     new Error(message);
@@ -224,7 +240,7 @@ function getMilkSession() {
 
 
   if (
-    now.timeMinutes < 600
+    now.timeMinutes < MORNING_END
   ) {
 
     return {
@@ -253,7 +269,7 @@ function getMilkSession() {
 
 
   if (
-    now.timeMinutes >= 960
+    now.timeMinutes >= EVENING_START
   ) {
 
     return {
@@ -392,7 +408,8 @@ function canSubmitSession(
   ) {
 
     return (
-      now.timeMinutes < 600
+      now.timeMinutes <
+      MORNING_END
     );
 
   }
@@ -403,7 +420,8 @@ function canSubmitSession(
   ) {
 
     return (
-      now.timeMinutes >= 960
+      now.timeMinutes >=
+      EVENING_START
     );
 
   }
@@ -450,7 +468,8 @@ function canAdminEditRecord(
   ) {
 
     return (
-      now.timeMinutes < 960
+      now.timeMinutes <
+      EVENING_START
     );
 
   }
@@ -461,7 +480,8 @@ function canAdminEditRecord(
   ) {
 
     return (
-      now.timeMinutes >= 960
+      now.timeMinutes >=
+      EVENING_START
     );
 
   }
@@ -550,24 +570,63 @@ function getAssignedFarmIds(user) {
 
 
 // ==========================================================
-// BUILD ANIMAL ACCESS FILTER
+// GET FARM FOR AN ANIMAL
 // ==========================================================
 //
-// ADMIN
-// ------
-// Can access all milking animals.
+// Dairy animals are linked to their farm through `farm`.
 //
-// DAIRY WORKER
-// ------------
-// Can access only animals belonging to the farms contained
-// in User.assignedFarm.
-//
-// The Dairy model represents both farms and animals. A
-// negative Dairy.code identifies a Dairy Farm.
-//
-// The animal's farm relationship must therefore be resolved
-// from the Dairy hierarchy already represented by the model.
-//
+// ==========================================================
+
+async function getAnimalFarm(
+  dairy
+) {
+
+  if (
+    !dairy
+  ) {
+
+    return null;
+
+  }
+
+
+  if (
+    dairy.farm
+  ) {
+
+    if (
+      typeof dairy.farm === "object" &&
+      dairy.farm._id
+    ) {
+
+      return dairy.farm;
+
+    }
+
+
+    if (
+      mongoose.Types.ObjectId.isValid(
+        dairy.farm
+      )
+    ) {
+
+      return Dairy.findById(
+        dairy.farm
+      )
+        .lean();
+
+    }
+
+  }
+
+
+  return null;
+
+}
+
+
+// ==========================================================
+// BUILD ACCESSIBLE MILKING ANIMALS
 // ==========================================================
 
 async function getAccessibleMilkingAnimals(
@@ -611,59 +670,6 @@ async function getAccessibleMilkingAnimals(
   }
 
 
-  /*
-   * The Dairy model is responsible for the farm/animal
-   * relationship. We first load the assigned farms and then
-   * determine their animals.
-   *
-   * The exact hierarchy fields are deliberately queried
-   * conservatively so that existing Dairy documents remain
-   * usable.
-   */
-
-
-  const assignedFarms =
-    await Dairy.find({
-
-      _id: {
-        $in:
-          assignedFarmIds
-      },
-
-      code: {
-        $lt: 0
-      }
-
-    })
-      .lean();
-
-
-  if (
-    !assignedFarms.length
-  ) {
-
-    return [];
-
-  }
-
-
-  const farmIds =
-    assignedFarms.map(
-      farm =>
-        farm._id
-    );
-
-
-  /*
-   * Most Dairy implementations in this project represent
-   * ownership/hierarchy through `farm`.
-   *
-   * If the Dairy document has a farm reference, this query
-   * gives the worker the animals belonging to the assigned
-   * farms.
-   */
-
-
   return Dairy.find({
 
     isMilking:
@@ -680,12 +686,13 @@ async function getAccessibleMilkingAnimals(
 
     farm: {
       $in:
-        farmIds
+        assignedFarmIds
     }
 
   })
     .sort({
-      code: 1
+      code:
+        1
     })
     .lean();
 
@@ -697,9 +704,6 @@ async function getAccessibleMilkingAnimals(
 // ==========================================================
 //
 // ADMIN / INTERNAL VERSION
-//
-// Returns active female milking animals.
-//
 // ==========================================================
 
 exports.getMilkingAnimals =
@@ -721,7 +725,8 @@ async () => {
 
   })
     .sort({
-      code: 1
+      code:
+        1
     })
     .lean();
 
@@ -805,24 +810,55 @@ async function verifyAnimalAccess(
   }
 
 
-  const accessible =
-    await getAccessibleMilkingAnimals(
-      user
+  if (
+    user.role !== "dairyWorker"
+  ) {
+
+    throw milkError(
+      "MILK_ACCESS_DENIED",
+      "You are not authorized to access this dairy animal."
     );
 
+  }
 
-  const accessibleIds =
-    new Set(
-      accessible.map(
-        animal =>
-          animal._id.toString()
-      )
-    );
+
+  const assignedFarmIds =
+    getAssignedFarmIds(user);
 
 
   if (
-    !accessibleIds.has(
-      dairyId.toString()
+    !assignedFarmIds.length
+  ) {
+
+    throw milkError(
+      "MILK_ACCESS_DENIED",
+      "No dairy farm is assigned to your account."
+    );
+
+  }
+
+
+  if (
+    !dairy.farm
+  ) {
+
+    throw milkError(
+      "MILK_ACCESS_DENIED",
+      "This dairy animal is not assigned to a dairy farm."
+    );
+
+  }
+
+
+  const farmId =
+    dairy.farm._id
+      ? dairy.farm._id.toString()
+      : dairy.farm.toString();
+
+
+  if (
+    !assignedFarmIds.includes(
+      farmId
     )
   ) {
 
@@ -835,6 +871,357 @@ async function verifyAnimalAccess(
 
 
   return dairy;
+
+}
+
+
+// ==========================================================
+// GET FARM TOTALS FROM MILK RECORDS
+// ==========================================================
+//
+// Returns totals grouped by farm.
+//
+// Each item:
+//
+// {
+//     farm: farmId,
+//     total: liters
+// }
+//
+// The total is calculated from Milk records rather than
+// trusting the previously stored summary value.
+//
+// ==========================================================
+
+async function calculateFarmTotals(
+  day,
+  session
+) {
+
+  const records =
+    await Milk.find({
+
+      day,
+
+      session
+
+    })
+      .select(
+        "dairy liters"
+      )
+      .lean();
+
+
+  if (
+    !records.length
+  ) {
+
+    return [];
+
+  }
+
+
+  const dairyIds =
+    records
+      .filter(
+        record =>
+          record.dairy
+      )
+      .map(
+        record =>
+          record.dairy
+      );
+
+
+  const dairies =
+    await Dairy.find({
+
+      _id: {
+        $in:
+          dairyIds
+      }
+
+    })
+      .select(
+        "_id farm"
+      )
+      .lean();
+
+
+  const dairyMap =
+    new Map();
+
+
+  dairies.forEach(
+    dairy => {
+
+      if (
+        dairy.farm
+      ) {
+
+        dairyMap.set(
+          dairy._id.toString(),
+          dairy.farm._id
+            ? dairy.farm._id.toString()
+            : dairy.farm.toString()
+        );
+
+      }
+
+    }
+  );
+
+
+  const totals =
+    new Map();
+
+
+  records.forEach(
+    record => {
+
+      if (
+        !record.dairy
+      ) {
+
+        return;
+
+      }
+
+
+      const farmId =
+        dairyMap.get(
+          record.dairy.toString()
+        );
+
+
+      if (
+        !farmId
+      ) {
+
+        return;
+
+      }
+
+
+      const current =
+        totals.get(
+          farmId
+        ) || 0;
+
+
+      totals.set(
+        farmId,
+        current +
+        Number(
+          record.liters || 0
+        )
+      );
+
+    }
+  );
+
+
+  return Array.from(
+    totals.entries()
+  )
+    .map(
+      ([farm, total]) => ({
+
+        farm,
+
+        total
+
+      })
+    );
+
+}
+
+
+// ==========================================================
+// SAVE FARM TOTALS TO DAILY SUMMARY
+// ==========================================================
+//
+// farmTotal is maintained on MilkSummary for the day.
+//
+// Totals are recalculated from Milk records so that:
+//
+// • new records are reflected
+// • edited records are reflected
+// • zero/not-milked records are reflected correctly
+// • the summary cannot drift from Milk records
+//
+// ==========================================================
+
+async function updateFarmTotals(
+  day,
+  session
+) {
+
+  if (
+    !day ||
+    !session
+  ) {
+
+    return null;
+
+  }
+
+
+  let summary =
+    await MilkSummary.findOne({
+      day
+    });
+
+
+  if (!summary) {
+
+    summary =
+      await MilkSummary.create({
+
+        day,
+
+        month:
+          day.slice(0, 7),
+
+        price:
+          DEFAULT_MILK_PRICE,
+
+        consumed:
+          0,
+
+        available:
+          0,
+
+        cash:
+          0,
+
+        locked:
+          false,
+
+        sales:
+          [],
+
+        farmTotal:
+          []
+
+      });
+
+  }
+
+
+  const totals =
+    await calculateFarmTotals(
+      day,
+      session
+    );
+
+
+  /*
+   * Keep farm totals for the current day.
+   *
+   * A farm may have both a morning and an evening
+   * collection. Therefore the stored farm total represents
+   * the combined total for the day.
+   */
+
+  const allMorning =
+    await calculateFarmTotals(
+      day,
+      "morning"
+    );
+
+
+  const allEvening =
+    await calculateFarmTotals(
+      day,
+      "evening"
+    );
+
+
+  const farmMap =
+    new Map();
+
+
+  allMorning.forEach(
+    item => {
+
+      farmMap.set(
+        item.farm,
+        Number(
+          item.total || 0
+        )
+      );
+
+    }
+  );
+
+
+  allEvening.forEach(
+    item => {
+
+      farmMap.set(
+        item.farm,
+        (
+          farmMap.get(
+            item.farm
+          ) || 0
+        ) +
+        Number(
+          item.total || 0
+        )
+      );
+
+    }
+  );
+
+
+  /*
+   * Ensure the current session was actually calculated.
+   * This also makes the function deterministic when called
+   * immediately after a save.
+   */
+
+  totals.forEach(
+    item => {
+
+      if (
+        !farmMap.has(
+          item.farm
+        )
+      ) {
+
+        farmMap.set(
+          item.farm,
+          Number(
+            item.total || 0
+          )
+        );
+
+      }
+
+    }
+  );
+
+
+  summary.farmTotal =
+    Array.from(
+      farmMap.entries()
+    )
+      .map(
+        ([farm, total]) => ({
+
+          farm,
+
+          total
+
+        })
+      );
+
+
+  await summary.save();
+
+
+  return summary.farmTotal;
 
 }
 
@@ -964,37 +1351,54 @@ async (
     !docs.length
   ) {
 
+    await updateFarmTotals(
+      day,
+      sessionName
+    );
+
     return [];
 
   }
 
 
+  let saved;
+
+
   try {
 
-    return await Milk.insertMany(
-      docs,
-      {
-        ordered:
-          false
-      }
-    );
+    saved =
+      await Milk.insertMany(
+        docs,
+        {
+          ordered:
+            false
+        }
+      );
 
   }
 
   catch (error) {
 
     if (
-      error?.code === 11000
+      error?.code !== 11000
     ) {
 
-      return [];
+      throw error;
 
     }
 
-
-    throw error;
+    saved = [];
 
   }
+
+
+  await updateFarmTotals(
+    day,
+    sessionName
+  );
+
+
+  return saved;
 
 };
 
@@ -1018,7 +1422,8 @@ async () => {
   // --------------------------------------------------------
 
   if (
-    now.timeMinutes >= 600
+    now.timeMinutes >=
+    MORNING_END
   ) {
 
     results.push(
@@ -1036,7 +1441,8 @@ async () => {
   // --------------------------------------------------------
 
   if (
-    now.timeMinutes < 600
+    now.timeMinutes <
+    MORNING_END
   ) {
 
     const previousDay =
@@ -1060,6 +1466,29 @@ async () => {
 
 // ==========================================================
 // GET MILK PAGE DATA
+// ==========================================================
+//
+// Data contract used by milk.ejs:
+//
+// dairies
+// milkRecords
+// morningRecords
+// eveningRecords
+// session
+// sessionInfo
+// canSubmit
+// canEditMorning
+// canEditEvening
+//
+// Each dairy additionally contains:
+//
+// morning
+// evening
+// morningRecorded
+// eveningRecorded
+// morningLiters
+// eveningLiters
+//
 // ==========================================================
 
 exports.getMilkPageData =
@@ -1119,12 +1548,6 @@ async (
         "name"
       )
       .lean();
-
-
-  /*
-   * Workers should only receive records belonging to animals
-   * they are allowed to see.
-   */
 
 
   const accessibleIds =
@@ -1548,7 +1971,7 @@ async (
 
 
   // --------------------------------------------------------
-  // VERIFY ACCESS AND ANIMAL STATUS
+  // VERIFY ACCESS
   // --------------------------------------------------------
 
   for (
@@ -1693,6 +2116,16 @@ async (
   }
 
 
+  // ========================================================
+  // UPDATE FARM TOTALS
+  // ========================================================
+
+  await updateFarmTotals(
+    day,
+    session
+  );
+
+
   return saved;
 
 };
@@ -1804,6 +2237,16 @@ async ({
   await record.save();
 
 
+  // --------------------------------------------------------
+  // Recalculate the affected farm
+  // --------------------------------------------------------
+
+  await updateFarmTotals(
+    record.day,
+    record.session
+  );
+
+
   return record;
 
 };
@@ -1825,7 +2268,8 @@ async () => {
 
     })
       .sort({
-        day: -1
+        day:
+          -1
       })
       .lean();
 
