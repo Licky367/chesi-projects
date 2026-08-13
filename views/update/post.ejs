@@ -48,9 +48,7 @@
                             class="post-subject"
                             title="<%= item.dairyName %>"
                         >
-
                             <%= item.dairyName %>
-
                         </span>
 
                     <% } %>
@@ -111,75 +109,43 @@
 
 
     <!-- =================================================
-         POST MESSAGE BODY
-         
-         The background image is:
-         
-             public/images/h1.png
-         
-         Browser URL:
-         
-             /images/h1.png
+         BODY
     ================================================== -->
 
-    <div
-        class="feed-body post-message-body"
-        style="
-            background-image:
-                linear-gradient(
-                    rgba(255, 255, 255, .82),
-                    rgba(255, 255, 255, .82)
-                ),
-                url('/images/h1.png');
-            background-repeat: no-repeat;
-            background-position: center center;
-            background-size: contain;
-        "
-    >
+    <div class="feed-body">
 
         <!-- =============================================
-             MESSAGE CONTENT
+             TITLE
         ============================================== -->
 
-        <div class="post-message-content">
+        <% if (item.title) { %>
 
-            <!-- =========================================
-                 TITLE
-            ========================================== -->
+            <h3 class="post-title">
 
-            <% if (item.title) { %>
+                <%= item.title %>
 
-                <h3 class="post-title">
+            </h3>
 
-                    <%= item.title %>
-
-                </h3>
-
-            <% } %>
-
-
-            <!-- =========================================
-                 TYPED MESSAGE
-            ========================================== -->
-
-            <% if (item.text) { %>
-
-                <p class="post-text">
-
-                    <%= item.text %>
-
-                </p>
-
-            <% } %>
-
-        </div>
+        <% } %>
 
 
         <!-- =============================================
-             USER-UPLOADED IMAGE
-             
-             This remains separate from the h1.png
-             background.
+             TEXT
+        ============================================== -->
+
+        <% if (item.text) { %>
+
+            <p class="post-text">
+
+                <%= item.text %>
+
+            </p>
+
+        <% } %>
+
+
+        <!-- =============================================
+             IMAGE
         ============================================== -->
 
         <% if (item.image) { %>
