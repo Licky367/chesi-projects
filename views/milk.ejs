@@ -1,2407 +1,2381 @@
+<% /*
+==========================================================
+MILK COLLECTION PAGE
+
+FILE:
+views/milk.ejs
+
+PURPOSE:
+----------------------------------------------------------
+• Display all currently milking dairy animals
+• Display morning / evening milk records
+• Allow normal users to submit milk
+• Allow administrators to edit existing records
+• Show current collection session
+• Show submission status
+• Show validation / success messages
+
+EXPECTED CONTROLLER DATA:
+----------------------------------------------------------
+dairies
+session
+isAdmin
+user
+success
+error
+
+EACH DAIRY MAY CONTAIN:
+----------------------------------------------------------
+dairy._id
+dairy.name
+dairy.code
+dairy.isMilking
+
+dairy.morning
+dairy.evening
+
+dairy.morningRecorded
+dairy.eveningRecorded
+
+dairy.morningLiters
+dairy.eveningLiters
+
+SESSION VALUES:
+----------------------------------------------------------
+morning
+closed
+evening
+
+==========================================================
+*/ %>
+
+
 <style>
 
-/* =====================================================
+/* ==========================================================
    PAGE
-===================================================== */
+========================================================== */
 
-.milk-stats-page {
-
-  width: 100%;
-
-  max-width: 1100px;
-
-  margin: 0 auto;
-
-  padding: 20px 0 40px;
-
+.milk-page {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 22px 16px 50px;
+    box-sizing: border-box;
+    color: #183528;
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
 }
 
 
-/* =====================================================
-   HEADER
-===================================================== */
+/* ==========================================================
+   SVG ICON
+========================================================== */
 
-.page-header {
+.milk-icon {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    flex: 0 0 auto;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
 
-  margin-bottom: 20px;
-
+.milk-icon-lg {
+    width: 26px;
+    height: 26px;
 }
 
 
-.page-header h2 {
+/* ==========================================================
+   HERO
+========================================================== */
 
-  margin: 0 0 6px;
+.milk-hero {
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(
+            135deg,
+            #f1f9f3 0%,
+            #ffffff 52%,
+            #edf7f0 100%
+        );
+    border: 1px solid #d8eadc;
+    border-radius: 24px;
+    padding: 28px;
+    margin-bottom: 18px;
+    box-shadow:
+        0 8px 30px rgba(31, 92, 52, 0.07);
+}
 
-  color: #166534;
+.milk-hero::after {
+    content: "";
+    position: absolute;
+    width: 210px;
+    height: 210px;
+    right: -75px;
+    top: -85px;
+    border-radius: 50%;
+    background: rgba(50, 137, 75, 0.07);
+}
 
-  font-size: 26px;
+.milk-hero-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+}
 
+.milk-title-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.milk-title-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #23733d;
+    background: #dff1e3;
+    flex: 0 0 auto;
+}
+
+.milk-title {
+    margin: 0;
+    font-size: clamp(25px, 4vw, 34px);
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -0.7px;
+    color: #163b27;
+}
+
+.milk-subtitle {
+    margin: 8px 0 0;
+    color: #61786a;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 680px;
 }
 
 
-.page-header p {
+/* ==========================================================
+   SESSION BADGE
+========================================================== */
 
-  margin: 0;
+.milk-session-box {
+    position: relative;
+    z-index: 1;
+    min-width: 155px;
+    padding: 13px 16px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #dce9df;
+    box-shadow: 0 5px 18px rgba(31, 92, 52, 0.06);
+}
 
-  color: #6b7280;
+.milk-session-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    font-weight: 700;
+    color: #799080;
+}
 
-  font-size: 14px;
+.milk-session-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #286d3e;
+}
 
+.milk-session-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #35a957;
+    box-shadow: 0 0 0 4px #e4f5e8;
+}
+
+.milk-session-dot.closed {
+    background: #89968d;
+    box-shadow: 0 0 0 4px #edf0ee;
 }
 
 
-/* =====================================================
-   CARD
-===================================================== */
+/* ==========================================================
+   ALERTS
+========================================================== */
 
-.stats-card {
+.milk-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+}
 
-  margin-bottom: 20px;
+.milk-alert.success {
+    color: #236438;
+    background: #edf8ef;
+    border: 1px solid #cfe9d4;
+}
 
-  padding: 22px;
+.milk-alert.error {
+    color: #9a3e35;
+    background: #fff3f1;
+    border: 1px solid #f1d1cd;
+}
 
-  border-radius: 15px;
-
-  background: #ffffff;
-
-  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
-
+.milk-alert strong {
+    font-weight: 800;
 }
 
 
-/* =====================================================
-   FILTER
-===================================================== */
+/* ==========================================================
+   SESSION INFORMATION
+========================================================== */
 
-.stats-filter {
+.milk-session-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
 
-  display: flex;
+.milk-info-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: #ffffff;
+    border: 1px solid #e0ebe3;
+    border-radius: 16px;
+}
 
-  align-items: flex-end;
+.milk-info-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2e7d46;
+    background: #edf7ef;
+}
 
-  gap: 12px;
+.milk-info-label {
+    font-size: 11px;
+    color: #7a8c81;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    font-weight: 700;
+}
 
-  flex-wrap: wrap;
-
+.milk-info-value {
+    margin-top: 2px;
+    font-size: 14px;
+    color: #294d38;
+    font-weight: 750;
 }
 
 
-.filter-group {
+/* ==========================================================
+   SECTION HEADER
+========================================================== */
 
-  flex: 1;
+.milk-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin: 25px 0 12px;
+}
 
-  min-width: 180px;
+.milk-section-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: #183b28;
+}
 
+.milk-section-count {
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #edf7ef;
+    color: #2b7541;
+    font-size: 12px;
+    font-weight: 800;
 }
 
 
-.filter-group label {
+/* ==========================================================
+   ANIMAL LIST
+========================================================== */
 
-  display: block;
-
-  margin-bottom: 7px;
-
-  color: #374151;
-
-  font-size: 13px;
-
-  font-weight: 700;
-
+.milk-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 
-.filter-group input,
-.filter-group select {
+/* ==========================================================
+   ANIMAL CARD
+========================================================== */
 
-  width: 100%;
+.milk-animal-card {
+    background: #ffffff;
+    border: 1px solid #dfeae2;
+    border-radius: 19px;
+    overflow: hidden;
+    box-shadow:
+        0 5px 20px rgba(31, 92, 52, 0.045);
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        transform .2s ease;
+}
 
-  padding: 11px 12px;
-
-  border-radius: 9px;
-
-  border: 1px solid #d1d5db;
-
-  background: #f9fafb;
-
-  font-family: inherit;
-
-  outline: none;
-
+.milk-animal-card:hover {
+    border-color: #c5ddcb;
+    box-shadow:
+        0 8px 26px rgba(31, 92, 52, 0.075);
 }
 
 
-.filter-group input:focus,
-.filter-group select:focus {
+/* ==========================================================
+   ANIMAL HEADER
+========================================================== */
 
-  border-color: #16a34a;
+.milk-animal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 15px 17px;
+    background: #fbfdfb;
+    border-bottom: 1px solid #edf2ee;
+}
 
-  box-shadow: 0 0 0 3px rgba(22,163,74,0.1);
+.milk-animal-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
 
+.milk-animal-avatar {
+    width: 43px;
+    height: 43px;
+    flex: 0 0 auto;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e4f2e7;
+    color: #287442;
+}
+
+.milk-animal-name {
+    margin: 0;
+    color: #1e432e;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.milk-animal-code {
+    margin-top: 3px;
+    color: #829188;
+    font-size: 12px;
+}
+
+.milk-milking-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    color: #27703d;
+    background: #edf8ef;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.milk-milking-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #39a656;
 }
 
 
-.filter-button {
+/* ==========================================================
+   SESSION COLUMNS
+========================================================== */
 
-  padding: 11px 20px;
+.milk-session-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 
-  border: none;
+.milk-session-column {
+    padding: 18px;
+    min-width: 0;
+}
 
-  border-radius: 9px;
+.milk-session-column + .milk-session-column {
+    border-left: 1px solid #edf1ee;
+}
 
-  background: #166534;
+.milk-session-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 13px;
+}
 
-  color: white;
+.milk-session-heading-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-  font-weight: 700;
+.milk-session-heading-icon {
+    width: 31px;
+    height: 31px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-  cursor: pointer;
+.milk-session-heading-icon.morning {
+    background: #fff5d9;
+    color: #9b741d;
+}
 
+.milk-session-heading-icon.evening {
+    background: #edf0fb;
+    color: #596ca8;
+}
+
+.milk-session-heading-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #345340;
+}
+
+.milk-recorded-badge {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #eaf6ed;
+    color: #2c7743;
+    font-size: 10px;
+    font-weight: 800;
 }
 
 
-.filter-button:hover {
+/* ==========================================================
+   RECORDED VALUE
+========================================================== */
 
-  background: #14532d;
+.milk-recorded-box {
+    padding: 15px;
+    border-radius: 14px;
+    background: #f5faf6;
+    border: 1px solid #dcecdf;
+}
 
+.milk-recorded-value {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+}
+
+.milk-recorded-number {
+    font-size: 26px;
+    font-weight: 850;
+    line-height: 1;
+    color: #216438;
+}
+
+.milk-recorded-unit {
+    font-size: 12px;
+    color: #718378;
+    font-weight: 700;
+}
+
+.milk-recorded-remarks {
+    margin-top: 8px;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #718178;
 }
 
 
-/* =====================================================
-   REPORT HEADER
-===================================================== */
+/* ==========================================================
+   FORM
+========================================================== */
 
-.report-header {
-
-  display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  gap: 15px;
-
-  margin-bottom: 18px;
-
+.milk-form {
+    width: 100%;
 }
 
-
-.report-header h3 {
-
-  margin: 0;
-
-  color: #374151;
-
-  font-size: 20px;
-
+.milk-field-label {
+    display: block;
+    margin-bottom: 7px;
+    color: #53695b;
+    font-size: 11px;
+    font-weight: 750;
 }
 
-
-.report-date {
-
-  color: #6b7280;
-
-  font-size: 13px;
-
+.milk-input-wrap {
+    position: relative;
 }
-
-
-/* =====================================================
-   TABLE
-===================================================== */
-
-.table-wrapper {
-
-  overflow-x: auto;
-
-}
-
-
-table {
-
-  width: 100%;
-
-  border-collapse: collapse;
-
-}
-
-
-th,
-td {
-
-  padding: 13px 15px;
-
-  border-bottom: 1px solid #e5e7eb;
-
-  text-align: left;
-
-}
-
-
-th {
-
-  background: #f9fafb;
-
-  color: #6b7280;
-
-  font-size: 12px;
-
-  text-transform: uppercase;
-
-}
-
-
-td {
-
-  color: #4b5563;
-
-  font-size: 14px;
-
-}
-
-
-tbody tr:hover {
-
-  background: #f9fafb;
-
-}
-
-
-.animal-code {
-
-  font-weight: 700;
-
-  color: #166534;
-
-}
-
-
-.liters-value {
-
-  font-weight: 700;
-
-  color: #166534;
-
-}
-
-
-/* =====================================================
-   MILK SESSION CELLS
-===================================================== */
-
-.milk-session-cell {
-
-  min-width: 145px;
-
-}
-
-
-.milk-session-form {
-
-  margin: 0;
-
-}
-
-
-.session-label {
-
-  display: block;
-
-  margin-bottom: 5px;
-
-  color: #6b7280;
-
-  font-size: 10px;
-
-  font-weight: 700;
-
-  text-transform: uppercase;
-
-}
-
 
 .milk-input {
-
-  width: 100%;
-
-  min-width: 105px;
-
-  box-sizing: border-box;
-
-  padding: 9px 10px;
-
-  border-radius: 8px;
-
-  border: 1px solid #d1d5db;
-
-  background: #f9fafb;
-
-  color: #374151;
-
-  font-family: inherit;
-
-  font-size: 14px;
-
-  font-weight: 600;
-
-  outline: none;
-
-  transition: all 0.15s ease;
-
+    width: 100%;
+    height: 45px;
+    box-sizing: border-box;
+    border: 1px solid #d5e2d8;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #193d29;
+    outline: none;
+    padding: 0 55px 0 13px;
+    font-size: 15px;
+    font-weight: 650;
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease;
 }
-
-
-.milk-input::placeholder {
-
-  color: #9ca3af;
-
-  font-weight: 400;
-
-}
-
 
 .milk-input:focus {
+    border-color: #5ca76d;
+    box-shadow:
+        0 0 0 3px rgba(71, 150, 88, .11);
+}
 
-  border-color: #16a34a;
+.milk-input::placeholder {
+    color: #a3afa7;
+    font-weight: 500;
+}
 
-  background: #ffffff;
+.milk-input-unit {
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #87968c;
+    font-size: 11px;
+    font-weight: 750;
+    pointer-events: none;
+}
 
-  box-shadow: 0 0 0 3px rgba(22,163,74,0.10);
+.milk-remarks-input {
+    margin-top: 9px;
+}
 
+.milk-remarks-input .milk-input {
+    padding-right: 13px;
+    font-size: 12px;
 }
 
 
-.milk-input.session-open {
-
-  background: #ffffff;
-
-  border-color: #16a34a;
-
-  cursor: text;
-
-}
-
-
-.milk-input.session-open:hover {
-
-  border-color: #15803d;
-
-}
-
-
-.milk-input.session-closed {
-
-  background: #f3f4f6;
-
-  border-color: #e5e7eb;
-
-  color: #6b7280;
-
-  cursor: default;
-
-}
-
-
-.milk-input.admin-editable {
-
-  background: #ffffff;
-
-  border-color: #d1d5db;
-
-  cursor: pointer;
-
-}
-
-
-.milk-input.admin-editable:hover {
-
-  border-color: #16a34a;
-
-}
-
-
-/* =====================================================
-   SESSION STATUS
-===================================================== */
-
-.session-status {
-
-  display: block;
-
-  margin-top: 4px;
-
-  font-size: 10px;
-
-  color: #9ca3af;
-
-}
-
-
-.session-status.open {
-
-  color: #166534;
-
-}
-
-
-.session-status.closed {
-
-  color: #6b7280;
-
-}
-
-
-/* =====================================================
-   SAVE BUTTON
-===================================================== */
-
-.session-save-button {
-
-  margin-top: 5px;
-
-  width: 100%;
-
-  padding: 6px 8px;
-
-  border: none;
-
-  border-radius: 6px;
-
-  background: #166534;
-
-  color: #ffffff;
-
-  font-size: 11px;
-
-  font-weight: 700;
-
-  cursor: pointer;
-
-}
-
-
-.session-save-button:hover {
-
-  background: #14532d;
-
-}
-
-
-/* =====================================================
-   ADMIN EDIT NOTE
-===================================================== */
-
-.admin-edit-note {
-
-  display: block;
-
-  margin-top: 4px;
-
-  color: #9ca3af;
-
-  font-size: 9px;
-
-}
-
-
-/* =====================================================
-   TOTAL
-===================================================== */
-
-.total-cell {
-
-  min-width: 100px;
-
-}
-
-
-.daily-total {
-
-  font-size: 15px;
-
-  font-weight: 800;
-
-  color: #166534;
-
-}
-
-
-/* =====================================================
-   SUMMARY
-===================================================== */
-
-.summary-grid {
-
-  display: grid;
-
-  grid-template-columns:
-    repeat(auto-fit,minmax(170px,1fr));
-
-  gap: 15px;
-
-  margin-top: 22px;
-
-}
-
-
-.summary-box {
-
-  padding: 17px;
-
-  border-radius: 12px;
-
-  background: #f9fafb;
-
-}
-
-
-.summary-box span {
-
-  display: block;
-
-  margin-bottom: 7px;
-
-  color: #6b7280;
-
-  font-size: 12px;
-
-}
-
-
-.summary-box strong {
-
-  color: #166534;
-
-  font-size: 20px;
-
-}
-
-
-/* =====================================================
-   STATUS
-===================================================== */
-
-.status-open {
-
-  color: #166534 !important;
-
-}
-
-
-.status-locked {
-
-  color: #b91c1c !important;
-
-}
-
-
-/* =====================================================
-   SALES
-===================================================== */
-
-.sales-section {
-
-  margin-top: 30px;
-
-}
-
-
-.sales-section h3 {
-
-  margin-bottom: 15px;
-
-  color: #374151;
-
-}
-
-
-.revenue-total {
-
-  margin-top: 18px;
-
-  padding: 17px;
-
-  border-radius: 12px;
-
-  background: #f0fdf4;
-
-}
-
-
-.revenue-total span {
-
-  display: block;
-
-  margin-bottom: 5px;
-
-  color: #6b7280;
-
-}
-
-
-.revenue-total strong {
-
-  color: #166534;
-
-  font-size: 22px;
-
-}
-
-
-/* =====================================================
-   EMPTY STATE
-===================================================== */
-
-.empty-state {
-
-  padding: 45px 20px;
-
-  text-align: center;
-
-}
-
-
-.empty-icon {
-
-  font-size: 42px;
-
-  margin-bottom: 10px;
-
-}
-
-
-.empty-state h3 {
-
-  margin-bottom: 8px;
-
-  color: #374151;
-
-}
-
-
-.empty-state p {
-
-  color: #9ca3af;
-
-  font-size: 14px;
-
-}
-
-
-/* =====================================================
-   POPUP
-===================================================== */
-
-.milk-message-popup {
-
-  position: fixed;
-
-  top: 20px;
-
-  left: 50%;
-
-  z-index: 9999;
-
-  width: calc(100% - 30px);
-
-  max-width: 420px;
-
-  padding: 18px 20px;
-
-  border-radius: 12px;
-
-  background: #ffffff;
-
-  box-shadow: 0 10px 35px rgba(0,0,0,0.18);
-
-  transform: translate(-50%, -150%);
-
-  opacity: 0;
-
-  pointer-events: none;
-
-  transition:
-    transform 0.25s ease,
-    opacity 0.25s ease;
-
-}
-
-
-.milk-message-popup.show {
-
-  transform: translate(-50%, 0);
-
-  opacity: 1;
-
-  pointer-events: auto;
-
-}
-
-
-.milk-message-popup.success {
-
-  border-left: 5px solid #16a34a;
-
-}
-
-
-.milk-message-popup.error {
-
-  border-left: 5px solid #dc2626;
-
-}
-
-
-.milk-message-content {
-
-  display: flex;
-
-  align-items: flex-start;
-
-  gap: 12px;
-
-}
-
-
-.milk-message-icon {
-
-  font-size: 23px;
-
-  line-height: 1;
-
-}
-
-
-.milk-message-text {
-
-  flex: 1;
-
-}
-
-
-.milk-message-text strong {
-
-  display: block;
-
-  margin-bottom: 4px;
-
-  color: #374151;
-
-  font-size: 15px;
-
-}
-
-
-.milk-message-text span {
-
-  color: #6b7280;
-
-  font-size: 13px;
-
-  line-height: 1.4;
-
-}
-
-
-.milk-message-close {
-
-  border: none;
-
-  background: transparent;
-
-  color: #9ca3af;
-
-  font-size: 20px;
-
-  line-height: 1;
-
-  cursor: pointer;
-
-}
-
-
-.milk-message-close:hover {
-
-  color: #374151;
-
-}
-
-
-/* =====================================================
-   MOBILE
-===================================================== */
-
-@media(max-width:650px){
-
-  .milk-stats-page {
-
-    padding: 10px 0 30px;
-
-  }
-
-
-  .stats-card {
-
-    padding: 16px;
-
-  }
-
-
-  .stats-filter {
-
-    flex-direction: column;
-
-    align-items: stretch;
-
-  }
-
-
-  .filter-button {
-
+/* ==========================================================
+   SUBMIT BUTTON
+========================================================== */
+
+.milk-submit {
     width: 100%;
+    min-height: 43px;
+    margin-top: 10px;
+    border: 0;
+    border-radius: 12px;
+    background: #2f8448;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition:
+        background .2s ease,
+        transform .15s ease,
+        box-shadow .2s ease;
+    box-shadow:
+        0 5px 14px rgba(47, 132, 72, .17);
+}
 
-  }
+.milk-submit:hover {
+    background: #256f3b;
+}
+
+.milk-submit:active {
+    transform: translateY(1px);
+}
+
+.milk-submit:disabled {
+    cursor: not-allowed;
+    opacity: .65;
+}
 
 
-  .report-header {
+/* ==========================================================
+   CLOSED STATE
+========================================================== */
 
-    flex-direction: column;
+.milk-closed-box {
+    padding: 14px;
+    border-radius: 13px;
+    border: 1px dashed #d5dfd8;
+    background: #fafcfb;
+    color: #7a8980;
+    font-size: 12px;
+    line-height: 1.5;
+}
 
+.milk-closed-box strong {
+    color: #53665a;
+}
+
+
+/* ==========================================================
+   ADMIN EDIT
+========================================================== */
+
+.milk-admin-edit {
+    margin-top: 10px;
+}
+
+.milk-edit-button {
+    width: 100%;
+    min-height: 41px;
+    border: 1px solid #cfe1d3;
+    border-radius: 11px;
+    background: #ffffff;
+    color: #2d7041;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: .2s ease;
+}
+
+.milk-edit-button:hover {
+    background: #f1f8f3;
+    border-color: #a8cdb0;
+}
+
+
+/* ==========================================================
+   EMPTY STATE
+========================================================== */
+
+.milk-empty {
+    text-align: center;
+    padding: 55px 20px;
+    background: #ffffff;
+    border: 1px dashed #cfddd2;
+    border-radius: 20px;
+}
+
+.milk-empty-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 14px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #559066;
+    background: #edf7ef;
+}
+
+.milk-empty-title {
+    margin: 0;
+    color: #365442;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.milk-empty-text {
+    margin: 7px auto 0;
+    max-width: 450px;
+    color: #849188;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+
+/* ==========================================================
+   EDIT MODAL
+========================================================== */
+
+.milk-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: rgba(18, 43, 28, .38);
+    backdrop-filter: blur(4px);
+}
+
+.milk-modal.active {
+    display: flex;
+}
+
+.milk-modal-card {
+    width: 100%;
+    max-width: 450px;
+    background: #ffffff;
+    border-radius: 21px;
+    padding: 22px;
+    box-sizing: border-box;
+    box-shadow:
+        0 25px 70px rgba(15, 43, 25, .22);
+    animation: milkModalIn .18s ease-out;
+}
+
+@keyframes milkModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.milk-modal-header {
+    display: flex;
     align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 20px;
+}
 
-  }
+.milk-modal-title {
+    margin: 0;
+    color: #183d28;
+    font-size: 19px;
+    font-weight: 850;
+}
+
+.milk-modal-subtitle {
+    margin: 5px 0 0;
+    color: #7a897f;
+    font-size: 12px;
+}
+
+.milk-modal-close {
+    width: 35px;
+    height: 35px;
+    border: 0;
+    border-radius: 10px;
+    background: #f0f5f1;
+    color: #52645a;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.milk-modal-close:hover {
+    background: #e5eee7;
+}
+
+.milk-modal-actions {
+    display: flex;
+    gap: 9px;
+    margin-top: 17px;
+}
+
+.milk-modal-cancel,
+.milk-modal-save {
+    flex: 1;
+    min-height: 43px;
+    border-radius: 11px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.milk-modal-cancel {
+    border: 1px solid #d9e3dc;
+    background: #ffffff;
+    color: #5e6f65;
+}
+
+.milk-modal-save {
+    border: 0;
+    background: #2f8448;
+    color: #ffffff;
+}
 
 
-  th,
-  td {
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
 
-    white-space: nowrap;
+@media (max-width: 760px) {
 
-    padding: 10px;
+    .milk-page {
+        padding: 14px 11px 35px;
+    }
 
-  }
+    .milk-hero {
+        padding: 21px 17px;
+        border-radius: 19px;
+    }
+
+    .milk-hero-content {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .milk-session-box {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .milk-session-info {
+        grid-template-columns: 1fr;
+    }
+
+    .milk-session-columns {
+        grid-template-columns: 1fr;
+    }
+
+    .milk-session-column + .milk-session-column {
+        border-left: 0;
+        border-top: 1px solid #edf1ee;
+    }
+
+    .milk-animal-header {
+        padding: 13px;
+    }
+
+    .milk-session-column {
+        padding: 15px;
+    }
+
+}
 
 
-  .milk-input {
+@media (max-width: 430px) {
 
-    min-width: 95px;
+    .milk-title-wrap {
+        gap: 11px;
+    }
 
-  }
+    .milk-title-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 13px;
+    }
+
+    .milk-title {
+        font-size: 24px;
+    }
+
+    .milk-subtitle {
+        font-size: 13px;
+    }
+
+    .milk-milking-status {
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+
+}
+
+
+/* ==========================================================
+   REDUCE MOTION
+========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .milk-animal-card,
+    .milk-submit,
+    .milk-edit-button {
+        transition: none;
+    }
+
+    .milk-modal-card {
+        animation: none;
+    }
 
 }
 
 </style>
 
 
-<!-- =====================================================
-     POPUP MESSAGE
-===================================================== -->
+<!-- ==========================================================
+     SVG ICON DEFINITIONS
+========================================================== -->
+
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    style="display:none;"
+    aria-hidden="true"
+>
+
+    <symbol
+        id="milk-cow"
+        viewBox="0 0 24 24"
+    >
+        <path d="M4 9.5h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+        <path d="M7 9.5V7a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2.5"/>
+        <path d="M8 5 6 3M16 5l2-2"/>
+        <path d="M8 13h.01M16 13h.01"/>
+        <path d="M10 16c1.2 1 2.8 1 4 0"/>
+    </symbol>
+
+
+    <symbol
+        id="milk-droplet"
+        viewBox="0 0 24 24"
+    >
+        <path d="M12 3s6 6.1 6 11a6 6 0 0 1-12 0c0-4.9 6-11 6-11z"/>
+        <path d="M9.5 15.5a3 3 0 0 0 3 2.5"/>
+    </symbol>
+
+
+    <symbol
+        id="milk-sun"
+        viewBox="0 0 24 24"
+    >
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+    </symbol>
+
+
+    <symbol
+        id="milk-moon"
+        viewBox="0 0 24 24"
+    >
+        <path d="M21 14.8A8.5 8.5 0 0 1 9.2 3 8.5 8.5 0 1 0 21 14.8z"/>
+    </symbol>
+
+
+    <symbol
+        id="milk-check"
+        viewBox="0 0 24 24"
+    >
+        <path d="m5 12 4 4L19 6"/>
+    </symbol>
+
+
+    <symbol
+        id="milk-edit"
+        viewBox="0 0 24 24"
+    >
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/>
+    </symbol>
+
+
+    <symbol
+        id="milk-clock"
+        viewBox="0 0 24 24"
+    >
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 7v5l3 2"/>
+    </symbol>
+
+
+    <symbol
+        id="milk-info"
+        viewBox="0 0 24 24"
+    >
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 11v5"/>
+        <path d="M12 8h.01"/>
+    </symbol>
+
+
+    <symbol
+        id="milk-x"
+        viewBox="0 0 24 24"
+    >
+        <path d="m7 7 10 10M17 7 7 17"/>
+    </symbol>
+
+
+    <symbol
+        id="milk-save"
+        viewBox="0 0 24 24"
+    >
+        <path d="M5 4h12l2 2v14H5z"/>
+        <path d="M8 4v5h8V4"/>
+        <path d="M8 20v-6h8v6"/>
+    </symbol>
+
+
+    <symbol
+        id="milk-alert"
+        viewBox="0 0 24 24"
+    >
+        <path d="M10.3 4.5 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0z"/>
+        <path d="M12 9v4"/>
+        <path d="M12 17h.01"/>
+    </symbol>
+
+</svg>
+
+
+<!-- ==========================================================
+     PAGE
+========================================================== -->
+
+<div class="milk-page">
+
+
+    <!-- ======================================================
+         HERO
+    ======================================================= -->
+
+    <section class="milk-hero">
+
+        <div class="milk-hero-content">
+
+            <div class="milk-title-wrap">
+
+                <div class="milk-title-icon">
+
+                    <svg
+                        class="milk-icon milk-icon-lg"
+                        aria-hidden="true"
+                    >
+                        <use href="#milk-droplet"></use>
+                    </svg>
+
+                </div>
+
+                <div>
+
+                    <h1 class="milk-title">
+                        Milk Collection
+                    </h1>
+
+                    <p class="milk-subtitle">
+                        Record the milk produced by each milking
+                        animal during the current collection session.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="milk-session-box">
+
+                <span class="milk-session-label">
+                    Current session
+                </span>
+
+                <span class="milk-session-value">
+
+                    <span
+                        class="milk-session-dot <%= session === 'closed' ? 'closed' : '' %>"
+                    ></span>
+
+                    <%= session === "morning"
+                        ? "Morning Collection"
+                        : session === "evening"
+                            ? "Evening Collection"
+                            : "Collection Closed"
+                    %>
+
+                </span>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ======================================================
+         ALERTS
+    ======================================================= -->
+
+    <% if (success) { %>
+
+        <div
+            class="milk-alert success"
+            role="status"
+        >
+
+            <svg
+                class="milk-icon"
+                aria-hidden="true"
+            >
+                <use href="#milk-check"></use>
+            </svg>
+
+            <div>
+                <strong>Milk record saved successfully.</strong>
+                The collection record has been recorded.
+            </div>
+
+        </div>
+
+    <% } %>
+
+
+    <% if (error) { %>
+
+        <div
+            class="milk-alert error"
+            role="alert"
+        >
+
+            <svg
+                class="milk-icon"
+                aria-hidden="true"
+            >
+                <use href="#milk-alert"></use>
+            </svg>
+
+            <div>
+                <strong>Unable to save milk record.</strong>
+                <%= error %>
+            </div>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- ======================================================
+         SESSION INFORMATION
+    ======================================================= -->
+
+    <section class="milk-session-info">
+
+
+        <div class="milk-info-card">
+
+            <div class="milk-info-icon">
+
+                <svg
+                    class="milk-icon"
+                    aria-hidden="true"
+                >
+                    <use href="#milk-clock"></use>
+                </svg>
+
+            </div>
+
+            <div>
+
+                <div class="milk-info-label">
+                    Collection window
+                </div>
+
+                <div class="milk-info-value">
+
+                    <% if (session === "morning") { %>
+                        Morning · Until 10:00 AM
+                    <% } else if (session === "evening") { %>
+                        Evening · From 4:00 PM
+                    <% } else { %>
+                        Currently closed
+                    <% } %>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="milk-info-card">
+
+            <div class="milk-info-icon">
+
+                <svg
+                    class="milk-icon"
+                    aria-hidden="true"
+                >
+                    <use href="#milk-cow"></use>
+                </svg>
+
+            </div>
+
+            <div>
+
+                <div class="milk-info-label">
+                    Milking animals
+                </div>
+
+                <div class="milk-info-value">
+                    <%= dairies.length %> registered
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="milk-info-card">
+
+            <div class="milk-info-icon">
+
+                <svg
+                    class="milk-icon"
+                    aria-hidden="true"
+                >
+                    <use href="#milk-check"></use>
+                </svg>
+
+            </div>
+
+            <div>
+
+                <div class="milk-info-label">
+                    Access
+                </div>
+
+                <div class="milk-info-value">
+                    <%= isAdmin ? "Administrator" : "Milk Worker" %>
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+
+    <!-- ======================================================
+         ANIMAL SECTION
+    ======================================================= -->
+
+    <div class="milk-section-header">
+
+        <h2 class="milk-section-title">
+            Today's Milk Records
+        </h2>
+
+        <span class="milk-section-count">
+            <%= dairies.length %>
+            <%= dairies.length === 1 ? "animal" : "animals" %>
+        </span>
+
+    </div>
+
+
+    <% if (!dairies.length) { %>
+
+        <!-- ==================================================
+             EMPTY STATE
+        =================================================== -->
+
+        <section class="milk-empty">
+
+            <div class="milk-empty-icon">
+
+                <svg
+                    class="milk-icon milk-icon-lg"
+                    aria-hidden="true"
+                >
+                    <use href="#milk-cow"></use>
+                </svg>
+
+            </div>
+
+            <h3 class="milk-empty-title">
+                No milking animals
+            </h3>
+
+            <p class="milk-empty-text">
+                There are currently no dairy animals marked as
+                actively milking.
+            </p>
+
+        </section>
+
+    <% } else { %>
+
+
+        <section class="milk-list">
+
+
+            <% dairies.forEach((dairy) => { %>
+
+                <article class="milk-animal-card">
+
+
+                    <!-- ======================================
+                         ANIMAL HEADER
+                    ======================================= -->
+
+                    <header class="milk-animal-header">
+
+                        <div class="milk-animal-identity">
+
+                            <div class="milk-animal-avatar">
+
+                                <svg
+                                    class="milk-icon"
+                                    aria-hidden="true"
+                                >
+                                    <use href="#milk-cow"></use>
+                                </svg>
+
+                            </div>
+
+                            <div>
+
+                                <h3 class="milk-animal-name">
+
+                                    <%= dairy.name ||
+                                        `Dairy Animal ${dairy.code ?? ""}`
+                                    %>
+
+                                </h3>
+
+                                <div class="milk-animal-code">
+
+                                    <% if (dairy.code !== undefined &&
+                                           dairy.code !== null) { %>
+
+                                        Animal code:
+                                        <strong>
+                                            <%= dairy.code %>
+                                        </strong>
+
+                                    <% } else { %>
+
+                                        Dairy animal
+
+                                    <% } %>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <span class="milk-milking-status">
+
+                            <span class="milk-milking-status-dot"></span>
+
+                            Milking
+
+                        </span>
+
+                    </header>
+
+
+                    <!-- ======================================
+                         MORNING / EVENING
+                    ======================================= -->
+
+                    <div class="milk-session-columns">
+
+
+                        <!-- ==================================
+                             MORNING
+                        =================================== -->
+
+                        <div class="milk-session-column">
+
+                            <div class="milk-session-heading">
+
+                                <div class="milk-session-heading-left">
+
+                                    <span class="milk-session-heading-icon morning">
+
+                                        <svg
+                                            class="milk-icon"
+                                            aria-hidden="true"
+                                        >
+                                            <use href="#milk-sun"></use>
+                                        </svg>
+
+                                    </span>
+
+                                    <span class="milk-session-heading-title">
+                                        Morning
+                                    </span>
+
+                                </div>
+
+
+                                <% if (dairy.morningRecorded) { %>
+
+                                    <span class="milk-recorded-badge">
+                                        Recorded
+                                    </span>
+
+                                <% } %>
+
+                            </div>
+
+
+                            <% if (dairy.morningRecorded) { %>
+
+                                <!-- ==========================
+                                     RECORDED MORNING
+                                =========================== -->
+
+                                <div class="milk-recorded-box">
+
+                                    <div class="milk-recorded-value">
+
+                                        <span class="milk-recorded-number">
+                                            <%= Number(
+                                                dairy.morningLiters || 0
+                                            ).toFixed(2) %>
+                                        </span>
+
+                                        <span class="milk-recorded-unit">
+                                            litres
+                                        </span>
+
+                                    </div>
+
+
+                                    <% if (
+                                        dairy.morning &&
+                                        dairy.morning.remarks
+                                    ) { %>
+
+                                        <div class="milk-recorded-remarks">
+                                            <%= dairy.morning.remarks %>
+                                        </div>
+
+                                    <% } %>
+
+                                </div>
+
+
+                                <% if (
+                                    isAdmin &&
+                                    (
+                                        session === "morning" ||
+                                        session === "closed"
+                                    ) &&
+                                    dairy.morning &&
+                                    dairy.morning._id
+                                ) { %>
+
+                                    <div class="milk-admin-edit">
+
+                                        <button
+                                            type="button"
+                                            class="milk-edit-button"
+                                            onclick="openMilkEditModal(
+                                                '<%= dairy.morning._id %>',
+                                                '<%= dairy.morningLiters ?? 0 %>',
+                                                '<%= String(dairy.morning.remarks || '').replace(/'/g, '&#39;') %>',
+                                                'Morning'
+                                            )"
+                                        >
+
+                                            <svg
+                                                class="milk-icon"
+                                                aria-hidden="true"
+                                            >
+                                                <use href="#milk-edit"></use>
+                                            </svg>
+
+                                            Edit morning record
+
+                                        </button>
+
+                                    </div>
+
+                                <% } %>
+
+
+                            <% } else if (session === "morning") { %>
+
+
+                                <!-- ==========================
+                                     MORNING FORM
+                                =========================== -->
+
+                                <form
+                                    class="milk-form"
+                                    method="POST"
+                                    action="/milk"
+                                    onsubmit="return validateMilkForm(this)"
+                                >
+
+                                    <input
+                                        type="hidden"
+                                        name="dairy"
+                                        value="<%= dairy._id %>"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="session"
+                                        value="morning"
+                                    >
+
+
+                                    <label class="milk-field-label">
+                                        Milk quantity
+                                    </label>
+
+                                    <div class="milk-input-wrap">
+
+                                        <input
+                                            class="milk-input"
+                                            type="number"
+                                            name="liters"
+                                            min="0"
+                                            step="0.01"
+                                            inputmode="decimal"
+                                            placeholder="Enter litres"
+                                            required
+                                        >
+
+                                        <span class="milk-input-unit">
+                                            L
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="milk-remarks-input">
+
+                                        <input
+                                            class="milk-input"
+                                            type="text"
+                                            name="remarks"
+                                            maxlength="250"
+                                            placeholder="Remarks (optional)"
+                                        >
+
+                                    </div>
+
+
+                                    <button
+                                        type="submit"
+                                        class="milk-submit"
+                                    >
+
+                                        <svg
+                                            class="milk-icon"
+                                            aria-hidden="true"
+                                        >
+                                            <use href="#milk-save"></use>
+                                        </svg>
+
+                                        Save morning milk
+
+                                    </button>
+
+                                </form>
+
+
+                            <% } else { %>
+
+
+                                <div class="milk-closed-box">
+
+                                    <% if (session === "evening") { %>
+
+                                        <strong>
+                                            Morning collection is closed.
+                                        </strong>
+
+                                        Existing morning records remain
+                                        available for review.
+
+                                    <% } else { %>
+
+                                        <strong>
+                                            Morning collection is closed.
+                                        </strong>
+
+                                        It will reopen at midnight.
+
+                                    <% } %>
+
+                                </div>
+
+
+                                <% if (
+                                    isAdmin &&
+                                    dairy.morning &&
+                                    dairy.morning._id
+                                ) { %>
+
+                                    <div class="milk-admin-edit">
+
+                                        <button
+                                            type="button"
+                                            class="milk-edit-button"
+                                            onclick="openMilkEditModal(
+                                                '<%= dairy.morning._id %>',
+                                                '<%= dairy.morningLiters ?? 0 %>',
+                                                '<%= String(dairy.morning.remarks || '').replace(/'/g, '&#39;') %>',
+                                                'Morning'
+                                            )"
+                                        >
+
+                                            <svg
+                                                class="milk-icon"
+                                                aria-hidden="true"
+                                            >
+                                                <use href="#milk-edit"></use>
+                                            </svg>
+
+                                            Edit morning record
+
+                                        </button>
+
+                                    </div>
+
+                                <% } %>
+
+                            <% } %>
+
+                        </div>
+
+
+                        <!-- ==================================
+                             EVENING
+                        =================================== -->
+
+                        <div class="milk-session-column">
+
+                            <div class="milk-session-heading">
+
+                                <div class="milk-session-heading-left">
+
+                                    <span class="milk-session-heading-icon evening">
+
+                                        <svg
+                                            class="milk-icon"
+                                            aria-hidden="true"
+                                        >
+                                            <use href="#milk-moon"></use>
+                                        </svg>
+
+                                    </span>
+
+                                    <span class="milk-session-heading-title">
+                                        Evening
+                                    </span>
+
+                                </div>
+
+
+                                <% if (dairy.eveningRecorded) { %>
+
+                                    <span class="milk-recorded-badge">
+                                        Recorded
+                                    </span>
+
+                                <% } %>
+
+                            </div>
+
+
+                            <% if (dairy.eveningRecorded) { %>
+
+                                <!-- ==========================
+                                     RECORDED EVENING
+                                =========================== -->
+
+                                <div class="milk-recorded-box">
+
+                                    <div class="milk-recorded-value">
+
+                                        <span class="milk-recorded-number">
+                                            <%= Number(
+                                                dairy.eveningLiters || 0
+                                            ).toFixed(2) %>
+                                        </span>
+
+                                        <span class="milk-recorded-unit">
+                                            litres
+                                        </span>
+
+                                    </div>
+
+
+                                    <% if (
+                                        dairy.evening &&
+                                        dairy.evening.remarks
+                                    ) { %>
+
+                                        <div class="milk-recorded-remarks">
+                                            <%= dairy.evening.remarks %>
+                                        </div>
+
+                                    <% } %>
+
+                                </div>
+
+
+                                <% if (
+                                    isAdmin &&
+                                    session === "evening" &&
+                                    dairy.evening &&
+                                    dairy.evening._id
+                                ) { %>
+
+                                    <div class="milk-admin-edit">
+
+                                        <button
+                                            type="button"
+                                            class="milk-edit-button"
+                                            onclick="openMilkEditModal(
+                                                '<%= dairy.evening._id %>',
+                                                '<%= dairy.eveningLiters ?? 0 %>',
+                                                '<%= String(dairy.evening.remarks || '').replace(/'/g, '&#39;') %>',
+                                                'Evening'
+                                            )"
+                                        >
+
+                                            <svg
+                                                class="milk-icon"
+                                                aria-hidden="true"
+                                            >
+                                                <use href="#milk-edit"></use>
+                                            </svg>
+
+                                            Edit evening record
+
+                                        </button>
+
+                                    </div>
+
+                                <% } %>
+
+
+                            <% } else if (session === "evening") { %>
+
+
+                                <!-- ==========================
+                                     EVENING FORM
+                                =========================== -->
+
+                                <form
+                                    class="milk-form"
+                                    method="POST"
+                                    action="/milk"
+                                    onsubmit="return validateMilkForm(this)"
+                                >
+
+                                    <input
+                                        type="hidden"
+                                        name="dairy"
+                                        value="<%= dairy._id %>"
+                                    >
+
+                                    <input
+                                        type="hidden"
+                                        name="session"
+                                        value="evening"
+                                    >
+
+
+                                    <label class="milk-field-label">
+                                        Milk quantity
+                                    </label>
+
+                                    <div class="milk-input-wrap">
+
+                                        <input
+                                            class="milk-input"
+                                            type="number"
+                                            name="liters"
+                                            min="0"
+                                            step="0.01"
+                                            inputmode="decimal"
+                                            placeholder="Enter litres"
+                                            required
+                                        >
+
+                                        <span class="milk-input-unit">
+                                            L
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="milk-remarks-input">
+
+                                        <input
+                                            class="milk-input"
+                                            type="text"
+                                            name="remarks"
+                                            maxlength="250"
+                                            placeholder="Remarks (optional)"
+                                        >
+
+                                    </div>
+
+
+                                    <button
+                                        type="submit"
+                                        class="milk-submit"
+                                    >
+
+                                        <svg
+                                            class="milk-icon"
+                                            aria-hidden="true"
+                                        >
+                                            <use href="#milk-save"></use>
+                                        </svg>
+
+                                        Save evening milk
+
+                                    </button>
+
+                                </form>
+
+
+                            <% } else { %>
+
+
+                                <div class="milk-closed-box">
+
+                                    <% if (session === "morning") { %>
+
+                                        <strong>
+                                            Evening collection has not opened.
+                                        </strong>
+
+                                        It opens at 4:00 PM.
+
+                                    <% } else { %>
+
+                                        <strong>
+                                            Evening collection is closed.
+                                        </strong>
+
+                                        It will reopen at 4:00 PM.
+
+                                    <% } %>
+
+                                </div>
+
+
+                                <% if (
+                                    isAdmin &&
+                                    dairy.evening &&
+                                    dairy.evening._id &&
+                                    session === "closed"
+                                ) { %>
+
+                                    <div class="milk-admin-edit">
+
+                                        <button
+                                            type="button"
+                                            class="milk-edit-button"
+                                            onclick="openMilkEditModal(
+                                                '<%= dairy.evening._id %>',
+                                                '<%= dairy.eveningLiters ?? 0 %>',
+                                                '<%= String(dairy.evening.remarks || '').replace(/'/g, '&#39;') %>',
+                                                'Evening'
+                                            )"
+                                        >
+
+                                            <svg
+                                                class="milk-icon"
+                                                aria-hidden="true"
+                                            >
+                                                <use href="#milk-edit"></use>
+                                            </svg>
+
+                                            Edit evening record
+
+                                        </button>
+
+                                    </div>
+
+                                <% } %>
+
+                            <% } %>
+
+                        </div>
+
+
+                    </div>
+
+                </article>
+
+            <% }) %>
+
+
+        </section>
+
+    <% } %>
+
+
+</div>
+
+
+<!-- ==========================================================
+     ADMIN EDIT MODAL
+========================================================== -->
+
+<% if (isAdmin) { %>
 
 <div
-  id="milkMessagePopup"
-  class="milk-message-popup"
+    id="milkEditModal"
+    class="milk-modal"
+    aria-hidden="true"
 >
-
-  <div class="milk-message-content">
 
     <div
-      id="milkMessageIcon"
-      class="milk-message-icon"
+        class="milk-modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="milkEditTitle"
     >
-      ✅
+
+        <div class="milk-modal-header">
+
+            <div>
+
+                <h2
+                    id="milkEditTitle"
+                    class="milk-modal-title"
+                >
+                    Edit milk record
+                </h2>
+
+                <p
+                    id="milkEditSubtitle"
+                    class="milk-modal-subtitle"
+                >
+                    Administrator record adjustment
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="milk-modal-close"
+                onclick="closeMilkEditModal()"
+                aria-label="Close"
+            >
+
+                <svg
+                    class="milk-icon"
+                    aria-hidden="true"
+                >
+                    <use href="#milk-x"></use>
+                </svg>
+
+            </button>
+
+        </div>
+
+
+        <form
+            id="milkEditForm"
+            method="POST"
+        >
+
+            <label class="milk-field-label">
+                Milk quantity
+            </label>
+
+            <div class="milk-input-wrap">
+
+                <input
+                    id="milkEditLiters"
+                    class="milk-input"
+                    type="number"
+                    name="liters"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                    required
+                >
+
+                <span class="milk-input-unit">
+                    L
+                </span>
+
+            </div>
+
+
+            <div class="milk-remarks-input">
+
+                <label class="milk-field-label">
+                    Remarks
+                </label>
+
+                <input
+                    id="milkEditRemarks"
+                    class="milk-input"
+                    type="text"
+                    name="remarks"
+                    maxlength="250"
+                    placeholder="Optional remarks"
+                >
+
+            </div>
+
+
+            <div class="milk-modal-actions">
+
+                <button
+                    type="button"
+                    class="milk-modal-cancel"
+                    onclick="closeMilkEditModal()"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    type="submit"
+                    class="milk-modal-save"
+                >
+                    Save changes
+                </button>
+
+            </div>
+
+        </form>
+
     </div>
 
-
-    <div class="milk-message-text">
-
-      <strong id="milkMessageTitle">
-        Success
-      </strong>
-
-      <span id="milkMessageText">
-        Milk record submitted successfully.
-      </span>
-
-    </div>
-
-
-    <button
-      type="button"
-      class="milk-message-close"
-      onclick="closeMilkMessage()"
-      aria-label="Close"
-    >
-      ×
-    </button>
-
-  </div>
-
 </div>
-
-
-<div class="milk-stats-page">
-
-
-<!-- =====================================================
-     HEADER
-===================================================== -->
-
-<div class="page-header">
-
-  <h2>
-    🥛 Milk Statistics
-  </h2>
-
-
-  <p>
-    Review milk production, consumption, sales and revenue.
-  </p>
-
-</div>
-
-
-<!-- =====================================================
-     FILTER
-===================================================== -->
-
-<div class="stats-card">
-
-
-<form
-  method="GET"
-  action="/stats"
-  class="stats-filter"
->
-
-
-<div class="filter-group">
-
-<label>
-Report Type
-</label>
-
-
-<select name="type">
-
-
-<option
-  value="day"
-  <%= typeof type !== "undefined" && type === "day"
-    ? "selected"
-    : "" %>
->
-  Daily
-</option>
-
-
-<option
-  value="month"
-  <%= typeof type !== "undefined" && type === "month"
-    ? "selected"
-    : "" %>
->
-  Monthly
-</option>
-
-
-</select>
-
-</div>
-
-
-<div class="filter-group">
-
-<label>
-Select Date
-</label>
-
-
-<input
-  type="date"
-  name="date"
-  value="<%= typeof date !== "undefined" ? (date || '') : '' %>"
->
-
-
-</div>
-
-
-<div class="filter-group">
-
-<label>
-Select Month
-</label>
-
-
-<input
-  type="month"
-  name="month"
-  value="<%= typeof month !== "undefined" ? (month || '') : '' %>"
->
-
-
-</div>
-
-
-<button
-  type="submit"
-  class="filter-button"
->
-🔍 View Report
-</button>
-
-
-</form>
-
-
-</div>
-
-
-<!-- =====================================================
-     DAILY REPORT
-===================================================== -->
-
-<% if (typeof type !== "undefined" && type === "day") { %>
-
-
-<div class="stats-card">
-
-
-<div class="report-header">
-
-<h3>
-Daily Milk Production
-</h3>
-
-
-<span class="report-date">
-
-<%= date || "Today" %>
-
-</span>
-
-
-</div>
-
-
-<div class="table-wrapper">
-
-
-<table>
-
-
-<thead>
-
-<tr>
-
-<th>
-Code
-</th>
-
-
-<th>
-Animal
-</th>
-
-
-<th>
-Morning
-</th>
-
-
-<th>
-Evening
-</th>
-
-
-<th>
-Total
-</th>
-
-</tr>
-
-</thead>
-
-
-<tbody>
-
-
-<%
-records
-  .filter((record, index) =>
-    records.findIndex(item =>
-      String(item.dairy?._id) ===
-      String(record.dairy?._id)
-    ) === index
-  )
-  .forEach(record => {
-%>
-
-
-<tr>
-
-
-<!-- =====================================================
-     CODE
-===================================================== -->
-
-<td>
-
-<span class="animal-code">
-
-<%= record.dairy
-  ? record.dairy.code
-  : "Unknown" %>
-
-</span>
-
-</td>
-
-
-<!-- =====================================================
-     ANIMAL
-===================================================== -->
-
-<td>
-
-<%= record.dairy
-  ? record.dairy.name
-  : "Unknown Animal" %>
-
-</td>
-
-
-<!-- =====================================================
-     MORNING
-===================================================== -->
-
-<td class="milk-session-cell">
-
-
-<form
-  method="POST"
-  action="/milk"
-  class="milk-session-form"
->
-
-
-<input
-  type="hidden"
-  name="dairyId"
-  value="<%= record.dairy?._id || '' %>"
->
-
-
-<input
-  type="hidden"
-  name="date"
-  value="<%= date || '' %>"
->
-
-
-<input
-  type="hidden"
-  name="session"
-  value="morning"
->
-
-
-<label class="session-label">
-Morning
-</label>
-
-
-<input
-  type="number"
-  name="liters"
-  min="0"
-  step="0.01"
-
-  value="<%= (
-    records.find(item =>
-      String(item.dairy?._id) ===
-      String(record.dairy?._id) &&
-      (
-        String(item.session || '').toLowerCase() === 'morning' ||
-        String(item.session || '').toLowerCase() === 'am'
-      )
-    )?.liters ?? ''
-  ) %>"
-
-  placeholder="0.00 L"
-
-  class="milk-input
-    <%= (
-      typeof user !== 'undefined' &&
-      user?.role === 'admin'
-    )
-      ? 'admin-editable'
-      : (
-          typeof session !== 'undefined' &&
-          String(session).toLowerCase() === 'morning'
-        )
-          ? 'session-open'
-          : 'session-closed'
-    %>"
-
-  <%= (
-    typeof user !== 'undefined' &&
-    user?.role === 'admin'
-  )
-    ? ''
-    : (
-        typeof session !== 'undefined' &&
-        String(session).toLowerCase() === 'morning'
-      )
-        ? ''
-        : 'readonly'
-  %>
->
-
-
-<%
-if (
-  typeof user !== 'undefined' &&
-  user?.role === 'admin'
-) {
-%>
-
-
-<button
-  type="submit"
-  class="session-save-button"
->
-Save
-</button>
-
-
-<%
-} else if (
-  typeof session !== 'undefined' &&
-  String(session).toLowerCase() === 'morning'
-) {
-%>
-
-
-<button
-  type="submit"
-  class="session-save-button"
->
-Save
-</button>
-
-
-<span class="session-status open">
-🟢 Open
-</span>
-
-
-<%
-} else {
-%>
-
-
-<span class="session-status closed">
-🔒 Closed
-</span>
-
-
-<%
-}
-%>
-
-
-<%
-if (
-  typeof user !== 'undefined' &&
-  user?.role === 'admin' &&
-  typeof session !== 'undefined' &&
-  String(session).toLowerCase() !== 'morning'
-) {
-%>
-
-
-<span class="admin-edit-note">
-Admin edit
-</span>
-
-
-<%
-}
-%>
-
-
-</form>
-
-
-</td>
-
-
-<!-- =====================================================
-     EVENING
-===================================================== -->
-
-<td class="milk-session-cell">
-
-
-<form
-  method="POST"
-  action="/milk"
-  class="milk-session-form"
->
-
-
-<input
-  type="hidden"
-  name="dairyId"
-  value="<%= record.dairy?._id || '' %>"
->
-
-
-<input
-  type="hidden"
-  name="date"
-  value="<%= date || '' %>"
->
-
-
-<input
-  type="hidden"
-  name="session"
-  value="evening"
->
-
-
-<label class="session-label">
-Evening
-</label>
-
-
-<input
-  type="number"
-  name="liters"
-  min="0"
-  step="0.01"
-
-  value="<%= (
-    records.find(item =>
-      String(item.dairy?._id) ===
-      String(record.dairy?._id) &&
-      (
-        String(item.session || '').toLowerCase() === 'evening' ||
-        String(item.session || '').toLowerCase() === 'pm'
-      )
-    )?.liters ?? ''
-  ) %>"
-
-  placeholder="0.00 L"
-
-  class="milk-input
-    <%= (
-      typeof user !== 'undefined' &&
-      user?.role === 'admin'
-    )
-      ? 'admin-editable'
-      : (
-          typeof session !== 'undefined' &&
-          String(session).toLowerCase() === 'evening'
-        )
-          ? 'session-open'
-          : 'session-closed'
-    %>"
-
-  <%= (
-    typeof user !== 'undefined' &&
-    user?.role === 'admin'
-  )
-    ? ''
-    : (
-        typeof session !== 'undefined' &&
-        String(session).toLowerCase() === 'evening'
-      )
-        ? ''
-        : 'readonly'
-  %>
->
-
-
-<%
-if (
-  typeof user !== 'undefined' &&
-  user?.role === 'admin'
-) {
-%>
-
-
-<button
-  type="submit"
-  class="session-save-button"
->
-Save
-</button>
-
-
-<%
-} else if (
-  typeof session !== 'undefined' &&
-  String(session).toLowerCase() === 'evening'
-) {
-%>
-
-
-<button
-  type="submit"
-  class="session-save-button"
->
-Save
-</button>
-
-
-<span class="session-status open">
-🟢 Open
-</span>
-
-
-<%
-} else {
-%>
-
-
-<span class="session-status closed">
-🔒 Closed
-</span>
-
-
-<%
-}
-%>
-
-
-<%
-if (
-  typeof user !== 'undefined' &&
-  user?.role === 'admin' &&
-  typeof session !== 'undefined' &&
-  String(session).toLowerCase() !== 'evening'
-) {
-%>
-
-
-<span class="admin-edit-note">
-Admin edit
-</span>
-
-
-<%
-}
-%>
-
-
-</form>
-
-
-</td>
-
-
-<!-- =====================================================
-     DAILY TOTAL
-     
-     CALCULATED HERE FROM THE TWO SESSION RECORDS.
-     NO BACKEND TOTAL IS REQUIRED.
-===================================================== -->
-
-<td class="total-cell">
-
-
-<span
-  class="daily-total"
-  data-dairy="<%= record.dairy?._id || '' %>"
->
-
-
-<span class="morning-total-value">
-<%= Number(
-  records.find(item =>
-    String(item.dairy?._id) ===
-    String(record.dairy?._id) &&
-    (
-      String(item.session || '').toLowerCase() === 'morning' ||
-      String(item.session || '').toLowerCase() === 'am'
-    )
-  )?.liters || 0
-).toFixed(2) %>
-</span>
-
-
-<span>
-+
-</span>
-
-
-<span class="evening-total-value">
-<%= Number(
-  records.find(item =>
-    String(item.dairy?._id) ===
-    String(record.dairy?._id) &&
-    (
-      String(item.session || '').toLowerCase() === 'evening' ||
-      String(item.session || '').toLowerCase() === 'pm'
-    )
-  )?.liters || 0
-).toFixed(2) %>
-</span>
-
-
-<span>
-=
-</span>
-
-
-<span class="daily-total-number">
-
-<%= (
-  Number(
-    records.find(item =>
-      String(item.dairy?._id) ===
-      String(record.dairy?._id) &&
-      (
-        String(item.session || '').toLowerCase() === 'morning' ||
-        String(item.session || '').toLowerCase() === 'am'
-      )
-    )?.liters || 0
-  )
-  +
-  Number(
-    records.find(item =>
-      String(item.dairy?._id) ===
-      String(record.dairy?._id) &&
-      (
-        String(item.session || '').toLowerCase() === 'evening' ||
-        String(item.session || '').toLowerCase() === 'pm'
-      )
-    )?.liters || 0
-  )
-).toFixed(2) %>
-
-</span>
-
-L
-
-</span>
-
-
-</td>
-
-
-</tr>
-
-
-<%
-  });
-%>
-
-
-<% if (!records || records.length === 0) { %>
-
-
-<tr>
-
-<td colspan="5">
-
-
-<div class="empty-state">
-
-
-<div class="empty-icon">
-🥛
-</div>
-
-
-<h3>
-No Milk Records
-</h3>
-
-
-<p>
-No milk production records were found for this date.
-</p>
-
-
-</div>
-
-
-</td>
-
-</tr>
-
 
 <% } %>
 
-
-</tbody>
-
-</table>
-
-</div>
-
-
-<!-- =====================================================
-     DAILY SUMMARY
-===================================================== -->
-
-<div class="summary-grid">
-
-
-<div class="summary-box">
-
-<span>
-Total Milk
-</span>
-
-
-<strong>
-
-<%= Number(stats?.total || 0) %> L
-
-</strong>
-
-</div>
-
-
-<div class="summary-box">
-
-<span>
-Consumed
-</span>
-
-
-<strong>
-
-<%= Number(stats?.consumed || 0) %> L
-
-</strong>
-
-</div>
-
-
-<div class="summary-box">
-
-<span>
-Available
-</span>
-
-
-<strong>
-
-<%= Number(stats?.available || 0) %> L
-
-</strong>
-
-</div>
-
-
-<div class="summary-box">
-
-<span>
-Price Per Liter
-</span>
-
-
-<strong>
-
-KES <%= Number(stats?.price || 0) %>
-
-</strong>
-
-</div>
-
-
-<div class="summary-box">
-
-<span>
-Total Revenue
-</span>
-
-
-<strong>
-
-KES <%= Number(stats?.cash || 0) %>
-
-</strong>
-
-</div>
-
-
-<div class="summary-box">
-
-<span>
-Status
-</span>
-
-
-<% if (stats?.locked) { %>
-
-
-<strong class="status-locked">
-
-🔒 Locked
-
-</strong>
-
-
-<% } else { %>
-
-
-<strong class="status-open">
-
-🟢 Open
-
-</strong>
-
-
-<% } %>
-
-
-</div>
-
-
-</div>
-
-
-<!-- =====================================================
-     CUSTOMER SALES
-===================================================== -->
-
-<% if (sales && sales.length > 0) { %>
-
-
-<div class="sales-section">
-
-
-<h3>
-Customer Sales Breakdown
-</h3>
-
-
-<div class="table-wrapper">
-
-
-<table>
-
-
-<thead>
-
-<tr>
-
-<th>
-Customer
-</th>
-
-<th>
-Liters
-</th>
-
-<th>
-Cash
-</th>
-
-</tr>
-
-
-</thead>
-
-
-<tbody>
-
-
-<% sales.forEach(sale => { %>
-
-
-<tr>
-
-
-<td>
-
-<%= sale.customerName || "Unknown Customer" %>
-
-</td>
-
-
-<td>
-
-<%= Number(sale.liters || 0) %> L
-
-</td>
-
-
-<td>
-
-KES <%= Number(sale.cash || 0) %>
-
-</td>
-
-
-</tr>
-
-
-<% }) %>
-
-
-</tbody>
-
-
-</table>
-
-
-</div>
-
-
-<div class="revenue-total">
-
-
-<span>
-Total Customer Revenue
-</span>
-
-
-<strong>
-
-KES
-<%= sales.reduce(
-  (total, sale) =>
-    total + Number(sale.cash || 0),
-  0
-) %>
-
-</strong>
-
-
-</div>
-
-
-</div>
-
-
-<% } %>
-
-
-</div>
-
-
-<% } %>
-
-
-<!-- =====================================================
-     MONTHLY REPORT
-===================================================== -->
-
-<% if (typeof type !== "undefined" && type === "month") { %>
-
-
-<div class="stats-card">
-
-
-<div class="report-header">
-
-
-<h3>
-Monthly Milk Report
-</h3>
-
-
-<span class="report-date">
-
-<%= month || "Current Month" %>
-
-</span>
-
-
-</div>
-
-
-<div class="table-wrapper">
-
-
-<table>
-
-
-<thead>
-
-
-<tr>
-
-<th>
-Code
-</th>
-
-
-<th>
-Animal
-</th>
-
-
-<th>
-Total Milk
-</th>
-
-
-<th>
-Average
-</th>
-
-</tr>
-
-
-</thead>
-
-
-<tbody>
-
-
-<% if (records && records.length > 0) { %>
-
-
-<% records.forEach(record => { %>
-
-
-<tr>
-
-
-<td>
-
-<span class="animal-code">
-
-<%= record.dairy
-  ? record.dairy.code
-  : "Unknown" %>
-
-</span>
-
-</td>
-
-
-<td>
-
-<%= record.dairy
-  ? record.dairy.name
-  : "Unknown Animal" %>
-
-</td>
-
-
-<td>
-
-<span class="liters-value">
-
-<%= Number(record.total || 0).toFixed(2) %> L
-
-</span>
-
-</td>
-
-
-<td>
-
-<%= Number(record.avg || 0).toFixed(2) %> L
-
-</td>
-
-
-</tr>
-
-
-<% }) %>
-
-
-<% } else { %>
-
-
-<tr>
-
-<td colspan="4">
-
-
-<div class="empty-state">
-
-
-<div class="empty-icon">
-📊
-</div>
-
-
-<h3>
-No Monthly Records
-</h3>
-
-
-<p>
-No milk production records were found for this month.
-</p>
-
-
-</div>
-
-
-</td>
-
-</tr>
-
-
-<% } %>
-
-
-</tbody>
-
-</table>
-
-</div>
-
-
-<div class="summary-grid">
-
-
-<div class="summary-box">
-
-<span>
-Total Milk
-</span>
-
-
-<strong>
-
-<%= Number(stats?.total || 0).toFixed(2) %> L
-
-</strong>
-
-</div>
-
-
-<div class="summary-box">
-
-<span>
-Total Sold
-</span>
-
-
-<strong>
-
-<%= Number(stats?.consumed || 0).toFixed(2) %> L
-
-</strong>
-
-</div>
-
-
-<div class="summary-box">
-
-<span>
-Available Milk
-</span>
-
-
-<strong>
-
-<%= Number(stats?.available || 0).toFixed(2) %> L
-
-</strong>
-
-</div>
-
-
-<div class="summary-box">
-
-<span>
-Average Per Animal
-</span>
-
-
-<strong>
-
-<%= Number(stats?.avg || 0).toFixed(2) %> L
-
-</strong>
-
-</div>
-
-
-<div class="summary-box">
-
-<span>
-Global Revenue
-</span>
-
-
-<strong>
-
-KES <%= Number(stats?.cash || 0) %>
-
-</strong>
-
-</div>
-
-
-</div>
-
-
-</div>
-
-
-<% } %>
-
-
-<!-- =====================================================
-     NO REPORT SELECTED
-===================================================== -->
-
-<%
-if (
-  typeof type === "undefined" ||
-  !type
-) {
-%>
-
-
-<div class="stats-card">
-
-
-<div class="empty-state">
-
-
-<div class="empty-icon">
-📊
-</div>
-
-
-<h3>
-No Report Selected
-</h3>
-
-
-<p>
-Select Daily or Monthly report type to view milk statistics.
-</p>
-
-
-</div>
-
-
-</div>
-
-
-<%
-}
-%>
-
-
-</div>
-
-
-<!-- =====================================================
-     FRONTEND TOTAL CALCULATION
-===================================================== -->
 
 <script>
 
-document.addEventListener(
-  "input",
-  function(event) {
+/* ==========================================================
+   MILK FORM VALIDATION
+========================================================== */
+
+function validateMilkForm(form) {
+
+    const input =
+        form.querySelector(
+            'input[name="liters"]'
+        );
+
+    if (!input) {
+        return false;
+    }
+
+    const value =
+        Number(input.value);
 
     if (
-      !event.target.classList.contains(
-        "milk-input"
-      )
+        input.value === "" ||
+        !Number.isFinite(value) ||
+        value < 0
     ) {
 
-      return;
+        alert(
+            "Please enter a valid milk quantity."
+        );
+
+        input.focus();
+
+        return false;
+    }
+
+    return true;
+}
+
+
+/* ==========================================================
+   ADMIN EDIT MODAL
+========================================================== */
+
+function openMilkEditModal(
+    recordId,
+    liters,
+    remarks,
+    sessionName
+) {
+
+    const modal =
+        document.getElementById(
+            "milkEditModal"
+        );
+
+    const form =
+        document.getElementById(
+            "milkEditForm"
+        );
+
+    const litersInput =
+        document.getElementById(
+            "milkEditLiters"
+        );
+
+    const remarksInput =
+        document.getElementById(
+            "milkEditRemarks"
+        );
+
+    const subtitle =
+        document.getElementById(
+            "milkEditSubtitle"
+        );
+
+
+    if (
+        !modal ||
+        !form ||
+        !litersInput ||
+        !remarksInput
+    ) {
+        return;
+    }
+
+
+    form.action =
+        "/milk/" +
+        encodeURIComponent(
+            recordId
+        );
+
+
+    litersInput.value =
+        liters ?? "";
+
+
+    remarksInput.value =
+        remarks || "";
+
+
+    if (subtitle) {
+
+        subtitle.textContent =
+            "Editing " +
+            sessionName +
+            " milk record";
 
     }
 
 
-    const row =
-      event.target.closest("tr");
+    modal.classList.add(
+        "active"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
 
 
-    if (!row) {
+    setTimeout(
+        () => {
 
-      return;
+            litersInput.focus();
 
+            litersInput.select();
+
+        },
+        50
+    );
+
+}
+
+
+/* ==========================================================
+   CLOSE MODAL
+========================================================== */
+
+function closeMilkEditModal() {
+
+    const modal =
+        document.getElementById(
+            "milkEditModal"
+        );
+
+    if (!modal) {
+        return;
     }
 
 
-    const inputs =
-      row.querySelectorAll(
-        ".milk-input"
-      );
+    modal.classList.remove(
+        "active"
+    );
+
+    modal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+}
 
 
-    let total = 0;
+/* ==========================================================
+   CLICK OUTSIDE MODAL
+========================================================== */
 
+document.addEventListener(
+    "click",
+    function(event) {
 
-    inputs.forEach(input => {
+        const modal =
+            document.getElementById(
+                "milkEditModal"
+            );
 
-      total +=
-        Number(input.value || 0);
+        if (
+            modal &&
+            event.target === modal
+        ) {
 
-    });
+            closeMilkEditModal();
 
-
-    const totalElement =
-      row.querySelector(
-        ".daily-total-number"
-      );
-
-
-    if (totalElement) {
-
-      totalElement.textContent =
-        total.toFixed(2);
+        }
 
     }
-
-  }
 );
 
 
-/* =====================================================
-   SUCCESS / FAILURE POPUP
-
-   The page does not contain a permanent message section.
-
-   Supported URL states:
-
-   ?success=1
-   ?error=1
-===================================================== */
-
-function showMilkMessage(
-  type,
-  title,
-  message
-) {
-
-  const popup =
-    document.getElementById(
-      "milkMessagePopup"
-    );
-
-
-  const icon =
-    document.getElementById(
-      "milkMessageIcon"
-    );
-
-
-  const titleElement =
-    document.getElementById(
-      "milkMessageTitle"
-    );
-
-
-  const textElement =
-    document.getElementById(
-      "milkMessageText"
-    );
-
-
-  if (!popup) {
-
-    return;
-
-  }
-
-
-  popup.classList.remove(
-    "success",
-    "error"
-  );
-
-
-  popup.classList.add(type);
-
-
-  icon.textContent =
-    type === "success"
-      ? "✅"
-      : "❌";
-
-
-  titleElement.textContent =
-    title;
-
-
-  textElement.textContent =
-    message;
-
-
-  popup.classList.add("show");
-
-
-  window.setTimeout(
-    closeMilkMessage,
-    5000
-  );
-
-}
-
-
-function closeMilkMessage() {
-
-  const popup =
-    document.getElementById(
-      "milkMessagePopup"
-    );
-
-
-  if (popup) {
-
-    popup.classList.remove(
-      "show"
-    );
-
-  }
-
-}
-
-
-/* =====================================================
-   READ MESSAGE FROM URL
-===================================================== */
+/* ==========================================================
+   ESCAPE KEY
+========================================================== */
 
 document.addEventListener(
-  "DOMContentLoaded",
-  function() {
+    "keydown",
+    function(event) {
 
-    const params =
-      new URLSearchParams(
-        window.location.search
-      );
+        if (
+            event.key !== "Escape"
+        ) {
+            return;
+        }
 
-
-    if (
-      params.get("success") === "1"
-    ) {
-
-      showMilkMessage(
-        "success",
-        "Success",
-        "Milk record submitted successfully."
-      );
+        closeMilkEditModal();
 
     }
+);
 
 
-    if (
-      params.get("error") === "1"
-    ) {
+/* ==========================================================
+   PREVENT DOUBLE SUBMISSION
+========================================================== */
 
-      showMilkMessage(
-        "error",
-        "Unable to save",
-        "The milk record could not be saved."
-      );
+document.addEventListener(
+    "submit",
+    function(event) {
+
+        const form =
+            event.target;
+
+        if (
+            !form.classList.contains(
+                "milk-form"
+            )
+        ) {
+            return;
+        }
+
+
+        const button =
+            form.querySelector(
+                ".milk-submit"
+            );
+
+        if (!button) {
+            return;
+        }
+
+
+        if (
+            form.dataset.submitted === "true"
+        ) {
+
+            event.preventDefault();
+
+            return;
+
+        }
+
+
+        form.dataset.submitted =
+            "true";
+
+        button.disabled =
+            true;
+
+
+        const originalText =
+            button.innerHTML;
+
+
+        button.innerHTML =
+            "Saving...";
+
+
+        setTimeout(
+            () => {
+
+                /*
+                 * If the request does not navigate away,
+                 * restore the button.
+                 */
+
+                button.disabled =
+                    false;
+
+                button.innerHTML =
+                    originalText;
+
+                form.dataset.submitted =
+                    "false";
+
+            },
+            10000
+        );
 
     }
-
-  }
 );
 
 </script>
