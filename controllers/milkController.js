@@ -7,8 +7,10 @@
 // Responsibilities:
 //
 // • Receive HTTP requests
-// • Validate basic request input
+// • Validate request input
+// • Enforce controller-level permissions
 // • Call milkService
+// • Prepare safe data for EJS
 // • Render EJS pages
 // • Redirect after successful mutations
 //
@@ -16,9 +18,7 @@
 //
 // ==========================================================
 
-
-const mongoose =
-  require("mongoose");
+const mongoose = require("mongoose");
 
 const milkService =
   require("../services/milkService");
@@ -28,8 +28,29 @@ const Dairy =
 
 
 // ==========================================================
-// HELPER
+// CONSTANTS
 // ==========================================================
+
+const VALID_SESSIONS = [
+  "morning",
+  "evening"
+];
+
+
+// ==========================================================
+// BASIC HELPERS
+// ==========================================================
+
+function isAdmin(req) {
+
+  return req?.user?.role === "admin";
+
+}
+
+
+// ----------------------------------------------------------
+// Redirect with error
+// ----------------------------------------------------------
 
 function redirectError(
   res,
@@ -39,9 +60,773 @@ function redirectError(
 
   return res.redirect(
     `${path}?error=${encodeURIComponent(
-      message
+      message || "An error occurred."
     )}`
   );
+
+}
+
+
+// ----------------------------------------------------------
+// Convert value to number safely
+// ----------------------------------------------------------
+
+function toNumber(value, fallback = 0) {
+
+  const number = Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : fallback;
+
+}
+
+
+// ----------------------------------------------------------
+// Convert value to string safely
+// ----------------------------------------------------------
+
+function toText(value, fallback = "") {
+
+  if (
+    value === undefined ||
+    value === null
+  ) {
+
+    return fallback;
+
+  }
+
+  return String(value);
+
+}
+
+
+// ----------------------------------------------------------
+// Normalize MongoDB ObjectId to string
+// ----------------------------------------------------------
+
+function idToString(value) {
+
+  if (!value) {
+    return "";
+  }
+
+  if (
+    typeof value === "object" &&
+    value._id
+  ) {
+
+    return String(value._id);
+
+  }
+
+  return String(value);
+
+}
+
+
+// ----------------------------------------------------------
+// Check ObjectId
+// ----------------------------------------------------------
+
+function isValidObjectId(value) {
+
+  return mongoose.Types.ObjectId.isValid(
+    value
+  );
+
+}
+
+
+// ----------------------------------------------------------
+// Normalize assigned farms
+//
+// Handles:
+//
+// [
+//   ObjectId(...),
+//   "ObjectId..."
+// ]
+//
+// and also:
+//
+// [
+//   { _id: ObjectId(...) }
+// ]
+// ----------------------------------------------------------
+
+function normalizeAssignedFarmIds(
+  assignedFarm
+) {
+
+  if (
+    !Array.isArray(assignedFarm)
+  ) {
+
+    return [];
+
+  }
+
+  return assignedFarm
+    .map(idToString)
+    .filter(Boolean)
+    .filter(
+      id =>
+        isValidObjectId(id)
+    );
+
+}
+
+
+// ==========================================================
+// SAFE FARM OBJECT
+// ==========================================================
+//
+// Ensures the EJS always receives:
+//
+// farm._id
+// farm.name
+// farm.code
+//
+// while preserving all other fields from MongoDB.
+//
+// ==========================================================
+
+function prepareFarm(farm) {
+
+  if (!farm) {
+    return null;
+  }
+
+  const prepared = {
+    ...farm
+  };
+
+  prepared._id =
+    farm._id
+      ? String(farm._id)
+      : "";
+
+  prepared.name =
+    toText(
+      farm.name,
+      "Unnamed Dairy Farm"
+    );
+
+  prepared.code =
+    farm.code !== undefined &&
+    farm.code !== null
+      ? farm.code
+      : "";
+
+  prepared.numericCode =
+    toNumber(
+      farm.code,
+      NaN
+    );
+
+  return prepared;
+}
+
+
+// ==========================================================
+// SAFE ANIMAL OBJECT
+// ==========================================================
+//
+// We deliberately preserve the entire animal returned by
+// milkService.
+//
+// This is important because milk.ejs may need fields such as:
+//
+// • _id
+// • name
+// • code
+// • assetCode
+// • breed
+// • profileImage
+// • image
+// • isMilking
+// • milk records
+// • morning
+// • evening
+//
+// etc.
+//
+// We only normalize the fields needed for grouping.
+//
+// ==========================================================
+
+function prepareAnimal(animal) {
+
+  if (!animal) {
+    return null;
+  }
+
+  const prepared = {
+    ...animal
+  };
+
+  prepared._id =
+    animal._id
+      ? String(animal._id)
+      : "";
+
+  prepared.code =
+    animal.code !== undefined &&
+    animal.code !== null
+      ? animal.code
+      : "";
+
+  prepared.assetCode =
+    animal.assetCode !== undefined &&
+    animal.assetCode !== null
+      ? animal.assetCode
+      : "";
+
+  prepared.numericCode =
+    toNumber(
+      animal.code,
+      NaN
+    );
+
+  prepared.numericAssetCode =
+    toNumber(
+      animal.assetCode,
+      NaN
+    );
+
+  prepared.name =
+    toText(
+      animal.name,
+      "Unnamed Animal"
+    );
+
+  return prepared;
+}
+
+
+// ==========================================================
+// PREPARE MILK PAGE DATA
+// ==========================================================
+//
+// This function is intentionally separate from getMilkPage.
+//
+// It makes the controller easier to reason about and ensures
+// that the EJS receives a predictable structure.
+//
+// ==========================================================
+
+async function buildMilkPageData(req) {
+
+  const user =
+    req.user || {};
+
+  const admin =
+    user.role === "admin";
+
+
+  // ========================================================
+  // GET DATA FROM MILK SERVICE
+  // ========================================================
+
+  const serviceData =
+    await milkService.getMilkPageData(
+      user
+    );
+
+
+  // ========================================================
+  // SESSION
+  // ========================================================
+
+  const session =
+    serviceData?.session ||
+    "closed";
+
+
+  // ========================================================
+  // RAW DAIRIES / ANIMALS FROM SERVICE
+  // ========================================================
+
+  let serviceDairies =
+    Array.isArray(
+      serviceData?.dairies
+    )
+      ? serviceData.dairies
+      : [];
+
+
+  // --------------------------------------------------------
+  // Some service implementations may return animals under
+  // "animals" instead of "dairies".
+  //
+  // Supporting both costs nothing and prevents an empty
+  // page when the service uses the newer property name.
+  // --------------------------------------------------------
+
+  if (
+    serviceDairies.length === 0 &&
+    Array.isArray(
+      serviceData?.animals
+    )
+  ) {
+
+    serviceDairies =
+      serviceData.animals;
+
+  }
+
+
+  // ========================================================
+  // PREPARE FARM QUERY
+  // ========================================================
+
+  const farmQuery = {
+
+    code: {
+      $lt: 0
+    },
+
+    status: "active"
+
+  };
+
+
+  // ========================================================
+  // WORKER ACCESS RESTRICTION
+  // ========================================================
+
+  if (!admin) {
+
+    const assignedFarmIds =
+      normalizeAssignedFarmIds(
+        user.assignedFarm
+      );
+
+
+    // ------------------------------------------------------
+    // Worker has no assigned farms
+    // ------------------------------------------------------
+
+    if (
+      assignedFarmIds.length === 0
+    ) {
+
+      return {
+
+        farms: [],
+
+        dairies: [],
+
+        animals: [],
+
+        session,
+
+        isAdmin: false,
+
+        user,
+
+        success:
+          req.query?.success === "1",
+
+        error:
+          req.query?.error || ""
+
+      };
+
+    }
+
+
+    farmQuery._id = {
+      $in: assignedFarmIds
+    };
+
+  }
+
+
+  // ========================================================
+  // LOAD DAIRY FARMS
+  // ========================================================
+
+  const rawFarms =
+    await Dairy
+      .find(farmQuery)
+      .sort({
+        code: 1
+      })
+      .lean();
+
+
+  const farms =
+    rawFarms
+      .map(prepareFarm)
+      .filter(Boolean);
+
+
+  // ========================================================
+  // FARM LOOKUP BY CODE
+  // ========================================================
+  //
+  // Example:
+  //
+  // farm.code = -5
+  //
+  // animal.assetCode = -5
+  //
+  // ========================================================
+
+  const farmByCode =
+    new Map();
+
+
+  for (
+    const farm of farms
+  ) {
+
+    const numericCode =
+      toNumber(
+        farm.code,
+        NaN
+      );
+
+
+    if (
+      !Number.isFinite(
+        numericCode
+      )
+    ) {
+
+      continue;
+
+    }
+
+
+    farmByCode.set(
+      numericCode,
+      farm
+    );
+
+  }
+
+
+  // ========================================================
+  // PREPARE ANIMALS
+  // ========================================================
+  //
+  // Only identified animals are allowed into milk
+  // collection tables.
+  //
+  // Animal:
+  //
+  //     code > 0
+  //
+  // Parent:
+  //
+  //     assetCode < 0
+  //
+  // ========================================================
+
+  const animals =
+    serviceDairies
+      .map(prepareAnimal)
+      .filter(Boolean)
+      .filter(animal => {
+
+        const animalCode =
+          animal.numericCode;
+
+        const assetCode =
+          animal.numericAssetCode;
+
+
+        return (
+
+          Number.isFinite(
+            animalCode
+          ) &&
+
+          animalCode > 0 &&
+
+          Number.isFinite(
+            assetCode
+          ) &&
+
+          assetCode < 0
+
+        );
+
+      });
+
+
+  // ========================================================
+  // GROUP ANIMALS BY FARM
+  // ========================================================
+
+  const animalsByFarm =
+    new Map();
+
+
+  for (
+    const animal of animals
+  ) {
+
+    const assetCode =
+      animal.numericAssetCode;
+
+
+    const farm =
+      farmByCode.get(
+        assetCode
+      );
+
+
+    // ------------------------------------------------------
+    // The animal belongs to a farm that the current user
+    // cannot see.
+    //
+    // Do not expose it.
+    // ------------------------------------------------------
+
+    if (!farm) {
+
+      continue;
+
+    }
+
+
+    if (
+      !animalsByFarm.has(
+        assetCode
+      )
+    ) {
+
+      animalsByFarm.set(
+        assetCode,
+        []
+      );
+
+    }
+
+
+    animalsByFarm
+      .get(assetCode)
+      .push(animal);
+
+  }
+
+
+  // ========================================================
+  // BUILD FARM GROUPS
+  // ========================================================
+  //
+  // EJS receives:
+  //
+  // farms = [
+  //
+  //   {
+  //     farm: {...},
+  //     farmId: "...",
+  //     farmName: "...",
+  //     farmCode: -1,
+  //     animals: [...]
+  //   }
+  //
+  // ]
+  //
+  // ========================================================
+
+  const groupedFarms = [];
+
+
+  for (
+    const farm of farms
+  ) {
+
+    const farmCode =
+      toNumber(
+        farm.code,
+        NaN
+      );
+
+
+    if (
+      !Number.isFinite(
+        farmCode
+      )
+    ) {
+
+      continue;
+
+    }
+
+
+    const farmAnimals =
+      animalsByFarm.get(
+        farmCode
+      ) || [];
+
+
+    // ------------------------------------------------------
+    // Keep farms even when they have no animals.
+    //
+    // This is useful because the EJS can then display:
+    //
+    // "No milking animals on this farm."
+    //
+    // If your existing EJS specifically requires only farms
+    // with animals, it can simply skip empty groups.
+    // ------------------------------------------------------
+
+    groupedFarms.push({
+
+      farm,
+
+      farmId:
+        String(
+          farm._id
+        ),
+
+      farmName:
+        farm.name,
+
+      farmCode:
+        farm.code,
+
+      numericFarmCode:
+        farmCode,
+
+      animals:
+        farmAnimals,
+
+      animalCount:
+        farmAnimals.length
+
+    });
+
+  }
+
+
+  // ========================================================
+  // SORT FARMS
+  // ========================================================
+
+  groupedFarms.sort(
+    (a, b) =>
+      Number(a.numericFarmCode) -
+      Number(b.numericFarmCode)
+  );
+
+
+  // ========================================================
+  // FLAT ANIMAL LIST
+  // ========================================================
+  //
+  // This preserves compatibility with old milk.ejs code
+  // which may still use:
+  //
+  //     dairies
+  //
+  // ========================================================
+
+  const visibleDairies =
+    groupedFarms.flatMap(
+      group =>
+        group.animals
+    );
+
+
+  // ========================================================
+  // RETURN EVERYTHING EJS MAY NEED
+  // ========================================================
+
+  return {
+
+    // ------------------------------------------------------
+    // PRIMARY FARM DATA
+    // ------------------------------------------------------
+
+    farms:
+      groupedFarms,
+
+
+    // ------------------------------------------------------
+    // BACKWARD COMPATIBILITY
+    // ------------------------------------------------------
+
+    dairies:
+      visibleDairies,
+
+
+    animals:
+      visibleDairies,
+
+
+    // ------------------------------------------------------
+    // SESSION
+    // ------------------------------------------------------
+
+    session,
+
+
+    // ------------------------------------------------------
+    // AUTH
+    // ------------------------------------------------------
+
+    isAdmin:
+      admin,
+
+    user,
+
+
+    // ------------------------------------------------------
+    // QUERY RESULT
+    // ------------------------------------------------------
+
+    success:
+      req.query?.success === "1",
+
+    error:
+      req.query?.error || "",
+
+    // ------------------------------------------------------
+    // OPTIONAL SERVICE DATA
+    //
+    // Preserve any additional properties supplied by the
+    // milk service without allowing them to overwrite the
+    // controller's authoritative fields above.
+    // ------------------------------------------------------
+
+    ...serviceData,
+
+    // ------------------------------------------------------
+    // Re-apply these after spreading serviceData so the
+    // controller's prepared structures always win.
+    // ------------------------------------------------------
+
+    farms:
+      groupedFarms,
+
+    dairies:
+      visibleDairies,
+
+    animals:
+      visibleDairies,
+
+    session,
+
+    isAdmin:
+      admin,
+
+    user,
+
+    success:
+      req.query?.success === "1",
+
+    error:
+      req.query?.error || ""
+
+  };
 
 }
 
@@ -51,59 +836,6 @@ function redirectError(
 // ==========================================================
 //
 // GET /milk
-//
-// IMPORTANT
-// ----------------------------------------------------------
-// milk.ejs is organized by Dairy Farm.
-//
-// Each table represents ONE Dairy Farm.
-//
-// Example:
-//
-//     Green Farm
-//     Farm Code: -1
-//
-//     ---------------------------------------------------
-//     Animal       Morning       Evening
-//     Cow 1        10L           12L
-//     Cow 2         8L            9L
-//
-//     Blue Farm
-//     Farm Code: -3
-//
-//     ---------------------------------------------------
-//     Animal       Morning       Evening
-//     Cow 3        15L           14L
-//
-// ----------------------------------------------------------
-//
-// Animal grouping:
-//
-//     animal.assetCode === dairyFarm.code
-//
-// Example:
-//
-//     Dairy Farm:
-//         code = -5
-//
-//     Animals:
-//         assetCode = -5
-//
-// Therefore all animals with assetCode -5 belong to
-// the Dairy Farm whose code is -5.
-//
-// ACCESS
-// ----------------------------------------------------------
-//
-// ADMIN
-//     Sees every Dairy Farm.
-//
-// DAIRY WORKER
-//     Sees only Dairy Farms contained in:
-//
-//         req.user.assignedFarm
-//
-// assignedFarm contains Dairy document ObjectIds.
 //
 // ==========================================================
 
@@ -115,512 +847,15 @@ async (
 
   try {
 
-    // ======================================================
-    // GET DATA FROM SERVICE
-    // ======================================================
-    //
-    // The milk service remains responsible for preparing
-    // the actual milk collection information.
-    //
-    // ======================================================
-
     const data =
-      await milkService.getMilkPageData(
-        req.user
+      await buildMilkPageData(
+        req
       );
 
-
-    const currentSession =
-      data?.session ||
-      "closed";
-
-
-    const isAdmin =
-      req.user?.role === "admin";
-
-
-    // ======================================================
-    // RAW DAIRY DATA FROM SERVICE
-    // ======================================================
-
-    const serviceDairies =
-      Array.isArray(
-        data?.dairies
-      )
-
-        ? data.dairies
-
-        : [];
-
-
-    // ======================================================
-    // GET DAIRY FARMS
-    // ======================================================
-    //
-    // Dairy farms are identified by:
-    //
-    //     code < 0
-    //
-    // We fetch the farms independently so that the controller
-    // can guarantee that every milk table has the correct
-    // parent Dairy Farm name.
-    //
-    // ======================================================
-
-    let farmQuery = {
-
-      code: {
-        $lt: 0
-      },
-
-      status: "active"
-
-    };
-
-
-    // ======================================================
-    // WORKER FARM RESTRICTION
-    // ======================================================
-    //
-    // A dairyWorker may only see farms assigned to them.
-    //
-    // assignedFarm contains Dairy document ObjectIds.
-    //
-    // ======================================================
-
-    if (!isAdmin) {
-
-      const assignedFarmIds =
-        Array.isArray(
-          req.user?.assignedFarm
-        )
-
-          ? req.user.assignedFarm
-
-          : [];
-
-
-      // ----------------------------------------------------
-      // Worker with no assigned farms
-      // ----------------------------------------------------
-
-      if (
-        assignedFarmIds.length === 0
-      ) {
-
-        return res.render(
-          "milk",
-          {
-
-            farms:
-              [],
-
-            dairies:
-              [],
-
-            session:
-              currentSession,
-
-            isAdmin,
-
-            user:
-              req.user,
-
-            success:
-              req.query.success === "1",
-
-            error:
-              req.query.error ||
-              ""
-
-          }
-        );
-
-      }
-
-
-      farmQuery._id = {
-
-        $in:
-          assignedFarmIds
-
-      };
-
-    }
-
-
-    // ======================================================
-    // LOAD FARMS
-    // ======================================================
-
-    const farms =
-      await Dairy
-        .find(
-          farmQuery
-        )
-        .sort({
-          code: 1
-        })
-        .lean();
-
-
-    // ======================================================
-    // MAP FARMS BY CODE
-    // ======================================================
-    //
-    // The important relationship is:
-    //
-    //     farm.code
-    //
-    //             =
-    //
-    //     animal.assetCode
-    //
-    // ======================================================
-
-    const farmByCode =
-      new Map();
-
-
-    for (
-      const farm
-      of farms
-    ) {
-
-      farmByCode.set(
-
-        Number(
-          farm.code
-        ),
-
-        farm
-
-      );
-
-    }
-
-
-    // ======================================================
-    // PREPARE ANIMALS
-    // ======================================================
-    //
-    // Only identified animals are relevant to milk
-    // collection.
-    //
-    // Animals have:
-    //
-    //     code > 0
-    //
-    // and must have:
-    //
-    //     assetCode < 0
-    //
-    // ======================================================
-
-    const animals =
-      serviceDairies.filter(
-        animal => {
-
-          const code =
-            Number(
-              animal?.code
-            );
-
-
-          const assetCode =
-            Number(
-              animal?.assetCode
-            );
-
-
-          return (
-
-            Number.isFinite(code) &&
-
-            code > 0 &&
-
-            Number.isFinite(assetCode) &&
-
-            assetCode < 0
-
-          );
-
-        }
-      );
-
-
-    // ======================================================
-    // GROUP ANIMALS BY FARM
-    // ======================================================
-    //
-    // Each farm gets its own table.
-    //
-    // ======================================================
-
-    const animalsByFarm =
-      new Map();
-
-
-    for (
-      const animal
-      of animals
-    ) {
-
-      const assetCode =
-        Number(
-          animal.assetCode
-        );
-
-
-      // ----------------------------------------------------
-      // Find parent farm
-      // ----------------------------------------------------
-
-      const farm =
-        farmByCode.get(
-          assetCode
-        );
-
-
-      // ----------------------------------------------------
-      // Safety:
-      //
-      // If the parent farm is not visible to the current
-      // user, do not display the animal.
-      // ----------------------------------------------------
-
-      if (!farm) {
-
-        continue;
-
-      }
-
-
-      if (
-        !animalsByFarm.has(
-          assetCode
-        )
-      ) {
-
-        animalsByFarm.set(
-
-          assetCode,
-
-          []
-
-        );
-
-      }
-
-
-      animalsByFarm
-        .get(assetCode)
-        .push(
-          animal
-        );
-
-    }
-
-
-    // ======================================================
-    // BUILD FARM TABLE DATA
-    // ======================================================
-    //
-    // milk.ejs receives:
-    //
-    //     farms
-    //
-    // Each object contains:
-    //
-    //     farm
-    //     animals
-    //
-    // Therefore EJS does not need to understand how
-    // assetCode works.
-    //
-    // ======================================================
-
-    const groupedFarms =
-      [];
-
-
-    for (
-      const farm
-      of farms
-    ) {
-
-      const farmCode =
-        Number(
-          farm.code
-        );
-
-
-      const farmAnimals =
-        animalsByFarm.get(
-          farmCode
-        ) || [];
-
-
-      // ----------------------------------------------------
-      // Only create a table when the farm has animals.
-      // ----------------------------------------------------
-
-      if (
-        farmAnimals.length === 0
-      ) {
-
-        continue;
-
-      }
-
-
-      groupedFarms.push({
-
-        // --------------------------------------------------
-        // FARM
-        // --------------------------------------------------
-
-        farm,
-
-
-        // --------------------------------------------------
-        // FARM IDENTIFICATION
-        // --------------------------------------------------
-
-        farmId:
-          farm._id,
-
-        farmName:
-          farm.name,
-
-        farmCode:
-
-
-          farm.code,
-
-
-        // --------------------------------------------------
-        // ANIMALS
-        // --------------------------------------------------
-
-        animals:
-          farmAnimals
-
-      });
-
-    }
-
-
-    // ======================================================
-    // SORT TABLES BY FARM CODE
-    // ======================================================
-    //
-    // Negative codes:
-    //
-    // -1
-    // -3
-    // -5
-    //
-    // are sorted numerically.
-    //
-    // ======================================================
-
-    groupedFarms.sort(
-      (
-        a,
-        b
-      ) => {
-
-        return (
-
-          Number(
-            a.farmCode
-          ) -
-
-          Number(
-            b.farmCode
-          )
-
-        );
-
-      }
-    );
-
-
-    // ======================================================
-    // BACKWARD COMPATIBILITY
-    // ======================================================
-    //
-    // Keep `dairies` available because other existing
-    // milk.ejs code may still reference it.
-    //
-    // The new milk.ejs should use `farms`.
-    //
-    // ======================================================
-
-    const visibleDairies =
-      groupedFarms.flatMap(
-        group =>
-          group.animals
-      );
-
-
-    // ======================================================
-    // RENDER MILK
-    // ======================================================
 
     return res.render(
       "milk",
-      {
-
-        // --------------------------------------------------
-        // NEW PRIMARY DATA
-        // --------------------------------------------------
-        //
-        // One item = one Dairy Farm table.
-        //
-        farms:
-          groupedFarms,
-
-
-        // --------------------------------------------------
-        // BACKWARD COMPATIBILITY
-        // --------------------------------------------------
-
-        dairies:
-          visibleDairies,
-
-
-        // --------------------------------------------------
-        // CURRENT SESSION
-        // --------------------------------------------------
-
-        session:
-          currentSession,
-
-
-        // --------------------------------------------------
-        // AUTHENTICATION / ACCESS
-        // --------------------------------------------------
-
-        isAdmin,
-
-        user:
-          req.user,
-
-
-        // --------------------------------------------------
-        // RESULT POPUP
-        // --------------------------------------------------
-
-        success:
-          req.query.success === "1",
-
-        error:
-          req.query.error ||
-          ""
-
-      }
+      data
     );
 
   }
@@ -639,23 +874,21 @@ async (
         "milk",
         {
 
-          farms:
-            [],
+          farms: [],
 
-          dairies:
-            [],
+          dairies: [],
 
-          session:
-            "closed",
+          animals: [],
+
+          session: "closed",
 
           isAdmin:
-            req.user?.role === "admin",
+            isAdmin(req),
 
           user:
-            req.user,
+            req.user || {},
 
-          success:
-            false,
+          success: false,
 
           error:
             "Error loading milk collection page."
@@ -674,12 +907,12 @@ async (
 //
 // POST /milk
 //
-// Expected request body:
+// Expected:
 //
-//     dairy
-//     session
-//     liters
-//     remarks
+// dairy
+// session
+// liters
+// remarks
 //
 // ==========================================================
 
@@ -692,20 +925,15 @@ async (
   try {
 
     const {
-
       dairy,
-
       session,
-
       liters,
-
       remarks
-
-    } = req.body;
+    } = req.body || {};
 
 
     // ======================================================
-    // BASIC INPUT VALIDATION
+    // ANIMAL
     // ======================================================
 
     if (!dairy) {
@@ -716,6 +944,10 @@ async (
 
     }
 
+
+    // ======================================================
+    // LITERS
+    // ======================================================
 
     if (
       liters === undefined ||
@@ -749,13 +981,14 @@ async (
 
 
     // ======================================================
-    // SESSION VALIDATION
+    // SESSION
     // ======================================================
 
     if (
       session &&
-      session !== "morning" &&
-      session !== "evening"
+      !VALID_SESSIONS.includes(
+        session
+      )
     ) {
 
       throw new Error(
@@ -766,13 +999,11 @@ async (
 
 
     // ======================================================
-    // SAVE MILK RECORD
+    // SAVE
     // ======================================================
 
     await milkService.saveMilkRecords(
-
       [
-
         {
 
           dairy,
@@ -783,14 +1014,12 @@ async (
           remarks:
             remarks || "",
 
-          session
+          session:
+            session || undefined
 
         }
-
       ],
-
       req.user
-
     );
 
 
@@ -829,6 +1058,8 @@ async (
 //
 // Compatibility route.
 //
+// GET /milk/edit/:id
+//
 // ==========================================================
 
 exports.getEditMilk =
@@ -854,9 +1085,7 @@ async (
     }
 
 
-    if (
-      req.user?.role !== "admin"
-    ) {
+    if (!isAdmin(req)) {
 
       return redirectError(
         res,
@@ -867,9 +1096,7 @@ async (
 
 
     if (
-      !mongoose.Types.ObjectId.isValid(
-        id
-      )
+      !isValidObjectId(id)
     ) {
 
       return redirectError(
@@ -881,8 +1108,7 @@ async (
 
 
     return res.redirect(
-      "/milk?edit=" +
-      encodeURIComponent(id)
+      `/milk?edit=${encodeURIComponent(id)}`
     );
 
   }
@@ -930,12 +1156,10 @@ async (
 
 
     // ======================================================
-    // ADMIN CHECK
+    // ADMIN
     // ======================================================
 
-    if (
-      req.user?.role !== "admin"
-    ) {
+    if (!isAdmin(req)) {
 
       return redirectError(
         res,
@@ -946,7 +1170,7 @@ async (
 
 
     // ======================================================
-    // RECORD ID
+    // ID
     // ======================================================
 
     if (!id) {
@@ -959,9 +1183,7 @@ async (
 
 
     if (
-      !mongoose.Types.ObjectId.isValid(
-        id
-      )
+      !isValidObjectId(id)
     ) {
 
       throw new Error(
@@ -972,13 +1194,17 @@ async (
 
 
     // ======================================================
-    // MILK QUANTITY
+    // LITERS
     // ======================================================
 
+    const liters =
+      req.body?.liters;
+
+
     if (
-      req.body.liters === undefined ||
-      req.body.liters === null ||
-      req.body.liters === ""
+      liters === undefined ||
+      liters === null ||
+      liters === ""
     ) {
 
       throw new Error(
@@ -989,9 +1215,7 @@ async (
 
 
     const numericLiters =
-      Number(
-        req.body.liters
-      );
+      Number(liters);
 
 
     if (
@@ -1021,7 +1245,7 @@ async (
         numericLiters,
 
       remarks:
-        req.body.remarks ||
+        req.body?.remarks ||
         "",
 
       user:
@@ -1029,10 +1253,6 @@ async (
 
     });
 
-
-    // ======================================================
-    // SUCCESS
-    // ======================================================
 
     return res.redirect(
       "/milk?success=1"
@@ -1063,7 +1283,8 @@ async (
 // GET MILK STATS
 // ==========================================================
 //
-// This section is unchanged.
+// GET /milkStats
+//
 // ==========================================================
 
 exports.getMilkStats =
@@ -1074,31 +1295,32 @@ async (
 
   try {
 
-    const {
+    const type =
+      req.query?.type ||
+      "day";
 
-      type =
-        "day",
+    const date =
+      req.query?.date;
 
-      date,
-
-      month
-
-    } = req.query;
+    const month =
+      req.query?.month;
 
 
     // ======================================================
-    // DAILY REPORT
+    // DAILY
     // ======================================================
 
     if (
       type === "day"
     ) {
 
+      const kenyaParts =
+        milkService.getKenyaDateParts();
+
+
       const selectedDate =
         date ||
-        milkService
-          .getKenyaDateParts()
-          .date;
+        kenyaParts.date;
 
 
       const data =
@@ -1111,28 +1333,28 @@ async (
         "milkStats",
         {
 
-          type,
+          type: "day",
 
           date:
             selectedDate,
 
-          month:
-            "",
+          month: "",
 
           records:
-            data?.records ||
-            [],
+            Array.isArray(data?.records)
+              ? data.records
+              : [],
 
           stats:
-            data?.stats ||
-            {},
+            data?.stats || {},
 
           sales:
-            data?.sales ||
-            [],
+            Array.isArray(data?.sales)
+              ? data.sales
+              : [],
 
           user:
-            req.user
+            req.user || {}
 
         }
       );
@@ -1141,18 +1363,20 @@ async (
 
 
     // ======================================================
-    // MONTHLY REPORT
+    // MONTHLY
     // ======================================================
 
     if (
       type === "month"
     ) {
 
+      const kenyaParts =
+        milkService.getKenyaDateParts();
+
+
       const selectedMonth =
         month ||
-        milkService
-          .getKenyaDateParts()
-          .monthKey;
+        kenyaParts.monthKey;
 
 
       const data =
@@ -1165,28 +1389,28 @@ async (
         "milkStats",
         {
 
-          type,
+          type: "month",
 
-          date:
-            "",
+          date: "",
 
           month:
             selectedMonth,
 
           records:
-            data?.records ||
-            [],
+            Array.isArray(data?.records)
+              ? data.records
+              : [],
 
           stats:
-            data?.stats ||
-            {},
+            data?.stats || {},
 
           sales:
-            data?.sales ||
-            [],
+            Array.isArray(data?.sales)
+              ? data.sales
+              : [],
 
           user:
-            req.user
+            req.user || {}
 
         }
       );
@@ -1202,48 +1426,36 @@ async (
       "milkStats",
       {
 
-        type:
-          "",
+        type: "",
 
-        date:
-          "",
+        date: "",
 
-        month:
-          "",
+        month: "",
 
-        records:
-          [],
+        records: [],
 
         stats: {
 
-          total:
-            0,
+          total: 0,
 
-          consumed:
-            0,
+          consumed: 0,
 
-          available:
-            0,
+          available: 0,
 
-          price:
-            0,
+          price: 0,
 
-          cash:
-            0,
+          cash: 0,
 
-          locked:
-            false,
+          locked: false,
 
-          avg:
-            0
+          avg: 0
 
         },
 
-        sales:
-          [],
+        sales: [],
 
         user:
-          req.user
+          req.user || {}
 
       }
     );
@@ -1273,6 +1485,10 @@ async (
 // ==========================================================
 // SAVE DAILY STATS
 // ==========================================================
+//
+// POST /milkStats/daily
+//
+// ==========================================================
 
 exports.saveDailyStats =
 async (
@@ -1283,12 +1499,9 @@ async (
   try {
 
     const {
-
       day,
-
       price
-
-    } = req.body;
+    } = req.body || {};
 
 
     if (!day) {
@@ -1300,9 +1513,7 @@ async (
     }
 
 
-    if (
-      req.user?.role !== "admin"
-    ) {
+    if (!isAdmin(req)) {
 
       throw new Error(
         "Only administrators can save daily statistics."
@@ -1349,6 +1560,10 @@ async (
 // ==========================================================
 // GET SALES PAGE
 // ==========================================================
+//
+// GET /sales
+//
+// ==========================================================
 
 exports.getSalesPage =
 async (
@@ -1367,27 +1582,35 @@ async (
       {
 
         standingOrders:
-          data?.standingOrders ||
-          [],
+          Array.isArray(
+            data?.standingOrders
+          )
+            ? data.standingOrders
+            : [],
 
         manualSales:
-          data?.manualSales ||
-          [],
+          Array.isArray(
+            data?.manualSales
+          )
+            ? data.manualSales
+            : [],
 
         currentPrice:
           data?.currentPrice ??
           50,
 
         totalSales:
-          data?.totalSales ||
-          0,
+          Number(
+            data?.totalSales || 0
+          ),
 
         availableMilk:
-          data?.availableMilk ||
-          0,
+          Number(
+            data?.availableMilk || 0
+          ),
 
         user:
-          req.user
+          req.user || {}
 
       }
     );
@@ -1417,6 +1640,10 @@ async (
 // ==========================================================
 // SUBMIT MANUAL SALE
 // ==========================================================
+//
+// POST /sales/manual
+//
+// ==========================================================
 
 exports.submitManualSale =
 async (
@@ -1426,13 +1653,58 @@ async (
 
   try {
 
+    const {
+      customerName,
+      liters
+    } = req.body || {};
+
+
+    if (!customerName) {
+
+      throw new Error(
+        "Customer name is required."
+      );
+
+    }
+
+
+    if (
+      liters === undefined ||
+      liters === null ||
+      liters === ""
+    ) {
+
+      throw new Error(
+        "Liters are required."
+      );
+
+    }
+
+
+    const numericLiters =
+      Number(liters);
+
+
+    if (
+      !Number.isFinite(
+        numericLiters
+      ) ||
+      numericLiters <= 0
+    ) {
+
+      throw new Error(
+        "Liters must be a valid number greater than zero."
+      );
+
+    }
+
+
     await milkService.submitManualSale({
 
-      customerName:
-        req.body.customerName,
+      customerName,
 
       liters:
-        req.body.liters
+        numericLiters
 
     });
 
@@ -1466,6 +1738,10 @@ async (
 // ==========================================================
 // SUBMIT STANDING ORDER SALE
 // ==========================================================
+//
+// POST /sales/standing
+//
+// ==========================================================
 
 exports.submitStandingOrderSale =
 async (
@@ -1475,10 +1751,23 @@ async (
 
   try {
 
+    const {
+      standingOrderId
+    } = req.body || {};
+
+
+    if (!standingOrderId) {
+
+      throw new Error(
+        "Standing order was not specified."
+      );
+
+    }
+
+
     await milkService.submitStandingOrderSale({
 
-      standingOrderId:
-        req.body.standingOrderId
+      standingOrderId
 
     });
 
@@ -1514,6 +1803,7 @@ async (
 // ==========================================================
 //
 // ADMIN ONLY
+//
 // ==========================================================
 
 exports.updateMilkPrice =
@@ -1524,9 +1814,7 @@ async (
 
   try {
 
-    if (
-      req.user?.role !== "admin"
-    ) {
+    if (!isAdmin(req)) {
 
       return res
         .status(403)
@@ -1539,14 +1827,12 @@ async (
 
     const price =
       Number(
-        req.body.price
+        req.body?.price
       );
 
 
     if (
-      !Number.isFinite(
-        price
-      ) ||
+      !Number.isFinite(price) ||
       price < 0
     ) {
 
@@ -1591,6 +1877,10 @@ async (
 // ==========================================================
 // ADD STANDING ORDER
 // ==========================================================
+//
+// POST /sales/standing-order
+//
+// ==========================================================
 
 exports.addStandingOrder =
 async (
@@ -1601,19 +1891,44 @@ async (
   try {
 
     const {
-
       customerName,
-
       liters
+    } = req.body || {};
 
-    } = req.body;
+
+    if (!customerName) {
+
+      throw new Error(
+        "Customer name is required."
+      );
+
+    }
+
+
+    const numericLiters =
+      Number(liters);
+
+
+    if (
+      !Number.isFinite(
+        numericLiters
+      ) ||
+      numericLiters <= 0
+    ) {
+
+      throw new Error(
+        "Liters must be a valid number greater than zero."
+      );
+
+    }
 
 
     await milkService.addStandingOrder({
 
       customerName,
 
-      liters
+      liters:
+        numericLiters
 
     });
 
@@ -1647,6 +1962,10 @@ async (
 // ==========================================================
 // OMIT STANDING ORDER
 // ==========================================================
+//
+// POST /sales/omit
+//
+// ==========================================================
 
 exports.omitStandingOrder =
 async (
@@ -1658,7 +1977,16 @@ async (
 
     const {
       id
-    } = req.body;
+    } = req.body || {};
+
+
+    if (!id) {
+
+      throw new Error(
+        "Standing order was not specified."
+      );
+
+    }
 
 
     await milkService.omitStandingOrder({
@@ -1701,6 +2029,10 @@ async (
 // ==========================================================
 // MILKING HISTORY
 // ==========================================================
+//
+// GET /milk/history/:dairyId
+//
+// ==========================================================
 
 exports.getMilkingHistory =
 async (
@@ -1715,9 +2047,17 @@ async (
     } = req.params;
 
 
-    const {
-      month
-    } = req.query;
+    const month =
+      req.query?.month;
+
+
+    if (!dairyId) {
+
+      throw new Error(
+        "Dairy animal was not specified."
+      );
+
+    }
 
 
     const data =
@@ -1738,30 +2078,33 @@ async (
       {
 
         dairy:
-          data?.dairy,
+          data?.dairy || null,
 
         records:
-          data?.records ||
-          [],
+          Array.isArray(
+            data?.records
+          )
+            ? data.records
+            : [],
 
         grouped:
-          data?.grouped ||
-          {},
+          data?.grouped || {},
 
         monthlyTotal:
-          data?.monthlyTotal ||
-          0,
+          Number(
+            data?.monthlyTotal || 0
+          ),
 
         hasData:
-          data?.hasData ||
-          false,
+          Boolean(
+            data?.hasData
+          ),
 
         selectedMonth:
-          month ||
-          "",
+          month || "",
 
         user:
-          req.user
+          req.user || {}
 
       }
     );
@@ -1793,6 +2136,9 @@ async (
 // ==========================================================
 //
 // ADMIN ONLY
+//
+// POST /milk/toggle/:id
+//
 // ==========================================================
 
 exports.toggleMilkingStatus =
@@ -1803,9 +2149,7 @@ async (
 
   try {
 
-    if (
-      req.user?.role !== "admin"
-    ) {
+    if (!isAdmin(req)) {
 
       return res
         .status(403)
@@ -1821,6 +2165,26 @@ async (
     } = req.params;
 
 
+    if (!id) {
+
+      throw new Error(
+        "Dairy animal was not specified."
+      );
+
+    }
+
+
+    if (
+      !isValidObjectId(id)
+    ) {
+
+      throw new Error(
+        "Invalid dairy animal."
+      );
+
+    }
+
+
     await milkService.toggleMilkingStatus({
 
       dairyId:
@@ -1833,7 +2197,7 @@ async (
 
 
     return res.redirect(
-      `/milk/history/${id}`
+      `/milk/history/${encodeURIComponent(id)}`
     );
 
   }
@@ -1856,3 +2220,17 @@ async (
   }
 
 };
+
+
+// ==========================================================
+// EXPORT INTERNAL HELPER
+// ==========================================================
+//
+// Normally not needed by routes, but exporting this makes
+// testing/debugging possible without changing the public
+// controller endpoints.
+//
+// ==========================================================
+
+exports.buildMilkPageData =
+  buildMilkPageData;
