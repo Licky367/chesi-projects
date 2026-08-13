@@ -1,8 +1,22 @@
 // ==========================================================
 // controllers/milkCollectController.js
 // ==========================================================
+//
+// PURPOSE
+// ----------------------------------------------------------
+// Controller for:
+//
+//     /milk
+//
+// Handles:
+//
+//     GET  /milk
+//     POST /milk
+//
+// ==========================================================
 
-const milkService =
+
+const milkCollectService =
     require("../services/milkCollectService");
 
 
@@ -14,7 +28,7 @@ const milkService =
 //
 // ==========================================================
 
-exports.milkPage =
+exports.getMilkPage =
 async function(
     req,
     res
@@ -22,13 +36,16 @@ async function(
 
     try {
 
+        // ==================================================
+        // AUTHENTICATED USER
+        // ==================================================
+
         const user =
+            req.session &&
             req.session.user;
 
 
-        if (
-            !user
-        ) {
+        if (!user) {
 
             return res.redirect(
                 "/login"
@@ -38,49 +55,36 @@ async function(
 
 
         // ==================================================
-        // AUTHORIZATION
+        // GET PAGE DATA
         // ==================================================
 
-        if (
-            ![
-                "admin",
-                "dairyWorker"
-            ].includes(
-                user.role
-            )
-        ) {
-
-            return res.status(403)
-                .send(
-                    "You are not authorized to access milk collection."
-                );
-
-        }
-
-
         const data =
-            await milkService.getTodayMilkPage(
+            await milkCollectService.getMilkPageData(
                 user
             );
 
+
+        // ==================================================
+        // RENDER
+        // ==================================================
 
         return res.render(
             "milk",
             {
 
-                title:
-                    "Record Today's Milk",
-
-                user,
-
                 day:
                     data.day,
+
+                month:
+                    data.month,
 
                 farms:
                     data.farms,
 
-                summary:
-                    data.summary
+                isAdmin:
+                    user.role === "admin",
+
+                user
 
             }
         );
@@ -90,15 +94,37 @@ async function(
     catch (error) {
 
         console.error(
-            "Milk page error:",
+            "GET /milk error:",
             error
         );
 
 
-        return res.status(500)
-            .send(
-                "Unable to load today's milk collection page."
-            );
+        return res.status(
+            500
+        ).render(
+            "milk",
+            {
+
+                day:
+                    milkCollectService.getNairobiDay(),
+
+                month:
+                    milkCollectService.getNairobiMonth(),
+
+                farms: [],
+
+                isAdmin:
+                    req.session?.user?.role ===
+                    "admin",
+
+                user:
+                    req.session?.user || null,
+
+                error:
+                    "Unable to load today's milk collection page."
+
+            }
+        );
 
     }
 
@@ -106,14 +132,14 @@ async function(
 
 
 // ==========================================================
-// SUBMIT TODAY'S MILK
+// POST MILK COLLECTION
 // ==========================================================
 //
 // POST /milk
 //
 // ==========================================================
 
-exports.recordMilk =
+exports.saveMilk =
 async function(
     req,
     res
@@ -121,349 +147,169 @@ async function(
 
     try {
 
+        // ==================================================
+        // AUTHENTICATED USER
+        // ==================================================
+
         const user =
+            req.session &&
             req.session.user;
 
 
-        if (
-            !user
-        ) {
+        if (!user) {
 
-            return res.status(401)
-                .json({
-
-                    success:
-                        false,
-
-                    message:
-                        "Authentication required."
-
-                });
+            return res.redirect(
+                "/login"
+            );
 
         }
 
 
+        // ==================================================
+        // VALID ROLE
+        // ==================================================
+
         if (
-            ![
-                "admin",
-                "dairyWorker"
-            ].includes(
-                user.role
-            )
+            user.role !== "admin" &&
+            user.role !== "dairyWorker"
         ) {
 
-            return res.status(403)
-                .json({
-
-                    success:
-                        false,
-
-                    message:
-                        "You are not authorized to record milk."
-
-                });
+            return res.status(
+                403
+            ).send(
+                "You are not authorized to record milk."
+            );
 
         }
 
+
+        // ==================================================
+        // RECORDS
+        // ==================================================
 
         const records =
-            Array.isArray(
-                req.body.records
-            )
-                ? req.body.records
-                : [];
+            req.body?.records || {};
 
+
+        // ==================================================
+        // SAVE
+        // ==================================================
 
         const result =
-            await milkService.saveMilkCollection({
-
+            await milkCollectService.saveMilk(
                 user,
-
                 records
+            );
 
-            });
+
+        // ==================================================
+        // SUCCESS
+        // ==================================================
+
+        const message =
+            user.role === "admin"
+
+                ? "Milk records saved successfully."
+
+                : "Today's milk records have been submitted successfully.";
 
 
-        return res.json({
+        // ==================================================
+        // REDIRECT
+        // ==================================================
+        //
+        // Redirect instead of rendering directly.
+        //
+        // This prevents accidental duplicate POSTs when the
+        // browser refreshes the page.
+        //
+        // ==================================================
 
-            success:
-                true,
+        return res.redirect(
+            `/milk?success=${encodeURIComponent(message)}`
+        );
 
-            message:
-                "Milk records saved successfully.",
+    }
 
-            day:
-                milkService.getTodayKey(),
+    catch (error) {
 
-            summary: {
+        console.error(
+            "POST /milk error:",
+            error
+        );
 
-                produced:
-                    result.summary.produced,
 
-                farmTotal:
-                    result.summary.farmTotal,
+        // ==================================================
+        // RELOAD PAGE
+        // ==================================================
 
-                available:
-                    result.summary.available
+        try {
+
+            const user =
+                req.session?.user;
+
+
+            if (!user) {
+
+                return res.redirect(
+                    "/login"
+                );
 
             }
 
-        });
 
-    }
-
-    catch (error) {
-
-        console.error(
-            "Record milk error:",
-            error
-        );
+            const data =
+                await milkCollectService.getMilkPageData(
+                    user
+                );
 
 
-        return res.status(400)
-            .json({
+            return res.status(
+                500
+            ).render(
+                "milk",
+                {
 
-                success:
-                    false,
+                    day:
+                        data.day,
 
-                message:
-                    error.message ||
-                    "Unable to save milk records."
+                    month:
+                        data.month,
 
-            });
+                    farms:
+                        data.farms,
 
-    }
+                    isAdmin:
+                        user.role === "admin",
 
-};
+                    user,
 
+                    error:
+                        error.message ||
+                        "Unable to save today's milk records."
 
-// ==========================================================
-// ADMIN EDIT ONE RECORD
-// ==========================================================
-//
-// PUT /milk/:animalId/:session
-//
-// ==========================================================
-
-exports.updateMilk =
-async function(
-    req,
-    res
-) {
-
-    try {
-
-        const user =
-            req.session.user;
-
-
-        if (
-            !user
-        ) {
-
-            return res.status(401)
-                .json({
-
-                    success:
-                        false,
-
-                    message:
-                        "Authentication required."
-
-                });
+                }
+            );
 
         }
 
-
-        if (
-            user.role !== "admin"
+        catch (
+            renderError
         ) {
 
-            return res.status(403)
-                .json({
-
-                    success:
-                        false,
-
-                    message:
-                        "Only an administrator can edit submitted milk records."
-
-                });
-
-        }
+            console.error(
+                "Milk error page failed:",
+                renderError
+            );
 
 
-        const {
-            animalId,
-            session
-        } =
-            req.params;
-
-
-        const {
-            liters,
-            remarks
-        } =
-            req.body;
-
-
-        const record =
-            await milkService.saveMilkRecord({
-
-                user,
-
-                animalId,
-
-                session,
-
-                liters,
-
-                remarks
-
-            });
-
-
-        return res.json({
-
-            success:
-                true,
-
-            message:
-                "Milk record updated successfully.",
-
-            record
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Update milk error:",
-            error
-        );
-
-
-        return res.status(400)
-            .json({
-
-                success:
-                    false,
-
-                message:
-                    error.message ||
-                    "Unable to update milk record."
-
-            });
-
-    }
-
-};
-
-
-// ==========================================================
-// DELETE MILK RECORD
-// ==========================================================
-//
-// DELETE /milk/:animalId/:session
-//
-// Admin only.
-//
-// ==========================================================
-
-exports.deleteMilk =
-async function(
-    req,
-    res
-) {
-
-    try {
-
-        const user =
-            req.session.user;
-
-
-        if (
-            !user
-        ) {
-
-            return res.status(401)
-                .json({
-
-                    success:
-                        false,
-
-                    message:
-                        "Authentication required."
-
-                });
+            return res.status(
+                500
+            ).send(
+                "Unable to process today's milk records."
+            );
 
         }
-
-
-        if (
-            user.role !== "admin"
-        ) {
-
-            return res.status(403)
-                .json({
-
-                    success:
-                        false,
-
-                    message:
-                        "Only an administrator can delete milk records."
-
-                });
-
-        }
-
-
-        await milkService.deleteMilkRecord({
-
-            user,
-
-            animalId:
-                req.params.animalId,
-
-            session:
-                req.params.session
-
-        });
-
-
-        return res.json({
-
-            success:
-                true,
-
-            message:
-                "Milk record deleted successfully."
-
-        });
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "Delete milk error:",
-            error
-        );
-
-
-        return res.status(400)
-            .json({
-
-                success:
-                    false,
-
-                message:
-                    error.message ||
-                    "Unable to delete milk record."
-
-            });
 
     }
 
