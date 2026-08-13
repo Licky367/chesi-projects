@@ -32,91 +32,106 @@ EXPECTED CONTROLLER DATA:
 ----------------------------------------------------------
 
 dairyGroups
-
 session
-
 isAdmin
-
 user
-
 success
-
 error
-
-
-EXPECTED dairyGroups STRUCTURE:
-----------------------------------------------------------
-
-dairyGroups = [
-
-    {
-        farm: {
-
-            _id,
-            name,
-            code
-
-        },
-
-        animals: [
-
-            {
-
-                _id,
-                name,
-                code,
-                assetCode,
-                isMilking,
-
-                morning,
-                evening,
-
-                morningRecorded,
-                eveningRecorded,
-
-                morningLiters,
-                eveningLiters
-
-            }
-
-        ]
-
-    }
-
-]
-
-
-IMPORTANT RELATIONSHIP:
-----------------------------------------------------------
-
-Dairy Farm:
-
-    code = -10
-
-Animal:
-
-    assetCode = -10
-
-Therefore:
-
-    farm.code === animal.assetCode
-
-
-IMPORTANT RESULT RULE:
-----------------------------------------------------------
-
-The result popup must ONLY appear when:
-
-    success === true
-    success === "1"
-
-OR when error contains an actual message.
-
-Opening /milk normally must NEVER display
-the result popup.
 
 ==========================================================
 */ %>
+
+
+<%
+/* ==========================================================
+   SAFE EJS DEFAULTS
+
+   Prevent ReferenceError when the controller does not
+   explicitly provide one of these variables.
+========================================================== */
+
+const safeDairyGroups =
+    typeof dairyGroups !== "undefined" &&
+    Array.isArray(dairyGroups)
+        ? dairyGroups
+        : [];
+
+const safeSession =
+    typeof session !== "undefined" &&
+    session !== null
+        ? String(session)
+        : "";
+
+const safeIsAdmin =
+    typeof isAdmin !== "undefined"
+        ? Boolean(isAdmin)
+        : false;
+
+const safeUser =
+    typeof user !== "undefined" &&
+    user !== null
+        ? user
+        : {};
+
+const safeSuccess =
+    typeof success !== "undefined"
+        ? success
+        : false;
+
+const safeError =
+    typeof error !== "undefined"
+        ? error
+        : null;
+
+
+/* ==========================================================
+   RESULT FLAGS
+========================================================== */
+
+const hasMilkError =
+    safeError !== null &&
+    safeError !== false &&
+    String(safeError).trim() !== "" &&
+    String(safeError).trim() !== "undefined" &&
+    String(safeError).trim() !== "null";
+
+
+const hasMilkSuccess =
+    safeSuccess === true ||
+    safeSuccess === "1" ||
+    safeSuccess === 1;
+
+
+/* ==========================================================
+   TOTAL MILKING ANIMALS
+========================================================== */
+
+const totalMilkingAnimals =
+    safeDairyGroups.reduce(
+        (total, group) => {
+
+            if (
+                !group ||
+                !Array.isArray(group.animals)
+            ) {
+                return total;
+            }
+
+            return total + group.animals.length;
+
+        },
+        0
+    );
+
+
+/* ==========================================================
+   TOTAL FARMS
+========================================================== */
+
+const totalDairyFarms =
+    safeDairyGroups.length;
+
+%>
 
 
 <style>
@@ -340,7 +355,7 @@ the result popup.
 
 
 /* ==========================================================
-   PAGE SECTION HEADER
+   SECTION HEADER
 ========================================================== */
 
 .milk-section-header {
@@ -369,7 +384,7 @@ the result popup.
 
 
 /* ==========================================================
-   FARM SECTION
+   FARM
 ========================================================== */
 
 .milk-farm-section {
@@ -379,11 +394,6 @@ the result popup.
 .milk-farm-section:first-child {
     margin-top: 0;
 }
-
-
-/* ==========================================================
-   FARM HEADER
-========================================================== */
 
 .milk-farm-header {
     display: flex;
@@ -455,7 +465,7 @@ the result popup.
 
 
 /* ==========================================================
-   TABLE WRAPPER
+   TABLE
 ========================================================== */
 
 .milk-table-wrapper {
@@ -468,11 +478,6 @@ the result popup.
         0 5px 20px rgba(31, 92, 52, 0.045);
 }
 
-
-/* ==========================================================
-   TABLE
-========================================================== */
-
 .milk-table {
     width: 100%;
     min-width: 850px;
@@ -480,11 +485,6 @@ the result popup.
     border-spacing: 0;
     table-layout: fixed;
 }
-
-
-/* ==========================================================
-   TABLE HEADER
-========================================================== */
 
 .milk-table thead th {
     padding: 14px 15px;
@@ -507,11 +507,6 @@ the result popup.
     border-top-right-radius: 19px;
 }
 
-
-/* ==========================================================
-   TABLE COLUMNS
-========================================================== */
-
 .milk-table .milk-column-animal {
     width: 23%;
 }
@@ -523,11 +518,6 @@ the result popup.
 .milk-table .milk-column-session {
     width: 33.5%;
 }
-
-
-/* ==========================================================
-   TABLE BODY
-========================================================== */
 
 .milk-table tbody td {
     padding: 16px 15px;
@@ -546,7 +536,7 @@ the result popup.
 
 
 /* ==========================================================
-   ANIMAL CELL
+   ANIMAL
 ========================================================== */
 
 .milk-animal-cell {
@@ -601,7 +591,7 @@ the result popup.
 
 
 /* ==========================================================
-   CODE CELL
+   CODE
 ========================================================== */
 
 .milk-code-cell {
@@ -622,7 +612,7 @@ the result popup.
 
 
 /* ==========================================================
-   SESSION CELL
+   SESSION
 ========================================================== */
 
 .milk-session-cell {
@@ -789,7 +779,7 @@ the result popup.
 
 
 /* ==========================================================
-   SUBMIT BUTTON
+   SUBMIT
 ========================================================== */
 
 .milk-submit {
@@ -835,7 +825,7 @@ the result popup.
 
 
 /* ==========================================================
-   CLOSED STATE
+   CLOSED
 ========================================================== */
 
 .milk-closed-box {
@@ -894,7 +884,7 @@ the result popup.
 
 
 /* ==========================================================
-   EMPTY STATE
+   EMPTY
 ========================================================== */
 
 .milk-empty {
@@ -1032,17 +1022,10 @@ the result popup.
     font-size: 12px;
     font-weight: 800;
     cursor: pointer;
-    transition:
-        background .2s ease,
-        transform .15s ease;
 }
 
 .milk-result-button:hover {
     background: #256f3b;
-}
-
-.milk-result-button:active {
-    transform: translateY(1px);
 }
 
 .milk-result-popup.error .milk-result-button {
@@ -1259,10 +1242,6 @@ the result popup.
 }
 
 
-/* ==========================================================
-   REDUCE MOTION
-========================================================== */
-
 @media (prefers-reduced-motion: reduce) {
 
     .milk-submit,
@@ -1406,15 +1385,22 @@ the result popup.
                 <span class="milk-session-value">
 
                     <span
-                        class="milk-session-dot <%= session === 'closed' ? 'closed' : '' %>"
+                        class="milk-session-dot <%= safeSession === 'closed' ? 'closed' : '' %>"
                     ></span>
 
-                    <%= session === "morning"
-                        ? "Morning Collection"
-                        : session === "evening"
-                            ? "Evening Collection"
-                            : "Collection Closed"
-                    %>
+                    <% if (safeSession === "morning") { %>
+
+                        Morning Collection
+
+                    <% } else if (safeSession === "evening") { %>
+
+                        Evening Collection
+
+                    <% } else { %>
+
+                        Collection Closed
+
+                    <% } %>
 
                 </span>
 
@@ -1453,11 +1439,11 @@ the result popup.
 
                 <div class="milk-info-value">
 
-                    <% if (session === "morning") { %>
+                    <% if (safeSession === "morning") { %>
 
                         Morning · Until 10:00 AM
 
-                    <% } else if (session === "evening") { %>
+                    <% } else if (safeSession === "evening") { %>
 
                         Evening · From 4:00 PM
 
@@ -1495,23 +1481,8 @@ the result popup.
 
                 <div class="milk-info-value">
 
-                    <%
-                        const totalMilkingAnimals =
-                            Array.isArray(dairyGroups)
-                                ? dairyGroups.reduce(
-                                    (total, group) =>
-                                        total +
-                                        (
-                                            Array.isArray(group.animals)
-                                                ? group.animals.length
-                                                : 0
-                                        ),
-                                    0
-                                )
-                                : 0;
-                    %>
-
-                    <%= totalMilkingAnimals %> registered
+                    <%= totalMilkingAnimals %>
+                    registered
 
                 </div>
 
@@ -1540,7 +1511,12 @@ the result popup.
                 </div>
 
                 <div class="milk-info-value">
-                    <%= isAdmin ? "Administrator" : "Milk Worker" %>
+
+                    <%= safeIsAdmin
+                        ? "Administrator"
+                        : "Milk Worker"
+                    %>
+
                 </div>
 
             </div>
@@ -1562,15 +1538,9 @@ the result popup.
 
         <span class="milk-section-count">
 
-            <%= Array.isArray(dairyGroups)
-                ? dairyGroups.length
-                : 0
-            %>
+            <%= totalDairyFarms %>
 
-            <%= (
-                Array.isArray(dairyGroups) &&
-                dairyGroups.length === 1
-            )
+            <%= totalDairyFarms === 1
                 ? "farm"
                 : "farms"
             %>
@@ -1584,10 +1554,7 @@ the result popup.
          EMPTY STATE
     ======================================================= -->
 
-    <% if (
-        !Array.isArray(dairyGroups) ||
-        dairyGroups.length === 0
-    ) { %>
+    <% if (safeDairyGroups.length === 0) { %>
 
         <section class="milk-empty">
 
@@ -1623,12 +1590,14 @@ the result popup.
              FARM GROUPS
         =================================================== -->
 
-        <% dairyGroups.forEach((group) => { %>
+        <% safeDairyGroups.forEach(function(group) { %>
 
 
             <%
                 const farm =
-                    group && group.farm
+                    group &&
+                    group.farm &&
+                    typeof group.farm === "object"
                         ? group.farm
                         : {};
 
@@ -1640,17 +1609,13 @@ the result popup.
             %>
 
 
-            <% if (animals.length) { %>
+            <% if (animals.length > 0) { %>
 
-
-                <!-- ==========================================
-                     FARM SECTION
-                =========================================== -->
 
                 <section
                     class="milk-farm-section"
-                    data-farm-code="<%= farm.code ?? '' %>"
-                    data-farm-id="<%= farm._id ?? '' %>"
+                    data-farm-code="<%= farm.code != null ? farm.code : '' %>"
+                    data-farm-id="<%= farm._id != null ? farm._id : '' %>"
                 >
 
 
@@ -1678,8 +1643,16 @@ the result popup.
 
                                 <h3 class="milk-farm-name">
 
-                                    <%= farm.name ||
-                                        `Dairy Farm ${farm.code ?? ""}`
+                                    <%= farm.name
+                                        ? farm.name
+                                        : (
+                                            "Dairy Farm " +
+                                            (
+                                                farm.code != null
+                                                    ? farm.code
+                                                    : ""
+                                            )
+                                        )
                                     %>
 
                                 </h3>
@@ -1689,7 +1662,10 @@ the result popup.
 
                                     Farm code:
 
-                                    <%= farm.code ?? "—" %>
+                                    <%= farm.code != null
+                                        ? farm.code
+                                        : "—"
+                                    %>
 
                                 </div>
 
@@ -1720,7 +1696,6 @@ the result popup.
 
                         <table class="milk-table">
 
-
                             <thead>
 
                                 <tr>
@@ -1749,8 +1724,7 @@ the result popup.
                             <tbody>
 
 
-                                <% animals.forEach((dairy) => { %>
-
+                                <% animals.forEach(function(dairy) { %>
 
                                     <tr>
 
@@ -1779,8 +1753,18 @@ the result popup.
 
                                                     <h3 class="milk-animal-name">
 
-                                                        <%= dairy.name ||
-                                                            `Dairy Animal ${dairy.code ?? ""}`
+                                                        <%= dairy &&
+                                                            dairy.name
+                                                                ? dairy.name
+                                                                : (
+                                                                    "Dairy Animal " +
+                                                                    (
+                                                                        dairy &&
+                                                                        dairy.code != null
+                                                                            ? dairy.code
+                                                                            : ""
+                                                                    )
+                                                                )
                                                         %>
 
                                                     </h3>
@@ -1810,6 +1794,7 @@ the result popup.
                                         <td class="milk-code-cell">
 
                                             <% if (
+                                                dairy &&
                                                 dairy.code !== undefined &&
                                                 dairy.code !== null
                                             ) { %>
@@ -1837,7 +1822,6 @@ the result popup.
 
                                             <div class="milk-session-cell">
 
-
                                                 <div class="milk-session-cell-header">
 
                                                     <div class="milk-session-cell-title">
@@ -1861,6 +1845,7 @@ the result popup.
 
 
                                                     <% if (
+                                                        dairy &&
                                                         dairy.morningRecorded
                                                     ) { %>
 
@@ -1876,6 +1861,7 @@ the result popup.
 
 
                                                 <% if (
+                                                    dairy &&
                                                     dairy.morningRecorded
                                                 ) { %>
 
@@ -1918,7 +1904,7 @@ the result popup.
 
 
                                                     <% if (
-                                                        isAdmin &&
+                                                        safeIsAdmin &&
                                                         dairy.morning &&
                                                         dairy.morning._id
                                                     ) { %>
@@ -1929,7 +1915,7 @@ the result popup.
                                                                 type="button"
                                                                 class="milk-edit-button"
                                                                 data-record-id="<%= dairy.morning._id %>"
-                                                                data-liters="<%= dairy.morningLiters ?? 0 %>"
+                                                                data-liters="<%= dairy.morningLiters != null ? dairy.morningLiters : 0 %>"
                                                                 data-remarks="<%= dairy.morning.remarks || '' %>"
                                                                 data-session="Morning"
                                                                 onclick="openMilkEditModal(this)"
@@ -1952,7 +1938,7 @@ the result popup.
 
 
                                                 <% } else if (
-                                                    session === "morning"
+                                                    safeSession === "morning"
                                                 ) { %>
 
 
@@ -1966,7 +1952,7 @@ the result popup.
                                                         <input
                                                             type="hidden"
                                                             name="dairy"
-                                                            value="<%= dairy._id %>"
+                                                            value="<%= dairy && dairy._id ? dairy._id : '' %>"
                                                         >
 
                                                         <input
@@ -2034,7 +2020,7 @@ the result popup.
                                                     <div class="milk-closed-box">
 
                                                         <% if (
-                                                            session === "evening"
+                                                            safeSession === "evening"
                                                         ) { %>
 
                                                             <strong>
@@ -2058,7 +2044,7 @@ the result popup.
 
 
                                                     <% if (
-                                                        isAdmin &&
+                                                        safeIsAdmin &&
                                                         dairy.morning &&
                                                         dairy.morning._id
                                                     ) { %>
@@ -2069,7 +2055,7 @@ the result popup.
                                                                 type="button"
                                                                 class="milk-edit-button"
                                                                 data-record-id="<%= dairy.morning._id %>"
-                                                                data-liters="<%= dairy.morningLiters ?? 0 %>"
+                                                                data-liters="<%= dairy.morningLiters != null ? dairy.morningLiters : 0 %>"
                                                                 data-remarks="<%= dairy.morning.remarks || '' %>"
                                                                 data-session="Morning"
                                                                 onclick="openMilkEditModal(this)"
@@ -2091,7 +2077,6 @@ the result popup.
                                                     <% } %>
 
                                                 <% } %>
-
 
                                             </div>
 
@@ -2130,6 +2115,7 @@ the result popup.
 
 
                                                     <% if (
+                                                        dairy &&
                                                         dairy.eveningRecorded
                                                     ) { %>
 
@@ -2145,6 +2131,7 @@ the result popup.
 
 
                                                 <% if (
+                                                    dairy &&
                                                     dairy.eveningRecorded
                                                 ) { %>
 
@@ -2187,7 +2174,7 @@ the result popup.
 
 
                                                     <% if (
-                                                        isAdmin &&
+                                                        safeIsAdmin &&
                                                         dairy.evening &&
                                                         dairy.evening._id
                                                     ) { %>
@@ -2198,7 +2185,7 @@ the result popup.
                                                                 type="button"
                                                                 class="milk-edit-button"
                                                                 data-record-id="<%= dairy.evening._id %>"
-                                                                data-liters="<%= dairy.eveningLiters ?? 0 %>"
+                                                                data-liters="<%= dairy.eveningLiters != null ? dairy.eveningLiters : 0 %>"
                                                                 data-remarks="<%= dairy.evening.remarks || '' %>"
                                                                 data-session="Evening"
                                                                 onclick="openMilkEditModal(this)"
@@ -2221,7 +2208,7 @@ the result popup.
 
 
                                                 <% } else if (
-                                                    session === "evening"
+                                                    safeSession === "evening"
                                                 ) { %>
 
 
@@ -2235,7 +2222,7 @@ the result popup.
                                                         <input
                                                             type="hidden"
                                                             name="dairy"
-                                                            value="<%= dairy._id %>"
+                                                            value="<%= dairy && dairy._id ? dairy._id : '' %>"
                                                         >
 
                                                         <input
@@ -2303,7 +2290,7 @@ the result popup.
                                                     <div class="milk-closed-box">
 
                                                         <% if (
-                                                            session === "morning"
+                                                            safeSession === "morning"
                                                         ) { %>
 
                                                             <strong>
@@ -2326,7 +2313,7 @@ the result popup.
 
 
                                                     <% if (
-                                                        isAdmin &&
+                                                        safeIsAdmin &&
                                                         dairy.evening &&
                                                         dairy.evening._id
                                                     ) { %>
@@ -2337,7 +2324,7 @@ the result popup.
                                                                 type="button"
                                                                 class="milk-edit-button"
                                                                 data-record-id="<%= dairy.evening._id %>"
-                                                                data-liters="<%= dairy.eveningLiters ?? 0 %>"
+                                                                data-liters="<%= dairy.eveningLiters != null ? dairy.eveningLiters : 0 %>"
                                                                 data-remarks="<%= dairy.evening.remarks || '' %>"
                                                                 data-session="Evening"
                                                                 onclick="openMilkEditModal(this)"
@@ -2365,12 +2352,9 @@ the result popup.
 
                                         </td>
 
-
                                     </tr>
 
-
-                                <% }) %>
-
+                                <% }); %>
 
                             </tbody>
 
@@ -2378,15 +2362,11 @@ the result popup.
 
                     </div>
 
-
                 </section>
-
 
             <% } %>
 
-
-        <% }) %>
-
+        <% }); %>
 
     <% } %>
 
@@ -2398,29 +2378,14 @@ the result popup.
      SERVER RESULT POPUP
 ========================================================== -->
 
-<%
-    const hasMilkError =
-        typeof error !== "undefined" &&
-        error !== null &&
-        error !== false &&
-        String(error).trim() !== "" &&
-        String(error).trim() !== "undefined";
-
-    const hasMilkSuccess =
-        success === true ||
-        success === "1";
-%>
-
-
 <% if (
     hasMilkSuccess ||
     hasMilkError
 ) { %>
 
-
 <div
     id="milkResultPopup"
-    class="milk-result-popup active <%= hasMilkError ? "error" : "success" %>"
+    class="milk-result-popup active <%= hasMilkError ? 'error' : 'success' %>"
     aria-hidden="false"
 >
 
@@ -2432,7 +2397,7 @@ the result popup.
     >
 
         <div
-            class="milk-result-icon <%= hasMilkError ? "error" : "success" %>"
+            class="milk-result-icon <%= hasMilkError ? 'error' : 'success' %>"
         >
 
             <svg
@@ -2442,8 +2407,8 @@ the result popup.
 
                 <use
                     href="<%= hasMilkError
-                        ? "#milk-alert"
-                        : "#milk-check"
+                        ? '#milk-alert'
+                        : '#milk-check'
                     %>"
                 ></use>
 
@@ -2468,7 +2433,7 @@ the result popup.
         <p class="milk-result-message">
 
             <%= hasMilkError
-                ? String(error)
+                ? String(safeError)
                 : "The collection record has been recorded successfully."
             %>
 
@@ -2487,7 +2452,6 @@ the result popup.
 
 </div>
 
-
 <% } %>
 
 
@@ -2495,8 +2459,7 @@ the result popup.
      ADMIN EDIT MODAL
 ========================================================== -->
 
-<% if (isAdmin) { %>
-
+<% if (safeIsAdmin) { %>
 
 <div
     id="milkEditModal"
@@ -2630,7 +2593,6 @@ the result popup.
 
 </div>
 
-
 <% } %>
 
 
@@ -2651,10 +2613,8 @@ function validateMilkForm(form) {
         return false;
     }
 
-
     const value =
         Number(input.value);
-
 
     if (
         input.value === "" ||
@@ -2671,9 +2631,7 @@ function validateMilkForm(form) {
         return false;
     }
 
-
     return true;
-
 }
 
 
@@ -2688,7 +2646,6 @@ function showMilkValidationPopup(message) {
             "milkValidationPopup"
         );
 
-
     if (!popup) {
 
         popup =
@@ -2702,13 +2659,11 @@ function showMilkValidationPopup(message) {
         popup.className =
             "milk-result-popup error";
 
-
         popup.innerHTML = `
             <div
                 class="milk-result-card"
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby="milkValidationTitle"
             >
 
                 <div class="milk-result-icon error">
@@ -2722,17 +2677,11 @@ function showMilkValidationPopup(message) {
 
                 </div>
 
-
-                <h2
-                    id="milkValidationTitle"
-                    class="milk-result-title"
-                >
+                <h2 class="milk-result-title">
                     Invalid milk quantity
                 </h2>
 
-
                 <p class="milk-result-message"></p>
-
 
                 <button
                     type="button"
@@ -2744,42 +2693,41 @@ function showMilkValidationPopup(message) {
             </div>
         `;
 
-
         document.body.appendChild(
             popup
         );
-
 
         const button =
             popup.querySelector(
                 ".milk-result-button"
             );
 
+        if (button) {
 
-        button.addEventListener(
-            "click",
-            function() {
+            button.addEventListener(
+                "click",
+                function() {
 
-                popup.classList.remove(
-                    "active"
-                );
+                    popup.classList.remove(
+                        "active"
+                    );
 
-                popup.setAttribute(
-                    "aria-hidden",
-                    "true"
-                );
+                    popup.setAttribute(
+                        "aria-hidden",
+                        "true"
+                    );
 
-            }
-        );
+                }
+            );
+
+        }
 
     }
-
 
     const messageElement =
         popup.querySelector(
             ".milk-result-message"
         );
-
 
     if (messageElement) {
 
@@ -2787,7 +2735,6 @@ function showMilkValidationPopup(message) {
             message;
 
     }
-
 
     popup.classList.add(
         "active"
@@ -2797,7 +2744,6 @@ function showMilkValidationPopup(message) {
         "aria-hidden",
         "false"
     );
-
 }
 
 
@@ -2812,11 +2758,9 @@ function closeMilkResultPopup() {
             "milkResultPopup"
         );
 
-
     if (!popup) {
         return;
     }
-
 
     popup.classList.remove(
         "active"
@@ -2832,7 +2776,6 @@ function closeMilkResultPopup() {
         new URL(
             window.location.href
         );
-
 
     url.searchParams.delete(
         "success"
@@ -2861,7 +2804,6 @@ function closeMilkResultPopup() {
 
 
     window.location.reload();
-
 }
 
 
@@ -2945,7 +2887,7 @@ function openMilkEditModal(button) {
 
         subtitle.textContent =
             "Editing " +
-            sessionName +
+            (sessionName || "") +
             " milk record";
 
     }
@@ -2965,13 +2907,11 @@ function openMilkEditModal(button) {
         function() {
 
             litersInput.focus();
-
             litersInput.select();
 
         },
         50
     );
-
 }
 
 
@@ -2986,11 +2926,9 @@ function closeMilkEditModal() {
             "milkEditModal"
         );
 
-
     if (!modal) {
         return;
     }
-
 
     modal.classList.remove(
         "active"
@@ -3000,7 +2938,6 @@ function closeMilkEditModal() {
         "aria-hidden",
         "true"
     );
-
 }
 
 
@@ -3016,7 +2953,6 @@ document.addEventListener(
             document.getElementById(
                 "milkEditModal"
             );
-
 
         if (
             modal &&
@@ -3044,7 +2980,6 @@ document.addEventListener(
         ) {
             return;
         }
-
 
         closeMilkEditModal();
 
@@ -3098,7 +3033,6 @@ document.addEventListener(
             event.preventDefault();
 
             return;
-
         }
 
 
