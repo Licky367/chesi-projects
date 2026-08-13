@@ -7,8 +7,11 @@
 .milk-stats-page {
 
   width: 100%;
+
   max-width: 1100px;
+
   margin: 0 auto;
+
   padding: 20px 0 40px;
 
 }
@@ -19,8 +22,11 @@
 ===================================================== */
 
 .page-header {
+
   margin-bottom: 20px;
+
 }
+
 
 .page-header h2 {
 
@@ -31,6 +37,7 @@
   font-size: 26px;
 
 }
+
 
 .page-header p {
 
@@ -78,6 +85,7 @@
 
 }
 
+
 .filter-group {
 
   flex: 1;
@@ -85,6 +93,7 @@
   min-width: 180px;
 
 }
+
 
 .filter-group label {
 
@@ -99,6 +108,7 @@
   font-weight: 700;
 
 }
+
 
 .filter-group input,
 .filter-group select {
@@ -119,6 +129,7 @@
 
 }
 
+
 .filter-group input:focus,
 .filter-group select:focus {
 
@@ -127,6 +138,7 @@
   box-shadow: 0 0 0 3px rgba(22,163,74,0.1);
 
 }
+
 
 .filter-button {
 
@@ -145,6 +157,7 @@
   cursor: pointer;
 
 }
+
 
 .filter-button:hover {
 
@@ -171,6 +184,7 @@
 
 }
 
+
 .report-header h3 {
 
   margin: 0;
@@ -180,6 +194,7 @@
   font-size: 20px;
 
 }
+
 
 .report-date {
 
@@ -200,6 +215,7 @@
 
 }
 
+
 table {
 
   width: 100%;
@@ -207,6 +223,7 @@ table {
   border-collapse: collapse;
 
 }
+
 
 th,
 td {
@@ -218,6 +235,7 @@ td {
   text-align: left;
 
 }
+
 
 th {
 
@@ -231,6 +249,7 @@ th {
 
 }
 
+
 td {
 
   color: #4b5563;
@@ -239,11 +258,13 @@ td {
 
 }
 
+
 tbody tr:hover {
 
   background: #f9fafb;
 
 }
+
 
 .animal-code {
 
@@ -254,9 +275,25 @@ tbody tr:hover {
 }
 
 
+.liters-value {
+
+  font-weight: 700;
+
+  color: #166534;
+
+}
+
+
 /* =====================================================
-   MILK SESSION INPUTS
+   MILK SESSION CELLS
 ===================================================== */
+
+.milk-session-cell {
+
+  min-width: 145px;
+
+}
+
 
 .milk-session-form {
 
@@ -264,11 +301,23 @@ tbody tr:hover {
 
 }
 
-.milk-session-cell {
 
-  min-width: 135px;
+.session-label {
+
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #6b7280;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
 
 }
+
 
 .milk-input {
 
@@ -300,6 +349,7 @@ tbody tr:hover {
 
 }
 
+
 .milk-input::placeholder {
 
   color: #9ca3af;
@@ -307,6 +357,7 @@ tbody tr:hover {
   font-weight: 400;
 
 }
+
 
 .milk-input:focus {
 
@@ -317,6 +368,25 @@ tbody tr:hover {
   box-shadow: 0 0 0 3px rgba(22,163,74,0.10);
 
 }
+
+
+.milk-input.session-open {
+
+  background: #ffffff;
+
+  border-color: #16a34a;
+
+  cursor: text;
+
+}
+
+
+.milk-input.session-open:hover {
+
+  border-color: #15803d;
+
+}
+
 
 .milk-input.session-closed {
 
@@ -330,42 +400,28 @@ tbody tr:hover {
 
 }
 
-.milk-input.session-open {
+
+.milk-input.admin-editable {
 
   background: #ffffff;
 
-  border-color: #16a34a;
+  border-color: #d1d5db;
 
-  cursor: text;
+  cursor: pointer;
 
 }
 
-.milk-input.session-open:hover {
 
-  border-color: #15803d;
+.milk-input.admin-editable:hover {
+
+  border-color: #16a34a;
 
 }
 
 
 /* =====================================================
-   SESSION LABEL
+   SESSION STATUS
 ===================================================== */
-
-.session-label {
-
-  display: block;
-
-  margin-bottom: 5px;
-
-  color: #6b7280;
-
-  font-size: 10px;
-
-  font-weight: 700;
-
-  text-transform: uppercase;
-
-}
 
 .session-status {
 
@@ -379,44 +435,17 @@ tbody tr:hover {
 
 }
 
+
 .session-status.open {
 
   color: #166534;
 
 }
 
+
 .session-status.closed {
 
   color: #6b7280;
-
-}
-
-
-/* =====================================================
-   TOTAL
-===================================================== */
-
-.total-cell {
-
-  min-width: 100px;
-
-}
-
-.liters-value {
-
-  font-weight: 700;
-
-  color: #166534;
-
-}
-
-.daily-total {
-
-  font-size: 15px;
-
-  font-weight: 800;
-
-  color: #166534;
 
 }
 
@@ -449,6 +478,7 @@ tbody tr:hover {
 
 }
 
+
 .session-save-button:hover {
 
   background: #14532d;
@@ -457,7 +487,7 @@ tbody tr:hover {
 
 
 /* =====================================================
-   ADMIN EDIT INDICATOR
+   ADMIN EDIT NOTE
 ===================================================== */
 
 .admin-edit-note {
@@ -469,6 +499,28 @@ tbody tr:hover {
   color: #9ca3af;
 
   font-size: 9px;
+
+}
+
+
+/* =====================================================
+   TOTAL
+===================================================== */
+
+.total-cell {
+
+  min-width: 100px;
+
+}
+
+
+.daily-total {
+
+  font-size: 15px;
+
+  font-weight: 800;
+
+  color: #166534;
 
 }
 
@@ -490,6 +542,7 @@ tbody tr:hover {
 
 }
 
+
 .summary-box {
 
   padding: 17px;
@@ -499,6 +552,7 @@ tbody tr:hover {
   background: #f9fafb;
 
 }
+
 
 .summary-box span {
 
@@ -511,6 +565,7 @@ tbody tr:hover {
   font-size: 12px;
 
 }
+
 
 .summary-box strong {
 
@@ -531,6 +586,7 @@ tbody tr:hover {
 
 }
 
+
 .status-locked {
 
   color: #b91c1c !important;
@@ -548,6 +604,7 @@ tbody tr:hover {
 
 }
 
+
 .sales-section h3 {
 
   margin-bottom: 15px;
@@ -555,6 +612,7 @@ tbody tr:hover {
   color: #374151;
 
 }
+
 
 .revenue-total {
 
@@ -568,6 +626,7 @@ tbody tr:hover {
 
 }
 
+
 .revenue-total span {
 
   display: block;
@@ -577,6 +636,7 @@ tbody tr:hover {
   color: #6b7280;
 
 }
+
 
 .revenue-total strong {
 
@@ -599,6 +659,7 @@ tbody tr:hover {
 
 }
 
+
 .empty-icon {
 
   font-size: 42px;
@@ -607,6 +668,7 @@ tbody tr:hover {
 
 }
 
+
 .empty-state h3 {
 
   margin-bottom: 8px;
@@ -614,6 +676,7 @@ tbody tr:hover {
   color: #374151;
 
 }
+
 
 .empty-state p {
 
@@ -625,196 +688,140 @@ tbody tr:hover {
 
 
 /* =====================================================
-   POPUP OVERLAY
-===================================================== */
-
-.milk-message-overlay {
-
-  position: fixed;
-
-  inset: 0;
-
-  z-index: 9999;
-
-  display: none;
-
-  align-items: center;
-
-  justify-content: center;
-
-  padding: 20px;
-
-  background: rgba(0,0,0,0.35);
-
-  backdrop-filter: blur(2px);
-
-}
-
-.milk-message-overlay.show {
-
-  display: flex;
-
-}
-
-
-/* =====================================================
    POPUP
 ===================================================== */
 
 .milk-message-popup {
 
-  width: 100%;
+  position: fixed;
 
-  max-width: 390px;
+  top: 20px;
 
-  padding: 28px 24px 24px;
+  left: 50%;
 
-  border-radius: 16px;
+  z-index: 9999;
+
+  width: calc(100% - 30px);
+
+  max-width: 420px;
+
+  padding: 18px 20px;
+
+  border-radius: 12px;
 
   background: #ffffff;
 
-  box-shadow:
-    0 20px 50px rgba(0,0,0,0.18);
+  box-shadow: 0 10px 35px rgba(0,0,0,0.18);
 
-  text-align: center;
+  transform: translate(-50%, -150%);
 
-  animation: milkPopupIn 0.18s ease-out;
+  opacity: 0;
 
-}
+  pointer-events: none;
 
-@keyframes milkPopupIn {
-
-  from {
-
-    opacity: 0;
-
-    transform: scale(0.94);
-
-  }
-
-  to {
-
-    opacity: 1;
-
-    transform: scale(1);
-
-  }
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
 
 }
 
 
-/* =====================================================
-   POPUP ICON
-===================================================== */
+.milk-message-popup.show {
 
-.milk-message-icon {
+  transform: translate(-50%, 0);
+
+  opacity: 1;
+
+  pointer-events: auto;
+
+}
+
+
+.milk-message-popup.success {
+
+  border-left: 5px solid #16a34a;
+
+}
+
+
+.milk-message-popup.error {
+
+  border-left: 5px solid #dc2626;
+
+}
+
+
+.milk-message-content {
 
   display: flex;
 
-  align-items: center;
+  align-items: flex-start;
 
-  justify-content: center;
-
-  width: 58px;
-
-  height: 58px;
-
-  margin: 0 auto 15px;
-
-  border-radius: 50%;
-
-  font-size: 27px;
+  gap: 12px;
 
 }
 
 
-/* SUCCESS */
-
-.milk-message-popup.success
 .milk-message-icon {
 
-  background: #dcfce7;
+  font-size: 23px;
 
-  color: #166534;
-
-}
-
-
-/* FAILURE */
-
-.milk-message-popup.failure
-.milk-message-icon {
-
-  background: #fee2e2;
-
-  color: #b91c1c;
+  line-height: 1;
 
 }
 
 
-/* =====================================================
-   POPUP TITLE
-===================================================== */
+.milk-message-text {
 
-.milk-message-popup h3 {
+  flex: 1;
 
-  margin: 0 0 8px;
+}
+
+
+.milk-message-text strong {
+
+  display: block;
+
+  margin-bottom: 4px;
 
   color: #374151;
 
-  font-size: 20px;
+  font-size: 15px;
 
 }
 
 
-/* =====================================================
-   POPUP MESSAGE
-===================================================== */
-
-.milk-message-popup p {
-
-  margin: 0 0 22px;
+.milk-message-text span {
 
   color: #6b7280;
 
-  font-size: 14px;
+  font-size: 13px;
 
-  line-height: 1.5;
+  line-height: 1.4;
 
 }
 
 
-/* =====================================================
-   POPUP BUTTON
-===================================================== */
-
-.milk-message-button {
-
-  width: 100%;
-
-  padding: 11px 18px;
+.milk-message-close {
 
   border: none;
 
-  border-radius: 9px;
+  background: transparent;
 
-  background: #166534;
+  color: #9ca3af;
 
-  color: #ffffff;
+  font-size: 20px;
 
-  font-family: inherit;
-
-  font-size: 14px;
-
-  font-weight: 700;
+  line-height: 1;
 
   cursor: pointer;
 
 }
 
-.milk-message-button:hover {
 
-  background: #14532d;
+.milk-message-close:hover {
+
+  color: #374151;
 
 }
 
@@ -831,11 +838,13 @@ tbody tr:hover {
 
   }
 
+
   .stats-card {
 
     padding: 16px;
 
   }
+
 
   .stats-filter {
 
@@ -845,11 +854,13 @@ tbody tr:hover {
 
   }
 
+
   .filter-button {
 
     width: 100%;
 
   }
+
 
   .report-header {
 
@@ -858,6 +869,7 @@ tbody tr:hover {
     align-items: flex-start;
 
   }
+
 
   th,
   td {
@@ -868,17 +880,10 @@ tbody tr:hover {
 
   }
 
+
   .milk-input {
 
     min-width: 95px;
-
-  }
-
-  .milk-message-popup {
-
-    max-width: 340px;
-
-    padding: 24px 20px 20px;
 
   }
 
@@ -891,90 +896,46 @@ tbody tr:hover {
      POPUP MESSAGE
 ===================================================== -->
 
-<%
-const popupSuccess =
-  typeof success !== "undefined"
-    ? success
-    : false;
-
-const popupError =
-  typeof error !== "undefined"
-    ? error
-    : false;
-
-const querySuccess =
-  typeof query !== "undefined" &&
-  query?.success === "1";
-
-const queryError =
-  typeof query !== "undefined" &&
-  query?.error === "1";
-
-const showSuccessPopup =
-  popupSuccess === true ||
-  popupSuccess === "1" ||
-  querySuccess;
-
-const showErrorPopup =
-  popupError === true ||
-  popupError === "1" ||
-  queryError;
-%>
-
-
-<% if (showSuccessPopup || showErrorPopup) { %>
-
 <div
-  id="milkMessageOverlay"
-  class="milk-message-overlay"
+  id="milkMessagePopup"
+  class="milk-message-popup"
 >
 
+  <div class="milk-message-content">
 
-  <div
-    class="milk-message-popup
-      <%= showErrorPopup ? 'failure' : 'success' %>"
-  >
+    <div
+      id="milkMessageIcon"
+      class="milk-message-icon"
+    >
+      ✅
+    </div>
 
 
-    <div class="milk-message-icon">
+    <div class="milk-message-text">
 
-      <%= showErrorPopup ? "✕" : "✓" %>
+      <strong id="milkMessageTitle">
+        Success
+      </strong>
+
+      <span id="milkMessageText">
+        Milk record submitted successfully.
+      </span>
 
     </div>
 
 
-    <h3>
-
-      <%= showErrorPopup
-        ? "Submission Failed"
-        : "Milk Record Submitted" %>
-
-    </h3>
-
-
-    <p>
-
-      <%= showErrorPopup
-        ? "The milk record could not be saved. Please try again."
-        : "The milk record was submitted successfully." %>
-
-    </p>
-
-
     <button
       type="button"
-      id="milkMessageButton"
-      class="milk-message-button"
+      class="milk-message-close"
+      onclick="closeMilkMessage()"
+      aria-label="Close"
     >
-      OK
+      ×
     </button>
-
 
   </div>
 
 </div>
-
-<% } %>
 
 
 <div class="milk-stats-page">
@@ -990,6 +951,7 @@ const showErrorPopup =
     🥛 Milk Statistics
   </h2>
 
+
   <p>
     Review milk production, consumption, sales and revenue.
   </p>
@@ -1003,77 +965,93 @@ const showErrorPopup =
 
 <div class="stats-card">
 
+
 <form
   method="GET"
   action="/stats"
   class="stats-filter"
 >
 
-  <div class="filter-group">
 
-    <label>
-      Report Type
-    </label>
+<div class="filter-group">
 
-    <select name="type">
-
-      <option
-        value="day"
-        <%= type === "day" ? "selected" : "" %>
-      >
-        Daily
-      </option>
-
-      <option
-        value="month"
-        <%= type === "month" ? "selected" : "" %>
-      >
-        Monthly
-      </option>
-
-    </select>
-
-  </div>
+<label>
+Report Type
+</label>
 
 
-  <div class="filter-group">
-
-    <label>
-      Select Date
-    </label>
-
-    <input
-      type="date"
-      name="date"
-      value="<%= date || '' %>"
-    >
-
-  </div>
+<select name="type">
 
 
-  <div class="filter-group">
-
-    <label>
-      Select Month
-    </label>
-
-    <input
-      type="month"
-      name="month"
-      value="<%= month || '' %>"
-    >
-
-  </div>
+<option
+  value="day"
+  <%= typeof type !== "undefined" && type === "day"
+    ? "selected"
+    : "" %>
+>
+  Daily
+</option>
 
 
-  <button
-    type="submit"
-    class="filter-button"
-  >
-    🔍 View Report
-  </button>
+<option
+  value="month"
+  <%= typeof type !== "undefined" && type === "month"
+    ? "selected"
+    : "" %>
+>
+  Monthly
+</option>
+
+
+</select>
+
+</div>
+
+
+<div class="filter-group">
+
+<label>
+Select Date
+</label>
+
+
+<input
+  type="date"
+  name="date"
+  value="<%= typeof date !== "undefined" ? (date || '') : '' %>"
+>
+
+
+</div>
+
+
+<div class="filter-group">
+
+<label>
+Select Month
+</label>
+
+
+<input
+  type="month"
+  name="month"
+  value="<%= typeof month !== "undefined" ? (month || '') : '' %>"
+>
+
+
+</div>
+
+
+<button
+  type="submit"
+  class="filter-button"
+>
+🔍 View Report
+</button>
+
 
 </form>
+
 
 </div>
 
@@ -1082,7 +1060,7 @@ const showErrorPopup =
      DAILY REPORT
 ===================================================== -->
 
-<% if (type === "day") { %>
+<% if (typeof type !== "undefined" && type === "day") { %>
 
 
 <div class="stats-card">
@@ -1090,148 +1068,54 @@ const showErrorPopup =
 
 <div class="report-header">
 
-  <h3>
-    Daily Milk Production
-  </h3>
+<h3>
+Daily Milk Production
+</h3>
 
-  <span class="report-date">
-    <%= date || "Today" %>
-  </span>
+
+<span class="report-date">
+
+<%= date || "Today" %>
+
+</span>
+
 
 </div>
 
 
-<%
-/* =====================================================
-   DAILY RECORD PREPARATION
-
-   Group records by cow.
-
-   Each cow receives:
-   - morning record
-   - evening record
-   - daily cumulative total
-===================================================== */
-
-const dailyMilkByCow = {};
-
-if (records && records.length > 0) {
-
-  records.forEach(record => {
-
-    const dairyId = record.dairy?._id
-      ? String(record.dairy._id)
-      : `unknown-${record.dairy?.code || "animal"}`;
-
-
-    if (!dailyMilkByCow[dairyId]) {
-
-      dailyMilkByCow[dairyId] = {
-
-        dairy: record.dairy || null,
-
-        morning: null,
-
-        evening: null
-
-      };
-
-    }
-
-
-    const session =
-      String(
-        record.session ||
-        record.milkingSession ||
-        record.period ||
-        ""
-      ).toLowerCase();
-
-
-    if (
-      session === "morning" ||
-      session === "am"
-    ) {
-
-      dailyMilkByCow[dairyId].morning = record;
-
-    }
-
-
-    else if (
-      session === "evening" ||
-      session === "pm"
-    ) {
-
-      dailyMilkByCow[dairyId].evening = record;
-
-    }
-
-  });
-
-}
-
-
-const dailyMilkRecords =
-  Object.values(dailyMilkByCow);
-
-
-/* =====================================================
-   SESSION STATE
-===================================================== */
-
-const currentSession =
-  typeof session !== "undefined"
-    ? session
-    : null;
-
-
-const isAdmin =
-  typeof user !== "undefined" &&
-  user?.role === "admin";
-
-
-const morningWindowOpen =
-  typeof morningOpen !== "undefined"
-    ? morningOpen
-    : currentSession === "morning";
-
-
-const eveningWindowOpen =
-  typeof eveningOpen !== "undefined"
-    ? eveningOpen
-    : currentSession === "evening";
-
-%>
-
-
 <div class="table-wrapper">
 
+
 <table>
+
 
 <thead>
 
 <tr>
 
-  <th>
-    Code
-  </th>
+<th>
+Code
+</th>
 
-  <th>
-    Animal
-  </th>
 
-  <th>
-    Morning
-  </th>
+<th>
+Animal
+</th>
 
-  <th>
-    Evening
-  </th>
 
-  <th>
-    Total
-  </th>
+<th>
+Morning
+</th>
+
+
+<th>
+Evening
+</th>
+
+
+<th>
+Total
+</th>
 
 </tr>
 
@@ -1241,48 +1125,15 @@ const eveningWindowOpen =
 <tbody>
 
 
-<% if (dailyMilkRecords.length > 0) { %>
-
-
-<% dailyMilkRecords.forEach(record => {
-
-  const dairy =
-    record.dairy || null;
-
-
-  const morning =
-    record.morning;
-
-
-  const evening =
-    record.evening;
-
-
-  const morningLiters =
-    Number(morning?.liters || 0);
-
-
-  const eveningLiters =
-    Number(evening?.liters || 0);
-
-
-  const dailyTotal =
-    morningLiters + eveningLiters;
-
-
-  const dairyId =
-    dairy?._id
-      ? String(dairy._id)
-      : "";
-
-
-  const morningEditable =
-    isAdmin || morningWindowOpen;
-
-
-  const eveningEditable =
-    isAdmin || eveningWindowOpen;
-
+<%
+records
+  .filter((record, index) =>
+    records.findIndex(item =>
+      String(item.dairy?._id) ===
+      String(record.dairy?._id)
+    ) === index
+  )
+  .forEach(record => {
 %>
 
 
@@ -1295,13 +1146,13 @@ const eveningWindowOpen =
 
 <td>
 
-  <span class="animal-code">
+<span class="animal-code">
 
-    <%= dairy
-      ? dairy.code
-      : "Unknown" %>
+<%= record.dairy
+  ? record.dairy.code
+  : "Unknown" %>
 
-  </span>
+</span>
 
 </td>
 
@@ -1312,9 +1163,9 @@ const eveningWindowOpen =
 
 <td>
 
-  <%= dairy
-    ? dairy.name
-    : "Unknown Animal" %>
+<%= record.dairy
+  ? record.dairy.name
+  : "Unknown Animal" %>
 
 </td>
 
@@ -1336,7 +1187,7 @@ const eveningWindowOpen =
 <input
   type="hidden"
   name="dairyId"
-  value="<%= dairyId %>"
+  value="<%= record.dairy?._id || '' %>"
 >
 
 
@@ -1355,7 +1206,7 @@ const eveningWindowOpen =
 
 
 <label class="session-label">
-  Morning
+Morning
 </label>
 
 
@@ -1364,46 +1215,123 @@ const eveningWindowOpen =
   name="liters"
   min="0"
   step="0.01"
-  value="<%= morning
-    ? Number(morning.liters || 0)
-    : '' %>"
+
+  value="<%= (
+    records.find(item =>
+      String(item.dairy?._id) ===
+      String(record.dairy?._id) &&
+      (
+        String(item.session || '').toLowerCase() === 'morning' ||
+        String(item.session || '').toLowerCase() === 'am'
+      )
+    )?.liters ?? ''
+  ) %>"
+
   placeholder="0.00 L"
+
   class="milk-input
-    <%= morningWindowOpen || isAdmin
-      ? 'session-open'
-      : 'session-closed' %>"
-  <%= morningEditable ? "" : "readonly" %>
+    <%= (
+      typeof user !== 'undefined' &&
+      user?.role === 'admin'
+    )
+      ? 'admin-editable'
+      : (
+          typeof session !== 'undefined' &&
+          String(session).toLowerCase() === 'morning'
+        )
+          ? 'session-open'
+          : 'session-closed'
+    %>"
+
+  <%= (
+    typeof user !== 'undefined' &&
+    user?.role === 'admin'
+  )
+    ? ''
+    : (
+        typeof session !== 'undefined' &&
+        String(session).toLowerCase() === 'morning'
+      )
+        ? ''
+        : 'readonly'
+  %>
 >
 
 
-<% if (morningEditable) { %>
+<%
+if (
+  typeof user !== 'undefined' &&
+  user?.role === 'admin'
+) {
+%>
+
 
 <button
   type="submit"
   class="session-save-button"
 >
-  Save
+Save
 </button>
 
-<% } else { %>
+
+<%
+} else if (
+  typeof session !== 'undefined' &&
+  String(session).toLowerCase() === 'morning'
+) {
+%>
+
+
+<button
+  type="submit"
+  class="session-save-button"
+>
+Save
+</button>
+
+
+<span class="session-status open">
+🟢 Open
+</span>
+
+
+<%
+} else {
+%>
+
 
 <span class="session-status closed">
-  🔒 Closed
+🔒 Closed
 </span>
 
-<% } %>
+
+<%
+}
+%>
 
 
-<% if (isAdmin && !morningWindowOpen) { %>
+<%
+if (
+  typeof user !== 'undefined' &&
+  user?.role === 'admin' &&
+  typeof session !== 'undefined' &&
+  String(session).toLowerCase() !== 'morning'
+) {
+%>
+
 
 <span class="admin-edit-note">
-  Admin edit
+Admin edit
 </span>
 
-<% } %>
+
+<%
+}
+%>
 
 
 </form>
+
 
 </td>
 
@@ -1425,7 +1353,7 @@ const eveningWindowOpen =
 <input
   type="hidden"
   name="dairyId"
-  value="<%= dairyId %>"
+  value="<%= record.dairy?._id || '' %>"
 >
 
 
@@ -1444,7 +1372,7 @@ const eveningWindowOpen =
 
 
 <label class="session-label">
-  Evening
+Evening
 </label>
 
 
@@ -1453,61 +1381,213 @@ const eveningWindowOpen =
   name="liters"
   min="0"
   step="0.01"
-  value="<%= evening
-    ? Number(evening.liters || 0)
-    : '' %>"
+
+  value="<%= (
+    records.find(item =>
+      String(item.dairy?._id) ===
+      String(record.dairy?._id) &&
+      (
+        String(item.session || '').toLowerCase() === 'evening' ||
+        String(item.session || '').toLowerCase() === 'pm'
+      )
+    )?.liters ?? ''
+  ) %>"
+
   placeholder="0.00 L"
+
   class="milk-input
-    <%= eveningWindowOpen || isAdmin
-      ? 'session-open'
-      : 'session-closed' %>"
-  <%= eveningEditable ? "" : "readonly" %>
+    <%= (
+      typeof user !== 'undefined' &&
+      user?.role === 'admin'
+    )
+      ? 'admin-editable'
+      : (
+          typeof session !== 'undefined' &&
+          String(session).toLowerCase() === 'evening'
+        )
+          ? 'session-open'
+          : 'session-closed'
+    %>"
+
+  <%= (
+    typeof user !== 'undefined' &&
+    user?.role === 'admin'
+  )
+    ? ''
+    : (
+        typeof session !== 'undefined' &&
+        String(session).toLowerCase() === 'evening'
+      )
+        ? ''
+        : 'readonly'
+  %>
 >
 
 
-<% if (eveningEditable) { %>
+<%
+if (
+  typeof user !== 'undefined' &&
+  user?.role === 'admin'
+) {
+%>
+
 
 <button
   type="submit"
   class="session-save-button"
 >
-  Save
+Save
 </button>
 
-<% } else { %>
+
+<%
+} else if (
+  typeof session !== 'undefined' &&
+  String(session).toLowerCase() === 'evening'
+) {
+%>
+
+
+<button
+  type="submit"
+  class="session-save-button"
+>
+Save
+</button>
+
+
+<span class="session-status open">
+🟢 Open
+</span>
+
+
+<%
+} else {
+%>
+
 
 <span class="session-status closed">
-  🔒 Closed
+🔒 Closed
 </span>
 
-<% } %>
+
+<%
+}
+%>
 
 
-<% if (isAdmin && !eveningWindowOpen) { %>
+<%
+if (
+  typeof user !== 'undefined' &&
+  user?.role === 'admin' &&
+  typeof session !== 'undefined' &&
+  String(session).toLowerCase() !== 'evening'
+) {
+%>
+
 
 <span class="admin-edit-note">
-  Admin edit
+Admin edit
 </span>
 
-<% } %>
+
+<%
+}
+%>
 
 
 </form>
+
 
 </td>
 
 
 <!-- =====================================================
      DAILY TOTAL
+     
+     CALCULATED HERE FROM THE TWO SESSION RECORDS.
+     NO BACKEND TOTAL IS REQUIRED.
 ===================================================== -->
 
 <td class="total-cell">
 
-<span class="daily-total">
 
-  <%= dailyTotal.toFixed(2) %> L
+<span
+  class="daily-total"
+  data-dairy="<%= record.dairy?._id || '' %>"
+>
+
+
+<span class="morning-total-value">
+<%= Number(
+  records.find(item =>
+    String(item.dairy?._id) ===
+    String(record.dairy?._id) &&
+    (
+      String(item.session || '').toLowerCase() === 'morning' ||
+      String(item.session || '').toLowerCase() === 'am'
+    )
+  )?.liters || 0
+).toFixed(2) %>
+</span>
+
+
+<span>
++
+</span>
+
+
+<span class="evening-total-value">
+<%= Number(
+  records.find(item =>
+    String(item.dairy?._id) ===
+    String(record.dairy?._id) &&
+    (
+      String(item.session || '').toLowerCase() === 'evening' ||
+      String(item.session || '').toLowerCase() === 'pm'
+    )
+  )?.liters || 0
+).toFixed(2) %>
+</span>
+
+
+<span>
+=
+</span>
+
+
+<span class="daily-total-number">
+
+<%= (
+  Number(
+    records.find(item =>
+      String(item.dairy?._id) ===
+      String(record.dairy?._id) &&
+      (
+        String(item.session || '').toLowerCase() === 'morning' ||
+        String(item.session || '').toLowerCase() === 'am'
+      )
+    )?.liters || 0
+  )
+  +
+  Number(
+    records.find(item =>
+      String(item.dairy?._id) ===
+      String(record.dairy?._id) &&
+      (
+        String(item.session || '').toLowerCase() === 'evening' ||
+        String(item.session || '').toLowerCase() === 'pm'
+      )
+    )?.liters || 0
+  )
+).toFixed(2) %>
 
 </span>
+
+L
+
+</span>
+
 
 </td>
 
@@ -1515,10 +1595,12 @@ const eveningWindowOpen =
 </tr>
 
 
-<% }) %>
+<%
+  });
+%>
 
 
-<% } else { %>
+<% if (!records || records.length === 0) { %>
 
 
 <tr>
@@ -1528,17 +1610,21 @@ const eveningWindowOpen =
 
 <div class="empty-state">
 
+
 <div class="empty-icon">
-  🥛
+🥛
 </div>
 
+
 <h3>
-  No Milk Records
+No Milk Records
 </h3>
 
+
 <p>
-  No milk production records were found for this date.
+No milk production records were found for this date.
 </p>
+
 
 </div>
 
@@ -1568,11 +1654,14 @@ const eveningWindowOpen =
 <div class="summary-box">
 
 <span>
-  Total Milk
+Total Milk
 </span>
 
+
 <strong>
-  <%= Number(stats?.total || 0) %> L
+
+<%= Number(stats?.total || 0) %> L
+
 </strong>
 
 </div>
@@ -1581,11 +1670,14 @@ const eveningWindowOpen =
 <div class="summary-box">
 
 <span>
-  Consumed
+Consumed
 </span>
 
+
 <strong>
-  <%= Number(stats?.consumed || 0) %> L
+
+<%= Number(stats?.consumed || 0) %> L
+
 </strong>
 
 </div>
@@ -1594,11 +1686,14 @@ const eveningWindowOpen =
 <div class="summary-box">
 
 <span>
-  Available
+Available
 </span>
 
+
 <strong>
-  <%= Number(stats?.available || 0) %> L
+
+<%= Number(stats?.available || 0) %> L
+
 </strong>
 
 </div>
@@ -1607,11 +1702,14 @@ const eveningWindowOpen =
 <div class="summary-box">
 
 <span>
-  Price Per Liter
+Price Per Liter
 </span>
 
+
 <strong>
-  KES <%= Number(stats?.price || 0) %>
+
+KES <%= Number(stats?.price || 0) %>
+
 </strong>
 
 </div>
@@ -1620,11 +1718,14 @@ const eveningWindowOpen =
 <div class="summary-box">
 
 <span>
-  Total Revenue
+Total Revenue
 </span>
 
+
 <strong>
-  KES <%= Number(stats?.cash || 0) %>
+
+KES <%= Number(stats?.cash || 0) %>
+
 </strong>
 
 </div>
@@ -1633,21 +1734,29 @@ const eveningWindowOpen =
 <div class="summary-box">
 
 <span>
-  Status
+Status
 </span>
 
 
 <% if (stats?.locked) { %>
 
+
 <strong class="status-locked">
-  🔒 Locked
+
+🔒 Locked
+
 </strong>
+
 
 <% } else { %>
 
+
 <strong class="status-open">
-  🟢 Open
+
+🟢 Open
+
 </strong>
+
 
 <% } %>
 
@@ -1669,7 +1778,7 @@ const eveningWindowOpen =
 
 
 <h3>
-  Customer Sales Breakdown
+Customer Sales Breakdown
 </h3>
 
 
@@ -1678,23 +1787,25 @@ const eveningWindowOpen =
 
 <table>
 
+
 <thead>
 
 <tr>
 
 <th>
-  Customer
+Customer
 </th>
 
 <th>
-  Liters
+Liters
 </th>
 
 <th>
-  Cash
+Cash
 </th>
 
 </tr>
+
 
 </thead>
 
@@ -1707,19 +1818,27 @@ const eveningWindowOpen =
 
 <tr>
 
+
 <td>
-  <%= sale.customerName || "Unknown Customer" %>
+
+<%= sale.customerName || "Unknown Customer" %>
+
 </td>
 
 
 <td>
-  <%= Number(sale.liters || 0) %> L
+
+<%= Number(sale.liters || 0) %> L
+
 </td>
 
 
 <td>
-  KES <%= Number(sale.cash || 0) %>
+
+KES <%= Number(sale.cash || 0) %>
+
 </td>
+
 
 </tr>
 
@@ -1729,36 +1848,32 @@ const eveningWindowOpen =
 
 </tbody>
 
+
 </table>
+
 
 </div>
 
 
-<%
-
-const totalCustomerRevenue =
-  sales.reduce(
-
-    (total, sale) =>
-
-      total + Number(sale.cash || 0),
-
-    0
-
-  );
-
-%>
-
-
 <div class="revenue-total">
 
+
 <span>
-  Total Customer Revenue
+Total Customer Revenue
 </span>
 
+
 <strong>
-  KES <%= totalCustomerRevenue %>
+
+KES
+<%= sales.reduce(
+  (total, sale) =>
+    total + Number(sale.cash || 0),
+  0
+) %>
+
 </strong>
+
 
 </div>
 
@@ -1779,7 +1894,7 @@ const totalCustomerRevenue =
      MONTHLY REPORT
 ===================================================== -->
 
-<% if (type === "month") { %>
+<% if (typeof type !== "undefined" && type === "month") { %>
 
 
 <div class="stats-card">
@@ -1787,13 +1902,18 @@ const totalCustomerRevenue =
 
 <div class="report-header">
 
+
 <h3>
-  Monthly Milk Report
+Monthly Milk Report
 </h3>
 
+
 <span class="report-date">
-  <%= month || "Current Month" %>
+
+<%= month || "Current Month" %>
+
 </span>
+
 
 </div>
 
@@ -1803,27 +1923,33 @@ const totalCustomerRevenue =
 
 <table>
 
+
 <thead>
+
 
 <tr>
 
 <th>
-  Code
+Code
 </th>
 
-<th>
-  Animal
-</th>
 
 <th>
-  Total Milk
+Animal
 </th>
 
+
 <th>
-  Average
+Total Milk
+</th>
+
+
+<th>
+Average
 </th>
 
 </tr>
+
 
 </thead>
 
@@ -1896,17 +2022,21 @@ const totalCustomerRevenue =
 
 <div class="empty-state">
 
+
 <div class="empty-icon">
-  📊
+📊
 </div>
 
+
 <h3>
-  No Monthly Records
+No Monthly Records
 </h3>
 
+
 <p>
-  No milk production records were found for this month.
+No milk production records were found for this month.
 </p>
+
 
 </div>
 
@@ -1932,11 +2062,14 @@ const totalCustomerRevenue =
 <div class="summary-box">
 
 <span>
-  Total Milk
+Total Milk
 </span>
 
+
 <strong>
-  <%= Number(stats?.total || 0).toFixed(2) %> L
+
+<%= Number(stats?.total || 0).toFixed(2) %> L
+
 </strong>
 
 </div>
@@ -1945,11 +2078,14 @@ const totalCustomerRevenue =
 <div class="summary-box">
 
 <span>
-  Total Sold
+Total Sold
 </span>
 
+
 <strong>
-  <%= Number(stats?.consumed || 0).toFixed(2) %> L
+
+<%= Number(stats?.consumed || 0).toFixed(2) %> L
+
 </strong>
 
 </div>
@@ -1958,11 +2094,14 @@ const totalCustomerRevenue =
 <div class="summary-box">
 
 <span>
-  Available Milk
+Available Milk
 </span>
 
+
 <strong>
-  <%= Number(stats?.available || 0).toFixed(2) %> L
+
+<%= Number(stats?.available || 0).toFixed(2) %> L
+
 </strong>
 
 </div>
@@ -1971,11 +2110,14 @@ const totalCustomerRevenue =
 <div class="summary-box">
 
 <span>
-  Average Per Animal
+Average Per Animal
 </span>
 
+
 <strong>
-  <%= Number(stats?.avg || 0).toFixed(2) %> L
+
+<%= Number(stats?.avg || 0).toFixed(2) %> L
+
 </strong>
 
 </div>
@@ -1984,17 +2126,21 @@ const totalCustomerRevenue =
 <div class="summary-box">
 
 <span>
-  Global Revenue
+Global Revenue
 </span>
 
+
 <strong>
-  KES <%= Number(stats?.cash || 0) %>
+
+KES <%= Number(stats?.cash || 0) %>
+
 </strong>
 
 </div>
 
 
 </div>
+
 
 </div>
 
@@ -2003,10 +2149,15 @@ const totalCustomerRevenue =
 
 
 <!-- =====================================================
-     FINAL PAGE CLOSURE
+     NO REPORT SELECTED
 ===================================================== -->
 
-<% if (!type) { %>
+<%
+if (
+  typeof type === "undefined" ||
+  !type
+) {
+%>
 
 
 <div class="stats-card">
@@ -2014,101 +2165,241 @@ const totalCustomerRevenue =
 
 <div class="empty-state">
 
+
 <div class="empty-icon">
-  📊
+📊
 </div>
+
 
 <h3>
-  No Report Selected
+No Report Selected
 </h3>
 
+
 <p>
-  Select Daily or Monthly report type to view milk statistics.
+Select Daily or Monthly report type to view milk statistics.
 </p>
 
-</div>
-
 
 </div>
 
 
-<% } %>
+</div>
+
+
+<%
+}
+%>
 
 
 </div>
 
 
 <!-- =====================================================
-     POPUP JAVASCRIPT
+     FRONTEND TOTAL CALCULATION
 ===================================================== -->
 
 <script>
 
 document.addEventListener(
-  "DOMContentLoaded",
-  function () {
+  "input",
+  function(event) {
 
-    const overlay =
-      document.getElementById(
-        "milkMessageOverlay"
-      );
-
-
-    const button =
-      document.getElementById(
-        "milkMessageButton"
-      );
-
-
-    if (!overlay || !button) {
+    if (
+      !event.target.classList.contains(
+        "milk-input"
+      )
+    ) {
 
       return;
 
     }
 
 
-    overlay.classList.add("show");
+    const row =
+      event.target.closest("tr");
 
 
-    button.addEventListener(
-      "click",
-      function () {
+    if (!row) {
 
-        overlay.classList.remove("show");
+      return;
+
+    }
 
 
-        /*
-         * Refresh the page after OK.
-         *
-         * This removes the success/error query
-         * parameter that caused the popup.
-         */
+    const inputs =
+      row.querySelectorAll(
+        ".milk-input"
+      );
 
-        window.location.reload();
 
-      }
+    let total = 0;
+
+
+    inputs.forEach(input => {
+
+      total +=
+        Number(input.value || 0);
+
+    });
+
+
+    const totalElement =
+      row.querySelector(
+        ".daily-total-number"
+      );
+
+
+    if (totalElement) {
+
+      totalElement.textContent =
+        total.toFixed(2);
+
+    }
+
+  }
+);
+
+
+/* =====================================================
+   SUCCESS / FAILURE POPUP
+
+   The page does not contain a permanent message section.
+
+   Supported URL states:
+
+   ?success=1
+   ?error=1
+===================================================== */
+
+function showMilkMessage(
+  type,
+  title,
+  message
+) {
+
+  const popup =
+    document.getElementById(
+      "milkMessagePopup"
     );
 
 
-    /*
-     * Prevent clicking outside the popup
-     * from accidentally dismissing it.
-     */
-
-    overlay.addEventListener(
-      "click",
-      function (event) {
-
-        if (
-          event.target === overlay
-        ) {
-
-          return;
-
-        }
-
-      }
+  const icon =
+    document.getElementById(
+      "milkMessageIcon"
     );
+
+
+  const titleElement =
+    document.getElementById(
+      "milkMessageTitle"
+    );
+
+
+  const textElement =
+    document.getElementById(
+      "milkMessageText"
+    );
+
+
+  if (!popup) {
+
+    return;
+
+  }
+
+
+  popup.classList.remove(
+    "success",
+    "error"
+  );
+
+
+  popup.classList.add(type);
+
+
+  icon.textContent =
+    type === "success"
+      ? "✅"
+      : "❌";
+
+
+  titleElement.textContent =
+    title;
+
+
+  textElement.textContent =
+    message;
+
+
+  popup.classList.add("show");
+
+
+  window.setTimeout(
+    closeMilkMessage,
+    5000
+  );
+
+}
+
+
+function closeMilkMessage() {
+
+  const popup =
+    document.getElementById(
+      "milkMessagePopup"
+    );
+
+
+  if (popup) {
+
+    popup.classList.remove(
+      "show"
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   READ MESSAGE FROM URL
+===================================================== */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  function() {
+
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+
+    if (
+      params.get("success") === "1"
+    ) {
+
+      showMilkMessage(
+        "success",
+        "Success",
+        "Milk record submitted successfully."
+      );
+
+    }
+
+
+    if (
+      params.get("error") === "1"
+    ) {
+
+      showMilkMessage(
+        "error",
+        "Unable to save",
+        "The milk record could not be saved."
+      );
+
+    }
 
   }
 );
