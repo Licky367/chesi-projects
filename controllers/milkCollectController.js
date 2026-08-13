@@ -12,20 +12,19 @@
 //
 //     GET  /milk
 //     POST /milk
-//     GET  /milk/edit/:id
-//     POST /milk/:id
 //
 // IMPORTANT
 // ----------------------------------------------------------
-// Business logic and authorization belong to:
+// Business logic belongs to:
 //
 //     services/milkCollectService.js
 //
 // This controller is responsible only for:
 //
 // • Authentication/session access
-// • Calling the service
+// • Calling the milk collection service
 // • Rendering milk.ejs
+// • Passing the exact data expected by milk.ejs
 // • Redirecting after successful POST
 // • Translating service errors into HTTP responses
 //
@@ -40,7 +39,13 @@ const milkCollectService =
 // GET AUTHENTICATED USER
 // ==========================================================
 //
-// Keeps session access consistent.
+// Supports applications where authentication is stored in:
+//
+//     req.user
+//
+// or:
+//
+//     req.session.user
 //
 // ==========================================================
 
@@ -56,13 +61,66 @@ function getUser(req) {
 
 
 // ==========================================================
+// GET USER ROLE
+// ==========================================================
+
+function getUserRole(user) {
+
+    if (!user) {
+
+        return null;
+
+    }
+
+
+    return user.role || null;
+
+}
+
+
+// ==========================================================
+// IS ADMIN
+// ==========================================================
+
+function isAdmin(user) {
+
+    return (
+        !!user &&
+        user.role === "admin"
+    );
+
+}
+
+
+// ==========================================================
+// IS DAIRY WORKER
+// ==========================================================
+
+function isDairyWorker(user) {
+
+    return (
+        !!user &&
+        user.role === "dairyWorker"
+    );
+
+}
+
+
+// ==========================================================
 // RENDER MILK PAGE
 // ==========================================================
 //
-// Centralized rendering helper.
+// Centralized renderer.
 //
-// This prevents GET /milk and POST /milk error handling
-// from building different versions of the milk.ejs data.
+// This is used both when:
+//
+//     GET /milk
+//
+// and when:
+//
+//     POST /milk
+//
+// needs to return the page with an error.
 //
 // ==========================================================
 
@@ -76,6 +134,10 @@ async function renderMilkPage(
         getUser(req);
 
 
+    // ======================================================
+    // AUTHENTICATION
+    // ======================================================
+
     if (!user) {
 
         return res.redirect(
@@ -87,11 +149,19 @@ async function renderMilkPage(
 
     try {
 
+        // ==================================================
+        // GET PAGE DATA FROM SERVICE
+        // ==================================================
+
         const data =
             await milkCollectService.getMilkPageData(
                 user
             );
 
+
+        // ==================================================
+        // RENDER
+        // ==================================================
 
         return res.status(
             options.status || 200
@@ -100,40 +170,19 @@ async function renderMilkPage(
             {
 
                 // ==================================================
-                // MILK PAGE DATA
+                // EXACT DATA EXPECTED BY milk.ejs
                 // ==================================================
 
-                dairies:
-                    data.dairies || [],
+                day:
+                    data.day,
 
-                milkRecords:
-                    data.milkRecords || [],
+                month:
+                    data.month,
 
-                morningRecords:
-                    data.morningRecords || [],
-
-                eveningRecords:
-                    data.eveningRecords || [],
-
-
-                // ==================================================
-                // SESSION
-                // ==================================================
-
-                session:
-                    data.session,
-
-                sessionInfo:
-                    data.sessionInfo || null,
-
-                canSubmit:
-                    data.canSubmit === true,
-
-                canEditMorning:
-                    data.canEditMorning === true,
-
-                canEditEvening:
-                    data.canEditEvening === true,
+                farms:
+                    Array.isArray(data.farms)
+                        ? data.farms
+                        : [],
 
 
                 // ==================================================
@@ -143,18 +192,18 @@ async function renderMilkPage(
                 user,
 
                 isAdmin:
-                    user.role === "admin",
+                    isAdmin(user),
 
 
                 // ==================================================
-                // OPTIONAL MESSAGE
+                // FLASH / STATUS MESSAGES
                 // ==================================================
 
                 success:
-                    options.success || null,
+                    options.success || "",
 
                 error:
-                    options.error || null
+                    options.error || ""
 
             }
         );
@@ -169,49 +218,40 @@ async function renderMilkPage(
         );
 
 
+        // ======================================================
+        // FALLBACK DATA
+        // ======================================================
+
+        const fallbackDay =
+            milkCollectService.getNairobiDay();
+
+
+        const fallbackMonth =
+            milkCollectService.getNairobiMonth();
+
+
         return res.status(
-            500
+            options.status || 500
         ).render(
             "milk",
             {
 
-                dairies:
+                day:
+                    fallbackDay,
+
+                month:
+                    fallbackMonth,
+
+                farms:
                     [],
-
-                milkRecords:
-                    [],
-
-                morningRecords:
-                    [],
-
-                eveningRecords:
-                    [],
-
-
-                session:
-                    null,
-
-                sessionInfo:
-                    null,
-
-                canSubmit:
-                    false,
-
-                canEditMorning:
-                    false,
-
-                canEditEvening:
-                    false,
-
 
                 user,
 
                 isAdmin:
-                    user.role === "admin",
-
+                    isAdmin(user),
 
                 success:
-                    null,
+                    options.success || "",
 
                 error:
                     options.error ||
@@ -230,8 +270,6 @@ async function renderMilkPage(
 // ==========================================================
 //
 // GET /milk
-//
-// ==========================================================
 //
 // Service:
 //
@@ -275,58 +313,48 @@ async function(
 
 
         // ==================================================
-        // RENDER MILK.EJS
+        // RENDER milk.ejs
         // ==================================================
 
         return res.render(
             "milk",
             {
 
-                // ------------------------------------------------
-                // Animals / records
-                // ------------------------------------------------
+                // ==================================================
+                // PAGE DATA
+                // ==================================================
 
-                dairies:
-                    data.dairies || [],
+                day:
+                    data.day,
 
-                milkRecords:
-                    data.milkRecords || [],
+                month:
+                    data.month,
 
-                morningRecords:
-                    data.morningRecords || [],
-
-                eveningRecords:
-                    data.eveningRecords || [],
-
-
-                // ------------------------------------------------
-                // Session
-                // ------------------------------------------------
-
-                session:
-                    data.session,
-
-                sessionInfo:
-                    data.sessionInfo || null,
-
-                canSubmit:
-                    data.canSubmit === true,
-
-                canEditMorning:
-                    data.canEditMorning === true,
-
-                canEditEvening:
-                    data.canEditEvening === true,
+                farms:
+                    Array.isArray(data.farms)
+                        ? data.farms
+                        : [],
 
 
-                // ------------------------------------------------
-                // User
-                // ------------------------------------------------
+                // ==================================================
+                // USER
+                // ==================================================
 
                 user,
 
                 isAdmin:
-                    user.role === "admin"
+                    isAdmin(user),
+
+
+                // ==================================================
+                // STATUS MESSAGES
+                // ==================================================
+
+                success:
+                    req.query?.success || "",
+
+                error:
+                    req.query?.error || ""
 
             }
         );
@@ -345,12 +373,13 @@ async function(
             req,
             res,
             {
+
                 status:
                     500,
 
                 error:
-                    error.message ||
                     "Unable to load today's milk collection page."
+
             }
         );
 
@@ -365,29 +394,24 @@ async function(
 //
 // POST /milk
 //
-// ==========================================================
+// The EJS form submits:
 //
-// Route:
+//     records[animalId][morning][liters]
+//     records[animalId][morning][remarks]
 //
-//     router.post(
-//         "/milk",
-//         milkCollectController.submitMilk
-//     );
+//     records[animalId][evening][liters]
+//     records[animalId][evening][remarks]
 //
-// Service:
+// The controller does NOT determine:
 //
-//     milkCollectService.saveMilkRecords(
-//         records,
-//         user
-//     );
+//     • current session
+//     • whether a record can be edited
+//     • whether the worker is allowed to edit
+//     • whether a session is closed
 //
-// IMPORTANT
-// ----------------------------------------------------------
-// The service determines the real session using Kenya time.
+// Those decisions belong to:
 //
-// The controller does NOT trust:
-//
-//     req.body.session
+//     milkCollectService.saveMilk()
 //
 // ==========================================================
 
@@ -414,59 +438,130 @@ async function(
     }
 
 
+    // ======================================================
+    // ROLE CHECK
+    // ======================================================
+    //
+    // The service also performs authorization.
+    //
+    // This check prevents unnecessary processing for users
+    // who are obviously not permitted to use the page.
+    //
+    // ======================================================
+
+    if (
+        !isAdmin(user) &&
+        !isDairyWorker(user)
+    ) {
+
+        return res.status(
+            403
+        ).send(
+            "You are not authorized to record milk."
+        );
+
+    }
+
+
     try {
 
         // ==================================================
-        // GET SUBMITTED RECORDS
+        // GET RECORDS
         // ==================================================
         //
-        // The service accepts either:
+        // Expected structure:
         //
-        //     Array
+        // records = {
         //
-        // or:
+        //     animalId: {
         //
-        //     Object
+        //         morning: {
+        //             liters,
+        //             remarks
+        //         },
         //
-        // Therefore we pass the records through without
-        // duplicating validation here.
+        //         evening: {
+        //             liters,
+        //             remarks
+        //         }
+        //
+        //     }
+        //
+        // }
         //
         // ==================================================
 
         const records =
-            req.body?.records ||
-            req.body ||
-            {};
+            req.body?.records || {};
 
 
         // ==================================================
-        // SAVE RECORDS
+        // SAVE THROUGH SERVICE
         // ==================================================
 
-        await milkCollectService.saveMilkRecords(
-            records,
-            user
-        );
+        const result =
+            await milkCollectService.saveMilk(
+                user,
+                records
+            );
 
 
         // ==================================================
         // SUCCESS MESSAGE
         // ==================================================
 
-        const message =
-            user.role === "admin"
+        let message;
 
-                ? "Milk records saved successfully."
 
-                : "Today's milk records have been submitted successfully.";
+        if (
+            result.created > 0 &&
+            result.updated > 0
+        ) {
+
+            message =
+                "Milk records saved and updated successfully.";
+
+        }
+
+        else if (
+            result.updated > 0
+        ) {
+
+            message =
+                "Milk records updated successfully.";
+
+        }
+
+        else if (
+            result.created > 0
+        ) {
+
+            message =
+                "Milk records submitted successfully.";
+
+        }
+
+        else {
+
+            message =
+                "No new milk records were submitted.";
+
+        }
 
 
         // ==================================================
         // REDIRECT
         // ==================================================
         //
-        // Prevents duplicate POST submission when the user
-        // refreshes the browser.
+        // PRG:
+        //
+        // POST
+        //  ↓
+        // REDIRECT
+        //  ↓
+        // GET /milk
+        //
+        // Prevents duplicate submission on refresh.
         //
         // ==================================================
 
@@ -485,7 +580,7 @@ async function(
 
 
         // ==================================================
-        // AUTHENTICATION FAILURE
+        // AUTHENTICATION ERROR
         // ==================================================
 
         if (
@@ -512,19 +607,33 @@ async function(
             return res.status(
                 403
             ).send(
-                error.message
+                error.message ||
+                "You are not authorized to record milk."
             );
 
         }
 
 
         // ==================================================
-        // COLLECTION TIME CLOSED
+        // WORKER / ADMIN RECORD EDIT ERROR
+        // ==================================================
+        //
+        // The service currently uses its return value
+        // `skipped` when a worker attempts to modify an
+        // existing record.
+        //
+        // Therefore this is normally handled by the normal
+        // response rather than as a thrown exception.
+        //
+        // These codes are nevertheless supported in case
+        // the service later converts them into explicit
+        // errors.
+        //
         // ==================================================
 
         if (
             error.code ===
-            "MILK_TIME_CLOSED"
+            "MILK_RECORD_LOCKED"
         ) {
 
             return renderMilkPage(
@@ -536,7 +645,8 @@ async function(
                         400,
 
                     error:
-                        error.message
+                        error.message ||
+                        "This milk record is read-only."
 
                 }
             );
@@ -545,29 +655,16 @@ async function(
 
 
         // ==================================================
-        // VALIDATION / DUPLICATE RECORD ERRORS
+        // INVALID QUANTITY
         // ==================================================
 
-        const validationErrors = [
-
-            "MILK_NO_RECORDS",
-
-            "MILK_INVALID_ANIMAL",
-
-            "MILK_INVALID_QUANTITY",
-
-            "MILK_DUPLICATE_RECORD",
-
-            "MILK_ALREADY_RECORDED",
-
-            "MILK_SAVE_FAILED"
-
-        ];
-
-
         if (
-            validationErrors.includes(
-                error.code
+            error.message &&
+            error.message.toLowerCase().includes(
+                "invalid"
+            ) &&
+            error.message.toLowerCase().includes(
+                "milk"
             )
         ) {
 
@@ -589,7 +686,7 @@ async function(
 
 
         // ==================================================
-        // UNEXPECTED ERROR
+        // GENERIC SAVE ERROR
         // ==================================================
 
         return renderMilkPage(
@@ -615,15 +712,15 @@ async function(
 // BACKWARD COMPATIBILITY ALIAS
 // ==========================================================
 //
-// If another file still calls:
+// Existing routes may still use:
 //
-//     milkCollectController.saveMilk
+//     controller.saveMilk
 //
-// it will continue working.
+// Keep this alias so the route does not immediately break.
 //
-// The route should preferably use:
+// Preferred:
 //
-//     submitMilk
+//     controller.submitMilk
 //
 // ==========================================================
 
@@ -632,413 +729,71 @@ exports.saveMilk =
 
 
 // ==========================================================
-// GET EDIT MILK RECORD
+// OPTIONAL: GET MILK RECORD EDIT PAGE
 // ==========================================================
-//
-// GET /milk/edit/:id
-//
-// Admin only.
 //
 // IMPORTANT
 // ----------------------------------------------------------
-// The actual authorization and edit-window validation belongs
-// to milkCollectService.editMilkRecord().
+// The new milk.ejs is designed as the primary recording page.
 //
-// This endpoint only loads the record for the edit form.
+// It already supports:
 //
-// ==========================================================
-
-exports.getEditMilk =
-async function(
-    req,
-    res
-) {
-
-    const user =
-        getUser(req);
-
-
-    // ======================================================
-    // AUTHENTICATION
-    // ======================================================
-
-    if (!user) {
-
-        return res.redirect(
-            "/login"
-        );
-
-    }
-
-
-    try {
-
-        // ==================================================
-        // ADMIN CHECK
-        // ==================================================
-        //
-        // This is a UI-access check only.
-        //
-        // The actual authorization remains in the service.
-        //
-        // ==================================================
-
-        if (
-            user.role !== "admin"
-        ) {
-
-            return res.status(
-                403
-            ).send(
-                "Only an administrator can edit milk records."
-            );
-
-        }
-
-
-        // ==================================================
-        // VALIDATE RECORD ID
-        // ==================================================
-
-        const recordId =
-            req.params.id;
-
-
-        if (
-            !recordId
-        ) {
-
-            return res.status(
-                400
-            ).send(
-                "Milk record ID is required."
-            );
-
-        }
-
-
-        // ==================================================
-        // LOAD MILK RECORD
-        // ==================================================
-
-        const Milk =
-            require("../models/milk");
-
-
-        const record =
-            await Milk.findById(
-                recordId
-            )
-                .populate(
-                    "dairy"
-                )
-                .populate(
-                    "recordedBy",
-                    "name"
-                )
-                .lean();
-
-
-        if (
-            !record
-        ) {
-
-            return res.status(
-                404
-            ).send(
-                "Milk record not found."
-            );
-
-        }
-
-
-        // ==================================================
-        // CHECK EDIT PERMISSION
-        // ==================================================
-
-        const canEdit =
-            milkCollectService.canAdminEditRecord(
-                record
-            );
-
-
-        if (
-            !canEdit
-        ) {
-
-            return res.status(
-                400
-            ).send(
-                "This milk record can no longer be edited."
-            );
-
-        }
-
-
-        // ==================================================
-        // RENDER EDIT PAGE
-        // ==================================================
-        //
-        // If your application uses a different edit view,
-        // change ONLY the view name here.
-        //
-        // ==================================================
-
-        return res.render(
-            "milk/edit",
-            {
-
-                record,
-
-                user,
-
-                isAdmin:
-                    true
-
-            }
-        );
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "GET /milk/edit/:id error:",
-            error
-        );
-
-
-        return res.status(
-            500
-        ).send(
-            error.message ||
-            "Unable to load the milk record."
-        );
-
-    }
-
-};
-
-
-// ==========================================================
-// UPDATE EXISTING MILK RECORD
-// ==========================================================
+//     Admin → edit existing records
 //
-// POST /milk/:id
+// Therefore a separate:
 //
-// Admin only.
+//     /milk/edit/:id
 //
-// Service:
+// page is NOT required for the normal milk workflow.
 //
-//     milkCollectService.editMilkRecord({
-//         recordId,
-//         liters,
-//         remarks,
-//         user
-//     })
+// This endpoint is intentionally omitted.
+//
+// If you later want a dedicated admin edit screen, it should
+// be implemented as a separate feature and its service method
+// should be added to milkCollectService first.
 //
 // ==========================================================
 
-exports.updateMilkRecord =
-async function(
-    req,
-    res
-) {
 
-    const user =
-        getUser(req);
-
-
-    // ======================================================
-    // AUTHENTICATION
-    // ======================================================
-
-    if (!user) {
-
-        return res.redirect(
-            "/login"
-        );
-
-    }
-
-
-    try {
-
-        // ==================================================
-        // RECORD ID
-        // ==================================================
-
-        const recordId =
-            req.params.id;
-
-
-        // ==================================================
-        // FORM DATA
-        // ==================================================
-
-        const liters =
-            req.body?.liters;
-
-
-        const remarks =
-            req.body?.remarks;
-
-
-        // ==================================================
-        // UPDATE THROUGH SERVICE
-        // ==================================================
-        //
-        // Authorization is handled by the service.
-        //
-        // ==================================================
-
-        await milkCollectService.editMilkRecord({
-
-            recordId,
-
-            liters,
-
-            remarks,
-
-            user
-
-        });
-
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
-
-        const message =
-            "Milk record updated successfully.";
-
-
-        // ==================================================
-        // REDIRECT
-        // ==================================================
-
-        return res.redirect(
-            `/milk?success=${encodeURIComponent(message)}`
-        );
-
-    }
-
-    catch (error) {
-
-        console.error(
-            "POST /milk/:id error:",
-            error
-        );
-
-
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
-        if (
-            error.code ===
-            "MILK_USER_REQUIRED"
-        ) {
-
-            return res.redirect(
-                "/login"
-            );
-
-        }
-
-
-        // ==================================================
-        // ADMIN REQUIRED
-        // ==================================================
-
-        if (
-            error.code ===
-            "MILK_ADMIN_REQUIRED"
-        ) {
-
-            return res.status(
-                403
-            ).send(
-                error.message
-            );
-
-        }
-
-
-        // ==================================================
-        // RECORD NOT FOUND
-        // ==================================================
-
-        if (
-            error.code ===
-            "MILK_NOT_FOUND"
-        ) {
-
-            return res.status(
-                404
-            ).send(
-                error.message
-            );
-
-        }
-
-
-        // ==================================================
-        // EDIT WINDOW CLOSED
-        // ==================================================
-
-        if (
-            error.code ===
-            "MILK_TIME_CLOSED"
-        ) {
-
-            return res.status(
-                400
-            ).send(
-                error.message
-            );
-
-        }
-
-
-        // ==================================================
-        // INVALID QUANTITY
-        // ==================================================
-
-        if (
-            error.code ===
-            "MILK_INVALID_QUANTITY"
-        ) {
-
-            return res.status(
-                400
-            ).send(
-                error.message
-            );
-
-        }
-
-
-        // ==================================================
-        // GENERIC ERROR
-        // ==================================================
-
-        return res.status(
-            500
-        ).send(
-            error.message ||
-            "Unable to update the milk record."
-        );
-
-    }
-
-};
+// ==========================================================
+// OPTIONAL: UPDATE SINGLE MILK RECORD
+// ==========================================================
+//
+// IMPORTANT
+// ----------------------------------------------------------
+// The current milkCollectService does NOT expose:
+//
+//     editMilkRecord()
+//
+// Therefore this controller must NOT call it.
+//
+// Admin editing currently happens through:
+//
+//     POST /milk
+//
+// using the same records structure as the EJS.
+//
+// The service recognizes an existing record and allows the
+// administrator to update it.
+//
+// ==========================================================
 
 
 // ==========================================================
-// EXPORT
+// PUBLIC RENDER HELPER
 // ==========================================================
 //
-// The individual functions are already exported above.
+// Exporting this is optional.
 //
+// It can be useful if another milk route needs to render the
+// same page without duplicating page-data preparation.
+//
+// ==========================================================
+
+exports.renderMilkPage =
+    renderMilkPage;
+
+
+// ==========================================================
+// MODULE COMPLETE
 // ==========================================================
