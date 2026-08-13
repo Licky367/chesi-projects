@@ -1,6 +1,14 @@
 /*=========================================================
   UPDATE PAGE
   FEED
+
+  CORE THEME:
+  ---------------------------------------------------------
+  Deep agricultural green
+  Soft grey page background
+  Clean white content cards
+  Subtle green accents
+  Professional farm-management appearance
 =========================================================*/
 
 
@@ -10,11 +18,15 @@
 
 .feed-container {
 
+    width: 100%;
+
     display: flex;
 
     flex-direction: column;
 
-    gap: 22px;
+    gap: 20px;
+
+    box-sizing: border-box;
 
 }
 
@@ -29,33 +41,31 @@
 
     width: 100%;
 
-    background:
-        linear-gradient(
-            145deg,
-            rgba(46, 125, 50, .055),
-            rgba(255, 255, 255, .98) 42%,
-            rgba(46, 125, 50, .025)
-        );
+    background: #ffffff;
 
-    border: 1px solid rgba(46, 125, 50, .13);
+    border: 1px solid rgba(39, 92, 54, .10);
 
-    border-radius: 16px;
+    border-radius: 10px;
 
     box-shadow:
-        0 2px 5px rgba(0, 0, 0, .035),
-        0 8px 24px rgba(46, 125, 50, .07);
+        0 2px 7px rgba(30, 60, 40, .07),
+        0 8px 22px rgba(30, 60, 40, .045);
 
     overflow: hidden;
 
     box-sizing: border-box;
 
     transition:
-        box-shadow .22s ease,
-        transform .22s ease,
-        border-color .22s ease;
+        box-shadow .2s ease,
+        border-color .2s ease,
+        transform .2s ease;
 
 }
 
+
+/*=========================================================
+  SUBTLE GREEN CARD EDGE
+=========================================================*/
 
 .feed-card::before {
 
@@ -67,62 +77,33 @@
 
     left: 0;
 
-    width: 4px;
+    width: 3px;
 
     height: 100%;
 
     background:
         linear-gradient(
             to bottom,
-            var(--primary),
-            rgba(46, 125, 50, .18)
+            rgba(35, 105, 48, .55),
+            rgba(35, 105, 48, .12)
         );
-
-    opacity: .72;
 
     pointer-events: none;
 
 }
 
 
+/*=========================================================
+  CARD HOVER
+=========================================================*/
+
 .feed-card:hover {
 
-    border-color: rgba(46, 125, 50, .22);
+    border-color: rgba(39, 92, 54, .17);
 
     box-shadow:
-        0 4px 8px rgba(0, 0, 0, .04),
-        0 14px 34px rgba(46, 125, 50, .10);
-
-    transform: translateY(-1px);
-
-}
-
-
-/*=========================================================
-  POST CARD
-=========================================================*/
-
-.post-card {
-
-    position: relative;
-
-    isolation: isolate;
-
-}
-
-
-/*=========================================================
-  POST CARD HEADER
-=========================================================*/
-
-.post-card .feed-header {
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(46, 125, 50, .055),
-            rgba(46, 125, 50, .018)
-        );
+        0 3px 9px rgba(30, 60, 40, .08),
+        0 10px 26px rgba(30, 60, 40, .06);
 
 }
 
@@ -143,9 +124,16 @@
 
     gap: 12px;
 
-    padding: 17px 18px;
+    padding: 16px 18px 14px 20px;
 
-    border-bottom: 1px solid rgba(46, 125, 50, .10);
+    background:
+        linear-gradient(
+            to right,
+            rgba(247, 251, 248, .96),
+            #ffffff
+        );
+
+    border-bottom: 1px solid rgba(39, 92, 54, .09);
 
     box-sizing: border-box;
 
@@ -164,7 +152,7 @@
 
     align-items: center;
 
-    gap: 12px;
+    gap: 11px;
 
 }
 
@@ -175,11 +163,11 @@
 
 .post-card .avatar-sm {
 
-    flex: 0 0 auto;
+    width: 42px;
 
-    width: 44px;
+    height: 42px;
 
-    height: 44px;
+    flex: 0 0 42px;
 
     display: block;
 
@@ -187,14 +175,11 @@
 
     border-radius: 50%;
 
-    border: 2px solid rgba(46, 125, 50, .16);
-
-    background: #edf6ed;
+    border: 2px solid #ffffff;
 
     box-shadow:
-        0 2px 7px rgba(0, 0, 0, .08);
-
-    box-sizing: border-box;
+        0 0 0 1px rgba(39, 92, 54, .18),
+        0 2px 6px rgba(30, 60, 40, .10);
 
 }
 
@@ -213,13 +198,17 @@
 
     align-items: flex-start;
 
-    gap: 4px;
+    gap: 3px;
 
 }
 
 
 /*=========================================================
   POST META LINE
+
+  Example:
+
+  Nelson updated about Cow Shed C
 =========================================================*/
 
 .post-meta-line {
@@ -234,7 +223,7 @@
 
     gap: 5px;
 
-    color: var(--text);
+    color: #26382d;
 
     font-size: 14px;
 
@@ -251,11 +240,11 @@
 
     display: inline;
 
-    color: var(--text);
+    color: #1d3425;
 
     font-size: 15px;
 
-    font-weight: 750;
+    font-weight: 700;
 
     line-height: 1.4;
 
@@ -263,14 +252,14 @@
 
 
 /*=========================================================
-  META ACTION
+  "UPDATED ABOUT"
 =========================================================*/
 
 .post-meta-action {
 
     display: inline;
 
-    color: var(--muted);
+    color: #66736a;
 
     font-size: 13px;
 
@@ -283,10 +272,6 @@
 
 /*=========================================================
   POST SUBJECT
-
-  Example:
-
-  Cow Shed C
 =========================================================*/
 
 .post-subject {
@@ -301,22 +286,21 @@
 
     gap: 5px;
 
-    padding: 3px 9px;
+    padding: 2px 8px;
 
-    border: 1px solid rgba(46, 125, 50, .12);
+    border: 1px solid rgba(39, 110, 55, .15);
 
-    border-radius: 999px;
+    border-radius: 5px;
 
-    background:
-        rgba(46, 125, 50, .075);
+    background: rgba(39, 110, 55, .065);
 
-    color: var(--primary);
+    color: #28633a;
 
     font-size: 13px;
 
     font-weight: 700;
 
-    line-height: 1.35;
+    line-height: 1.5;
 
     box-sizing: border-box;
 
@@ -328,16 +312,14 @@
 
 
 /*=========================================================
-  SUBJECT ICON
+  SUBJECT HOVER
 =========================================================*/
 
-.post-subject i {
+.post-subject:hover {
 
-    flex: 0 0 auto;
+    background: rgba(39, 110, 55, .10);
 
-    font-size: 10px;
-
-    line-height: 1;
+    border-color: rgba(39, 110, 55, .22);
 
 }
 
@@ -362,21 +344,6 @@
 
 
 /*=========================================================
-  SUBJECT HOVER
-=========================================================*/
-
-.post-subject:hover {
-
-    background:
-        rgba(46, 125, 50, .12);
-
-    border-color:
-        rgba(46, 125, 50, .20);
-
-}
-
-
-/*=========================================================
   POST TIME
 =========================================================*/
 
@@ -386,15 +353,13 @@
 
     margin: 0;
 
-    color: var(--muted);
+    color: #7a857d;
 
     font-size: 11px;
 
     font-weight: 500;
 
     line-height: 1.4;
-
-    letter-spacing: .01em;
 
 }
 
@@ -405,11 +370,11 @@
 
 .delete-post {
 
-    width: 36px;
+    width: 35px;
 
-    height: 36px;
+    height: 35px;
 
-    flex: 0 0 36px;
+    flex: 0 0 35px;
 
     display: inline-flex;
 
@@ -425,9 +390,9 @@
 
     padding: 0;
 
-    color: var(--muted);
+    color: #879087;
 
-    font-size: 15px;
+    font-size: 14px;
 
     line-height: 1;
 
@@ -437,34 +402,46 @@
 
     transition:
         background-color .18s ease,
-        color .18s ease,
         border-color .18s ease,
+        color .18s ease,
         transform .15s ease;
 
 }
 
 
+/*=========================================================
+  DELETE HOVER
+=========================================================*/
+
 .delete-post:hover {
 
-    background: rgba(220, 53, 69, .08);
+    background: rgba(180, 45, 55, .06);
 
-    border-color: rgba(220, 53, 69, .10);
+    border-color: rgba(180, 45, 55, .10);
 
     color: var(--red);
 
 }
 
 
+/*=========================================================
+  DELETE ACTIVE
+=========================================================*/
+
 .delete-post:active {
 
-    transform: scale(.93);
+    transform: scale(.94);
 
 }
 
 
+/*=========================================================
+  DELETE FOCUS
+=========================================================*/
+
 .delete-post:focus-visible {
 
-    outline: 2px solid var(--primary);
+    outline: 2px solid #2e7d32;
 
     outline-offset: 2px;
 
@@ -489,7 +466,9 @@
 
     margin: 0;
 
-    padding: 18px 20px;
+    padding: 17px 20px 18px;
+
+    background: #ffffff;
 
     box-sizing: border-box;
 
@@ -514,7 +493,9 @@
 
     margin: 0;
 
-    padding: 18px 20px;
+    padding: 17px 20px 18px;
+
+    background: #ffffff;
 
     text-align: left;
 
@@ -537,7 +518,7 @@
 
     padding: 0;
 
-    color: var(--primary);
+    color: #285d39;
 
     font-size: 1.05rem;
 
@@ -564,7 +545,7 @@
 
     padding: 0;
 
-    color: var(--text);
+    color: #455249;
 
     font-size: 15px;
 
@@ -585,7 +566,7 @@
 
     padding: 0;
 
-    color: var(--text);
+    color: #3f4d44;
 
     font-size: 15px;
 
@@ -629,14 +610,11 @@
 
     overflow: hidden;
 
-    border: 1px solid rgba(46, 125, 50, .10);
+    border: 1px solid rgba(39, 92, 54, .10);
 
-    border-radius: 13px;
+    border-radius: 8px;
 
-    background: #edf5ed;
-
-    box-shadow:
-        0 3px 12px rgba(0, 0, 0, .06);
+    background: #f3f6f3;
 
     box-sizing: border-box;
 
@@ -689,9 +667,9 @@
 
 .post-card .feed-body:has(.post-image) {
 
-    padding-top: 16px;
+    padding-top: 15px;
 
-    padding-bottom: 18px;
+    padding-bottom: 17px;
 
 }
 
@@ -712,12 +690,16 @@
 
     gap: 8px;
 
-    padding: 11px 18px;
-
-    border-top: 1px solid rgba(46, 125, 50, .10);
+    padding: 10px 18px 11px 20px;
 
     background:
-        rgba(46, 125, 50, .018);
+        linear-gradient(
+            to right,
+            rgba(248, 251, 249, .92),
+            #ffffff
+        );
+
+    border-top: 1px solid rgba(39, 92, 54, .09);
 
     box-sizing: border-box;
 
@@ -745,11 +727,11 @@
 
     border: 1px solid transparent;
 
-    border-radius: 9px;
+    border-radius: 7px;
 
     background: transparent;
 
-    color: #555;
+    color: #68736c;
 
     font-family: inherit;
 
@@ -763,8 +745,8 @@
 
     transition:
         background-color .18s ease,
-        color .18s ease,
-        border-color .18s ease;
+        border-color .18s ease,
+        color .18s ease;
 
 }
 
@@ -776,11 +758,11 @@
 .like-btn:hover,
 .toggle-comments:hover {
 
-    background: rgba(46, 125, 50, .075);
+    background: rgba(39, 110, 55, .065);
 
-    border-color: rgba(46, 125, 50, .10);
+    border-color: rgba(39, 110, 55, .10);
 
-    color: var(--primary);
+    color: #28633a;
 
 }
 
@@ -792,7 +774,7 @@
 .like-btn:focus-visible,
 .toggle-comments:focus-visible {
 
-    outline: 2px solid var(--primary);
+    outline: 2px solid #2e7d32;
 
     outline-offset: 2px;
 
@@ -841,18 +823,18 @@
 
 
 /*=========================================================
-  EMPTY META SAFETY
+  POST CARD
 =========================================================*/
 
-.post-meta-line:empty {
+.post-card {
 
-    display: none;
+    position: relative;
 
 }
 
 
 /*=========================================================
-  MODERN CARD INNER HIGHLIGHT
+  SUBTLE CARD TOP HIGHLIGHT
 =========================================================*/
 
 .post-card::after {
@@ -861,16 +843,34 @@
 
     position: absolute;
 
-    inset: 0;
+    top: 0;
 
-    border-radius: inherit;
+    left: 3px;
 
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .75);
+    right: 0;
+
+    height: 1px;
+
+    background:
+        linear-gradient(
+            to right,
+            rgba(35, 105, 48, .20),
+            rgba(35, 105, 48, .03),
+            transparent
+        );
 
     pointer-events: none;
 
-    z-index: -1;
+}
+
+
+/*=========================================================
+  EMPTY META SAFETY
+=========================================================*/
+
+.post-meta-line:empty {
+
+    display: none;
 
 }
 
@@ -891,16 +891,20 @@
 
     .feed-card {
 
-        border-radius: 13px;
+        border-radius: 9px;
+
+        box-shadow:
+            0 2px 6px rgba(30, 60, 40, .065),
+            0 6px 16px rgba(30, 60, 40, .035);
 
     }
 
 
     .feed-header {
 
-        padding: 14px 15px;
+        padding: 14px 14px 13px 16px;
 
-        gap: 9px;
+        gap: 8px;
 
     }
 
@@ -914,9 +918,11 @@
 
     .post-card .avatar-sm {
 
-        width: 40px;
+        width: 39px;
 
-        height: 40px;
+        height: 39px;
+
+        flex-basis: 39px;
 
     }
 
@@ -933,6 +939,8 @@
         gap: 4px;
 
         font-size: 13px;
+
+        line-height: 1.4;
 
     }
 
@@ -953,9 +961,9 @@
 
     .post-subject {
 
-        max-width: calc(100vw - 115px);
+        max-width: calc(100vw - 110px);
 
-        padding: 3px 8px;
+        padding: 2px 7px;
 
         font-size: 12px;
 
@@ -964,7 +972,7 @@
 
     .post-subject span {
 
-        max-width: 190px;
+        max-width: 185px;
 
     }
 
@@ -978,18 +986,20 @@
 
     .delete-post {
 
-        width: 34px;
+        width: 33px;
 
-        height: 34px;
+        height: 33px;
 
-        flex-basis: 34px;
+        flex-basis: 33px;
 
     }
 
 
+    .feed-body,
+
     .post-card .feed-body {
 
-        padding: 15px 15px;
+        padding: 15px 16px 16px;
 
     }
 
@@ -1014,9 +1024,9 @@
 
     .post-image-container {
 
-        margin-top: 12px;
+        margin-top: 13px;
 
-        border-radius: 11px;
+        border-radius: 7px;
 
     }
 
@@ -1032,7 +1042,7 @@
 
     .feed-actions {
 
-        padding: 9px 15px;
+        padding: 9px 14px 10px 16px;
 
     }
 
@@ -1040,9 +1050,9 @@
     .like-btn,
     .toggle-comments {
 
-        min-height: 34px;
+        min-height: 33px;
 
-        padding: 6px 9px;
+        padding: 6px 8px;
 
     }
 
@@ -1058,25 +1068,34 @@
 
     .feed-header {
 
-        padding: 13px 12px;
+        padding: 13px 12px 12px 14px;
 
     }
 
 
     .post-card .avatar-sm {
 
-        width: 38px;
+        width: 37px;
 
-        height: 38px;
+        height: 37px;
+
+        flex-basis: 37px;
+
+    }
+
+
+    .feed-user {
+
+        gap: 9px;
 
     }
 
 
     .post-card .feed-body {
 
-        padding-left: 12px;
+        padding-left: 14px;
 
-        padding-right: 12px;
+        padding-right: 14px;
 
     }
 
@@ -1085,9 +1104,7 @@
 
         align-items: flex-start;
 
-        flex-direction: column;
-
-        gap: 2px;
+        gap: 2px 4px;
 
     }
 
@@ -1101,14 +1118,14 @@
 
     .post-subject span {
 
-        max-width: 180px;
+        max-width: 170px;
 
     }
 
 
     .feed-actions {
 
-        padding-left: 12px;
+        padding-left: 13px;
 
         padding-right: 12px;
 
@@ -1138,7 +1155,11 @@
 
 
 /*=========================================================
-  DARK MODE COMPATIBILITY
+  DARK MODE SAFETY
+
+  Keeps the feed consistent if the browser itself is
+  operating in dark mode, without forcing the whole
+  application into a different visual identity.
 =========================================================*/
 
 @media (prefers-color-scheme: dark) {
@@ -1146,55 +1167,35 @@
 
     .feed-card {
 
-        background:
-            linear-gradient(
-                145deg,
-                rgba(46, 125, 50, .10),
-                rgba(30, 30, 30, .98) 45%,
-                rgba(46, 125, 50, .055)
-            );
-
-        border-color:
-            rgba(76, 175, 80, .18);
+        background: #ffffff;
 
     }
 
 
-    .post-card .feed-header {
+    .feed-header {
 
         background:
             linear-gradient(
-                180deg,
-                rgba(76, 175, 80, .08),
-                rgba(76, 175, 80, .025)
+                to right,
+                rgba(247, 251, 248, .96),
+                #ffffff
             );
+
+    }
+
+
+    .feed-body {
+
+        background: #ffffff;
 
     }
 
 
     .post-subject {
 
-        background:
-            rgba(76, 175, 80, .12);
+        background: rgba(39, 110, 55, .075);
 
-        border-color:
-            rgba(76, 175, 80, .18);
-
-    }
-
-
-    .post-subject:hover {
-
-        background:
-            rgba(76, 175, 80, .18);
-
-    }
-
-
-    .feed-actions {
-
-        background:
-            rgba(76, 175, 80, .035);
+        border-color: rgba(39, 110, 55, .15);
 
     }
 
@@ -1202,8 +1203,7 @@
     .like-btn:hover,
     .toggle-comments:hover {
 
-        background:
-            rgba(255, 255, 255, .06);
+        background: rgba(39, 110, 55, .07);
 
     }
 
