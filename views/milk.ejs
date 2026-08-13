@@ -21,39 +21,6 @@
      success
      error
 
-     FARM:
-     ---------------------------------------------------------
-     Each farm contains:
-
-         _id
-         name
-         code
-         animals
-         total
-
-     ANIMAL:
-     ---------------------------------------------------------
-     Each animal contains:
-
-         _id
-         name
-         code
-         assetCode
-         isMilking
-         morning
-         evening
-
-     EXISTING RECORD:
-     ---------------------------------------------------------
-     morning / evening may contain:
-
-         liters
-         remarks
-         session
-         day
-         date
-         recordedBy
-
      PERMISSIONS:
      ---------------------------------------------------------
      Admin:
@@ -64,6 +31,62 @@
          • Can create records
          • Cannot edit existing records
 ========================================================= -->
+
+
+<!-- =========================================================
+     SAFE VIEW VARIABLES
+========================================================= -->
+
+<%
+    /*
+     * The controller should normally provide these values.
+     *
+     * However, EJS throws a ReferenceError if a variable has
+     * never been passed into res.render().
+     *
+     * Therefore we safely check typeof before using them.
+     */
+
+    const pageDay =
+        typeof day !== "undefined" && day
+            ? day
+            : new Date().toISOString().slice(0, 10);
+
+
+    const pageMonth =
+        typeof month !== "undefined" && month
+            ? month
+            : "";
+
+
+    const pageFarms =
+        typeof farms !== "undefined" &&
+        Array.isArray(farms)
+            ? farms
+            : [];
+
+
+    const pageIsAdmin =
+        typeof isAdmin !== "undefined"
+            ? Boolean(isAdmin)
+            : Boolean(
+                typeof user !== "undefined" &&
+                user &&
+                user.role === "admin"
+            );
+
+
+    const pageSuccess =
+        typeof success !== "undefined"
+            ? success
+            : "";
+
+
+    const pageError =
+        typeof error !== "undefined"
+            ? error
+            : "";
+%>
 
 
 <!-- =========================================================
@@ -96,19 +119,19 @@
             </h1>
 
             <p class="milk-date">
-                <%= day %>
+                <%= pageDay %>
             </p>
 
         </div>
 
 
-        <!-- ================================================
+        <!-- =================================================
              USER ROLE
-        ================================================= -->
+        ================================================== -->
 
         <div class="milk-role-badge">
 
-            <% if (isAdmin) { %>
+            <% if (pageIsAdmin) { %>
 
                 Administrator
 
@@ -128,34 +151,28 @@
          FLASH / STATUS MESSAGES
     ====================================================== -->
 
-    <% if (
-        typeof success !== "undefined" &&
-        success
-    ) { %>
+    <% if (pageSuccess) { %>
 
         <div
             class="milk-message milk-success"
             role="alert"
         >
 
-            <%= success %>
+            <%= pageSuccess %>
 
         </div>
 
     <% } %>
 
 
-    <% if (
-        typeof error !== "undefined" &&
-        error
-    ) { %>
+    <% if (pageError) { %>
 
         <div
             class="milk-message milk-error"
             role="alert"
         >
 
-            <%= error %>
+            <%= pageError %>
 
         </div>
 
@@ -167,10 +184,7 @@
          NO FARMS
     ====================================================== -->
 
-    <% if (
-        !farms ||
-        farms.length === 0
-    ) { %>
+    <% if (pageFarms.length === 0) { %>
 
         <section class="milk-empty">
 
@@ -193,10 +207,7 @@
          COLLECTION FORM
     ====================================================== -->
 
-    <% if (
-        farms &&
-        farms.length > 0
-    ) { %>
+    <% if (pageFarms.length > 0) { %>
 
         <form
             action="/milk"
@@ -210,7 +221,23 @@
                  FARMS
             ================================================== -->
 
-            <% farms.forEach(function(farm) { %>
+            <% pageFarms.forEach(function(farm) { %>
+
+
+                <%
+                    /*
+                     * Make sure farm.animals is always an array.
+                     */
+
+                    const farmAnimals =
+                        Array.isArray(farm.animals)
+                            ? farm.animals
+                            : [];
+
+
+                    const farmTotal =
+                        Number(farm.total || 0);
+                %>
 
 
                 <section
@@ -234,13 +261,13 @@
                         <div class="milk-farm-information">
 
                             <h2>
-                                <%= farm.name %>
+                                <%= farm.name || "Unnamed Farm" %>
                             </h2>
 
                             <span class="milk-farm-code">
 
                                 Farm Code:
-                                <%= farm.code %>
+                                <%= farm.code || "" %>
 
                             </span>
 
@@ -259,12 +286,7 @@
                             </span>
 
                             <strong>
-
-                                <%= Number(
-                                    farm.total || 0
-                                ).toFixed(2) %>
-                                L
-
+                                <%= farmTotal.toFixed(2) %> L
                             </strong>
 
                         </div>
@@ -278,10 +300,8 @@
                          FARM HAS NO MILKING ANIMALS
                     ========================================== -->
 
-                    <% if (
-                        !farm.animals ||
-                        farm.animals.length === 0
-                    ) { %>
+                    <% if (farmAnimals.length === 0) { %>
+
 
                         <div class="milk-no-animals">
 
@@ -289,6 +309,7 @@
                             registered for this farm.
 
                         </div>
+
 
                     <% } else { %>
 
@@ -367,20 +388,26 @@
                                 <tbody>
 
 
-                                    <% farm.animals.forEach(function(animal) { %>
+                                    <% farmAnimals.forEach(function(animal) { %>
 
 
                                         <%
                                             /*
-                                             * Existing records supplied
-                                             * by milkCollectController.js.
+                                             * Existing morning record.
                                              */
 
                                             const morning =
-                                                animal.morning || null;
+                                                animal.morning ||
+                                                null;
+
+
+                                            /*
+                                             * Existing evening record.
+                                             */
 
                                             const evening =
-                                                animal.evening || null;
+                                                animal.evening ||
+                                                null;
 
 
                                             /*
@@ -393,19 +420,26 @@
                                             const morningLocked =
                                                 Boolean(morning);
 
+
                                             const eveningLocked =
                                                 Boolean(evening);
 
 
                                             /*
-                                             * Existing values.
+                                             * Existing morning liters.
                                              */
 
                                             const morningLiters =
                                                 morning &&
-                                                morning.liters !== undefined
+                                                morning.liters !== undefined &&
+                                                morning.liters !== null
                                                     ? morning.liters
                                                     : "";
+
+
+                                            /*
+                                             * Existing morning remarks.
+                                             */
 
                                             const morningRemarks =
                                                 morning &&
@@ -413,11 +447,22 @@
                                                     ? morning.remarks
                                                     : "";
 
+
+                                            /*
+                                             * Existing evening liters.
+                                             */
+
                                             const eveningLiters =
                                                 evening &&
-                                                evening.liters !== undefined
+                                                evening.liters !== undefined &&
+                                                evening.liters !== null
                                                     ? evening.liters
                                                     : "";
+
+
+                                            /*
+                                             * Existing evening remarks.
+                                             */
 
                                             const eveningRemarks =
                                                 evening &&
@@ -447,7 +492,7 @@
                                                 <div class="milk-animal-name">
 
                                                     <strong>
-                                                        <%= animal.name %>
+                                                        <%= animal.name || "Unnamed Animal" %>
                                                     </strong>
 
                                                 </div>
@@ -455,7 +500,7 @@
 
                                                 <small class="milk-animal-code">
 
-                                                    #<%= animal.code %>
+                                                    #<%= animal.code || animal.assetCode || "" %>
 
                                                 </small>
 
@@ -479,16 +524,11 @@
                                                     value="<%= morningLiters %>"
                                                     data-session="morning"
                                                     data-animal-id="<%= animal._id %>"
-                                                    aria-label="Morning milk liters for <%= animal.name %>"
+                                                    aria-label="Morning milk liters for <%= animal.name || 'animal' %>"
 
-                                                    <% if (
-                                                        !isAdmin &&
-                                                        morningLocked
-                                                    ) { %>
-
+                                                    <% if (!pageIsAdmin && morningLocked) { %>
                                                         readonly
                                                         aria-readonly="true"
-
                                                     <% } %>
                                                 >
 
@@ -510,16 +550,11 @@
                                                     maxlength="500"
                                                     data-session="morning"
                                                     data-animal-id="<%= animal._id %>"
-                                                    aria-label="Morning remarks for <%= animal.name %>"
+                                                    aria-label="Morning remarks for <%= animal.name || 'animal' %>"
 
-                                                    <% if (
-                                                        !isAdmin &&
-                                                        morningLocked
-                                                    ) { %>
-
+                                                    <% if (!pageIsAdmin && morningLocked) { %>
                                                         readonly
                                                         aria-readonly="true"
-
                                                     <% } %>
                                                 >
 
@@ -543,16 +578,11 @@
                                                     value="<%= eveningLiters %>"
                                                     data-session="evening"
                                                     data-animal-id="<%= animal._id %>"
-                                                    aria-label="Evening milk liters for <%= animal.name %>"
+                                                    aria-label="Evening milk liters for <%= animal.name || 'animal' %>"
 
-                                                    <% if (
-                                                        !isAdmin &&
-                                                        eveningLocked
-                                                    ) { %>
-
+                                                    <% if (!pageIsAdmin && eveningLocked) { %>
                                                         readonly
                                                         aria-readonly="true"
-
                                                     <% } %>
                                                 >
 
@@ -574,16 +604,11 @@
                                                     maxlength="500"
                                                     data-session="evening"
                                                     data-animal-id="<%= animal._id %>"
-                                                    aria-label="Evening remarks for <%= animal.name %>"
+                                                    aria-label="Evening remarks for <%= animal.name || 'animal' %>"
 
-                                                    <% if (
-                                                        !isAdmin &&
-                                                        eveningLocked
-                                                    ) { %>
-
+                                                    <% if (!pageIsAdmin && eveningLocked) { %>
                                                         readonly
                                                         aria-readonly="true"
-
                                                     <% } %>
                                                 >
 
@@ -626,7 +651,8 @@
                      PERMISSION MESSAGE
                 ============================================== -->
 
-                <% if (isAdmin) { %>
+                <% if (pageIsAdmin) { %>
+
 
                     <p class="milk-admin-note">
 
@@ -635,7 +661,9 @@
 
                     </p>
 
+
                 <% } else { %>
+
 
                     <p class="milk-worker-note">
 
@@ -643,6 +671,7 @@
                         read-only for dairy workers.
 
                     </p>
+
 
                 <% } %>
 
@@ -658,7 +687,7 @@
                     id="milkSubmitButton"
                 >
 
-                    <% if (isAdmin) { %>
+                    <% if (pageIsAdmin) { %>
 
                         Save Milk Records
 
@@ -706,7 +735,7 @@ document.addEventListener(
 
 
         /*
-         * There is no form when the user has no farms.
+         * There is no form when there are no farms.
          */
 
         if (!form) {
@@ -733,7 +762,7 @@ document.addEventListener(
            -----------------------------------------------------
            Client-side preview only.
 
-           The server recalculates all authoritative totals.
+           The server remains authoritative.
         ====================================================== */
 
         function updateFarmTotal(
@@ -764,13 +793,7 @@ document.addEventListener(
                         input.value;
 
 
-                    /*
-                     * Empty input is not a quantity.
-                     */
-
-                    if (
-                        rawValue === ""
-                    ) {
+                    if (rawValue === "") {
 
                         return;
 
@@ -778,9 +801,7 @@ document.addEventListener(
 
 
                     const value =
-                        Number(
-                            rawValue
-                        );
+                        Number(rawValue);
 
 
                     if (
@@ -855,7 +876,7 @@ document.addEventListener(
 
 
                 /*
-                 * Calculate the initial displayed total.
+                 * Calculate initial total.
                  */
 
                 updateFarmTotal(
@@ -896,7 +917,10 @@ document.addEventListener(
 
 
                 /*
-                 * Disable the submit button.
+                 * Disable submit button.
+                 *
+                 * Inputs are deliberately NOT disabled because
+                 * disabled inputs are not submitted by browsers.
                  */
 
                 if (submitButton) {
@@ -913,16 +937,6 @@ document.addEventListener(
                         "Saving...";
 
                 }
-
-
-                /*
-                 * Do NOT disable the input fields here.
-                 *
-                 * Disabled inputs are NOT submitted by the
-                 * browser.
-                 *
-                 * Readonly inputs ARE submitted.
-                 */
 
             }
         );
@@ -948,14 +962,22 @@ document.addEventListener(
                     "input",
                     function() {
 
+                        const rawValue =
+                            input.value;
+
+
+                        if (rawValue === "") {
+
+                            return;
+
+                        }
+
+
                         const value =
-                            Number(
-                                input.value
-                            );
+                            Number(rawValue);
 
 
                         if (
-                            input.value !== "" &&
                             Number.isFinite(value) &&
                             value < 0
                         ) {
