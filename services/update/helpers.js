@@ -17,7 +17,6 @@ function formatDate(date) {
     return new Intl.DateTimeFormat(
         "en-KE",
         {
-
             timeZone:
                 "Africa/Nairobi",
 
@@ -38,7 +37,6 @@ function formatDate(date) {
 
             hour12:
                 false
-
         }
     ).format(
         new Date(date)
@@ -168,8 +166,6 @@ function formatComment(
 // FEED FORMATTER
 // ==========================================================
 //
-// IMPORTANT:
-//
 // pageService.js populates:
 //
 //     item.dairy
@@ -181,8 +177,7 @@ function formatComment(
 //     assetCode
 //     profileImage
 //
-// This formatter exposes those values as convenient feed
-// properties:
+// This formatter exposes the populated Dairy/asset as:
 //
 //     dairyId
 //     dairyName
@@ -190,11 +185,11 @@ function formatComment(
 //     dairyAssetCode
 //     dairyImage
 //
-// Therefore post.ejs can display:
+// It also explicitly preserves the post owner's:
 //
-//     userName updated about dairyName
+//     userName
 //
-// Example:
+// so post.ejs can display:
 //
 //     Nelson updated about Cow Shed C
 //     Aug 14, 2026, 10:35
@@ -222,6 +217,20 @@ function formatFeed(
         item.user || null;
 
 
+    // ------------------------------------------------------
+    // PRESERVE POST OWNER NAME
+    //
+    // Update.js stores the owner's name directly in:
+    //
+    //     userName
+    //
+    // Keep that property available to post.ejs.
+    // ------------------------------------------------------
+
+    item.userName =
+        item.userName || "User";
+
+
     // ======================================================
     // DATE
     // ======================================================
@@ -240,9 +249,9 @@ function formatFeed(
     //
     //     item.dairy
     //
-    // So we do NOT perform another database query here.
+    // Therefore no additional database query is required.
     //
-    // This is what supplies post.ejs with:
+    // post.ejs can use:
     //
     //     item.dairyName
     //
@@ -253,7 +262,7 @@ function formatFeed(
     ) {
 
         // --------------------------------------------------
-        // Dairy ID
+        // Dairy / Asset ID
         // --------------------------------------------------
 
         item.dairyId =
