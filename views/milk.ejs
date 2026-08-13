@@ -1,13 +1,27 @@
 <% /*
 ==========================================================
 MILK COLLECTION PAGE
+==========================================================
 
 FILE:
 views/milk.ejs
 
 PURPOSE:
 ----------------------------------------------------------
-• Display all currently milking dairy animals
+• Display actively milking animals grouped by Dairy Farm
+• Each Dairy Farm gets its own milk table
+• Farm title comes from Dairy Farm.name
+• Farm identification is based on:
+
+      Dairy Farm.code === Animal.assetCode
+
+• Admin:
+      Sees all Dairy Farm tables
+
+• dairyWorker:
+      Sees only tables belonging to Dairy Farms
+      contained in user.assignedFarm
+
 • Display morning / evening milk records
 • Allow normal users to submit milk
 • Allow administrators to edit existing records
@@ -16,15 +30,81 @@ PURPOSE:
 
 EXPECTED CONTROLLER DATA:
 ----------------------------------------------------------
-dairies
+
+dairyGroups
+
 session
+
 isAdmin
+
 user
+
 success
+
 error
+
+
+EXPECTED dairyGroups STRUCTURE:
+----------------------------------------------------------
+
+dairyGroups = [
+
+    {
+        farm: {
+
+            _id,
+            name,
+            code
+
+        },
+
+        animals: [
+
+            {
+
+                _id,
+                name,
+                code,
+                assetCode,
+                isMilking,
+
+                morning,
+                evening,
+
+                morningRecorded,
+                eveningRecorded,
+
+                morningLiters,
+                eveningLiters
+
+            }
+
+        ]
+
+    }
+
+]
+
+
+IMPORTANT RELATIONSHIP:
+----------------------------------------------------------
+
+Dairy Farm:
+
+    code = -10
+
+Animal:
+
+    assetCode = -10
+
+Therefore:
+
+    farm.code === animal.assetCode
+
 
 IMPORTANT RESULT RULE:
 ----------------------------------------------------------
+
 The result popup must ONLY appear when:
 
     success === true
@@ -34,28 +114,6 @@ OR when error contains an actual message.
 
 Opening /milk normally must NEVER display
 the result popup.
-
-EACH DAIRY MAY CONTAIN:
-----------------------------------------------------------
-dairy._id
-dairy.name
-dairy.code
-dairy.isMilking
-
-dairy.morning
-dairy.evening
-
-dairy.morningRecorded
-dairy.eveningRecorded
-
-dairy.morningLiters
-dairy.eveningLiters
-
-SESSION VALUES:
-----------------------------------------------------------
-morning
-closed
-evening
 
 ==========================================================
 */ %>
@@ -282,7 +340,7 @@ evening
 
 
 /* ==========================================================
-   SECTION HEADER
+   PAGE SECTION HEADER
 ========================================================== */
 
 .milk-section-header {
@@ -306,6 +364,92 @@ evening
     background: #edf7ef;
     color: #2b7541;
     font-size: 12px;
+    font-weight: 800;
+}
+
+
+/* ==========================================================
+   FARM SECTION
+========================================================== */
+
+.milk-farm-section {
+    margin-top: 24px;
+}
+
+.milk-farm-section:first-child {
+    margin-top: 0;
+}
+
+
+/* ==========================================================
+   FARM HEADER
+========================================================== */
+
+.milk-farm-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    background:
+        linear-gradient(
+            135deg,
+            #f0f8f2,
+            #ffffff
+        );
+    border: 1px solid #d9e9dd;
+    border-radius: 17px;
+}
+
+.milk-farm-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.milk-farm-icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #287442;
+    background: #e2f1e5;
+}
+
+.milk-farm-details {
+    min-width: 0;
+}
+
+.milk-farm-name {
+    margin: 0;
+    color: #183d28;
+    font-size: 17px;
+    font-weight: 850;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.milk-farm-code {
+    margin-top: 3px;
+    color: #7b8d82;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.milk-farm-count {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #ffffff;
+    border: 1px solid #dce9df;
+    color: #39734a;
+    font-size: 11px;
     font-weight: 800;
 }
 
@@ -1060,6 +1204,15 @@ evening
         grid-template-columns: 1fr;
     }
 
+    .milk-farm-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .milk-farm-count {
+        align-self: flex-start;
+    }
+
     .milk-table-wrapper {
         border-radius: 15px;
     }
@@ -1097,6 +1250,10 @@ evening
 
     .milk-subtitle {
         font-size: 13px;
+    }
+
+    .milk-farm-name {
+        font-size: 15px;
     }
 
 }
@@ -1184,6 +1341,13 @@ evening
         <path d="M10.3 4.5 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.5a2 2 0 0 0-3.4 0z"/>
         <path d="M12 9v4"/>
         <path d="M12 17h.01"/>
+    </symbol>
+
+    <symbol id="milk-farm" viewBox="0 0 24 24">
+        <path d="M3 21h18"/>
+        <path d="M5 21V9l7-5 7 5v12"/>
+        <path d="M9 21v-5h6v5"/>
+        <path d="M8 11h.01M12 11h.01M16 11h.01"/>
     </symbol>
 
 </svg>
@@ -1330,7 +1494,25 @@ evening
                 </div>
 
                 <div class="milk-info-value">
-                    <%= dairies.length %> registered
+
+                    <%
+                        const totalMilkingAnimals =
+                            Array.isArray(dairyGroups)
+                                ? dairyGroups.reduce(
+                                    (total, group) =>
+                                        total +
+                                        (
+                                            Array.isArray(group.animals)
+                                                ? group.animals.length
+                                                : 0
+                                        ),
+                                    0
+                                )
+                                : 0;
+                    %>
+
+                    <%= totalMilkingAnimals %> registered
+
                 </div>
 
             </div>
@@ -1369,7 +1551,7 @@ evening
 
 
     <!-- ======================================================
-         TABLE HEADER
+         PAGE HEADER
     ======================================================= -->
 
     <div class="milk-section-header">
@@ -1380,11 +1562,17 @@ evening
 
         <span class="milk-section-count">
 
-            <%= dairies.length %>
+            <%= Array.isArray(dairyGroups)
+                ? dairyGroups.length
+                : 0
+            %>
 
-            <%= dairies.length === 1
-                ? "animal"
-                : "animals"
+            <%= (
+                Array.isArray(dairyGroups) &&
+                dairyGroups.length === 1
+            )
+                ? "farm"
+                : "farms"
             %>
 
         </span>
@@ -1392,12 +1580,14 @@ evening
     </div>
 
 
-    <% if (!dairies.length) { %>
+    <!-- ======================================================
+         EMPTY STATE
+    ======================================================= -->
 
-
-        <!-- ==================================================
-             EMPTY STATE
-        =================================================== -->
+    <% if (
+        !Array.isArray(dairyGroups) ||
+        dairyGroups.length === 0
+    ) { %>
 
         <section class="milk-empty">
 
@@ -1413,12 +1603,14 @@ evening
             </div>
 
             <h3 class="milk-empty-title">
-                No milking animals
+                No milking animals available
             </h3>
 
             <p class="milk-empty-text">
-                There are currently no dairy animals marked as
-                actively milking.
+
+                There are currently no actively milking animals
+                available for your dairy collection access.
+
             </p>
 
         </section>
@@ -1428,645 +1620,773 @@ evening
 
 
         <!-- ==================================================
-             MILK TABLE
+             FARM GROUPS
         =================================================== -->
 
-        <section class="milk-table-wrapper">
-
-            <table class="milk-table">
-
-                <thead>
-
-                    <tr>
-
-                        <th class="milk-column-animal">
-                            Animal
-                        </th>
-
-                        <th class="milk-column-code">
-                            Code
-                        </th>
-
-                        <th class="milk-column-session">
-                            Morning
-                        </th>
-
-                        <th class="milk-column-session">
-                            Evening
-                        </th>
-
-                    </tr>
-
-                </thead>
+        <% dairyGroups.forEach((group) => { %>
 
 
-                <tbody>
+            <%
+                const farm =
+                    group && group.farm
+                        ? group.farm
+                        : {};
+
+                const animals =
+                    group &&
+                    Array.isArray(group.animals)
+                        ? group.animals
+                        : [];
+
+            %>
 
 
-                    <% dairies.forEach((dairy) => { %>
-
-                        <tr>
+            <% if (animals.length) { %>
 
 
-                            <!-- ==================================
-                                 ANIMAL
-                            =================================== -->
+                <!-- ==========================================
+                     FARM SECTION
+                =========================================== -->
 
-                            <td>
-
-                                <div class="milk-animal-cell">
-
-                                    <div class="milk-animal-avatar">
-
-                                        <svg
-                                            class="milk-icon"
-                                            aria-hidden="true"
-                                        >
-                                            <use href="#milk-cow"></use>
-                                        </svg>
-
-                                    </div>
+                <section
+                    class="milk-farm-section"
+                    data-farm-code="<%= farm.code ?? '' %>"
+                    data-farm-id="<%= farm._id ?? '' %>"
+                >
 
 
-                                    <div class="milk-animal-details">
+                    <!-- ======================================
+                         FARM HEADER
+                    ======================================= -->
 
-                                        <h3 class="milk-animal-name">
+                    <div class="milk-farm-header">
 
-                                            <%= dairy.name ||
-                                                `Dairy Animal ${dairy.code ?? ""}`
-                                            %>
+                        <div class="milk-farm-title-wrap">
 
-                                        </h3>
+                            <div class="milk-farm-icon">
+
+                                <svg
+                                    class="milk-icon"
+                                    aria-hidden="true"
+                                >
+                                    <use href="#milk-farm"></use>
+                                </svg>
+
+                            </div>
 
 
-                                        <div class="milk-animal-status">
+                            <div class="milk-farm-details">
 
-                                            <span
-                                                class="milk-animal-status-dot"
-                                            ></span>
+                                <h3 class="milk-farm-name">
 
-                                            Milking
+                                    <%= farm.name ||
+                                        `Dairy Farm ${farm.code ?? ""}`
+                                    %>
 
-                                        </div>
+                                </h3>
 
-                                    </div>
+
+                                <div class="milk-farm-code">
+
+                                    Farm code:
+
+                                    <%= farm.code ?? "—" %>
 
                                 </div>
 
-                            </td>
+                            </div>
+
+                        </div>
 
 
-                            <!-- ==================================
-                                 CODE
-                            =================================== -->
+                        <span class="milk-farm-count">
 
-                            <td class="milk-code-cell">
+                            <%= animals.length %>
 
-                                <% if (
-                                    dairy.code !== undefined &&
-                                    dairy.code !== null
-                                ) { %>
+                            <%= animals.length === 1
+                                ? "animal"
+                                : "animals"
+                            %>
 
-                                    <span class="milk-code-value">
-                                        <%= dairy.code %>
-                                    </span>
+                        </span>
 
-                                <% } else { %>
-
-                                    <span class="milk-code-value">
-                                        —
-                                    </span>
-
-                                <% } %>
-
-                            </td>
+                    </div>
 
 
-                            <!-- ==================================
-                                 MORNING
-                            =================================== -->
+                    <!-- ======================================
+                         FARM MILK TABLE
+                    ======================================= -->
 
-                            <td>
+                    <div class="milk-table-wrapper">
 
-                                <div class="milk-session-cell">
-
-                                    <div class="milk-session-cell-header">
-
-                                        <div class="milk-session-cell-title">
-
-                                            <span
-                                                class="milk-session-heading-icon morning"
-                                            >
-
-                                                <svg
-                                                    class="milk-icon"
-                                                    aria-hidden="true"
-                                                >
-                                                    <use href="#milk-sun"></use>
-                                                </svg>
-
-                                            </span>
-
-                                            Morning
-
-                                        </div>
+                        <table class="milk-table">
 
 
-                                        <% if (dairy.morningRecorded) { %>
+                            <thead>
 
-                                            <span
-                                                class="milk-recorded-badge"
-                                            >
-                                                Recorded
-                                            </span>
+                                <tr>
 
-                                        <% } %>
+                                    <th class="milk-column-animal">
+                                        Animal
+                                    </th>
 
-                                    </div>
+                                    <th class="milk-column-code">
+                                        Code
+                                    </th>
 
+                                    <th class="milk-column-session">
+                                        Morning
+                                    </th>
 
-                                    <% if (dairy.morningRecorded) { %>
+                                    <th class="milk-column-session">
+                                        Evening
+                                    </th>
 
+                                </tr>
 
-                                        <div class="milk-recorded-box">
-
-                                            <div class="milk-recorded-value">
-
-                                                <span
-                                                    class="milk-recorded-number"
-                                                >
-                                                    <%= Number(
-                                                        dairy.morningLiters || 0
-                                                    ).toFixed(2) %>
-                                                </span>
-
-                                                <span
-                                                    class="milk-recorded-unit"
-                                                >
-                                                    litres
-                                                </span>
-
-                                            </div>
+                            </thead>
 
 
-                                            <% if (
-                                                dairy.morning &&
-                                                dairy.morning.remarks
-                                            ) { %>
-
-                                                <div
-                                                    class="milk-recorded-remarks"
-                                                >
-                                                    <%= dairy.morning.remarks %>
-                                                </div>
-
-                                            <% } %>
-
-                                        </div>
+                            <tbody>
 
 
-                                        <% if (
-                                            isAdmin &&
-                                            dairy.morning &&
-                                            dairy.morning._id
-                                        ) { %>
+                                <% animals.forEach((dairy) => { %>
 
-                                            <div class="milk-admin-edit">
 
-                                                <button
-                                                    type="button"
-                                                    class="milk-edit-button"
-                                                    data-record-id="<%= dairy.morning._id %>"
-                                                    data-liters="<%= dairy.morningLiters ?? 0 %>"
-                                                    data-remarks="<%= dairy.morning.remarks || '' %>"
-                                                    data-session="Morning"
-                                                    onclick="openMilkEditModal(this)"
-                                                >
+                                    <tr>
+
+
+                                        <!-- ======================
+                                             ANIMAL
+                                        ======================= -->
+
+                                        <td>
+
+                                            <div class="milk-animal-cell">
+
+                                                <div class="milk-animal-avatar">
 
                                                     <svg
                                                         class="milk-icon"
                                                         aria-hidden="true"
                                                     >
-                                                        <use href="#milk-edit"></use>
+                                                        <use href="#milk-cow"></use>
                                                     </svg>
 
-                                                    Edit morning record
+                                                </div>
 
-                                                </button>
+
+                                                <div class="milk-animal-details">
+
+                                                    <h3 class="milk-animal-name">
+
+                                                        <%= dairy.name ||
+                                                            `Dairy Animal ${dairy.code ?? ""}`
+                                                        %>
+
+                                                    </h3>
+
+
+                                                    <div class="milk-animal-status">
+
+                                                        <span
+                                                            class="milk-animal-status-dot"
+                                                        ></span>
+
+                                                        Milking
+
+                                                    </div>
+
+                                                </div>
 
                                             </div>
 
-                                        <% } %>
+                                        </td>
 
 
-                                    <% } else if (session === "morning") { %>
+                                        <!-- ======================
+                                             CODE
+                                        ======================= -->
 
+                                        <td class="milk-code-cell">
 
-                                        <form
-                                            class="milk-form"
-                                            method="POST"
-                                            action="/milk"
-                                            onsubmit="return validateMilkForm(this)"
-                                        >
+                                            <% if (
+                                                dairy.code !== undefined &&
+                                                dairy.code !== null
+                                            ) { %>
 
-                                            <input
-                                                type="hidden"
-                                                name="dairy"
-                                                value="<%= dairy._id %>"
-                                            >
-
-                                            <input
-                                                type="hidden"
-                                                name="session"
-                                                value="morning"
-                                            >
-
-
-                                            <div class="milk-input-wrap">
-
-                                                <input
-                                                    class="milk-input"
-                                                    type="number"
-                                                    name="liters"
-                                                    min="0"
-                                                    step="0.01"
-                                                    inputmode="decimal"
-                                                    placeholder="Enter litres"
-                                                    required
-                                                >
-
-                                                <span class="milk-input-unit">
-                                                    L
+                                                <span class="milk-code-value">
+                                                    <%= dairy.code %>
                                                 </span>
-
-                                            </div>
-
-
-                                            <div class="milk-remarks-input">
-
-                                                <input
-                                                    class="milk-input"
-                                                    type="text"
-                                                    name="remarks"
-                                                    maxlength="250"
-                                                    placeholder="Remarks (optional)"
-                                                >
-
-                                            </div>
-
-
-                                            <button
-                                                type="submit"
-                                                class="milk-submit"
-                                            >
-
-                                                <svg
-                                                    class="milk-icon"
-                                                    aria-hidden="true"
-                                                >
-                                                    <use href="#milk-save"></use>
-                                                </svg>
-
-                                                Save morning milk
-
-                                            </button>
-
-                                        </form>
-
-
-                                    <% } else { %>
-
-
-                                        <div class="milk-closed-box">
-
-                                            <% if (session === "evening") { %>
-
-                                                <strong>
-                                                    Morning collection is closed.
-                                                </strong>
-
-                                                Existing morning records remain
-                                                available for review.
 
                                             <% } else { %>
 
-                                                <strong>
-                                                    Morning collection is closed.
-                                                </strong>
-
-                                                It will reopen at midnight.
+                                                <span class="milk-code-value">
+                                                    —
+                                                </span>
 
                                             <% } %>
 
-                                        </div>
+                                        </td>
 
 
-                                        <% if (
-                                            isAdmin &&
-                                            dairy.morning &&
-                                            dairy.morning._id
-                                        ) { %>
+                                        <!-- ======================
+                                             MORNING
+                                        ======================= -->
 
-                                            <div class="milk-admin-edit">
+                                        <td>
 
-                                                <button
-                                                    type="button"
-                                                    class="milk-edit-button"
-                                                    data-record-id="<%= dairy.morning._id %>"
-                                                    data-liters="<%= dairy.morningLiters ?? 0 %>"
-                                                    data-remarks="<%= dairy.morning.remarks || '' %>"
-                                                    data-session="Morning"
-                                                    onclick="openMilkEditModal(this)"
-                                                >
-
-                                                    <svg
-                                                        class="milk-icon"
-                                                        aria-hidden="true"
-                                                    >
-                                                        <use href="#milk-edit"></use>
-                                                    </svg>
-
-                                                    Edit morning record
-
-                                                </button>
-
-                                            </div>
-
-                                        <% } %>
-
-                                    <% } %>
-
-                                </div>
-
-                            </td>
+                                            <div class="milk-session-cell">
 
 
-                            <!-- ==================================
-                                 EVENING
-                            =================================== -->
+                                                <div class="milk-session-cell-header">
 
-                            <td>
+                                                    <div class="milk-session-cell-title">
 
-                                <div class="milk-session-cell">
+                                                        <span
+                                                            class="milk-session-heading-icon morning"
+                                                        >
 
-                                    <div class="milk-session-cell-header">
+                                                            <svg
+                                                                class="milk-icon"
+                                                                aria-hidden="true"
+                                                            >
+                                                                <use href="#milk-sun"></use>
+                                                            </svg>
 
-                                        <div class="milk-session-cell-title">
+                                                        </span>
 
-                                            <span
-                                                class="milk-session-heading-icon evening"
-                                            >
+                                                        Morning
 
-                                                <svg
-                                                    class="milk-icon"
-                                                    aria-hidden="true"
-                                                >
-                                                    <use href="#milk-moon"></use>
-                                                </svg>
-
-                                            </span>
-
-                                            Evening
-
-                                        </div>
+                                                    </div>
 
 
-                                        <% if (dairy.eveningRecorded) { %>
+                                                    <% if (
+                                                        dairy.morningRecorded
+                                                    ) { %>
 
-                                            <span
-                                                class="milk-recorded-badge"
-                                            >
-                                                Recorded
-                                            </span>
+                                                        <span
+                                                            class="milk-recorded-badge"
+                                                        >
+                                                            Recorded
+                                                        </span>
 
-                                        <% } %>
+                                                    <% } %>
 
-                                    </div>
-
-
-                                    <% if (dairy.eveningRecorded) { %>
-
-
-                                        <div class="milk-recorded-box">
-
-                                            <div class="milk-recorded-value">
-
-                                                <span
-                                                    class="milk-recorded-number"
-                                                >
-                                                    <%= Number(
-                                                        dairy.eveningLiters || 0
-                                                    ).toFixed(2) %>
-                                                </span>
-
-                                                <span
-                                                    class="milk-recorded-unit"
-                                                >
-                                                    litres
-                                                </span>
-
-                                            </div>
-
-
-                                            <% if (
-                                                dairy.evening &&
-                                                dairy.evening.remarks
-                                            ) { %>
-
-                                                <div
-                                                    class="milk-recorded-remarks"
-                                                >
-                                                    <%= dairy.evening.remarks %>
                                                 </div>
 
-                                            <% } %>
 
-                                        </div>
+                                                <% if (
+                                                    dairy.morningRecorded
+                                                ) { %>
 
 
-                                        <% if (
-                                            isAdmin &&
-                                            dairy.evening &&
-                                            dairy.evening._id
-                                        ) { %>
+                                                    <div class="milk-recorded-box">
 
-                                            <div class="milk-admin-edit">
+                                                        <div class="milk-recorded-value">
 
-                                                <button
-                                                    type="button"
-                                                    class="milk-edit-button"
-                                                    data-record-id="<%= dairy.evening._id %>"
-                                                    data-liters="<%= dairy.eveningLiters ?? 0 %>"
-                                                    data-remarks="<%= dairy.evening.remarks || '' %>"
-                                                    data-session="Evening"
-                                                    onclick="openMilkEditModal(this)"
-                                                >
+                                                            <span
+                                                                class="milk-recorded-number"
+                                                            >
+                                                                <%= Number(
+                                                                    dairy.morningLiters || 0
+                                                                ).toFixed(2) %>
+                                                            </span>
 
-                                                    <svg
-                                                        class="milk-icon"
-                                                        aria-hidden="true"
+                                                            <span
+                                                                class="milk-recorded-unit"
+                                                            >
+                                                                litres
+                                                            </span>
+
+                                                        </div>
+
+
+                                                        <% if (
+                                                            dairy.morning &&
+                                                            dairy.morning.remarks
+                                                        ) { %>
+
+                                                            <div
+                                                                class="milk-recorded-remarks"
+                                                            >
+                                                                <%= dairy.morning.remarks %>
+                                                            </div>
+
+                                                        <% } %>
+
+                                                    </div>
+
+
+                                                    <% if (
+                                                        isAdmin &&
+                                                        dairy.morning &&
+                                                        dairy.morning._id
+                                                    ) { %>
+
+                                                        <div class="milk-admin-edit">
+
+                                                            <button
+                                                                type="button"
+                                                                class="milk-edit-button"
+                                                                data-record-id="<%= dairy.morning._id %>"
+                                                                data-liters="<%= dairy.morningLiters ?? 0 %>"
+                                                                data-remarks="<%= dairy.morning.remarks || '' %>"
+                                                                data-session="Morning"
+                                                                onclick="openMilkEditModal(this)"
+                                                            >
+
+                                                                <svg
+                                                                    class="milk-icon"
+                                                                    aria-hidden="true"
+                                                                >
+                                                                    <use href="#milk-edit"></use>
+                                                                </svg>
+
+                                                                Edit morning record
+
+                                                            </button>
+
+                                                        </div>
+
+                                                    <% } %>
+
+
+                                                <% } else if (
+                                                    session === "morning"
+                                                ) { %>
+
+
+                                                    <form
+                                                        class="milk-form"
+                                                        method="POST"
+                                                        action="/milk"
+                                                        onsubmit="return validateMilkForm(this)"
                                                     >
-                                                        <use href="#milk-edit"></use>
-                                                    </svg>
 
-                                                    Edit evening record
+                                                        <input
+                                                            type="hidden"
+                                                            name="dairy"
+                                                            value="<%= dairy._id %>"
+                                                        >
 
-                                                </button>
+                                                        <input
+                                                            type="hidden"
+                                                            name="session"
+                                                            value="morning"
+                                                        >
+
+
+                                                        <div class="milk-input-wrap">
+
+                                                            <input
+                                                                class="milk-input"
+                                                                type="number"
+                                                                name="liters"
+                                                                min="0"
+                                                                step="0.01"
+                                                                inputmode="decimal"
+                                                                placeholder="Enter litres"
+                                                                required
+                                                            >
+
+                                                            <span class="milk-input-unit">
+                                                                L
+                                                            </span>
+
+                                                        </div>
+
+
+                                                        <div class="milk-remarks-input">
+
+                                                            <input
+                                                                class="milk-input"
+                                                                type="text"
+                                                                name="remarks"
+                                                                maxlength="250"
+                                                                placeholder="Remarks (optional)"
+                                                            >
+
+                                                        </div>
+
+
+                                                        <button
+                                                            type="submit"
+                                                            class="milk-submit"
+                                                        >
+
+                                                            <svg
+                                                                class="milk-icon"
+                                                                aria-hidden="true"
+                                                            >
+                                                                <use href="#milk-save"></use>
+                                                            </svg>
+
+                                                            Save morning milk
+
+                                                        </button>
+
+                                                    </form>
+
+
+                                                <% } else { %>
+
+
+                                                    <div class="milk-closed-box">
+
+                                                        <% if (
+                                                            session === "evening"
+                                                        ) { %>
+
+                                                            <strong>
+                                                                Morning collection is closed.
+                                                            </strong>
+
+                                                            Existing morning records remain
+                                                            available for review.
+
+                                                        <% } else { %>
+
+                                                            <strong>
+                                                                Morning collection is closed.
+                                                            </strong>
+
+                                                            It will reopen at midnight.
+
+                                                        <% } %>
+
+                                                    </div>
+
+
+                                                    <% if (
+                                                        isAdmin &&
+                                                        dairy.morning &&
+                                                        dairy.morning._id
+                                                    ) { %>
+
+                                                        <div class="milk-admin-edit">
+
+                                                            <button
+                                                                type="button"
+                                                                class="milk-edit-button"
+                                                                data-record-id="<%= dairy.morning._id %>"
+                                                                data-liters="<%= dairy.morningLiters ?? 0 %>"
+                                                                data-remarks="<%= dairy.morning.remarks || '' %>"
+                                                                data-session="Morning"
+                                                                onclick="openMilkEditModal(this)"
+                                                            >
+
+                                                                <svg
+                                                                    class="milk-icon"
+                                                                    aria-hidden="true"
+                                                                >
+                                                                    <use href="#milk-edit"></use>
+                                                                </svg>
+
+                                                                Edit morning record
+
+                                                            </button>
+
+                                                        </div>
+
+                                                    <% } %>
+
+                                                <% } %>
+
 
                                             </div>
 
-                                        <% } %>
+                                        </td>
 
 
-                                    <% } else if (session === "evening") { %>
+                                        <!-- ======================
+                                             EVENING
+                                        ======================= -->
+
+                                        <td>
+
+                                            <div class="milk-session-cell">
 
 
-                                        <form
-                                            class="milk-form"
-                                            method="POST"
-                                            action="/milk"
-                                            onsubmit="return validateMilkForm(this)"
-                                        >
+                                                <div class="milk-session-cell-header">
 
-                                            <input
-                                                type="hidden"
-                                                name="dairy"
-                                                value="<%= dairy._id %>"
-                                            >
+                                                    <div class="milk-session-cell-title">
 
-                                            <input
-                                                type="hidden"
-                                                name="session"
-                                                value="evening"
-                                            >
+                                                        <span
+                                                            class="milk-session-heading-icon evening"
+                                                        >
 
+                                                            <svg
+                                                                class="milk-icon"
+                                                                aria-hidden="true"
+                                                            >
+                                                                <use href="#milk-moon"></use>
+                                                            </svg>
 
-                                            <div class="milk-input-wrap">
+                                                        </span>
 
-                                                <input
-                                                    class="milk-input"
-                                                    type="number"
-                                                    name="liters"
-                                                    min="0"
-                                                    step="0.01"
-                                                    inputmode="decimal"
-                                                    placeholder="Enter litres"
-                                                    required
-                                                >
+                                                        Evening
 
-                                                <span class="milk-input-unit">
-                                                    L
-                                                </span>
-
-                                            </div>
+                                                    </div>
 
 
-                                            <div class="milk-remarks-input">
+                                                    <% if (
+                                                        dairy.eveningRecorded
+                                                    ) { %>
 
-                                                <input
-                                                    class="milk-input"
-                                                    type="text"
-                                                    name="remarks"
-                                                    maxlength="250"
-                                                    placeholder="Remarks (optional)"
-                                                >
+                                                        <span
+                                                            class="milk-recorded-badge"
+                                                        >
+                                                            Recorded
+                                                        </span>
 
-                                            </div>
+                                                    <% } %>
 
-
-                                            <button
-                                                type="submit"
-                                                class="milk-submit"
-                                            >
-
-                                                <svg
-                                                    class="milk-icon"
-                                                    aria-hidden="true"
-                                                >
-                                                    <use href="#milk-save"></use>
-                                                </svg>
-
-                                                Save evening milk
-
-                                            </button>
-
-                                        </form>
+                                                </div>
 
 
-                                    <% } else { %>
+                                                <% if (
+                                                    dairy.eveningRecorded
+                                                ) %>
 
 
-                                        <div class="milk-closed-box">
+                                                    <div class="milk-recorded-box">
 
-                                            <% if (session === "morning") { %>
+                                                        <div class="milk-recorded-value">
 
-                                                <strong>
-                                                    Evening collection has not opened.
-                                                </strong>
+                                                            <span
+                                                                class="milk-recorded-number"
+                                                            >
+                                                                <%= Number(
+                                                                    dairy.eveningLiters || 0
+                                                                ).toFixed(2) %>
+                                                            </span>
 
-                                                It opens at 4:00 PM.
+                                                            <span
+                                                                class="milk-recorded-unit"
+                                                            >
+                                                                litres
+                                                            </span>
 
-                                            <% } else { %>
-
-                                                <strong>
-                                                    Evening collection is closed.
-                                                </strong>
-
-                                                It will reopen at 4:00 PM.
-
-                                            <% } %>
-
-                                        </div>
+                                                        </div>
 
 
-                                        <% if (
-                                            isAdmin &&
-                                            dairy.evening &&
-                                            dairy.evening._id
-                                        ) { %>
+                                                        <% if (
+                                                            dairy.evening &&
+                                                            dairy.evening.remarks
+                                                        ) { %>
 
-                                            <div class="milk-admin-edit">
+                                                            <div
+                                                                class="milk-recorded-remarks"
+                                                            >
+                                                                <%= dairy.evening.remarks %>
+                                                            </div>
 
-                                                <button
-                                                    type="button"
-                                                    class="milk-edit-button"
-                                                    data-record-id="<%= dairy.evening._id %>"
-                                                    data-liters="<%= dairy.eveningLiters ?? 0 %>"
-                                                    data-remarks="<%= dairy.evening.remarks || '' %>"
-                                                    data-session="Evening"
-                                                    onclick="openMilkEditModal(this)"
-                                                >
+                                                        <% } %>
 
-                                                    <svg
-                                                        class="milk-icon"
-                                                        aria-hidden="true"
+                                                    </div>
+
+
+                                                    <% if (
+                                                        isAdmin &&
+                                                        dairy.evening &&
+                                                        dairy.evening._id
+                                                    ) { %>
+
+                                                        <div class="milk-admin-edit">
+
+                                                            <button
+                                                                type="button"
+                                                                class="milk-edit-button"
+                                                                data-record-id="<%= dairy.evening._id %>"
+                                                                data-liters="<%= dairy.eveningLiters ?? 0 %>"
+                                                                data-remarks="<%= dairy.evening.remarks || '' %>"
+                                                                data-session="Evening"
+                                                                onclick="openMilkEditModal(this)"
+                                                            >
+
+                                                                <svg
+                                                                    class="milk-icon"
+                                                                    aria-hidden="true"
+                                                                >
+                                                                    <use href="#milk-edit"></use>
+                                                                </svg>
+
+                                                                Edit evening record
+
+                                                            </button>
+
+                                                        </div>
+
+                                                    <% } %>
+
+
+                                                <% } else if (
+                                                    session === "evening"
+                                                ) %>
+
+
+                                                    <form
+                                                        class="milk-form"
+                                                        method="POST"
+                                                        action="/milk"
+                                                        onsubmit="return validateMilkForm(this)"
                                                     >
-                                                        <use href="#milk-edit"></use>
-                                                    </svg>
 
-                                                    Edit evening record
+                                                        <input
+                                                            type="hidden"
+                                                            name="dairy"
+                                                            value="<%= dairy._id %>"
+                                                        >
 
-                                                </button>
+                                                        <input
+                                                            type="hidden"
+                                                            name="session"
+                                                            value="evening"
+                                                        >
+
+
+                                                        <div class="milk-input-wrap">
+
+                                                            <input
+                                                                class="milk-input"
+                                                                type="number"
+                                                                name="liters"
+                                                                min="0"
+                                                                step="0.01"
+                                                                inputmode="decimal"
+                                                                placeholder="Enter litres"
+                                                                required
+                                                            >
+
+                                                            <span class="milk-input-unit">
+                                                                L
+                                                            </span>
+
+                                                        </div>
+
+
+                                                        <div class="milk-remarks-input">
+
+                                                            <input
+                                                                class="milk-input"
+                                                                type="text"
+                                                                name="remarks"
+                                                                maxlength="250"
+                                                                placeholder="Remarks (optional)"
+                                                            >
+
+                                                        </div>
+
+
+                                                        <button
+                                                            type="submit"
+                                                            class="milk-submit"
+                                                        >
+
+                                                            <svg
+                                                                class="milk-icon"
+                                                                aria-hidden="true"
+                                                            >
+                                                                <use href="#milk-save"></use>
+                                                            </svg>
+
+                                                            Save evening milk
+
+                                                        </button>
+
+                                                    </form>
+
+
+                                                <% } else { %>
+
+
+                                                    <div class="milk-closed-box">
+
+                                                        <% if (
+                                                            session === "morning"
+                                                        ) { %>
+
+                                                            <strong>
+                                                                Evening collection has not opened.
+                                                            </strong>
+
+                                                            It opens at 4:00 PM.
+
+                                                        <% } else { %>
+
+                                                            <strong>
+                                                                Evening collection is closed.
+                                                            </strong>
+
+                                                            It will reopen at 4:00 PM.
+
+                                                        <% } %>
+
+                                                    </div>
+
+
+                                                    <% if (
+                                                        isAdmin &&
+                                                        dairy.evening &&
+                                                        dairy.evening._id
+                                                    ) { %>
+
+                                                        <div class="milk-admin-edit">
+
+                                                            <button
+                                                                type="button"
+                                                                class="milk-edit-button"
+                                                                data-record-id="<%= dairy.evening._id %>"
+                                                                data-liters="<%= dairy.eveningLiters ?? 0 %>"
+                                                                data-remarks="<%= dairy.evening.remarks || '' %>"
+                                                                data-session="Evening"
+                                                                onclick="openMilkEditModal(this)"
+                                                            >
+
+                                                                <svg
+                                                                    class="milk-icon"
+                                                                    aria-hidden="true"
+                                                                >
+                                                                    <use href="#milk-edit"></use>
+                                                                </svg>
+
+                                                                Edit evening record
+
+                                                            </button>
+
+                                                        </div>
+
+                                                    <% } %>
+
+                                                <% } %>
+
 
                                             </div>
 
-                                        <% } %>
+                                        </td>
 
-                                    <% } %>
 
-                                </div>
+                                    </tr>
 
-                            </td>
 
-                        </tr>
+                                <% }) %>
 
-                    <% }) %>
 
-                </tbody>
+                            </tbody>
 
-            </table>
+                        </table>
 
-        </section>
+                    </div>
+
+
+                </section>
+
+
+            <% } %>
+
+
+        <% }) %>
 
 
     <% } %>
@@ -2077,38 +2397,31 @@ evening
 
 <!-- ==========================================================
      SERVER RESULT POPUP
-
-     IMPORTANT:
-     ----------------------------------------------------------
-     This block is rendered ONLY when there is a genuine
-     success result or a genuine error message.
-
-     Opening /milk normally will not render this popup.
 ========================================================== -->
 
 <%
-    if (
-        success === true ||
-        success === "1" ||
-        (
-            typeof error !== "undefined" &&
-            error !== null &&
-            error !== false &&
-            String(error).trim() !== "" &&
-            String(error).trim() !== "undefined"
-        )
-    ) {
-%>
-
-<div
-    id="milkResultPopup"
-    class="milk-result-popup active <%= (
+    const hasMilkError =
         typeof error !== "undefined" &&
         error !== null &&
         error !== false &&
         String(error).trim() !== "" &&
-        String(error).trim() !== "undefined"
-    ) ? "error" : "success" %>"
+        String(error).trim() !== "undefined";
+
+    const hasMilkSuccess =
+        success === true ||
+        success === "1";
+%>
+
+
+<% if (
+    hasMilkSuccess ||
+    hasMilkError
+) { %>
+
+
+<div
+    id="milkResultPopup"
+    class="milk-result-popup active <%= hasMilkError ? "error" : "success" %>"
     aria-hidden="false"
 >
 
@@ -2120,13 +2433,7 @@ evening
     >
 
         <div
-            class="milk-result-icon <%= (
-                typeof error !== "undefined" &&
-                error !== null &&
-                error !== false &&
-                String(error).trim() !== "" &&
-                String(error).trim() !== "undefined"
-            ) ? "error" : "success" %>"
+            class="milk-result-icon <%= hasMilkError ? "error" : "success" %>"
         >
 
             <svg
@@ -2135,13 +2442,7 @@ evening
             >
 
                 <use
-                    href="<%= (
-                        typeof error !== "undefined" &&
-                        error !== null &&
-                        error !== false &&
-                        String(error).trim() !== "" &&
-                        String(error).trim() !== "undefined"
-                    )
+                    href="<%= hasMilkError
                         ? "#milk-alert"
                         : "#milk-check"
                     %>"
@@ -2157,13 +2458,7 @@ evening
             class="milk-result-title"
         >
 
-            <%= (
-                typeof error !== "undefined" &&
-                error !== null &&
-                error !== false &&
-                String(error).trim() !== "" &&
-                String(error).trim() !== "undefined"
-            )
+            <%= hasMilkError
                 ? "Unable to save milk record."
                 : "Milk record saved successfully."
             %>
@@ -2173,13 +2468,7 @@ evening
 
         <p class="milk-result-message">
 
-            <%= (
-                typeof error !== "undefined" &&
-                error !== null &&
-                error !== false &&
-                String(error).trim() !== "" &&
-                String(error).trim() !== "undefined"
-            )
+            <%= hasMilkError
                 ? String(error)
                 : "The collection record has been recorded successfully."
             %>
@@ -2199,6 +2488,7 @@ evening
 
 </div>
 
+
 <% } %>
 
 
@@ -2207,6 +2497,7 @@ evening
 ========================================================== -->
 
 <% if (isAdmin) { %>
+
 
 <div
     id="milkEditModal"
@@ -2273,6 +2564,7 @@ evening
                 Milk quantity
             </label>
 
+
             <div class="milk-input-wrap">
 
                 <input
@@ -2338,6 +2630,7 @@ evening
     </div>
 
 </div>
+
 
 <% } %>
 
@@ -2536,12 +2829,6 @@ function closeMilkResultPopup() {
     );
 
 
-    /*
-    ----------------------------------------------------------
-    Remove only the result parameters.
-    ----------------------------------------------------------
-    */
-
     const url =
         new URL(
             window.location.href
@@ -2556,12 +2843,6 @@ function closeMilkResultPopup() {
         "error"
     );
 
-
-    /*
-    ----------------------------------------------------------
-    Replace the current URL first.
-    ----------------------------------------------------------
-    */
 
     window.history.replaceState(
         {},
@@ -2579,12 +2860,6 @@ function closeMilkResultPopup() {
         )
     );
 
-
-    /*
-    ----------------------------------------------------------
-    Reload the page so the newly saved milk data is displayed.
-    ----------------------------------------------------------
-    */
 
     window.location.reload();
 
