@@ -6,30 +6,33 @@
 //
 // Responsibilities:
 //
-// • Receive HTTP requests
-// • Validate request input
-// • Enforce controller-level permissions
-// • Call milkService
-// • Pass service data to EJS
-// • Render EJS pages
-// • Redirect after successful mutations
+// • Milk record editing
+// • Milk statistics
+// • Milk sales
+// • Standing orders
+// • Milk pricing
+// • Milking history
+// • Milking status
 //
 // IMPORTANT:
 //
-// The controller does NOT build the milk page data.
+// Milk collection page logic for:
 //
-// milkService.js is responsible for:
+//     GET  /milk
+//     POST /milk
 //
-// • Farms
-// • Animals
-// • Milk records
-// • Milk collection tables
-// • Sessions
-// • User access filtering
-// • Totals
-// • Any other data required by milk.ejs
+// has been moved to:
 //
-// The controller must not duplicate or override that logic.
+//     controllers/milkCollectController.js
+//
+// This controller therefore does NOT:
+//
+// • Render milk.ejs
+// • Build milk collection page data
+// • Query farms for milk.ejs
+// • Query animals for milk.ejs
+// • Build milk collection tables
+// • Submit new milk collection records
 //
 // ==========================================================
 
@@ -40,16 +43,6 @@ const mongoose =
 
 const milkService =
   require("../services/milkService");
-
-
-// ==========================================================
-// CONSTANTS
-// ==========================================================
-
-const VALID_SESSIONS = [
-  "morning",
-  "evening"
-];
 
 
 // ==========================================================
@@ -102,305 +95,12 @@ function isValidObjectId(value) {
 
 
 // ==========================================================
-// GET MILK PAGE
-// ==========================================================
-//
-// GET /milk
-//
-// IMPORTANT:
-//
-// milkService.getMilkPageData() is the ONLY source of
-// milk-page data.
-//
-// The controller does NOT:
-//
-// • Query Dairy
-// • Query animals
-// • Group animals
-// • Flatten animals
-// • Filter farms
-// • Rebuild tables
-// • Replace service data
-//
-// This prevents the controller from interfering with the
-// structure already prepared by milkService.js.
-//
-// ==========================================================
-
-exports.getMilkPage =
-async (
-  req,
-  res
-) => {
-
-  try {
-
-    const user =
-      req.user || {};
-
-
-    // ======================================================
-    // GET COMPLETE MILK PAGE DATA
-    // ======================================================
-    //
-    // The service owns this structure.
-    //
-    // Do not modify it here.
-    //
-    // ======================================================
-
-    const serviceData =
-      await milkService.getMilkPageData(
-        user
-      );
-
-
-    // ======================================================
-    // RENDER MILK PAGE
-    // ======================================================
-    //
-    // Preserve EVERYTHING returned by the service.
-    //
-    // This is particularly important because milk.ejs
-    // contains collection tables and may depend on nested
-    // structures supplied by the service.
-    //
-    // ======================================================
-
-    return res.render(
-      "milk",
-      {
-
-        ...serviceData,
-
-        // --------------------------------------------------
-        // Authentication context belongs to the controller.
-        //
-        // Do not allow service data to accidentally replace
-        // the current request user.
-        // --------------------------------------------------
-
-        user,
-
-        isAdmin:
-          isAdmin(req),
-
-        // --------------------------------------------------
-        // Query messages
-        // --------------------------------------------------
-
-        success:
-          req.query?.success === "1",
-
-        error:
-          req.query?.error || ""
-
-      }
-    );
-
-  }
-
-  catch (err) {
-
-    console.error(
-      "Milk page error:",
-      err
-    );
-
-
-    // ======================================================
-    // FALLBACK PAGE
-    // ======================================================
-    //
-    // Only used if the service fails completely.
-    //
-    // No fake farm/animal/table data is constructed here.
-    //
-    // ======================================================
-
-    return res
-      .status(500)
-      .render(
-        "milk",
-        {
-
-          user:
-            req.user || {},
-
-          isAdmin:
-            isAdmin(req),
-
-          success: false,
-
-          error:
-            "Error loading milk collection page."
-
-        }
-      );
-
-  }
-
-};
-
-
-// ==========================================================
-// SUBMIT MILK
-// ==========================================================
-//
-// POST /milk
-//
-// Expected:
-//
-// dairy
-// session
-// liters
-// remarks
-//
-// ==========================================================
-
-exports.submitMilk =
-async (
-  req,
-  res
-) => {
-
-  try {
-
-    const {
-      dairy,
-      session,
-      liters,
-      remarks
-    } = req.body || {};
-
-
-    // ======================================================
-    // ANIMAL
-    // ======================================================
-
-    if (!dairy) {
-
-      throw new Error(
-        "No dairy animal was selected."
-      );
-
-    }
-
-
-    // ======================================================
-    // LITERS
-    // ======================================================
-
-    if (
-      liters === undefined ||
-      liters === null ||
-      liters === ""
-    ) {
-
-      throw new Error(
-        "Milk quantity is required."
-      );
-
-    }
-
-
-    const numericLiters =
-      Number(liters);
-
-
-    if (
-      !Number.isFinite(
-        numericLiters
-      ) ||
-      numericLiters < 0
-    ) {
-
-      throw new Error(
-        "Milk quantity must be a valid number."
-      );
-
-    }
-
-
-    // ======================================================
-    // SESSION
-    // ======================================================
-
-    if (
-      session &&
-      !VALID_SESSIONS.includes(
-        session
-      )
-    ) {
-
-      throw new Error(
-        "Invalid milk collection session."
-      );
-
-    }
-
-
-    // ======================================================
-    // SAVE
-    // ======================================================
-
-    await milkService.saveMilkRecords(
-      [
-        {
-
-          dairy,
-
-          liters:
-            numericLiters,
-
-          remarks:
-            remarks || "",
-
-          session:
-            session || undefined
-
-        }
-      ],
-      req.user
-    );
-
-
-    // ======================================================
-    // SUCCESS
-    // ======================================================
-
-    return res.redirect(
-      "/milk?success=1"
-    );
-
-  }
-
-  catch (err) {
-
-    console.error(
-      "Submit milk error:",
-      err
-    );
-
-
-    return redirectError(
-      res,
-      err.message ||
-        "Unable to save milk record."
-    );
-
-  }
-
-};
-
-
-// ==========================================================
 // GET EDIT MILK
 // ==========================================================
 //
-// Compatibility route.
-//
 // GET /milk/edit/:id
+//
+// Compatibility route.
 //
 // ==========================================================
 
@@ -1603,3 +1303,21 @@ async (
   }
 
 };
+
+
+// ==========================================================
+// EXPORT
+// ==========================================================
+//
+// Milk collection is intentionally NOT exported here.
+//
+// These functions now belong to:
+//
+//     controllers/milkCollectController.js
+//
+// Specifically:
+//
+//     getMilkPage
+//     submitMilk
+//
+// ==========================================================
