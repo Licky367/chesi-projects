@@ -42,8 +42,6 @@ const {
 //        assetCode === Dairy Farm code.
 //
 // No Update documents are duplicated.
-// The same Update document is simply included in the
-// Dairy Farm feed when it belongs to one of its assets.
 //
 // ASSET FEED:
 //
@@ -334,16 +332,29 @@ async (
     // ======================================================
     // GET UPDATES
     //
-    // DAIRY FARM:
+    // IMPORTANT:
     //
-    //     Includes:
+    // Populate the Dairy record attached to each Update.
     //
-    //     - posts/updates made directly for the farm
-    //     - posts/updates made for its assets
+    // This allows formatFeed() to expose information about
+    // the actual Dairy / asset the post or update belongs to.
     //
-    // ASSET:
+    // Example:
     //
-    //     Includes only posts/updates for that asset.
+    //     Update
+    //         dairy -> Cow Shed C
+    //
+    // The feed item can therefore identify:
+    //
+    //     dairyId
+    //     dairyName
+    //     dairyCode
+    //     dairyAssetCode
+    //     dairyImage
+    //
+    // This is especially important on a Dairy Farm feed,
+    // because the farm feed may contain updates belonging
+    // to many different assets.
     //
     // ======================================================
 
@@ -358,6 +369,15 @@ async (
             }
 
         })
+        .populate({
+
+            path:
+                "dairy",
+
+            select:
+                "name code assetCode profileImage"
+
+        })
         .sort({
 
             createdAt: -1
@@ -367,6 +387,13 @@ async (
 
     // ======================================================
     // FORMAT FEED
+    //
+    // formatFeed() remains synchronous.
+    //
+    // The Dairy information has already been populated
+    // above, so the formatter can safely expose the
+    // subject information without performing a database
+    // query for every feed item.
     // ======================================================
 
     const feed =
