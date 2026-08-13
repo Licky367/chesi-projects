@@ -187,6 +187,7 @@ transition:.2s;
 .sidebar a:hover{
 background:rgba(255,255,255,.15);
 }
+
 /* ================= OVERLAY ================= */
 
 .overlay{
@@ -262,6 +263,33 @@ const authPages=[
 
 const isAuthPage=authPages.includes(currentPath||req?.path||"");
 
+/* ======================================================
+   SIDEBAR HOME DESTINATION
+
+   Same logic used by authController.login:
+
+   dairyWorker + assigned farm
+   → /dairy/<first assigned farm>
+
+   Otherwise
+   → /
+====================================================== */
+
+let homeLink="/";
+
+if(
+user &&
+user.role==="dairyWorker" &&
+Array.isArray(user.assignedFarm) &&
+user.assignedFarm.length>0
+){
+
+const firstFarm=user.assignedFarm[0];
+
+homeLink=`/dairy/${firstFarm}`;
+
+}
+
 %>
 
 <% if(!isAuthPage){ %>
@@ -299,7 +327,7 @@ class="header-logo">
     <div class="profile-name">
         <%= user ? user.name : "Profile" %> ▼
     </div>
-</div> 
+</div>
 
 <div class="dropdown-profile">
 
@@ -341,7 +369,7 @@ class="header-logo">
 
 <% }else if(user && user.role==="dairyWorker"){ %>
 
-<a href="/">🏠 Home</a>
+<a href="<%= homeLink %>">🏠 Home</a>
 
 <a href="/dairyProjects">🐄 View Dairy Cattle</a>
 
@@ -378,6 +406,7 @@ class="header-logo">
 <%- body %>
 
 </div>
+
 <% if(!isAuthPage){ %>
 
 <div class="footer">
