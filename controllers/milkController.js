@@ -10,21 +10,36 @@
 // • Validate request input
 // • Enforce controller-level permissions
 // • Call milkService
-// • Prepare safe data for EJS
+// • Pass service data to EJS
 // • Render EJS pages
 // • Redirect after successful mutations
 //
-// Business logic remains in milkService.js.
+// IMPORTANT:
+//
+// The controller does NOT build the milk page data.
+//
+// milkService.js is responsible for:
+//
+// • Farms
+// • Animals
+// • Milk records
+// • Milk collection tables
+// • Sessions
+// • User access filtering
+// • Totals
+// • Any other data required by milk.ejs
+//
+// The controller must not duplicate or override that logic.
 //
 // ==========================================================
 
-const mongoose = require("mongoose");
+
+const mongoose =
+  require("mongoose");
+
 
 const milkService =
   require("../services/milkService");
-
-const Dairy =
-  require("../models/dairy");
 
 
 // ==========================================================
@@ -40,6 +55,11 @@ const VALID_SESSIONS = [
 // ==========================================================
 // BASIC HELPERS
 // ==========================================================
+
+
+// ----------------------------------------------------------
+// Check administrator
+// ----------------------------------------------------------
 
 function isAdmin(req) {
 
@@ -60,7 +80,8 @@ function redirectError(
 
   return res.redirect(
     `${path}?error=${encodeURIComponent(
-      message || "An error occurred."
+      message ||
+      "An error occurred."
     )}`
   );
 
@@ -68,66 +89,7 @@ function redirectError(
 
 
 // ----------------------------------------------------------
-// Convert value to number safely
-// ----------------------------------------------------------
-
-function toNumber(value, fallback = 0) {
-
-  const number = Number(value);
-
-  return Number.isFinite(number)
-    ? number
-    : fallback;
-
-}
-
-
-// ----------------------------------------------------------
-// Convert value to string safely
-// ----------------------------------------------------------
-
-function toText(value, fallback = "") {
-
-  if (
-    value === undefined ||
-    value === null
-  ) {
-
-    return fallback;
-
-  }
-
-  return String(value);
-
-}
-
-
-// ----------------------------------------------------------
-// Normalize MongoDB ObjectId to string
-// ----------------------------------------------------------
-
-function idToString(value) {
-
-  if (!value) {
-    return "";
-  }
-
-  if (
-    typeof value === "object" &&
-    value._id
-  ) {
-
-    return String(value._id);
-
-  }
-
-  return String(value);
-
-}
-
-
-// ----------------------------------------------------------
-// Check ObjectId
+// Validate MongoDB ObjectId
 // ----------------------------------------------------------
 
 function isValidObjectId(value) {
@@ -139,703 +101,29 @@ function isValidObjectId(value) {
 }
 
 
-// ----------------------------------------------------------
-// Normalize assigned farms
-//
-// Handles:
-//
-// [
-//   ObjectId(...),
-//   "ObjectId..."
-// ]
-//
-// and also:
-//
-// [
-//   { _id: ObjectId(...) }
-// ]
-// ----------------------------------------------------------
-
-function normalizeAssignedFarmIds(
-  assignedFarm
-) {
-
-  if (
-    !Array.isArray(assignedFarm)
-  ) {
-
-    return [];
-
-  }
-
-  return assignedFarm
-    .map(idToString)
-    .filter(Boolean)
-    .filter(
-      id =>
-        isValidObjectId(id)
-    );
-
-}
-
-
-// ==========================================================
-// SAFE FARM OBJECT
-// ==========================================================
-//
-// Ensures the EJS always receives:
-//
-// farm._id
-// farm.name
-// farm.code
-//
-// while preserving all other fields from MongoDB.
-//
-// ==========================================================
-
-function prepareFarm(farm) {
-
-  if (!farm) {
-    return null;
-  }
-
-  const prepared = {
-    ...farm
-  };
-
-  prepared._id =
-    farm._id
-      ? String(farm._id)
-      : "";
-
-  prepared.name =
-    toText(
-      farm.name,
-      "Unnamed Dairy Farm"
-    );
-
-  prepared.code =
-    farm.code !== undefined &&
-    farm.code !== null
-      ? farm.code
-      : "";
-
-  prepared.numericCode =
-    toNumber(
-      farm.code,
-      NaN
-    );
-
-  return prepared;
-}
-
-
-// ==========================================================
-// SAFE ANIMAL OBJECT
-// ==========================================================
-//
-// We deliberately preserve the entire animal returned by
-// milkService.
-//
-// This is important because milk.ejs may need fields such as:
-//
-// • _id
-// • name
-// • code
-// • assetCode
-// • breed
-// • profileImage
-// • image
-// • isMilking
-// • milk records
-// • morning
-// • evening
-//
-// etc.
-//
-// We only normalize the fields needed for grouping.
-//
-// ==========================================================
-
-function prepareAnimal(animal) {
-
-  if (!animal) {
-    return null;
-  }
-
-  const prepared = {
-    ...animal
-  };
-
-  prepared._id =
-    animal._id
-      ? String(animal._id)
-      : "";
-
-  prepared.code =
-    animal.code !== undefined &&
-    animal.code !== null
-      ? animal.code
-      : "";
-
-  prepared.assetCode =
-    animal.assetCode !== undefined &&
-    animal.assetCode !== null
-      ? animal.assetCode
-      : "";
-
-  prepared.numericCode =
-    toNumber(
-      animal.code,
-      NaN
-    );
-
-  prepared.numericAssetCode =
-    toNumber(
-      animal.assetCode,
-      NaN
-    );
-
-  prepared.name =
-    toText(
-      animal.name,
-      "Unnamed Animal"
-    );
-
-  return prepared;
-}
-
-
-// ==========================================================
-// PREPARE MILK PAGE DATA
-// ==========================================================
-//
-// This function is intentionally separate from getMilkPage.
-//
-// It makes the controller easier to reason about and ensures
-// that the EJS receives a predictable structure.
-//
-// ==========================================================
-
-async function buildMilkPageData(req) {
-
-  const user =
-    req.user || {};
-
-  const admin =
-    user.role === "admin";
-
-
-  // ========================================================
-  // GET DATA FROM MILK SERVICE
-  // ========================================================
-
-  const serviceData =
-    await milkService.getMilkPageData(
-      user
-    );
-
-
-  // ========================================================
-  // SESSION
-  // ========================================================
-
-  const session =
-    serviceData?.session ||
-    "closed";
-
-
-  // ========================================================
-  // RAW DAIRIES / ANIMALS FROM SERVICE
-  // ========================================================
-
-  let serviceDairies =
-    Array.isArray(
-      serviceData?.dairies
-    )
-      ? serviceData.dairies
-      : [];
-
-
-  // --------------------------------------------------------
-  // Some service implementations may return animals under
-  // "animals" instead of "dairies".
-  //
-  // Supporting both costs nothing and prevents an empty
-  // page when the service uses the newer property name.
-  // --------------------------------------------------------
-
-  if (
-    serviceDairies.length === 0 &&
-    Array.isArray(
-      serviceData?.animals
-    )
-  ) {
-
-    serviceDairies =
-      serviceData.animals;
-
-  }
-
-
-  // ========================================================
-  // PREPARE FARM QUERY
-  // ========================================================
-
-  const farmQuery = {
-
-    code: {
-      $lt: 0
-    },
-
-    status: "active"
-
-  };
-
-
-  // ========================================================
-  // WORKER ACCESS RESTRICTION
-  // ========================================================
-
-  if (!admin) {
-
-    const assignedFarmIds =
-      normalizeAssignedFarmIds(
-        user.assignedFarm
-      );
-
-
-    // ------------------------------------------------------
-    // Worker has no assigned farms
-    // ------------------------------------------------------
-
-    if (
-      assignedFarmIds.length === 0
-    ) {
-
-      return {
-
-        farms: [],
-
-        dairies: [],
-
-        animals: [],
-
-        session,
-
-        isAdmin: false,
-
-        user,
-
-        success:
-          req.query?.success === "1",
-
-        error:
-          req.query?.error || ""
-
-      };
-
-    }
-
-
-    farmQuery._id = {
-      $in: assignedFarmIds
-    };
-
-  }
-
-
-  // ========================================================
-  // LOAD DAIRY FARMS
-  // ========================================================
-
-  const rawFarms =
-    await Dairy
-      .find(farmQuery)
-      .sort({
-        code: 1
-      })
-      .lean();
-
-
-  const farms =
-    rawFarms
-      .map(prepareFarm)
-      .filter(Boolean);
-
-
-  // ========================================================
-  // FARM LOOKUP BY CODE
-  // ========================================================
-  //
-  // Example:
-  //
-  // farm.code = -5
-  //
-  // animal.assetCode = -5
-  //
-  // ========================================================
-
-  const farmByCode =
-    new Map();
-
-
-  for (
-    const farm of farms
-  ) {
-
-    const numericCode =
-      toNumber(
-        farm.code,
-        NaN
-      );
-
-
-    if (
-      !Number.isFinite(
-        numericCode
-      )
-    ) {
-
-      continue;
-
-    }
-
-
-    farmByCode.set(
-      numericCode,
-      farm
-    );
-
-  }
-
-
-  // ========================================================
-  // PREPARE ANIMALS
-  // ========================================================
-  //
-  // Only identified animals are allowed into milk
-  // collection tables.
-  //
-  // Animal:
-  //
-  //     code > 0
-  //
-  // Parent:
-  //
-  //     assetCode < 0
-  //
-  // ========================================================
-
-  const animals =
-    serviceDairies
-      .map(prepareAnimal)
-      .filter(Boolean)
-      .filter(animal => {
-
-        const animalCode =
-          animal.numericCode;
-
-        const assetCode =
-          animal.numericAssetCode;
-
-
-        return (
-
-          Number.isFinite(
-            animalCode
-          ) &&
-
-          animalCode > 0 &&
-
-          Number.isFinite(
-            assetCode
-          ) &&
-
-          assetCode < 0
-
-        );
-
-      });
-
-
-  // ========================================================
-  // GROUP ANIMALS BY FARM
-  // ========================================================
-
-  const animalsByFarm =
-    new Map();
-
-
-  for (
-    const animal of animals
-  ) {
-
-    const assetCode =
-      animal.numericAssetCode;
-
-
-    const farm =
-      farmByCode.get(
-        assetCode
-      );
-
-
-    // ------------------------------------------------------
-    // The animal belongs to a farm that the current user
-    // cannot see.
-    //
-    // Do not expose it.
-    // ------------------------------------------------------
-
-    if (!farm) {
-
-      continue;
-
-    }
-
-
-    if (
-      !animalsByFarm.has(
-        assetCode
-      )
-    ) {
-
-      animalsByFarm.set(
-        assetCode,
-        []
-      );
-
-    }
-
-
-    animalsByFarm
-      .get(assetCode)
-      .push(animal);
-
-  }
-
-
-  // ========================================================
-  // BUILD FARM GROUPS
-  // ========================================================
-  //
-  // EJS receives:
-  //
-  // farms = [
-  //
-  //   {
-  //     farm: {...},
-  //     farmId: "...",
-  //     farmName: "...",
-  //     farmCode: -1,
-  //     animals: [...]
-  //   }
-  //
-  // ]
-  //
-  // ========================================================
-
-  const groupedFarms = [];
-
-
-  for (
-    const farm of farms
-  ) {
-
-    const farmCode =
-      toNumber(
-        farm.code,
-        NaN
-      );
-
-
-    if (
-      !Number.isFinite(
-        farmCode
-      )
-    ) {
-
-      continue;
-
-    }
-
-
-    const farmAnimals =
-      animalsByFarm.get(
-        farmCode
-      ) || [];
-
-
-    // ------------------------------------------------------
-    // Keep farms even when they have no animals.
-    //
-    // This is useful because the EJS can then display:
-    //
-    // "No milking animals on this farm."
-    //
-    // If your existing EJS specifically requires only farms
-    // with animals, it can simply skip empty groups.
-    // ------------------------------------------------------
-
-    groupedFarms.push({
-
-      farm,
-
-      farmId:
-        String(
-          farm._id
-        ),
-
-      farmName:
-        farm.name,
-
-      farmCode:
-        farm.code,
-
-      numericFarmCode:
-        farmCode,
-
-      animals:
-        farmAnimals,
-
-      animalCount:
-        farmAnimals.length
-
-    });
-
-  }
-
-
-  // ========================================================
-  // SORT FARMS
-  // ========================================================
-
-  groupedFarms.sort(
-    (a, b) =>
-      Number(a.numericFarmCode) -
-      Number(b.numericFarmCode)
-  );
-
-
-  // ========================================================
-  // FLAT ANIMAL LIST
-  // ========================================================
-  //
-  // This preserves compatibility with old milk.ejs code
-  // which may still use:
-  //
-  //     dairies
-  //
-  // ========================================================
-
-  const visibleDairies =
-    groupedFarms.flatMap(
-      group =>
-        group.animals
-    );
-
-
-  // ========================================================
-  // RETURN EVERYTHING EJS MAY NEED
-  // ========================================================
-
-  return {
-
-    // ------------------------------------------------------
-    // PRIMARY FARM DATA
-    // ------------------------------------------------------
-
-    farms:
-      groupedFarms,
-
-
-    // ------------------------------------------------------
-    // BACKWARD COMPATIBILITY
-    // ------------------------------------------------------
-
-    dairies:
-      visibleDairies,
-
-
-    animals:
-      visibleDairies,
-
-
-    // ------------------------------------------------------
-    // SESSION
-    // ------------------------------------------------------
-
-    session,
-
-
-    // ------------------------------------------------------
-    // AUTH
-    // ------------------------------------------------------
-
-    isAdmin:
-      admin,
-
-    user,
-
-
-    // ------------------------------------------------------
-    // QUERY RESULT
-    // ------------------------------------------------------
-
-    success:
-      req.query?.success === "1",
-
-    error:
-      req.query?.error || "",
-
-    // ------------------------------------------------------
-    // OPTIONAL SERVICE DATA
-    //
-    // Preserve any additional properties supplied by the
-    // milk service without allowing them to overwrite the
-    // controller's authoritative fields above.
-    // ------------------------------------------------------
-
-    ...serviceData,
-
-    // ------------------------------------------------------
-    // Re-apply these after spreading serviceData so the
-    // controller's prepared structures always win.
-    // ------------------------------------------------------
-
-    farms:
-      groupedFarms,
-
-    dairies:
-      visibleDairies,
-
-    animals:
-      visibleDairies,
-
-    session,
-
-    isAdmin:
-      admin,
-
-    user,
-
-    success:
-      req.query?.success === "1",
-
-    error:
-      req.query?.error || ""
-
-  };
-
-}
-
-
 // ==========================================================
 // GET MILK PAGE
 // ==========================================================
 //
 // GET /milk
+//
+// IMPORTANT:
+//
+// milkService.getMilkPageData() is the ONLY source of
+// milk-page data.
+//
+// The controller does NOT:
+//
+// • Query Dairy
+// • Query animals
+// • Group animals
+// • Flatten animals
+// • Filter farms
+// • Rebuild tables
+// • Replace service data
+//
+// This prevents the controller from interfering with the
+// structure already prepared by milkService.js.
 //
 // ==========================================================
 
@@ -847,15 +135,67 @@ async (
 
   try {
 
-    const data =
-      await buildMilkPageData(
-        req
+    const user =
+      req.user || {};
+
+
+    // ======================================================
+    // GET COMPLETE MILK PAGE DATA
+    // ======================================================
+    //
+    // The service owns this structure.
+    //
+    // Do not modify it here.
+    //
+    // ======================================================
+
+    const serviceData =
+      await milkService.getMilkPageData(
+        user
       );
 
 
+    // ======================================================
+    // RENDER MILK PAGE
+    // ======================================================
+    //
+    // Preserve EVERYTHING returned by the service.
+    //
+    // This is particularly important because milk.ejs
+    // contains collection tables and may depend on nested
+    // structures supplied by the service.
+    //
+    // ======================================================
+
     return res.render(
       "milk",
-      data
+      {
+
+        ...serviceData,
+
+        // --------------------------------------------------
+        // Authentication context belongs to the controller.
+        //
+        // Do not allow service data to accidentally replace
+        // the current request user.
+        // --------------------------------------------------
+
+        user,
+
+        isAdmin:
+          isAdmin(req),
+
+        // --------------------------------------------------
+        // Query messages
+        // --------------------------------------------------
+
+        success:
+          req.query?.success === "1",
+
+        error:
+          req.query?.error || ""
+
+      }
     );
 
   }
@@ -868,25 +208,27 @@ async (
     );
 
 
+    // ======================================================
+    // FALLBACK PAGE
+    // ======================================================
+    //
+    // Only used if the service fails completely.
+    //
+    // No fake farm/animal/table data is constructed here.
+    //
+    // ======================================================
+
     return res
       .status(500)
       .render(
         "milk",
         {
 
-          farms: [],
-
-          dairies: [],
-
-          animals: [],
-
-          session: "closed",
+          user:
+            req.user || {},
 
           isAdmin:
             isAdmin(req),
-
-          user:
-            req.user || {},
 
           success: false,
 
@@ -1254,6 +596,10 @@ async (
     });
 
 
+    // ======================================================
+    // SUCCESS
+    // ======================================================
+
     return res.redirect(
       "/milk?success=1"
     );
@@ -1299,8 +645,10 @@ async (
       req.query?.type ||
       "day";
 
+
     const date =
       req.query?.date;
+
 
     const month =
       req.query?.month;
@@ -1333,15 +681,19 @@ async (
         "milkStats",
         {
 
-          type: "day",
+          type:
+            "day",
 
           date:
             selectedDate,
 
-          month: "",
+          month:
+            "",
 
           records:
-            Array.isArray(data?.records)
+            Array.isArray(
+              data?.records
+            )
               ? data.records
               : [],
 
@@ -1349,7 +701,9 @@ async (
             data?.stats || {},
 
           sales:
-            Array.isArray(data?.sales)
+            Array.isArray(
+              data?.sales
+            )
               ? data.sales
               : [],
 
@@ -1389,15 +743,19 @@ async (
         "milkStats",
         {
 
-          type: "month",
+          type:
+            "month",
 
-          date: "",
+          date:
+            "",
 
           month:
             selectedMonth,
 
           records:
-            Array.isArray(data?.records)
+            Array.isArray(
+              data?.records
+            )
               ? data.records
               : [],
 
@@ -1405,7 +763,9 @@ async (
             data?.stats || {},
 
           sales:
-            Array.isArray(data?.sales)
+            Array.isArray(
+              data?.sales
+            )
               ? data.sales
               : [],
 
@@ -1426,33 +786,45 @@ async (
       "milkStats",
       {
 
-        type: "",
+        type:
+          "",
 
-        date: "",
+        date:
+          "",
 
-        month: "",
+        month:
+          "",
 
-        records: [],
+        records:
+          [],
 
         stats: {
 
-          total: 0,
+          total:
+            0,
 
-          consumed: 0,
+          consumed:
+            0,
 
-          available: 0,
+          available:
+            0,
 
-          price: 0,
+          price:
+            0,
 
-          cash: 0,
+          cash:
+            0,
 
-          locked: false,
+          locked:
+            false,
 
-          avg: 0
+          avg:
+            0
 
         },
 
-        sales: [],
+        sales:
+          [],
 
         user:
           req.user || {}
@@ -2060,6 +1432,17 @@ async (
     }
 
 
+    if (
+      !isValidObjectId(dairyId)
+    ) {
+
+      throw new Error(
+        "Invalid dairy animal."
+      );
+
+    }
+
+
     const data =
       await milkService.getMilkingHistory({
 
@@ -2220,17 +1603,3 @@ async (
   }
 
 };
-
-
-// ==========================================================
-// EXPORT INTERNAL HELPER
-// ==========================================================
-//
-// Normally not needed by routes, but exporting this makes
-// testing/debugging possible without changing the public
-// controller endpoints.
-//
-// ==========================================================
-
-exports.buildMilkPageData =
-  buildMilkPageData;
