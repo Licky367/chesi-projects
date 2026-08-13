@@ -1,72 +1,66 @@
 /* ==========================================================
+   COREVESTER
    MILK RECORDING PAGE
-   Corevester Dairy Management
-   Premium Green UI
+   Clean Green Data-Entry Interface
 ========================================================== */
 
 
 /* ==========================================================
-   ROOT / DESIGN TOKENS
+   DESIGN SYSTEM
 ========================================================== */
 
 .milk-page {
-    --milk-primary: #16803c;
-    --milk-primary-dark: #0f642e;
-    --milk-primary-deep: #0a4f24;
-    --milk-primary-light: #eaf7ef;
-    --milk-primary-soft: #f3fbf6;
 
-    --milk-accent: #25a957;
-    --milk-accent-light: #dff5e7;
+    --green-950: #073b1d;
+    --green-900: #075426;
+    --green-800: #086b30;
+    --green-700: #0a7d38;
+    --green-600: #149447;
+    --green-500: #22a957;
 
-    --milk-success: #16803c;
-    --milk-success-light: #e9f8ef;
+    --green-100: #dff3e6;
+    --green-50: #effaf3;
 
-    --milk-warning: #b77900;
-    --milk-warning-light: #fff7df;
+    --text: #17251d;
+    --text-soft: #52635a;
+    --text-muted: #7a8981;
 
-    --milk-danger: #c62828;
-    --milk-danger-light: #fff0f0;
+    --border: #dce5df;
+    --border-light: #e9efeb;
 
-    --milk-text: #183126;
-    --milk-text-soft: #557064;
-    --milk-text-muted: #789087;
+    --background: #f5f8f6;
+    --white: #ffffff;
 
-    --milk-border: #dce9e1;
-    --milk-border-light: #eaf1ed;
+    --success: #08752f;
+    --success-bg: #eaf8ef;
 
-    --milk-background: #f5f9f6;
-    --milk-card: #ffffff;
+    --warning: #986500;
+    --warning-bg: #fff7df;
 
-    --milk-shadow-sm:
-        0 2px 8px rgba(20, 72, 42, 0.06);
+    --danger: #bd2929;
+    --danger-bg: #fff0f0;
 
-    --milk-shadow:
-        0 8px 28px rgba(20, 72, 42, 0.08);
+    --radius-sm: 7px;
+    --radius: 11px;
+    --radius-lg: 15px;
 
-    --milk-shadow-lg:
-        0 18px 45px rgba(20, 72, 42, 0.11);
+    --shadow:
+        0 4px 16px rgba(10, 70, 35, 0.07);
 
-    --milk-radius-sm: 8px;
-    --milk-radius: 14px;
-    --milk-radius-lg: 20px;
-
-    --milk-transition:
-        180ms ease;
+    --transition:
+        160ms ease;
 
     width: 100%;
     min-height: 100vh;
-    padding: 28px 28px 80px;
+
+    padding:
+        24px 24px 70px;
 
     background:
-        linear-gradient(
-            180deg,
-            #f2f8f4 0%,
-            #f7faf8 260px,
-            #f5f9f6 100%
-        );
+        var(--background);
 
-    color: var(--milk-text);
+    color:
+        var(--text);
 
     font-family:
         Inter,
@@ -74,17 +68,12 @@
         BlinkMacSystemFont,
         "Segoe UI",
         Roboto,
-        Helvetica,
         Arial,
         sans-serif;
 
     box-sizing: border-box;
 }
 
-
-/* ==========================================================
-   BOX SIZING
-========================================================== */
 
 .milk-page *,
 .milk-page *::before,
@@ -98,118 +87,78 @@
 ========================================================== */
 
 .milk-header {
-    position: relative;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
 
     width: 100%;
-    max-width: 1450px;
+    max-width: 1400px;
 
-    margin: 0 auto 20px;
-    padding: 28px 30px;
+    margin:
+        0 auto 18px;
 
-    overflow: hidden;
+    padding:
+        22px 24px;
 
-    background:
-        linear-gradient(
-            135deg,
-            #0f642e 0%,
-            #16803c 52%,
-            #25a957 100%
-        );
+    display: flex;
 
-    border-radius: var(--milk-radius-lg);
+    align-items: center;
 
-    box-shadow:
-        0 15px 38px rgba(15, 100, 46, 0.20);
+    justify-content: space-between;
 
-    color: #ffffff;
-}
-
-
-/*
- * Decorative background glow.
- */
-
-.milk-header::before {
-    content: "";
-
-    position: absolute;
-
-    width: 240px;
-    height: 240px;
-
-    right: -75px;
-    top: -125px;
-
-    border-radius: 50%;
+    gap: 20px;
 
     background:
-        rgba(255, 255, 255, 0.08);
+        var(--green-900);
 
-    pointer-events: none;
-}
+    border-radius:
+        var(--radius-lg);
 
+    border:
+        1px solid
+        rgba(255,255,255,0.05);
 
-.milk-header::after {
-    content: "";
-
-    position: absolute;
-
-    width: 160px;
-    height: 160px;
-
-    left: 42%;
-    bottom: -120px;
-
-    border-radius: 50%;
-
-    background:
-        rgba(255, 255, 255, 0.06);
-
-    pointer-events: none;
+    color:
+        #ffffff;
 }
 
 
 .milk-header-content {
-    position: relative;
-    z-index: 1;
+    min-width: 0;
 }
 
 
 .milk-header h1 {
+
     margin: 0;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    font-size: clamp(
-        1.55rem,
-        3vw,
-        2.15rem
-    );
+    font-size:
+        clamp(1.4rem, 2.8vw, 2rem);
 
-    font-weight: 750;
+    font-weight:
+        750;
 
-    letter-spacing: -0.035em;
+    line-height:
+        1.2;
 
-    line-height: 1.15;
+    letter-spacing:
+        -0.025em;
 }
 
 
 .milk-date {
-    margin: 8px 0 0;
+
+    margin:
+        6px 0 0;
 
     color:
-        rgba(255, 255, 255, 0.78);
+        rgba(255,255,255,0.70);
 
-    font-size: 0.92rem;
+    font-size:
+        0.82rem;
 
-    font-weight: 500;
-
-    letter-spacing: 0.01em;
+    font-weight:
+        500;
 }
 
 
@@ -218,38 +167,42 @@
 ========================================================== */
 
 .milk-role-badge {
-    position: relative;
-    z-index: 2;
 
     flex-shrink: 0;
 
     display: inline-flex;
+
     align-items: center;
+
     justify-content: center;
 
-    min-height: 40px;
+    min-height:
+        34px;
 
-    padding: 8px 15px;
+    padding:
+        7px 13px;
 
     border:
         1px solid
-        rgba(255, 255, 255, 0.24);
+        rgba(255,255,255,0.20);
 
-    border-radius: 999px;
+    border-radius:
+        999px;
 
     background:
-        rgba(255, 255, 255, 0.12);
+        rgba(255,255,255,0.10);
 
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    color:
+        #ffffff;
 
-    color: #ffffff;
+    font-size:
+        0.74rem;
 
-    font-size: 0.82rem;
+    font-weight:
+        700;
 
-    font-weight: 700;
-
-    white-space: nowrap;
+    white-space:
+        nowrap;
 }
 
 
@@ -258,192 +211,189 @@
 ========================================================== */
 
 .milk-session-bar {
-    width: 100%;
-    max-width: 1450px;
 
-    margin: 0 auto 14px;
+    width: 100%;
+    max-width: 1400px;
+
+    margin:
+        0 auto 10px;
+
+    padding:
+        14px 18px;
 
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
 
-    gap: 20px;
-
-    padding: 18px 22px;
+    gap: 18px;
 
     background:
-        #ffffff;
+        var(--white);
 
     border:
         1px solid
-        var(--milk-border);
+        var(--border);
 
     border-radius:
-        var(--milk-radius);
+        var(--radius);
 
     box-shadow:
-        var(--milk-shadow-sm);
+        var(--shadow);
 }
 
 
 .milk-session-information {
-    min-width: 0;
 
     display: flex;
+
     align-items: center;
-    gap: 12px;
 
     flex-wrap: wrap;
+
+    gap: 10px;
+
+    min-width: 0;
 }
 
 
 .milk-session-label {
-    display: inline-flex;
-    align-items: center;
 
     color:
-        var(--milk-text-muted);
+        var(--text-muted);
 
-    font-size: 0.75rem;
+    font-size:
+        0.68rem;
 
-    font-weight: 700;
+    font-weight:
+        750;
 
-    text-transform: uppercase;
+    text-transform:
+        uppercase;
 
-    letter-spacing: 0.08em;
+    letter-spacing:
+        0.07em;
 }
 
 
 .milk-session-name {
-    position: relative;
 
     color:
-        var(--milk-primary-deep);
+        var(--green-900);
 
-    font-size: 1rem;
+    font-size:
+        0.95rem;
 
-    font-weight: 750;
-}
-
-
-.milk-session-name::before {
-    content: "";
-
-    display: inline-block;
-
-    width: 7px;
-    height: 7px;
-
-    margin-right: 8px;
-
-    vertical-align: middle;
-
-    border-radius: 50%;
-
-    background:
-        var(--milk-accent);
-
-    box-shadow:
-        0 0 0 4px
-        var(--milk-primary-light);
+    font-weight:
+        750;
 }
 
 
 .milk-session-time {
+
     color:
-        var(--milk-text-muted);
+        var(--text-muted);
 
-    font-size: 0.82rem;
-
-    font-weight: 500;
+    font-size:
+        0.76rem;
 }
 
 
-/* ==========================================================
-   SESSION STATUS
-========================================================== */
-
 .milk-session-status {
+
     flex-shrink: 0;
 
     display: inline-flex;
+
     align-items: center;
+
     justify-content: center;
 
-    min-height: 36px;
+    min-height:
+        32px;
 
-    padding: 8px 14px;
+    padding:
+        6px 11px;
 
-    border-radius: 999px;
+    border-radius:
+        999px;
 
-    font-size: 0.76rem;
+    font-size:
+        0.70rem;
 
-    font-weight: 750;
-
-    letter-spacing: 0.01em;
+    font-weight:
+        750;
 }
 
 
 .milk-session-status-open {
+
     color:
-        var(--milk-success);
+        var(--success);
 
     background:
-        var(--milk-success-light);
+        var(--success-bg);
 
     border:
         1px solid
-        #c8ebd4;
+        #c9e8d2;
 }
 
 
 .milk-session-status-open::before {
+
     content: "";
 
-    width: 7px;
-    height: 7px;
+    width:
+        6px;
 
-    margin-right: 7px;
+    height:
+        6px;
 
-    border-radius: 50%;
+    margin-right:
+        7px;
+
+    border-radius:
+        50%;
 
     background:
-        var(--milk-success);
-
-    box-shadow:
-        0 0 0 4px
-        rgba(22, 128, 60, 0.10);
-
-    animation:
-        milkPulse 2s infinite;
+        var(--success);
 }
 
 
 .milk-session-status-closed {
+
     color:
-        var(--milk-warning);
+        var(--warning);
 
     background:
-        var(--milk-warning-light);
+        var(--warning-bg);
 
     border:
         1px solid
-        #f1dfac;
+        #eadcae;
 }
 
 
 .milk-session-status-closed::before {
+
     content: "";
 
-    width: 7px;
-    height: 7px;
+    width:
+        6px;
 
-    margin-right: 7px;
+    height:
+        6px;
 
-    border-radius: 50%;
+    margin-right:
+        7px;
+
+    border-radius:
+        50%;
 
     background:
-        var(--milk-warning);
+        var(--warning);
 }
 
 
@@ -452,104 +402,105 @@
 ========================================================== */
 
 .milk-session-note {
+
     width: 100%;
-    max-width: 1450px;
-
-    margin:
-        0 auto 22px;
-
-    padding:
-        14px 18px;
-
-    display: flex;
-    align-items: flex-start;
-
-    gap: 9px;
-
-    background:
-        var(--milk-primary-soft);
-
-    border:
-        1px solid
-        var(--milk-border);
-
-    border-left:
-        4px solid
-        var(--milk-primary);
-
-    border-radius:
-        10px;
-
-    color:
-        var(--milk-text-soft);
-
-    font-size: 0.87rem;
-
-    line-height: 1.55;
-}
-
-
-.milk-session-note strong {
-    flex-shrink: 0;
-
-    color:
-        var(--milk-primary-deep);
-
-    font-weight: 750;
-}
-
-
-/* ==========================================================
-   FLASH MESSAGES
-========================================================== */
-
-.milk-message {
-    width: 100%;
-    max-width: 1450px;
+    max-width: 1400px;
 
     margin:
         0 auto 18px;
 
     padding:
-        14px 18px;
+        11px 14px;
+
+    background:
+        var(--green-50);
+
+    border:
+        1px solid
+        var(--green-100);
+
+    border-left:
+        3px solid
+        var(--green-600);
 
     border-radius:
-        12px;
+        var(--radius-sm);
 
-    font-size: 0.9rem;
+    color:
+        var(--text-soft);
 
-    font-weight: 600;
+    font-size:
+        0.78rem;
 
-    line-height: 1.5;
+    line-height:
+        1.5;
+}
 
-    animation:
-        milkMessageIn 250ms ease both;
+
+.milk-session-note strong {
+
+    color:
+        var(--green-900);
+
+    font-weight:
+        750;
+}
+
+
+/* ==========================================================
+   MESSAGES
+========================================================== */
+
+.milk-message {
+
+    width: 100%;
+    max-width: 1400px;
+
+    margin:
+        0 auto 14px;
+
+    padding:
+        11px 14px;
+
+    border-radius:
+        var(--radius-sm);
+
+    font-size:
+        0.82rem;
+
+    font-weight:
+        600;
+
+    line-height:
+        1.5;
 }
 
 
 .milk-success {
+
     color:
-        #126b34;
+        var(--success);
 
     background:
-        var(--milk-success-light);
+        var(--success-bg);
 
     border:
         1px solid
-        #c6e9d2;
+        #ccebd6;
 }
 
 
 .milk-error {
+
     color:
-        #a32222;
+        var(--danger);
 
     background:
-        var(--milk-danger-light);
+        var(--danger-bg);
 
     border:
         1px solid
-        #f0caca;
+        #efcccc;
 }
 
 
@@ -558,78 +509,94 @@
 ========================================================== */
 
 .milk-empty {
+
     width: 100%;
-    max-width: 760px;
+    max-width: 600px;
 
     margin:
-        55px auto;
+        50px auto;
 
     padding:
-        48px 28px;
+        40px 25px;
 
-    text-align: center;
+    text-align:
+        center;
 
     background:
-        #ffffff;
+        var(--white);
 
     border:
         1px solid
-        var(--milk-border);
+        var(--border);
 
     border-radius:
-        var(--milk-radius-lg);
+        var(--radius-lg);
 
     box-shadow:
-        var(--milk-shadow);
+        var(--shadow);
 }
 
 
 .milk-empty::before {
-    content: "🥛";
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    content:
+        "🥛";
 
-    width: 64px;
-    height: 64px;
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    width:
+        56px;
+
+    height:
+        56px;
 
     margin:
-        0 auto 18px;
+        0 auto 15px;
 
-    border-radius: 50%;
+    border-radius:
+        50%;
 
     background:
-        var(--milk-primary-light);
+        var(--green-50);
 
-    font-size: 1.8rem;
+    font-size:
+        1.6rem;
 }
 
 
 .milk-empty h2 {
-    margin: 0 0 8px;
+
+    margin:
+        0 0 7px;
 
     color:
-        var(--milk-primary-deep);
+        var(--green-900);
 
-    font-size: 1.25rem;
-
-    font-weight: 750;
+    font-size:
+        1.15rem;
 }
 
 
 .milk-empty p {
-    max-width: 520px;
 
     margin:
-        0 auto;
+        0;
 
     color:
-        var(--milk-text-soft);
+        var(--text-soft);
 
-    font-size: 0.9rem;
+    font-size:
+        0.82rem;
 
-    line-height: 1.65;
+    line-height:
+        1.6;
 }
 
 
@@ -638,36 +605,28 @@
 ========================================================== */
 
 .milk-farm-section {
+
     width: 100%;
-    max-width: 1450px;
+    max-width: 1400px;
 
     margin:
-        0 auto 22px;
+        0 auto 18px;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
     background:
-        var(--milk-card);
+        var(--white);
 
     border:
         1px solid
-        var(--milk-border);
+        var(--border);
 
     border-radius:
-        var(--milk-radius-lg);
+        var(--radius-lg);
 
     box-shadow:
-        var(--milk-shadow);
-
-    transition:
-        box-shadow var(--milk-transition),
-        transform var(--milk-transition);
-}
-
-
-.milk-farm-section:hover {
-    box-shadow:
-        var(--milk-shadow-lg);
+        var(--shadow);
 }
 
 
@@ -676,61 +635,63 @@
 ========================================================== */
 
 .milk-farm-header {
-    position: relative;
 
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    display:
+        flex;
 
-    gap: 22px;
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    gap:
+        18px;
 
     padding:
-        20px 22px;
+        16px 18px;
 
     background:
-        linear-gradient(
-            135deg,
-            #f7fcf8 0%,
-            #eef8f1 100%
-        );
+        #f8fbf9;
 
     border-bottom:
         1px solid
-        var(--milk-border);
-}
-
-
-.milk-farm-information {
-    min-width: 0;
+        var(--border);
 }
 
 
 .milk-farm-information h2 {
-    margin: 0;
+
+    margin:
+        0;
 
     color:
-        var(--milk-primary-deep);
+        var(--green-900);
 
-    font-size: 1.2rem;
+    font-size:
+        1.05rem;
 
-    font-weight: 750;
-
-    letter-spacing:
-        -0.02em;
+    font-weight:
+        750;
 }
 
 
 .milk-farm-code {
-    display: inline-flex;
 
-    margin-top: 6px;
+    display:
+        block;
+
+    margin-top:
+        4px;
 
     color:
-        var(--milk-text-muted);
+        var(--text-muted);
 
-    font-size: 0.78rem;
+    font-size:
+        0.70rem;
 
-    font-weight: 600;
+    font-weight:
+        600;
 }
 
 
@@ -739,60 +700,63 @@
 ========================================================== */
 
 .milk-farm-total {
-    flex-shrink: 0;
 
-    display: flex;
-    flex-direction: column;
+    flex-shrink:
+        0;
 
-    align-items: flex-end;
+    display:
+        flex;
 
-    gap: 3px;
+    align-items:
+        center;
+
+    gap:
+        9px;
 
     padding:
-        10px 14px;
-
-    min-width: 150px;
+        7px 11px;
 
     background:
-        #ffffff;
+        var(--green-50);
 
     border:
         1px solid
-        #d5e9dc;
+        var(--green-100);
 
     border-radius:
-        12px;
-
-    box-shadow:
-        0 3px 10px
-        rgba(22, 128, 60, 0.06);
+        var(--radius-sm);
 }
 
 
 .milk-farm-total span {
+
     color:
-        var(--milk-text-muted);
+        var(--text-muted);
 
-    font-size: 0.69rem;
+    font-size:
+        0.66rem;
 
-    font-weight: 700;
+    font-weight:
+        700;
 
-    text-transform: uppercase;
+    text-transform:
+        uppercase;
 
     letter-spacing:
-        0.06em;
+        0.04em;
 }
 
 
 .milk-farm-total strong {
+
     color:
-        var(--milk-primary);
+        var(--green-800);
 
-    font-size: 1.25rem;
+    font-size:
+        0.95rem;
 
-    font-weight: 800;
-
-    line-height: 1.15;
+    font-weight:
+        800;
 }
 
 
@@ -801,28 +765,31 @@
 ========================================================== */
 
 .milk-no-animals {
+
     margin:
-        18px 22px;
+        15px;
 
     padding:
-        18px;
+        15px;
 
-    text-align: center;
+    text-align:
+        center;
 
     color:
-        var(--milk-text-soft);
+        var(--text-muted);
 
     background:
-        #f8faf9;
+        #fafcfb;
 
     border:
         1px dashed
-        var(--milk-border);
+        var(--border);
 
     border-radius:
-        10px;
+        var(--radius-sm);
 
-    font-size: 0.86rem;
+    font-size:
+        0.78rem;
 }
 
 
@@ -831,38 +798,15 @@
 ========================================================== */
 
 .milk-table-wrapper {
-    width: 100%;
 
-    overflow-x: auto;
+    width:
+        100%;
 
-    -webkit-overflow-scrolling: touch;
+    overflow-x:
+        auto;
 
-    scrollbar-width: thin;
-}
-
-
-.milk-table-wrapper::-webkit-scrollbar {
-    height: 7px;
-}
-
-
-.milk-table-wrapper::-webkit-scrollbar-track {
-    background:
-        #f2f6f3;
-}
-
-
-.milk-table-wrapper::-webkit-scrollbar-thumb {
-    background:
-        #bdd7c5;
-
-    border-radius: 999px;
-}
-
-
-.milk-table-wrapper::-webkit-scrollbar-thumb:hover {
-    background:
-        #8fba9c;
+    -webkit-overflow-scrolling:
+        touch;
 }
 
 
@@ -871,16 +815,59 @@
 ========================================================== */
 
 .milk-table {
-    width: 100%;
 
-    min-width: 760px;
+    width:
+        100%;
+
+    min-width:
+        780px;
 
     border-collapse:
-        separate;
+        collapse;
 
-    border-spacing: 0;
+    table-layout:
+        fixed;
+}
 
-    table-layout: fixed;
+
+/* ==========================================================
+   COLUMN WIDTHS
+
+   1. Animal
+   2. Liters
+   3. Remarks
+   4. Cumulative
+========================================================== */
+
+.milk-table th:nth-child(1),
+.milk-table td:nth-child(1) {
+
+    width:
+        24%;
+}
+
+
+.milk-table th:nth-child(2),
+.milk-table td:nth-child(2) {
+
+    width:
+        18%;
+}
+
+
+.milk-table th:nth-child(3),
+.milk-table td:nth-child(3) {
+
+    width:
+        38%;
+}
+
+
+.milk-table th:nth-child(4),
+.milk-table td:nth-child(4) {
+
+    width:
+        20%;
 }
 
 
@@ -889,105 +876,103 @@
 ========================================================== */
 
 .milk-table thead th {
-    position: relative;
 
     padding:
-        13px 16px;
+        11px 14px;
 
     background:
-        #f7faf8;
+        var(--green-900);
 
-    border-bottom:
-        1px solid
-        var(--milk-border);
+    border:
+        none;
 
     color:
-        var(--milk-text-muted);
+        #ffffff;
 
-    font-size: 0.72rem;
+    font-size:
+        0.69rem;
 
-    font-weight: 750;
+    font-weight:
+        750;
 
-    text-transform: uppercase;
+    text-transform:
+        uppercase;
 
     letter-spacing:
         0.055em;
 
-    text-align: left;
+    text-align:
+        left;
+
+    white-space:
+        nowrap;
 }
 
 
 .milk-table thead th:first-child {
-    width: 27%;
-}
 
-
-.milk-table thead th:nth-child(2) {
-    width: 53%;
+    padding-left:
+        18px;
 }
 
 
 .milk-table thead th:last-child {
-    width: 20%;
 
-    text-align: right;
+    padding-right:
+        18px;
+
+    text-align:
+        right;
 }
 
 
-.milk-record-heading {
-    color:
-        var(--milk-primary) !important;
+.milk-liters-heading {
+
+    background:
+        var(--green-800) !important;
 }
 
 
-.milk-record-heading span {
-    display: block;
-}
+.milk-remarks-heading {
 
-
-.milk-record-heading small {
-    display: block;
-
-    margin-top: 3px;
-
-    color:
-        var(--milk-text-muted);
-
-    font-size: 0.65rem;
-
-    font-weight: 500;
-
-    text-transform: none;
-
-    letter-spacing: 0;
+    background:
+        var(--green-800) !important;
 }
 
 
 .milk-cumulative-heading {
-    text-align: right !important;
+
+    text-align:
+        right !important;
 }
 
 
 /* ==========================================================
-   TABLE BODY
+   TABLE ROWS
 ========================================================== */
 
 .milk-animal-row {
+
+    background:
+        #ffffff;
+
     transition:
-        background var(--milk-transition);
+        background var(--transition);
 }
 
 
 .milk-animal-row:hover {
+
     background:
-        #fbfefc;
+        #f8fcf9;
 }
 
 
 .milk-animal-row:not(:last-child) td {
+
     border-bottom:
         1px solid
-        var(--milk-border-light);
+        var(--border-light);
 }
 
 
@@ -996,230 +981,268 @@
 ========================================================== */
 
 .milk-animal-cell {
-    padding:
-        17px 16px;
 
-    vertical-align: middle;
+    padding:
+        13px 14px 13px 18px;
+
+    vertical-align:
+        middle;
 }
 
 
 .milk-animal-name {
-    display: flex;
-    align-items: center;
-    gap: 9px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        8px;
 }
 
 
 .milk-animal-name::before {
-    content: "";
 
-    flex-shrink: 0;
+    content:
+        "";
 
-    width: 8px;
-    height: 8px;
+    flex-shrink:
+        0;
 
-    border-radius: 50%;
+    width:
+        7px;
+
+    height:
+        7px;
+
+    border-radius:
+        50%;
 
     background:
-        var(--milk-accent);
-
-    box-shadow:
-        0 0 0 4px
-        var(--milk-primary-light);
+        var(--green-600);
 }
 
 
 .milk-animal-name strong {
+
     color:
-        var(--milk-text);
+        var(--text);
 
-    font-size: 0.92rem;
+    font-size:
+        0.86rem;
 
-    font-weight: 700;
+    font-weight:
+        700;
 }
 
 
 .milk-animal-code {
-    display: block;
+
+    display:
+        block;
 
     margin:
-        5px 0 0 17px;
+        4px 0 0 15px;
 
     color:
-        var(--milk-text-muted);
+        var(--text-muted);
 
-    font-size: 0.72rem;
+    font-size:
+        0.66rem;
 
-    font-weight: 600;
+    font-weight:
+        600;
 }
 
 
 /* ==========================================================
-   RECORD CELL
+   LITERS CELL
 ========================================================== */
 
-.milk-record-cell {
-    padding:
-        14px 16px;
-
-    vertical-align: middle;
-}
-
-
-.milk-record-input-group,
-.milk-record-remarks-group {
-    display: flex;
-    align-items: center;
-
-    gap: 10px;
-}
-
-
-.milk-record-remarks-group {
-    margin-top: 8px;
-}
-
-
-.milk-input-label {
-    flex:
-        0 0 56px;
-
-    color:
-        var(--milk-text-muted);
-
-    font-size: 0.68rem;
-
-    font-weight: 700;
-
-    text-transform: uppercase;
-
-    letter-spacing:
-        0.045em;
-}
-
-
-/* ==========================================================
-   INPUTS
-========================================================== */
-
-.milk-liters-input,
-.milk-remarks-input {
-    width: 100%;
-
-    min-height: 40px;
+.milk-liters-cell {
 
     padding:
-        9px 11px;
+        10px 12px;
 
-    border:
-        1px solid
-        #d6e5db;
-
-    border-radius:
-        9px;
-
-    outline: none;
-
-    background:
-        #ffffff;
-
-    color:
-        var(--milk-text);
-
-    font-family:
-        inherit;
-
-    font-size: 0.87rem;
-
-    transition:
-        border-color var(--milk-transition),
-        box-shadow var(--milk-transition),
-        background var(--milk-transition);
+    vertical-align:
+        middle;
 }
 
 
 .milk-liters-input {
-    max-width: 155px;
 
-    font-size: 0.95rem;
+    width:
+        100%;
 
-    font-weight: 700;
+    height:
+        40px;
 
-    color:
-        var(--milk-primary-deep);
-}
+    padding:
+        8px 10px;
 
+    border:
+        1px solid
+        #cfded5;
 
-.milk-remarks-input {
-    min-width: 0;
-}
-
-
-.milk-liters-input::placeholder,
-.milk-remarks-input::placeholder {
-    color:
-        #a5b5ac;
-}
-
-
-.milk-liters-input:hover,
-.milk-remarks-input:hover {
-    border-color:
-        #b8d2c0;
-}
-
-
-.milk-liters-input:focus,
-.milk-remarks-input:focus {
-    border-color:
-        var(--milk-primary);
-
-    box-shadow:
-        0 0 0 3px
-        rgba(22, 128, 60, 0.10);
+    border-radius:
+        var(--radius-sm);
 
     background:
         #ffffff;
+
+    color:
+        var(--green-900);
+
+    outline:
+        none;
+
+    font-family:
+        inherit;
+
+    font-size:
+        0.88rem;
+
+    font-weight:
+        700;
+
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition),
+        background var(--transition);
+}
+
+
+.milk-liters-input:hover {
+
+    border-color:
+        #a9c8b4;
+}
+
+
+.milk-liters-input:focus {
+
+    border-color:
+        var(--green-600);
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(20,148,71,0.11);
 }
 
 
 /* ==========================================================
-   READ-ONLY INPUTS
+   REMARKS CELL
+========================================================== */
+
+.milk-remarks-cell {
+
+    padding:
+        10px 12px;
+
+    vertical-align:
+        middle;
+}
+
+
+.milk-remarks-input {
+
+    width:
+        100%;
+
+    height:
+        40px;
+
+    padding:
+        8px 10px;
+
+    border:
+        1px solid
+        #cfded5;
+
+    border-radius:
+        var(--radius-sm);
+
+    background:
+        #ffffff;
+
+    color:
+        var(--text);
+
+    outline:
+        none;
+
+    font-family:
+        inherit;
+
+    font-size:
+        0.80rem;
+
+    transition:
+        border-color var(--transition),
+        box-shadow var(--transition),
+        background var(--transition);
+}
+
+
+.milk-remarks-input::placeholder {
+
+    color:
+        #a0ada6;
+}
+
+
+.milk-remarks-input:hover {
+
+    border-color:
+        #a9c8b4;
+}
+
+
+.milk-remarks-input:focus {
+
+    border-color:
+        var(--green-600);
+
+    box-shadow:
+        0 0 0 3px
+        rgba(20,148,71,0.11);
+}
+
+
+/* ==========================================================
+   READ ONLY
 ========================================================== */
 
 .milk-liters-input[readonly],
 .milk-remarks-input[readonly] {
+
     cursor:
         not-allowed;
 
     background:
-        #f5f7f6;
+        #f2f5f3;
 
     border-color:
-        #e0e8e3;
+        #dce4df;
 
     color:
-        #718178;
+        #78847d;
 }
 
 
 .milk-liters-input[readonly]:focus,
 .milk-remarks-input[readonly]:focus {
-    border-color:
-        #d8e2dc;
 
     box-shadow:
         none;
-}
 
-
-/* ==========================================================
-   REMOVE NUMBER SPINNER VISUAL CLUTTER
-========================================================== */
-
-.milk-liters-input::-webkit-outer-spin-button,
-.milk-liters-input::-webkit-inner-spin-button {
-    margin: 0;
+    border-color:
+        #dce4df;
 }
 
 
@@ -1228,60 +1251,64 @@
 ========================================================== */
 
 .milk-record-status {
-    min-height: 22px;
 
-    margin-top: 8px;
-
-    padding-left:
-        66px;
+    margin-top:
+        5px;
 }
 
 
 .milk-record-status span {
-    display: inline-flex;
-    align-items: center;
 
-    min-height: 23px;
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    min-height:
+        20px;
 
     padding:
-        4px 8px;
+        3px 7px;
 
     border-radius:
-        6px;
+        5px;
 
-    font-size: 0.67rem;
+    font-size:
+        0.60rem;
 
-    font-weight: 700;
+    font-weight:
+        700;
+
+    white-space:
+        nowrap;
 }
 
-
-/* Pending */
 
 .milk-status-pending {
+
     color:
-        #697b70;
+        #69776f;
 
     background:
-        #f1f5f2;
+        #f0f3f1;
 }
 
-
-/* Recorded */
 
 .milk-status-recorded {
+
     color:
-        #126b34;
+        var(--success);
 
     background:
-        #e7f6ec;
+        var(--success-bg);
 }
 
 
-/* Locked */
-
 .milk-status-locked {
+
     color:
-        #68756d;
+        #657169;
 
     background:
         #edf1ef;
@@ -1289,44 +1316,66 @@
 
 
 /* ==========================================================
-   CUMULATIVE CELL
+   CUMULATIVE
 ========================================================== */
 
 .milk-cumulative-cell {
+
     padding:
-        17px 20px;
+        12px 18px;
 
-    text-align: right;
+    text-align:
+        right;
 
-    vertical-align: middle;
+    vertical-align:
+        middle;
 }
 
 
 .milk-cumulative-value {
-    display: block;
+
+    display:
+        block;
 
     color:
-        var(--milk-primary-deep);
+        var(--green-900);
 
-    font-size: 1rem;
+    font-size:
+        0.92rem;
 
-    font-weight: 800;
-
-    line-height: 1.2;
+    font-weight:
+        800;
 }
 
 
 .milk-cumulative-label {
-    display: block;
 
-    margin-top: 4px;
+    display:
+        block;
+
+    margin-top:
+        3px;
 
     color:
-        var(--milk-text-muted);
+        var(--text-muted);
 
-    font-size: 0.68rem;
+    font-size:
+        0.63rem;
 
-    font-weight: 600;
+    font-weight:
+        600;
+}
+
+
+/* ==========================================================
+   NUMBER INPUT SPINNERS
+========================================================== */
+
+.milk-liters-input::-webkit-inner-spin-button,
+.milk-liters-input::-webkit-outer-spin-button {
+
+    margin:
+        0;
 }
 
 
@@ -1335,108 +1384,104 @@
 ========================================================== */
 
 .milk-submit-area {
-    width: 100%;
-    max-width: 1450px;
+
+    width:
+        100%;
+
+    max-width:
+        1400px;
 
     margin:
-        25px auto 0;
+        22px auto 0;
 
     padding:
-        22px;
+        18px;
 
     background:
-        #ffffff;
+        var(--white);
 
     border:
         1px solid
-        var(--milk-border);
+        var(--border);
 
     border-radius:
-        var(--milk-radius-lg);
+        var(--radius-lg);
 
     box-shadow:
-        var(--milk-shadow);
+        var(--shadow);
 }
 
-
-/* ==========================================================
-   WORKER / ADMIN NOTES
-========================================================== */
 
 .milk-worker-note,
 .milk-admin-note,
 .milk-zero-note {
-    margin: 0;
 
-    font-size: 0.82rem;
+    margin:
+        0;
 
-    line-height: 1.55;
+    padding:
+        10px 12px;
+
+    border-radius:
+        var(--radius-sm);
+
+    font-size:
+        0.75rem;
+
+    line-height:
+        1.5;
 }
 
 
 .milk-worker-note {
-    padding:
-        12px 14px;
 
     color:
-        #286440;
+        var(--success);
 
     background:
-        var(--milk-success-light);
+        var(--success-bg);
 
     border:
         1px solid
-        #d2ead9;
-
-    border-radius:
-        9px;
+        #d0ead8;
 }
 
 
 .milk-admin-note {
-    padding:
-        12px 14px;
 
     color:
-        #355b43;
+        var(--green-900);
 
     background:
-        var(--milk-primary-soft);
+        var(--green-50);
 
     border:
         1px solid
-        var(--milk-border);
-
-    border-radius:
-        9px;
+        var(--green-100);
 }
 
 
 .milk-zero-note {
-    margin-top:
-        11px;
 
-    padding:
-        12px 14px;
+    margin-top:
+        8px;
 
     color:
-        var(--milk-text-soft);
+        var(--text-soft);
 
     background:
         #fafcfb;
 
     border:
         1px solid
-        var(--milk-border-light);
-
-    border-radius:
-        9px;
+        var(--border-light);
 }
 
 
 .milk-zero-note strong {
+
     color:
-        var(--milk-primary-deep);
+        var(--green-900);
 
     font-weight:
         750;
@@ -1448,34 +1493,27 @@
 ========================================================== */
 
 .milk-submit-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
 
-    width: 100%;
+    width:
+        100%;
 
-    min-height: 52px;
+    min-height:
+        48px;
 
     margin-top:
-        18px;
+        14px;
 
     padding:
-        13px 20px;
+        11px 18px;
 
     border:
         none;
 
     border-radius:
-        11px;
-
-    outline: none;
+        var(--radius);
 
     background:
-        linear-gradient(
-            135deg,
-            var(--milk-primary-dark),
-            var(--milk-primary)
-        );
+        var(--green-700);
 
     color:
         #ffffff;
@@ -1483,103 +1521,69 @@
     font-family:
         inherit;
 
-    font-size: 0.92rem;
+    font-size:
+        0.86rem;
 
-    font-weight: 750;
+    font-weight:
+        750;
 
-    cursor: pointer;
-
-    box-shadow:
-        0 7px 18px
-        rgba(22, 128, 60, 0.20);
+    cursor:
+        pointer;
 
     transition:
-        transform var(--milk-transition),
-        box-shadow var(--milk-transition),
-        background var(--milk-transition);
+        background var(--transition),
+        transform var(--transition),
+        box-shadow var(--transition);
 }
 
 
 .milk-submit-button:hover {
+
+    background:
+        var(--green-800);
+
     transform:
         translateY(-1px);
 
-    background:
-        linear-gradient(
-            135deg,
-            #0b5928,
-            #16803c
-        );
-
     box-shadow:
-        0 10px 24px
-        rgba(22, 128, 60, 0.25);
+        0 6px 15px
+        rgba(8,107,48,0.18);
 }
 
 
 .milk-submit-button:active {
+
     transform:
         translateY(0);
-
-    box-shadow:
-        0 4px 12px
-        rgba(22, 128, 60, 0.18);
-}
-
-
-.milk-submit-button:focus-visible {
-    box-shadow:
-        0 0 0 4px
-        rgba(22, 128, 60, 0.16),
-        0 7px 18px
-        rgba(22, 128, 60, 0.20);
 }
 
 
 .milk-submit-button:disabled {
+
+    opacity:
+        0.65;
+
     cursor:
         not-allowed;
 
     transform:
         none;
 
-    opacity:
-        0.72;
-
     box-shadow:
         none;
 }
 
 
 /* ==========================================================
-   INPUT VALIDATION
+   FOCUS
 ========================================================== */
-
-.milk-liters-input:invalid:not(:placeholder-shown) {
-    border-color:
-        #dc7777;
-
-    background:
-        #fffafa;
-}
-
-
-/* ==========================================================
-   ACCESSIBILITY
-========================================================== */
-
-.milk-page button,
-.milk-page input {
-    -webkit-tap-highlight-color:
-        transparent;
-}
-
 
 .milk-page input:focus-visible,
 .milk-page button:focus-visible {
+
     outline:
         2px solid
-        rgba(22, 128, 60, 0.35);
+        rgba(20,148,71,0.28);
 
     outline-offset:
         2px;
@@ -1587,73 +1591,36 @@
 
 
 /* ==========================================================
-   ANIMATIONS
-========================================================== */
-
-@keyframes milkPulse {
-
-    0%,
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 0.55;
-        transform: scale(0.82);
-    }
-}
-
-
-@keyframes milkMessageIn {
-
-    from {
-        opacity: 0;
-        transform:
-            translateY(-5px);
-    }
-
-    to {
-        opacity: 1;
-        transform:
-            translateY(0);
-    }
-}
-
-
-/* ==========================================================
    TABLET
 ========================================================== */
 
-@media (max-width: 900px) {
+@media (max-width: 850px) {
 
     .milk-page {
+
         padding:
-            20px 18px 70px;
+            18px 15px 65px;
     }
 
 
     .milk-header {
-        padding:
-            23px 22px;
-    }
 
-
-    .milk-session-bar {
         padding:
-            16px 18px;
+            20px;
     }
 
 
     .milk-farm-header {
+
         padding:
-            18px;
+            14px 15px;
     }
 
 
-    .milk-submit-area {
-        padding:
-            18px;
+    .milk-table {
+
+        min-width:
+            730px;
     }
 
 }
@@ -1666,16 +1633,16 @@
 @media (max-width: 640px) {
 
     .milk-page {
+
         padding:
-            12px 10px 92px;
+            10px 8px 80px;
     }
 
 
-    /* ----------------------------------------------
-       Header
-    ---------------------------------------------- */
+    /* Header */
 
     .milk-header {
+
         align-items:
             flex-start;
 
@@ -1683,51 +1650,47 @@
             column;
 
         gap:
-            14px;
-
-        margin-bottom:
-            12px;
+            11px;
 
         padding:
-            20px 18px;
+            17px 15px;
 
         border-radius:
-            16px;
+            12px;
     }
 
 
     .milk-header h1 {
+
         font-size:
-            1.38rem;
+            1.28rem;
     }
 
 
     .milk-date {
-        margin-top:
-            6px;
-
-        font-size:
-            0.78rem;
-    }
-
-
-    .milk-role-badge {
-        min-height:
-            34px;
-
-        padding:
-            7px 12px;
 
         font-size:
             0.72rem;
     }
 
 
-    /* ----------------------------------------------
-       Session bar
-    ---------------------------------------------- */
+    .milk-role-badge {
+
+        min-height:
+            30px;
+
+        padding:
+            6px 10px;
+
+        font-size:
+            0.67rem;
+    }
+
+
+    /* Session */
 
     .milk-session-bar {
+
         align-items:
             flex-start;
 
@@ -1735,102 +1698,92 @@
             column;
 
         gap:
-            12px;
+            9px;
 
         padding:
-            15px;
-
-        border-radius:
-            13px;
+            12px 13px;
     }
 
 
     .milk-session-information {
-        display:
-            block;
 
         width:
             100%;
+
+        display:
+            block;
     }
 
 
     .milk-session-label,
     .milk-session-name,
     .milk-session-time {
+
         display:
             block;
     }
 
 
     .milk-session-label {
+
         margin-bottom:
-            4px;
+            3px;
 
         font-size:
-            0.65rem;
+            0.61rem;
     }
 
 
     .milk-session-name {
+
         font-size:
-            0.96rem;
+            0.88rem;
     }
 
 
     .milk-session-time {
+
         margin-top:
-            5px;
+            3px;
 
         font-size:
-            0.76rem;
+            0.69rem;
     }
 
 
     .milk-session-status {
+
         width:
             100%;
     }
 
 
-    /* ----------------------------------------------
-       Session note
-    ---------------------------------------------- */
+    /* Note */
 
     .milk-session-note {
-        display:
-            block;
 
         padding:
-            12px 14px;
+            10px 11px;
 
         font-size:
-            0.78rem;
+            0.70rem;
     }
 
 
-    .milk-session-note strong {
-        display:
-            block;
-
-        margin-bottom:
-            3px;
-    }
-
-
-    /* ----------------------------------------------
-       Farm
-    ---------------------------------------------- */
+    /* Farm */
 
     .milk-farm-section {
-        margin-bottom:
-            15px;
 
         border-radius:
-            15px;
+            12px;
+
+        margin-bottom:
+            13px;
     }
 
 
     .milk-farm-header {
+
         align-items:
             flex-start;
 
@@ -1838,256 +1791,276 @@
             column;
 
         gap:
-            12px;
+            9px;
 
         padding:
-            16px;
+            13px;
     }
 
 
     .milk-farm-information h2 {
+
         font-size:
-            1.05rem;
+            0.95rem;
     }
 
 
     .milk-farm-code {
+
         font-size:
-            0.7rem;
+            0.64rem;
     }
 
 
     .milk-farm-total {
-        align-items:
-            flex-start;
 
         width:
             100%;
 
-        min-width:
-            0;
+        justify-content:
+            space-between;
 
         padding:
-            10px 12px;
+            7px 9px;
+    }
+
+
+    .milk-farm-total span {
+
+        font-size:
+            0.60rem;
     }
 
 
     .milk-farm-total strong {
+
         font-size:
-            1.15rem;
+            0.85rem;
     }
 
 
-    /* ----------------------------------------------
-       Table
-    ---------------------------------------------- */
+    /* Table */
 
     .milk-table {
+
         min-width:
-            690px;
+            700px;
     }
 
 
     .milk-table thead th {
+
         padding:
-            11px 12px;
-
-        font-size:
-            0.65rem;
-    }
-
-
-    .milk-animal-cell {
-        padding:
-            14px 12px;
-    }
-
-
-    .milk-record-cell {
-        padding:
-            11px 12px;
-    }
-
-
-    .milk-cumulative-cell {
-        padding:
-            14px 12px;
-    }
-
-
-    .milk-animal-name strong {
-        font-size:
-            0.84rem;
-    }
-
-
-    .milk-animal-code {
-        margin-left:
-            16px;
-
-        font-size:
-            0.66rem;
-    }
-
-
-    .milk-liters-input,
-    .milk-remarks-input {
-        min-height:
-            38px;
-
-        font-size:
-            0.82rem;
-    }
-
-
-    .milk-liters-input {
-        max-width:
-            125px;
-    }
-
-
-    .milk-input-label {
-        flex-basis:
-            48px;
+            9px 10px;
 
         font-size:
             0.61rem;
     }
 
 
-    .milk-record-status {
-        padding-left:
-            58px;
+    .milk-table th:nth-child(1),
+    .milk-table td:nth-child(1) {
+
+        width:
+            24%;
     }
 
 
-    /* ----------------------------------------------
-       Submit area
-    ---------------------------------------------- */
+    .milk-table th:nth-child(2),
+    .milk-table td:nth-child(2) {
+
+        width:
+            17%;
+    }
+
+
+    .milk-table th:nth-child(3),
+    .milk-table td:nth-child(3) {
+
+        width:
+            39%;
+    }
+
+
+    .milk-table th:nth-child(4),
+    .milk-table td:nth-child(4) {
+
+        width:
+            20%;
+    }
+
+
+    .milk-animal-cell {
+
+        padding:
+            11px 10px 11px 12px;
+    }
+
+
+    .milk-animal-name {
+
+        gap:
+            6px;
+    }
+
+
+    .milk-animal-name strong {
+
+        font-size:
+            0.78rem;
+    }
+
+
+    .milk-animal-code {
+
+        margin-left:
+            13px;
+
+        font-size:
+            0.59rem;
+    }
+
+
+    .milk-liters-cell,
+    .milk-remarks-cell {
+
+        padding:
+            8px 7px;
+    }
+
+
+    .milk-liters-input,
+    .milk-remarks-input {
+
+        height:
+            36px;
+
+        padding:
+            7px 8px;
+
+        font-size:
+            0.74rem;
+    }
+
+
+    .milk-record-status span {
+
+        font-size:
+            0.54rem;
+    }
+
+
+    .milk-cumulative-cell {
+
+        padding:
+            10px 11px;
+    }
+
+
+    .milk-cumulative-value {
+
+        font-size:
+            0.80rem;
+    }
+
+
+    .milk-cumulative-label {
+
+        font-size:
+            0.56rem;
+    }
+
+
+    /* Submit */
 
     .milk-submit-area {
+
         position:
             sticky;
 
         bottom:
-            8px;
+            7px;
 
         z-index:
-            20;
-
-        margin-top:
-            16px;
+            50;
 
         padding:
-            12px;
+            10px;
 
         border-radius:
-            14px;
+            11px;
 
         box-shadow:
-            0 8px 30px
-            rgba(20, 72, 42, 0.17);
+            0 6px 25px
+            rgba(7,59,29,0.16);
     }
 
 
     .milk-worker-note,
     .milk-admin-note,
     .milk-zero-note {
-        font-size:
-            0.73rem;
 
         padding:
-            9px 10px;
-    }
+            8px 9px;
 
-
-    .milk-zero-note {
-        margin-top:
-            7px;
+        font-size:
+            0.66rem;
     }
 
 
     .milk-submit-button {
+
         min-height:
-            48px;
+            45px;
 
         margin-top:
-            10px;
+            9px;
 
         font-size:
-            0.86rem;
-    }
-
-
-    /* ----------------------------------------------
-       Messages
-    ---------------------------------------------- */
-
-    .milk-message {
-        padding:
-            12px 14px;
-
-        font-size:
-            0.8rem;
-    }
-
-
-    .milk-empty {
-        margin:
-            35px auto;
-
-        padding:
-            38px 20px;
+            0.78rem;
     }
 
 }
 
 
 /* ==========================================================
-   VERY SMALL PHONES
+   SMALL PHONES
 ========================================================== */
 
 @media (max-width: 390px) {
 
     .milk-page {
+
         padding:
-            9px 7px 88px;
+            7px 6px 75px;
     }
 
 
     .milk-header {
+
         padding:
-            17px 15px;
+            15px 13px;
     }
 
 
     .milk-header h1 {
+
         font-size:
-            1.25rem;
-    }
-
-
-    .milk-session-bar {
-        padding:
-            13px;
-    }
-
-
-    .milk-farm-header {
-        padding:
-            14px;
+            1.18rem;
     }
 
 
     .milk-table {
+
         min-width:
-            650px;
+            670px;
     }
 
 
-    .milk-submit-area {
+    .milk-farm-header {
+
         padding:
-            10px;
+            12px;
     }
 
 }
@@ -2102,6 +2075,7 @@
     .milk-page *,
     .milk-page *::before,
     .milk-page *::after {
+
         animation-duration:
             0.01ms !important;
 
