@@ -3,7 +3,7 @@
 // ==========================================================
 
 const Milk =
-  require("../../models/milk");
+    require("../../models/milk");
 
 
 // ==========================================================
@@ -12,460 +12,437 @@ const Milk =
 
 function formatDate(date) {
 
-  if (!date) return "";
+    if (!date) return "";
 
-  return new Intl.DateTimeFormat("en-KE", {
+    return new Intl.DateTimeFormat(
+        "en-KE",
+        {
 
-    timeZone: "Africa/Nairobi",
+            timeZone:
+                "Africa/Nairobi",
 
-    year: "numeric",
+            year:
+                "numeric",
 
-    month: "short",
+            month:
+                "short",
 
-    day: "numeric",
+            day:
+                "numeric",
 
-    hour: "2-digit",
+            hour:
+                "2-digit",
 
-    minute: "2-digit",
+            minute:
+                "2-digit",
 
-    hour12: false
+            hour12:
+                false
 
-  }).format(
-    new Date(date)
-  );
+        }
+    ).format(
+        new Date(date)
+    );
 
 }
 
 
 function getDayKey(
-  date = new Date()
+    date = new Date()
 ) {
 
-  return new Date(date)
-    .toISOString()
-    .split("T")[0];
+    return new Date(date)
+        .toISOString()
+        .split("T")[0];
 
 }
 
 
 function getMonthKey(
-  date = new Date()
+    date = new Date()
 ) {
 
-  return getDayKey(date)
-    .slice(0, 7);
+    return getDayKey(date)
+        .slice(0, 7);
 
 }
 
 
 function getWeekRange(
-  date = new Date()
+    date = new Date()
 ) {
 
-  const current =
-    new Date(date);
+    const current =
+        new Date(date);
 
-  const day =
-    current.getDay();
+    const day =
+        current.getDay();
 
-  const diff =
-    current.getDate() -
-    day +
-    (
-      day === 0
-        ? -6
-        : 1
+    const diff =
+        current.getDate() -
+        day +
+        (
+            day === 0
+                ? -6
+                : 1
+        );
+
+    const monday =
+        new Date(current);
+
+    monday.setDate(diff);
+
+    monday.setHours(
+        0,
+        0,
+        0,
+        0
     );
 
-  const monday =
-    new Date(current);
+    const sunday =
+        new Date(monday);
 
-  monday.setDate(diff);
+    sunday.setDate(
+        monday.getDate() + 6
+    );
 
-  monday.setHours(
-    0,
-    0,
-    0,
-    0
-  );
+    sunday.setHours(
+        23,
+        59,
+        59,
+        999
+    );
 
-  const sunday =
-    new Date(monday);
+    return {
 
-  sunday.setDate(
-    monday.getDate() + 6
-  );
+        start:
+            monday,
 
-  sunday.setHours(
-    23,
-    59,
-    59,
-    999
-  );
+        end:
+            sunday
 
-  return {
-
-    start:
-      monday,
-
-    end:
-      sunday
-
-  };
+    };
 
 }
 
 
 // ==========================================================
-// FEED FORMATTERS
+// COMMENT FORMATTER
 // ==========================================================
 
 function formatComment(
-  comment
+    comment
 ) {
 
-  return {
+    return {
 
-    _id:
-      comment._id,
+        _id:
+            comment._id,
 
-    userId:
-      comment.userId,
+        userId:
+            comment.userId,
 
-    userName:
-      comment.userName,
+        userName:
+            comment.userName,
 
-    userImage:
-      comment.userImage || "",
+        userImage:
+            comment.userImage || "",
 
-    text:
-      comment.text,
+        text:
+            comment.text,
 
-    createdAt:
-      comment.createdAt,
+        createdAt:
+            comment.createdAt,
 
-    dateText:
-      formatDate(
-        comment.createdAt
-      )
+        dateText:
+            formatDate(
+                comment.createdAt
+            )
 
-  };
+    };
 
 }
 
 
 // ==========================================================
-// FORMAT FEED ITEM
+// FEED FORMATTER
 // ==========================================================
 //
-// Every Update now has its related Dairy populated by:
+// IMPORTANT:
 //
-//     pageService.js
+// pageService.js populates:
+//
+//     item.dairy
+//
+// with:
+//
+//     name
+//     code
+//     assetCode
+//     profileImage
+//
+// This formatter exposes those values as convenient feed
+// properties:
+//
+//     dairyId
+//     dairyName
+//     dairyCode
+//     dairyAssetCode
+//     dairyImage
+//
+// Therefore post.ejs can display:
+//
+//     userName updated about dairyName
 //
 // Example:
 //
-//     Update
-//         dairy -> Cow Shed C
-//
-// The formatter exposes that information directly on the
-// feed item so EJS views do not need to understand the
-// populated MongoDB document.
-//
-// Available properties:
-//
-//     item.dairyId
-//     item.dairyName
-//     item.dairyCode
-//     item.dairyAssetCode
-//     item.dairyImage
-//     item.dairyIsFarm
-//     item.dairyIsAnimal
-//     item.dairyIsStructure
+//     Nelson updated about Cow Shed C
+//     Aug 14, 2026, 10:35
 //
 // ==========================================================
 
-function formatFeed(update) {
+function formatFeed(
+    update
+) {
 
-  const item =
+    const item =
 
-    typeof update.toObject === "function"
+        typeof update.toObject === "function"
 
-      ? update.toObject()
+            ? update.toObject()
 
-      : update;
-
-
-  // ========================================================
-  // USER
-  // ========================================================
-
-  item.userId =
-    item.user || null;
+            : update;
 
 
-  // ========================================================
-  // DATE
-  // ========================================================
+    // ======================================================
+    // USER
+    // ======================================================
 
-  item.dateText =
-    formatDate(
-      item.createdAt
-    );
+    item.userId =
+        item.user || null;
 
 
-  // ========================================================
-  // LIKES
-  // ========================================================
+    // ======================================================
+    // DATE
+    // ======================================================
 
-  item.likes =
-    Array.isArray(
-      item.likes
-    )
-
-      ? item.likes.length
-
-      : 0;
+    item.dateText =
+        formatDate(
+            item.createdAt
+        );
 
 
-  // ========================================================
-  // COMMENTS
-  // ========================================================
+    // ======================================================
+    // DAIRY / ASSET SUBJECT
+    // ======================================================
+    //
+    // pageService.js has already populated:
+    //
+    //     item.dairy
+    //
+    // So we do NOT perform another database query here.
+    //
+    // This is what supplies post.ejs with:
+    //
+    //     item.dairyName
+    //
+    // ======================================================
 
-  item.comments =
+    if (
+        item.dairy
+    ) {
 
-    Array.isArray(
-      item.comments
-    )
+        // --------------------------------------------------
+        // Dairy ID
+        // --------------------------------------------------
 
-      ? item.comments.map(
-          formatComment
+        item.dairyId =
+            item.dairy._id || null;
+
+
+        // --------------------------------------------------
+        // Dairy / Asset Name
+        // --------------------------------------------------
+
+        item.dairyName =
+            item.dairy.name || "";
+
+
+        // --------------------------------------------------
+        // Dairy / Asset Code
+        // --------------------------------------------------
+
+        item.dairyCode =
+            item.dairy.code !== undefined
+
+                ? item.dairy.code
+
+                : null;
+
+
+        // --------------------------------------------------
+        // Parent Farm Code
+        // --------------------------------------------------
+
+        item.dairyAssetCode =
+            item.dairy.assetCode !== undefined
+
+                ? item.dairy.assetCode
+
+                : null;
+
+
+        // --------------------------------------------------
+        // Dairy / Asset Image
+        // --------------------------------------------------
+
+        item.dairyImage =
+            item.dairy.profileImage || "";
+
+    }
+
+    else {
+
+        // --------------------------------------------------
+        // No populated Dairy
+        // --------------------------------------------------
+
+        item.dairyId =
+            null;
+
+        item.dairyName =
+            "";
+
+        item.dairyCode =
+            null;
+
+        item.dairyAssetCode =
+            null;
+
+        item.dairyImage =
+            "";
+
+    }
+
+
+    // ======================================================
+    // LIKES
+    // ======================================================
+
+    item.likes =
+        Array.isArray(
+            item.likes
         )
 
-      : [];
+            ? item.likes.length
 
+            : 0;
 
-  // ========================================================
-  // RELATED DAIRY / ASSET
-  // ========================================================
-  //
-  // pageService.js populates:
-  //
-  //     dairy:
-  //         name
-  //         code
-  //         assetCode
-  //         profileImage
-  //
-  // The populated document can therefore be used to
-  // identify exactly what the post/update is about.
-  //
-  // ========================================================
 
-  const relatedDairy =
-    item.dairy;
+    // ======================================================
+    // COMMENTS
+    // ======================================================
 
+    item.comments =
 
-  // ========================================================
-  // RELATED DAIRY ID
-  // ========================================================
+        Array.isArray(
+            item.comments
+        )
 
-  if (
-    relatedDairy &&
-    relatedDairy._id
-  ) {
+            ? item.comments.map(
+                formatComment
+            )
 
-    item.dairyId =
-      relatedDairy._id;
+            : [];
 
-  } else {
 
-    item.dairyId =
-      item.dairy || null;
+    // ======================================================
+    // POST
+    // ======================================================
 
-  }
+    if (
+        item.type === "post"
+    ) {
 
+        item.title =
+            "";
 
-  // ========================================================
-  // RELATED DAIRY NAME
-  // ========================================================
+    }
 
-  item.dairyName =
 
-    relatedDairy &&
-    relatedDairy.name
+    // ======================================================
+    // MEDICAL
+    // ======================================================
 
-      ? relatedDairy.name
+    if (
+        item.type === "medical" &&
+        item.medical
+    ) {
 
-      : "";
+        item.status =
+            item.medical.status;
 
 
-  // ========================================================
-  // RELATED DAIRY CODE
-  // ========================================================
+        item.title =
+            item.medical.type;
 
-  item.dairyCode =
 
-    relatedDairy &&
-    relatedDairy.code !== undefined
+        item.details =
+            item.medical.details;
 
-      ? relatedDairy.code
 
-      : null;
+        item.description =
 
+            item.medical.status === "cleared"
 
-  // ========================================================
-  // RELATED DAIRY ASSET CODE
-  // ========================================================
+                ? item.medical.clearDescription
 
-  item.dairyAssetCode =
+                : item.medical.details;
 
-    relatedDairy &&
-    relatedDairy.assetCode !== undefined
 
-      ? relatedDairy.assetCode
+        item.charges =
+            item.medical.charges || 0;
 
-      : null;
+    }
 
 
-  // ========================================================
-  // RELATED DAIRY IMAGE
-  // ========================================================
+    // ======================================================
+    // MAINTENANCE
+    // ======================================================
 
-  item.dairyImage =
+    if (
+        item.type === "maintenance" &&
+        item.maintenance
+    ) {
 
-    relatedDairy &&
-    relatedDairy.profileImage
+        item.status =
+            item.maintenance.status;
 
-      ? relatedDairy.profileImage
 
-      : "";
+        item.maintenanceType =
+            item.maintenance.type;
 
 
-  // ========================================================
-  // RELATED DAIRY TYPE
-  // ========================================================
+        item.description =
 
-  item.dairyIsFarm =
+            item.maintenance.status === "cleared"
 
-    item.dairyCode !== null &&
+                ? item.maintenance.clearDescription
 
-    item.dairyCode !== undefined &&
+                : item.maintenance.description;
 
-    Number(
-      item.dairyCode
-    ) < 0;
 
+        item.charges =
+            item.maintenance.charges || 0;
 
-  item.dairyIsAnimal =
+    }
 
-    item.dairyCode !== null &&
 
-    item.dairyCode !== undefined &&
+    // ======================================================
+    // RETURN FORMATTED FEED ITEM
+    // ======================================================
 
-    Number(
-      item.dairyCode
-    ) > 0;
-
-
-  item.dairyIsStructure =
-
-    item.dairyCode === null ||
-
-    item.dairyCode === undefined;
-
-
-  // ========================================================
-  // POST
-  // ========================================================
-
-  if (
-    item.type === "post"
-  ) {
-
-    item.title = "";
-
-  }
-
-
-  // ========================================================
-  // MEDICAL
-  // ========================================================
-
-  if (
-
-    item.type === "medical" &&
-
-    item.medical
-
-  ) {
-
-    item.status =
-      item.medical.status;
-
-
-    item.title =
-      item.medical.type;
-
-
-    item.details =
-      item.medical.details;
-
-
-    item.description =
-
-      item.medical.status === "cleared"
-
-        ? item.medical.clearDescription
-
-        : item.medical.details;
-
-
-    item.charges =
-      item.medical.charges || 0;
-
-  }
-
-
-  // ========================================================
-  // MAINTENANCE
-  // ========================================================
-
-  if (
-
-    item.type === "maintenance" &&
-
-    item.maintenance
-
-  ) {
-
-    item.status =
-      item.maintenance.status;
-
-
-    item.maintenanceType =
-      item.maintenance.type;
-
-
-    item.description =
-
-      item.maintenance.status === "cleared"
-
-        ? item.maintenance.clearDescription
-
-        : item.maintenance.description;
-
-
-    item.charges =
-      item.maintenance.charges || 0;
-
-  }
-
-
-  // ========================================================
-  // RETURN FORMATTED ITEM
-  // ========================================================
-
-  return item;
+    return item;
 
 }
 
@@ -475,238 +452,224 @@ function formatFeed(update) {
 // ==========================================================
 
 async function buildWeeklyMilkFeeds(
-  dairyId
+    dairyId
 ) {
 
-  const records =
-    await Milk.find({
+    const records =
+        await Milk.find({
 
-      dairy:
-        dairyId
+            dairy:
+                dairyId
 
-    })
+        })
 
-      .sort({
+        .sort({
 
-        date: 1
+            date:
+                1
 
-      })
+        })
 
-      .lean();
-
-
-  if (
-    !records.length
-  ) {
-
-    return [];
-
-  }
-
-
-  const weeks = {};
-
-
-  // ========================================================
-  // GROUP RECORDS BY WEEK
-  // ========================================================
-
-  for (
-    const record of records
-  ) {
-
-    const week =
-      getWeekRange(
-        record.date
-      );
-
-
-    const weekKey =
-      getDayKey(
-        week.start
-      );
+        .lean();
 
 
     if (
-      !weeks[weekKey]
+        !records.length
     ) {
 
-      weeks[weekKey] = {
-
-        start:
-          week.start,
-
-        end:
-          week.end,
-
-        days: {}
-
-      };
+        return [];
 
     }
 
 
-    const dayKey =
-
-      record.day ||
-
-      getDayKey(
-        record.date
-      );
+    const weeks = {};
 
 
-    weeks[weekKey]
-      .days[dayKey] =
+    // ======================================================
+    // GROUP RECORDS INTO WEEKS
+    // ======================================================
 
-        (
-          weeks[weekKey]
-            .days[dayKey] || 0
-        ) +
+    for (
+        const record of records
+    ) {
 
-        Number(
-          record.liters || 0
-        );
-
-  }
-
-
-  // ========================================================
-  // BUILD WEEKLY FEED ITEMS
-  // ========================================================
-
-  return Object
-    .values(weeks)
-    .map(
-      week => {
-
-        // ================================================
-        // DAILY TOTALS
-        // ================================================
-
-        const days =
-
-          Object.keys(
-            week.days
-          )
-
-            .sort()
-
-            .map(
-              day => ({
-
-                day,
-
-                total:
-                  Number(
-                    week
-                      .days[day]
-                      .toFixed(2)
-                  )
-
-              })
+        const week =
+            getWeekRange(
+                record.date
             );
 
 
-        // ================================================
-        // WEEK TOTAL
-        // ================================================
+        const weekKey =
+            getDayKey(
+                week.start
+            );
 
-        const total =
-          days.reduce(
+
+        if (
+            !weeks[weekKey]
+        ) {
+
+            weeks[weekKey] = {
+
+                start:
+                    week.start,
+
+                end:
+                    week.end,
+
+                days:
+                    {}
+
+            };
+
+        }
+
+
+        const dayKey =
+
+            record.day ||
+
+            getDayKey(
+                record.date
+            );
+
+
+        weeks[weekKey]
+            .days[dayKey] =
 
             (
-              sum,
-              d
-            ) =>
+                weeks[weekKey]
+                    .days[dayKey] || 0
+            ) +
 
-              sum +
-              d.total,
-
-            0
-
-          );
-
-
-        // ================================================
-        // WEEK AVERAGE
-        // ================================================
-
-        const average =
-
-          days.length
-
-            ? Number(
-                (
-                  total /
-                  days.length
-                ).toFixed(2)
-              )
-
-            : 0;
-
-
-        // ================================================
-        // RETURN MILK FEED
-        // ================================================
-
-        return {
-
-          _id:
-            `weekly-${getDayKey(
-              week.start
-            )}`,
-
-          type:
-            "milk",
-
-          userId:
-            null,
-
-          userName:
-            "System",
-
-          userImage:
-            "",
-
-          createdAt:
-            week.end,
-
-          dateText:
-            formatDate(
-              week.end
-            ),
-
-          title:
-            "Weekly Production Summary",
-
-          weekStart:
-            getDayKey(
-              week.start
-            ),
-
-          weekEnd:
-            getDayKey(
-              week.end
-            ),
-
-          days,
-
-          total:
             Number(
-              total.toFixed(2)
-            ),
+                record.liters || 0
+            );
 
-          average,
+    }
 
-          likes:
-            0,
 
-          comments: []
+    // ======================================================
+    // BUILD WEEKLY FEED ITEMS
+    // ======================================================
 
-        };
+    return Object
+        .values(weeks)
+        .map(
+            week => {
 
-      }
-    );
+                const days =
+
+                    Object.keys(
+                        week.days
+                    )
+
+                    .sort()
+
+                    .map(
+                        day => ({
+
+                            day,
+
+                            total:
+                                Number(
+                                    week.days[day]
+                                        .toFixed(2)
+                                )
+
+                        })
+                    );
+
+
+                const total =
+                    days.reduce(
+
+                        (
+                            sum,
+                            d
+                        ) =>
+
+                            sum +
+                            d.total,
+
+                        0
+
+                    );
+
+
+                const average =
+
+                    days.length
+
+                        ? Number(
+                            (
+                                total /
+                                days.length
+                            ).toFixed(2)
+                        )
+
+                        : 0;
+
+
+                return {
+
+                    _id:
+                        `weekly-${getDayKey(
+                            week.start
+                        )}`,
+
+                    type:
+                        "milk",
+
+                    userId:
+                        null,
+
+                    userName:
+                        "System",
+
+                    userImage:
+                        "",
+
+                    createdAt:
+                        week.end,
+
+                    dateText:
+                        formatDate(
+                            week.end
+                        ),
+
+                    title:
+                        "Weekly Production Summary",
+
+                    weekStart:
+                        getDayKey(
+                            week.start
+                        ),
+
+                    weekEnd:
+                        getDayKey(
+                            week.end
+                        ),
+
+                    days,
+
+                    total:
+                        Number(
+                            total.toFixed(2)
+                        ),
+
+                    average,
+
+                    likes:
+                        0,
+
+                    comments:
+                        []
+
+                };
+
+            }
+        );
 
 }
 
@@ -717,18 +680,18 @@ async function buildWeeklyMilkFeeds(
 
 module.exports = {
 
-  formatDate,
+    formatDate,
 
-  getDayKey,
+    getDayKey,
 
-  getMonthKey,
+    getMonthKey,
 
-  getWeekRange,
+    getWeekRange,
 
-  formatComment,
+    formatComment,
 
-  formatFeed,
+    formatFeed,
 
-  buildWeeklyMilkFeeds
+    buildWeeklyMilkFeeds
 
 };
