@@ -3,17 +3,18 @@
   FEED
 =========================================================*/
 
+
 /*=========================================================
   FEED CONTAINER
 =========================================================*/
 
-.feed-container{
+.feed-container {
 
-    display:flex;
+    display: flex;
 
-    flex-direction:column;
+    flex-direction: column;
 
-    gap:22px;
+    gap: 22px;
 
 }
 
@@ -22,23 +23,30 @@
   FEED CARD
 =========================================================*/
 
-.feed-card{
+.feed-card {
 
-    background:var(--card);
+    width: 100%;
 
-    border-radius:var(--radius);
+    background: var(--card);
 
-    box-shadow:var(--shadow-md);
+    border-radius: var(--radius);
 
-    overflow:hidden;
+    box-shadow: var(--shadow-md);
 
-    transition:var(--transition);
+    overflow: hidden;
+
+    box-sizing: border-box;
+
+    transition:
+        box-shadow .2s ease,
+        transform .2s ease;
 
 }
 
-.feed-card:hover{
 
-    box-shadow:var(--shadow-lg);
+.feed-card:hover {
+
+    box-shadow: var(--shadow-lg);
 
 }
 
@@ -47,77 +55,284 @@
   FEED HEADER
 =========================================================*/
 
-.feed-header{
+.feed-header {
 
-    display:flex;
+    width: 100%;
 
-    justify-content:space-between;
+    display: flex;
 
-    align-items:center;
+    align-items: flex-start;
 
-    padding:18px;
+    justify-content: space-between;
 
-    border-bottom:1px solid var(--border);
+    gap: 12px;
 
-}
+    padding: 17px 18px;
 
-.feed-user{
+    border-bottom: 1px solid var(--border);
 
-    display:flex;
-
-    align-items:center;
-
-    gap:12px;
+    box-sizing: border-box;
 
 }
 
-.feed-user-info{
 
-    display:flex;
+/*=========================================================
+  FEED USER
+=========================================================*/
 
-    flex-direction:column;
+.feed-user {
 
-    align-items:flex-start;
+    min-width: 0;
 
-}
+    display: flex;
 
-.feed-user-info strong{
+    align-items: center;
 
-    font-size:1rem;
-
-    color:var(--text);
-
-}
-
-.feed-user-info small{
-
-    margin-top:2px;
-
-    color:var(--muted);
+    gap: 12px;
 
 }
 
-.delete-post{
 
-    border:none;
+/*=========================================================
+  FEED USER INFORMATION
+=========================================================*/
 
-    background:none;
+.feed-user-info {
 
-    padding:6px;
+    min-width: 0;
 
-    font-size:1.2rem;
+    display: flex;
 
-    color:var(--muted);
+    flex-direction: column;
 
-    cursor:pointer;
+    align-items: flex-start;
 
-    transition:var(--transition);
+    gap: 3px;
 
 }
 
-.delete-post:hover{
 
-    color:var(--red);
+/*=========================================================
+  POST META LINE
+
+  Example:
+
+  Nelson posted about Cow Shed C
+=========================================================*/
+
+.post-meta-line {
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: 5px;
+
+    color: var(--text);
+
+    font-size: 14px;
+
+    line-height: 1.35;
+
+}
+
+
+/*=========================================================
+  POST OWNER NAME
+=========================================================*/
+
+.post-user-name {
+
+    display: inline;
+
+    color: var(--text);
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    line-height: 1.35;
+
+}
+
+
+/*=========================================================
+  "POSTED ABOUT"
+=========================================================*/
+
+.post-meta-action {
+
+    display: inline;
+
+    color: var(--muted);
+
+    font-size: 13px;
+
+    font-weight: 500;
+
+    line-height: 1.35;
+
+}
+
+
+/*=========================================================
+  POST SUBJECT
+
+  Example:
+
+  🏷 Cow Shed C
+=========================================================*/
+
+.post-subject {
+
+    min-width: 0;
+
+    max-width: 100%;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    color: var(--primary);
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    line-height: 1.35;
+
+}
+
+
+/*=========================================================
+  POST SUBJECT ICON
+=========================================================*/
+
+.post-subject i {
+
+    flex: 0 0 auto;
+
+    font-size: 11px;
+
+    line-height: 1;
+
+}
+
+
+/*=========================================================
+  POST SUBJECT NAME
+
+  Prevent extremely long asset names from destroying
+  the header layout.
+=========================================================*/
+
+.post-subject span {
+
+    min-width: 0;
+
+    max-width: 280px;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+
+/*=========================================================
+  POST TIME
+=========================================================*/
+
+.post-time {
+
+    display: block;
+
+    margin: 0;
+
+    color: var(--muted);
+
+    font-size: 11px;
+
+    font-weight: 500;
+
+    line-height: 1.4;
+
+}
+
+
+/*=========================================================
+  DELETE POST
+=========================================================*/
+
+.delete-post {
+
+    width: 36px;
+
+    height: 36px;
+
+    flex: 0 0 36px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    padding: 0;
+
+    color: var(--muted);
+
+    font-size: 15px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    box-sizing: border-box;
+
+    transition:
+        background-color .18s ease,
+        color .18s ease,
+        transform .15s ease;
+
+}
+
+
+.delete-post:hover {
+
+    background: rgba(220, 53, 69, .09);
+
+    color: var(--red);
+
+}
+
+
+.delete-post:active {
+
+    transform: scale(.94);
+
+}
+
+
+.delete-post:focus-visible {
+
+    outline: 2px solid var(--primary);
+
+    outline-offset: 2px;
 
 }
 
@@ -126,29 +341,25 @@
   FEED BODY
 =========================================================*/
 
-.feed-body{
+.feed-body {
 
-    display:block;
+    display: block;
 
-    position:relative;
+    position: relative;
 
-    width:100%;
+    width: 100%;
 
-    height:auto;
+    height: auto;
 
-    min-height:0;
+    min-height: 0;
 
-    margin:0;
+    margin: 0;
 
-    padding:14px 18px;
+    padding: 16px 18px;
 
-    box-sizing:border-box;
+    box-sizing: border-box;
 
-    text-align:left;
-
-    align-items:initial;
-
-    justify-content:initial;
+    text-align: left;
 
 }
 
@@ -157,34 +368,23 @@
   POST CARD BODY
 =========================================================*/
 
-/*
-   Explicitly prevent other global/responsive styles
-   from centering post content.
-*/
+.post-card .feed-body {
 
-.post-card .feed-body{
+    display: block;
 
-    display:block;
+    width: 100%;
 
-    width:100%;
+    height: auto;
 
-    height:auto;
+    min-height: 0;
 
-    min-height:0;
+    margin: 0;
 
-    margin:0;
+    padding: 16px 18px;
 
-    padding:14px 18px;
+    text-align: left;
 
-    text-align:left;
-
-    align-items:initial;
-
-    justify-content:initial;
-
-    flex-direction:initial;
-
-    box-sizing:border-box;
+    box-sizing: border-box;
 
 }
 
@@ -193,23 +393,25 @@
   POST TITLE
 =========================================================*/
 
-.feed-body h3{
+.post-title {
 
-    display:block;
+    display: block;
 
-    width:100%;
+    width: 100%;
 
-    margin:0 0 8px 0;
+    margin: 0 0 8px;
 
-    padding:0;
+    padding: 0;
 
-    color:var(--primary);
+    color: var(--primary);
 
-    font-size:1.05rem;
+    font-size: 1.05rem;
 
-    line-height:1.4;
+    font-weight: 700;
 
-    text-align:left;
+    line-height: 1.4;
+
+    text-align: left;
 
 }
 
@@ -218,45 +420,50 @@
   POST TEXT
 =========================================================*/
 
-.feed-body p{
+.feed-body p {
 
-    display:block;
+    display: block;
 
-    width:100%;
+    width: 100%;
 
-    margin:0;
+    margin: 0;
 
-    padding:0;
+    padding: 0;
 
-    line-height:1.6;
+    color: var(--text);
 
-    text-align:left;
+    font-size: 15px;
+
+    line-height: 1.65;
+
+    text-align: left;
 
 }
 
-.post-card .post-text{
 
-    display:block;
+.post-card .post-text {
 
-    width:100%;
+    display: block;
 
-    margin:0;
+    width: 100%;
 
-    padding:0;
+    margin: 0;
 
-    font-size:15px;
+    padding: 0;
 
-    line-height:1.6;
+    color: var(--text);
 
-    color:var(--text);
+    font-size: 15px;
 
-    text-align:left;
+    line-height: 1.65;
 
-    white-space:pre-wrap;
+    text-align: left;
 
-    word-break:break-word;
+    white-space: pre-wrap;
 
-    overflow-wrap:anywhere;
+    word-break: break-word;
+
+    overflow-wrap: anywhere;
 
 }
 
@@ -265,16 +472,34 @@
   TEXT-ONLY POST
 =========================================================*/
 
-/*
-   A text-only post should not create a large empty
-   centered area.
-*/
+.post-card:not(:has(.feed-img)) .feed-body {
 
-.post-card:not(:has(.feed-img)) .feed-body{
+    min-height: 0;
 
-    min-height:0;
+    height: auto;
 
-    height:auto;
+}
+
+
+/*=========================================================
+  POST IMAGE CONTAINER
+=========================================================*/
+
+.post-image-container {
+
+    width: 100%;
+
+    margin: 14px 0 0;
+
+    padding: 0;
+
+    overflow: hidden;
+
+    border-radius: 12px;
+
+    background: var(--border);
+
+    box-sizing: border-box;
 
 }
 
@@ -283,34 +508,54 @@
   FEED IMAGE
 =========================================================*/
 
-.feed-img{
+.feed-img {
 
-    display:block;
+    display: block;
 
-    width:100%;
+    width: 100%;
 
-    max-width:100%;
+    max-width: 100%;
 
-    height:auto;
+    height: auto;
 
-    margin:12px 0 0 0;
+    margin: 0;
 
-    padding:0;
+    padding: 0;
 
-    object-fit:cover;
+    object-fit: cover;
 
-    box-sizing:border-box;
+    box-sizing: border-box;
 
 }
 
 
 /*=========================================================
-  IMAGE POST BODY
+  POST IMAGE
 =========================================================*/
 
-.post-card .feed-body:has(.feed-img){
+.post-card .post-image {
 
-    padding:14px 18px;
+    width: 100%;
+
+    height: auto;
+
+    display: block;
+
+}
+
+
+/*=========================================================
+  IMAGE-ONLY POST
+
+  Keeps the image visually clean without unnecessary
+  spacing around it.
+=========================================================*/
+
+.post-card .feed-body:has(.post-image) {
+
+    padding-top: 14px;
+
+    padding-bottom: 16px;
 
 }
 
@@ -319,79 +564,201 @@
   FEED ACTIONS
 =========================================================*/
 
-.feed-actions{
+.feed-actions {
 
-    display:flex;
+    width: 100%;
 
-    justify-content:space-between;
+    display: flex;
 
-    align-items:center;
+    align-items: center;
 
-    padding:12px 18px;
+    justify-content: space-between;
 
-    border-top:1px solid var(--border);
+    gap: 8px;
+
+    padding: 11px 18px;
+
+    border-top: 1px solid var(--border);
+
+    box-sizing: border-box;
 
 }
+
+
+/*=========================================================
+  LIKE / COMMENT BUTTONS
+=========================================================*/
 
 .like-btn,
-.toggle-comments{
+.toggle-comments {
 
-    display:flex;
+    min-height: 34px;
 
-    align-items:center;
+    display: inline-flex;
 
-    justify-content:center;
+    align-items: center;
 
-    gap:6px;
+    justify-content: center;
 
-    padding:6px 10px;
+    gap: 6px;
 
-    border:none;
+    padding: 6px 10px;
 
-    background:none;
+    border: none;
 
-    color:#555;
+    border-radius: 8px;
 
-    font-weight:bold;
+    background: transparent;
 
-    cursor:pointer;
+    color: #555;
 
-    transition:var(--transition);
+    font-family: inherit;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background-color .18s ease,
+        color .18s ease;
 
 }
+
+
+/*=========================================================
+  ACTION HOVER
+=========================================================*/
 
 .like-btn:hover,
-.toggle-comments:hover{
+.toggle-comments:hover {
 
-    color:var(--primary);
+    background: #f1f4f2;
 
-}
-
-.toggle-comments{
-
-    margin-left:auto;
+    color: var(--primary);
 
 }
 
-.toggle-comments:hover{
 
-    background:#e3e8ec;
+/*=========================================================
+  ACTION FOCUS
+=========================================================*/
 
-    border-radius:8px;
+.like-btn:focus-visible,
+.toggle-comments:focus-visible {
+
+    outline: 2px solid var(--primary);
+
+    outline-offset: 2px;
 
 }
 
-.like-count,
-.comment-count{
 
-    font-weight:bold;
+/*=========================================================
+  COMMENT BUTTON
+=========================================================*/
+
+.toggle-comments {
+
+    margin-left: auto;
 
 }
+
+
+/*=========================================================
+  ACTION ICONS
+=========================================================*/
 
 .like-btn i,
-.toggle-comments i{
+.toggle-comments i {
 
-    font-size:1rem;
+    font-size: 1rem;
+
+    line-height: 1;
+
+}
+
+
+/*=========================================================
+  COUNTS
+=========================================================*/
+
+.like-count,
+.comment-count {
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    line-height: 1;
+
+}
+
+
+/*=========================================================
+  POST CARD SPACING
+
+  Gives the card a clean social-feed rhythm.
+=========================================================*/
+
+.post-card {
+
+    position: relative;
+
+}
+
+
+/*=========================================================
+  AVATAR FALLBACK / IMAGE SAFETY
+=========================================================*/
+
+.post-card .avatar-sm {
+
+    flex: 0 0 auto;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+/*=========================================================
+  EMPTY META SAFETY
+=========================================================*/
+
+.post-meta-line:empty {
+
+    display: none;
+
+}
+
+
+/*=========================================================
+  MODERN SUBJECT HIGHLIGHT
+=========================================================*/
+
+.post-subject {
+
+    padding: 2px 7px;
+
+    border-radius: 6px;
+
+    background: rgba(46, 125, 50, .08);
+
+}
+
+
+/*=========================================================
+  SUBJECT HOVER
+=========================================================*/
+
+.post-subject:hover {
+
+    background: rgba(46, 125, 50, .13);
 
 }
 
@@ -400,37 +767,268 @@
   MOBILE
 =========================================================*/
 
-@media (max-width:600px){
+@media (max-width: 600px) {
 
-    .feed-container{
 
-        gap:16px;
+    .feed-container {
 
-    }
-
-    .feed-header{
-
-        padding:14px 15px;
+        gap: 16px;
 
     }
 
-    .post-card .feed-body{
 
-        padding:14px 15px;
+    .feed-card {
 
-    }
-
-    .feed-actions{
-
-        padding:10px 15px;
+        border-radius: 12px;
 
     }
 
-    .post-text{
 
-        font-size:15px;
+    .feed-header {
 
-        line-height:1.6;
+        padding: 14px 15px;
+
+        gap: 9px;
+
+    }
+
+
+    .feed-user {
+
+        gap: 10px;
+
+    }
+
+
+    .feed-user-info {
+
+        gap: 3px;
+
+    }
+
+
+    .post-meta-line {
+
+        gap: 4px;
+
+        font-size: 13px;
+
+    }
+
+
+    .post-user-name {
+
+        font-size: 14px;
+
+    }
+
+
+    .post-meta-action {
+
+        font-size: 12px;
+
+    }
+
+
+    .post-subject {
+
+        max-width: calc(100vw - 115px);
+
+        font-size: 13px;
+
+    }
+
+
+    .post-subject span {
+
+        max-width: 190px;
+
+    }
+
+
+    .post-time {
+
+        font-size: 10px;
+
+    }
+
+
+    .delete-post {
+
+        width: 34px;
+
+        height: 34px;
+
+        flex-basis: 34px;
+
+    }
+
+
+    .post-card .feed-body {
+
+        padding: 14px 15px;
+
+    }
+
+
+    .post-title {
+
+        font-size: 1rem;
+
+        margin-bottom: 7px;
+
+    }
+
+
+    .post-card .post-text {
+
+        font-size: 15px;
+
+        line-height: 1.6;
+
+    }
+
+
+    .post-image-container {
+
+        margin-top: 12px;
+
+        border-radius: 10px;
+
+    }
+
+
+    .post-card .feed-body:has(.post-image) {
+
+        padding-top: 13px;
+
+        padding-bottom: 14px;
+
+    }
+
+
+    .feed-actions {
+
+        padding: 9px 15px;
+
+    }
+
+
+    .like-btn,
+    .toggle-comments {
+
+        min-height: 34px;
+
+        padding: 6px 9px;
+
+    }
+
+}
+
+
+/*=========================================================
+  SMALL MOBILE
+=========================================================*/
+
+@media (max-width: 380px) {
+
+
+    .feed-header {
+
+        padding: 13px 12px;
+
+    }
+
+
+    .post-card .feed-body {
+
+        padding-left: 12px;
+
+        padding-right: 12px;
+
+    }
+
+
+    .post-meta-line {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        gap: 2px;
+
+    }
+
+
+    .post-subject {
+
+        max-width: 100%;
+
+    }
+
+
+    .post-subject span {
+
+        max-width: 180px;
+
+    }
+
+
+    .feed-actions {
+
+        padding-left: 12px;
+
+        padding-right: 12px;
+
+    }
+
+}
+
+
+/*=========================================================
+  ACCESSIBILITY
+=========================================================*/
+
+@media (prefers-reduced-motion: reduce) {
+
+
+    .feed-card,
+    .delete-post,
+    .like-btn,
+    .toggle-comments {
+
+        transition: none;
+
+    }
+
+}
+
+
+/*=========================================================
+  DARK MODE COMPATIBILITY
+=========================================================*/
+
+@media (prefers-color-scheme: dark) {
+
+
+    .post-subject {
+
+        background: rgba(76, 175, 80, .12);
+
+    }
+
+
+    .post-subject:hover {
+
+        background: rgba(76, 175, 80, .18);
+
+    }
+
+
+    .like-btn:hover,
+    .toggle-comments:hover {
+
+        background: rgba(255, 255, 255, .06);
 
     }
 
