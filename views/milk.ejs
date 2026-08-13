@@ -96,9 +96,7 @@
             </h1>
 
             <p class="milk-date">
-
                 <%= day %>
-
             </p>
 
         </div>
@@ -174,7 +172,6 @@
         farms.length === 0
     ) { %>
 
-
         <section class="milk-empty">
 
             <h2>
@@ -182,14 +179,11 @@
             </h2>
 
             <p>
-
                 There are currently no dairy farms available
                 for milk collection.
-
             </p>
 
         </section>
-
 
     <% } %>
 
@@ -204,7 +198,6 @@
         farms.length > 0
     ) { %>
 
-
         <form
             action="/milk"
             method="POST"
@@ -217,9 +210,7 @@
                  FARMS
             ================================================== -->
 
-            <% farms.forEach(
-                function(farm) {
-            { %>
+            <% farms.forEach(function(farm) { %>
 
 
                 <section
@@ -292,14 +283,12 @@
                         farm.animals.length === 0
                     ) { %>
 
-
                         <div class="milk-no-animals">
 
                             No milking animals are currently
                             registered for this farm.
 
                         </div>
-
 
                     <% } else { %>
 
@@ -378,24 +367,20 @@
                                 <tbody>
 
 
-                                    <% farm.animals.forEach(
-                                        function(animal) {
-                                    { %>
+                                    <% farm.animals.forEach(function(animal) { %>
 
 
                                         <%
                                             /*
                                              * Existing records supplied
-                                             * by milkCollectService.
+                                             * by milkCollectController.js.
                                              */
 
                                             const morning =
-                                                animal.morning ||
-                                                null;
+                                                animal.morning || null;
 
                                             const evening =
-                                                animal.evening ||
-                                                null;
+                                                animal.evening || null;
 
 
                                             /*
@@ -406,14 +391,10 @@
                                              */
 
                                             const morningLocked =
-                                                Boolean(
-                                                    morning
-                                                );
+                                                Boolean(morning);
 
                                             const eveningLocked =
-                                                Boolean(
-                                                    evening
-                                                );
+                                                Boolean(evening);
 
 
                                             /*
@@ -463,7 +444,6 @@
 
                                             <td class="milk-animal-cell">
 
-
                                                 <div class="milk-animal-name">
 
                                                     <strong>
@@ -479,7 +459,6 @@
 
                                                 </small>
 
-
                                             </td>
 
 
@@ -489,7 +468,6 @@
                                             ============================== -->
 
                                             <td class="milk-liters-cell">
-
 
                                                 <input
                                                     type="number"
@@ -514,7 +492,6 @@
                                                     <% } %>
                                                 >
 
-
                                             </td>
 
 
@@ -524,7 +501,6 @@
                                             ============================== -->
 
                                             <td class="milk-remarks-cell">
-
 
                                                 <input
                                                     type="text"
@@ -547,7 +523,6 @@
                                                     <% } %>
                                                 >
 
-
                                             </td>
 
 
@@ -557,7 +532,6 @@
                                             ============================== -->
 
                                             <td class="milk-liters-cell">
-
 
                                                 <input
                                                     type="number"
@@ -582,7 +556,6 @@
                                                     <% } %>
                                                 >
 
-
                                             </td>
 
 
@@ -592,7 +565,6 @@
                                             ============================== -->
 
                                             <td class="milk-remarks-cell">
-
 
                                                 <input
                                                     type="text"
@@ -614,7 +586,6 @@
 
                                                     <% } %>
                                                 >
-
 
                                             </td>
 
@@ -657,7 +628,6 @@
 
                 <% if (isAdmin) { %>
 
-
                     <p class="milk-admin-note">
 
                         Administrator mode:
@@ -665,9 +635,7 @@
 
                     </p>
 
-
                 <% } else { %>
-
 
                     <p class="milk-worker-note">
 
@@ -675,7 +643,6 @@
                         read-only for dairy workers.
 
                     </p>
-
 
                 <% } %>
 
@@ -773,7 +740,6 @@ document.addEventListener(
             farmSection
         ) {
 
-
             if (!farmSection) {
 
                 return;
@@ -793,7 +759,6 @@ document.addEventListener(
 
             inputs.forEach(
                 function(input) {
-
 
                     const rawValue =
                         input.value;
@@ -865,7 +830,6 @@ document.addEventListener(
         farmSections.forEach(
             function(farmSection) {
 
-
                 const inputs =
                     farmSection.querySelectorAll(
                         ".milk-liters-input"
@@ -874,7 +838,6 @@ document.addEventListener(
 
                 inputs.forEach(
                     function(input) {
-
 
                         input.addEventListener(
                             "input",
@@ -887,7 +850,6 @@ document.addEventListener(
                             }
                         );
 
-
                     }
                 );
 
@@ -899,7 +861,6 @@ document.addEventListener(
                 updateFarmTotal(
                     farmSection
                 );
-
 
             }
         );
@@ -961,9 +922,6 @@ document.addEventListener(
                  * browser.
                  *
                  * Readonly inputs ARE submitted.
-                 *
-                 * This is important for administrator edits
-                 * and for the existing-record structure.
                  */
 
             }
@@ -986,11 +944,9 @@ document.addEventListener(
         litersInputs.forEach(
             function(input) {
 
-
                 input.addEventListener(
                     "input",
                     function() {
-
 
                         const value =
                             Number(
@@ -1009,10 +965,8 @@ document.addEventListener(
 
                         }
 
-
                     }
                 );
-
 
             }
         );
