@@ -1,34 +1,84 @@
 <!-- =========================================================
      MILK COLLECTION PAGE
 
+     FILE:
+     views/milk.ejs
+
      PURPOSE
      ---------------------------------------------------------
      Records today's milk production.
 
-     Farms are displayed as separate tables.
+     DATA PROVIDED BY:
+     controllers/milkCollectController.js
 
-     Each table contains only:
-       • Animals belonging to that farm
-       • Female animals
-       • Animals currently marked isMilking = true
+     EXPECTED DATA:
+     ---------------------------------------------------------
+     day
+     month
+     farms
+     isAdmin
+     user
+     success
+     error
 
-     Each animal has:
-       • Morning liters
-       • Morning remarks
-       • Evening liters
-       • Evening remarks
+     FARM:
+     ---------------------------------------------------------
+     Each farm contains:
 
-     Existing records:
-       • Dairy worker = read-only
-       • Admin       = editable
+         _id
+         name
+         code
+         animals
+         total
+
+     ANIMAL:
+     ---------------------------------------------------------
+     Each animal contains:
+
+         _id
+         name
+         code
+         assetCode
+         isMilking
+         morning
+         evening
+
+     EXISTING RECORD:
+     ---------------------------------------------------------
+     morning / evening may contain:
+
+         liters
+         remarks
+         session
+         day
+         date
+         recordedBy
+
+     PERMISSIONS:
+     ---------------------------------------------------------
+     Admin:
+         • Can create records
+         • Can edit existing records
+
+     Dairy Worker:
+         • Can create records
+         • Cannot edit existing records
 ========================================================= -->
 
+
+<!-- =========================================================
+     STYLESHEET
+========================================================= -->
 
 <link
     rel="stylesheet"
     href="/css/milk.css"
 >
 
+
+<!-- =========================================================
+     PAGE
+========================================================= -->
 
 <div class="milk-page">
 
@@ -37,38 +87,58 @@
          PAGE HEADER
     ====================================================== -->
 
-    <div class="milk-header">
+    <header class="milk-header">
 
-        <div>
+        <div class="milk-header-content">
 
             <h1>
                 Record Today's Milk
             </h1>
 
-            <p>
+            <p class="milk-date">
+
                 <%= day %>
+
             </p>
 
         </div>
 
 
+        <!-- ================================================
+             USER ROLE
+        ================================================= -->
+
         <div class="milk-role-badge">
 
-            <%= isAdmin ? "Administrator" : "Dairy Worker" %>
+            <% if (isAdmin) { %>
+
+                Administrator
+
+            <% } else { %>
+
+                Dairy Worker
+
+            <% } %>
 
         </div>
 
-    </div>
+    </header>
 
 
 
     <!-- =====================================================
-         FLASH MESSAGE
+         FLASH / STATUS MESSAGES
     ====================================================== -->
 
-    <% if (typeof success !== "undefined" && success) { %>
+    <% if (
+        typeof success !== "undefined" &&
+        success
+    ) { %>
 
-        <div class="milk-message milk-success">
+        <div
+            class="milk-message milk-success"
+            role="alert"
+        >
 
             <%= success %>
 
@@ -77,9 +147,15 @@
     <% } %>
 
 
-    <% if (typeof error !== "undefined" && error) { %>
+    <% if (
+        typeof error !== "undefined" &&
+        error
+    ) { %>
 
-        <div class="milk-message milk-error">
+        <div
+            class="milk-message milk-error"
+            role="alert"
+        >
 
             <%= error %>
 
@@ -93,20 +169,27 @@
          NO FARMS
     ====================================================== -->
 
-    <% if (!farms || farms.length === 0) { %>
+    <% if (
+        !farms ||
+        farms.length === 0
+    ) { %>
 
-        <div class="milk-empty">
 
-            <h3>
+        <section class="milk-empty">
+
+            <h2>
                 No Dairy Farms Available
-            </h3>
+            </h2>
 
             <p>
+
                 There are currently no dairy farms available
                 for milk collection.
+
             </p>
 
-        </div>
+        </section>
+
 
     <% } %>
 
@@ -116,48 +199,67 @@
          COLLECTION FORM
     ====================================================== -->
 
-    <% if (farms && farms.length > 0) { %>
+    <% if (
+        farms &&
+        farms.length > 0
+    ) { %>
 
 
         <form
             action="/milk"
             method="POST"
             id="milkCollectionForm"
+            autocomplete="off"
         >
 
 
             <!-- =================================================
-                 FARM TABLES
+                 FARMS
             ================================================== -->
 
-            <% farms.forEach(function(farm) { %>
+            <% farms.forEach(
+                function(farm) {
+            { %>
 
 
                 <section
                     class="milk-farm-section"
                     data-farm-id="<%= farm._id %>"
+                    data-farm-code="<%= farm.code %>"
                 >
 
 
                     <!-- =========================================
-                         FARM TITLE
+                         FARM HEADER
                     ========================================== -->
 
                     <div class="milk-farm-header">
 
-                        <div>
+
+                        <!-- =====================================
+                             FARM INFORMATION
+                        ====================================== -->
+
+                        <div class="milk-farm-information">
 
                             <h2>
                                 <%= farm.name %>
                             </h2>
 
-                            <span>
+                            <span class="milk-farm-code">
+
                                 Farm Code:
                                 <%= farm.code %>
+
                             </span>
 
                         </div>
 
+
+
+                        <!-- =====================================
+                             FARM TOTAL
+                        ====================================== -->
 
                         <div class="milk-farm-total">
 
@@ -165,27 +267,31 @@
                                 Today's Farm Total
                             </span>
 
-                            <strong
-                                id="farmTotal_<%= farm._id %>"
-                            >
-                                <%= Number(farm.total || 0).toFixed(2) %>
+                            <strong>
+
+                                <%= Number(
+                                    farm.total || 0
+                                ).toFixed(2) %>
                                 L
+
                             </strong>
 
                         </div>
+
 
                     </div>
 
 
 
                     <!-- =========================================
-                         NO MILKING ANIMALS
+                         FARM HAS NO MILKING ANIMALS
                     ========================================== -->
 
                     <% if (
                         !farm.animals ||
                         farm.animals.length === 0
                     ) { %>
+
 
                         <div class="milk-no-animals">
 
@@ -194,12 +300,13 @@
 
                         </div>
 
+
                     <% } else { %>
 
 
 
                         <!-- =====================================
-                             TABLE
+                             TABLE WRAPPER
                         ====================================== -->
 
                         <div class="milk-table-wrapper">
@@ -208,19 +315,32 @@
                             <table class="milk-table">
 
 
+                                <!-- =================================
+                                     TABLE HEADER
+                                ================================== -->
+
                                 <thead>
 
                                     <tr>
 
-                                        <th rowspan="2">
+                                        <th
+                                            rowspan="2"
+                                            scope="col"
+                                        >
                                             Animal
                                         </th>
 
-                                        <th colspan="2">
+                                        <th
+                                            colspan="2"
+                                            scope="colgroup"
+                                        >
                                             Morning
                                         </th>
 
-                                        <th colspan="2">
+                                        <th
+                                            colspan="2"
+                                            scope="colgroup"
+                                        >
                                             Evening
                                         </th>
 
@@ -229,19 +349,19 @@
 
                                     <tr>
 
-                                        <th>
+                                        <th scope="col">
                                             Liters
                                         </th>
 
-                                        <th>
+                                        <th scope="col">
                                             Remarks
                                         </th>
 
-                                        <th>
+                                        <th scope="col">
                                             Liters
                                         </th>
 
-                                        <th>
+                                        <th scope="col">
                                             Remarks
                                         </th>
 
@@ -251,56 +371,125 @@
 
 
 
+                                <!-- =================================
+                                     TABLE BODY
+                                ================================== -->
+
                                 <tbody>
 
 
-                                    <% farm.animals.forEach(function(animal) { %>
+                                    <% farm.animals.forEach(
+                                        function(animal) {
+                                    { %>
 
 
                                         <%
+                                            /*
+                                             * Existing records supplied
+                                             * by milkCollectService.
+                                             */
+
                                             const morning =
-                                                animal.morning || null;
+                                                animal.morning ||
+                                                null;
 
                                             const evening =
-                                                animal.evening || null;
+                                                animal.evening ||
+                                                null;
+
+
+                                            /*
+                                             * Existing records are locked
+                                             * for dairy workers.
+                                             *
+                                             * Administrators may edit them.
+                                             */
 
                                             const morningLocked =
-                                                !!morning;
+                                                Boolean(
+                                                    morning
+                                                );
 
                                             const eveningLocked =
-                                                !!evening;
+                                                Boolean(
+                                                    evening
+                                                );
+
+
+                                            /*
+                                             * Existing values.
+                                             */
+
+                                            const morningLiters =
+                                                morning &&
+                                                morning.liters !== undefined
+                                                    ? morning.liters
+                                                    : "";
+
+                                            const morningRemarks =
+                                                morning &&
+                                                morning.remarks
+                                                    ? morning.remarks
+                                                    : "";
+
+                                            const eveningLiters =
+                                                evening &&
+                                                evening.liters !== undefined
+                                                    ? evening.liters
+                                                    : "";
+
+                                            const eveningRemarks =
+                                                evening &&
+                                                evening.remarks
+                                                    ? evening.remarks
+                                                    : "";
                                         %>
 
 
+                                        <!-- =================================
+                                             ANIMAL ROW
+                                        ================================== -->
+
                                         <tr
+                                            class="milk-animal-row"
                                             data-animal-id="<%= animal._id %>"
                                             data-farm-id="<%= farm._id %>"
                                         >
 
 
-                                            <!-- =====================
+                                            <!-- =============================
                                                  ANIMAL
-                                            ====================== -->
+                                            ============================== -->
 
                                             <td class="milk-animal-cell">
 
-                                                <strong>
-                                                    <%= animal.name %>
-                                                </strong>
 
-                                                <small>
+                                                <div class="milk-animal-name">
+
+                                                    <strong>
+                                                        <%= animal.name %>
+                                                    </strong>
+
+                                                </div>
+
+
+                                                <small class="milk-animal-code">
+
                                                     #<%= animal.code %>
+
                                                 </small>
+
 
                                             </td>
 
 
 
-                                            <!-- =====================
+                                            <!-- =============================
                                                  MORNING LITERS
-                                            ====================== -->
+                                            ============================== -->
 
-                                            <td>
+                                            <td class="milk-liters-cell">
+
 
                                                 <input
                                                     type="number"
@@ -309,8 +498,10 @@
                                                     min="0"
                                                     step="0.01"
                                                     inputmode="decimal"
-                                                    value="<%= morning ? morning.liters : '' %>"
+                                                    value="<%= morningLiters %>"
                                                     data-session="morning"
+                                                    data-animal-id="<%= animal._id %>"
+                                                    aria-label="Morning milk liters for <%= animal.name %>"
 
                                                     <% if (
                                                         !isAdmin &&
@@ -318,26 +509,32 @@
                                                     ) { %>
 
                                                         readonly
+                                                        aria-readonly="true"
 
                                                     <% } %>
                                                 >
+
 
                                             </td>
 
 
 
-                                            <!-- =====================
+                                            <!-- =============================
                                                  MORNING REMARKS
-                                            ====================== -->
+                                            ============================== -->
 
-                                            <td>
+                                            <td class="milk-remarks-cell">
+
 
                                                 <input
                                                     type="text"
                                                     name="records[<%= animal._id %>][morning][remarks]"
                                                     class="milk-remarks-input"
-                                                    value="<%= morning ? morning.remarks : '' %>"
+                                                    value="<%= morningRemarks %>"
                                                     maxlength="500"
+                                                    data-session="morning"
+                                                    data-animal-id="<%= animal._id %>"
+                                                    aria-label="Morning remarks for <%= animal.name %>"
 
                                                     <% if (
                                                         !isAdmin &&
@@ -345,19 +542,22 @@
                                                     ) { %>
 
                                                         readonly
+                                                        aria-readonly="true"
 
                                                     <% } %>
                                                 >
+
 
                                             </td>
 
 
 
-                                            <!-- =====================
+                                            <!-- =============================
                                                  EVENING LITERS
-                                            ====================== -->
+                                            ============================== -->
 
-                                            <td>
+                                            <td class="milk-liters-cell">
+
 
                                                 <input
                                                     type="number"
@@ -366,8 +566,10 @@
                                                     min="0"
                                                     step="0.01"
                                                     inputmode="decimal"
-                                                    value="<%= evening ? evening.liters : '' %>"
+                                                    value="<%= eveningLiters %>"
                                                     data-session="evening"
+                                                    data-animal-id="<%= animal._id %>"
+                                                    aria-label="Evening milk liters for <%= animal.name %>"
 
                                                     <% if (
                                                         !isAdmin &&
@@ -375,26 +577,32 @@
                                                     ) { %>
 
                                                         readonly
+                                                        aria-readonly="true"
 
                                                     <% } %>
                                                 >
+
 
                                             </td>
 
 
 
-                                            <!-- =====================
+                                            <!-- =============================
                                                  EVENING REMARKS
-                                            ====================== -->
+                                            ============================== -->
 
-                                            <td>
+                                            <td class="milk-remarks-cell">
+
 
                                                 <input
                                                     type="text"
                                                     name="records[<%= animal._id %>][evening][remarks]"
                                                     class="milk-remarks-input"
-                                                    value="<%= evening ? evening.remarks : '' %>"
+                                                    value="<%= eveningRemarks %>"
                                                     maxlength="500"
+                                                    data-session="evening"
+                                                    data-animal-id="<%= animal._id %>"
+                                                    aria-label="Evening remarks for <%= animal.name %>"
 
                                                     <% if (
                                                         !isAdmin &&
@@ -402,9 +610,11 @@
                                                     ) { %>
 
                                                         readonly
+                                                        aria-readonly="true"
 
                                                     <% } %>
                                                 >
+
 
                                             </td>
 
@@ -441,32 +651,55 @@
             <div class="milk-submit-area">
 
 
+                <!-- =============================================
+                     PERMISSION MESSAGE
+                ============================================== -->
+
                 <% if (isAdmin) { %>
 
+
                     <p class="milk-admin-note">
+
                         Administrator mode:
-                        existing records can be edited.
+                        existing milk records can be edited.
+
                     </p>
+
 
                 <% } else { %>
 
+
                     <p class="milk-worker-note">
-                        Submitted milk records are read-only
-                        for dairy workers.
+
+                        Existing submitted milk records are
+                        read-only for dairy workers.
+
                     </p>
+
 
                 <% } %>
 
 
+
+                <!-- =============================================
+                     SUBMIT BUTTON
+                ============================================== -->
+
                 <button
                     type="submit"
                     class="milk-submit-button"
+                    id="milkSubmitButton"
                 >
 
-                    <%= isAdmin
-                        ? "Save Milk Records"
-                        : "Submit Today's Milk"
-                    %>
+                    <% if (isAdmin) { %>
+
+                        Save Milk Records
+
+                    <% } else { %>
+
+                        Submit Today's Milk
+
+                    <% } %>
 
                 </button>
 
@@ -484,17 +717,30 @@
 
 
 
+<!-- =========================================================
+     PAGE JAVASCRIPT
+========================================================= -->
+
 <script>
 
 document.addEventListener(
     "DOMContentLoaded",
     function() {
 
+
+        /* =====================================================
+           COLLECTION FORM
+        ====================================================== */
+
         const form =
             document.getElementById(
                 "milkCollectionForm"
             );
 
+
+        /*
+         * There is no form when the user has no farms.
+         */
 
         if (!form) {
 
@@ -503,51 +749,37 @@ document.addEventListener(
         }
 
 
-        /*
-         * -----------------------------------------------------
-         * FORM SUBMISSION
-         * -----------------------------------------------------
-         */
 
-        form.addEventListener(
-            "submit",
-            function() {
+        /* =====================================================
+           SUBMIT BUTTON
+        ====================================================== */
 
-                const button =
-                    form.querySelector(
-                        ".milk-submit-button"
-                    );
+        const submitButton =
+            document.getElementById(
+                "milkSubmitButton"
+            );
 
 
-                if (button) {
 
-                    button.disabled =
-                        true;
+        /* =====================================================
+           FARM TOTAL
+           -----------------------------------------------------
+           Client-side preview only.
 
-                    button.textContent =
-                        "Saving...";
-
-                }
-
-            }
-        );
-
-
-        /*
-         * -----------------------------------------------------
-         * FARM TOTAL PREVIEW
-         * -----------------------------------------------------
-         *
-         * This is only a client-side preview.
-         *
-         * The authoritative total is calculated again by
-         * milkCollectService.js.
-         *
-         */
+           The server recalculates all authoritative totals.
+        ====================================================== */
 
         function updateFarmTotal(
             farmSection
         ) {
+
+
+            if (!farmSection) {
+
+                return;
+
+            }
+
 
             let total =
                 0;
@@ -562,9 +794,27 @@ document.addEventListener(
             inputs.forEach(
                 function(input) {
 
+
+                    const rawValue =
+                        input.value;
+
+
+                    /*
+                     * Empty input is not a quantity.
+                     */
+
+                    if (
+                        rawValue === ""
+                    ) {
+
+                        return;
+
+                    }
+
+
                     const value =
                         Number(
-                            input.value
+                            rawValue
                         );
 
 
@@ -587,21 +837,24 @@ document.addEventListener(
                 );
 
 
-            if (totalElement) {
+            if (!totalElement) {
 
-                totalElement.textContent =
-                    total.toFixed(2) + " L";
+                return;
 
             }
+
+
+            totalElement.textContent =
+                total.toFixed(2) +
+                " L";
 
         }
 
 
-        /*
-         * -----------------------------------------------------
-         * LIVE TOTALS
-         * -----------------------------------------------------
-         */
+
+        /* =====================================================
+           UPDATE ALL FARM TOTALS
+        ====================================================== */
 
         const farmSections =
             document.querySelectorAll(
@@ -610,10 +863,11 @@ document.addEventListener(
 
 
         farmSections.forEach(
-            function(section) {
+            function(farmSection) {
+
 
                 const inputs =
-                    section.querySelectorAll(
+                    farmSection.querySelectorAll(
                         ".milk-liters-input"
                     );
 
@@ -621,27 +875,148 @@ document.addEventListener(
                 inputs.forEach(
                     function(input) {
 
+
                         input.addEventListener(
                             "input",
                             function() {
 
                                 updateFarmTotal(
-                                    section
+                                    farmSection
                                 );
 
                             }
                         );
 
+
                     }
                 );
 
 
+                /*
+                 * Calculate the initial displayed total.
+                 */
+
                 updateFarmTotal(
-                    section
+                    farmSection
                 );
+
 
             }
         );
+
+
+
+        /* =====================================================
+           FORM SUBMISSION
+        ====================================================== */
+
+        form.addEventListener(
+            "submit",
+            function(event) {
+
+
+                /*
+                 * Prevent accidental double submission.
+                 */
+
+                if (
+                    form.dataset.submitting === "true"
+                ) {
+
+                    event.preventDefault();
+
+                    return;
+
+                }
+
+
+                form.dataset.submitting =
+                    "true";
+
+
+                /*
+                 * Disable the submit button.
+                 */
+
+                if (submitButton) {
+
+                    submitButton.disabled =
+                        true;
+
+                    submitButton.setAttribute(
+                        "aria-disabled",
+                        "true"
+                    );
+
+                    submitButton.textContent =
+                        "Saving...";
+
+                }
+
+
+                /*
+                 * Do NOT disable the input fields here.
+                 *
+                 * Disabled inputs are NOT submitted by the
+                 * browser.
+                 *
+                 * Readonly inputs ARE submitted.
+                 *
+                 * This is important for administrator edits
+                 * and for the existing-record structure.
+                 */
+
+            }
+        );
+
+
+
+        /* =====================================================
+           PREVENT NEGATIVE CLIENT INPUT
+           -----------------------------------------------------
+           Server validation remains authoritative.
+        ====================================================== */
+
+        const litersInputs =
+            form.querySelectorAll(
+                ".milk-liters-input"
+            );
+
+
+        litersInputs.forEach(
+            function(input) {
+
+
+                input.addEventListener(
+                    "input",
+                    function() {
+
+
+                        const value =
+                            Number(
+                                input.value
+                            );
+
+
+                        if (
+                            input.value !== "" &&
+                            Number.isFinite(value) &&
+                            value < 0
+                        ) {
+
+                            input.value =
+                                "";
+
+                        }
+
+
+                    }
+                );
+
+
+            }
+        );
+
 
     }
 );
