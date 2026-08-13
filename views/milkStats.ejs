@@ -613,6 +613,8 @@ class="filter-button"
 
 
 </div>
+
+
 <!-- =====================================================
      DAILY REPORT
 ===================================================== -->
@@ -639,6 +641,53 @@ Daily Milk Production
 
 </div>
 
+
+<%
+/* =====================================================
+   GROUP DAILY MILK RECORDS BY COW
+=====================================================
+
+   If a cow has multiple records for the same day
+   (for example morning + evening), they are combined
+   into one row.
+
+   The original dairy information is preserved from
+   the first record encountered for that cow.
+===================================================== */
+
+const dailyMilkByCow = {};
+
+if (records && records.length > 0) {
+
+  records.forEach(record => {
+
+    const dairyId = record.dairy?._id
+      ? String(record.dairy._id)
+      : `unknown-${record.dairy?.code || "animal"}`;
+
+    if (!dailyMilkByCow[dairyId]) {
+
+      dailyMilkByCow[dairyId] = {
+
+        dairy: record.dairy || null,
+
+        liters: 0
+
+      };
+
+    }
+
+    dailyMilkByCow[dairyId].liters +=
+      Number(record.liters || 0);
+
+  });
+
+}
+
+const dailyMilkRecords =
+  Object.values(dailyMilkByCow);
+
+%>
 
 
 <div class="table-wrapper">
@@ -673,10 +722,10 @@ Liters
 <tbody>
 
 
-<% if (records && records.length > 0) { %>
+<% if (dailyMilkRecords.length > 0) { %>
 
 
-<% records.forEach(record => { %>
+<% dailyMilkRecords.forEach(record => { %>
 
 
 <tr>
@@ -687,8 +736,8 @@ Liters
 <span class="animal-code">
 
 <%= record.dairy
-? record.dairy.code
-: "Unknown" %>
+  ? record.dairy.code
+  : "Unknown" %>
 
 </span>
 
@@ -699,8 +748,8 @@ Liters
 <td>
 
 <%= record.dairy
-? record.dairy.name
-: "Unknown Animal" %>
+  ? record.dairy.name
+  : "Unknown Animal" %>
 
 </td>
 
@@ -710,7 +759,7 @@ Liters
 
 <span class="liters-value">
 
-<%= Number(record.liters || 0) %> L
+<%= Number(record.liters || 0).toFixed(2) %> L
 
 </span>
 
@@ -774,7 +823,9 @@ No milk production records were found for this date.
 
 
 
-<!-- DAILY SUMMARY -->
+<!-- =====================================================
+     DAILY SUMMARY
+===================================================== -->
 
 <div class="summary-grid">
 
@@ -1072,6 +1123,8 @@ KES <%= totalCustomerRevenue %>
 
 
 <% } %>
+
+
 <!-- =====================================================
      MONTHLY REPORT
 ===================================================== -->
@@ -1165,8 +1218,8 @@ Average
 
 
 <%= record.dairy
-? record.dairy.code
-: "Unknown" %>
+  ? record.dairy.code
+  : "Unknown" %>
 
 
 </span>
@@ -1181,8 +1234,8 @@ Average
 
 
 <%= record.dairy
-? record.dairy.name
-: "Unknown Animal" %>
+  ? record.dairy.name
+  : "Unknown Animal" %>
 
 
 </td>
@@ -1360,6 +1413,8 @@ KES <%= Number(stats?.cash || 0) %>
 </div>
 
 <% } %>
+
+
 <!-- =====================================================
      FINAL PAGE CLOSURE
 ===================================================== -->
