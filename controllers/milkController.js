@@ -14,6 +14,38 @@
 //
 // Business logic remains in milkService.js.
 //
+// IMPORTANT
+// ----------------------------------------------------------
+// The /milk page is intentionally kept separate from the
+// statistics, sales, history, and milking-status pages.
+//
+// milk.ejs expects:
+//
+//     dairies
+//     session
+//     isAdmin
+//     user
+//     success
+//     error
+//
+// Each dairy supplied to milk.ejs should already contain:
+//
+//     dairy._id
+//     dairy.name
+//     dairy.code
+//     dairy.isMilking
+//
+//     dairy.morning
+//     dairy.evening
+//
+//     dairy.morningRecorded
+//     dairy.eveningRecorded
+//
+//     dairy.morningLiters
+//     dairy.eveningLiters
+//
+// The service is responsible for preparing those values.
+//
 // ==========================================================
 
 
@@ -46,6 +78,15 @@ function redirectError(
 // ==========================================================
 // GET MILK PAGE
 // ==========================================================
+//
+// GET /milk
+//
+// This controller intentionally passes only the data required
+// by milk.ejs.
+//
+// Business logic remains inside milkService.getMilkPageData().
+//
+// ==========================================================
 
 exports.getMilkPage =
 async (
@@ -74,55 +115,48 @@ async (
       "milk",
       {
 
+        // ----------------------------------------------------
+        // DAIRIES
+        // ----------------------------------------------------
+        //
+        // The service prepares the dairy objects with the
+        // morning/evening record information required by
+        // milk.ejs.
+        //
         dairies:
           data?.dairies ||
           [],
 
-        milkRecords:
-          data?.milkRecords ||
-          [],
 
-        morningRecords:
-          data?.morningRecords ||
-          [],
-
-        eveningRecords:
-          data?.eveningRecords ||
-          [],
+        // ----------------------------------------------------
+        // CURRENT SESSION
+        // ----------------------------------------------------
 
         session:
           currentSession,
 
-        sessionInfo:
-          data?.sessionInfo ||
-          {},
 
-        canSubmit:
-          data?.canSubmit ||
-          false,
-
-        canEditMorning:
-          data?.canEditMorning ||
-          false,
-
-        canEditEvening:
-          data?.canEditEvening ||
-          false,
+        // ----------------------------------------------------
+        // AUTHENTICATION / ACCESS
+        // ----------------------------------------------------
 
         isAdmin,
 
         user:
           req.user,
 
+
+        // ----------------------------------------------------
+        // RESULT POPUP
+        // ----------------------------------------------------
+        //
+        // milk.ejs displays the popup when either value exists.
+        //
         success:
           req.query.success === "1",
 
         error:
           req.query.error ||
-          "",
-
-        edit:
-          req.query.edit ||
           ""
 
       }
@@ -147,29 +181,8 @@ async (
           dairies:
             [],
 
-          milkRecords:
-            [],
-
-          morningRecords:
-            [],
-
-          eveningRecords:
-            [],
-
           session:
             "closed",
-
-          sessionInfo:
-            {},
-
-          canSubmit:
-            false,
-
-          canEditMorning:
-            false,
-
-          canEditEvening:
-            false,
 
           isAdmin:
             req.user?.role === "admin",
@@ -181,10 +194,7 @@ async (
             false,
 
           error:
-            "Error loading milk collection page.",
-
-          edit:
-            ""
+            "Error loading milk collection page."
 
         }
       );
@@ -200,14 +210,24 @@ async (
 //
 // POST /milk
 //
-// The EJS may submit:
+// Expected request body:
 //
-// dairy
-// session
-// liters
-// remarks
+//     dairy
+//     session
+//     liters
+//     remarks
 //
-// The service determines the actual active session.
+// The controller performs only basic HTTP/input validation.
+//
+// The service remains responsible for:
+//
+// • Determining the actual collection session
+// • Checking whether the dairy can receive a record
+// • Creating the milk record
+// • Updating milk summaries
+// • Updating farmTotal
+// • Any other business rules
+//
 // ==========================================================
 
 exports.submitMilk =
@@ -231,9 +251,9 @@ async (
     } = req.body;
 
 
-    // ------------------------------------------------------
-    // BASIC INPUT
-    // ------------------------------------------------------
+    // ======================================================
+    // BASIC INPUT VALIDATION
+    // ======================================================
 
     if (!dairy) {
 
@@ -275,15 +295,17 @@ async (
     }
 
 
-    // ------------------------------------------------------
-    // SESSION
-    // ------------------------------------------------------
+    // ======================================================
+    // SESSION VALIDATION
+    // ======================================================
     //
-    // We validate a supplied session only for malformed
-    // requests. The service still determines the real
-    // current session.
+    // The submitted session is checked only to prevent
+    // malformed requests.
     //
-    // ------------------------------------------------------
+    // The service remains authoritative about the actual
+    // current collection session.
+    //
+    // ======================================================
 
     if (
       session &&
@@ -298,9 +320,19 @@ async (
     }
 
 
-    // ------------------------------------------------------
-    // SAVE
-    // ------------------------------------------------------
+    // ======================================================
+    // SAVE MILK RECORD
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // The controller does NOT calculate farm totals here.
+    //
+    // milkService.saveMilkRecords() is responsible for saving
+    // the record and, after the record is successfully saved,
+    // updating the corresponding MilkSummary farmTotal.
+    //
+    // ======================================================
 
     await milkService.saveMilkRecords(
 
@@ -326,6 +358,15 @@ async (
 
     );
 
+
+    // ======================================================
+    // SUCCESS
+    // ======================================================
+    //
+    // milk.ejs reads ?success=1 and displays the success
+    // popup.
+    //
+    // ======================================================
 
     return res.redirect(
       "/milk?success=1"
@@ -358,7 +399,9 @@ async (
 //
 // Compatibility route.
 //
-// Actual editing is performed by the milk page/modal.
+// The actual edit interface is the modal contained directly
+// inside milk.ejs.
+//
 // ==========================================================
 
 exports.getEditMilk =
@@ -443,6 +486,12 @@ async (
 // POST /milk/:id
 //
 // ADMIN ONLY
+//
+// This is the endpoint used by the edit modal in milk.ejs.
+//
+// The service is responsible for updating the record and
+// synchronizing the corresponding farmTotal.
+//
 // ==========================================================
 
 exports.updateMilkRecord =
@@ -458,6 +507,10 @@ async (
     } = req.params;
 
 
+    // ======================================================
+    // ADMIN CHECK
+    // ======================================================
+
     if (
       req.user?.role !== "admin"
     ) {
@@ -469,6 +522,10 @@ async (
 
     }
 
+
+    // ======================================================
+    // RECORD ID
+    // ======================================================
 
     if (!id) {
 
@@ -491,6 +548,10 @@ async (
 
     }
 
+
+    // ======================================================
+    // MILK QUANTITY
+    // ======================================================
 
     if (
       req.body.liters === undefined ||
@@ -525,6 +586,15 @@ async (
     }
 
 
+    // ======================================================
+    // UPDATE
+    // ======================================================
+    //
+    // The service handles the database update and farmTotal
+    // synchronization.
+    //
+    // ======================================================
+
     await milkService.editMilkRecord({
 
       recordId:
@@ -542,6 +612,10 @@ async (
 
     });
 
+
+    // ======================================================
+    // SUCCESS
+    // ======================================================
 
     return res.redirect(
       "/milk?success=1"
@@ -570,6 +644,12 @@ async (
 
 // ==========================================================
 // GET MILK STATS
+// ==========================================================
+//
+// This section is intentionally unchanged.
+// It serves milkStats.ejs and must not be affected by the
+// milk collection page changes.
+//
 // ==========================================================
 
 exports.getMilkStats =
