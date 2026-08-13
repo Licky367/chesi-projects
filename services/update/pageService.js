@@ -29,6 +29,30 @@ const {
 // - Comment count
 // - Assigned farms for the logged-in dairy worker
 //
+// FARM FEED:
+//
+// When the current Dairy is a Dairy Farm:
+//
+//     code < 0
+//
+// the feed includes:
+//
+//     1. Updates posted directly on the Dairy Farm.
+//     2. Updates posted on every asset whose
+//        assetCode === Dairy Farm code.
+//
+// No Update documents are duplicated.
+// The same Update document is simply included in the
+// Dairy Farm feed when it belongs to one of its assets.
+//
+// ASSET FEED:
+//
+// When the current Dairy is an animal, structure, machine,
+// tool, or other asset:
+//
+//     Only updates belonging to that specific asset
+//     are loaded.
+//
 // ==========================================================
 
 exports.getDairyPage =
@@ -52,6 +76,23 @@ async (
         );
 
     }
+
+
+    // ======================================================
+    // DETERMINE WHETHER CURRENT RECORD IS A DAIRY FARM
+    //
+    // Negative code = Dairy Farm
+    // ======================================================
+
+    const isDairyFarm =
+
+        dairy.code !== null &&
+
+        dairy.code !== undefined &&
+
+        Number(
+            dairy.code
+        ) < 0;
 
 
     // ======================================================
@@ -84,15 +125,7 @@ async (
     let assetDairies = [];
 
 
-    if (
-
-        dairy.code !== null &&
-
-        dairy.code !== undefined &&
-
-        Number(dairy.code) < 0
-
-    ) {
+    if (isDairyFarm) {
 
         assetDairies =
             await Dairy.find({
@@ -205,8 +238,11 @@ async (
                 new Map(
                     assignedFarms.map(
                         farm => [
+
                             farm._id.toString(),
+
                             farm
+
                         ]
                     )
                 );
@@ -216,6 +252,7 @@ async (
                 user.assignedFarm
                     .map(
                         farmId =>
+
                             farmMap.get(
                                 farmId.toString()
                             )
@@ -230,13 +267,95 @@ async (
 
 
     // ======================================================
+    // DETERMINE WHICH DAIRY RECORDS CAN SUPPLY FEED
+    //
+    // For a Dairy Farm:
+    //
+    //     Farm itself
+    //     +
+    //     all assets where assetCode === farm.code
+    //
+    // For an asset:
+    //
+    //     Current asset only.
+    //
+    // ======================================================
+
+    let updateDairyIds = [
+
+        dairy._id
+
+    ];
+
+
+    // ======================================================
+    // CURRENT RECORD IS A DAIRY FARM
+    // ======================================================
+
+    if (isDairyFarm) {
+
+        // ==================================================
+        // FIND ALL ASSETS BELONGING TO THIS FARM
+        //
+        // assetCode is always the negative code of the
+        // parent Dairy Farm.
+        // ==================================================
+
+        const farmAssets =
+            await Dairy.find({
+
+                assetCode:
+                    Number(dairy.code)
+
+            })
+            .select(
+                "_id"
+            );
+
+
+        // ==================================================
+        // ADD ALL FARM ASSET IDs
+        //
+        // The farm's own ID was already included above.
+        // ==================================================
+
+        updateDairyIds.push(
+
+            ...farmAssets.map(
+                asset =>
+                    asset._id
+            )
+
+        );
+
+    }
+
+
+    // ======================================================
     // GET UPDATES
+    //
+    // DAIRY FARM:
+    //
+    //     Includes:
+    //
+    //     - posts/updates made directly for the farm
+    //     - posts/updates made for its assets
+    //
+    // ASSET:
+    //
+    //     Includes only posts/updates for that asset.
+    //
     // ======================================================
 
     const updates =
         await Update.find({
 
-            dairy: id
+            dairy: {
+
+                $in:
+                    updateDairyIds
+
+            }
 
         })
         .sort({
@@ -277,14 +396,30 @@ async (
 
     // ======================================================
     // SORT COMPLETE FEED
+    //
+    // This ensures that:
+    //
+    // - Normal posts
+    // - Images
+    // - Medical updates
+    // - Maintenance updates
+    // - Weekly milk feeds
+    //
+    // all appear according to their actual creation/update
+    // date rather than being grouped by type.
     // ======================================================
 
     feed.sort(
 
         (a, b) =>
 
-            new Date(b.createdAt) -
-            new Date(a.createdAt)
+            new Date(
+                b.createdAt
+            ) -
+
+            new Date(
+                a.createdAt
+            )
 
     );
 
@@ -395,7 +530,9 @@ async (
         Array.isArray(
             user.assignedFarm
         )
+
             ? user.assignedFarm
+
             : [];
 
 
@@ -405,12 +542,14 @@ async (
 
     const isAssigned =
         assignedFarmIds.some(
+
             assignedId =>
 
                 assignedId
                     .toString() ===
                 farmId
                     .toString()
+
         );
 
 
