@@ -19,7 +19,7 @@
      EVENING:
          16:00 - 00:00
 
-     IMPORTANT
+     RULES
      ---------------------------------------------------------
      Only ONE active recording session is displayed.
 
@@ -39,7 +39,8 @@
      DAIRY WORKER:
          • Can create a new session record
          • Cannot edit submitted records
-         • Can enter morning records during 10:00 AM–4:00 PM
+         • Can enter missing morning records from 10:00 AM
+           until 4:00 PM
          • Cannot edit morning records during evening
 ========================================================= -->
 
@@ -91,6 +92,7 @@
             : "";
 
 
+
     /* ========================================================
        NAIROBI TIME
     ======================================================== */
@@ -130,6 +132,7 @@
         currentMinute;
 
 
+
     /* ========================================================
        SESSION WINDOWS
     ======================================================== */
@@ -158,9 +161,11 @@
         "open";
 
 
-    /*
-     * 00:00 - 09:59
-     */
+
+    /* ========================================================
+       MORNING
+       00:00 - 09:59
+    ======================================================== */
 
     if (
         currentMinutes >= morningStart &&
@@ -179,13 +184,11 @@
     }
 
 
-    /*
-     * 10:00 - 15:59
-     *
-     * Morning remains the active recording session.
-     * It is closed for normal morning editing but a worker
-     * may still enter a missing morning record.
-     */
+
+    /* ========================================================
+       CLOSED MORNING
+       10:00 - 15:59
+    ======================================================== */
 
     else if (
         currentMinutes >= morningEnd &&
@@ -204,9 +207,11 @@
     }
 
 
-    /*
-     * 16:00 - 23:59
-     */
+
+    /* ========================================================
+       EVENING
+       16:00 - 23:59
+    ======================================================== */
 
     else {
 
@@ -220,6 +225,7 @@
             "open";
 
     }
+
 
 
     /* ========================================================
@@ -260,6 +266,7 @@
 %>
 
 
+
 <!-- =========================================================
      STYLESHEET
 ========================================================= -->
@@ -268,6 +275,7 @@
     rel="stylesheet"
     href="/css/milk.css"
 >
+
 
 
 <!-- =========================================================
@@ -285,7 +293,7 @@
 
 
     <!-- =====================================================
-         HEADER
+         PAGE HEADER
     ====================================================== -->
 
     <header class="milk-header">
@@ -396,7 +404,7 @@
 
 
     <!-- =====================================================
-         FLASH MESSAGES
+         SUCCESS MESSAGE
     ====================================================== -->
 
     <% if (pageSuccess) { %>
@@ -412,6 +420,11 @@
 
     <% } %>
 
+
+
+    <!-- =====================================================
+         ERROR MESSAGE
+    ====================================================== -->
 
     <% if (pageError) { %>
 
@@ -486,6 +499,11 @@
                 %>
 
 
+
+                <!-- =============================================
+                     FARM SECTION
+                ============================================== -->
+
                 <section
                     class="milk-farm-section"
                     data-farm-id="<%= farm._id %>"
@@ -498,6 +516,7 @@
                     ========================================== -->
 
                     <div class="milk-farm-header">
+
 
                         <div class="milk-farm-information">
 
@@ -515,7 +534,10 @@
                         </div>
 
 
-                        <!-- FARM TOTAL -->
+
+                        <!-- =====================================
+                             FARM TOTAL
+                        ====================================== -->
 
                         <div class="milk-farm-total">
 
@@ -550,6 +572,7 @@
                     <% } else { %>
 
 
+
                         <!-- =====================================
                              TABLE
                         ====================================== -->
@@ -561,6 +584,7 @@
                                 data-farm-code="<%= farm.code %>"
                             >
 
+
                                 <!-- =================================
                                      TABLE HEADER
                                 ================================== -->
@@ -569,47 +593,69 @@
 
                                     <tr>
 
-                                        <!-- NAME -->
+
+                                        <!-- =============================
+                                             COLUMN 1 — NAME
+                                        ============================== -->
 
                                         <th
                                             scope="col"
                                             class="milk-animal-heading"
                                         >
+
                                             Name
+
                                         </th>
 
 
-                                        <!-- INPUT -->
+
+                                        <!-- =============================
+                                             COLUMN 2 — INPUT
+                                        ============================== -->
 
                                         <th
                                             scope="col"
                                             class="milk-input-heading"
                                         >
+
                                             Input
+
                                             <span>
                                                 (Litres)
                                             </span>
+
                                         </th>
 
 
-                                        <!-- REMARKS -->
+
+                                        <!-- =============================
+                                             COLUMN 3 — REMARKS
+                                        ============================== -->
 
                                         <th
                                             scope="col"
                                             class="milk-remarks-heading"
                                         >
+
                                             Remarks
+
                                         </th>
 
 
-                                        <!-- CUMULATIVE -->
+
+                                        <!-- =============================
+                                             COLUMN 4 — CUMULATIVE
+                                        ============================== -->
 
                                         <th
                                             scope="col"
                                             class="milk-cumulative-heading"
                                         >
+
                                             Cumulative
+
                                         </th>
+
 
                                     </tr>
 
@@ -630,20 +676,27 @@
                                         <%
 
                                             /* ==========================================
-                                               ACTIVE SESSION RECORD
+                                               CURRENT SESSION RECORD
                                             ========================================== */
 
                                             const activeRecord =
                                                 currentSession === "morning"
+
                                                     ? (
                                                         animal.morning ||
                                                         null
                                                     )
+
                                                     : (
                                                         animal.evening ||
                                                         null
                                                     );
 
+
+
+                                            /* ==========================================
+                                               RECORD EXISTS
+                                            ========================================== */
 
                                             const hasRecord =
                                                 Boolean(
@@ -651,8 +704,9 @@
                                                 );
 
 
+
                                             /* ==========================================
-                                               LITERS
+                                               CURRENT LITERS
                                             ========================================== */
 
                                             const activeLiters =
@@ -665,8 +719,9 @@
                                                     : "";
 
 
+
                                             /* ==========================================
-                                               REMARKS
+                                               CURRENT REMARKS
                                             ========================================== */
 
                                             const activeRemarks =
@@ -678,6 +733,7 @@
                                                     : "";
 
 
+
                                             /* ==========================================
                                                WORKER LOCK
                                             ========================================== */
@@ -687,13 +743,15 @@
                                                 hasRecord;
 
 
+
                                             /* ==========================================
-                                               MORNING TOTAL
+                                               MORNING RECORD
                                             ========================================== */
 
                                             const morningRecord =
                                                 animal.morning ||
                                                 null;
+
 
 
                                             const morningLiters =
@@ -708,13 +766,15 @@
                                                     : 0;
 
 
+
                                             /* ==========================================
-                                               EVENING TOTAL
+                                               EVENING RECORD
                                             ========================================== */
 
                                             const eveningRecord =
                                                 animal.evening ||
                                                 null;
+
 
 
                                             const eveningLiters =
@@ -729,31 +789,54 @@
                                                     : 0;
 
 
+
                                             /* ==========================================
-                                               CUMULATIVE
+                                               SAFE VALUES
                                             ========================================== */
 
                                             const safeMorning =
                                                 Number.isFinite(
                                                     morningLiters
                                                 )
+
                                                     ? morningLiters
+
                                                     : 0;
+
 
 
                                             const safeEvening =
                                                 Number.isFinite(
                                                     eveningLiters
                                                 )
+
                                                     ? eveningLiters
+
                                                     : 0;
 
+
+
+                                            /* ==========================================
+                                               DAILY CUMULATIVE
+                                            ========================================== */
 
                                             const cumulative =
                                                 safeMorning +
                                                 safeEvening;
 
+
+
+                                            /* ==========================================
+                                               ANIMAL DISPLAY CODE
+                                            ========================================== */
+
+                                            const animalCode =
+                                                animal.code ||
+                                                animal.assetCode ||
+                                                "";
+
                                         %>
+
 
 
                                         <!-- =================================
@@ -768,31 +851,44 @@
 
 
                                             <!-- =================================
-                                                 NAME
+                                                 COLUMN 1 — NAME
                                             ================================== -->
 
-                                            <td class="milk-animal-cell">
+                                            <td
+                                                class="milk-animal-cell"
+                                            >
 
-                                                <div class="milk-animal-name">
+                                                <div
+                                                    class="milk-animal-name"
+                                                >
 
                                                     <strong>
+
                                                         <%= animal.name || "Unnamed Animal" %>
+
                                                     </strong>
 
                                                 </div>
 
-                                                <small class="milk-animal-code">
 
-                                                    #<%= animal.code || animal.assetCode || "" %>
+                                                <% if (animalCode) { %>
 
-                                                </small>
+                                                    <small
+                                                        class="milk-animal-code"
+                                                    >
+
+                                                        #<%= animalCode %>
+
+                                                    </small>
+
+                                                <% } %>
 
                                             </td>
 
 
 
                                             <!-- =================================
-                                                 INPUT / LITRES
+                                                 COLUMN 2 — INPUT
                                             ================================== -->
 
                                             <td
@@ -811,8 +907,8 @@
                                                     value="<%= activeLiters %>"
                                                     data-session="<%= currentSession %>"
                                                     data-animal-id="<%= animal._id %>"
-                                                    aria-label="<%= sessionLabel %> milk liters for <%= animal.name || 'animal' %>"
                                                     placeholder="0.00"
+                                                    aria-label="<%= sessionLabel %> milk liters for <%= animal.name || 'animal' %>"
 
                                                     <% if (recordLocked) { %>
 
@@ -820,6 +916,7 @@
                                                         aria-readonly="true"
 
                                                     <% } %>
+
                                                 >
 
                                             </td>
@@ -827,13 +924,14 @@
 
 
                                             <!-- =================================
-                                                 REMARKS
+                                                 COLUMN 3 — REMARKS
                                             ================================== -->
 
                                             <td
                                                 class="milk-remarks-cell"
                                                 data-session="<%= currentSession %>"
                                             >
+
 
                                                 <input
                                                     type="text"
@@ -853,26 +951,38 @@
                                                         aria-readonly="true"
 
                                                     <% } %>
+
                                                 >
 
 
-                                                <!-- RECORD STATUS -->
 
-                                                <div class="milk-record-status">
+                                                <!-- =================================
+                                                     STATUS INSIDE REMARKS CELL
+                                                ================================== -->
+
+                                                <div
+                                                    class="milk-record-status"
+                                                >
 
                                                     <% if (hasRecord) { %>
 
+
                                                         <% if (recordLocked) { %>
 
-                                                            <span class="milk-status-locked">
+                                                            <span
+                                                                class="milk-status-locked"
+                                                            >
 
                                                                 Submitted — Read Only
 
                                                             </span>
 
+
                                                         <% } else { %>
 
-                                                            <span class="milk-status-recorded">
+                                                            <span
+                                                                class="milk-status-recorded"
+                                                            >
 
                                                                 Recorded — Admin Editable
 
@@ -880,9 +990,12 @@
 
                                                         <% } %>
 
+
                                                     <% } else { %>
 
-                                                        <span class="milk-status-pending">
+                                                        <span
+                                                            class="milk-status-pending"
+                                                        >
 
                                                             Not Recorded
 
@@ -897,18 +1010,25 @@
 
 
                                             <!-- =================================
-                                                 CUMULATIVE
+                                                 COLUMN 4 — CUMULATIVE
                                             ================================== -->
 
-                                            <td class="milk-cumulative-cell">
+                                            <td
+                                                class="milk-cumulative-cell"
+                                            >
 
-                                                <strong class="milk-cumulative-value">
+                                                <strong
+                                                    class="milk-cumulative-value"
+                                                >
 
                                                     <%= cumulative.toFixed(2) %> L
 
                                                 </strong>
 
-                                                <small class="milk-cumulative-label">
+
+                                                <small
+                                                    class="milk-cumulative-label"
+                                                >
 
                                                     Today
 
@@ -947,7 +1067,9 @@
             <div class="milk-submit-area">
 
 
-                <!-- WORKER NOTE -->
+                <!-- =============================================
+                     WORKER NOTE
+                ============================================== -->
 
                 <% if (!pageIsAdmin) { %>
 
@@ -972,7 +1094,9 @@
 
 
 
-                <!-- ZERO RECORD NOTE -->
+                <!-- =============================================
+                     ZERO RECORD NOTE
+                ============================================== -->
 
                 <p class="milk-zero-note">
 
@@ -988,7 +1112,9 @@
 
 
 
-                <!-- SUBMIT -->
+                <!-- =============================================
+                     SUBMIT BUTTON
+                ============================================== -->
 
                 <button
                     type="submit"
@@ -1031,6 +1157,7 @@ document.addEventListener(
     "DOMContentLoaded",
     function () {
 
+
         /* =====================================================
            FORM
         ====================================================== */
@@ -1042,7 +1169,9 @@ document.addEventListener(
 
 
         if (!form) {
+
             return;
+
         }
 
 
@@ -1059,7 +1188,7 @@ document.addEventListener(
 
 
         /* =====================================================
-           LITERS VALIDATION
+           LITERS INPUTS
         ====================================================== */
 
         const litersInputs =
@@ -1071,18 +1200,26 @@ document.addEventListener(
         litersInputs.forEach(
             function (input) {
 
+
                 input.addEventListener(
                     "input",
                     function () {
+
 
                         const rawValue =
                             input.value;
 
 
+                        /*
+                         * Empty input is allowed.
+                         */
+
                         if (
                             rawValue === ""
                         ) {
+
                             return;
+
                         }
 
 
@@ -1092,12 +1229,17 @@ document.addEventListener(
                             );
 
 
+                        /*
+                         * Prevent invalid or negative values.
+                         */
+
                         if (
                             !Number.isFinite(value) ||
                             value < 0
                         ) {
 
-                            input.value = "";
+                            input.value =
+                                "";
 
                         }
 
@@ -1116,6 +1258,7 @@ document.addEventListener(
         form.addEventListener(
             "submit",
             function (event) {
+
 
                 /*
                  * Prevent duplicate submissions.
@@ -1136,11 +1279,12 @@ document.addEventListener(
                     "true";
 
 
+
                 /*
-                 * Do NOT disable inputs.
+                 * Inputs must NOT be disabled.
                  *
-                 * Disabled inputs are not submitted by the
-                 * browser.
+                 * Disabled inputs are not included in a normal
+                 * browser form submission.
                  */
 
                 if (submitButton) {
