@@ -9,6 +9,7 @@
 // A summary contains:
 //
 // • Total milk produced
+// • Total farm milk production
 // • Total milk consumed/sold
 // • Available milk
 // • Total cash collected
@@ -29,6 +30,9 @@
 //     YYYY-MM
 //
 // `month` is derived from `day`.
+//
+// `farmTotal` represents the total liters represented by
+// `farmProduction` for the summary day.
 //
 // ==========================================================
 
@@ -51,14 +55,6 @@ const MONTH_PATTERN =
 // ==========================================================
 // DATE KEY HELPERS
 // ==========================================================
-//
-// Summary documents work with calendar keys rather than
-// JavaScript timestamps.
-//
-// This is intentional because milk reporting uses the
-// Africa/Nairobi calendar day.
-//
-// ==========================================================
 
 function getMonthFromDay(day) {
 
@@ -73,10 +69,6 @@ function getMonthFromDay(day) {
 
     }
 
-
-    // --------------------------------------------------------
-    // Validate the actual calendar date.
-    // --------------------------------------------------------
 
     const [
         year,
@@ -122,13 +114,6 @@ function getMonthFromDay(day) {
 // ==========================================================
 // FINITE NUMBER VALIDATOR
 // ==========================================================
-//
-// Mongoose's `min` validator does not by itself communicate
-// the intention that a value must be a real finite number.
-//
-// This helper is used throughout the schemas.
-//
-// ==========================================================
 
 function isFiniteNumber(value) {
 
@@ -141,20 +126,6 @@ function isFiniteNumber(value) {
 
 // ==========================================================
 // COW DAILY PRODUCTION
-// ==========================================================
-//
-// One entry represents the total milk produced by one cow
-// during the summary day.
-//
-// Example:
-//
-// {
-//     dairy: ObjectId("..."),
-//     cowCode: 24,
-//     farmCode: -101,
-//     liters: 18
-// }
-//
 // ==========================================================
 
 const cowProductionSchema =
@@ -271,9 +242,6 @@ const cowProductionSchema =
 
         {
 
-            // These are embedded summary entries, not
-            // independent MongoDB documents.
-
             _id:
                 false
 
@@ -284,19 +252,6 @@ const cowProductionSchema =
 
 // ==========================================================
 // FARM DAILY PRODUCTION
-// ==========================================================
-//
-// One entry represents the total milk produced by a farm
-// during the summary day.
-//
-// Example:
-//
-// {
-//     farm: ObjectId("..."),
-//     farmCode: -101,
-//     liters: 145
-// }
-//
 // ==========================================================
 
 const farmProductionSchema =
@@ -391,10 +346,6 @@ const farmProductionSchema =
 
 // ==========================================================
 // DAILY SALE
-// ==========================================================
-//
-// Represents one sale recorded against the daily summary.
-//
 // ==========================================================
 
 const saleSchema =
@@ -549,9 +500,6 @@ const saleSchema =
 
         {
 
-            // Sales are embedded inside the daily summary and
-            // therefore do not need their own MongoDB _id.
-
             _id:
                 false
 
@@ -571,14 +519,6 @@ const milkSummarySchema =
 
             // ==================================================
             // DAY
-            // ==================================================
-            //
-            // Format:
-            //
-            // YYYY-MM-DD
-            //
-            // Exactly one summary is allowed per day.
-            //
             // ==================================================
 
             day: {
@@ -640,10 +580,6 @@ const milkSummarySchema =
             // ==================================================
             // MONTH
             // ==================================================
-            //
-            // Derived automatically from `day`.
-            //
-            // ==================================================
 
             month: {
 
@@ -676,13 +612,6 @@ const milkSummarySchema =
 
             // ==================================================
             // MILK PRICE
-            // ==================================================
-            //
-            // Default farm/customer milk price for this day.
-            //
-            // Individual sales may override this through their
-            // own `price` field.
-            //
             // ==================================================
 
             price: {
@@ -743,6 +672,48 @@ const milkSummarySchema =
 
 
             // ==================================================
+            // TOTAL FARM PRODUCTION
+            // ==================================================
+            //
+            // Total liters represented by all entries in
+            // `farmProduction`.
+            //
+            // Normally:
+            //
+            //     farmTotal =
+            //         farmProduction.reduce(...)
+            //
+            // This is stored separately so farm-level totals
+            // can be accessed directly without rebuilding the
+            // embedded farmProduction array.
+            //
+            // ==================================================
+
+            farmTotal: {
+
+                type:
+                    Number,
+
+                default:
+                    0,
+
+                min:
+                    0,
+
+                validate: {
+
+                    validator:
+                        isFiniteNumber,
+
+                    message:
+                        "Farm total milk must be a valid number."
+
+                }
+
+            },
+
+
+            // ==================================================
             // TOTAL CONSUMED / SOLD
             // ==================================================
 
@@ -772,18 +743,6 @@ const milkSummarySchema =
 
             // ==================================================
             // AVAILABLE MILK
-            // ==================================================
-            //
-            // Normally:
-            //
-            // available = produced - consumed
-            //
-            // The service layer should calculate this value.
-            //
-            // It remains stored because summaries should be
-            // fast to read without recalculating all sales and
-            // production records.
-            //
             // ==================================================
 
             available: {
@@ -840,14 +799,6 @@ const milkSummarySchema =
 
             // ==================================================
             // LOCK / FINALIZATION
-            // ==================================================
-            //
-            // false:
-            //     summary may still be modified.
-            //
-            // true:
-            //     summary has been finalized/locked.
-            //
             // ==================================================
 
             locked: {
@@ -912,17 +863,8 @@ const milkSummarySchema =
 
         {
 
-            // ==================================================
-            // CREATED / UPDATED TIMESTAMPS
-            // ==================================================
-
             timestamps:
                 true,
-
-
-            // ==================================================
-            // KEEP EMPTY OBJECTS
-            // ==================================================
 
             minimize:
                 false
@@ -934,17 +876,6 @@ const milkSummarySchema =
 
 // ==========================================================
 // NORMALIZE MONTH
-// ==========================================================
-//
-// The month must always correspond to the summary day.
-//
-// This prevents:
-//
-//     day   = 2026-08-12
-//     month = 2026-07
-//
-// from accidentally being stored.
-//
 // ==========================================================
 
 milkSummarySchema.pre(
@@ -982,15 +913,6 @@ milkSummarySchema.pre(
 // ==========================================================
 // UPDATE MONTH WHEN DAY CHANGES
 // ==========================================================
-//
-// Handles:
-//
-//     updateOne()
-//     updateMany()
-//     findOneAndUpdate()
-//     findByIdAndUpdate()
-//
-// ==========================================================
 
 function normalizeSummaryUpdate(
     update
@@ -1010,12 +932,6 @@ function normalizeSummaryUpdate(
         null;
 
 
-    // --------------------------------------------------------
-    // Direct update:
-    //
-    // { day: "2026-08-12" }
-    // --------------------------------------------------------
-
     if (
         Object.prototype.hasOwnProperty.call(
             update,
@@ -1028,12 +944,6 @@ function normalizeSummaryUpdate(
 
     }
 
-
-    // --------------------------------------------------------
-    // $set update:
-    //
-    // { $set: { day: "2026-08-12" } }
-    // --------------------------------------------------------
 
     else if (
         update.$set &&
@@ -1048,10 +958,6 @@ function normalizeSummaryUpdate(
 
     }
 
-
-    // --------------------------------------------------------
-    // No day change.
-    // --------------------------------------------------------
 
     if (
         dayValue === null ||
@@ -1068,10 +974,6 @@ function normalizeSummaryUpdate(
             dayValue
         );
 
-
-    // --------------------------------------------------------
-    // Ensure $set exists.
-    // --------------------------------------------------------
 
     if (
         !update.$set
@@ -1189,15 +1091,7 @@ milkSummarySchema.pre(
 
 
 // ==========================================================
-// DAILY TOTAL HELPER
-// ==========================================================
-//
-// Calculates the total liters represented by the embedded
-// sales array.
-//
-// This is useful when the service needs to rebuild the
-// consumed/cash figures from the stored sales.
-//
+// DAILY SALES TOTAL HELPER
 // ==========================================================
 
 milkSummarySchema.methods.calculateSalesTotals =
@@ -1274,14 +1168,6 @@ function() {
 // ==========================================================
 // PRODUCTION TOTAL HELPER
 // ==========================================================
-//
-// Calculates total production from cowProduction.
-//
-// This provides a way for the service layer to verify that
-// the summary's `produced` field agrees with its embedded
-// production records.
-//
-// ==========================================================
 
 milkSummarySchema.methods.calculateProductionTotal =
 function() {
@@ -1333,15 +1219,66 @@ function() {
 
 
 // ==========================================================
-// AVAILABLE MILK HELPER
+// FARM TOTAL HELPER
 // ==========================================================
 //
-// Calculates:
+// Calculates total liters represented by farmProduction.
 //
-//     produced - consumed
+// This corresponds to the stored `farmTotal` field.
 //
-// Never returns a negative value.
-//
+// ==========================================================
+
+milkSummarySchema.methods.calculateFarmTotal =
+function() {
+
+    const production =
+        Array.isArray(
+            this.farmProduction
+        )
+            ? this.farmProduction
+            : [];
+
+
+    return production.reduce(
+
+        (
+            total,
+            entry
+        ) => {
+
+            const liters =
+                Number(
+                    entry.liters
+                );
+
+
+            if (
+                !Number.isFinite(
+                    liters
+                )
+            ) {
+
+                return total;
+
+            }
+
+
+            return (
+                total +
+                liters
+            );
+
+        },
+
+        0
+
+    );
+
+};
+
+
+// ==========================================================
+// AVAILABLE MILK HELPER
 // ==========================================================
 
 milkSummarySchema.methods.calculateAvailable =
@@ -1380,10 +1317,6 @@ function() {
 // ==========================================================
 // MONTHLY INDEX
 // ==========================================================
-//
-// Useful for monthly milk reports.
-//
-// ==========================================================
 
 milkSummarySchema.index(
 
@@ -1410,10 +1343,6 @@ milkSummarySchema.index(
 // ==========================================================
 // LOCKED SUMMARY INDEX
 // ==========================================================
-//
-// Useful when looking for finalized/unfinalized summaries.
-//
-// ==========================================================
 
 milkSummarySchema.index(
 
@@ -1439,10 +1368,6 @@ milkSummarySchema.index(
 
 // ==========================================================
 // MODEL
-// ==========================================================
-//
-// Prevents OverwriteModelError during development/hot reload.
-//
 // ==========================================================
 
 const MilkSummary =
