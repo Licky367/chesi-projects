@@ -14,9 +14,9 @@
 
     <div class="feed-header">
 
-        <!-- =============================================
-             POST OWNER
-        ============================================== -->
+        <!-- =================================================
+             POST OWNER + SUBJECT
+        ================================================== -->
 
         <div class="feed-user">
 
@@ -28,9 +28,9 @@
 
             <div class="feed-user-info">
 
-                <!-- =====================================
-                     MODERN POST META
-                ====================================== -->
+                <!-- =============================================
+                     POST META
+                ============================================== -->
 
                 <div class="post-meta-line">
 
@@ -38,31 +38,17 @@
                         <%= item.userName || "User" %>
                     </strong>
 
-
                     <% if (item.dairyName) { %>
 
-                        <span
-                            class="post-meta-action"
-                            aria-hidden="true"
-                        >
-                            posted about
+                        <span class="post-meta-action">
+                            updated about
                         </span>
-
 
                         <span
                             class="post-subject"
                             title="<%= item.dairyName %>"
                         >
-
-                            <i
-                                class="bi bi-tag-fill"
-                                aria-hidden="true"
-                            ></i>
-
-                            <span>
-                                <%= item.dairyName %>
-                            </span>
-
+                            <%= item.dairyName %>
                         </span>
 
                     <% } %>
@@ -70,9 +56,9 @@
                 </div>
 
 
-                <!-- =====================================
-                     POST TIME
-                ====================================== -->
+                <!-- =============================================
+                     POST DATE / TIME
+                ============================================== -->
 
                 <small class="post-time">
 
