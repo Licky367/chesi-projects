@@ -23,7 +23,42 @@ const express = require("express");
 
 const router = express.Router();
 
-const milkController = require("../controllers/milkController");
+
+// ==========================================================
+// CONTROLLERS
+// ==========================================================
+
+// ----------------------------------------------------------
+// Milk collection controller
+//
+// Handles:
+//
+// • GET /milk
+// • POST /milk
+// • Milk record editing
+//
+// ----------------------------------------------------------
+
+const milkCollectController =
+    require("../controllers/milkCollectController");
+
+
+// ----------------------------------------------------------
+// General milk controller
+//
+// Handles:
+//
+// • Statistics
+// • Sales
+// • Standing orders
+// • Milk pricing
+// • Milking history
+// • Milking status
+//
+// ----------------------------------------------------------
+
+const milkController =
+    require("../controllers/milkController");
 
 
 // ==========================================================
@@ -32,19 +67,54 @@ const milkController = require("../controllers/milkController");
 
 // GET /milk
 // ----------------------------------------------------------
-// Displays the milk collection page.
+// Displays the "Record Today's Milk" page.
+//
+// The controller determines:
+//
+// • User role
+// • Assigned farms
+// • Eligible milking animals
+// • Existing morning records
+// • Existing evening records
+//
+// Admin:
+//     Sees all farms.
+//
+// Dairy worker:
+//     Sees only assigned farms.
+//
+// ----------------------------------------------------------
+
 router.get(
     "/milk",
-    milkController.getMilkPage
+    milkCollectController.getMilkPage
 );
 
 
+// ==========================================================
+// MILK RECORD SUBMISSION
+// ==========================================================
+
 // POST /milk
 // ----------------------------------------------------------
-// Submits one animal's milk record.
+// Creates or submits milk records.
+//
+// The collection controller is responsible for:
+//
+// • Validating the farm
+// • Validating the animal
+// • Checking that the animal is female
+// • Checking isMilking === true
+// • Checking farm ownership/assignment
+// • Saving morning/evening records
+// • Updating MilkSummary
+// • Updating farmTotal
+//
+// ----------------------------------------------------------
+
 router.post(
     "/milk",
-    milkController.submitMilk
+    milkCollectController.submitMilk
 );
 
 
@@ -54,19 +124,29 @@ router.post(
 
 // GET /milk/edit/:id
 // ----------------------------------------------------------
-// Opens the edit state for a milk record.
+// Opens an existing milk record for editing.
+//
+// Admin only.
+//
+// ----------------------------------------------------------
+
 router.get(
     "/milk/edit/:id",
-    milkController.getEditMilk
+    milkCollectController.getEditMilk
 );
 
 
 // POST /milk/:id
 // ----------------------------------------------------------
 // Updates an existing milk record.
+//
+// Admin only.
+//
+// ----------------------------------------------------------
+
 router.post(
     "/milk/:id",
-    milkController.updateMilkRecord
+    milkCollectController.updateMilkRecord
 );
 
 
@@ -80,19 +160,34 @@ router.post(
 //
 // Examples:
 //
-// /milkStats
-// /milkStats?type=day&date=2026-08-13
-// /milkStats?type=month&month=2026-08
+// /stats
+// /stats?type=day&date=2026-08-13
+// /stats?type=month&month=2026-08
 //
+// ----------------------------------------------------------
+
 router.get(
     "/stats",
     milkController.getMilkStats
 );
 
 
+// ==========================================================
+// DAILY MILK STATISTICS
+// ==========================================================
+
 // POST /tats/day
 // ----------------------------------------------------------
 // Saves daily milk statistics / milk price.
+//
+// NOTE:
+// The original route says "/tats/day".
+// If this was a typo, it should probably be:
+//
+//     /stats/day
+//
+// ----------------------------------------------------------
+
 router.post(
     "/tats/day",
     milkController.saveDailyStats
@@ -106,6 +201,8 @@ router.post(
 // GET /sales
 // ----------------------------------------------------------
 // Displays the milk sales page.
+// ----------------------------------------------------------
+
 router.get(
     "/sales",
     milkController.getSalesPage
@@ -115,6 +212,8 @@ router.get(
 // POST /sales/manual
 // ----------------------------------------------------------
 // Submits a manual milk sale.
+// ----------------------------------------------------------
+
 router.post(
     "/sales/manual",
     milkController.submitManualSale
@@ -124,6 +223,8 @@ router.post(
 // POST /sales/standing-order
 // ----------------------------------------------------------
 // Submits a standing-order milk sale.
+// ----------------------------------------------------------
+
 router.post(
     "/sales/standing-order",
     milkController.submitStandingOrderSale
@@ -133,16 +234,25 @@ router.post(
 // POST /sales/price
 // ----------------------------------------------------------
 // Updates the current milk price.
+//
 // ADMIN ONLY.
+// ----------------------------------------------------------
+
 router.post(
     "/sales/price",
     milkController.updateMilkPrice
 );
 
 
-// POST /sales/standing-order
+// ==========================================================
+// STANDING ORDERS
+// ==========================================================
+
+// POST /sales/standing-order/add
 // ----------------------------------------------------------
 // Adds a new standing order.
+// ----------------------------------------------------------
+
 router.post(
     "/sales/standing-order/add",
     milkController.addStandingOrder
@@ -152,6 +262,8 @@ router.post(
 // POST /sales/standing-order/omit
 // ----------------------------------------------------------
 // Omits an existing standing order.
+// ----------------------------------------------------------
+
 router.post(
     "/sales/standing-order/omit",
     milkController.omitStandingOrder
@@ -174,6 +286,8 @@ router.post(
 //
 // /milk/history/64xxxxxxxxxxxxxxxxxxxxxxxx?month=2026-08
 //
+// ----------------------------------------------------------
+
 router.get(
     "/milk/history/:dairyId",
     milkController.getMilkingHistory
@@ -187,7 +301,10 @@ router.get(
 // POST /milk/history/:id/status
 // ----------------------------------------------------------
 // Toggles whether an animal is currently being milked.
+//
 // ADMIN ONLY.
+// ----------------------------------------------------------
+
 router.post(
     "/milk/history/:id/status",
     milkController.toggleMilkingStatus
