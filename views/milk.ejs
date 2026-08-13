@@ -1,17 +1,50 @@
 <!-- =========================================================
-     MILK COLLECTION PAGE
+     MILK RECORDING PAGE
 
      FILE:
      views/milk.ejs
 
      PURPOSE
      ---------------------------------------------------------
-     Records today's milk production.
+     Records today's milk production for active milking cows.
 
-     DATA PROVIDED BY:
-     controllers/milkCollectController.js
+     SESSION MODEL
+     ---------------------------------------------------------
+     MORNING:
+         00:00 - 10:00
 
-     EXPECTED DATA:
+     CLOSED MORNING:
+         10:00 - 16:00
+
+     EVENING:
+         16:00 - 00:00
+
+     IMPORTANT
+     ---------------------------------------------------------
+     Only ONE recording column is displayed.
+
+     During morning:
+         The column records morning milk.
+
+     During evening:
+         The column records evening milk.
+
+     The previous session remains stored in MongoDB but is
+     not displayed in the active recording column.
+
+     ADMIN:
+         • Can create records
+         • Can edit existing records
+         • Can edit closed-session records
+
+     DAIRY WORKER:
+         • Can record a new session
+         • Cannot edit a submitted record
+         • Can enter a morning record during the closed
+           morning period
+         • Cannot enter/edit morning during evening
+
+     EXPECTED DATA
      ---------------------------------------------------------
      day
      month
@@ -20,16 +53,6 @@
      user
      success
      error
-
-     PERMISSIONS:
-     ---------------------------------------------------------
-     Admin:
-         • Can create records
-         • Can edit existing records
-
-     Dairy Worker:
-         • Can create records
-         • Cannot edit existing records
 ========================================================= -->
 
 
@@ -38,13 +61,9 @@
 ========================================================= -->
 
 <%
+
     /*
-     * The controller should normally provide these values.
-     *
-     * However, EJS throws a ReferenceError if a variable has
-     * never been passed into res.render().
-     *
-     * Therefore we safely check typeof before using them.
+     * Safely read controller variables.
      */
 
     const pageDay =
@@ -56,7 +75,7 @@
     const pageMonth =
         typeof month !== "undefined" && month
             ? month
-            : "";
+            : pageDay.slice(0, 7);
 
 
     const pageFarms =
@@ -86,6 +105,185 @@
         typeof error !== "undefined"
             ? error
             : "";
+
+
+    /*
+     * ========================================================
+     * NAIROBI CURRENT TIME
+     * ========================================================
+     *
+     * The milk system operates using Africa/Nairobi time.
+     *
+     * We determine the current hour on the server-rendered
+     * page so that the correct session is displayed.
+     */
+
+    const now =
+        new Date();
+
+
+    const nairobiTime =
+        new Intl.DateTimeFormat(
+            "en-GB",
+            {
+                timeZone: "Africa/Nairobi",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false
+            }
+        ).format(now);
+
+
+    const timeParts =
+        nairobiTime.split(":");
+
+
+    const currentHour =
+        Number(timeParts[0]);
+
+
+    const currentMinute =
+        Number(timeParts[1]);
+
+
+    const currentMinutes =
+        (
+            currentHour * 60
+        ) +
+        currentMinute;
+
+
+    /*
+     * ========================================================
+     * SESSION WINDOWS
+     * ========================================================
+     */
+
+    const morningStart =
+        0;
+
+
+    const morningEnd =
+        10 * 60;
+
+
+    const eveningStart =
+        16 * 60;
+
+
+    let currentSession =
+        "morning";
+
+
+    let sessionLabel =
+        "Morning";
+
+
+    let sessionStatus =
+        "open";
+
+
+    /*
+     * 00:00 - 09:59
+     * Morning recording.
+     */
+
+    if (
+        currentMinutes >= morningStart &&
+        currentMinutes < morningEnd
+    ) {
+
+        currentSession =
+            "morning";
+
+        sessionLabel =
+            "Morning";
+
+        sessionStatus =
+            "open";
+
+    }
+
+
+    /*
+     * 10:00 - 15:59
+     * Morning is closed but the page is still outside
+     * the evening recording window.
+     */
+
+    else if (
+        currentMinutes >= morningEnd &&
+        currentMinutes < eveningStart
+    ) {
+
+        currentSession =
+            "morning";
+
+        sessionLabel =
+            "Morning";
+
+        sessionStatus =
+            "closed";
+
+    }
+
+
+    /*
+     * 16:00 - 23:59
+     * Evening recording.
+     */
+
+    else {
+
+        currentSession =
+            "evening";
+
+        sessionLabel =
+            "Evening";
+
+        sessionStatus =
+            "open";
+
+    }
+
+
+    /*
+     * ========================================================
+     * SESSION DESCRIPTION
+     * ========================================================
+     */
+
+    let sessionDescription =
+        "";
+
+
+    if (
+        currentSession === "morning" &&
+        sessionStatus === "open"
+    ) {
+
+        sessionDescription =
+            "Morning recording is open until 10:00 AM.";
+
+    }
+
+    else if (
+        currentSession === "morning" &&
+        sessionStatus === "closed"
+    ) {
+
+        sessionDescription =
+            "Morning session is closed. New morning records may still be entered before the evening session begins.";
+
+    }
+
+    else {
+
+        sessionDescription =
+            "Evening recording is open from 4:00 PM until midnight.";
+
+    }
+
 %>
 
 
@@ -103,7 +301,14 @@
      PAGE
 ========================================================= -->
 
-<div class="milk-page">
+<div
+    class="milk-page"
+    data-day="<%= pageDay %>"
+    data-month="<%= pageMonth %>"
+    data-session="<%= currentSession %>"
+    data-session-status="<%= sessionStatus %>"
+    data-is-admin="<%= pageIsAdmin %>"
+>
 
 
     <!-- =====================================================
@@ -126,7 +331,7 @@
 
 
         <!-- =================================================
-             USER ROLE
+             ROLE
         ================================================== -->
 
         <div class="milk-role-badge">
@@ -144,6 +349,78 @@
         </div>
 
     </header>
+
+
+
+    <!-- =====================================================
+         SESSION BAR
+    ====================================================== -->
+
+    <section
+        class="milk-session-bar"
+        aria-label="Milk recording session"
+    >
+
+        <div class="milk-session-information">
+
+            <span class="milk-session-label">
+                Current Recording
+            </span>
+
+            <strong class="milk-session-name">
+                <%= sessionLabel %> Session
+            </strong>
+
+            <span class="milk-session-time">
+                <% if (currentSession === "morning") { %>
+
+                    12:00 AM – 10:00 AM
+
+                <% } else { %>
+
+                    4:00 PM – 12:00 AM
+
+                <% } %>
+            </span>
+
+        </div>
+
+
+        <div
+            class="milk-session-status milk-session-status-<%= sessionStatus %>"
+        >
+
+            <% if (sessionStatus === "open") { %>
+
+                Session Open
+
+            <% } else { %>
+
+                Morning Session Closed
+
+            <% } %>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         SESSION INFORMATION
+    ====================================================== -->
+
+    <div class="milk-session-note">
+
+        <strong>
+            <%= sessionLabel %> recording:
+        </strong>
+
+        <span>
+            <%= sessionDescription %>
+        </span>
+
+    </div>
 
 
 
@@ -193,8 +470,8 @@
             </h2>
 
             <p>
-                There are currently no dairy farms available
-                for milk collection.
+                There are currently no active dairy farms
+                available for milk recording.
             </p>
 
         </section>
@@ -225,9 +502,6 @@
 
 
                 <%
-                    /*
-                     * Make sure farm.animals is always an array.
-                     */
 
                     const farmAnimals =
                         Array.isArray(farm.animals)
@@ -235,8 +509,16 @@
                             : [];
 
 
+                    /*
+                     * Server-provided farm total.
+                     *
+                     * This is today's total based on all
+                     * stored records.
+                     */
+
                     const farmTotal =
                         Number(farm.total || 0);
+
                 %>
 
 
@@ -253,10 +535,6 @@
 
                     <div class="milk-farm-header">
 
-
-                        <!-- =====================================
-                             FARM INFORMATION
-                        ====================================== -->
 
                         <div class="milk-farm-information">
 
@@ -291,17 +569,15 @@
 
                         </div>
 
-
                     </div>
 
 
 
                     <!-- =========================================
-                         FARM HAS NO MILKING ANIMALS
+                         NO ANIMALS
                     ========================================== -->
 
                     <% if (farmAnimals.length === 0) { %>
-
 
                         <div class="milk-no-animals">
 
@@ -316,13 +592,15 @@
 
 
                         <!-- =====================================
-                             TABLE WRAPPER
+                             TABLE
                         ====================================== -->
 
                         <div class="milk-table-wrapper">
 
-
-                            <table class="milk-table">
+                            <table
+                                class="milk-table"
+                                data-farm-code="<%= farm.code %>"
+                            >
 
 
                                 <!-- =================================
@@ -334,45 +612,36 @@
                                     <tr>
 
                                         <th
-                                            rowspan="2"
                                             scope="col"
+                                            class="milk-animal-heading"
                                         >
                                             Animal
                                         </th>
 
                                         <th
-                                            colspan="2"
-                                            scope="colgroup"
+                                            scope="col"
+                                            class="milk-record-heading"
                                         >
-                                            Morning
+
+                                            <span>
+                                                <%= sessionLabel %> Record
+                                            </span>
+
+                                            <small>
+
+                                                Liters / Remarks
+
+                                            </small>
+
                                         </th>
 
                                         <th
-                                            colspan="2"
-                                            scope="colgroup"
+                                            scope="col"
+                                            class="milk-cumulative-heading"
                                         >
-                                            Evening
-                                        </th>
 
-                                    </tr>
+                                            Cumulative
 
-
-                                    <tr>
-
-                                        <th scope="col">
-                                            Liters
-                                        </th>
-
-                                        <th scope="col">
-                                            Remarks
-                                        </th>
-
-                                        <th scope="col">
-                                            Liters
-                                        </th>
-
-                                        <th scope="col">
-                                            Remarks
                                         </th>
 
                                     </tr>
@@ -392,83 +661,154 @@
 
 
                                         <%
+
                                             /*
-                                             * Existing morning record.
+                                             * ==================================================
+                                             * SESSION RECORD
+                                             * ==================================================
+                                             *
+                                             * The service supplies:
+                                             *
+                                             *     animal.morning
+                                             *     animal.evening
+                                             *
+                                             * Only the CURRENT session is shown in the
+                                             * recording column.
                                              */
 
-                                            const morning =
+                                            const activeRecord =
+                                                currentSession === "morning"
+
+                                                    ? (
+                                                        animal.morning ||
+                                                        null
+                                                    )
+
+                                                    : (
+                                                        animal.evening ||
+                                                        null
+                                                    );
+
+
+                                            /*
+                                             * ==================================================
+                                             * EXISTING RECORD
+                                             * ==================================================
+                                             */
+
+                                            const hasRecord =
+                                                Boolean(
+                                                    activeRecord
+                                                );
+
+
+                                            /*
+                                             * Existing record liters.
+                                             */
+
+                                            const activeLiters =
+                                                activeRecord &&
+                                                activeRecord.liters !== undefined &&
+                                                activeRecord.liters !== null
+
+                                                    ? activeRecord.liters
+
+                                                    : "";
+
+
+                                            /*
+                                             * Existing remarks.
+                                             */
+
+                                            const activeRemarks =
+                                                activeRecord &&
+                                                activeRecord.remarks
+
+                                                    ? activeRecord.remarks
+
+                                                    : "";
+
+
+                                            /*
+                                             * ==================================================
+                                             * WORKER LOCK
+                                             * ==================================================
+                                             *
+                                             * Once a dairy worker has submitted the current
+                                             * session record, it becomes read-only.
+                                             *
+                                             * Admin is never locked.
+                                             */
+
+                                            const recordLocked =
+                                                !pageIsAdmin &&
+                                                hasRecord;
+
+
+                                            /*
+                                             * ==================================================
+                                             * CUMULATIVE
+                                             * ==================================================
+                                             *
+                                             * The service currently supplies morning and
+                                             * evening records separately.
+                                             *
+                                             * Therefore the cumulative value is calculated
+                                             * from both stored records.
+                                             */
+
+                                            const morningRecord =
                                                 animal.morning ||
                                                 null;
 
 
-                                            /*
-                                             * Existing evening record.
-                                             */
-
-                                            const evening =
+                                            const eveningRecord =
                                                 animal.evening ||
                                                 null;
 
 
-                                            /*
-                                             * Existing records are locked
-                                             * for dairy workers.
-                                             *
-                                             * Administrators may edit them.
-                                             */
-
-                                            const morningLocked =
-                                                Boolean(morning);
-
-
-                                            const eveningLocked =
-                                                Boolean(evening);
-
-
-                                            /*
-                                             * Existing morning liters.
-                                             */
-
                                             const morningLiters =
-                                                morning &&
-                                                morning.liters !== undefined &&
-                                                morning.liters !== null
-                                                    ? morning.liters
-                                                    : "";
+                                                morningRecord &&
+                                                morningRecord.liters !== undefined &&
+                                                morningRecord.liters !== null
 
+                                                    ? Number(
+                                                        morningRecord.liters
+                                                    )
 
-                                            /*
-                                             * Existing morning remarks.
-                                             */
+                                                    : 0;
 
-                                            const morningRemarks =
-                                                morning &&
-                                                morning.remarks
-                                                    ? morning.remarks
-                                                    : "";
-
-
-                                            /*
-                                             * Existing evening liters.
-                                             */
 
                                             const eveningLiters =
-                                                evening &&
-                                                evening.liters !== undefined &&
-                                                evening.liters !== null
-                                                    ? evening.liters
-                                                    : "";
+                                                eveningRecord &&
+                                                eveningRecord.liters !== undefined &&
+                                                eveningRecord.liters !== null
+
+                                                    ? Number(
+                                                        eveningRecord.liters
+                                                    )
+
+                                                    : 0;
 
 
-                                            /*
-                                             * Existing evening remarks.
-                                             */
+                                            const cumulative =
+                                                (
+                                                    Number.isFinite(
+                                                        morningLiters
+                                                    )
+                                                        ? morningLiters
+                                                        : 0
+                                                ) +
 
-                                            const eveningRemarks =
-                                                evening &&
-                                                evening.remarks
-                                                    ? evening.remarks
-                                                    : "";
+                                                (
+                                                    Number.isFinite(
+                                                        eveningLiters
+                                                    )
+                                                        ? eveningLiters
+                                                        : 0
+                                                );
+
+
                                         %>
 
 
@@ -509,108 +849,163 @@
 
 
                                             <!-- =============================
-                                                 MORNING LITERS
+                                                 ACTIVE SESSION RECORD
                                             ============================== -->
 
-                                            <td class="milk-liters-cell">
+                                            <td
+                                                class="milk-record-cell"
+                                                data-session="<%= currentSession %>"
+                                            >
 
-                                                <input
-                                                    type="number"
-                                                    name="records[<%= animal._id %>][morning][liters]"
-                                                    class="milk-liters-input"
-                                                    min="0"
-                                                    step="0.01"
-                                                    inputmode="decimal"
-                                                    value="<%= morningLiters %>"
-                                                    data-session="morning"
-                                                    data-animal-id="<%= animal._id %>"
-                                                    aria-label="Morning milk liters for <%= animal.name || 'animal' %>"
 
-                                                    <% if (!pageIsAdmin && morningLocked) { %>
-                                                        readonly
-                                                        aria-readonly="true"
+                                                <!-- =============================
+                                                     RECORD INPUT
+                                                ============================== -->
+
+                                                <div class="milk-record-input-group">
+
+
+                                                    <label
+                                                        class="milk-input-label"
+                                                        for="milk-<%= currentSession %>-<%= animal._id %>"
+                                                    >
+
+                                                        Liters
+
+                                                    </label>
+
+
+                                                    <input
+                                                        type="number"
+                                                        id="milk-<%= currentSession %>-<%= animal._id %>"
+                                                        name="records[<%= animal._id %>][<%= currentSession %>][liters]"
+                                                        class="milk-liters-input"
+                                                        min="0"
+                                                        step="0.01"
+                                                        inputmode="decimal"
+                                                        value="<%= activeLiters %>"
+                                                        data-session="<%= currentSession %>"
+                                                        data-animal-id="<%= animal._id %>"
+                                                        aria-label="<%= sessionLabel %> milk liters for <%= animal.name || 'animal' %>"
+
+                                                        <% if (recordLocked) { %>
+
+                                                            readonly
+                                                            aria-readonly="true"
+
+                                                        <% } %>
+
+                                                    >
+
+                                                </div>
+
+
+
+                                                <!-- =============================
+                                                     REMARKS
+                                                ============================== -->
+
+                                                <div class="milk-record-remarks-group">
+
+                                                    <label
+                                                        class="milk-input-label"
+                                                        for="remarks-<%= currentSession %>-<%= animal._id %>"
+                                                    >
+
+                                                        Remarks
+
+                                                    </label>
+
+
+                                                    <input
+                                                        type="text"
+                                                        id="remarks-<%= currentSession %>-<%= animal._id %>"
+                                                        name="records[<%= animal._id %>][<%= currentSession %>][remarks]"
+                                                        class="milk-remarks-input"
+                                                        value="<%= activeRemarks %>"
+                                                        maxlength="500"
+                                                        data-session="<%= currentSession %>"
+                                                        data-animal-id="<%= animal._id %>"
+                                                        placeholder="Optional remarks"
+                                                        aria-label="<%= sessionLabel %> remarks for <%= animal.name || 'animal' %>"
+
+                                                        <% if (recordLocked) { %>
+
+                                                            readonly
+                                                            aria-readonly="true"
+
+                                                        <% } %>
+
+                                                    >
+
+                                                </div>
+
+
+
+                                                <!-- =============================
+                                                     RECORD STATUS
+                                                ============================== -->
+
+                                                <div class="milk-record-status">
+
+
+                                                    <% if (hasRecord) { %>
+
+                                                        <% if (recordLocked) { %>
+
+                                                            <span class="milk-status-locked">
+
+                                                                Submitted — Read Only
+
+                                                            </span>
+
+                                                        <% } else { %>
+
+                                                            <span class="milk-status-recorded">
+
+                                                                Recorded — Admin Editable
+
+                                                            </span>
+
+                                                        <% } %>
+
+
+                                                    <% } else { %>
+
+                                                        <span class="milk-status-pending">
+
+                                                            Not Recorded
+
+                                                        </span>
+
                                                     <% } %>
-                                                >
+
+
+                                                </div>
+
 
                                             </td>
 
 
 
                                             <!-- =============================
-                                                 MORNING REMARKS
+                                                 CUMULATIVE
                                             ============================== -->
 
-                                            <td class="milk-remarks-cell">
+                                            <td class="milk-cumulative-cell">
 
-                                                <input
-                                                    type="text"
-                                                    name="records[<%= animal._id %>][morning][remarks]"
-                                                    class="milk-remarks-input"
-                                                    value="<%= morningRemarks %>"
-                                                    maxlength="500"
-                                                    data-session="morning"
-                                                    data-animal-id="<%= animal._id %>"
-                                                    aria-label="Morning remarks for <%= animal.name || 'animal' %>"
+                                                <strong class="milk-cumulative-value">
 
-                                                    <% if (!pageIsAdmin && morningLocked) { %>
-                                                        readonly
-                                                        aria-readonly="true"
-                                                    <% } %>
-                                                >
+                                                    <%= cumulative.toFixed(2) %> L
 
-                                            </td>
+                                                </strong>
 
 
+                                                <small class="milk-cumulative-label">
 
-                                            <!-- =============================
-                                                 EVENING LITERS
-                                            ============================== -->
+                                                    Today
 
-                                            <td class="milk-liters-cell">
-
-                                                <input
-                                                    type="number"
-                                                    name="records[<%= animal._id %>][evening][liters]"
-                                                    class="milk-liters-input"
-                                                    min="0"
-                                                    step="0.01"
-                                                    inputmode="decimal"
-                                                    value="<%= eveningLiters %>"
-                                                    data-session="evening"
-                                                    data-animal-id="<%= animal._id %>"
-                                                    aria-label="Evening milk liters for <%= animal.name || 'animal' %>"
-
-                                                    <% if (!pageIsAdmin && eveningLocked) { %>
-                                                        readonly
-                                                        aria-readonly="true"
-                                                    <% } %>
-                                                >
-
-                                            </td>
-
-
-
-                                            <!-- =============================
-                                                 EVENING REMARKS
-                                            ============================== -->
-
-                                            <td class="milk-remarks-cell">
-
-                                                <input
-                                                    type="text"
-                                                    name="records[<%= animal._id %>][evening][remarks]"
-                                                    class="milk-remarks-input"
-                                                    value="<%= eveningRemarks %>"
-                                                    maxlength="500"
-                                                    data-session="evening"
-                                                    data-animal-id="<%= animal._id %>"
-                                                    aria-label="Evening remarks for <%= animal.name || 'animal' %>"
-
-                                                    <% if (!pageIsAdmin && eveningLocked) { %>
-                                                        readonly
-                                                        aria-readonly="true"
-                                                    <% } %>
-                                                >
+                                                </small>
 
                                             </td>
 
@@ -625,7 +1020,6 @@
 
 
                             </table>
-
 
                         </div>
 
@@ -648,32 +1042,47 @@
 
 
                 <!-- =============================================
-                     PERMISSION MESSAGE
+                     WORKER INFORMATION
                 ============================================== -->
 
-                <% if (pageIsAdmin) { %>
+                <% if (!pageIsAdmin) { %>
 
+                    <p class="milk-worker-note">
+
+                        Once you submit a milk record, it becomes
+                        read-only for you. Administrators can still
+                        edit submitted records.
+
+                    </p>
+
+                <% } else { %>
 
                     <p class="milk-admin-note">
 
                         Administrator mode:
-                        existing milk records can be edited.
+                        existing records can be edited.
 
                     </p>
-
-
-                <% } else { %>
-
-
-                    <p class="milk-worker-note">
-
-                        Existing submitted milk records are
-                        read-only for dairy workers.
-
-                    </p>
-
 
                 <% } %>
+
+
+
+                <!-- =============================================
+                     ZERO RECORD INFORMATION
+                ============================================== -->
+
+                <p class="milk-zero-note">
+
+                    If a cow is not milked or no record is entered
+                    before the session closes, the session is
+                    automatically recorded as:
+
+                    <strong>
+                        0 L — Not Milked/recorded
+                    </strong>
+
+                </p>
 
 
 
@@ -689,11 +1098,11 @@
 
                     <% if (pageIsAdmin) { %>
 
-                        Save Milk Records
+                        Save <%= sessionLabel %> Records
 
                     <% } else { %>
 
-                        Submit Today's Milk
+                        Submit <%= sessionLabel %> Records
 
                     <% } %>
 
@@ -725,7 +1134,7 @@ document.addEventListener(
 
 
         /* =====================================================
-           COLLECTION FORM
+           FORM
         ====================================================== */
 
         const form =
@@ -733,10 +1142,6 @@ document.addEventListener(
                 "milkCollectionForm"
             );
 
-
-        /*
-         * There is no form when there are no farms.
-         */
 
         if (!form) {
 
@@ -758,9 +1163,9 @@ document.addEventListener(
 
 
         /* =====================================================
-           FARM TOTAL
+           UPDATE FARM TOTAL
            -----------------------------------------------------
-           Client-side preview only.
+           This is only a visual preview.
 
            The server remains authoritative.
         ====================================================== */
@@ -776,24 +1181,38 @@ document.addEventListener(
             }
 
 
+            /*
+             * The displayed farm total is today's total,
+             * therefore both session records contribute.
+             *
+             * However, because only the active session is
+             * editable, the existing server total is used
+             * as the starting value.
+             *
+             * We only add the current visible unsaved values
+             * where appropriate.
+             */
+
             let total =
                 0;
 
 
-            const inputs =
+            const rows =
                 farmSection.querySelectorAll(
-                    ".milk-liters-input"
+                    ".milk-animal-row"
                 );
 
 
-            inputs.forEach(
-                function(input) {
+            rows.forEach(
+                function(row) {
 
-                    const rawValue =
-                        input.value;
+                    const input =
+                        row.querySelector(
+                            ".milk-liters-input"
+                        );
 
 
-                    if (rawValue === "") {
+                    if (!input) {
 
                         return;
 
@@ -801,7 +1220,9 @@ document.addEventListener(
 
 
                     const value =
-                        Number(rawValue);
+                        Number(
+                            input.value
+                        );
 
 
                     if (
@@ -817,6 +1238,12 @@ document.addEventListener(
             );
 
 
+            /*
+             * This is intentionally a preview of the currently
+             * displayed session, not the authoritative daily
+             * total.
+             */
+
             const totalElement =
                 farmSection.querySelector(
                     ".milk-farm-total strong"
@@ -824,6 +1251,20 @@ document.addEventListener(
 
 
             if (!totalElement) {
+
+                return;
+
+            }
+
+
+            /*
+             * Keep the server-rendered total until a user
+             * actually changes a field.
+             */
+
+            if (
+                farmSection.dataset.edited !== "true"
+            ) {
 
                 return;
 
@@ -839,7 +1280,7 @@ document.addEventListener(
 
 
         /* =====================================================
-           UPDATE ALL FARM TOTALS
+           INPUT LISTENERS
         ====================================================== */
 
         const farmSections =
@@ -851,6 +1292,7 @@ document.addEventListener(
         farmSections.forEach(
             function(farmSection) {
 
+
                 const inputs =
                     farmSection.querySelectorAll(
                         ".milk-liters-input"
@@ -860,9 +1302,15 @@ document.addEventListener(
                 inputs.forEach(
                     function(input) {
 
+
                         input.addEventListener(
                             "input",
                             function() {
+
+
+                                farmSection.dataset.edited =
+                                    "true";
+
 
                                 updateFarmTotal(
                                     farmSection
@@ -871,17 +1319,68 @@ document.addEventListener(
                             }
                         );
 
+
                     }
                 );
 
 
-                /*
-                 * Calculate initial total.
-                 */
+            }
+        );
 
-                updateFarmTotal(
-                    farmSection
+
+
+        /* =====================================================
+           PREVENT NEGATIVE VALUES
+        ====================================================== */
+
+        const litersInputs =
+            form.querySelectorAll(
+                ".milk-liters-input"
+            );
+
+
+        litersInputs.forEach(
+            function(input) {
+
+
+                input.addEventListener(
+                    "input",
+                    function() {
+
+
+                        const rawValue =
+                            input.value;
+
+
+                        if (
+                            rawValue === ""
+                        ) {
+
+                            return;
+
+                        }
+
+
+                        const value =
+                            Number(
+                                rawValue
+                            );
+
+
+                        if (
+                            Number.isFinite(value) &&
+                            value < 0
+                        ) {
+
+                            input.value =
+                                "";
+
+                        }
+
+
+                    }
                 );
+
 
             }
         );
@@ -898,7 +1397,7 @@ document.addEventListener(
 
 
                 /*
-                 * Prevent accidental double submission.
+                 * Prevent duplicate submissions.
                  */
 
                 if (
@@ -917,10 +1416,10 @@ document.addEventListener(
 
 
                 /*
-                 * Disable submit button.
+                 * Disable only the submit button.
                  *
-                 * Inputs are deliberately NOT disabled because
-                 * disabled inputs are not submitted by browsers.
+                 * Inputs must NOT be disabled because disabled
+                 * inputs are excluded from normal form submission.
                  */
 
                 if (submitButton) {
@@ -928,67 +1427,18 @@ document.addEventListener(
                     submitButton.disabled =
                         true;
 
+
                     submitButton.setAttribute(
                         "aria-disabled",
                         "true"
                     );
+
 
                     submitButton.textContent =
                         "Saving...";
 
                 }
 
-            }
-        );
-
-
-
-        /* =====================================================
-           PREVENT NEGATIVE CLIENT INPUT
-           -----------------------------------------------------
-           Server validation remains authoritative.
-        ====================================================== */
-
-        const litersInputs =
-            form.querySelectorAll(
-                ".milk-liters-input"
-            );
-
-
-        litersInputs.forEach(
-            function(input) {
-
-                input.addEventListener(
-                    "input",
-                    function() {
-
-                        const rawValue =
-                            input.value;
-
-
-                        if (rawValue === "") {
-
-                            return;
-
-                        }
-
-
-                        const value =
-                            Number(rawValue);
-
-
-                        if (
-                            Number.isFinite(value) &&
-                            value < 0
-                        ) {
-
-                            input.value =
-                                "";
-
-                        }
-
-                    }
-                );
 
             }
         );
