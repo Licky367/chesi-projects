@@ -5,6 +5,9 @@
 const Milk =
     require("../../models/milk");
 
+const Dairy =
+    require("../../models/dairy");
+
 
 // ==========================================================
 // DATE HELPERS
@@ -177,7 +180,7 @@ function formatComment(
 //     assetCode
 //     profileImage
 //
-// This formatter exposes the populated Dairy/asset as:
+// This formatter exposes the populated Dairy / asset as:
 //
 //     dairyId
 //     dairyName
@@ -185,7 +188,7 @@ function formatComment(
 //     dairyAssetCode
 //     dairyImage
 //
-// It also explicitly preserves the post owner's:
+// It also preserves:
 //
 //     userName
 //
@@ -219,12 +222,6 @@ function formatFeed(
 
     // ------------------------------------------------------
     // PRESERVE POST OWNER NAME
-    //
-    // Update.js stores the owner's name directly in:
-    //
-    //     userName
-    //
-    // Keep that property available to post.ejs.
     // ------------------------------------------------------
 
     item.userName =
@@ -250,10 +247,6 @@ function formatFeed(
     //     item.dairy
     //
     // Therefore no additional database query is required.
-    //
-    // post.ejs can use:
-    //
-    //     item.dairyName
     //
     // ======================================================
 
@@ -459,10 +452,58 @@ function formatFeed(
 // ==========================================================
 // WEEKLY MILK FEED
 // ==========================================================
+//
+// Builds weekly milk reports for a specific Dairy / asset.
+//
+// Each generated weekly feed now contains:
+//
+//     dairyId
+//     dairyName
+//
+// This allows milk.ejs to display:
+//
+//     Weekly Milk Report for Daisy Freshman
+//
+// with Daisy Freshman linking to:
+//
+//     /dairy/:id
+//
+// ==========================================================
 
 async function buildWeeklyMilkFeeds(
     dairyId
 ) {
+
+    // ======================================================
+    // GET DAIRY / ASSET
+    // ======================================================
+
+    const dairy =
+        await Dairy.findById(
+            dairyId
+        )
+        .select(
+            "_id name"
+        )
+        .lean();
+
+
+    // ======================================================
+    // DAIRY NOT FOUND
+    // ======================================================
+
+    if (
+        !dairy
+    ) {
+
+        return [];
+
+    }
+
+
+    // ======================================================
+    // GET MILK RECORDS
+    // ======================================================
 
     const records =
         await Milk.find({
@@ -471,16 +512,18 @@ async function buildWeeklyMilkFeeds(
                 dairyId
 
         })
-
         .sort({
 
             date:
                 1
 
         })
-
         .lean();
 
+
+    // ======================================================
+    // NO RECORDS
+    // ======================================================
 
     if (
         !records.length
@@ -567,6 +610,10 @@ async function buildWeeklyMilkFeeds(
         .map(
             week => {
 
+                // ==========================================
+                // DAILY TOTALS
+                // ==========================================
+
                 const days =
 
                     Object.keys(
@@ -590,6 +637,10 @@ async function buildWeeklyMilkFeeds(
                     );
 
 
+                // ==========================================
+                // WEEK TOTAL
+                // ==========================================
+
                 const total =
                     days.reduce(
 
@@ -606,6 +657,10 @@ async function buildWeeklyMilkFeeds(
                     );
 
 
+                // ==========================================
+                // DAILY AVERAGE
+                // ==========================================
+
                 const average =
 
                     days.length
@@ -620,15 +675,44 @@ async function buildWeeklyMilkFeeds(
                         : 0;
 
 
+                // ==========================================
+                // RETURN WEEKLY FEED
+                // ==========================================
+
                 return {
 
+                    // --------------------------------------
+                    // UNIQUE WEEKLY FEED ID
+                    // --------------------------------------
+
                     _id:
-                        `weekly-${getDayKey(
+                        `weekly-${dairy._id}-${getDayKey(
                             week.start
                         )}`,
 
+
+                    // --------------------------------------
+                    // TYPE
+                    // --------------------------------------
+
                     type:
                         "milk",
+
+
+                    // --------------------------------------
+                    // DAIRY / ASSET
+                    // --------------------------------------
+
+                    dairyId:
+                        dairy._id,
+
+                    dairyName:
+                        dairy.name || "",
+
+
+                    // --------------------------------------
+                    // USER
+                    // --------------------------------------
 
                     userId:
                         null,
@@ -639,6 +723,11 @@ async function buildWeeklyMilkFeeds(
                     userImage:
                         "",
 
+
+                    // --------------------------------------
+                    // DATE
+                    // --------------------------------------
+
                     createdAt:
                         week.end,
 
@@ -647,8 +736,18 @@ async function buildWeeklyMilkFeeds(
                             week.end
                         ),
 
+
+                    // --------------------------------------
+                    // TITLE
+                    // --------------------------------------
+
                     title:
                         "Weekly Production Summary",
+
+
+                    // --------------------------------------
+                    // WEEK RANGE
+                    // --------------------------------------
 
                     weekStart:
                         getDayKey(
@@ -660,14 +759,34 @@ async function buildWeeklyMilkFeeds(
                             week.end
                         ),
 
+
+                    // --------------------------------------
+                    // DAILY PRODUCTION
+                    // --------------------------------------
+
                     days,
+
+
+                    // --------------------------------------
+                    // TOTAL PRODUCTION
+                    // --------------------------------------
 
                     total:
                         Number(
                             total.toFixed(2)
                         ),
 
+
+                    // --------------------------------------
+                    // AVERAGE PRODUCTION
+                    // --------------------------------------
+
                     average,
+
+
+                    // --------------------------------------
+                    // SOCIAL DATA
+                    // --------------------------------------
 
                     likes:
                         0,
