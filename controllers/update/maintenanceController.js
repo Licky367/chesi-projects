@@ -12,17 +12,39 @@ const updateService =
 
 
 // ==========================================================
+// HELPER
+//
+// A maintenance target is a dairy structure/facility.
+// Structures must NOT have a code.
+//
+// undefined, null, and "" = no code
+// Any actual code = animal / coded dairy record
+// ==========================================================
+
+function hasDairyCode(dairy) {
+
+  return (
+    dairy.code !== undefined &&
+    dairy.code !== null &&
+    String(dairy.code).trim() !== ""
+  );
+
+}
+
+
+
+// ==========================================================
 // 🔧 MARK MAINTENANCE
 //
 // Rules:
 // - User must be logged in.
 // - Only admin or dairyWorker can report maintenance.
 // - Target Dairy must be a structure/facility.
-// - A structure/facility must NOT have a code.
+// - Structure must NOT have a code.
 // - Maintenance update is created through updateService.
-// - Dairy.needsMaintenance is set to true.
-// - Socket errors must NEVER cause the successful request
-//   to become a failure.
+// - Dairy.needsMaintenance becomes true.
+// - Socket failure must NEVER cancel successful operation.
+// - Successful request redirects to /dairy/:id.
 // ==========================================================
 
 exports.markMaintenance = async (req, res) => {
@@ -50,8 +72,6 @@ exports.markMaintenance = async (req, res) => {
 
     // ======================================================
     // ROLE
-    //
-    // Only admin and dairyWorker may report maintenance.
     // ======================================================
 
     if (
@@ -100,20 +120,33 @@ exports.markMaintenance = async (req, res) => {
     // ======================================================
     // STRUCTURE VALIDATION
     //
-    // Maintenance is for structures/facilities.
-    //
-    // A Dairy with a code is not a structure.
+    // Maintenance is only for dairies without a code.
     // ======================================================
 
-    if (
-      dairy.code !== undefined &&
-      dairy.code !== null
-    ) {
+    if (hasDairyCode(dairy)) {
 
       return res
         .status(400)
         .send(
           "Maintenance can only be reported for dairy structures or facilities"
+        );
+
+    }
+
+
+    // ======================================================
+    // PREVENT DUPLICATE MARKING
+    //
+    // If maintenance is already required, the mark
+    // composer should not be available.
+    // ======================================================
+
+    if (dairy.needsMaintenance === true) {
+
+      return res
+        .status(400)
+        .send(
+          "This dairy facility already requires maintenance"
         );
 
     }
@@ -175,8 +208,6 @@ exports.markMaintenance = async (req, res) => {
 
     // ======================================================
     // CREATE MAINTENANCE UPDATE
-    //
-    // Keep the existing updateService contract.
     // ======================================================
 
     const update =
@@ -199,9 +230,7 @@ exports.markMaintenance = async (req, res) => {
 
 
     // ======================================================
-    // ACTUALLY MARK THE DAIRY
-    //
-    // This is the status used by structures.ejs.
+    // UPDATE DAIRY STATUS
     // ======================================================
 
     dairy.needsMaintenance =
@@ -211,10 +240,10 @@ exports.markMaintenance = async (req, res) => {
 
 
     // ======================================================
-    // REAL-TIME SOCKET PAYLOAD
+    // SOCKET.IO
     //
-    // Socket errors are isolated so they cannot turn a
-    // successful maintenance operation into HTTP 500.
+    // Socket failure must NEVER make the successful
+    // maintenance operation look like a failed request.
     // ======================================================
 
     try {
@@ -271,7 +300,7 @@ exports.markMaintenance = async (req, res) => {
     } catch (socketError) {
 
       console.error(
-        "MAINTENANCE SOCKET ERROR:",
+        "MAINTENANCE MARK SOCKET ERROR:",
         socketError
       );
 
@@ -279,13 +308,14 @@ exports.markMaintenance = async (req, res) => {
 
 
     // ======================================================
-    // SUCCESS REDIRECT
+    // SUCCESS
+    //
+    // Always return the user to the dairy page.
     // ======================================================
 
     return res.redirect(
       `/dairy/${dairy._id}`
     );
-
 
   } catch (err) {
 
@@ -314,11 +344,14 @@ exports.markMaintenance = async (req, res) => {
 // - User must be logged in.
 // - Admin only.
 // - Target Dairy must be a structure/facility.
-// - Charges must be a valid non-negative number.
+// - Structure must NOT have a code.
+// - Maintenance must currently be required.
+// - Charges must be valid and >= 0.
 // - Description is required.
 // - Maintenance update is cleared.
 // - Dairy.needsMaintenance becomes false.
-// - Socket errors cannot break the redirect.
+// - Socket failure must NEVER cancel successful operation.
+// - Successful request redirects to /dairy/:id.
 // ==========================================================
 
 exports.clearMaintenance = async (req, res) => {
@@ -395,18 +428,30 @@ exports.clearMaintenance = async (req, res) => {
     // ======================================================
     // STRUCTURE VALIDATION
     //
-    // Only structures/facilities can have maintenance.
+    // Maintenance applies only to dairies without a code.
     // ======================================================
 
-    if (
-      dairy.code !== undefined &&
-      dairy.code !== null
-    ) {
+    if (hasDairyCode(dairy)) {
 
       return res
         .status(400)
         .send(
           "Maintenance can only be cleared for dairy structures or facilities"
+        );
+
+    }
+
+
+    // ======================================================
+    // PREVENT CLEARING WHEN NOTHING IS MARKED
+    // ======================================================
+
+    if (dairy.needsMaintenance !== true) {
+
+      return res
+        .status(400)
+        .send(
+          "This dairy facility does not currently require maintenance"
         );
 
     }
@@ -482,7 +527,7 @@ exports.clearMaintenance = async (req, res) => {
 
 
     // ======================================================
-    // ACTUALLY CLEAR THE DAIRY STATUS
+    // CLEAR DAIRY MAINTENANCE STATUS
     // ======================================================
 
     dairy.needsMaintenance =
@@ -492,9 +537,10 @@ exports.clearMaintenance = async (req, res) => {
 
 
     // ======================================================
-    // REAL-TIME SOCKET PAYLOAD
+    // SOCKET.IO
     //
-    // Again, socket failure must not affect the operation.
+    // Socket failure must NEVER make the successful
+    // maintenance clear operation look like a failure.
     // ======================================================
 
     try {
@@ -551,7 +597,7 @@ exports.clearMaintenance = async (req, res) => {
     } catch (socketError) {
 
       console.error(
-        "MAINTENANCE SOCKET ERROR:",
+        "MAINTENANCE CLEAR SOCKET ERROR:",
         socketError
       );
 
@@ -559,13 +605,14 @@ exports.clearMaintenance = async (req, res) => {
 
 
     // ======================================================
-    // SUCCESS REDIRECT
+    // SUCCESS
+    //
+    // Always return the user to the dairy page.
     // ======================================================
 
     return res.redirect(
       `/dairy/${dairy._id}`
     );
-
 
   } catch (err) {
 
