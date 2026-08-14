@@ -1,0 +1,1102 @@
+<!-- =========================================================
+     maintComposer.ejs
+     
+     REUSABLE MAINTENANCE COMPOSER / POST MODAL
+
+     Expected variables:
+       user
+       dairy
+
+     Example:
+       <%- include("maintComposer", { user, dairy }) %>
+
+     The parent page can decide how/when this modal is opened.
+========================================================= -->
+
+
+<style>
+
+  /* =========================================================
+     MAINTENANCE COMPOSER
+  ========================================================= */
+
+  .maint-composer-overlay {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 10000;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(15, 23, 42, 0.58);
+
+    backdrop-filter: blur(5px);
+
+    -webkit-backdrop-filter: blur(5px);
+
+  }
+
+
+  .maint-composer-overlay.active {
+
+    display: flex;
+
+  }
+
+
+  /* =========================================================
+     MODAL
+  ========================================================= */
+
+  .maint-composer {
+
+    width: 100%;
+
+    max-width: 520px;
+
+    max-height: 92vh;
+
+    overflow-y: auto;
+
+    border-radius: 22px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 25px 70px rgba(0, 0, 0, 0.25);
+
+    animation:
+      maintComposerIn
+      0.22s
+      ease
+      both;
+
+  }
+
+
+  @keyframes maintComposerIn {
+
+    from {
+
+      opacity: 0;
+
+      transform:
+        translateY(18px)
+        scale(0.98);
+
+    }
+
+    to {
+
+      opacity: 1;
+
+      transform:
+        translateY(0)
+        scale(1);
+
+    }
+
+  }
+
+
+  /* =========================================================
+     HEADER
+  ========================================================= */
+
+  .maint-composer-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 16px 18px;
+
+    border-bottom:
+      1px solid #e5e7eb;
+
+  }
+
+
+  .maint-composer-user {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    min-width: 0;
+
+  }
+
+
+  .maint-composer-user-avatar {
+
+    width: 43px;
+    height: 43px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #dcfce7;
+
+    color: #166534;
+
+    font-size: 19px;
+
+  }
+
+
+  .maint-composer-user-info {
+
+    min-width: 0;
+
+  }
+
+
+  .maint-composer-user-name {
+
+    color: #111827;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+  }
+
+
+  .maint-composer-user-label {
+
+    margin-top: 2px;
+
+    color: #6b7280;
+
+    font-size: 11px;
+
+  }
+
+
+  /* =========================================================
+     CLOSE
+  ========================================================= */
+
+  .maint-composer-close {
+
+    width: 38px;
+    height: 38px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: #f3f4f6;
+
+    color: #4b5563;
+
+    font-size: 24px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      transform 0.2s ease;
+
+  }
+
+
+  .maint-composer-close:hover {
+
+    background: #e5e7eb;
+
+    color: #111827;
+
+  }
+
+
+  .maint-composer-close:active {
+
+    transform: scale(0.92);
+
+  }
+
+
+  /* =========================================================
+     BODY
+  ========================================================= */
+
+  .maint-composer-body {
+
+    padding: 20px;
+
+  }
+
+
+  /* =========================================================
+     QUESTION
+  ========================================================= */
+
+  .maint-composer-question {
+
+    margin: 0 0 18px;
+
+    color: #111827;
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+    line-height: 1.4;
+
+  }
+
+
+  .maint-composer-question-name {
+
+    color: #166534;
+
+  }
+
+
+  /* =========================================================
+     SELECTED ITEM
+  ========================================================= */
+
+  .maint-composer-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 20px;
+
+    padding: 12px;
+
+    border:
+      1px solid #dcfce7;
+
+    border-radius: 14px;
+
+    background: #f0fdf4;
+
+  }
+
+
+  .maint-composer-item-image {
+
+    width: 50px;
+    height: 50px;
+
+    flex-shrink: 0;
+
+    object-fit: cover;
+
+    border:
+      2px solid #bbf7d0;
+
+    border-radius: 50%;
+
+    background: #dcfce7;
+
+  }
+
+
+  .maint-composer-item-info {
+
+    min-width: 0;
+
+  }
+
+
+  .maint-composer-item-name {
+
+    margin-bottom: 4px;
+
+    color: #14532d;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+  }
+
+
+  .maint-composer-item-code {
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+  }
+
+
+  /* =========================================================
+     FORM
+  ========================================================= */
+
+  .maint-composer-form {
+
+    margin: 0;
+
+  }
+
+
+  .maint-composer-field {
+
+    margin-bottom: 16px;
+
+  }
+
+
+  .maint-composer-field label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #374151;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+  }
+
+
+  .maint-composer-field select,
+
+  .maint-composer-field textarea {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    border:
+      1px solid #d1d5db;
+
+    border-radius: 11px;
+
+    outline: none;
+
+    background: #ffffff;
+
+    color: #111827;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+
+  }
+
+
+  .maint-composer-field select {
+
+    height: 46px;
+
+    padding:
+      0 12px;
+
+  }
+
+
+  .maint-composer-field textarea {
+
+    min-height: 120px;
+
+    padding: 12px;
+
+    resize: vertical;
+
+    line-height: 1.5;
+
+  }
+
+
+  .maint-composer-field select:focus,
+
+  .maint-composer-field textarea:focus {
+
+    border-color: #16a34a;
+
+    box-shadow:
+      0 0 0 4px
+      rgba(22, 163, 74, 0.10);
+
+  }
+
+
+  /* =========================================================
+     ACTIONS
+  ========================================================= */
+
+  .maint-composer-actions {
+
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 20px;
+
+  }
+
+
+  .maint-composer-cancel,
+
+  .maint-composer-submit {
+
+    min-height: 46px;
+
+    border: none;
+
+    border-radius: 11px;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+      background 0.2s ease,
+      transform 0.2s ease;
+
+  }
+
+
+  .maint-composer-cancel {
+
+    padding:
+      0 18px;
+
+    background: #f3f4f6;
+
+    color: #374151;
+
+  }
+
+
+  .maint-composer-cancel:hover {
+
+    background: #e5e7eb;
+
+  }
+
+
+  .maint-composer-submit {
+
+    flex: 1;
+
+    background: #166534;
+
+    color: #ffffff;
+
+  }
+
+
+  .maint-composer-submit:hover {
+
+    background: #14532d;
+
+    transform:
+      translateY(-1px);
+
+  }
+
+
+  /* =========================================================
+     FOOTER NOTE
+  ========================================================= */
+
+  .maint-composer-note {
+
+    margin-top: 15px;
+
+    color: #9ca3af;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+
+    text-align: center;
+
+  }
+
+
+  /* =========================================================
+     MOBILE
+  ========================================================= */
+
+  @media (max-width: 650px) {
+
+    .maint-composer-overlay {
+
+      align-items: flex-end;
+
+      padding: 0;
+
+    }
+
+
+    .maint-composer {
+
+      max-width: none;
+
+      max-height: 94vh;
+
+      border-radius:
+        22px
+        22px
+        0
+        0;
+
+    }
+
+
+    .maint-composer-body {
+
+      padding: 18px;
+
+    }
+
+
+    .maint-composer-question {
+
+      font-size: 18px;
+
+    }
+
+
+    .maint-composer-actions {
+
+      flex-direction: column-reverse;
+
+    }
+
+
+    .maint-composer-cancel {
+
+      width: 100%;
+
+    }
+
+  }
+
+</style>
+
+
+
+<!-- =========================================================
+     MODAL
+========================================================= -->
+
+<div
+  id="maintComposer"
+  class="maint-composer-overlay"
+  aria-hidden="true"
+>
+
+
+  <div
+    class="maint-composer"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="maintComposerQuestion"
+  >
+
+
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="maint-composer-header">
+
+
+      <div class="maint-composer-user">
+
+
+        <div class="maint-composer-user-avatar">
+
+          👤
+
+        </div>
+
+
+        <div class="maint-composer-user-info">
+
+
+          <div class="maint-composer-user-name">
+
+            <%= user.name %>
+
+          </div>
+
+
+          <div class="maint-composer-user-label">
+
+            Maintenance report
+
+          </div>
+
+
+        </div>
+
+
+      </div>
+
+
+      <button
+        type="button"
+        class="maint-composer-close"
+        onclick="closeMaintComposer()"
+        aria-label="Close maintenance composer"
+      >
+
+        ×
+
+      </button>
+
+
+    </div>
+
+
+
+    <!-- =====================================================
+         BODY
+    ====================================================== -->
+
+    <div class="maint-composer-body">
+
+
+      <!-- ===================================================
+           QUESTION
+      ==================================================== -->
+
+      <h2
+        id="maintComposerQuestion"
+        class="maint-composer-question"
+      >
+
+        <span class="maint-composer-question-name">
+          <%= user.name %>
+        </span>,
+
+        does this facility/equipment/tool
+        require any maintenance?
+
+      </h2>
+
+
+
+      <!-- ===================================================
+           SELECTED FACILITY / EQUIPMENT / TOOL
+      ==================================================== -->
+
+      <div class="maint-composer-item">
+
+
+        <% if (
+          dairy &&
+          dairy.profileImage &&
+          dairy.profileImage.trim() !== ""
+        ) { %>
+
+
+          <img
+            src="/uploads/<%= dairy.profileImage %>"
+            class="maint-composer-item-image"
+            alt="<%= dairy.name %>"
+          >
+
+
+        <% } else if (dairy) { %>
+
+
+          <img
+            src="https://ui-avatars.com/api/?name=<%= encodeURIComponent(dairy.name) %>&background=0b5d1e&color=fff"
+            class="maint-composer-item-image"
+            alt="<%= dairy.name %>"
+          >
+
+
+        <% } else { %>
+
+
+          <div class="maint-composer-item-image"></div>
+
+
+        <% } %>
+
+
+        <div class="maint-composer-item-info">
+
+
+          <div class="maint-composer-item-name">
+
+            <%= dairy ? dairy.name : "Selected facility" %>
+
+          </div>
+
+
+          <% if (dairy && dairy.code !== undefined) { %>
+
+
+            <div class="maint-composer-item-code">
+
+              Facility Code:
+              <strong>
+                <%= dairy.code %>
+              </strong>
+
+            </div>
+
+
+          <% } %>
+
+
+        </div>
+
+
+      </div>
+
+
+
+      <!-- ===================================================
+           MAINTENANCE FORM
+      ==================================================== -->
+
+      <form
+        id="maintComposerForm"
+        class="maint-composer-form"
+        action="<%= dairy ? '/dairy/' + dairy._id + '/maintenance/mark' : '#' %>"
+        method="POST"
+      >
+
+
+        <!-- =================================================
+             TYPE
+        ================================================== -->
+
+        <div class="maint-composer-field">
+
+
+          <label for="maintComposerType">
+
+            What type of maintenance is required?
+
+          </label>
+
+
+          <select
+            id="maintComposerType"
+            name="type"
+            required
+          >
+
+            <option value="">
+
+              Select maintenance type
+
+            </option>
+
+
+            <option value="repair">
+
+              🔧 Repair
+
+            </option>
+
+
+            <option value="maintenance">
+
+              🛠️ Maintenance
+
+            </option>
+
+
+            <option value="construction">
+
+              🏗️ Construction
+
+            </option>
+
+          </select>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             DESCRIPTION
+        ================================================== -->
+
+        <div class="maint-composer-field">
+
+
+          <label for="maintComposerDescription">
+
+            What needs attention?
+
+          </label>
+
+
+          <textarea
+            id="maintComposerDescription"
+            name="description"
+            placeholder="Describe the issue or maintenance required..."
+            required
+          ></textarea>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             ACTIONS
+        ================================================== -->
+
+        <div class="maint-composer-actions">
+
+
+          <button
+            type="button"
+            class="maint-composer-cancel"
+            onclick="closeMaintComposer()"
+          >
+
+            Cancel
+
+          </button>
+
+
+          <button
+            type="submit"
+            class="maint-composer-submit"
+          >
+
+            🔧 Submit Maintenance
+
+          </button>
+
+
+        </div>
+
+
+      </form>
+
+
+
+      <div class="maint-composer-note">
+
+        Your maintenance report will be recorded against this
+        facility.
+
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+</div>
+
+
+
+<script>
+
+  /* =========================================================
+     OPEN
+  ========================================================= */
+
+  function openMaintComposer() {
+
+    const modal =
+      document.getElementById(
+        "maintComposer"
+      );
+
+
+    if (!modal) return;
+
+
+    modal.classList.add("active");
+
+    modal.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
+
+    document.body.style.overflow =
+      "hidden";
+
+
+    setTimeout(() => {
+
+      const type =
+        document.getElementById(
+          "maintComposerType"
+        );
+
+
+      if (type) {
+
+        type.focus();
+
+      }
+
+    }, 100);
+
+  }
+
+
+
+  /* =========================================================
+     CLOSE
+  ========================================================= */
+
+  function closeMaintComposer() {
+
+    const modal =
+      document.getElementById(
+        "maintComposer"
+      );
+
+
+    if (!modal) return;
+
+
+    modal.classList.remove("active");
+
+    modal.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
+
+    document.body.style.overflow =
+      "";
+
+
+    const form =
+      document.getElementById(
+        "maintComposerForm"
+      );
+
+
+    if (form) {
+
+      form.reset();
+
+    }
+
+  }
+
+
+
+  /* =========================================================
+     CLICK OUTSIDE
+  ========================================================= */
+
+  document.addEventListener(
+    "click",
+    function (event) {
+
+      const modal =
+        document.getElementById(
+          "maintComposer"
+        );
+
+
+      if (
+        modal &&
+        event.target === modal
+      ) {
+
+        closeMaintComposer();
+
+      }
+
+    }
+  );
+
+
+
+  /* =========================================================
+     ESCAPE
+  ========================================================= */
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+
+      if (
+        event.key !== "Escape"
+      ) {
+
+        return;
+
+      }
+
+
+      const modal =
+        document.getElementById(
+          "maintComposer"
+        );
+
+
+      if (
+        modal &&
+        modal.classList.contains("active")
+      ) {
+
+        closeMaintComposer();
+
+      }
+
+    }
+  );
+
+</script>
