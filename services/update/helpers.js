@@ -48,6 +48,56 @@ function formatDate(date) {
 }
 
 
+// ==========================================================
+// WEEK START DATE FORMATTER
+// ==========================================================
+//
+// Used specifically by weekly milk reports.
+//
+// Unlike formatDate(), this intentionally does NOT include
+// the time because the weekly report date represents the
+// first day of the week being summarized.
+//
+// Example:
+//
+//     Aug 10, 2026
+//
+// rather than:
+//
+//     Aug 10, 2026, 00:00
+//
+// ==========================================================
+
+function formatWeekStart(date) {
+
+    if (!date) return "";
+
+    return new Intl.DateTimeFormat(
+        "en-KE",
+        {
+            timeZone:
+                "Africa/Nairobi",
+
+            year:
+                "numeric",
+
+            month:
+                "short",
+
+            day:
+                "numeric"
+        }
+    ).format(
+        new Date(date)
+    );
+
+}
+
+
+// ==========================================================
+// DAY KEY
+// ==========================================================
+
 function getDayKey(
     date = new Date()
 ) {
@@ -59,6 +109,10 @@ function getDayKey(
 }
 
 
+// ==========================================================
+// MONTH KEY
+// ==========================================================
+
 function getMonthKey(
     date = new Date()
 ) {
@@ -68,6 +122,23 @@ function getMonthKey(
 
 }
 
+
+// ==========================================================
+// WEEK RANGE
+// ==========================================================
+//
+// Returns:
+//
+//     start = Monday 00:00:00.000
+//     end   = Sunday 23:59:59.999
+//
+// Example:
+//
+//     Monday Aug 10
+//     through
+//     Sunday Aug 16
+//
+// ==========================================================
 
 function getWeekRange(
     date = new Date()
@@ -91,7 +162,9 @@ function getWeekRange(
     const monday =
         new Date(current);
 
-    monday.setDate(diff);
+    monday.setDate(
+        diff
+    );
 
     monday.setHours(
         0,
@@ -455,18 +528,24 @@ function formatFeed(
 //
 // Builds weekly milk reports for a specific Dairy / asset.
 //
-// Each generated weekly feed now contains:
+// Each generated weekly feed contains:
 //
 //     dairyId
 //     dairyName
 //
-// This allows milk.ejs to display:
+// The weekly report date represents the FIRST DAY of the
+// week being summarized.
 //
-//     Weekly Milk Report for Daisy Freshman
+// Example:
 //
-// with Daisy Freshman linking to:
+//     Week:
+//         Monday Aug 10
+//         through
+//         Sunday Aug 16
 //
-//     /dairy/:id
+// Report timestamp:
+//
+//     Aug 10, 2026
 //
 // ==========================================================
 
@@ -727,13 +806,22 @@ async function buildWeeklyMilkFeeds(
                     // --------------------------------------
                     // DATE
                     // --------------------------------------
+                    //
+                    // IMPORTANT:
+                    //
+                    // The weekly report is dated using
+                    // the FIRST DAY of the week.
+                    //
+                    // It must NOT use week.end.
+                    //
+                    // --------------------------------------
 
                     createdAt:
-                        week.end,
+                        week.start,
 
                     dateText:
-                        formatDate(
-                            week.end
+                        formatWeekStart(
+                            week.start
                         ),
 
 
@@ -809,6 +897,8 @@ async function buildWeeklyMilkFeeds(
 module.exports = {
 
     formatDate,
+
+    formatWeekStart,
 
     getDayKey,
 
