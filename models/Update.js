@@ -264,6 +264,8 @@ const updateSchema = new mongoose.Schema(
 
       type: mongoose.Schema.Types.ObjectId,
 
+ref: "Dairy",
+
       required: true,
 
       index: true
