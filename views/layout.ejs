@@ -1,13 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
 <title>
-<%= typeof title !== "undefined" ? title : "Projects" %>
+    <%= typeof title !== "undefined" ? title : "Projects" %>
 </title>
+
 
 <style>
 
@@ -16,16 +22,16 @@
 ========================================================= */
 
 *{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Arial,sans-serif;
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
 }
 
 html,
 body{
-height:100%;
-background:#f4f6f8;
+    height:100%;
+    background:#f4f6f8;
 }
 
 
@@ -34,29 +40,26 @@ background:#f4f6f8;
 ========================================================= */
 
 .header{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
 
-position:fixed;
+    min-height:70px;
 
-top:0;
-left:0;
-right:0;
+    background:#0b5d1e;
 
-height:70px;
+    display:flex;
+    align-items:center;
 
-background:#0b5d1e;
+    padding:0 18px;
 
-display:flex;
-align-items:center;
+    color:#fff;
 
-padding:0 18px;
+    z-index:1002;
 
-color:#fff;
-
-z-index:1002;
-
-box-shadow:
-0 2px 8px rgba(0,0,0,.15);
-
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.15);
 }
 
 
@@ -65,36 +68,29 @@ box-shadow:
 ========================================================= */
 
 .header-logo-link{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
 
-display:flex;
-align-items:center;
-justify-content:flex-start;
+    width:auto;
 
-width:auto;
+    height:70px;
 
-height:100%;
+    text-decoration:none;
 
-text-decoration:none;
-
-flex-shrink:0;
-
+    flex-shrink:0;
 }
 
-
 .header-logo{
+    height:138px;
+    width:auto;
 
-height:138px;
+    display:block;
 
-width:auto;
+    object-fit:contain;
 
-display:block;
-
-object-fit:contain;
-
-position:relative;
-
-top:10px;
-
+    position:relative;
+    top:10px;
 }
 
 
@@ -103,44 +99,43 @@ top:10px;
 ========================================================= */
 
 .header-title{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
 
-flex:1;
+    flex:0 1 auto;
 
-min-width:0;
+    min-width:0;
 
-display:flex;
+    padding:0 0 0 8px;
 
-align-items:center;
-
-justify-content:center;
-
-padding:0 18px;
-
-text-align:center;
-
+    text-align:left;
 }
 
-
 .header-title-text{
+    display:block;
 
-display:block;
+    width:auto;
 
-width:100%;
+    font-size:18px;
+    font-weight:700;
 
-font-size:18px;
+    letter-spacing:.3px;
 
-font-weight:700;
+    color:#fff;
 
-letter-spacing:.3px;
+    /*
+       IMPORTANT:
+       Allow long titles to wrap.
+       Do not truncate.
+    */
+    white-space:normal;
 
-color:#fff;
+    overflow:visible;
 
-white-space:nowrap;
+    text-overflow:clip;
 
-overflow:hidden;
-
-text-overflow:ellipsis;
-
+    line-height:21px;
 }
 
 
@@ -149,32 +144,25 @@ text-overflow:ellipsis;
 ========================================================= */
 
 .top-menu{
+    position:fixed;
 
-position:fixed;
+    top:70px;
+    left:0;
+    right:0;
 
-top:70px;
+    height:50px;
 
-left:0;
+    background:#084816;
 
-right:0;
+    display:flex;
+    align-items:center;
 
-height:50px;
+    padding:0 15px;
 
-background:#084816;
+    z-index:1001;
 
-display:flex;
-
-align-items:center;
-
-justify-content:space-between;
-
-padding:0 15px;
-
-z-index:1001;
-
-box-shadow:
-0 2px 8px rgba(0,0,0,.15);
-
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.15);
 }
 
 
@@ -183,81 +171,76 @@ box-shadow:
 ========================================================= */
 
 .dairy-worker-nav{
+    display:flex;
 
-display:flex;
+    align-items:center;
 
-align-items:center;
+    justify-content:space-evenly;
 
-justify-content:flex-start;
+    width:100%;
 
-gap:8px;
+    height:100%;
 
-height:100%;
+    overflow-x:auto;
+    overflow-y:hidden;
 
-overflow-x:auto;
+    flex:1;
 
-overflow-y:hidden;
-
-flex:1;
-
-scrollbar-width:none;
-
+    scrollbar-width:none;
 }
-
 
 .dairy-worker-nav::-webkit-scrollbar{
-
-display:none;
-
+    display:none;
 }
 
+
+/* =========================================================
+   NAV LINKS
+========================================================= */
 
 .dairy-worker-nav a{
+    display:flex;
 
-display:flex;
+    flex-direction:column;
 
-flex-direction:column;
+    align-items:center;
 
-align-items:center;
+    justify-content:center;
 
-justify-content:center;
+    gap:2px;
 
-gap:2px;
+    height:46px;
 
-height:46px;
+    /*
+       Equal flexible space for every link.
+    */
+    flex:1 1 0;
 
-min-width:62px;
+    min-width:0;
 
-padding:2px 8px;
+    padding:2px 8px;
 
-border-radius:7px;
+    border-radius:7px;
 
-color:#fff;
+    color:#fff;
 
-text-decoration:none;
+    text-decoration:none;
 
-font-size:11px;
+    font-size:11px;
 
-font-weight:500;
+    font-weight:500;
 
-white-space:nowrap;
+    white-space:nowrap;
 
-transition:.2s;
-
+    transition:.2s;
 }
-
 
 .dairy-worker-nav a:hover{
-
-background:rgba(255,255,255,.15);
-
+    background:rgba(255,255,255,.15);
 }
 
-
 .dairy-worker-nav a:active{
-
-background:rgba(255,255,255,.2);
-
+    background:rgba(255,255,255,.2);
 }
 
 
@@ -266,24 +249,19 @@ background:rgba(255,255,255,.2);
 ========================================================= */
 
 .nav-icon{
+    display:block;
 
-display:block;
+    font-size:19px;
 
-font-size:19px;
-
-line-height:19px;
-
+    line-height:19px;
 }
 
-
 .nav-label{
+    display:block;
 
-display:block;
+    font-size:10px;
 
-font-size:10px;
-
-line-height:12px;
-
+    line-height:12px;
 }
 
 
@@ -292,33 +270,28 @@ line-height:12px;
 ========================================================= */
 
 .menu-btn{
+    width:44px;
+    height:44px;
 
-width:44px;
+    border-radius:8px;
 
-height:44px;
+    background:#fff;
 
-border-radius:8px;
+    color:#0b5d1e;
 
-background:#fff;
+    display:flex;
 
-color:#0b5d1e;
+    align-items:center;
+    justify-content:center;
 
-display:flex;
+    cursor:pointer;
 
-align-items:center;
+    font-size:28px;
+    font-weight:bold;
 
-justify-content:center;
+    user-select:none;
 
-cursor:pointer;
-
-font-size:28px;
-
-font-weight:bold;
-
-user-select:none;
-
-flex-shrink:0;
-
+    flex-shrink:0;
 }
 
 
@@ -327,68 +300,57 @@ flex-shrink:0;
 ========================================================= */
 
 .profile-box{
+    position:relative;
 
-position:relative;
+    flex-shrink:0;
 
-flex-shrink:0;
+    height:50px;
 
-height:50px;
+    display:flex;
 
-display:flex;
-
-align-items:center;
-
+    align-items:center;
 }
-
 
 .profile-trigger{
+    height:48px;
 
-height:48px;
+    min-width:58px;
 
-min-width:58px;
+    display:flex;
 
-display:flex;
+    flex-direction:column;
 
-flex-direction:column;
+    align-items:center;
 
-align-items:center;
+    justify-content:center;
 
-justify-content:center;
+    gap:1px;
 
-gap:1px;
-
-cursor:pointer;
-
+    cursor:pointer;
 }
-
 
 .profile-icon{
+    font-size:19px;
 
-font-size:19px;
+    line-height:19px;
 
-line-height:19px;
-
-display:block;
-
+    display:block;
 }
 
-
 .profile-name{
+    font-size:10px;
 
-font-size:10px;
+    line-height:12px;
 
-line-height:12px;
+    color:#fff;
 
-color:#fff;
+    max-width:75px;
 
-max-width:75px;
+    overflow:hidden;
 
-overflow:hidden;
+    text-overflow:ellipsis;
 
-text-overflow:ellipsis;
-
-white-space:nowrap;
-
+    white-space:nowrap;
 }
 
 
@@ -397,65 +359,49 @@ white-space:nowrap;
 ========================================================= */
 
 .dropdown-profile{
+    position:absolute;
 
-position:absolute;
+    top:52px;
+    right:0;
 
-top:52px;
+    width:190px;
 
-right:0;
+    background:#fff;
 
-width:190px;
+    border-radius:10px;
 
-background:#fff;
+    overflow:hidden;
 
-border-radius:10px;
+    box-shadow:
+        0 8px 25px rgba(0,0,0,.2);
 
-overflow:hidden;
+    display:none;
 
-box-shadow:
-0 8px 25px rgba(0,0,0,.2);
-
-display:none;
-
-z-index:1100;
-
+    z-index:1100;
 }
 
-
-.profile-box.active
-.dropdown-profile{
-
-display:block;
-
+.profile-box.active .dropdown-profile{
+    display:block;
 }
-
 
 .dropdown-profile a{
+    display:block;
 
-display:block;
+    padding:12px 15px;
 
-padding:12px 15px;
+    text-decoration:none;
 
-text-decoration:none;
+    color:#333;
 
-color:#333;
-
-border-bottom:1px solid #eee;
-
+    border-bottom:1px solid #eee;
 }
-
 
 .dropdown-profile a:last-child{
-
-border-bottom:none;
-
+    border-bottom:none;
 }
 
-
 .dropdown-profile a:hover{
-
-background:#f2f2f2;
-
+    background:#f2f2f2;
 }
 
 
@@ -464,62 +410,50 @@ background:#f2f2f2;
 ========================================================= */
 
 .sidebar{
+    position:fixed;
 
-position:fixed;
+    top:120px;
+    left:-260px;
 
-top:120px;
+    width:240px;
 
-left:-260px;
+    height:calc(100vh - 170px);
 
-width:240px;
+    background:#084816;
 
-height:calc(100vh - 170px);
+    overflow-y:auto;
 
-background:#084816;
+    padding:15px;
 
-overflow-y:auto;
+    transition:left .3s ease;
 
-padding:15px;
-
-transition:left .3s ease;
-
-z-index:1002;
-
+    z-index:1002;
 }
-
 
 .sidebar.active{
-
-left:0;
-
+    left:0;
 }
-
 
 .sidebar a{
+    display:block;
 
-display:block;
+    padding:12px;
 
-padding:12px;
+    margin-bottom:6px;
 
-margin-bottom:6px;
+    border-radius:6px;
 
-border-radius:6px;
+    text-decoration:none;
 
-text-decoration:none;
+    color:#fff;
 
-color:#fff;
+    font-size:15px;
 
-font-size:15px;
-
-transition:.2s;
-
+    transition:.2s;
 }
 
-
 .sidebar a:hover{
-
-background:rgba(255,255,255,.15);
-
+    background:rgba(255,255,255,.15);
 }
 
 
@@ -528,30 +462,24 @@ background:rgba(255,255,255,.15);
 ========================================================= */
 
 .overlay{
+    position:fixed;
 
-position:fixed;
+    top:120px;
+    left:0;
 
-top:120px;
+    width:100%;
 
-left:0;
+    height:calc(100vh - 170px);
 
-width:100%;
+    background:rgba(0,0,0,.45);
 
-height:calc(100vh - 170px);
+    display:none;
 
-background:rgba(0,0,0,.45);
-
-display:none;
-
-z-index:1001;
-
+    z-index:1001;
 }
 
-
 .overlay.active{
-
-display:block;
-
+    display:block;
 }
 
 
@@ -560,11 +488,9 @@ display:block;
 ========================================================= */
 
 .main{
+    padding:140px 18px 70px;
 
-padding:140px 18px 70px;
-
-min-height:100vh;
-
+    min-height:100vh;
 }
 
 
@@ -573,31 +499,26 @@ min-height:100vh;
 ========================================================= */
 
 .footer{
+    position:fixed;
 
-position:fixed;
+    bottom:0;
+    left:0;
+    right:0;
 
-bottom:0;
+    height:50px;
 
-left:0;
+    background:#0b5d1e;
 
-right:0;
+    color:#fff;
 
-height:50px;
+    display:flex;
 
-background:#0b5d1e;
+    align-items:center;
+    justify-content:center;
 
-color:#fff;
+    font-size:13px;
 
-display:flex;
-
-align-items:center;
-
-justify-content:center;
-
-font-size:13px;
-
-z-index:1000;
-
+    z-index:1000;
 }
 
 
@@ -607,94 +528,128 @@ z-index:1000;
 
 @media(max-width:600px){
 
-.sidebar{
+    .sidebar{
+        width:260px;
 
-width:260px;
-
-left:-280px;
-
-}
+        left:-280px;
+    }
 
 
-.header{
+    .header{
+        padding:0 10px;
 
-padding:0 10px;
-
-}
-
-
-.header-logo{
-
-height:100px;
-
-top:8px;
-
-}
+        min-height:70px;
+    }
 
 
-.header-title{
+    .header-logo{
+        height:100px;
 
-padding:0 8px;
-
-}
-
-
-.header-title-text{
-
-font-size:15px;
-
-}
+        top:8px;
+    }
 
 
-.top-menu{
+    .header-title{
+        padding-left:6px;
 
-padding:0 8px;
-
-}
-
-
-.dairy-worker-nav{
-
-gap:3px;
-
-}
+        /*
+           Prevent title from being pushed
+           unnecessarily far from the logo.
+        */
+        flex:1 1 auto;
+    }
 
 
-.dairy-worker-nav a{
+    .header-title-text{
+        font-size:15px;
 
-min-width:57px;
+        line-height:18px;
 
-padding:2px 5px;
+        /*
+           Long titles wrap instead of disappearing.
+        */
+        white-space:normal;
 
-}
+        overflow:visible;
 
-
-.nav-icon{
-
-font-size:18px;
-
-}
-
-
-.nav-label{
-
-font-size:9px;
-
-}
+        text-overflow:clip;
+    }
 
 
-.profile-trigger{
-
-min-width:53px;
-
-}
+    .top-menu{
+        padding:0 8px;
+    }
 
 
-.profile-name{
+    .dairy-worker-nav{
+        gap:3px;
+    }
 
-max-width:60px;
+
+    .dairy-worker-nav a{
+        min-width:0;
+
+        padding:2px 5px;
+    }
+
+
+    .nav-icon{
+        font-size:18px;
+    }
+
+
+    .nav-label{
+        font-size:9px;
+    }
+
+
+    .profile-trigger{
+        min-width:53px;
+    }
+
+
+    .profile-name{
+        max-width:60px;
+    }
 
 }
+
+
+/* =========================================================
+   VERY SMALL SCREENS
+========================================================= */
+
+@media(max-width:380px){
+
+    .header{
+        padding:0 6px;
+    }
+
+    .header-logo{
+        height:88px;
+    }
+
+    .header-title{
+        padding-left:4px;
+    }
+
+    .header-title-text{
+        font-size:14px;
+        line-height:17px;
+    }
+
+    .profile-trigger{
+        min-width:48px;
+    }
+
+    .profile-name{
+        max-width:50px;
+    }
+
+    .dairy-worker-nav a{
+        padding-left:2px;
+        padding-right:2px;
+    }
 
 }
 
@@ -712,66 +667,72 @@ max-width:60px;
    AUTHENTICATION PAGES
 ========================================================= */
 
-const authPages=[
+const authPages = [
     "/login",
     "/signup",
     "/forgot-password",
     "/reset-password"
 ];
 
-
-const isAuthPage=
-authPages.includes(
-    currentPath || req?.path || ""
-);
+const isAuthPage =
+    authPages.includes(
+        currentPath || req?.path || ""
+    );
 
 
 /* =========================================================
    HOME DESTINATION
 ========================================================= */
 
-let homeLink="/";
-
+let homeLink = "/";
 
 if(
     user &&
-    user.role==="dairyWorker" &&
+    user.role === "dairyWorker" &&
     Array.isArray(user.assignedFarm) &&
-    user.assignedFarm.length>0
+    user.assignedFarm.length > 0
 ){
 
-    const firstFarm=user.assignedFarm[0];
+    const firstFarm = user.assignedFarm[0];
 
-    homeLink=`/dairy/${firstFarm}`;
-
+    homeLink = `/dairy/${firstFarm}`;
 }
 
 
 /* =========================================================
    HEADER TITLE
+=========================================================
 
-   dairyWorker:
-       Current dairy farm name
+   ADMIN
+       CHESI PROJECTS
 
-   Fallback:
-       HOME COMMERCIAL DAIRIES
+   DAIRY WORKER
+       DAIRY ACTIVITIES
 
-   Other roles:
-       HOME COMMERCIAL DAIRIES
+   POULTRY WORKER
+       POULTRY ACTIVITIES
+
 ========================================================= */
 
-let headerTitle="HOME COMMERCIAL DAIRIES";
+let headerTitle = "CHESI PROJECTS";
 
+if(user){
 
-if(
-    user &&
-    user.role==="dairyWorker" &&
-    typeof dairy !== "undefined" &&
-    dairy &&
-    dairy.name
-){
+    if(user.role === "dairyWorker"){
 
-    headerTitle=dairy.name;
+        headerTitle = "DAIRY ACTIVITIES";
+
+    }
+    else if(user.role === "poultryWorker"){
+
+        headerTitle = "POULTRY ACTIVITIES";
+
+    }
+    else if(user.role === "admin"){
+
+        headerTitle = "CHESI PROJECTS";
+
+    }
 
 }
 
@@ -782,27 +743,31 @@ if(
 
 
 <!-- =========================================================
-     HEADER
+   HEADER
 ========================================================= -->
 
 <div class="header">
 
 
     <!-- =====================================================
-         LOGO
+       LOGO
     ====================================================== -->
 
     <a
-        href="<%= user && user.role==="dairyWorker"
+        href="<%= user && user.role === "dairyWorker"
             ? homeLink
             : "/" %>"
+
         class="header-logo-link"
+
         aria-label="Home"
     >
 
         <img
             src="/images/cfp-logo.png"
+
             alt="CFP Logo"
+
             class="header-logo"
         >
 
@@ -810,7 +775,7 @@ if(
 
 
     <!-- =====================================================
-         HEADER TITLE
+       HEADER TITLE
     ====================================================== -->
 
     <div class="header-title">
@@ -826,17 +791,17 @@ if(
 
 
 <!-- =========================================================
-     TOP MENU
+   TOP MENU
 ========================================================= -->
 
 <div class="top-menu">
 
 
-<% if(user && user.role==="dairyWorker"){ %>
+<% if(user && user.role === "dairyWorker"){ %>
 
 
     <!-- =====================================================
-         DAIRY WORKER NAVIGATION
+       DAIRY WORKER NAVIGATION
     ====================================================== -->
 
     <div class="dairy-worker-nav">
@@ -903,14 +868,18 @@ if(
 
 
     <!-- =====================================================
-         SIDEBAR MENU BUTTON
+       SIDEBAR MENU BUTTON
     ====================================================== -->
 
     <div
         class="menu-btn"
+
         onclick="openSidebar()"
+
         role="button"
+
         tabindex="0"
+
         aria-label="Open menu"
     >
 
@@ -923,7 +892,7 @@ if(
 
 
 <!-- =========================================================
-     PROFILE
+   PROFILE
 ========================================================= -->
 
 <div
@@ -931,12 +900,15 @@ if(
     id="profileBox"
 >
 
-
     <div
         class="profile-trigger"
+
         onclick="toggleProfile(event)"
+
         role="button"
+
         tabindex="0"
+
         aria-label="Open profile menu"
     >
 
@@ -965,7 +937,7 @@ if(
             </a>
 
 
-            <% if(user.role==="admin"){ %>
+            <% if(user.role === "admin"){ %>
 
                 <a href="/accounts">
                     👥 People
@@ -984,7 +956,6 @@ if(
 
     </div>
 
-
 </div>
 
 
@@ -992,12 +963,12 @@ if(
 
 
 <!-- =========================================================
-     SIDEBAR
+   SIDEBAR
 
-     Dairy workers DO NOT receive the sidebar.
+   Dairy workers DO NOT receive the sidebar.
 ========================================================= -->
 
-<% if(!user || user.role!=="dairyWorker"){ %>
+<% if(!user || user.role !== "dairyWorker"){ %>
 
 
 <div
@@ -1006,7 +977,7 @@ if(
 >
 
 
-    <% if(user && user.role==="admin"){ %>
+    <% if(user && user.role === "admin"){ %>
 
 
         <a href="/">
@@ -1034,7 +1005,7 @@ if(
         </a>
 
 
-    <% }else if(user && user.role==="poultryWorker"){ %>
+    <% }else if(user && user.role === "poultryWorker"){ %>
 
 
         <a href="/">
@@ -1086,7 +1057,7 @@ if(
 
 
 <!-- =========================================================
-     MAIN
+   MAIN
 ========================================================= -->
 
 <div class="main">
@@ -1100,12 +1071,13 @@ if(
 
 
 <!-- =========================================================
-     FOOTER
+   FOOTER
 ========================================================= -->
 
 <div class="footer">
 
-    © <%= new Date().getFullYear() %> Dr. Chessy Edwin
+    © <%= new Date().getFullYear() %>
+    Dr. Chessy Edwin
 
 </div>
 
@@ -1119,10 +1091,8 @@ if(
 const sidebar =
     document.getElementById("sidebar");
 
-
 const overlay =
     document.getElementById("overlay");
-
 
 const profileBox =
     document.getElementById("profileBox");
@@ -1135,9 +1105,7 @@ const profileBox =
 function openSidebar(){
 
     if(!sidebar || !overlay){
-
         return;
-
     }
 
     sidebar.classList.add("active");
@@ -1150,9 +1118,7 @@ function openSidebar(){
 function closeSidebar(){
 
     if(!sidebar || !overlay){
-
         return;
-
     }
 
     sidebar.classList.remove("active");
@@ -1172,7 +1138,9 @@ function toggleProfile(event){
 
     if(profileBox){
 
-        profileBox.classList.toggle("active");
+        profileBox.classList.toggle(
+            "active"
+        );
 
     }
 
@@ -1248,7 +1216,7 @@ document.addEventListener(
     "keydown",
     function(event){
 
-        if(event.key==="Escape"){
+        if(event.key === "Escape"){
 
             closeSidebar();
 
@@ -1274,7 +1242,7 @@ window.addEventListener(
     "resize",
     function(){
 
-        if(window.innerWidth>768){
+        if(window.innerWidth > 768){
 
             closeSidebar();
 
@@ -1290,4 +1258,5 @@ window.addEventListener(
 
 
 </body>
+
 </html>
