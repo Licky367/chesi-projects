@@ -15,174 +15,6 @@
 
 
 /* ==========================================================
-   PAGE HEADER
-========================================================== */
-
-.networth-page .financial-header {
-    margin-bottom: 25px;
-}
-
-
-.networth-page .financial-header h1 {
-    margin: 0 0 7px;
-
-    color: #173b2a;
-
-    font-size: 31px;
-
-    font-weight: 800;
-
-    line-height: 1.2;
-
-    letter-spacing: -0.6px;
-}
-
-
-.networth-page .financial-header p {
-    margin: 0;
-
-    color: #718078;
-
-    font-size: 15px;
-
-    line-height: 1.5;
-}
-
-
-/* ==========================================================
-   TOTAL NET WORTH
-========================================================== */
-
-.networth-total-card {
-    position: relative;
-
-    overflow: hidden;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 25px;
-
-    min-height: 155px;
-
-    margin-bottom: 35px;
-
-    padding: 30px 34px;
-
-    box-sizing: border-box;
-
-    border: 1px solid #cfe5d7;
-
-    border-radius: 20px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #f1faf4 0%,
-            #ffffff 65%
-        );
-
-    box-shadow:
-        0 10px 30px rgba(31, 111, 70, 0.08);
-}
-
-
-.networth-total-card::after {
-    content: "";
-
-    position: absolute;
-
-    width: 190px;
-
-    height: 190px;
-
-    right: -70px;
-
-    top: -75px;
-
-    border-radius: 50%;
-
-    background: rgba(39, 125, 73, 0.07);
-
-    pointer-events: none;
-}
-
-
-/* ==========================================================
-   TOTAL LABEL
-========================================================== */
-
-.networth-total-label {
-    position: relative;
-
-    z-index: 1;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-    color: #52705f;
-
-    font-size: 14px;
-
-    font-weight: 700;
-}
-
-
-.networth-total-label::before {
-    content: "◆";
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    width: 34px;
-
-    height: 34px;
-
-    border-radius: 10px;
-
-    background: #e0f1e6;
-
-    color: #267345;
-
-    font-size: 13px;
-}
-
-
-/* ==========================================================
-   TOTAL VALUE
-========================================================== */
-
-.networth-total-value {
-    position: relative;
-
-    z-index: 1;
-
-    color: #176337;
-
-    font-size: 34px;
-
-    font-weight: 800;
-
-    line-height: 1.15;
-
-    letter-spacing: -0.7px;
-
-    white-space: nowrap;
-
-    font-variant-numeric: tabular-nums;
-}
-
-
-/* ==========================================================
    SECTIONS
 ========================================================== */
 
@@ -498,43 +330,6 @@
     }
 
 
-    .networth-page .financial-header h1 {
-        font-size: 26px;
-    }
-
-
-    .networth-page .financial-header p {
-        font-size: 14px;
-    }
-
-
-    .networth-total-card {
-        align-items: flex-start;
-
-        flex-direction: column;
-
-        gap: 14px;
-
-        min-height: auto;
-
-        padding: 24px 22px;
-
-        border-radius: 17px;
-    }
-
-
-    .networth-total-label {
-        font-size: 13px;
-    }
-
-
-    .networth-total-value {
-        font-size: 28px;
-
-        white-space: normal;
-    }
-
-
     .networth-section {
         margin-bottom: 27px;
     }
@@ -586,21 +381,6 @@
     }
 
 
-    .networth-page .financial-header h1 {
-        font-size: 24px;
-    }
-
-
-    .networth-total-card {
-        padding: 21px 18px;
-    }
-
-
-    .networth-total-value {
-        font-size: 25px;
-    }
-
-
     .networth-section-header h2 {
         font-size: 17px;
     }
@@ -611,84 +391,28 @@
     }
 
 }
-</style><div class="financial-page networth-page"><!-- =====================================================
-     HEADER
-====================================================== -->
-
-<div class="financial-header">
-
-    <div>
-
-        <h1>
-            Net Worth
-        </h1>
-
-        <p>
-            Assets and their current estimated worth.
-        </p>
-
-    </div>
-
-</div>
+</style>
 
 
-<!-- =====================================================
-     TOTAL NET WORTH
-     
-     Uses:
-         totalNetWorth
-     
-     Source:
-         Dairy.calculateNetWorth()
-     
-     Calculation:
-         Active Dairy records
-         summed by currentWorth
-====================================================== -->
+<div class="financial-page networth-page">
 
-<div class="financial-card networth-total-card">
+    <!-- =====================================================
+         DAIRY FARMS
+         
+         Handled in:
+             networth/dairy-farms.ejs
+    ====================================================== -->
 
-    <span class="networth-total-label">
-        Total Net Worth
-    </span>
+    <%- include("networth/dairy-farms") %>
 
 
-    <strong class="networth-total-value">
+    <!-- =====================================================
+         STANDALONE ASSETS
+         
+         Handled in:
+             networth/standalone.ejs
+    ====================================================== -->
 
-        KSh
-        <%= Number(totalNetWorth || 0)
-            .toLocaleString("en-KE") %>
-
-    </strong>
+    <%- include("networth/standalone") %>
 
 </div>
-
-
-<!-- =====================================================
-     DAIRY FARMS
-     
-     Dairy farms are Dairy records where:
-         code < 0
-     
-     Partial:
-         networth/dairy-farms.ejs
-====================================================== -->
-
-<%- include("networth/dairy-farms") %>
-
-</div>
-
-
-<!-- =====================================================
-     STANDALONE ASSETS
-     
-     A standalone asset is a Dairy record whose
-     assetCode is null.
-     
-     This is NOT limited to "identified dairies".
-     
-     Partial:
-         networth/standalone-assets.ejs
-====================================================== -->
-
-<%- include("networth/standalone-assets") %>
