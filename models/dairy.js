@@ -582,6 +582,18 @@ sellingPrice: {
 },
 
 
+revenue: {
+
+    type: Number,
+
+    min: 0,
+
+    default: 0
+
+},
+
+
+
 
         // ==================================================
         // CURRENT WORTH
