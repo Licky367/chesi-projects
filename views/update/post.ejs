@@ -38,18 +38,27 @@
                         <%= item.userName || "User" %>
                     </strong>
 
-                    <% if (item.dairyName) { %>
+
+                    <% if (item.dairyName && item.dairyId) { %>
 
                         <span class="post-meta-action">
                             updated about
                         </span>
 
-                        <span
+
+                        <!-- =====================================
+                             CLICKABLE DAIRY / ASSET NAME
+                        ====================================== -->
+
+                        <a
+                            href="/dairy/<%= item.dairyId %>"
                             class="post-subject"
-                            title="<%= item.dairyName %>"
+                            title="View <%= item.dairyName %>"
                         >
+
                             <%= item.dairyName %>
-                        </span>
+
+                        </a>
 
                     <% } %>
 
