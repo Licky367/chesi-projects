@@ -1,0 +1,1579 @@
+<% /* =========================================================
+   FARM ASSET LIST
+
+   FILE:
+   views/update/farm-list.ejs
+
+   PURPOSE:
+   Allows the user to browse assets belonging to the
+   currently viewed dairy farm.
+
+   DATA EXPECTED:
+       user
+       dairy
+       assetDairies
+
+   NAVIGATION:
+       /dairy/:id
+========================================================= */ %>
+
+
+<%
+/* =========================================================
+   PREPARE AVAILABLE ASSETS
+========================================================= */
+
+const availableAssets =
+    Array.isArray(assetDairies)
+        ? assetDairies.filter(asset => !!asset)
+        : [];
+
+
+/* =========================================================
+   ANIMALS
+   code > 0
+========================================================= */
+
+const animalDairies =
+    availableAssets.filter(asset => {
+
+        return (
+            asset.code !== null &&
+            asset.code !== undefined &&
+            Number(asset.code) > 0
+        );
+
+    });
+
+
+/* =========================================================
+   STRUCTURES / EQUIPMENT
+   code === null / undefined
+========================================================= */
+
+const structureDairies =
+    availableAssets.filter(asset => {
+
+        return (
+            asset.code === null ||
+            asset.code === undefined
+        );
+
+    });
+
+
+/* =========================================================
+   USER NAME
+========================================================= */
+
+const displayUserName =
+    user && user.name
+        ? user.name
+        : "User";
+
+
+/* =========================================================
+   CURRENT FARM NAME
+========================================================= */
+
+const currentFarmName =
+    dairy && dairy.name
+        ? dairy.name
+        : "Dairy Farm";
+
+%>
+
+
+<!-- =========================================================
+     FARM ASSET CARD
+========================================================= -->
+
+<section
+    class="farm-list-card"
+    aria-label="Farm assets"
+>
+
+
+    <!-- =====================================================
+         CARD HEADER
+    ====================================================== -->
+
+    <div class="farm-list-header">
+
+
+        <div class="farm-list-heading">
+
+
+            <span class="farm-list-eyebrow">
+                FARM ASSETS
+            </span>
+
+
+            <h2>
+                <%= displayUserName %>,
+                go through available assets
+            </h2>
+
+
+            <p>
+                Browse the animals, structures and equipment
+                within <strong><%= currentFarmName %></strong>.
+            </p>
+
+
+        </div>
+
+
+        <div
+            class="farm-list-header-icon"
+            aria-hidden="true"
+        >
+            <span>⌂</span>
+        </div>
+
+
+    </div>
+
+
+    <!-- =====================================================
+         ASSET SELECTORS
+    ====================================================== -->
+
+    <div class="farm-list-selectors">
+
+
+        <!-- =================================================
+             ANIMALS
+        ================================================== -->
+
+        <div class="farm-list-selector">
+
+
+            <button
+                type="button"
+                class="farm-list-select-button"
+                data-dropdown="animalsDropdown"
+                aria-expanded="false"
+                aria-controls="animalsDropdown"
+            >
+
+
+                <span class="farm-list-select-icon">
+                    🐄
+                </span>
+
+
+                <span class="farm-list-select-text">
+
+
+                    <span class="farm-list-select-title">
+                        Animals
+                    </span>
+
+
+                    <span class="farm-list-select-subtitle">
+                        <%= animalDairies.length %>
+                        animal<%= animalDairies.length === 1 ? '' : 's' %>
+                    </span>
+
+
+                </span>
+
+
+                <span
+                    class="farm-list-select-arrow"
+                    aria-hidden="true"
+                >
+                    ▾
+                </span>
+
+
+            </button>
+
+
+            <!-- =============================================
+                 ANIMAL DROPDOWN
+            ============================================== -->
+
+            <div
+                id="animalsDropdown"
+                class="farm-list-dropdown"
+                hidden
+            >
+
+
+                <div class="farm-list-dropdown-header">
+
+                    <span>
+                        AVAILABLE ANIMALS
+                    </span>
+
+                    <span>
+                        <%= animalDairies.length %>
+                    </span>
+
+                </div>
+
+
+                <div class="farm-list-dropdown-scroll">
+
+
+                    <% if (animalDairies.length) { %>
+
+
+                        <% animalDairies.forEach(animal => { %>
+
+
+                            <a
+                                href="/dairy/<%= animal._id %>"
+                                class="farm-list-option"
+                            >
+
+
+                                <span class="farm-list-option-image">
+
+
+                                    <img
+                                        src="<%= animal.displayImage %>"
+                                        alt="<%= animal.name %>"
+                                        loading="lazy"
+                                    >
+
+
+                                </span>
+
+
+                                <span class="farm-list-option-details">
+
+
+                                    <span class="farm-list-option-name">
+                                        <%= animal.name %>
+                                    </span>
+
+
+                                    <span class="farm-list-option-code">
+                                        Animal #<%= animal.code %>
+                                    </span>
+
+
+                                    <span class="farm-list-option-meta">
+
+
+                                        <% if (animal.type) { %>
+
+                                            <span>
+                                                <%= animal.type %>
+                                            </span>
+
+                                        <% } %>
+
+
+                                        <% if (
+                                            animal.type &&
+                                            animal.gender
+                                        ) { %>
+
+                                            <span class="farm-list-meta-separator">
+                                                •
+                                            </span>
+
+                                        <% } %>
+
+
+                                        <% if (animal.gender) { %>
+
+                                            <span>
+                                                <%= animal.gender %>
+                                            </span>
+
+                                        <% } %>
+
+
+                                    </span>
+
+
+                                </span>
+
+
+                                <span
+                                    class="farm-list-option-arrow"
+                                    aria-hidden="true"
+                                >
+                                    ›
+                                </span>
+
+
+                            </a>
+
+
+                        <% }); %>
+
+
+                    <% } else { %>
+
+
+                        <div class="farm-list-empty">
+
+                            <span
+                                class="farm-list-empty-icon"
+                                aria-hidden="true"
+                            >
+                                —
+                            </span>
+
+                            <span>
+                                No animals found for this dairy farm.
+                            </span>
+
+                        </div>
+
+
+                    <% } %>
+
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             STRUCTURES & EQUIPMENT
+        ================================================== -->
+
+        <div class="farm-list-selector">
+
+
+            <button
+                type="button"
+                class="farm-list-select-button"
+                data-dropdown="structuresDropdown"
+                aria-expanded="false"
+                aria-controls="structuresDropdown"
+            >
+
+
+                <span class="farm-list-select-icon">
+                    ⚙
+                </span>
+
+
+                <span class="farm-list-select-text">
+
+
+                    <span class="farm-list-select-title">
+                        Structures &amp; Equipment
+                    </span>
+
+
+                    <span class="farm-list-select-subtitle">
+                        <%= structureDairies.length %>
+                        item<%= structureDairies.length === 1 ? '' : 's' %>
+                    </span>
+
+
+                </span>
+
+
+                <span
+                    class="farm-list-select-arrow"
+                    aria-hidden="true"
+                >
+                    ▾
+                </span>
+
+
+            </button>
+
+
+            <!-- =============================================
+                 STRUCTURES / EQUIPMENT DROPDOWN
+            ============================================== -->
+
+            <div
+                id="structuresDropdown"
+                class="farm-list-dropdown"
+                hidden
+            >
+
+
+                <div class="farm-list-dropdown-header">
+
+                    <span>
+                        STRUCTURES &amp; EQUIPMENT
+                    </span>
+
+                    <span>
+                        <%= structureDairies.length %>
+                    </span>
+
+                </div>
+
+
+                <div class="farm-list-dropdown-scroll">
+
+
+                    <% if (structureDairies.length) { %>
+
+
+                        <% structureDairies.forEach(asset => { %>
+
+
+                            <a
+                                href="/dairy/<%= asset._id %>"
+                                class="farm-list-option"
+                            >
+
+
+                                <span class="farm-list-option-image">
+
+
+                                    <img
+                                        src="<%= asset.displayImage %>"
+                                        alt="<%= asset.name %>"
+                                        loading="lazy"
+                                    >
+
+
+                                </span>
+
+
+                                <span class="farm-list-option-details">
+
+
+                                    <span class="farm-list-option-name">
+                                        <%= asset.name %>
+                                    </span>
+
+
+                                    <% if (asset.type) { %>
+
+                                        <span class="farm-list-option-code">
+                                            <%= asset.type %>
+                                        </span>
+
+                                    <% } %>
+
+
+                                    <% if (asset.location) { %>
+
+                                        <span class="farm-list-option-meta">
+                                            <%= asset.location %>
+                                        </span>
+
+                                    <% } %>
+
+
+                                </span>
+
+
+                                <span
+                                    class="farm-list-option-arrow"
+                                    aria-hidden="true"
+                                >
+                                    ›
+                                </span>
+
+
+                            </a>
+
+
+                        <% }); %>
+
+
+                    <% } else { %>
+
+
+                        <div class="farm-list-empty">
+
+                            <span
+                                class="farm-list-empty-icon"
+                                aria-hidden="true"
+                            >
+                                —
+                            </span>
+
+                            <span>
+                                No structures, machines or tools
+                                found for this dairy farm.
+                            </span>
+
+                        </div>
+
+
+                    <% } %>
+
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+</section>
+
+
+<!-- =========================================================
+     FARM LIST JAVASCRIPT
+========================================================= -->
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+
+        const selectorButtons =
+            document.querySelectorAll(
+                ".farm-list-select-button"
+            );
+
+
+        const dropdowns =
+            document.querySelectorAll(
+                ".farm-list-dropdown"
+            );
+
+
+        /* =================================================
+           CLOSE ALL DROPDOWNS
+        ================================================= */
+
+        function closeAllDropdowns(
+            exceptDropdown = null
+        ) {
+
+            dropdowns.forEach(
+                function(dropdown) {
+
+                    if (
+                        dropdown === exceptDropdown
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    dropdown.hidden = true;
+
+
+                    const button =
+                        document.querySelector(
+                            '[data-dropdown="' +
+                            dropdown.id +
+                            '"]'
+                        );
+
+
+                    if (button) {
+
+                        button.setAttribute(
+                            "aria-expanded",
+                            "false"
+                        );
+
+
+                        button.classList.remove(
+                            "open"
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* =================================================
+           BUTTON CLICK
+        ================================================= */
+
+        selectorButtons.forEach(
+            function(button) {
+
+                button.addEventListener(
+                    "click",
+                    function(event) {
+
+                        event.preventDefault();
+
+
+                        const dropdownId =
+                            button.dataset.dropdown;
+
+
+                        const dropdown =
+                            document.getElementById(
+                                dropdownId
+                            );
+
+
+                        if (!dropdown) {
+
+                            return;
+
+                        }
+
+
+                        const shouldOpen =
+                            dropdown.hidden;
+
+
+                        closeAllDropdowns(
+                            shouldOpen
+                                ? dropdown
+                                : null
+                        );
+
+
+                        dropdown.hidden =
+                            !shouldOpen;
+
+
+                        button.setAttribute(
+                            "aria-expanded",
+                            String(shouldOpen)
+                        );
+
+
+                        button.classList.toggle(
+                            "open",
+                            shouldOpen
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+        /* =================================================
+           CLICK OUTSIDE
+        ================================================= */
+
+        document.addEventListener(
+            "click",
+            function(event) {
+
+                if (
+                    !event.target.closest(
+                        ".farm-list-selector"
+                    )
+                ) {
+
+                    closeAllDropdowns();
+
+                }
+
+            }
+        );
+
+
+        /* =================================================
+           ESCAPE KEY
+        ================================================= */
+
+        document.addEventListener(
+            "keydown",
+            function(event) {
+
+                if (
+                    event.key !== "Escape"
+                ) {
+
+                    return;
+
+                }
+
+
+                closeAllDropdowns();
+
+            }
+        );
+
+
+    }
+);
+
+</script>
+
+
+<!-- =========================================================
+     FARM LIST STYLES
+========================================================= -->
+
+<style>
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.farm-list-card{
+
+    width:100%;
+
+    max-width:760px;
+
+    margin:0 auto;
+
+    padding:20px;
+
+    box-sizing:border-box;
+
+    border:1px solid #b8a85a;
+
+    border-radius:16px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #fffef0 0%,
+            #f4f7d9 48%,
+            #edf4d8 100%
+        );
+
+    box-shadow:
+        0 8px 24px rgba(42,61,20,.10);
+
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.farm-list-header{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:16px;
+
+    padding-bottom:17px;
+
+    border-bottom:1px solid #d4cf9b;
+
+}
+
+
+.farm-list-heading{
+
+    min-width:0;
+
+}
+
+
+.farm-list-eyebrow{
+
+    display:block;
+
+    margin-bottom:5px;
+
+    color:#35651d;
+
+    font-size:10px;
+
+    font-weight:800;
+
+    letter-spacing:1.5px;
+
+}
+
+
+.farm-list-heading h2{
+
+    margin:0;
+
+    color:#183719;
+
+    font-size:20px;
+
+    line-height:1.25;
+
+    font-weight:800;
+
+}
+
+
+.farm-list-heading p{
+
+    margin:7px 0 0;
+
+    color:#667044;
+
+    font-size:12px;
+
+    line-height:1.5;
+
+}
+
+
+.farm-list-heading p strong{
+
+    color:#294d1c;
+
+}
+
+
+/* =========================================================
+   HEADER ICON
+========================================================= */
+
+.farm-list-header-icon{
+
+    flex:0 0 48px;
+
+    width:48px;
+
+    height:48px;
+
+    border:2px solid #bd6c27;
+
+    border-radius:13px;
+
+    background:#f7edbb;
+
+    color:#35651d;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    box-shadow:
+        0 3px 8px rgba(74,64,15,.08);
+
+}
+
+
+.farm-list-header-icon span{
+
+    font-size:25px;
+
+    line-height:1;
+
+}
+
+
+/* =========================================================
+   SELECTOR AREA
+========================================================= */
+
+.farm-list-selectors{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:11px;
+
+    padding-top:17px;
+
+}
+
+
+/* =========================================================
+   SELECTOR
+========================================================= */
+
+.farm-list-selector{
+
+    position:relative;
+
+    width:100%;
+
+}
+
+
+/* =========================================================
+   SELECT BUTTON
+========================================================= */
+
+.farm-list-select-button{
+
+    position:relative;
+
+    width:100%;
+
+    min-height:65px;
+
+    padding:10px 43px 10px 13px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    border:2px solid #37601f;
+
+    border-radius:11px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #fffde9,
+            #edf3c9
+        );
+
+    color:#213c18;
+
+    cursor:pointer;
+
+    text-align:left;
+
+    box-sizing:border-box;
+
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        box-shadow .2s ease,
+        transform .15s ease;
+
+}
+
+
+.farm-list-select-button:hover{
+
+    border-color:#bd6c27;
+
+    background:#fff8d6;
+
+}
+
+
+.farm-list-select-button.open{
+
+    border-color:#bd6c27;
+
+    background:#f8f0bd;
+
+    box-shadow:
+        0 4px 12px rgba(70,68,19,.10);
+
+}
+
+
+/* =========================================================
+   SELECT ICON
+========================================================= */
+
+.farm-list-select-icon{
+
+    flex:0 0 39px;
+
+    width:39px;
+
+    height:39px;
+
+    border:1px solid #b9a950;
+
+    border-radius:9px;
+
+    background:#f8efb9;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:19px;
+
+}
+
+
+/* =========================================================
+   SELECT TEXT
+========================================================= */
+
+.farm-list-select-text{
+
+    min-width:0;
+
+    flex:1;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:3px;
+
+}
+
+
+.farm-list-select-title{
+
+    color:#234318;
+
+    font-size:14px;
+
+    font-weight:800;
+
+}
+
+
+.farm-list-select-subtitle{
+
+    color:#737846;
+
+    font-size:10px;
+
+}
+
+
+/* =========================================================
+   SELECT ARROW
+========================================================= */
+
+.farm-list-select-arrow{
+
+    position:absolute;
+
+    right:15px;
+
+    top:50%;
+
+    transform:
+        translateY(-50%);
+
+    color:#37601f;
+
+    font-size:19px;
+
+    font-weight:800;
+
+    transition:
+        transform .2s ease,
+        color .2s ease;
+
+}
+
+
+.farm-list-select-button.open
+.farm-list-select-arrow{
+
+    transform:
+        translateY(-50%)
+        rotate(180deg);
+
+    color:#bd6c27;
+
+}
+
+
+/* =========================================================
+   DROPDOWN
+========================================================= */
+
+.farm-list-dropdown{
+
+    position:absolute;
+
+    z-index:50;
+
+    left:0;
+
+    right:0;
+
+    top:calc(100% + 7px);
+
+    padding:8px;
+
+    border:2px solid #37601f;
+
+    border-radius:12px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #fffde9,
+            #f0f4d4
+        );
+
+    box-shadow:
+        0 9px 22px rgba(34,49,20,.18);
+
+}
+
+
+.farm-list-dropdown[hidden]{
+
+    display:none;
+
+}
+
+
+/* =========================================================
+   DROPDOWN HEADER
+========================================================= */
+
+.farm-list-dropdown-header{
+
+    min-height:30px;
+
+    padding:3px 6px 7px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:10px;
+
+    border-bottom:1px solid #d7d59e;
+
+    color:#52622d;
+
+    font-size:9px;
+
+    font-weight:800;
+
+    letter-spacing:1px;
+
+}
+
+
+.farm-list-dropdown-header span:last-child{
+
+    min-width:22px;
+
+    height:22px;
+
+    padding:0 5px;
+
+    box-sizing:border-box;
+
+    border:1px solid #bd6c27;
+
+    border-radius:11px;
+
+    background:#f8edb4;
+
+    color:#5a471f;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:9px;
+
+}
+
+
+/* =========================================================
+   FIXED SCROLLING AREA
+
+   The dropdown itself never grows indefinitely.
+========================================================= */
+
+.farm-list-dropdown-scroll{
+
+    max-height:280px;
+
+    overflow-y:auto;
+
+    overflow-x:hidden;
+
+    padding:7px 2px 2px;
+
+}
+
+
+/* =========================================================
+   DROPDOWN SCROLLBAR
+========================================================= */
+
+.farm-list-dropdown-scroll::-webkit-scrollbar{
+
+    width:6px;
+
+}
+
+
+.farm-list-dropdown-scroll::-webkit-scrollbar-track{
+
+    background:#edf0cf;
+
+    border-radius:10px;
+
+}
+
+
+.farm-list-dropdown-scroll::-webkit-scrollbar-thumb{
+
+    background:#6c812f;
+
+    border-radius:10px;
+
+}
+
+
+.farm-list-dropdown-scroll{
+
+    scrollbar-width:thin;
+
+    scrollbar-color:
+        #6c812f
+        #edf0cf;
+
+}
+
+
+/* =========================================================
+   OPTION
+========================================================= */
+
+.farm-list-option{
+
+    width:100%;
+
+    min-height:59px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:8px;
+
+    margin-bottom:5px;
+
+    box-sizing:border-box;
+
+    border:1px solid #b9b66d;
+
+    border-radius:9px;
+
+    background:#fffde9;
+
+    color:#213c18;
+
+    text-decoration:none;
+
+    transition:
+        background .18s ease,
+        border-color .18s ease,
+        transform .15s ease,
+        box-shadow .18s ease;
+
+}
+
+
+.farm-list-option:last-child{
+
+    margin-bottom:0;
+
+}
+
+
+.farm-list-option:hover{
+
+    border-color:#bd6c27;
+
+    background:#fff7cf;
+
+    transform:translateX(2px);
+
+    box-shadow:
+        0 3px 8px rgba(67,65,19,.08);
+
+}
+
+
+/* =========================================================
+   OPTION IMAGE
+========================================================= */
+
+.farm-list-option-image{
+
+    flex:0 0 43px;
+
+    width:43px;
+
+    height:43px;
+
+    overflow:hidden;
+
+    border:1px solid #9da65a;
+
+    border-radius:8px;
+
+    background:#e8eccb;
+
+}
+
+
+.farm-list-option-image img{
+
+    display:block;
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:cover;
+
+}
+
+
+/* =========================================================
+   OPTION DETAILS
+========================================================= */
+
+.farm-list-option-details{
+
+    min-width:0;
+
+    flex:1;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:2px;
+
+}
+
+
+.farm-list-option-name{
+
+    color:#244318;
+
+    font-size:12px;
+
+    font-weight:800;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+
+.farm-list-option-code{
+
+    color:#37601f;
+
+    font-size:9px;
+
+    font-weight:700;
+
+}
+
+
+.farm-list-option-meta{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:5px;
+
+    min-width:0;
+
+    color:#747847;
+
+    font-size:9px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+}
+
+
+.farm-list-meta-separator{
+
+    color:#bd6c27;
+
+}
+
+
+/* =========================================================
+   OPTION ARROW
+========================================================= */
+
+.farm-list-option-arrow{
+
+    flex:0 0 auto;
+
+    padding:0 3px;
+
+    color:#bd6c27;
+
+    font-size:22px;
+
+    line-height:1;
+
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.farm-list-empty{
+
+    min-height:100px;
+
+    padding:15px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:7px;
+
+    box-sizing:border-box;
+
+    border:1px dashed #9ea45d;
+
+    border-radius:9px;
+
+    background:#f9f9df;
+
+    color:#6d7349;
+
+    text-align:center;
+
+    font-size:11px;
+
+    line-height:1.4;
+
+}
+
+
+.farm-list-empty-icon{
+
+    color:#bd6c27;
+
+    font-size:20px;
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:600px){
+
+    .farm-list-card{
+
+        padding:16px;
+
+        border-radius:14px;
+
+    }
+
+
+    .farm-list-heading h2{
+
+        font-size:18px;
+
+    }
+
+
+    .farm-list-heading p{
+
+        font-size:11px;
+
+    }
+
+
+    .farm-list-header-icon{
+
+        flex-basis:42px;
+
+        width:42px;
+
+        height:42px;
+
+    }
+
+
+    .farm-list-select-button{
+
+        min-height:62px;
+
+    }
+
+
+    .farm-list-dropdown-scroll{
+
+        max-height:260px;
+
+    }
+
+}
+
+
+@media(max-width:400px){
+
+    .farm-list-card{
+
+        padding:13px;
+
+    }
+
+
+    .farm-list-header{
+
+        gap:10px;
+
+    }
+
+
+    .farm-list-header-icon{
+
+        display:none;
+
+    }
+
+
+    .farm-list-select-title{
+
+        font-size:13px;
+
+    }
+
+
+    .farm-list-dropdown-scroll{
+
+        max-height:240px;
+
+    }
+
+}
+
+</style>
