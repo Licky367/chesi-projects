@@ -1,5 +1,5 @@
 <% /*
-
+==========================================================
 DAIRY FARM INTRODUCTION / H1
 
 FILE:
@@ -11,105 +11,159 @@ Compact editorial introductory section for a Dairy Farm.
 DATA REQUIRED:
 dairy
 
+==========================================================
 */ %>
 
 <section
     class="dairy-h1"
     aria-label="Dairy Farm Introduction"
-><!-- =================================================
-     BACKGROUND LOGO
-================================================== -->
-
-<div
-    class="dairy-h1-background"
-    aria-hidden="true"
 >
-    <img
-        src="/images/h1.png"
-        alt=""
-        class="dairy-h1-logo"
+
+    <!-- =================================================
+         BACKGROUND LOGO
+    ================================================== -->
+
+    <div
+        class="dairy-h1-background"
+        aria-hidden="true"
     >
-</div>
-
-
-<!-- =================================================
-     CONTENT
-================================================== -->
-
-<div class="dairy-h1-content">
-
-    <div class="dairy-h1-label">
-        <span class="dairy-h1-label-line"></span>
-        <span>DAIRY FARM</span>
-        <span class="dairy-h1-label-line"></span>
+        <img
+            src="/images/h1.png"
+            alt=""
+            class="dairy-h1-logo"
+        >
     </div>
 
 
-    <h1 class="dairy-h1-title">
-        Welcome to
-        <span>
-            <%= dairy.name || "Our Dairy Farm" %>
-        </span>
-    </h1>
+    <!-- =================================================
+         CONTENT
+    ================================================== -->
 
+    <div class="dairy-h1-content">
 
-    <% if (dairy && dairy.code != null) { %>
-        <div class="dairy-h1-code">
-            FARM #<%= dairy.code %>
+        <div class="dairy-h1-label">
+            <span class="dairy-h1-label-line"></span>
+            <span>DAIRY FARM</span>
+            <span class="dairy-h1-label-line"></span>
         </div>
-    <% } %>
 
 
-    <div class="dairy-h1-message">
-
-        <p>
+        <h1 class="dairy-h1-title">
             Welcome to
-            <strong>
-                <%= dairy.name || "this dairy farm" %>
-            </strong>.
-            We're glad to have you here.
-        </p>
+            <span>
+                <%= dairy.name || "Our Dairy Farm" %>
+            </span>
+        </h1>
 
-        <p>
-            Support the activities here by updating us
-            about the welfare of all assets within the
-            dairy farm.
-        </p>
 
-        <p>
-            In case of any inconveniences, keep us
-            updated on this site.
-        </p>
+        <% if (dairy && dairy.code != null) { %>
+
+            <div class="dairy-h1-code">
+                FARM #<%= dairy.code %>
+            </div>
+
+        <% } %>
+
+
+        <div class="dairy-h1-message">
+
+            <p>
+                Welcome to
+                <strong>
+                    <%= dairy.name || "this dairy farm" %>
+                </strong>.
+                We're glad to have you here.
+            </p>
+
+            <p>
+                Support the activities here by updating us
+                about the welfare of all assets within the
+                dairy farm.
+            </p>
+
+            <p>
+                In case of any inconveniences, keep us
+                updated on this site.
+            </p>
+
+        </div>
 
     </div>
 
-</div>
+</section>
 
-</section><style>
+
+<style>
 
 /* =========================================================
-   MAIN SECTION
+   MAIN CARD
 ========================================================= */
 
 .dairy-h1 {
 
     position: relative;
 
-    width: 100%;
+    width: calc(100% - 24px);
+    max-width: 1180px;
 
-    min-height: 390px;
+    min-height: 350px;
 
-    margin: 0 0 28px;
+    margin: 12px auto 28px;
 
     overflow: hidden;
 
-    background: #fff;
+    border-radius: 22px;
+
+    border: 1px solid rgba(49, 105, 66, .28);
+
+    /*
+       Light green in the centre,
+       gradually becoming darker toward
+       the outer edges.
+    */
+    background:
+        radial-gradient(
+            circle at 50% 45%,
+            #edf8ef 0%,
+            #e4f3e7 42%,
+            #d3e9d8 72%,
+            #bdd8c3 100%
+        );
+
+    box-shadow:
+        0 10px 28px rgba(42, 78, 51, .12),
+        inset 0 0 0 1px rgba(255, 255, 255, .42);
 
 }
 
 
 /* =========================================================
-   BACKGROUND
+   SUBTLE INNER EDGE
+========================================================= */
+
+.dairy-h1::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 1;
+
+    pointer-events: none;
+
+    border-radius: inherit;
+
+    box-shadow:
+        inset 0 0 35px rgba(42, 91, 53, .10),
+        inset 0 0 8px rgba(35, 78, 44, .08);
+
+}
+
+
+/* =========================================================
+   BACKGROUND LOGO
 ========================================================= */
 
 .dairy-h1-background {
@@ -137,11 +191,15 @@ dairy
 
     display: block;
 
-    width: min(720px, 105vw);
+    width: min(680px, 105vw);
 
     height: auto;
 
-    opacity: .11;
+    opacity: .075;
+
+    filter:
+        saturate(.75)
+        contrast(.9);
 
 }
 
@@ -158,16 +216,12 @@ dairy
 
     width: 100%;
 
-    max-width: 1180px;
-
-    min-height: 390px;
-
-    margin: 0 auto;
+    min-height: 350px;
 
     padding:
-        38px
-        clamp(20px, 5vw, 65px)
-        34px;
+        34px
+        clamp(22px, 5vw, 60px)
+        30px;
 
     box-sizing: border-box;
 
@@ -194,9 +248,9 @@ dairy
 
     gap: 9px;
 
-    margin-bottom: 12px;
+    margin-bottom: 11px;
 
-    color: #426b4d;
+    color: #386247;
 
     font-family:
         Arial,
@@ -219,7 +273,7 @@ dairy
     height: 1px;
 
     background:
-        rgba(66, 107, 77, .65);
+        rgba(56, 98, 71, .62);
 
 }
 
@@ -234,7 +288,7 @@ dairy
 
     margin: 0;
 
-    color: #263d2d;
+    color: #263f2e;
 
     font-family:
         Georgia,
@@ -259,7 +313,7 @@ dairy
 
     margin-top: 4px;
 
-    color: #3d6849;
+    color: #37694a;
 
 }
 
@@ -272,7 +326,7 @@ dairy
 
     margin-top: 9px;
 
-    color: #55765c;
+    color: #52775b;
 
     font-family:
         Arial,
@@ -298,7 +352,7 @@ dairy
 
     max-width: 650px;
 
-    margin-top: 19px;
+    margin-top: 18px;
 
 }
 
@@ -308,7 +362,7 @@ dairy
     margin: 0 0 7px;
 
     color:
-        rgba(39, 58, 45, .84);
+        rgba(39, 65, 47, .86);
 
     font-family:
         Arial,
@@ -334,7 +388,7 @@ dairy
 
 .dairy-h1-message strong {
 
-    color: #3f6848;
+    color: #356647;
 
     font-weight: 700;
 
@@ -349,24 +403,28 @@ dairy
 
     .dairy-h1 {
 
-        min-height: 365px;
+        width: calc(100% - 20px);
+
+        min-height: 340px;
+
+        border-radius: 20px;
 
     }
 
     .dairy-h1-content {
 
-        min-height: 365px;
+        min-height: 340px;
 
         padding:
-            34px
+            32px
             28px
-            30px;
+            29px;
 
     }
 
     .dairy-h1-logo {
 
-        width: min(650px, 110vw);
+        width: min(620px, 110vw);
 
     }
 
@@ -381,22 +439,35 @@ dairy
 
     .dairy-h1 {
 
-        min-height: 400px;
+        width: calc(100% - 18px);
 
-        margin-bottom: 22px;
+        min-height: 370px;
+
+        margin:
+            9px
+            auto
+            22px;
+
+        border-radius: 18px;
+
+        box-shadow:
+            0 8px 22px rgba(42, 78, 51, .11),
+            inset 0 0 0 1px rgba(255, 255, 255, .40);
 
     }
+
 
     .dairy-h1-content {
 
-        min-height: 400px;
+        min-height: 370px;
 
         padding:
-            30px
+            29px
             20px
-            28px;
+            27px;
 
     }
+
 
     .dairy-h1-logo {
 
@@ -404,9 +475,10 @@ dairy
 
         max-width: 130vw;
 
-        opacity: .10;
+        opacity: .07;
 
     }
+
 
     .dairy-h1-label {
 
@@ -418,6 +490,7 @@ dairy
 
     }
 
+
     .dairy-h1-title {
 
         font-size:
@@ -427,11 +500,13 @@ dairy
 
     }
 
+
     .dairy-h1-title span {
 
         margin-top: 3px;
 
     }
+
 
     .dairy-h1-code {
 
@@ -441,11 +516,13 @@ dairy
 
     }
 
+
     .dairy-h1-message {
 
         margin-top: 17px;
 
     }
+
 
     .dairy-h1-message p {
 
@@ -468,20 +545,26 @@ dairy
 
     .dairy-h1 {
 
-        min-height: 385px;
+        width: calc(100% - 14px);
+
+        min-height: 355px;
+
+        border-radius: 16px;
 
     }
+
 
     .dairy-h1-content {
 
-        min-height: 385px;
+        min-height: 355px;
 
         padding:
-            27px
+            26px
             16px
-            25px;
+            24px;
 
     }
+
 
     .dairy-h1-title {
 
@@ -489,11 +572,13 @@ dairy
 
     }
 
+
     .dairy-h1-message {
 
         margin-top: 15px;
 
     }
+
 
     .dairy-h1-message p {
 
@@ -502,6 +587,7 @@ dairy
         line-height: 1.5;
 
     }
+
 
     .dairy-h1-logo {
 
