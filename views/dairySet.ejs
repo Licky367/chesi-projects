@@ -1,11 +1,26 @@
 <!-- =====================================================
      DAIRY SET PAGE
-     
+
      FILE:
          views/dairy/dairySet.ejs
-     
+
      ROUTE:
          /dairy/assets/<%= dairy._id %>
+
+     MAINTENANCE RULES:
+     -----------------------------------------------------
+     1. Maintenance composers are only available to:
+            - admin
+            - dairyWorker
+
+     2. Maintenance composers are only available for
+        dairies WITHOUT a code.
+
+     3. maintComposer.ejs appears when maintenance is NOT
+        currently required.
+
+     4. maintClearComposer.ejs appears when maintenance
+        IS currently required.
 ===================================================== -->
 
 
@@ -38,6 +53,7 @@
     }) %>
 
 
+
     <!-- =================================================
          CREATE POST
     ================================================== -->
@@ -51,14 +67,25 @@
     <% } %>
 
 
+
     <!-- =================================================
-         MAINTENANCE COMPOSER
+         MAINTENANCE COMPOSERS
          
-         Only displayed when the dairy has NO code.
+         Conditions:
+         -------------------------------------------------
+         - User must be admin or dairyWorker
+         - Dairy must NOT have a code
+         - Show MARK composer when maintenance is not
+           required
+         - Show CLEAR composer when maintenance is required
     ================================================== -->
 
     <% if (
         user &&
+        (
+            user.role === "admin" ||
+            user.role === "dairyWorker"
+        ) &&
         (
             dairy.code === undefined ||
             dairy.code === null ||
@@ -66,12 +93,42 @@
         )
     ) { %>
 
-        <%- include("update/maintComposer", {
-            user: user,
-            dairy: dairy
-        }) %>
+
+        <!-- =============================================
+             MARK MAINTENANCE
+             
+             Only when maintenance is NOT required.
+        ============================================== -->
+
+        <% if (dairy.needsMaintenance !== true) { %>
+
+            <%- include("update/maintComposer", {
+                user: user,
+                dairy: dairy
+            }) %>
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             CLEAR MAINTENANCE
+             
+             Only when maintenance IS required.
+        ============================================== -->
+
+        <% if (dairy.needsMaintenance === true) { %>
+
+            <%- include("update/maintClearComposer", {
+                user: user,
+                dairy: dairy
+            }) %>
+
+        <% } %>
+
 
     <% } %>
+
 
 
     <!-- =================================================
@@ -85,6 +142,7 @@
 
 
 </div>
+
 
 
 <!-- =====================================================
