@@ -1,3 +1,17 @@
+<% if (
+    dairy &&
+    (
+        dairy.code === null ||
+        dairy.code === undefined
+    ) &&
+    user &&
+    (
+        user.role === "admin" ||
+        user.role === "dairyWorker"
+    )
+) { %>
+
+
 <!-- =========================================================
      MAINTENANCE COMPOSER + FULL SCREEN MAINTENANCE MODAL
 
@@ -8,9 +22,9 @@
          Allows admin/dairyWorker to report maintenance
          required for a facility, equipment, or tool.
 
-     EXPECTED VARIABLES:
-         user
-         dairy
+     CONDITIONS:
+         - Dairy must have NO code.
+         - User must be admin or dairyWorker.
 ========================================================= -->
 
 
@@ -1283,3 +1297,6 @@
 })();
 
 </script>
+
+
+<% } %>
