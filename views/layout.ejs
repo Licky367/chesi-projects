@@ -124,11 +124,6 @@ body{
 
     color:#fff;
 
-    /*
-       IMPORTANT:
-       Allow long titles to wrap.
-       Do not truncate.
-    */
     white-space:normal;
 
     overflow:visible;
@@ -177,14 +172,21 @@ body{
 
     justify-content:space-evenly;
 
-    width:100%;
+    /*
+       IMPORTANT:
+       The navigation must not take 100% of the row,
+       because the profile must remain on the far right.
+    */
+    width:auto;
 
     height:100%;
 
     overflow-x:auto;
     overflow-y:hidden;
 
-    flex:1;
+    flex:1 1 auto;
+
+    min-width:0;
 
     scrollbar-width:none;
 }
@@ -211,9 +213,6 @@ body{
 
     height:46px;
 
-    /*
-       Equal flexible space for every link.
-    */
     flex:1 1 0;
 
     min-width:0;
@@ -301,6 +300,14 @@ body{
 
 .profile-box{
     position:relative;
+
+    /*
+       THIS IS THE IMPORTANT PART.
+       It pushes the profile all the way to the right
+       regardless of whether the menu button or worker
+       navigation is being displayed.
+    */
+    margin-left:auto;
 
     flex-shrink:0;
 
@@ -552,10 +559,6 @@ body{
     .header-title{
         padding-left:6px;
 
-        /*
-           Prevent title from being pushed
-           unnecessarily far from the logo.
-        */
         flex:1 1 auto;
     }
 
@@ -565,9 +568,6 @@ body{
 
         line-height:18px;
 
-        /*
-           Long titles wrap instead of disappearing.
-        */
         white-space:normal;
 
         overflow:visible;
@@ -583,6 +583,14 @@ body{
 
     .dairy-worker-nav{
         gap:3px;
+
+        /*
+           Keep navigation flexible while leaving
+           the profile at the far right.
+        */
+        flex:1 1 auto;
+
+        min-width:0;
     }
 
 
@@ -893,6 +901,10 @@ if(user){
 
 <!-- =========================================================
    PROFILE
+
+   IMPORTANT:
+   .profile-box uses margin-left:auto, so the profile
+   always stays at the far right of the top menu.
 ========================================================= -->
 
 <div
