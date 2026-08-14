@@ -1,24 +1,43 @@
+// ==========================================================
+// controllers/maintenanceController.js
+// ==========================================================
+
 const mongoose = require("mongoose");
 
-const Dairy = require("../../models/dairy");
-const updateService = require("../../services/update");
+const Dairy =
+  require("../../models/dairy");
+
+const updateService =
+  require("../../services/update");
 
 
-/* =========================================================
-   🔧 MARK MAINTENANCE
-========================================================= */
+// ==========================================================
+// 🔧 MARK MAINTENANCE
+//
+// Rules:
+// - User must be logged in.
+// - Only admin or dairyWorker can report maintenance.
+// - Target Dairy must be a structure/facility.
+// - A structure/facility must NOT have a code.
+// - Maintenance update is created through updateService.
+// - Dairy.needsMaintenance is set to true.
+// - Socket errors must NEVER cause the successful request
+//   to become a failure.
+// ==========================================================
 
 exports.markMaintenance = async (req, res) => {
 
   try {
 
     const { id } = req.params;
-    const user = req.session.user;
+
+    const user =
+      req.session.user;
 
 
-    /* =====================================================
-       AUTHENTICATION
-    ====================================================== */
+    // ======================================================
+    // AUTHENTICATION
+    // ======================================================
 
     if (!user) {
 
@@ -29,11 +48,11 @@ exports.markMaintenance = async (req, res) => {
     }
 
 
-    /* =====================================================
-       ROLE
-       
-       Only admin and dairyWorker can report maintenance.
-    ====================================================== */
+    // ======================================================
+    // ROLE
+    //
+    // Only admin and dairyWorker may report maintenance.
+    // ======================================================
 
     if (
       user.role !== "admin" &&
@@ -47,11 +66,13 @@ exports.markMaintenance = async (req, res) => {
     }
 
 
-    /* =====================================================
-       VALIDATE DAIRY ID
-    ====================================================== */
+    // ======================================================
+    // VALIDATE DAIRY ID
+    // ======================================================
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(id)
+    ) {
 
       return res
         .status(400)
@@ -60,14 +81,12 @@ exports.markMaintenance = async (req, res) => {
     }
 
 
-    /* =====================================================
-       FIND DAIRY
-       
-       This ensures the record actually exists before
-       attempting to create the maintenance update.
-    ====================================================== */
+    // ======================================================
+    // FIND DAIRY
+    // ======================================================
 
-    const dairy = await Dairy.findById(id);
+    const dairy =
+      await Dairy.findById(id);
 
     if (!dairy) {
 
@@ -78,9 +97,31 @@ exports.markMaintenance = async (req, res) => {
     }
 
 
-    /* =====================================================
-       READ FORM DATA
-    ====================================================== */
+    // ======================================================
+    // STRUCTURE VALIDATION
+    //
+    // Maintenance is for structures/facilities.
+    //
+    // A Dairy with a code is not a structure.
+    // ======================================================
+
+    if (
+      dairy.code !== undefined &&
+      dairy.code !== null
+    ) {
+
+      return res
+        .status(400)
+        .send(
+          "Maintenance can only be reported for dairy structures or facilities"
+        );
+
+    }
+
+
+    // ======================================================
+    // READ FORM DATA
+    // ======================================================
 
     const type =
       typeof req.body.type === "string"
@@ -93,9 +134,9 @@ exports.markMaintenance = async (req, res) => {
         : "";
 
 
-    /* =====================================================
-       VALIDATE TYPE
-    ====================================================== */
+    // ======================================================
+    // VALIDATE MAINTENANCE TYPE
+    // ======================================================
 
     const allowedTypes = [
       "repair",
@@ -104,18 +145,22 @@ exports.markMaintenance = async (req, res) => {
     ];
 
 
-    if (!allowedTypes.includes(type)) {
+    if (
+      !allowedTypes.includes(type)
+    ) {
 
       return res
         .status(400)
-        .send("Invalid maintenance type");
+        .send(
+          "Invalid maintenance type"
+        );
 
     }
 
 
-    /* =====================================================
-       VALIDATE DESCRIPTION
-    ====================================================== */
+    // ======================================================
+    // VALIDATE DESCRIPTION
+    // ======================================================
 
     if (!description) {
 
@@ -128,20 +173,23 @@ exports.markMaintenance = async (req, res) => {
     }
 
 
-    /* =====================================================
-       CREATE MAINTENANCE UPDATE
-       
-       Keep the existing updateService contract.
-    ====================================================== */
+    // ======================================================
+    // CREATE MAINTENANCE UPDATE
+    //
+    // Keep the existing updateService contract.
+    // ======================================================
 
     const update =
       await updateService.markMaintenance({
 
-        dairyId: dairy._id,
+        dairyId:
+          dairy._id,
 
-        userId: user._id,
+        userId:
+          user._id,
 
-        userName: user.name,
+        userName:
+          user.name,
 
         type,
 
@@ -150,72 +198,89 @@ exports.markMaintenance = async (req, res) => {
       });
 
 
-    /* =====================================================
-       ACTUALLY MARK THE DAIRY
-       
-       This is the important part:
-       the Dairy record itself must carry the maintenance
-       status used by the page UI.
-    ====================================================== */
+    // ======================================================
+    // ACTUALLY MARK THE DAIRY
+    //
+    // This is the status used by structures.ejs.
+    // ======================================================
 
-    dairy.needsMaintenance = true;
+    dairy.needsMaintenance =
+      true;
 
     await dairy.save();
 
 
-    /* =====================================================
-       REAL-TIME PAYLOAD
-    ====================================================== */
+    // ======================================================
+    // REAL-TIME SOCKET PAYLOAD
+    //
+    // Socket errors are isolated so they cannot turn a
+    // successful maintenance operation into HTTP 500.
+    // ======================================================
 
-    const payload = {
+    try {
 
-      dairyId: dairy._id.toString(),
-
-      status: "marked",
-
-      type,
-
-      description,
-
-      userName: user.name,
-
-      userImage:
-        user.profileImage ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(
-          user.name
-        )}`,
-
-      dateText:
-        update && update.createdAt
-          ? new Date(
-              update.createdAt
-            ).toLocaleString()
-          : new Date().toLocaleString()
-
-    };
+      const io =
+        req.app.get("io");
 
 
-    /* =====================================================
-       SOCKET.IO
-    ====================================================== */
+      if (
+        io &&
+        typeof io.to === "function"
+      ) {
 
-    const io =
-      req.app.get("io");
+        io
+          .to(
+            dairy._id.toString()
+          )
+          .emit(
+            "maintenanceMarked",
+            {
 
+              dairyId:
+                dairy._id.toString(),
 
-    if (io) {
+              status:
+                "marked",
 
-      io.to(dairy._id.toString()).emit(
-        "maintenanceMarked",
-        payload
+              type,
+
+              description,
+
+              userName:
+                user.name,
+
+              userImage:
+                user.profileImage ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  user.name
+                )}`,
+
+              dateText:
+                update &&
+                update.createdAt
+                  ? new Date(
+                      update.createdAt
+                    ).toLocaleString()
+                  : new Date().toLocaleString()
+
+            }
+          );
+
+      }
+
+    } catch (socketError) {
+
+      console.error(
+        "MAINTENANCE SOCKET ERROR:",
+        socketError
       );
 
     }
 
 
-    /* =====================================================
-       REDIRECT
-    ====================================================== */
+    // ======================================================
+    // SUCCESS REDIRECT
+    // ======================================================
 
     return res.redirect(
       `/dairy/${dairy._id}`
@@ -242,21 +307,33 @@ exports.markMaintenance = async (req, res) => {
 
 
 
-/* =========================================================
-   ✅ CLEAR MAINTENANCE
-========================================================= */
+// ==========================================================
+// ✅ CLEAR MAINTENANCE
+//
+// Rules:
+// - User must be logged in.
+// - Admin only.
+// - Target Dairy must be a structure/facility.
+// - Charges must be a valid non-negative number.
+// - Description is required.
+// - Maintenance update is cleared.
+// - Dairy.needsMaintenance becomes false.
+// - Socket errors cannot break the redirect.
+// ==========================================================
 
 exports.clearMaintenance = async (req, res) => {
 
   try {
 
     const { id } = req.params;
-    const user = req.session.user;
+
+    const user =
+      req.session.user;
 
 
-    /* =====================================================
-       AUTHENTICATION
-    ====================================================== */
+    // ======================================================
+    // AUTHENTICATION
+    // ======================================================
 
     if (!user) {
 
@@ -267,11 +344,13 @@ exports.clearMaintenance = async (req, res) => {
     }
 
 
-    /* =====================================================
-       ADMIN ONLY
-    ====================================================== */
+    // ======================================================
+    // ADMIN ONLY
+    // ======================================================
 
-    if (user.role !== "admin") {
+    if (
+      user.role !== "admin"
+    ) {
 
       return res
         .status(403)
@@ -282,11 +361,13 @@ exports.clearMaintenance = async (req, res) => {
     }
 
 
-    /* =====================================================
-       VALIDATE DAIRY ID
-    ====================================================== */
+    // ======================================================
+    // VALIDATE DAIRY ID
+    // ======================================================
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (
+      !mongoose.Types.ObjectId.isValid(id)
+    ) {
 
       return res
         .status(400)
@@ -295,11 +376,12 @@ exports.clearMaintenance = async (req, res) => {
     }
 
 
-    /* =====================================================
-       FIND DAIRY
-    ====================================================== */
+    // ======================================================
+    // FIND DAIRY
+    // ======================================================
 
-    const dairy = await Dairy.findById(id);
+    const dairy =
+      await Dairy.findById(id);
 
     if (!dairy) {
 
@@ -310,9 +392,29 @@ exports.clearMaintenance = async (req, res) => {
     }
 
 
-    /* =====================================================
-       READ FORM DATA
-    ====================================================== */
+    // ======================================================
+    // STRUCTURE VALIDATION
+    //
+    // Only structures/facilities can have maintenance.
+    // ======================================================
+
+    if (
+      dairy.code !== undefined &&
+      dairy.code !== null
+    ) {
+
+      return res
+        .status(400)
+        .send(
+          "Maintenance can only be cleared for dairy structures or facilities"
+        );
+
+    }
+
+
+    // ======================================================
+    // READ FORM DATA
+    // ======================================================
 
     const charges =
       Number(req.body.charges);
@@ -323,9 +425,9 @@ exports.clearMaintenance = async (req, res) => {
         : "";
 
 
-    /* =====================================================
-       VALIDATE CHARGES
-    ====================================================== */
+    // ======================================================
+    // VALIDATE CHARGES
+    // ======================================================
 
     if (
       !Number.isFinite(charges) ||
@@ -341,9 +443,9 @@ exports.clearMaintenance = async (req, res) => {
     }
 
 
-    /* =====================================================
-       VALIDATE DESCRIPTION
-    ====================================================== */
+    // ======================================================
+    // VALIDATE DESCRIPTION
+    // ======================================================
 
     if (!description) {
 
@@ -356,18 +458,21 @@ exports.clearMaintenance = async (req, res) => {
     }
 
 
-    /* =====================================================
-       CREATE CLEAR-MAINTENANCE UPDATE
-    ====================================================== */
+    // ======================================================
+    // CREATE CLEAR-MAINTENANCE UPDATE
+    // ======================================================
 
     const update =
       await updateService.clearMaintenance({
 
-        dairyId: dairy._id,
+        dairyId:
+          dairy._id,
 
-        userId: user._id,
+        userId:
+          user._id,
 
-        userName: user.name,
+        userName:
+          user.name,
 
         charges,
 
@@ -376,68 +481,86 @@ exports.clearMaintenance = async (req, res) => {
       });
 
 
-    /* =====================================================
-       ACTUALLY CLEAR THE DAIRY STATUS
-    ====================================================== */
+    // ======================================================
+    // ACTUALLY CLEAR THE DAIRY STATUS
+    // ======================================================
 
-    dairy.needsMaintenance = false;
+    dairy.needsMaintenance =
+      false;
 
     await dairy.save();
 
 
-    /* =====================================================
-       REAL-TIME PAYLOAD
-    ====================================================== */
+    // ======================================================
+    // REAL-TIME SOCKET PAYLOAD
+    //
+    // Again, socket failure must not affect the operation.
+    // ======================================================
 
-    const payload = {
+    try {
 
-      dairyId: dairy._id.toString(),
-
-      status: "cleared",
-
-      charges,
-
-      description,
-
-      userName: user.name,
-
-      userImage:
-        user.profileImage ||
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(
-          user.name
-        )}`,
-
-      dateText:
-        update && update.createdAt
-          ? new Date(
-              update.createdAt
-            ).toLocaleString()
-          : new Date().toLocaleString()
-
-    };
+      const io =
+        req.app.get("io");
 
 
-    /* =====================================================
-       SOCKET.IO
-    ====================================================== */
+      if (
+        io &&
+        typeof io.to === "function"
+      ) {
 
-    const io =
-      req.app.get("io");
+        io
+          .to(
+            dairy._id.toString()
+          )
+          .emit(
+            "maintenanceCleared",
+            {
 
+              dairyId:
+                dairy._id.toString(),
 
-    if (io) {
+              status:
+                "cleared",
 
-      io.to(dairy._id.toString()).emit(
-        "maintenanceCleared",
-        payload
+              charges,
+
+              description,
+
+              userName:
+                user.name,
+
+              userImage:
+                user.profileImage ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                  user.name
+                )}`,
+
+              dateText:
+                update &&
+                update.createdAt
+                  ? new Date(
+                      update.createdAt
+                    ).toLocaleString()
+                  : new Date().toLocaleString()
+
+            }
+          );
+
+      }
+
+    } catch (socketError) {
+
+      console.error(
+        "MAINTENANCE SOCKET ERROR:",
+        socketError
       );
 
     }
 
 
-    /* =====================================================
-       REDIRECT
-    ====================================================== */
+    // ======================================================
+    // SUCCESS REDIRECT
+    // ======================================================
 
     return res.redirect(
       `/dairy/${dairy._id}`
