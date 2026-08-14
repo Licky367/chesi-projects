@@ -1,647 +1,24 @@
 <!-- =========================================================
-     maintComposer.ejs
-     
-     REUSABLE MAINTENANCE COMPOSER / POST MODAL
+     MAINTENANCE COMPOSER + FULL SCREEN MAINTENANCE MODAL
 
-     Expected variables:
-       user
-       dairy
+     FILE:
+         views/update/maintComposer.ejs
 
-     Example:
-       <%- include("maintComposer", { user, dairy }) %>
+     PURPOSE:
+         Allows admin/dairyWorker to report maintenance
+         required for a facility, equipment, or tool.
 
-     The parent page can decide how/when this modal is opened.
+     EXPECTED VARIABLES:
+         user
+         dairy
 ========================================================= -->
-
-
-<style>
-
-  /* =========================================================
-     MAINTENANCE COMPOSER
-  ========================================================= */
-
-  .maint-composer-overlay {
-
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 10000;
-
-    display: none;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 20px;
-
-    background: rgba(15, 23, 42, 0.58);
-
-    backdrop-filter: blur(5px);
-
-    -webkit-backdrop-filter: blur(5px);
-
-  }
-
-
-  .maint-composer-overlay.active {
-
-    display: flex;
-
-  }
-
-
-  /* =========================================================
-     MODAL
-  ========================================================= */
-
-  .maint-composer {
-
-    width: 100%;
-
-    max-width: 520px;
-
-    max-height: 92vh;
-
-    overflow-y: auto;
-
-    border-radius: 22px;
-
-    background: #ffffff;
-
-    box-shadow:
-      0 25px 70px rgba(0, 0, 0, 0.25);
-
-    animation:
-      maintComposerIn
-      0.22s
-      ease
-      both;
-
-  }
-
-
-  @keyframes maintComposerIn {
-
-    from {
-
-      opacity: 0;
-
-      transform:
-        translateY(18px)
-        scale(0.98);
-
-    }
-
-    to {
-
-      opacity: 1;
-
-      transform:
-        translateY(0)
-        scale(1);
-
-    }
-
-  }
-
-
-  /* =========================================================
-     HEADER
-  ========================================================= */
-
-  .maint-composer-header {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 15px;
-
-    padding: 16px 18px;
-
-    border-bottom:
-      1px solid #e5e7eb;
-
-  }
-
-
-  .maint-composer-user {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 11px;
-
-    min-width: 0;
-
-  }
-
-
-  .maint-composer-user-avatar {
-
-    width: 43px;
-    height: 43px;
-
-    flex-shrink: 0;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background: #dcfce7;
-
-    color: #166534;
-
-    font-size: 19px;
-
-  }
-
-
-  .maint-composer-user-info {
-
-    min-width: 0;
-
-  }
-
-
-  .maint-composer-user-name {
-
-    color: #111827;
-
-    font-size: 14px;
-
-    font-weight: 700;
-
-    white-space: nowrap;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-
-  }
-
-
-  .maint-composer-user-label {
-
-    margin-top: 2px;
-
-    color: #6b7280;
-
-    font-size: 11px;
-
-  }
-
-
-  /* =========================================================
-     CLOSE
-  ========================================================= */
-
-  .maint-composer-close {
-
-    width: 38px;
-    height: 38px;
-
-    flex-shrink: 0;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    border: none;
-
-    border-radius: 50%;
-
-    background: #f3f4f6;
-
-    color: #4b5563;
-
-    font-size: 24px;
-
-    line-height: 1;
-
-    cursor: pointer;
-
-    transition:
-      background 0.2s ease,
-      color 0.2s ease,
-      transform 0.2s ease;
-
-  }
-
-
-  .maint-composer-close:hover {
-
-    background: #e5e7eb;
-
-    color: #111827;
-
-  }
-
-
-  .maint-composer-close:active {
-
-    transform: scale(0.92);
-
-  }
-
-
-  /* =========================================================
-     BODY
-  ========================================================= */
-
-  .maint-composer-body {
-
-    padding: 20px;
-
-  }
-
-
-  /* =========================================================
-     QUESTION
-  ========================================================= */
-
-  .maint-composer-question {
-
-    margin: 0 0 18px;
-
-    color: #111827;
-
-    font-size: 20px;
-
-    font-weight: 700;
-
-    line-height: 1.4;
-
-  }
-
-
-  .maint-composer-question-name {
-
-    color: #166534;
-
-  }
-
-
-  /* =========================================================
-     SELECTED ITEM
-  ========================================================= */
-
-  .maint-composer-item {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    margin-bottom: 20px;
-
-    padding: 12px;
-
-    border:
-      1px solid #dcfce7;
-
-    border-radius: 14px;
-
-    background: #f0fdf4;
-
-  }
-
-
-  .maint-composer-item-image {
-
-    width: 50px;
-    height: 50px;
-
-    flex-shrink: 0;
-
-    object-fit: cover;
-
-    border:
-      2px solid #bbf7d0;
-
-    border-radius: 50%;
-
-    background: #dcfce7;
-
-  }
-
-
-  .maint-composer-item-info {
-
-    min-width: 0;
-
-  }
-
-
-  .maint-composer-item-name {
-
-    margin-bottom: 4px;
-
-    color: #14532d;
-
-    font-size: 14px;
-
-    font-weight: 700;
-
-  }
-
-
-  .maint-composer-item-code {
-
-    color: #6b7280;
-
-    font-size: 12px;
-
-  }
-
-
-  /* =========================================================
-     FORM
-  ========================================================= */
-
-  .maint-composer-form {
-
-    margin: 0;
-
-  }
-
-
-  .maint-composer-field {
-
-    margin-bottom: 16px;
-
-  }
-
-
-  .maint-composer-field label {
-
-    display: block;
-
-    margin-bottom: 7px;
-
-    color: #374151;
-
-    font-size: 13px;
-
-    font-weight: 700;
-
-  }
-
-
-  .maint-composer-field select,
-
-  .maint-composer-field textarea {
-
-    width: 100%;
-
-    box-sizing: border-box;
-
-    border:
-      1px solid #d1d5db;
-
-    border-radius: 11px;
-
-    outline: none;
-
-    background: #ffffff;
-
-    color: #111827;
-
-    font-family: inherit;
-
-    font-size: 14px;
-
-    transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease;
-
-  }
-
-
-  .maint-composer-field select {
-
-    height: 46px;
-
-    padding:
-      0 12px;
-
-  }
-
-
-  .maint-composer-field textarea {
-
-    min-height: 120px;
-
-    padding: 12px;
-
-    resize: vertical;
-
-    line-height: 1.5;
-
-  }
-
-
-  .maint-composer-field select:focus,
-
-  .maint-composer-field textarea:focus {
-
-    border-color: #16a34a;
-
-    box-shadow:
-      0 0 0 4px
-      rgba(22, 163, 74, 0.10);
-
-  }
-
-
-  /* =========================================================
-     ACTIONS
-  ========================================================= */
-
-  .maint-composer-actions {
-
-    display: flex;
-
-    gap: 10px;
-
-    margin-top: 20px;
-
-  }
-
-
-  .maint-composer-cancel,
-
-  .maint-composer-submit {
-
-    min-height: 46px;
-
-    border: none;
-
-    border-radius: 11px;
-
-    font-family: inherit;
-
-    font-size: 14px;
-
-    font-weight: 700;
-
-    cursor: pointer;
-
-    transition:
-      background 0.2s ease,
-      transform 0.2s ease;
-
-  }
-
-
-  .maint-composer-cancel {
-
-    padding:
-      0 18px;
-
-    background: #f3f4f6;
-
-    color: #374151;
-
-  }
-
-
-  .maint-composer-cancel:hover {
-
-    background: #e5e7eb;
-
-  }
-
-
-  .maint-composer-submit {
-
-    flex: 1;
-
-    background: #166534;
-
-    color: #ffffff;
-
-  }
-
-
-  .maint-composer-submit:hover {
-
-    background: #14532d;
-
-    transform:
-      translateY(-1px);
-
-  }
-
-
-  /* =========================================================
-     FOOTER NOTE
-  ========================================================= */
-
-  .maint-composer-note {
-
-    margin-top: 15px;
-
-    color: #9ca3af;
-
-    font-size: 11px;
-
-    line-height: 1.5;
-
-    text-align: center;
-
-  }
-
-
-  /* =========================================================
-     MOBILE
-  ========================================================= */
-
-  @media (max-width: 650px) {
-
-    .maint-composer-overlay {
-
-      align-items: flex-end;
-
-      padding: 0;
-
-    }
-
-
-    .maint-composer {
-
-      max-width: none;
-
-      max-height: 94vh;
-
-      border-radius:
-        22px
-        22px
-        0
-        0;
-
-    }
-
-
-    .maint-composer-body {
-
-      padding: 18px;
-
-    }
-
-
-    .maint-composer-question {
-
-      font-size: 18px;
-
-    }
-
-
-    .maint-composer-actions {
-
-      flex-direction: column-reverse;
-
-    }
-
-
-    .maint-composer-cancel {
-
-      width: 100%;
-
-    }
-
-  }
-
-</style>
-
 
 
 <!-- =========================================================
-     MODAL
+     MAINTENANCE COMPOSER CARD
 ========================================================= -->
 
-<div
-  id="maintComposer"
-  class="maint-composer-overlay"
-  aria-hidden="true"
->
-
-
-  <div
-    class="maint-composer"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="maintComposerQuestion"
-  >
+<section class="maint-composer-card">
 
 
     <!-- =====================================================
@@ -651,452 +28,1258 @@
     <div class="maint-composer-header">
 
 
-      <div class="maint-composer-user">
+        <!-- USER AVATAR -->
 
+        <div class="maint-composer-avatar">
 
-        <div class="maint-composer-user-avatar">
-
-          👤
-
-        </div>
-
-
-        <div class="maint-composer-user-info">
-
-
-          <div class="maint-composer-user-name">
-
-            <%= user.name %>
-
-          </div>
-
-
-          <div class="maint-composer-user-label">
-
-            Maintenance report
-
-          </div>
-
+            <img
+                src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)) %>"
+                alt="<%= user.name %>"
+                class="maint-avatar-sm"
+            >
 
         </div>
 
 
-      </div>
+        <!-- HEADING -->
 
+        <div class="maint-composer-heading">
 
-      <button
-        type="button"
-        class="maint-composer-close"
-        onclick="closeMaintComposer()"
-        aria-label="Close maintenance composer"
-      >
+            <div class="maint-heading-line">
 
-        ×
+                <strong>
+                    <%= user.name.split(" ")[0] %>
+                </strong>
 
-      </button>
+                , does this facility/equipment/tool require
+                any maintenance?
 
+            </div>
+
+        </div>
 
     </div>
 
 
 
     <!-- =====================================================
-         BODY
+         CLICKABLE MAINTENANCE TRIGGER
     ====================================================== -->
 
-    <div class="maint-composer-body">
-
-
-      <!-- ===================================================
-           QUESTION
-      ==================================================== -->
-
-      <h2
-        id="maintComposerQuestion"
-        class="maint-composer-question"
-      >
-
-        <span class="maint-composer-question-name">
-          <%= user.name %>
-        </span>,
-
-        does this facility/equipment/tool
-        require any maintenance?
-
-      </h2>
-
-
-
-      <!-- ===================================================
-           SELECTED FACILITY / EQUIPMENT / TOOL
-      ==================================================== -->
-
-      <div class="maint-composer-item">
-
-
-        <% if (
-          dairy &&
-          dairy.profileImage &&
-          dairy.profileImage.trim() !== ""
-        ) { %>
-
-
-          <img
-            src="/uploads/<%= dairy.profileImage %>"
-            class="maint-composer-item-image"
-            alt="<%= dairy.name %>"
-          >
-
-
-        <% } else if (dairy) { %>
-
-
-          <img
-            src="https://ui-avatars.com/api/?name=<%= encodeURIComponent(dairy.name) %>&background=0b5d1e&color=fff"
-            class="maint-composer-item-image"
-            alt="<%= dairy.name %>"
-          >
-
-
-        <% } else { %>
-
-
-          <div class="maint-composer-item-image"></div>
-
-
-        <% } %>
-
-
-        <div class="maint-composer-item-info">
-
-
-          <div class="maint-composer-item-name">
-
-            <%= dairy ? dairy.name : "Selected facility" %>
-
-          </div>
-
-
-          <% if (dairy && dairy.code !== undefined) { %>
-
-
-            <div class="maint-composer-item-code">
-
-              Facility Code:
-              <strong>
-                <%= dairy.code %>
-              </strong>
-
-            </div>
-
-
-          <% } %>
-
-
-        </div>
-
-
-      </div>
-
-
-
-      <!-- ===================================================
-           MAINTENANCE FORM
-      ==================================================== -->
-
-      <form
-        id="maintComposerForm"
-        class="maint-composer-form"
-        action="<%= dairy ? '/dairy/' + dairy._id + '/maintenance/mark' : '#' %>"
-        method="POST"
-      >
-
-
-        <!-- =================================================
-             TYPE
-        ================================================== -->
-
-        <div class="maint-composer-field">
-
-
-          <label for="maintComposerType">
-
-            What type of maintenance is required?
-
-          </label>
-
-
-          <select
-            id="maintComposerType"
-            name="type"
-            required
-          >
-
-            <option value="">
-
-              Select maintenance type
-
-            </option>
-
-
-            <option value="repair">
-
-              🔧 Repair
-
-            </option>
-
-
-            <option value="maintenance">
-
-              🛠️ Maintenance
-
-            </option>
-
-
-            <option value="construction">
-
-              🏗️ Construction
-
-            </option>
-
-          </select>
-
-
-        </div>
-
-
-
-        <!-- =================================================
-             DESCRIPTION
-        ================================================== -->
-
-        <div class="maint-composer-field">
-
-
-          <label for="maintComposerDescription">
-
-            What needs attention?
-
-          </label>
-
-
-          <textarea
-            id="maintComposerDescription"
-            name="description"
-            placeholder="Describe the issue or maintenance required..."
-            required
-          ></textarea>
-
-
-        </div>
-
-
-
-        <!-- =================================================
-             ACTIONS
-        ================================================== -->
-
-        <div class="maint-composer-actions">
-
-
-          <button
-            type="button"
-            class="maint-composer-cancel"
-            onclick="closeMaintComposer()"
-          >
-
-            Cancel
-
-          </button>
-
-
-          <button
-            type="submit"
-            class="maint-composer-submit"
-          >
-
-            🔧 Submit Maintenance
-
-          </button>
-
-
-        </div>
-
-
-      </form>
-
-
-
-      <div class="maint-composer-note">
-
-        Your maintenance report will be recorded against this
-        facility.
-
-      </div>
-
+    <div
+        id="openMaintComposer"
+        class="maint-composer-trigger"
+        role="button"
+        tabindex="0"
+        aria-label="Report maintenance"
+    >
+
+        <span>
+
+            🔧 Report maintenance...
+
+        </span>
 
     </div>
 
 
-  </div>
+</section>
+
+
+
+<!-- =========================================================
+     FULL SCREEN MAINTENANCE MODAL
+========================================================= -->
+
+<div
+    id="maintModal"
+    class="maint-modal"
+    aria-hidden="true"
+>
+
+
+    <div class="maint-modal-content">
+
+
+        <!-- =================================================
+             MODAL HEADER
+        ================================================== -->
+
+        <header class="maint-modal-header">
+
+
+            <button
+                type="button"
+                id="closeMaintModal"
+                class="maint-back-button"
+                aria-label="Go back"
+            >
+
+                <i class="bi bi-arrow-left"></i>
+
+            </button>
+
+
+            <div class="maint-modal-title">
+
+                <strong>
+                    Maintenance Report
+                </strong>
+
+                <span>
+                    <%= dairy.name %>
+                </span>
+
+            </div>
+
+
+            <div class="maint-header-spacer"></div>
+
+
+        </header>
+
+
+
+        <!-- =================================================
+             MODAL BODY
+        ================================================== -->
+
+        <main class="maint-modal-body">
+
+
+            <!-- =================================================
+                 QUESTION
+            ================================================== -->
+
+            <div class="maint-question">
+
+                <strong>
+                    <%= user.name.split(" ")[0] %>
+                </strong>,
+
+                does this facility/equipment/tool require
+                any maintenance?
+
+            </div>
+
+
+
+            <!-- =================================================
+                 FACILITY / EQUIPMENT / TOOL
+            ================================================== -->
+
+            <div class="maint-target">
+
+
+                <% if (
+                    dairy.profileImage &&
+                    dairy.profileImage.trim() !== ""
+                ) { %>
+
+
+                    <img
+                        src="/uploads/<%= dairy.profileImage %>"
+                        class="maint-target-image"
+                        alt="<%= dairy.name %>"
+                    >
+
+
+                <% } else { %>
+
+
+                    <img
+                        src="https://ui-avatars.com/api/?name=<%= encodeURIComponent(dairy.name) %>&background=0b5d1e&color=fff"
+                        class="maint-target-image"
+                        alt="<%= dairy.name %>"
+                    >
+
+
+                <% } %>
+
+
+                <div class="maint-target-info">
+
+                    <strong>
+                        <%= dairy.name %>
+                    </strong>
+
+                    <span>
+                        Maintenance required
+                    </span>
+
+                </div>
+
+
+            </div>
+
+
+
+            <!-- =================================================
+                 MAINTENANCE FORM
+            ================================================== -->
+
+            <form
+                id="maintForm"
+                action="/dairy/<%= dairy._id %>/maintenance/mark"
+                method="POST"
+            >
+
+
+                <!-- =============================================
+                     MAINTENANCE TYPE
+                ============================================== -->
+
+                <div class="maint-field">
+
+                    <label
+                        for="maintType"
+                    >
+
+                        Maintenance type
+
+                    </label>
+
+
+                    <select
+                        id="maintType"
+                        name="type"
+                        required
+                    >
+
+                        <option value="">
+                            Select maintenance type
+                        </option>
+
+                        <option value="repair">
+                            🔧 Repair
+                        </option>
+
+                        <option value="maintenance">
+                            🛠️ Maintenance
+                        </option>
+
+                        <option value="construction">
+                            🏗️ Construction
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- =============================================
+                     DESCRIPTION
+                ============================================== -->
+
+                <div class="maint-field">
+
+                    <label
+                        for="maintDescription"
+                    >
+
+                        What needs attention?
+
+                    </label>
+
+
+                    <textarea
+                        id="maintDescription"
+                        name="description"
+                        maxlength="1000"
+                        placeholder="Describe the problem or maintenance required..."
+                        required
+                    ></textarea>
+
+
+                    <div
+                        id="maintCharacterCounter"
+                        class="maint-character-counter"
+                    >
+
+                        0/1000
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =============================================
+                     SUBMIT
+                ============================================== -->
+
+                <div class="maint-submit-wrapper">
+
+                    <button
+                        type="submit"
+                        id="submitMaintButton"
+                        class="maint-submit-button"
+                        disabled
+                    >
+
+                        <i class="bi bi-tools"></i>
+
+                        Submit Maintenance Report
+
+                    </button>
+
+                </div>
+
+
+            </form>
+
+
+        </main>
+
+
+    </div>
 
 </div>
 
 
 
+<!-- =========================================================
+     CSS
+========================================================= -->
+
+<style>
+
+/* =========================================================
+   MAINTENANCE COMPOSER CARD
+========================================================= */
+
+.maint-composer-card {
+
+    width: 100%;
+
+    background: #ffffff;
+
+    border-radius: 16px;
+
+    padding: 16px;
+
+    margin-bottom: 16px;
+
+    box-sizing: border-box;
+
+    border: 1px solid #e7eee9;
+
+}
+
+
+.maint-composer-header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+}
+
+
+.maint-composer-avatar {
+
+    flex-shrink: 0;
+
+}
+
+
+.maint-avatar-sm {
+
+    width: 44px;
+    height: 44px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    display: block;
+
+}
+
+
+.maint-composer-heading {
+
+    min-width: 0;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+    color: #555;
+
+}
+
+
+.maint-heading-line {
+
+    display: block;
+
+}
+
+
+.maint-composer-heading strong {
+
+    color: #222;
+
+}
+
+
+
+/* =========================================================
+   CLICKABLE TRIGGER
+========================================================= */
+
+.maint-composer-trigger {
+
+    margin-top: 14px;
+
+    min-height: 48px;
+
+    padding: 0 16px;
+
+    border: 1px solid #dfe8e2;
+
+    border-radius: 24px;
+
+    display: flex;
+
+    align-items: center;
+
+    color: #777;
+
+    background: #f8faf8;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.15s ease;
+
+}
+
+
+.maint-composer-trigger:hover {
+
+    background: #f1f7f3;
+
+    border-color: #2e8b57;
+
+}
+
+
+.maint-composer-trigger:active {
+
+    transform: scale(0.99);
+
+}
+
+
+
+/* =========================================================
+   FULL SCREEN MODAL
+========================================================= */
+
+.maint-modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    width: 100vw;
+
+    height: 100dvh;
+
+    background: #ffffff;
+
+    z-index: 99999;
+
+    display: none;
+
+    overflow: hidden;
+
+}
+
+
+.maint-modal.active {
+
+    display: block;
+
+}
+
+
+.maint-modal-content {
+
+    position: relative;
+
+    width: 100%;
+
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    background: #ffffff;
+
+}
+
+
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
+
+.maint-modal-header {
+
+    flex: 0 0 auto;
+
+    height: 64px;
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 0 16px;
+
+    box-sizing: border-box;
+
+    border-bottom: 1px solid #e8eee9;
+
+    background: #ffffff;
+
+}
+
+
+.maint-back-button {
+
+    width: 44px;
+
+    height: 44px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #198754;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 27px;
+
+    padding: 0;
+
+    flex-shrink: 0;
+
+}
+
+
+.maint-back-button:hover {
+
+    color: #146c43;
+
+}
+
+
+.maint-modal-title {
+
+    margin-left: 8px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    line-height: 1.25;
+
+}
+
+
+.maint-modal-title strong {
+
+    font-size: 17px;
+
+    color: #202520;
+
+}
+
+
+.maint-modal-title span {
+
+    margin-top: 2px;
+
+    font-size: 12px;
+
+    color: #7a817d;
+
+}
+
+
+.maint-header-spacer {
+
+    flex: 1;
+
+}
+
+
+
+/* =========================================================
+   MODAL BODY
+========================================================= */
+
+.maint-modal-body {
+
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    padding: 20px;
+
+    box-sizing: border-box;
+
+}
+
+
+
+/* =========================================================
+   QUESTION
+========================================================= */
+
+.maint-question {
+
+    margin-bottom: 20px;
+
+    color: #202520;
+
+    font-size: 20px;
+
+    line-height: 1.45;
+
+}
+
+
+.maint-question strong {
+
+    color: #198754;
+
+}
+
+
+
+/* =========================================================
+   TARGET
+========================================================= */
+
+.maint-target {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 24px;
+
+    padding: 12px;
+
+    border: 1px solid #e1ebe4;
+
+    border-radius: 14px;
+
+    background: #f7faf8;
+
+}
+
+
+.maint-target-image {
+
+    width: 52px;
+
+    height: 52px;
+
+    flex-shrink: 0;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+
+}
+
+
+.maint-target-info {
+
+    display: flex;
+
+    flex-direction: column;
+
+    min-width: 0;
+
+}
+
+
+.maint-target-info strong {
+
+    color: #202520;
+
+    font-size: 15px;
+
+}
+
+
+.maint-target-info span {
+
+    margin-top: 3px;
+
+    color: #7a817d;
+
+    font-size: 12px;
+
+}
+
+
+
+/* =========================================================
+   FORM
+========================================================= */
+
+#maintForm {
+
+    width: 100%;
+
+    margin: 0;
+
+}
+
+
+.maint-field {
+
+    position: relative;
+
+    margin-bottom: 20px;
+
+}
+
+
+.maint-field label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #37413a;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+}
+
+
+.maint-field select,
+
+.maint-field textarea {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    border: 1px solid #d6e0d9;
+
+    border-radius: 12px;
+
+    outline: none;
+
+    background: #f8faf8;
+
+    color: #202520;
+
+    font-family: inherit;
+
+    font-size: 15px;
+
+}
+
+
+.maint-field select {
+
+    height: 48px;
+
+    padding: 0 12px;
+
+}
+
+
+.maint-field textarea {
+
+    min-height: 130px;
+
+    resize: vertical;
+
+    padding: 13px;
+
+    padding-bottom: 28px;
+
+    line-height: 1.5;
+
+}
+
+
+.maint-field select:focus,
+
+.maint-field textarea:focus {
+
+    border-color: #198754;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(25, 135, 84, 0.10);
+
+}
+
+
+
+/* =========================================================
+   CHARACTER COUNTER
+========================================================= */
+
+.maint-character-counter {
+
+    position: absolute;
+
+    right: 10px;
+
+    bottom: 8px;
+
+    color: #89938d;
+
+    font-size: 10px;
+
+    pointer-events: none;
+
+}
+
+
+
+/* =========================================================
+   SUBMIT
+========================================================= */
+
+.maint-submit-wrapper {
+
+    width: 100%;
+
+    margin-top: 6px;
+
+}
+
+
+.maint-submit-button {
+
+    width: 100%;
+
+    min-height: 50px;
+
+    border: none;
+
+    border-radius: 13px;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    transition:
+        background 0.2s ease,
+        transform 0.15s ease;
+
+}
+
+
+.maint-submit-button:not(:disabled):hover {
+
+    background: #146c43;
+
+}
+
+
+.maint-submit-button:not(:disabled):active {
+
+    transform: scale(0.99);
+
+}
+
+
+.maint-submit-button:disabled {
+
+    background: #b8c2bc;
+
+    cursor: default;
+
+}
+
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .maint-modal-header {
+
+        height: 60px;
+
+        padding: 0 10px;
+
+    }
+
+
+    .maint-modal-title strong {
+
+        font-size: 16px;
+
+    }
+
+
+    .maint-modal-body {
+
+        padding: 16px;
+
+    }
+
+
+    .maint-question {
+
+        font-size: 18px;
+
+    }
+
+}
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .maint-modal-body {
+
+        padding: 12px;
+
+    }
+
+
+    .maint-modal-title span {
+
+        display: none;
+
+    }
+
+}
+
+</style>
+
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
 <script>
 
-  /* =========================================================
-     OPEN
-  ========================================================= */
+(function () {
 
-  function openMaintComposer() {
-
-    const modal =
-      document.getElementById(
-        "maintComposer"
-      );
+    "use strict";
 
 
-    if (!modal) return;
+    function initializeMaintenanceComposer() {
 
 
-    modal.classList.add("active");
+        const modal =
+            document.getElementById("maintModal");
 
-    modal.setAttribute(
-      "aria-hidden",
-      "false"
-    );
+        const openButton =
+            document.getElementById("openMaintComposer");
+
+        const closeButton =
+            document.getElementById("closeMaintModal");
+
+        const typeInput =
+            document.getElementById("maintType");
+
+        const descriptionInput =
+            document.getElementById("maintDescription");
+
+        const characterCounter =
+            document.getElementById("maintCharacterCounter");
+
+        const submitButton =
+            document.getElementById("submitMaintButton");
+
+        const form =
+            document.getElementById("maintForm");
 
 
-    document.body.style.overflow =
-      "hidden";
+        if (
+            !modal ||
+            !openButton ||
+            !closeButton ||
+            !typeInput ||
+            !descriptionInput ||
+            !characterCounter ||
+            !submitButton ||
+            !form
+        ) {
+
+            return;
+
+        }
 
 
-    setTimeout(() => {
 
-      const type =
-        document.getElementById(
-          "maintComposerType"
+        /* =================================================
+           OPEN
+        ================================================== */
+
+        function openModal() {
+
+            modal.classList.add("active");
+
+            modal.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+            document.body.style.overflow =
+                "hidden";
+
+
+            setTimeout(function () {
+
+                typeInput.focus();
+
+            }, 100);
+
+        }
+
+
+
+        /* =================================================
+           CLOSE
+        ================================================== */
+
+        function closeModal() {
+
+            modal.classList.remove("active");
+
+            modal.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+            document.body.style.overflow =
+                "";
+
+        }
+
+
+
+        /* =================================================
+           VALIDATION
+        ================================================== */
+
+        function updateSubmitButton() {
+
+            const validType =
+                typeInput.value.trim() !== "";
+
+            const validDescription =
+                descriptionInput.value.trim().length > 0;
+
+            submitButton.disabled =
+                !(validType && validDescription);
+
+        }
+
+
+
+        /* =================================================
+           CHARACTER COUNT
+        ================================================== */
+
+        function updateCharacterCounter() {
+
+            const length =
+                descriptionInput.value.length;
+
+            characterCounter.textContent =
+                length + "/1000";
+
+        }
+
+
+
+        /* =================================================
+           OPEN EVENTS
+        ================================================== */
+
+        openButton.addEventListener(
+            "click",
+            openModal
         );
 
 
-      if (type) {
+        openButton.addEventListener(
+            "keydown",
+            function (event) {
 
-        type.focus();
+                if (
+                    event.key === "Enter" ||
+                    event.key === " "
+                ) {
 
-      }
+                    event.preventDefault();
 
-    }, 100);
+                    openModal();
 
-  }
+                }
 
-
-
-  /* =========================================================
-     CLOSE
-  ========================================================= */
-
-  function closeMaintComposer() {
-
-    const modal =
-      document.getElementById(
-        "maintComposer"
-      );
-
-
-    if (!modal) return;
-
-
-    modal.classList.remove("active");
-
-    modal.setAttribute(
-      "aria-hidden",
-      "true"
-    );
-
-
-    document.body.style.overflow =
-      "";
-
-
-    const form =
-      document.getElementById(
-        "maintComposerForm"
-      );
-
-
-    if (form) {
-
-      form.reset();
-
-    }
-
-  }
-
-
-
-  /* =========================================================
-     CLICK OUTSIDE
-  ========================================================= */
-
-  document.addEventListener(
-    "click",
-    function (event) {
-
-      const modal =
-        document.getElementById(
-          "maintComposer"
+            }
         );
 
 
-      if (
-        modal &&
-        event.target === modal
-      ) {
 
-        closeMaintComposer();
+        /* =================================================
+           CLOSE EVENTS
+        ================================================== */
 
-      }
-
-    }
-  );
-
-
-
-  /* =========================================================
-     ESCAPE
-  ========================================================= */
-
-  document.addEventListener(
-    "keydown",
-    function (event) {
-
-      if (
-        event.key !== "Escape"
-      ) {
-
-        return;
-
-      }
-
-
-      const modal =
-        document.getElementById(
-          "maintComposer"
+        closeButton.addEventListener(
+            "click",
+            closeModal
         );
 
 
-      if (
-        modal &&
-        modal.classList.contains("active")
-      ) {
+        document.addEventListener(
+            "keydown",
+            function (event) {
 
-        closeMaintComposer();
+                if (
+                    event.key === "Escape" &&
+                    modal.classList.contains("active")
+                ) {
 
-      }
+                    closeModal();
+
+                }
+
+            }
+        );
+
+
+
+        /* =================================================
+           INPUT EVENTS
+        ================================================== */
+
+        typeInput.addEventListener(
+            "change",
+            updateSubmitButton
+        );
+
+
+        descriptionInput.addEventListener(
+            "input",
+            function () {
+
+                updateCharacterCounter();
+
+                updateSubmitButton();
+
+            }
+        );
+
+
+
+        /* =================================================
+           FORM SUBMIT
+        ================================================== */
+
+        form.addEventListener(
+            "submit",
+            function () {
+
+                submitButton.disabled = true;
+
+                submitButton.innerHTML =
+                    '<i class="bi bi-hourglass-split"></i> ' +
+                    'Submitting...';
+
+            }
+        );
+
+
+
+        /* =================================================
+           INITIAL STATE
+        ================================================== */
+
+        updateCharacterCounter();
+
+        updateSubmitButton();
 
     }
-  );
+
+
+
+    /* =====================================================
+       DOM READY
+    ====================================================== */
+
+    if (
+        document.readyState === "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeMaintenanceComposer
+        );
+
+    } else {
+
+        initializeMaintenanceComposer();
+
+    }
+
+})();
 
 </script>
