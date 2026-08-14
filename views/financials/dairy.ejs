@@ -32,11 +32,6 @@
 
        asset.assetCode === farm.code
 
-   The service is responsible for finding and calculating
-   farm assets.
-
-   This template only displays the supplied data.
-
    ========================================================== */ %>
 
 
@@ -62,23 +57,18 @@ function formatMoney(value) {
     const amount =
         Number(value);
 
-    if (
-        !Number.isFinite(amount)
-    ) {
+    if (!Number.isFinite(amount)) {
 
         return "—";
 
     }
 
     return amount.toLocaleString(
-
         "en-KE",
-
         {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         }
-
     );
 
 }
@@ -98,9 +88,7 @@ function profitText(value) {
     const amount =
         number(value);
 
-    if (
-        amount < 0
-    ) {
+    if (amount < 0) {
 
         return (
             "-KSh " +
@@ -135,14 +123,14 @@ const assets =
     Array.isArray(
         financial.assets
     )
-
         ? financial.assets
-
         : [];
 
 
 const farmId =
-    farm._id || financial._id || "";
+    farm._id ||
+    financial._id ||
+    "";
 
 
 const farmName =
@@ -157,12 +145,6 @@ const farmCode =
 
 /* ==========================================================
    FARM TOTALS
-
-   These include:
-
-       farm itself
-       +
-       all farm assets
    ========================================================== */
 
 const totalCurrentWorth =
@@ -220,9 +202,6 @@ const hasFilter =
 
 /* ==========================================================
    SORT ASSETS
-
-   The service already sorts assets, but sorting here again
-   keeps the display deterministic if the response changes.
    ========================================================== */
 
 assets.sort(
@@ -241,9 +220,7 @@ assets.sort(
             );
 
 
-        if (
-            profitA !== profitB
-        ) {
+        if (profitA !== profitB) {
 
             return (
                 profitB -
@@ -254,17 +231,13 @@ assets.sort(
 
 
         return (
-
             number(
                 b?.currentWorth
             )
-
             -
-
             number(
                 a?.currentWorth
             )
-
         );
 
     }
@@ -401,11 +374,8 @@ assets.sort(
 
             <div class="financial-filter-group">
 
-
                 <label for="startDate">
-
                     From
-
                 </label>
 
 
@@ -416,17 +386,13 @@ assets.sort(
                     value="<%= filterStart %>"
                 >
 
-
             </div>
 
 
             <div class="financial-filter-group">
 
-
                 <label for="endDate">
-
                     To
-
                 </label>
 
 
@@ -436,7 +402,6 @@ assets.sort(
                     name="endDate"
                     value="<%= filterEnd %>"
                 >
-
 
             </div>
 
@@ -562,9 +527,7 @@ assets.sort(
                 <tbody>
 
 
-                    <% if (
-                        assets.length > 0
-                    ) { %>
+                    <% if (assets.length > 0) { %>
 
 
                         <% assets.forEach(
@@ -572,7 +535,29 @@ assets.sort(
                         %>
 
 
-                            <tr>
+                            <!-- ==================================================
+                                 CLICKABLE ASSET ROW
+
+                                 Clicking anywhere on this row opens:
+
+                                     /networth/asset/:id
+                            =================================================== -->
+
+                            <tr
+                                class="financial-asset-row"
+                                onclick="window.location.href='/networth/asset/<%= asset._id %>'"
+                                role="link"
+                                tabindex="0"
+                                onkeydown="
+                                    if (
+                                        event.key === 'Enter' ||
+                                        event.key === ' '
+                                    ) {
+                                        event.preventDefault();
+                                        window.location.href='/networth/asset/<%= asset._id %>';
+                                    }
+                                "
+                            >
 
 
                                 <!-- ==================================
@@ -581,11 +566,9 @@ assets.sort(
 
                                 <td>
 
-
                                     <div
                                         class="financial-table-name"
                                     >
-
 
                                         <strong>
 
@@ -602,14 +585,12 @@ assets.sort(
                                             asset.code !== ""
                                         ) { %>
 
-
                                             <small>
 
                                                 Code:
                                                 <%= asset.code %>
 
                                             </small>
-
 
                                         <% } %>
 
@@ -620,7 +601,6 @@ assets.sort(
                                             asset.assetCode !== ""
                                         ) { %>
 
-
                                             <small>
 
                                                 Farm:
@@ -628,12 +608,10 @@ assets.sort(
 
                                             </small>
 
-
                                         <% } %>
 
 
                                     </div>
-
 
                                 </td>
 
@@ -713,7 +691,6 @@ assets.sort(
 
                                 <td>
 
-
                                     <strong
                                         class="<%= profitClass(
                                             asset.profit
@@ -725,7 +702,6 @@ assets.sort(
                                         ) %>
 
                                     </strong>
-
 
                                 </td>
 
@@ -741,12 +717,10 @@ assets.sort(
 
                         <tr>
 
-
                             <td
                                 colspan="7"
                                 class="financial-table-empty"
                             >
-
 
                                 <i class="bi bi-box-seam"></i>
 
@@ -766,9 +740,7 @@ assets.sort(
 
                                 </span>
 
-
                             </td>
-
 
                         </tr>
 
@@ -785,9 +757,7 @@ assets.sort(
 
                 <tfoot>
 
-
                     <tr>
-
 
                         <th colspan="2">
 
@@ -838,7 +808,6 @@ assets.sort(
 
                         <th>
 
-
                             <strong
                                 class="<%= profitClass(
                                     totalProfit
@@ -851,12 +820,10 @@ assets.sort(
 
                             </strong>
 
-
                         </th>
 
 
                     </tr>
-
 
                 </tfoot>
 
@@ -882,7 +849,6 @@ assets.sort(
 
         <div>
 
-
             <strong>
 
                 Profit / Loss calculation
@@ -900,7 +866,6 @@ assets.sort(
                 − Liabilities + Revenue.
 
             </span>
-
 
         </div>
 
@@ -1390,10 +1355,53 @@ assets.sort(
 }
 
 
+/* ==========================================================
+   CLICKABLE ASSET ROW
+   ========================================================== */
+
 .dairy-financial-page
-.financial-table tbody tr:hover{
+.financial-table
+.financial-asset-row{
+
+    cursor:pointer;
+
+    transition:
+        background .18s ease,
+        box-shadow .18s ease;
+
+}
+
+
+.dairy-financial-page
+.financial-table
+.financial-asset-row:hover{
 
     background:var(--financial-green-soft);
+
+}
+
+
+.dairy-financial-page
+.financial-table
+.financial-asset-row:focus{
+
+    outline:none;
+
+    background:var(--financial-green-soft);
+
+    box-shadow:
+        inset 3px 0 0
+        var(--financial-green);
+
+}
+
+
+.dairy-financial-page
+.financial-table
+.financial-asset-row:hover
+.financial-table-name strong{
+
+    color:var(--financial-green-dark);
 
 }
 
