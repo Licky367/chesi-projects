@@ -2,302 +2,444 @@
 // services/update/postService.js
 // ==========================================================
 
-const Update = require("../../models/Update");
+const Update =
+    require("../../models/Update");
+
+const ProjectUser =
+    require("../../models/projectUser");
 
 const {
-  formatComment
+    formatComment
 } = require("./helpers");
 
 
-/* ==========================================================
-   🟦 CREATE POST
-========================================================= */
-exports.createPost = async ({
-
-  dairyId,
-
-  userId,
-
-  userName,
-
-  text,
-
-  image
-
-}) => {
-
-  return await Update.create({
-
-    dairy: dairyId,
-
-    user: userId,
-
-    userName,
-
-    type: "post",
-
-    text: text || "",
-
-    image: image || null,
-
-    likes: [],
-
-    comments: []
-
-  });
-
-};
-
-
-/* ==========================================================
-   🟦 LIKE / UNLIKE POST
-========================================================= */
-exports.toggleLike = async ({
-
-  postId,
-
-  userId
-
-}) => {
-
-  const post = await Update.findById(postId);
-
-  if (!post) {
-
-    throw new Error(
-
-      "Post not found."
-
-    );
-
-  }
-
-  if (!Array.isArray(post.likes)) {
-
-    post.likes = [];
-
-  }
-
-  const index = post.likes.findIndex(
-
-    id => id.toString() === userId.toString()
-
-  );
-
-  let liked = false;
-
-  if (index >= 0) {
-
-    post.likes.splice(index, 1);
-
-    liked = false;
-
-  } else {
-
-    post.likes.push(userId);
-
-    liked = true;
-
-  }
-
-  await post.save();
-
-  return {
-
-    liked,
-
-    likes: post.likes.length
-
-  };
-
-};
-
-
-/* ==========================================================
-   🟦 ADD COMMENT TO POST
-========================================================= */
-exports.addPostComment = async ({
-
-  postId,
-
-  userId,
-
-  userName,
-
-  userImage = "",
-
-  text
-
-}) => {
-
-  const post = await Update.findById(postId);
-
-  if (!post) {
-
-    throw new Error(
-
-      "Post not found."
-
-    );
-
-  }
-
-  if (!Array.isArray(post.comments)) {
-
-    post.comments = [];
-
-  }
-
-  const comment = {
+// ==========================================================
+// CREATE POST
+// ==========================================================
+//
+// Creates a normal feed post.
+//
+// IMPORTANT:
+//
+// The post owner's name is obtained directly from
+// ProjectUser using userId.
+//
+// This means the caller does NOT need to remember to
+// provide userName.
+//
+// Saved Update:
+//
+//     dairy
+//     user
+//     userName
+//     type
+//     text
+//     image
+//
+// ==========================================================
+
+exports.createPost =
+async ({
+
+    dairyId,
 
     userId,
 
     userName,
 
-    userImage,
-
     text,
 
-    createdAt: new Date()
+    image
 
-  };
+}) => {
 
-  post.comments.push(comment);
+    // ======================================================
+    // VERIFY USER
+    // ======================================================
 
-  await post.save();
+    let resolvedUserName =
+        userName || "";
 
-  return formatComment(comment);
+
+    // ======================================================
+    // GET REAL USER NAME
+    //
+    // Prefer the database value over anything supplied
+    // by the browser/client.
+    // ======================================================
+
+    if (userId) {
+
+        const user =
+            await ProjectUser
+                .findById(userId)
+                .select("name");
+
+
+        if (user && user.name) {
+
+            resolvedUserName =
+                user.name;
+
+        }
+
+    }
+
+
+    // ======================================================
+    // CREATE UPDATE
+    // ======================================================
+
+    return await Update.create({
+
+        dairy:
+            dairyId,
+
+        user:
+            userId,
+
+        userName:
+            resolvedUserName,
+
+        type:
+            "post",
+
+        text:
+            text || "",
+
+        image:
+            image || null,
+
+        likes:
+            [],
+
+        comments:
+            []
+
+    });
 
 };
 
 
-/* ==========================================================
-   🗑 DELETE POST
-========================================================= */
-exports.deletePost = async ({
+// ==========================================================
+// LIKE / UNLIKE POST
+// ==========================================================
 
-  postId,
+exports.toggleLike =
+async ({
 
-  user
+    postId,
+
+    userId
 
 }) => {
 
-  const post = await Update.findById(postId);
+    const post =
+        await Update.findById(
+            postId
+        );
 
-  if (!post) {
 
-    throw new Error(
+    if (!post) {
 
-      "Post not found."
+        throw new Error(
+            "Post not found."
+        );
 
-    );
+    }
 
-  }
 
-  const owner =
+    if (
+        !Array.isArray(
+            post.likes
+        )
+    ) {
 
-    post.user &&
+        post.likes = [];
 
-    post.user.toString() ===
+    }
 
-    user._id.toString();
 
-  const admin =
+    const index =
+        post.likes.findIndex(
 
-    user.role === "admin";
+            id =>
 
-  if (!owner && !admin) {
+                id.toString() ===
+                userId.toString()
 
-    throw new Error(
+        );
 
-      "Not authorized."
 
-    );
+    let liked = false;
 
-  }
 
-  await Update.findByIdAndDelete(postId);
+    if (index >= 0) {
 
-  return true;
+        post.likes.splice(
+            index,
+            1
+        );
+
+        liked = false;
+
+    }
+
+    else {
+
+        post.likes.push(
+            userId
+        );
+
+        liked = true;
+
+    }
+
+
+    await post.save();
+
+
+    return {
+
+        liked,
+
+        likes:
+            post.likes.length
+
+    };
 
 };
 
 
-/* ==========================================================
-   🗑 DELETE COMMENT
-========================================================= */
-exports.deleteComment = async ({
+// ==========================================================
+// ADD COMMENT TO POST
+// ==========================================================
 
-  commentId,
+exports.addPostComment =
+async ({
 
-  user
+    postId,
+
+    userId,
+
+    userName,
+
+    userImage = "",
+
+    text
 
 }) => {
 
-  const post = await Update.findOne({
+    const post =
+        await Update.findById(
+            postId
+        );
 
-    "comments._id": commentId
 
-  });
+    if (!post) {
 
-  if (!post) {
+        throw new Error(
+            "Post not found."
+        );
 
-    throw new Error(
+    }
 
-      "Comment not found."
 
+    if (
+        !Array.isArray(
+            post.comments
+        )
+    ) {
+
+        post.comments = [];
+
+    }
+
+
+    const comment = {
+
+        userId,
+
+        userName,
+
+        userImage,
+
+        text,
+
+        createdAt:
+            new Date()
+
+    };
+
+
+    post.comments.push(
+        comment
     );
 
-  }
 
-  const comment = post.comments.find(
+    await post.save();
 
-    c => c._id.toString() === commentId.toString()
 
-  );
-
-  if (!comment) {
-
-    throw new Error(
-
-      "Comment not found."
-
+    return formatComment(
+        comment
     );
 
-  }
+};
 
-  const owner =
 
-    comment.userId &&
+// ==========================================================
+// DELETE POST
+// ==========================================================
 
-    user._id &&
+exports.deletePost =
+async ({
 
-    comment.userId.toString() ===
+    postId,
 
-    user._id.toString();
+    user
 
-  const admin =
+}) => {
 
-    user.role === "admin";
+    const post =
+        await Update.findById(
+            postId
+        );
 
-  if (!owner && !admin) {
 
-    throw new Error(
+    if (!post) {
 
-      "Not authorized."
+        throw new Error(
+            "Post not found."
+        );
 
+    }
+
+
+    const owner =
+
+        post.user &&
+
+        post.user.toString() ===
+        user._id.toString();
+
+
+    const admin =
+        user.role === "admin";
+
+
+    if (
+        !owner &&
+        !admin
+    ) {
+
+        throw new Error(
+            "Not authorized."
+        );
+
+    }
+
+
+    await Update.findByIdAndDelete(
+        postId
     );
 
-  }
 
-  post.comments = post.comments.filter(
+    return true;
 
-    c => c._id.toString() !== commentId.toString()
+};
 
-  );
 
-  await post.save();
+// ==========================================================
+// DELETE COMMENT
+// ==========================================================
 
-  return true;
+exports.deleteComment =
+async ({
+
+    commentId,
+
+    user
+
+}) => {
+
+    const post =
+        await Update.findOne({
+
+            "comments._id":
+                commentId
+
+        });
+
+
+    if (!post) {
+
+        throw new Error(
+            "Comment not found."
+        );
+
+    }
+
+
+    const comment =
+        post.comments.find(
+
+            c =>
+
+                c._id.toString() ===
+                commentId.toString()
+
+        );
+
+
+    if (!comment) {
+
+        throw new Error(
+            "Comment not found."
+        );
+
+    }
+
+
+    const owner =
+
+        comment.userId &&
+
+        user._id &&
+
+        comment.userId.toString() ===
+        user._id.toString();
+
+
+    const admin =
+        user.role === "admin";
+
+
+    if (
+        !owner &&
+        !admin
+    ) {
+
+        throw new Error(
+            "Not authorized."
+        );
+
+    }
+
+
+    post.comments =
+        post.comments.filter(
+
+            c =>
+
+                c._id.toString() !==
+                commentId.toString()
+
+        );
+
+
+    await post.save();
+
+
+    return true;
 
 };
