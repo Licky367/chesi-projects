@@ -6,9 +6,11 @@ const Dairy = require("../../models/dairy");
 const Update = require("../../models/Update");
 
 
+
 /* ==========================================================
    🔧 MARK MAINTENANCE
-========================================================= */
+========================================================== */
+
 exports.markMaintenance = async ({
 
   dairyId,
@@ -23,25 +25,73 @@ exports.markMaintenance = async ({
 
 }) => {
 
+
+  /* ========================================================
+     VALIDATE DAIRY
+  ======================================================== */
+
   const dairy = await Dairy.findById(dairyId);
+
 
   if (!dairy) {
 
     throw new Error(
-
       "Structure not found."
-
     );
 
   }
 
-  // Update dairy status
+
+  /* ========================================================
+     VALIDATE MAINTENANCE TYPE
+  ======================================================== */
+
+  const allowedTypes = [
+    "repair",
+    "maintenance",
+    "construction"
+  ];
+
+
+  if (!allowedTypes.includes(type)) {
+
+    throw new Error(
+      "Invalid maintenance type."
+    );
+
+  }
+
+
+  /* ========================================================
+     VALIDATE DESCRIPTION
+  ======================================================== */
+
+  if (
+    typeof description !== "string" ||
+    !description.trim()
+  ) {
+
+    throw new Error(
+      "Maintenance description is required."
+    );
+
+  }
+
+
+  /* ========================================================
+     MARK DAIRY AS REQUIRING MAINTENANCE
+  ======================================================== */
+
   dairy.needsMaintenance = true;
 
   await dairy.save();
 
-  // Create feed update
-  return await Update.create({
+
+  /* ========================================================
+     CREATE MAINTENANCE FEED UPDATE
+  ======================================================== */
+
+  const update = await Update.create({
 
     dairy: dairyId,
 
@@ -57,7 +107,7 @@ exports.markMaintenance = async ({
 
       type,
 
-      description,
+      description: description.trim(),
 
       markedAt: new Date(),
 
@@ -71,12 +121,21 @@ exports.markMaintenance = async ({
 
   });
 
+
+  /* ========================================================
+     RETURN CREATED UPDATE
+  ======================================================== */
+
+  return update;
+
 };
+
 
 
 /* ==========================================================
    ✅ CLEAR MAINTENANCE
-========================================================= */
+========================================================== */
+
 exports.clearMaintenance = async ({
 
   dairyId,
@@ -91,23 +150,67 @@ exports.clearMaintenance = async ({
 
 }) => {
 
+
+  /* ========================================================
+     VALIDATE DAIRY
+  ======================================================== */
+
   const dairy = await Dairy.findById(dairyId);
+
 
   if (!dairy) {
 
     throw new Error(
-
       "Structure not found."
-
     );
 
   }
+
+
+  /* ========================================================
+     VALIDATE CHARGES
+  ======================================================== */
+
+  if (
+    !Number.isFinite(Number(charges)) ||
+    Number(charges) < 0
+  ) {
+
+    throw new Error(
+      "Invalid maintenance charges."
+    );
+
+  }
+
+
+  /* ========================================================
+     VALIDATE CLEAR DESCRIPTION
+  ======================================================== */
+
+  if (
+    typeof description !== "string" ||
+    !description.trim()
+  ) {
+
+    throw new Error(
+      "Maintenance completion description is required."
+    );
+
+  }
+
+
+  /* ========================================================
+     CLEAR MAINTENANCE STATUS
+  ======================================================== */
 
   dairy.needsMaintenance = false;
 
   await dairy.save();
 
-  console.log("Creating maintenance update...");
+
+  /* ========================================================
+     CREATE MAINTENANCE FEED UPDATE
+  ======================================================== */
 
   const update = await Update.create({
 
@@ -135,15 +238,18 @@ exports.clearMaintenance = async ({
 
       clearedBy: userId,
 
-      charges,
+      charges: Number(charges),
 
-      clearDescription: description
+      clearDescription: description.trim()
 
     }
 
   });
 
-  console.log("Maintenance update created successfully.");
+
+  /* ========================================================
+     RETURN CREATED UPDATE
+  ======================================================== */
 
   return update;
 
