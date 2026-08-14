@@ -56,6 +56,41 @@ z-index:1001;
 box-shadow:0 2px 8px rgba(0,0,0,.15);
 }
 
+/* ================= DAIRY WORKER TOP NAV ================= */
+
+.dairy-worker-nav{
+display:flex;
+align-items:center;
+gap:6px;
+height:100%;
+overflow-x:auto;
+overflow-y:hidden;
+flex:1;
+}
+
+.dairy-worker-nav a{
+display:flex;
+align-items:center;
+justify-content:center;
+height:36px;
+padding:0 10px;
+border-radius:6px;
+color:#fff;
+text-decoration:none;
+font-size:14px;
+font-weight:500;
+white-space:nowrap;
+transition:.2s;
+}
+
+.dairy-worker-nav a:hover{
+background:rgba(255,255,255,.15);
+}
+
+.dairy-worker-nav a:active{
+background:rgba(255,255,255,.2);
+}
+
 /* ================= MENU ================= */
 
 .menu-btn{
@@ -95,6 +130,7 @@ top:10px;
 
 .profile-box{
 position:relative;
+flex-shrink:0;
 }
 
 .profile-trigger{
@@ -229,6 +265,8 @@ font-size:13px;
 z-index:1000;
 }
 
+/* ================= MOBILE ================= */
+
 @media(max-width:600px){
 
 .sidebar{
@@ -243,6 +281,19 @@ top:8px;
 
 .top-menu{
 padding:0 10px;
+}
+
+.dairy-worker-nav{
+gap:3px;
+}
+
+.dairy-worker-nav a{
+padding:0 7px;
+font-size:13px;
+}
+
+.profile-name{
+max-width:65px;
 }
 
 }
@@ -264,9 +315,7 @@ const authPages=[
 const isAuthPage=authPages.includes(currentPath||req?.path||"");
 
 /* ======================================================
-   SIDEBAR HOME DESTINATION
-
-   Same logic used by authController.login:
+   HOME DESTINATION
 
    dairyWorker + assigned farm
    → /dairy/<first assigned farm>
@@ -294,7 +343,7 @@ homeLink=`/dairy/${firstFarm}`;
 
 <% if(!isAuthPage){ %>
 
-<!-- ================= HEADER (LOGO ONLY) ================= -->
+<!-- ================= HEADER ================= -->
 
 <div class="header">
 
@@ -313,35 +362,78 @@ class="header-logo">
 
 </div>
 
-<!-- ================= TOP MENU ================= -->
+
+<!-- =====================================================
+     TOP MENU
+====================================================== -->
 
 <div class="top-menu">
+
+<% if(user && user.role==="dairyWorker"){ %>
+
+<!-- ================= DAIRY WORKER NAVIGATION ================= -->
+
+<div class="dairy-worker-nav">
+
+<a href="<%= homeLink %>">
+🏠 Home
+</a>
+
+<a href="/milk">
+🥛 Production
+</a>
+
+<a href="/sales">
+💰 Sales
+</a>
+
+</div>
+
+<% }else{ %>
+
+<!-- ================= SIDEBAR MENU BUTTON ================= -->
 
 <div class="menu-btn" onclick="openSidebar()">
 ☰
 </div>
 
+<% } %>
+
+
+<!-- ================= PROFILE ================= -->
+
 <div class="profile-box" id="profileBox">
 
-<div class="profile-trigger" onclick="toggleProfile(event)">
-    <div class="profile-name">
-        <%= user ? user.name : "Profile" %> ▼
-    </div>
+<div
+class="profile-trigger"
+onclick="toggleProfile(event)"
+>
+
+<div class="profile-name">
+<%= user ? user.name : "Profile" %> ▼
+</div>
+
 </div>
 
 <div class="dropdown-profile">
 
 <% if(user){ %>
 
-<a href="/profile">👤 My Account</a>
+<a href="/profile">
+👤 My Account
+</a>
 
-<% if (user.role === "admin") { %>
+<% if(user.role==="admin"){ %>
 
-<a href="/accounts">👥 People</a>
+<a href="/accounts">
+👥 People
+</a>
 
 <% } %>
 
-<a href="/logout">🚪 Logout</a>
+<a href="/logout">
+🚪 Logout
+</a>
 
 <% } %>
 
@@ -351,47 +443,64 @@ class="header-logo">
 
 </div>
 
-<!-- ================= SIDEBAR ================= -->
+
+<!-- =====================================================
+     SIDEBAR
+     
+     Dairy workers do NOT receive the sidebar.
+====================================================== -->
+
+<% if(!user || user.role!=="dairyWorker"){ %>
 
 <div class="sidebar" id="sidebar">
 
 <% if(user && user.role==="admin"){ %>
 
-<a href="/">🏠 Home</a>
+<a href="/">
+🏠 Home
+</a>
 
-<a href="/create-invite">👥 Add Staff</a>
+<a href="/create-invite">
+👥 Add Staff
+</a>
 
-<a href="/dashboard/dairy">🐄 Dairy Dashboard</a>
+<a href="/dashboard/dairy">
+🐄 Dairy Dashboard
+</a>
 
-<a href="/dashboard/poultry">🐔 Poultry Dashboard</a>
+<a href="/dashboard/poultry">
+🐔 Poultry Dashboard
+</a>
 
-<a href="/dashboard/agriculture">🌾 Agriculture Dashboard</a>
-
-<% }else if(user && user.role==="dairyWorker"){ %>
-
-<a href="<%= homeLink %>">🏠 Home</a>
-
-<a href="/dairyProjects">🐄 View Dairy Cattle</a>
-
-<a href="/structures">🏗 Facilities</a>
-
-<a href="/milk">🥛 Production</a>
-
-<a href="/sales">💰 Sales</a>
+<a href="/dashboard/agriculture">
+🌾 Agriculture Dashboard
+</a>
 
 <% }else if(user && user.role==="poultryWorker"){ %>
 
-<a href="/">🏠 Home</a>
+<a href="/">
+🏠 Home
+</a>
 
-<a href="/incubation">🥚 Incubate Eggs</a>
+<a href="/incubation">
+🥚 Incubate Eggs
+</a>
 
-<a href="/nursing">🐣 Poultry Progress</a>
+<a href="/nursing">
+🐣 Poultry Progress
+</a>
 
-<a href="/cage">🐔 Caged Chicken</a>
+<a href="/cage">
+🐔 Caged Chicken
+</a>
 
-<a href="/poultry-stats">📊 Track Production</a>
+<a href="/poultry-stats">
+📊 Track Production
+</a>
 
-<a href="/eggs">🥚 Sell Eggs</a>
+<a href="/eggs">
+🥚 Sell Eggs
+</a>
 
 <% } %>
 
@@ -401,37 +510,71 @@ class="header-logo">
 
 <% } %>
 
+<% } %>
+
+
+<!-- ================= MAIN ================= -->
+
 <div class="main">
 
 <%- body %>
 
 </div>
 
+
 <% if(!isAuthPage){ %>
 
+<!-- ================= FOOTER ================= -->
+
 <div class="footer">
+
 © <%= new Date().getFullYear() %> Dr. Chessy Edwin
+
 </div>
 
+
 <script>
+
+/* ======================================================
+   ELEMENTS
+====================================================== */
 
 const sidebar=document.getElementById("sidebar");
 const overlay=document.getElementById("overlay");
 const profileBox=document.getElementById("profileBox");
 
+
+/* ======================================================
+   SIDEBAR
+====================================================== */
+
 function openSidebar(){
+
+if(!sidebar || !overlay){
+return;
+}
 
 sidebar.classList.add("active");
 overlay.classList.add("active");
 
 }
 
+
 function closeSidebar(){
+
+if(!sidebar || !overlay){
+return;
+}
 
 sidebar.classList.remove("active");
 overlay.classList.remove("active");
 
 }
+
+
+/* ======================================================
+   PROFILE
+====================================================== */
 
 function toggleProfile(event){
 
@@ -445,33 +588,71 @@ profileBox.classList.toggle("active");
 
 }
 
+
+/* ======================================================
+   OVERLAY
+====================================================== */
+
 if(overlay){
 
-overlay.addEventListener("click",closeSidebar);
+overlay.addEventListener(
+"click",
+closeSidebar
+);
 
 }
 
-document.querySelectorAll(".sidebar a").forEach(link=>{
 
-link.addEventListener("click",function(){
+/* ======================================================
+   SIDEBAR LINKS
+====================================================== */
+
+if(sidebar){
+
+sidebar.querySelectorAll("a").forEach(link=>{
+
+link.addEventListener(
+"click",
+function(){
 
 closeSidebar();
 
-});
+}
+);
 
 });
 
-document.addEventListener("click",function(event){
+}
 
-if(profileBox && !profileBox.contains(event.target)){
+
+/* ======================================================
+   CLOSE PROFILE WHEN CLICKING OUTSIDE
+====================================================== */
+
+document.addEventListener(
+"click",
+function(event){
+
+if(
+profileBox &&
+!profileBox.contains(event.target)
+){
 
 profileBox.classList.remove("active");
 
 }
 
-});
+}
+);
 
-document.addEventListener("keydown",function(event){
+
+/* ======================================================
+   ESC KEY
+====================================================== */
+
+document.addEventListener(
+"keydown",
+function(event){
 
 if(event.key==="Escape"){
 
@@ -485,9 +666,17 @@ profileBox.classList.remove("active");
 
 }
 
-});
+}
+);
 
-window.addEventListener("resize",function(){
+
+/* ======================================================
+   RESIZE
+====================================================== */
+
+window.addEventListener(
+"resize",
+function(){
 
 if(window.innerWidth>768){
 
@@ -495,7 +684,8 @@ closeSidebar();
 
 }
 
-});
+}
+);
 
 </script>
 
