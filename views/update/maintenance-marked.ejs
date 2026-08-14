@@ -1,6 +1,6 @@
-<!-- ===================.==================================
+<!-- ==========================================================
      MAINTENANCE RECORD - REQUIRED
-====================================================== -->
+========================================================== -->
 
 <article
     class="feed-card maintenance-card"
@@ -8,27 +8,76 @@
     data-type="maintenance"
 >
 
-    <!-- Header -->
+    <!-- =================================================
+         HEADER
+    ================================================== -->
 
     <div class="feed-header">
 
         <div class="feed-user">
 
             <img
-                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName)) %>"
+                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
                 class="avatar-sm"
-                alt="<%= item.userName %>"
+                alt="<%= item.userName || 'User' %>"
             >
 
             <div class="feed-user-info">
 
-                <strong>
+                <!-- =========================================
+                     MAINTENANCE META
+                ========================================== -->
 
-                    🔧 <%= item.userName %>
+                <div class="post-meta-line">
 
-                </strong>
+                    <strong class="post-user-name">
 
-                <small>
+                        🔧 <%= item.userName || "User" %>
+
+                    </strong>
+
+                    <% if (item.dairyName && item.dairyId) { %>
+
+                        <span class="post-meta-action">
+
+                            evaluated
+
+                        </span>
+
+                        <a
+                            href="/dairy/<%= item.dairyId %>"
+                            class="post-subject"
+                            title="View <%= item.dairyName %>"
+                        >
+
+                            <%= item.dairyName %>
+
+                        </a>
+
+                        <span class="post-meta-action">
+
+                            overal conditions
+
+                        </span>
+
+                    <% } else { %>
+
+                        <span class="post-meta-action">
+
+                            evaluated health condition
+
+                        </span>
+
+                    <% } %>
+
+                </div>
+
+
+                <!-- =========================================
+                     DATE / TIME
+                ========================================== -->
+
+                <small class="post-time">
 
                     <%= item.dateText %>
 
@@ -38,6 +87,11 @@
 
         </div>
 
+
+        <!-- =================================================
+             DELETE MAINTENANCE
+        ================================================== -->
+
         <% if (
             user &&
             (
@@ -45,7 +99,8 @@
                 (
                     user._id &&
                     item.userId &&
-                    user._id.toString() === item.userId.toString()
+                    user._id.toString() ===
+                    item.userId.toString()
                 )
             )
         ) { %>
@@ -55,10 +110,14 @@
                 data-id="<%= item._id %>"
                 data-type="maintenance"
                 title="Delete Maintenance Record"
+                aria-label="Delete Maintenance Record"
                 type="button"
             >
 
-                <i class="bi bi-trash3-fill"></i>
+                <i
+                    class="bi bi-trash3-fill"
+                    aria-hidden="true"
+                ></i>
 
             </button>
 
@@ -66,7 +125,10 @@
 
     </div>
 
-    <!-- Body -->
+
+    <!-- =================================================
+         BODY
+    ================================================== -->
 
     <div class="feed-body">
 
@@ -76,9 +138,15 @@
 
         </h3>
 
+
+        <!-- =============================================
+             STATUS
+        ============================================== -->
+
         <div class="maintenance-status marked">
 
             Status:
+
             <strong>
 
                 Requires Maintenance
@@ -86,6 +154,11 @@
             </strong>
 
         </div>
+
+
+        <!-- =============================================
+             MAINTENANCE TYPE
+        ============================================== -->
 
         <% if (item.maintenanceType) { %>
 
@@ -99,6 +172,11 @@
 
         <% } %>
 
+
+        <!-- =============================================
+             TITLE
+        ============================================== -->
+
         <% if (item.title) { %>
 
             <p>
@@ -110,6 +188,11 @@
             </p>
 
         <% } %>
+
+
+        <!-- =============================================
+             DESCRIPTION
+        ============================================== -->
 
         <% if (item.description) { %>
 
@@ -123,14 +206,20 @@
 
     </div>
 
-    <!-- Actions -->
+
+    <!-- =================================================
+         ACTIONS
+    ================================================== -->
 
     <%- include("partials/feed-actions", {
         item,
         type: "maintenance"
     }) %>
 
-    <!-- Comments -->
+
+    <!-- =================================================
+         COMMENTS
+    ================================================== -->
 
     <%- include("comment-section", {
         item,
