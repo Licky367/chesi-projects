@@ -4,11 +4,6 @@
 //
 // CENTRAL MILK BUSINESS-LOGIC SERVICE
 //
-// Used by:
-//
-//     controllers/milkController.js
-//     controllers/milkCollectController.js
-//
 // Responsibilities:
 //
 // • Milk collection
@@ -27,8 +22,23 @@
 // • Standing orders
 // • Milking history
 // • Daily summary locking
+// • Daily cow production summaries
+// • Individual cow revenue
+// • Cumulative Dairy.revenue synchronization
 //
-// Page rendering belongs to controllers.
+// REVENUE FORMULA
+// ----------------------------------------------------------
+//
+// For every cow:
+//
+//     cowRevenue =
+//         (cowLitres / totalProduced)
+//         ×
+//         totalSalesCash
+//
+// Revenue is rebuilt from MilkSummary records rather than
+// incremented. This prevents duplicate revenue when records
+// are edited or saved again.
 //
 // ==========================================================
 
@@ -69,9 +79,9 @@ const DEFAULT_MILK_PRICE =
 // SESSION TIMES
 // ==========================================================
 //
-// 00:00 - 09:59  = MORNING
-// 10:00 - 15:59  = CLOSED
-// 16:00 - 23:59  = EVENING
+// 00:00 - 09:59 = MORNING
+// 10:00 - 15:59 = CLOSED
+// 16:00 - 23:59 = EVENING
 //
 // ==========================================================
 
@@ -93,12 +103,38 @@ function milkError(
 ) {
 
     const error =
-        new Error(message);
+        new Error(
+            message
+        );
 
     error.code =
         code;
 
     return error;
+
+}
+
+
+// ==========================================================
+// NUMBER HELPER
+// ==========================================================
+
+function number(
+    value
+) {
+
+    const parsed =
+        Number(
+            value
+        );
+
+
+    return Number.isFinite(
+        parsed
+    )
+        ? parsed
+        : 0;
+
 }
 
 
@@ -191,7 +227,8 @@ function getKenyaDateParts() {
             `${year}-${String(month).padStart(2, "0")}`,
 
         timeMinutes:
-            hour * 60 + minute
+            hour * 60 +
+            minute
 
     };
 
@@ -226,16 +263,24 @@ function getPreviousKenyaDate() {
     const month =
         String(
             date.getMonth() + 1
-        ).padStart(2, "0");
+        ).padStart(
+            2,
+            "0"
+        );
 
 
     const day =
         String(
             date.getDate()
-        ).padStart(2, "0");
+        ).padStart(
+            2,
+            "0"
+        );
 
 
-    return `${year}-${month}-${day}`;
+    return (
+        `${year}-${month}-${day}`
+    );
 
 }
 
@@ -564,8 +609,10 @@ async function() {
     })
 
     .sort({
+
         code:
             1
+
     })
 
     .lean();
@@ -855,11 +902,14 @@ async function calculateFarmTotals(
 
 
             totals.set(
+
                 farmId,
+
                 current +
-                    Number(
-                        record.liters || 0
-                    )
+                number(
+                    record.liters
+                )
+
             );
 
         }
@@ -877,6 +927,1162 @@ async function calculateFarmTotals(
 
         })
     );
+
+}
+
+
+// ==========================================================
+// REBUILD DAILY COW PRODUCTION
+// ==========================================================
+//
+// This is important for revenue.
+//
+// MilkSummary.cowProduction is rebuilt directly from the
+// Milk collection for the requested day.
+//
+// Each entry contains:
+//
+//     dairy
+//     cowCode
+//     farmCode
+//     liters
+//
+// ==========================================================
+
+async function rebuildDailyCowProduction(
+    day
+) {
+
+    if (
+        !day
+    ) {
+
+        return [];
+
+    }
+
+
+    const milkRecords =
+        await Milk.find({
+
+            day
+
+        })
+
+        .select(
+            "dairy liters"
+        )
+
+        .lean();
+
+
+    if (
+        !milkRecords.length
+    ) {
+
+        return [];
+
+    }
+
+
+    const dairyIds =
+        milkRecords
+
+            .filter(
+                record =>
+                    record.dairy
+            )
+
+            .map(
+                record =>
+                    record.dairy
+            );
+
+
+    const dairies =
+        await Dairy.find({
+
+            _id: {
+                $in:
+                    dairyIds
+            }
+
+        })
+
+        .select(
+            "_id code farm"
+        )
+
+        .lean();
+
+
+    const dairyMap =
+        new Map();
+
+
+    dairies.forEach(
+        dairy => {
+
+            dairyMap.set(
+
+                dairy._id.toString(),
+
+                dairy
+
+            );
+
+        }
+    );
+
+
+    // ------------------------------------------------------
+    // Aggregate because an animal can have morning and
+    // evening records.
+    // ------------------------------------------------------
+
+    const productionMap =
+        new Map();
+
+
+    milkRecords.forEach(
+        record => {
+
+            if (
+                !record.dairy
+            ) {
+
+                return;
+
+            }
+
+
+            const dairyId =
+                record.dairy.toString();
+
+
+            const dairy =
+                dairyMap.get(
+                    dairyId
+                );
+
+
+            if (!dairy) {
+
+                return;
+
+            }
+
+
+            const liters =
+                Math.max(
+                    0,
+                    number(
+                        record.liters
+                    )
+                );
+
+
+            const existing =
+                productionMap.get(
+                    dairyId
+                );
+
+
+            if (
+                existing
+            ) {
+
+                existing.liters +=
+                    liters;
+
+                return;
+
+            }
+
+
+            let farmCode =
+                null;
+
+
+            if (
+                dairy.farm
+            ) {
+
+                if (
+                    typeof dairy.farm ===
+                    "object" &&
+                    dairy.farm.code !==
+                        undefined
+                ) {
+
+                    farmCode =
+                        number(
+                            dairy.farm.code
+                        );
+
+                }
+
+            }
+
+
+            productionMap.set(
+
+                dairyId,
+
+                {
+
+                    dairy:
+                        dairy._id,
+
+                    cowCode:
+                        dairy.code,
+
+                    farmCode,
+
+                    liters
+
+                }
+
+            );
+
+        }
+    );
+
+
+    return Array.from(
+        productionMap.values()
+    );
+
+}
+
+
+// ==========================================================
+// GET DAILY TOTAL PRODUCTION
+// ==========================================================
+
+async function getDailyTotalProduction(
+    day
+) {
+
+    const production =
+        await rebuildDailyCowProduction(
+            day
+        );
+
+
+    return production.reduce(
+
+        (
+            total,
+            entry
+        ) => {
+
+            return (
+                total +
+                Math.max(
+                    0,
+                    number(
+                        entry.liters
+                    )
+                )
+            );
+
+        },
+
+        0
+
+    );
+
+}
+
+
+// ==========================================================
+// GET TOTAL SALES CASH FROM SUMMARY
+// ==========================================================
+
+function getSummarySalesCash(
+    summary
+) {
+
+    const sales =
+        Array.isArray(
+            summary?.sales
+        )
+            ? summary.sales
+            : [];
+
+
+    return sales.reduce(
+
+        (
+            total,
+            sale
+        ) => {
+
+            return (
+                total +
+                Math.max(
+                    0,
+                    number(
+                        sale?.cash
+                    )
+                )
+            );
+
+        },
+
+        0
+
+    );
+
+}
+
+
+// ==========================================================
+// CALCULATE DAILY COW REVENUE
+// ==========================================================
+//
+// Formula:
+//
+//     (cow litres / total produced)
+//     ×
+//     total sales cash
+//
+// ==========================================================
+
+function calculateDailyCowRevenue(
+    production,
+    totalProduced,
+    totalSalesCash
+) {
+
+    const revenueMap =
+        new Map();
+
+
+    if (
+        !Array.isArray(
+            production
+        ) ||
+        !production.length
+    ) {
+
+        return revenueMap;
+
+    }
+
+
+    totalProduced =
+        number(
+            totalProduced
+        );
+
+
+    totalSalesCash =
+        number(
+            totalSalesCash
+        );
+
+
+    if (
+        totalProduced <= 0 ||
+        totalSalesCash <= 0
+    ) {
+
+        return revenueMap;
+
+    }
+
+
+    production.forEach(
+        entry => {
+
+            if (
+                !entry?.dairy
+            ) {
+
+                return;
+
+            }
+
+
+            const liters =
+                Math.max(
+                    0,
+                    number(
+                        entry.liters
+                    )
+                );
+
+
+            if (
+                liters <= 0
+            ) {
+
+                return;
+
+            }
+
+
+            const revenue =
+
+                (
+                    liters /
+                    totalProduced
+                ) *
+                totalSalesCash;
+
+
+            if (
+                !Number.isFinite(
+                    revenue
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const dairyId =
+                String(
+                    entry.dairy
+                );
+
+
+            revenueMap.set(
+
+                dairyId,
+
+                (
+                    revenueMap.get(
+                        dairyId
+                    ) || 0
+                ) +
+                revenue
+
+            );
+
+        }
+    );
+
+
+    return revenueMap;
+
+}
+
+
+// ==========================================================
+// REBUILD ONE DAILY MILK SUMMARY
+// ==========================================================
+//
+// This updates:
+//
+//     produced
+//     cowProduction
+//     farmTotal
+//     consumed
+//     cash
+//     available
+//
+// It does NOT alter sales.
+//
+// ==========================================================
+
+async function rebuildDailySummary(
+    day
+) {
+
+    if (
+        !day
+    ) {
+
+        return null;
+
+    }
+
+
+    let summary =
+        await MilkSummary.findOne({
+
+            day
+
+        });
+
+
+    if (!summary) {
+
+        summary =
+            await MilkSummary.create({
+
+                day,
+
+                month:
+                    day.slice(
+                        0,
+                        7
+                    ),
+
+                price:
+                    DEFAULT_MILK_PRICE,
+
+                produced:
+                    0,
+
+                farmTotal:
+                    0,
+
+                consumed:
+                    0,
+
+                available:
+                    0,
+
+                cash:
+                    0,
+
+                locked:
+                    false,
+
+                cowProduction:
+                    [],
+
+                farmProduction:
+                    [],
+
+                sales:
+                    []
+
+            });
+
+    }
+
+
+    const cowProduction =
+        await rebuildDailyCowProduction(
+            day
+        );
+
+
+    const produced =
+        cowProduction.reduce(
+
+            (
+                total,
+                entry
+            ) =>
+                total +
+                Math.max(
+                    0,
+                    number(
+                        entry.liters
+                    )
+                ),
+
+            0
+
+        );
+
+
+    // ------------------------------------------------------
+    // Farm production
+    // ------------------------------------------------------
+
+    const farmMap =
+        new Map();
+
+
+    cowProduction.forEach(
+        entry => {
+
+            const dairy =
+                entry.dairy;
+
+
+            if (
+                !dairy
+            ) {
+
+                return;
+
+            }
+
+
+            const liters =
+                Math.max(
+                    0,
+                    number(
+                        entry.liters
+                    )
+                );
+
+
+            if (
+                !liters
+            ) {
+
+                return;
+
+            }
+
+
+            // ------------------------------------------------
+            // We retrieve the cow's farm.
+            // ------------------------------------------------
+
+        }
+    );
+
+
+    // ------------------------------------------------------
+    // Build farm production directly from all Milk records.
+    // ------------------------------------------------------
+
+    const milkRecords =
+        await Milk.find({
+
+            day
+
+        })
+
+        .select(
+            "dairy liters"
+        )
+
+        .lean();
+
+
+    const dairyIds =
+        milkRecords
+
+            .filter(
+                record =>
+                    record.dairy
+            )
+
+            .map(
+                record =>
+                    record.dairy
+            );
+
+
+    const dairies =
+        dairyIds.length
+
+            ? await Dairy.find({
+
+                _id: {
+                    $in:
+                        dairyIds
+                }
+
+            })
+
+            .select(
+                "_id farm"
+            )
+
+            .lean()
+
+            : [];
+
+
+    const dairyFarmMap =
+        new Map();
+
+
+    dairies.forEach(
+        dairy => {
+
+            if (
+                dairy.farm
+            ) {
+
+                const farmId =
+                    dairy.farm._id
+
+                        ? dairy.farm._id.toString()
+
+                        : dairy.farm.toString();
+
+
+                dairyFarmMap.set(
+
+                    dairy._id.toString(),
+
+                    farmId
+
+                );
+
+            }
+
+        }
+    );
+
+
+    milkRecords.forEach(
+        record => {
+
+            if (
+                !record.dairy
+            ) {
+
+                return;
+
+            }
+
+
+            const farmId =
+                dairyFarmMap.get(
+                    record.dairy.toString()
+                );
+
+
+            if (
+                !farmId
+            ) {
+
+                return;
+
+            }
+
+
+            const liters =
+                Math.max(
+                    0,
+                    number(
+                        record.liters
+                    )
+                );
+
+
+            farmMap.set(
+
+                farmId,
+
+                (
+                    farmMap.get(
+                        farmId
+                    ) || 0
+                ) +
+                liters
+
+            );
+
+        }
+    );
+
+
+    const farmProduction =
+        Array.from(
+            farmMap.entries()
+        ).map(
+            ([farm, liters]) => ({
+
+                farm,
+
+                farmCode:
+                    null,
+
+                liters
+
+            })
+        );
+
+
+    // ------------------------------------------------------
+    // Total farm production.
+    //
+    // IMPORTANT:
+    //
+    // milkSummary.farmTotal is a NUMBER in your schema.
+    // ------------------------------------------------------
+
+    const farmTotal =
+        farmProduction.reduce(
+
+            (
+                total,
+                entry
+            ) =>
+                total +
+                Math.max(
+                    0,
+                    number(
+                        entry.liters
+                    )
+                ),
+
+            0
+
+        );
+
+
+    const sales =
+        Array.isArray(
+            summary.sales
+        )
+            ? summary.sales
+            : [];
+
+
+    const consumed =
+        sales.reduce(
+
+            (
+                total,
+                sale
+            ) =>
+                total +
+                Math.max(
+                    0,
+                    number(
+                        sale?.liters
+                    )
+                ),
+
+            0
+
+        );
+
+
+    const cash =
+        getSummarySalesCash(
+            summary
+        );
+
+
+    const available =
+        Math.max(
+            0,
+            produced -
+            consumed
+        );
+
+
+    summary.produced =
+        produced;
+
+
+    summary.farmTotal =
+        farmTotal;
+
+
+    summary.cowProduction =
+        cowProduction;
+
+
+    summary.farmProduction =
+        farmProduction;
+
+
+    summary.consumed =
+        consumed;
+
+
+    summary.cash =
+        cash;
+
+
+    summary.available =
+        available;
+
+
+    await summary.save();
+
+
+    return summary;
+
+}
+
+
+// ==========================================================
+// SYNCHRONIZE DAIRY REVENUE
+// ==========================================================
+//
+// This is the central revenue synchronization function.
+//
+// It reads ALL MilkSummary records and rebuilds:
+//
+//     Dairy.revenue
+//
+// Formula:
+//
+//     cowRevenue =
+//         (cowLitres / summaryProduced)
+//         ×
+//         summarySalesCash
+//
+// Then:
+//
+//     Dairy.revenue =
+//         sum of all historical daily cow revenue
+//
+// ==========================================================
+
+async function synchronizeDairyRevenue() {
+
+    const summaries =
+        await MilkSummary.find({})
+
+        .select(
+            [
+                "day",
+                "produced",
+                "sales",
+                "cowProduction"
+            ].join(" ")
+        )
+
+        .lean();
+
+
+    const revenueMap =
+        new Map();
+
+
+    for (
+        const summary
+        of summaries
+    ) {
+
+        let production =
+            Array.isArray(
+                summary.cowProduction
+            )
+                ? summary.cowProduction
+                : [];
+
+
+        // --------------------------------------------------
+        // If old summaries don't have cowProduction, rebuild
+        // from Milk.
+        // --------------------------------------------------
+
+        if (
+            !production.length
+        ) {
+
+            production =
+                await rebuildDailyCowProduction(
+                    summary.day
+                );
+
+        }
+
+
+        const totalProduced =
+            number(
+                summary.produced
+            ) ||
+            production.reduce(
+
+                (
+                    total,
+                    entry
+                ) =>
+                    total +
+                    Math.max(
+                        0,
+                        number(
+                            entry.liters
+                        )
+                    ),
+
+                0
+
+            );
+
+
+        const totalSalesCash =
+            getSummarySalesCash(
+                summary
+            );
+
+
+        const dailyRevenue =
+            calculateDailyCowRevenue(
+
+                production,
+
+                totalProduced,
+
+                totalSalesCash
+
+            );
+
+
+        for (
+            const [
+                dairyId,
+                revenue
+            ]
+            of dailyRevenue.entries()
+        ) {
+
+            revenueMap.set(
+
+                dairyId,
+
+                (
+                    revenueMap.get(
+                        dairyId
+                    ) || 0
+                ) +
+                number(
+                    revenue
+                )
+
+            );
+
+        }
+
+    }
+
+
+    const dairies =
+        await Dairy.find({})
+
+        .select(
+            "_id code"
+        )
+
+        .lean();
+
+
+    if (
+        !dairies.length
+    ) {
+
+        return {
+
+            updated:
+                0,
+
+            totalRevenue:
+                0
+
+        };
+
+    }
+
+
+    const operations =
+        dairies.map(
+            dairy => {
+
+                const revenue =
+                    Math.max(
+
+                        0,
+
+                        number(
+
+                            revenueMap.get(
+                                dairy._id.toString()
+                            ) || 0
+
+                        )
+
+                    );
+
+
+                return {
+
+                    updateOne: {
+
+                        filter: {
+
+                            _id:
+                                dairy._id
+
+                        },
+
+                        update: {
+
+                            $set: {
+
+                                revenue
+
+                            }
+
+                        }
+
+                    }
+
+                };
+
+            }
+        );
+
+
+    const result =
+        await Dairy.bulkWrite(
+            operations
+        );
+
+
+    let totalRevenue =
+        0;
+
+
+    for (
+        const value
+        of revenueMap.values()
+    ) {
+
+        totalRevenue +=
+            number(
+                value
+            );
+
+    }
+
+
+    return {
+
+        updated:
+            result.modifiedCount || 0,
+
+        totalRevenue
+
+    };
+
+}
+
+
+// ==========================================================
+// SYNCHRONIZE REVENUE AFTER A DAILY CHANGE
+// ==========================================================
+//
+// This always rebuilds total historical revenue.
+//
+// Therefore:
+//
+// • New milk record → revenue updates
+// • Milk edit → revenue updates
+// • New sale → revenue updates
+// • Sale edit → revenue updates
+// • Previous-day correction → revenue remains accurate
+//
+// ==========================================================
+
+async function synchronizeRevenueAfterDailyChange(
+    day
+) {
+
+    if (
+        day
+    ) {
+
+        await rebuildDailySummary(
+            day
+        );
+
+    }
+
+
+    return synchronizeDairyRevenue();
 
 }
 
@@ -900,120 +2106,28 @@ async function updateFarmTotals(
     }
 
 
-    let summary =
-        await MilkSummary.findOne({
+    // ------------------------------------------------------
+    // Rebuild the complete daily summary.
+    //
+    // This is safer than maintaining farmTotal incrementally.
+    // ------------------------------------------------------
+
+    const summary =
+        await rebuildDailySummary(
             day
-        });
-
-
-    if (!summary) {
-
-        summary =
-            await MilkSummary.create({
-
-                day,
-
-                month:
-                    day.slice(0, 7),
-
-                price:
-                    DEFAULT_MILK_PRICE,
-
-                consumed:
-                    0,
-
-                available:
-                    0,
-
-                cash:
-                    0,
-
-                locked:
-                    false,
-
-                sales:
-                    [],
-
-                farmTotal:
-                    []
-
-            });
-
-    }
-
-
-    const morningTotals =
-        await calculateFarmTotals(
-            day,
-            "morning"
         );
 
 
-    const eveningTotals =
-        await calculateFarmTotals(
-            day,
-            "evening"
-        );
+    // ------------------------------------------------------
+    // Revenue is also rebuilt after every milk operation.
+    // ------------------------------------------------------
+
+    await synchronizeDairyRevenue();
 
 
-    const farmMap =
-        new Map();
-
-
-    morningTotals.forEach(
-        item => {
-
-            farmMap.set(
-                item.farm,
-                Number(
-                    item.total || 0
-                )
-            );
-
-        }
-    );
-
-
-    eveningTotals.forEach(
-        item => {
-
-            farmMap.set(
-
-                item.farm,
-
-                (
-                    farmMap.get(
-                        item.farm
-                    ) || 0
-                ) +
-                Number(
-                    item.total || 0
-                )
-
-            );
-
-        }
-    );
-
-
-    summary.farmTotal =
-        Array.from(
-            farmMap.entries()
-        ).map(
-            ([farm, total]) => ({
-
-                farm,
-
-                total
-
-            })
-        );
-
-
-    await summary.save();
-
-
-    return summary.farmTotal;
+    return summary
+        ? summary.farmTotal
+        : 0;
 
 }
 
@@ -1086,11 +2200,13 @@ async function(
         );
 
 
-    const docs = [];
+    const docs =
+        [];
 
 
     for (
-        const dairy of dairies
+        const dairy
+        of dairies
     ) {
 
         const dairyId =
@@ -1137,7 +2253,10 @@ async function(
             day,
 
             month:
-                day.slice(0, 7)
+                day.slice(
+                    0,
+                    7
+                )
 
         });
 
@@ -1166,11 +2285,16 @@ async function(
 
         saved =
             await Milk.insertMany(
+
                 docs,
+
                 {
+
                     ordered:
                         false
+
                 }
+
             );
 
     }
@@ -1187,7 +2311,8 @@ async function(
         }
 
 
-        saved = [];
+        saved =
+            [];
 
     }
 
@@ -1214,7 +2339,8 @@ async function() {
         getKenyaDateParts();
 
 
-    const results = [];
+    const results =
+        [];
 
 
     if (
@@ -1225,8 +2351,11 @@ async function() {
         results.push(
 
             await exports.finalizeExpiredMilkSession(
+
                 "morning",
+
                 now.date
+
             )
 
         );
@@ -1246,8 +2375,11 @@ async function() {
         results.push(
 
             await exports.finalizeExpiredMilkSession(
+
                 "evening",
+
                 previousDay
+
             )
 
         );
@@ -1262,10 +2394,6 @@ async function() {
 
 // ==========================================================
 // SAVE MILK RECORDS
-// ==========================================================
-//
-// Used by milkCollectController.js
-//
 // ==========================================================
 
 exports.saveMilkRecords =
@@ -1291,7 +2419,8 @@ async function(
     }
 
 
-    let normalizedRecords = [];
+    let normalizedRecords =
+        [];
 
 
     if (
@@ -1354,11 +2483,13 @@ async function(
         current.day;
 
 
-    const cleanedRecords = [];
+    const cleanedRecords =
+        [];
 
 
     for (
-        const record of normalizedRecords
+        const record
+        of normalizedRecords
     ) {
 
         if (
@@ -1468,7 +2599,8 @@ async function(
 
 
     for (
-        const record of cleanedRecords
+        const record
+        of cleanedRecords
     ) {
 
         const dairyId =
@@ -1497,12 +2629,16 @@ async function(
 
 
     for (
-        const record of cleanedRecords
+        const record
+        of cleanedRecords
     ) {
 
         await verifyAnimalAccess(
+
             record.dairy,
+
             user
+
         );
 
     }
@@ -1591,11 +2727,16 @@ async function(
 
         saved =
             await Milk.insertMany(
+
                 docs,
+
                 {
+
                     ordered:
                         true
+
                 }
+
             );
 
     }
@@ -1622,7 +2763,9 @@ async function(
 
     if (
         !saved ||
-        !Array.isArray(saved) ||
+        !Array.isArray(
+            saved
+        ) ||
         saved.length !==
             docs.length
     ) {
@@ -1634,6 +2777,10 @@ async function(
 
     }
 
+
+    // ------------------------------------------------------
+    // Rebuild summary + revenue.
+    // ------------------------------------------------------
 
     await updateFarmTotals(
         day,
@@ -1855,8 +3002,10 @@ async function() {
         })
 
         .sort({
+
             day:
                 -1
+
         })
 
         .lean();
@@ -1943,23 +3092,15 @@ async function({
 // ==========================================================
 // GET DAILY STATISTICS
 // ==========================================================
-//
-// Called by:
-//
-//     milkController.getMilkStats()
-//
-// With:
-//
-//     getDailyStats(day)
-//
-// ==========================================================
 
 exports.getDailyStats =
 async function(
     day
 ) {
 
-    if (!day) {
+    if (
+        !day
+    ) {
 
         throw milkError(
             "MILK_INVALID_DAY",
@@ -1989,10 +3130,19 @@ async function(
                 day,
 
                 month:
-                    day.slice(0, 7),
+                    day.slice(
+                        0,
+                        7
+                    ),
 
                 price:
                     DEFAULT_MILK_PRICE,
+
+                produced:
+                    0,
+
+                farmTotal:
+                    0,
 
                 consumed:
                     0,
@@ -2017,6 +3167,21 @@ async function(
     }
 
 
+    // ------------------------------------------------------
+    // Rebuild cow production and revenue basis.
+    // ------------------------------------------------------
+
+    await rebuildDailySummary(
+        day
+    );
+
+
+    summary =
+        await MilkSummary.findOne({
+            day
+        });
+
+
     const sales =
         summary.sales ||
         [];
@@ -2024,23 +3189,24 @@ async function(
 
     const consumed =
         sales.reduce(
+
             (
                 sum,
                 sale
             ) =>
                 sum +
-                Number(
-                    sale.liters ||
-                    0
+                number(
+                    sale.liters
                 ),
+
             0
+
         );
 
 
     const total =
-        Number(
-            report?.stats?.total ||
-            0
+        number(
+            summary.produced
         );
 
 
@@ -2048,41 +3214,32 @@ async function(
         Math.max(
             0,
             total -
-                consumed
+            consumed
         );
 
 
     const cash =
-        sales.reduce(
-            (
-                sum,
-                sale
-            ) =>
-                sum +
-                Number(
-                    sale.cash ||
-                    0
-                ),
-            0
+        getSummarySalesCash(
+            summary
         );
 
 
     if (
 
-        Number(
-            summary.consumed ||
-            0
-        ) !== consumed ||
+        number(
+            summary.consumed
+        ) !==
+            consumed ||
 
-        Number(
-            summary.available ||
-            0
-        ) !== available ||
+        number(
+            summary.available
+        ) !==
+            available ||
 
-        Number(
-            summary.cash ||
-            0
-        ) !== cash
+        number(
+            summary.cash
+        ) !==
+            cash
 
     ) {
 
@@ -2137,23 +3294,15 @@ async function(
 // ==========================================================
 // GET MONTHLY STATISTICS
 // ==========================================================
-//
-// Called by:
-//
-//     milkController.getMilkStats()
-//
-// With:
-//
-//     getMonthlyStats(month)
-//
-// ==========================================================
 
 exports.getMonthlyStats =
 async function(
     month
 ) {
 
-    if (!month) {
+    if (
+        !month
+    ) {
 
         throw milkError(
             "MILK_INVALID_MONTH",
@@ -2215,7 +3364,9 @@ async function(
 
     const summaries =
         await MilkSummary.find({
+
             month
+
         }).lean();
 
 
@@ -2239,9 +3390,8 @@ async function(
         summary => {
 
             totalPrice +=
-                Number(
-                    summary.price ||
-                    0
+                number(
+                    summary.price
                 );
 
 
@@ -2252,16 +3402,14 @@ async function(
                 sale => {
 
                     totalConsumed +=
-                        Number(
-                            sale.liters ||
-                            0
+                        number(
+                            sale.liters
                         );
 
 
                     totalCash +=
-                        Number(
-                            sale.cash ||
-                            0
+                        number(
+                            sale.cash
                         );
 
 
@@ -2278,16 +3426,18 @@ async function(
 
     const totalProduced =
         records.reduce(
+
             (
                 sum,
                 record
             ) =>
                 sum +
-                Number(
-                    record.total ||
-                    0
+                number(
+                    record.total
                 ),
+
             0
+
         );
 
 
@@ -2309,7 +3459,7 @@ async function(
                 Math.max(
                     0,
                     totalProduced -
-                        totalConsumed
+                    totalConsumed
                 ),
 
             price:
@@ -2340,16 +3490,6 @@ async function(
 // ==========================================================
 // SAVE DAILY STATISTICS
 // ==========================================================
-//
-// Called by:
-//
-//     milkController.saveDailyStats()
-//
-// With:
-//
-//     saveDailyStats({ day, price })
-//
-// ==========================================================
 
 exports.saveDailyStats =
 async function({
@@ -2357,57 +3497,14 @@ async function({
     price
 }) {
 
-    if (!day) {
+    if (
+        !day
+    ) {
 
         throw milkError(
             "MILK_INVALID_DAY",
             "Day is required."
         );
-
-    }
-
-
-    const report =
-        await Milk.getDailyReport(
-            day
-        );
-
-
-    let summary =
-        await MilkSummary.findOne({
-            day
-        });
-
-
-    if (!summary) {
-
-        summary =
-            await MilkSummary.create({
-
-                day,
-
-                month:
-                    day.slice(0, 7),
-
-                price:
-                    DEFAULT_MILK_PRICE,
-
-                consumed:
-                    0,
-
-                available:
-                    0,
-
-                cash:
-                    0,
-
-                locked:
-                    false,
-
-                sales:
-                    []
-
-            });
 
     }
 
@@ -2433,102 +3530,9 @@ async function({
     }
 
 
-    const sales =
-        summary.sales ||
-        [];
-
-
-    const consumed =
-        sales.reduce(
-            (
-                sum,
-                sale
-            ) =>
-                sum +
-                Number(
-                    sale.liters ||
-                    0
-                ),
-            0
-        );
-
-
-    const total =
-        Number(
-            report?.stats?.total ||
-            0
-        );
-
-
-    const cash =
-        sales.reduce(
-            (
-                sum,
-                sale
-            ) =>
-                sum +
-                Number(
-                    sale.cash ||
-                    0
-                ),
-            0
-        );
-
-
-    summary.price =
-        numericPrice;
-
-
-    summary.consumed =
-        consumed;
-
-
-    summary.available =
-        Math.max(
-            0,
-            total -
-                consumed
-        );
-
-
-    summary.cash =
-        cash;
-
-
-    await summary.save();
-
-
-    return summary;
-
-};
-
-
-// ==========================================================
-// GET SALES PAGE DATA
-// ==========================================================
-//
-// Called by:
-//
-//     milkController.getSalesPage()
-//
-// With:
-//
-//     getSalesPageData()
-//
-// ==========================================================
-
-exports.getSalesPageData =
-async function() {
-
-    const today =
-        getKenyaDateParts()
-            .date;
-
-
     let summary =
         await MilkSummary.findOne({
-            day:
-                today
+            day
         });
 
 
@@ -2537,14 +3541,22 @@ async function() {
         summary =
             await MilkSummary.create({
 
-                day:
-                    today,
+                day,
 
                 month:
-                    today.slice(0, 7),
+                    day.slice(
+                        0,
+                        7
+                    ),
 
                 price:
                     DEFAULT_MILK_PRICE,
+
+                produced:
+                    0,
+
+                farmTotal:
+                    0,
 
                 consumed:
                     0,
@@ -2566,6 +3578,107 @@ async function() {
     }
 
 
+    summary.price =
+        numericPrice;
+
+
+    await summary.save();
+
+
+    // ------------------------------------------------------
+    // Rebuild production and revenue.
+    // ------------------------------------------------------
+
+    await synchronizeRevenueAfterDailyChange(
+        day
+    );
+
+
+    return MilkSummary.findOne({
+        day
+    });
+
+};
+
+
+// ==========================================================
+// GET SALES PAGE DATA
+// ==========================================================
+
+exports.getSalesPageData =
+async function() {
+
+    const today =
+        getKenyaDateParts()
+            .date;
+
+
+    let summary =
+        await MilkSummary.findOne({
+
+            day:
+                today
+
+        });
+
+
+    if (!summary) {
+
+        summary =
+            await MilkSummary.create({
+
+                day:
+                    today,
+
+                month:
+                    today.slice(
+                        0,
+                        7
+                    ),
+
+                price:
+                    DEFAULT_MILK_PRICE,
+
+                produced:
+                    0,
+
+                farmTotal:
+                    0,
+
+                consumed:
+                    0,
+
+                available:
+                    0,
+
+                cash:
+                    0,
+
+                locked:
+                    false,
+
+                sales:
+                    []
+
+            });
+
+    }
+
+
+    await rebuildDailySummary(
+        today
+    );
+
+
+    summary =
+        await MilkSummary.findOne({
+
+            day:
+                today
+
+        });
+
+
     const standingOrders =
         await StandingOrder.find({
 
@@ -2578,8 +3691,10 @@ async function() {
         })
 
         .sort({
+
             customerName:
                 1
+
         })
 
         .lean();
@@ -2604,11 +3719,14 @@ async function() {
 
             order.isFuture =
                 Boolean(
+
                     order.effectiveDate &&
+
                     new Date(
                         order.effectiveDate
                     ) >
                     new Date()
+
                 );
 
         }
@@ -2625,16 +3743,9 @@ async function() {
         );
 
 
-    const report =
-        await Milk.getDailyReport(
-            today
-        );
-
-
     const totalProduced =
-        Number(
-            report?.stats?.total ||
-            0
+        number(
+            summary.produced
         );
 
 
@@ -2643,16 +3754,18 @@ async function() {
             summary.sales ||
             []
         ).reduce(
+
             (
                 sum,
                 sale
             ) =>
                 sum +
-                Number(
-                    sale.liters ||
-                    0
+                number(
+                    sale.liters
                 ),
+
             0
+
         );
 
 
@@ -2660,7 +3773,7 @@ async function() {
         Math.max(
             0,
             totalProduced -
-                totalSales
+            totalSales
         );
 
 
@@ -2685,19 +3798,6 @@ async function() {
 
 // ==========================================================
 // SUBMIT MANUAL SALE
-// ==========================================================
-//
-// Called by:
-//
-//     milkController.submitManualSale()
-//
-// With:
-//
-//     submitManualSale({
-//         customerName,
-//         liters
-//     })
-//
 // ==========================================================
 
 exports.submitManualSale =
@@ -2747,8 +3847,10 @@ async function({
 
     let summary =
         await MilkSummary.findOne({
+
             day:
                 today
+
         });
 
 
@@ -2761,10 +3863,19 @@ async function({
                     today,
 
                 month:
-                    today.slice(0, 7),
+                    today.slice(
+                        0,
+                        7
+                    ),
 
                 price:
                     DEFAULT_MILK_PRICE,
+
+                produced:
+                    0,
+
+                farmTotal:
+                    0,
 
                 consumed:
                     0,
@@ -2798,21 +3909,28 @@ async function({
     }
 
 
+    await rebuildDailySummary(
+        today
+    );
+
+
+    summary =
+        await MilkSummary.findOne({
+
+            day:
+                today
+
+        });
+
+
     const price =
         summary.price ||
         DEFAULT_MILK_PRICE;
 
 
-    const report =
-        await Milk.getDailyReport(
-            today
-        );
-
-
     const produced =
-        Number(
-            report?.stats?.total ||
-            0
+        number(
+            summary.produced
         );
 
 
@@ -2821,16 +3939,18 @@ async function({
             summary.sales ||
             []
         ).reduce(
+
             (
                 sum,
                 sale
             ) =>
                 sum +
-                Number(
-                    sale.liters ||
-                    0
+                number(
+                    sale.liters
                 ),
+
             0
+
         );
 
 
@@ -2871,31 +3991,24 @@ async function({
 
     summary.consumed =
         summary.sales.reduce(
+
             (
                 sum,
                 sale
             ) =>
                 sum +
-                Number(
-                    sale.liters ||
-                    0
+                number(
+                    sale.liters
                 ),
+
             0
+
         );
 
 
     summary.cash =
-        summary.sales.reduce(
-            (
-                sum,
-                sale
-            ) =>
-                sum +
-                Number(
-                    sale.cash ||
-                    0
-                ),
-            0
+        getSummarySalesCash(
+            summary
         );
 
 
@@ -2903,11 +4016,19 @@ async function({
         Math.max(
             0,
             produced -
-                summary.consumed
+            summary.consumed
         );
 
 
     await summary.save();
+
+
+    // ------------------------------------------------------
+    // Sale changed total sales cash, therefore revenue must
+    // be rebuilt.
+    // ------------------------------------------------------
+
+    await synchronizeDairyRevenue();
 
 
     return summary;
@@ -2917,18 +4038,6 @@ async function({
 
 // ==========================================================
 // SUBMIT STANDING ORDER SALE
-// ==========================================================
-//
-// Called by:
-//
-//     milkController.submitStandingOrderSale()
-//
-// With:
-//
-//     submitStandingOrderSale({
-//         standingOrderId
-//     })
-//
 // ==========================================================
 
 exports.submitStandingOrderSale =
@@ -3003,8 +4112,10 @@ async function({
 
     let summary =
         await MilkSummary.findOne({
+
             day:
                 today
+
         });
 
 
@@ -3017,10 +4128,19 @@ async function({
                     today,
 
                 month:
-                    today.slice(0, 7),
+                    today.slice(
+                        0,
+                        7
+                    ),
 
                 price:
                     DEFAULT_MILK_PRICE,
+
+                produced:
+                    0,
+
+                farmTotal:
+                    0,
 
                 consumed:
                     0,
@@ -3054,6 +4174,20 @@ async function({
     }
 
 
+    await rebuildDailySummary(
+        today
+    );
+
+
+    summary =
+        await MilkSummary.findOne({
+
+            day:
+                today
+
+        });
+
+
     const alreadyProcessed =
         (
             summary.sales ||
@@ -3085,16 +4219,9 @@ async function({
         DEFAULT_MILK_PRICE;
 
 
-    const report =
-        await Milk.getDailyReport(
-            today
-        );
-
-
     const produced =
-        Number(
-            report?.stats?.total ||
-            0
+        number(
+            summary.produced
         );
 
 
@@ -3103,16 +4230,18 @@ async function({
             summary.sales ||
             []
         ).reduce(
+
             (
                 sum,
                 sale
             ) =>
                 sum +
-                Number(
-                    sale.liters ||
-                    0
+                number(
+                    sale.liters
                 ),
+
             0
+
         );
 
 
@@ -3177,31 +4306,24 @@ async function({
 
     summary.consumed =
         summary.sales.reduce(
+
             (
                 sum,
                 sale
             ) =>
                 sum +
-                Number(
-                    sale.liters ||
-                    0
+                number(
+                    sale.liters
                 ),
+
             0
+
         );
 
 
     summary.cash =
-        summary.sales.reduce(
-            (
-                sum,
-                sale
-            ) =>
-                sum +
-                Number(
-                    sale.cash ||
-                    0
-                ),
-            0
+        getSummarySalesCash(
+            summary
         );
 
 
@@ -3209,11 +4331,18 @@ async function({
         Math.max(
             0,
             produced -
-                summary.consumed
+            summary.consumed
         );
 
 
     await summary.save();
+
+
+    // ------------------------------------------------------
+    // Rebuild cow revenue because total sales cash changed.
+    // ------------------------------------------------------
+
+    await synchronizeDairyRevenue();
 
 
     return summary;
@@ -3223,16 +4352,6 @@ async function({
 
 // ==========================================================
 // UPDATE MILK PRICE
-// ==========================================================
-//
-// Called by:
-//
-//     milkController.updateMilkPrice()
-//
-// With:
-//
-//     updateMilkPrice(price)
-//
 // ==========================================================
 
 exports.updateMilkPrice =
@@ -3268,8 +4387,10 @@ async function(
 
     let summary =
         await MilkSummary.findOne({
+
             day:
                 today
+
         });
 
 
@@ -3282,10 +4403,19 @@ async function(
                     today,
 
                 month:
-                    today.slice(0, 7),
+                    today.slice(
+                        0,
+                        7
+                    ),
 
                 price:
                     DEFAULT_MILK_PRICE,
+
+                produced:
+                    0,
+
+                farmTotal:
+                    0,
 
                 consumed:
                     0,
@@ -3333,19 +4463,6 @@ async function(
 
 // ==========================================================
 // ADD STANDING ORDER
-// ==========================================================
-//
-// Called by:
-//
-//     milkController.addStandingOrder()
-//
-// With:
-//
-//     addStandingOrder({
-//         customerName,
-//         liters
-//     })
-//
 // ==========================================================
 
 exports.addStandingOrder =
@@ -3403,19 +4520,6 @@ async function({
 
 // ==========================================================
 // OMIT STANDING ORDER
-// ==========================================================
-//
-// Called by:
-//
-//     milkController.omitStandingOrder()
-//
-// With:
-//
-//     omitStandingOrder({
-//         orderId,
-//         user
-//     })
-//
 // ==========================================================
 
 exports.omitStandingOrder =
@@ -3477,20 +4581,6 @@ async function({
 
 // ==========================================================
 // MILKING HISTORY
-// ==========================================================
-//
-// Called by:
-//
-//     milkController.getMilkingHistory()
-//
-// With:
-//
-//     getMilkingHistory({
-//         dairyId,
-//         month,
-//         user
-//     })
-//
 // ==========================================================
 
 exports.getMilkingHistory =
@@ -3556,8 +4646,10 @@ async function({
         )
 
         .sort({
+
             date:
                 -1
+
         })
 
         .lean();
@@ -3568,7 +4660,8 @@ async function({
 
 
     for (
-        const record of records
+        const record
+        of records
     ) {
 
         const day =
@@ -3602,9 +4695,8 @@ async function({
         grouped[
             day
         ].total +=
-            Number(
-                record.liters ||
-                0
+            number(
+                record.liters
             );
 
     }
@@ -3612,16 +4704,18 @@ async function({
 
     const monthlyTotal =
         records.reduce(
+
             (
                 sum,
                 record
             ) =>
                 sum +
-                Number(
-                    record.liters ||
-                    0
+                number(
+                    record.liters
                 ),
+
             0
+
         );
 
 
@@ -3661,7 +4755,9 @@ async function(
 
     const summary =
         await MilkSummary.findOne({
+
             day
+
         });
 
 
@@ -3675,11 +4771,24 @@ async function(
     }
 
 
+    // ------------------------------------------------------
+    // Make sure production and revenue are synchronized
+    // before locking.
+    // ------------------------------------------------------
+
+    await rebuildDailySummary(
+        day
+    );
+
+
     summary.locked =
         true;
 
 
     await summary.save();
+
+
+    await synchronizeDairyRevenue();
 
 
     return summary;
@@ -3704,7 +4813,9 @@ async function(
 
     const summary =
         await MilkSummary.findOne({
+
             day
+
         });
 
 
@@ -3731,24 +4842,101 @@ async function(
 
 
 // ==========================================================
+// REBUILD ONE DAY
+// ==========================================================
+//
+// Public helper.
+//
+// Useful if you have old MilkSummary records which were
+// created before revenue/cowProduction was implemented.
+//
+// ==========================================================
+
+exports.rebuildDailySummary =
+async function(
+    day
+) {
+
+    return rebuildDailySummary(
+        day
+    );
+
+};
+
+
+// ==========================================================
+// SYNCHRONIZE ALL DAIRY REVENUE
+// ==========================================================
+//
+// Public helper.
+//
+// Useful for:
+//
+//     admin route
+//     startup migration
+//     repairing historical revenue
+//
+// ==========================================================
+
+exports.synchronizeDairyRevenue =
+async function() {
+
+    return synchronizeDairyRevenue();
+
+};
+
+
+// ==========================================================
+// REBUILD DAILY SUMMARY + REVENUE
+// ==========================================================
+
+exports.synchronizeRevenueAfterDailyChange =
+async function(
+    day
+) {
+
+    return synchronizeRevenueAfterDailyChange(
+        day
+    );
+
+};
+
+
+// ==========================================================
+// PUBLIC REVENUE HELPERS
+// ==========================================================
+
+exports.calculateDailyCowRevenue =
+calculateDailyCowRevenue;
+
+
+exports.getSummarySalesCash =
+getSummarySalesCash;
+
+
+exports.getDailyTotalProduction =
+getDailyTotalProduction;
+
+
+// ==========================================================
 // PUBLIC HELPERS
 // ==========================================================
 
 exports.getMilkSession =
-    getMilkSession;
+getMilkSession;
 
 
 exports.getKenyaDateParts =
-    getKenyaDateParts;
+getKenyaDateParts;
 
 
 exports.getSessionDeadline =
-    getSessionDeadline;
+getSessionDeadline;
 
 
 exports.canSubmitSession =
-    canSubmitSession;
+canSubmitSession;
 
 
 exports.canAdminEditRecord =
-    canAdminEditRecord;
+canAdminEditRecord;
