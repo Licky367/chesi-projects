@@ -319,13 +319,18 @@
     </div>
 
 
-    <form method="POST" action="/sales/price">
+    <form
+      method="POST"
+      action="/sales/price"
+    >
 
       <div class="sales-row">
 
         <div class="sales-field">
 
-          <label>Current Price (KES/L)</label>
+          <label>
+            Current Price (KES/L)
+          </label>
 
           <input
             class="sales-input"
@@ -349,8 +354,11 @@
           class="sales-btn"
           style="margin-top:18px;"
         >
+
           <i class="fas fa-floppy-disk"></i>
+
           Save Price
+
         </button>
 
       <% } else { %>
@@ -382,7 +390,9 @@
         <i class="fas fa-repeat"></i>
       </div>
 
-      <span>Standing Orders</span>
+      <span>
+        Standing Orders
+      </span>
 
     </div>
 
@@ -397,13 +407,28 @@
 
             <tr>
 
-              <th>Customer</th>
-              <th>Liters Today</th>
-              <th>Status</th>
-              <th>Daily Sale</th>
+              <th>
+                Customer
+              </th>
+
+              <th>
+                Liters Today
+              </th>
+
+              <th>
+                Status
+              </th>
+
+              <th>
+                Daily Sale
+              </th>
 
               <% if (user?.role === "admin") { %>
-                <th>Action</th>
+
+                <th>
+                  Action
+                </th>
+
               <% } %>
 
             </tr>
@@ -415,18 +440,24 @@
 
             <% standingOrders.forEach(order => { %>
 
-              <tr class="<%= order.isFuture ? 'future' : '' %>">
+              <tr
+                class="<%= order.isFuture ? 'future' : '' %>"
+              >
 
                 <td>
+
                   <strong>
                     <%= order.customerName %>
                   </strong>
+
                 </td>
 
 
                 <td>
 
-                  <%= Number(order.liters || 0).toFixed(2) %> L
+                  <%= Number(
+                    order.liters || 0
+                  ).toFixed(2) %> L
 
                 </td>
 
@@ -468,11 +499,15 @@
                 </td>
 
 
+                <!-- =================================================
+                     STANDING ORDER DAILY SALE
+                ================================================== -->
+
                 <td>
 
                   <form
                     method="POST"
-                    action="/sales/standing/submit"
+                    action="/sales/standing-order"
                     class="standing-sale-form"
                   >
 
@@ -482,11 +517,13 @@
                       value="<%= order._id %>"
                     >
 
+
                     <input
                       type="hidden"
                       name="customerName"
                       value="<%= order.customerName %>"
                     >
+
 
                     <input
                       class="sales-input"
@@ -495,7 +532,9 @@
                       step="0.1"
                       min="0"
                       value="<%= order.liters %>"
-                      <%= order.saleRecordedToday || order.isFuture ? "readonly" : "" %>
+                      <%= order.saleRecordedToday || order.isFuture
+                        ? "readonly"
+                        : "" %>
                     >
 
 
@@ -506,8 +545,11 @@
                         class="sales-btn"
                         disabled
                       >
+
                         <i class="fas fa-ban"></i>
+
                         Not Active
+
                       </button>
 
 
@@ -518,8 +560,11 @@
                         class="sales-btn"
                         disabled
                       >
+
                         <i class="fas fa-circle-check"></i>
+
                         Recorded
+
                       </button>
 
 
@@ -529,8 +574,11 @@
                         type="submit"
                         class="sales-btn"
                       >
+
                         <i class="fas fa-paper-plane"></i>
+
                         Submit Sale
+
                       </button>
 
                     <% } %>
@@ -540,13 +588,17 @@
                 </td>
 
 
+                <!-- =================================================
+                     ADMIN OMIT
+                ================================================== -->
+
                 <% if (user?.role === "admin") { %>
 
                   <td>
 
                     <form
                       method="POST"
-                      action="/sales/standing/omit"
+                      action="/sales/standing-order/omit"
                       onsubmit="return confirm('Omit this standing order?');"
                     >
 
@@ -556,12 +608,16 @@
                         value="<%= order._id %>"
                       >
 
+
                       <button
                         type="submit"
                         class="omit-btn"
                       >
+
                         <i class="fas fa-trash-can"></i>
+
                         Omit
+
                       </button>
 
                     </form>
@@ -608,21 +664,25 @@
         <i class="fas fa-repeat"></i>
       </div>
 
-      <span>Add Standing Order</span>
+      <span>
+        Add Standing Order
+      </span>
 
     </div>
 
 
     <form
       method="POST"
-      action="/sales/standing"
+      action="/sales/standing-order/add"
     >
 
       <div class="sales-row">
 
         <div class="sales-field">
 
-          <label>Customer Name</label>
+          <label>
+            Customer Name
+          </label>
 
           <input
             class="sales-input"
@@ -637,7 +697,9 @@
 
         <div class="sales-field">
 
-          <label>Default Liters Per Day</label>
+          <label>
+            Default Liters Per Day
+          </label>
 
           <input
             class="sales-input"
@@ -683,7 +745,9 @@
         <i class="fas fa-cart-shopping"></i>
       </div>
 
-      <span>Manual Order</span>
+      <span>
+        Manual Order
+      </span>
 
     </div>
 
@@ -698,7 +762,9 @@
 
         <div class="sales-field">
 
-          <label>Customer Name</label>
+          <label>
+            Customer Name
+          </label>
 
           <input
             class="sales-input"
@@ -712,7 +778,9 @@
 
         <div class="sales-field">
 
-          <label>Liters</label>
+          <label>
+            Liters
+          </label>
 
           <input
             class="sales-input"
@@ -757,7 +825,9 @@
         <i class="fas fa-clipboard-list"></i>
       </div>
 
-      <span>Today's Manual Sales</span>
+      <span>
+        Today's Manual Sales
+      </span>
 
     </div>
 
@@ -772,9 +842,17 @@
 
             <tr>
 
-              <th>Customer</th>
-              <th>Liters</th>
-              <th>Status</th>
+              <th>
+                Customer
+              </th>
+
+              <th>
+                Liters
+              </th>
+
+              <th>
+                Status
+              </th>
 
             </tr>
 
@@ -798,7 +876,9 @@
 
                 <td>
 
-                  <%= Number(sale.liters).toFixed(2) %> L
+                  <%= Number(
+                    sale.liters
+                  ).toFixed(2) %> L
 
                 </td>
 
@@ -852,7 +932,11 @@
     Available Milk:
 
     <strong>
-      <%= Number(availableMilk || 0).toFixed(2) %> L
+
+      <%= Number(
+        availableMilk || 0
+      ).toFixed(2) %> L
+
     </strong>
 
   </div>
@@ -862,7 +946,9 @@
        7. TOTAL SALES
   ======================================================= -->
 
-  <% if (typeof totalSales !== "undefined") { %>
+  <% if (
+    typeof totalSales !== "undefined"
+  ) { %>
 
     <div class="sales-card total-box">
 
@@ -877,7 +963,9 @@
 
       <span class="total-number">
 
-        <%= Number(totalSales || 0).toFixed(2) %> L
+        <%= Number(
+          totalSales || 0
+        ).toFixed(2) %> L
 
       </span>
 
@@ -904,85 +992,24 @@
   ========================================================= */
 
   document
-    .querySelector("form[action='/sales/manual']")
-    ?.addEventListener("submit", function(e){
+    .querySelector(
+      "form[action='/sales/manual']"
+    )
+    ?.addEventListener(
+      "submit",
+      function(e){
 
-      const liters = Number(
-        this.querySelector("[name='liters']").value
-      );
-
-
-      if (liters > availableMilk){
-
-        e.preventDefault();
-
-        alert(
-          "❌ Insufficient milk available.\n\n" +
-          "Available Milk: " +
-          availableMilk.toFixed(2) +
-          " L"
-        );
-
-        return;
-      }
+        const liters =
+          Number(
+            this.querySelector(
+              "[name='liters']"
+            ).value
+          );
 
 
-      const customer =
-        this.querySelector("[name='customerName']").value;
-
-
-      const proceed = confirm(
-        "🛒 Confirm Manual Sale\n\n" +
-        "Customer: " +
-        customer +
-        "\nMilk: " +
-        liters.toFixed(2) +
-        " L\n\n" +
-        "You are about to submit this sale.\n\n" +
-        "Press OK to continue or Cancel to abort."
-      );
-
-
-      if (!proceed){
-
-        e.preventDefault();
-
-        return;
-      }
-
-
-      const btn =
-        this.querySelector("button[type='submit']");
-
-
-      if (btn){
-
-        btn.disabled = true;
-
-        btn.innerHTML =
-          '<i class="fas fa-spinner fa-spin"></i> Recording...';
-
-      }
-
-    });
-
-
-  /* =========================================================
-     STANDING ORDER SALE
-  ========================================================= */
-
-  document
-    .querySelectorAll("form[action='/sales/standing/submit']")
-    .forEach(form => {
-
-      form.addEventListener("submit", function(e){
-
-        const liters = Number(
-          this.querySelector("[name='liters']").value
-        );
-
-
-        if (liters > availableMilk){
+        if (
+          liters > availableMilk
+        ){
 
           e.preventDefault();
 
@@ -994,23 +1021,27 @@
           );
 
           return;
+
         }
 
 
         const customer =
-          this.querySelector("[name='customerName']").value;
+          this.querySelector(
+            "[name='customerName']"
+          ).value;
 
 
-        const proceed = confirm(
-          "🔄 Confirm Standing Order Sale\n\n" +
-          "Customer: " +
-          customer +
-          "\nMilk: " +
-          liters.toFixed(2) +
-          " L\n\n" +
-          "You are about to submit this standing order sale.\n\n" +
-          "Press OK to continue or Cancel to abort."
-        );
+        const proceed =
+          confirm(
+            "🛒 Confirm Manual Sale\n\n" +
+            "Customer: " +
+            customer +
+            "\nMilk: " +
+            liters.toFixed(2) +
+            " L\n\n" +
+            "You are about to submit this sale.\n\n" +
+            "Press OK to continue or Cancel to abort."
+          );
 
 
         if (!proceed){
@@ -1018,27 +1049,125 @@
           e.preventDefault();
 
           return;
+
         }
 
 
         const btn =
-          this.querySelector("button[type='submit']");
+          this.querySelector(
+            "button[type='submit']"
+          );
 
 
         if (btn){
 
           btn.disabled = true;
 
-          btn.style.background = "#9ca3af";
-          btn.style.cursor = "not-allowed";
-
           btn.innerHTML =
-            '<i class="fas fa-circle-check"></i> Recorded';
+            '<i class="fas fa-spinner fa-spin"></i> Recording...';
 
         }
 
-      });
+      }
+    );
 
-    });
+
+  /* =========================================================
+     STANDING ORDER SALE
+     CONTROLLER ROUTE:
+     POST /sales/standing-order
+  ========================================================= */
+
+  document
+    .querySelectorAll(
+      "form[action='/sales/standing-order']"
+    )
+    .forEach(
+      form => {
+
+        form.addEventListener(
+          "submit",
+          function(e){
+
+            const liters =
+              Number(
+                this.querySelector(
+                  "[name='liters']"
+                ).value
+              );
+
+
+            if (
+              liters > availableMilk
+            ){
+
+              e.preventDefault();
+
+              alert(
+                "❌ Insufficient milk available.\n\n" +
+                "Available Milk: " +
+                availableMilk.toFixed(2) +
+                " L"
+              );
+
+              return;
+
+            }
+
+
+            const customer =
+              this.querySelector(
+                "[name='customerName']"
+              ).value;
+
+
+            const proceed =
+              confirm(
+                "🔄 Confirm Standing Order Sale\n\n" +
+                "Customer: " +
+                customer +
+                "\nMilk: " +
+                liters.toFixed(2) +
+                " L\n\n" +
+                "You are about to submit this standing order sale.\n\n" +
+                "Press OK to continue or Cancel to abort."
+              );
+
+
+            if (!proceed){
+
+              e.preventDefault();
+
+              return;
+
+            }
+
+
+            const btn =
+              this.querySelector(
+                "button[type='submit']"
+              );
+
+
+            if (btn){
+
+              btn.disabled = true;
+
+              btn.style.background =
+                "#9ca3af";
+
+              btn.style.cursor =
+                "not-allowed";
+
+              btn.innerHTML =
+                '<i class="fas fa-circle-check"></i> Recorded';
+
+            }
+
+          }
+        );
+
+      }
+    );
 
 </script>
