@@ -473,15 +473,9 @@
 
                 <form
                   method="POST"
-                  action="/accounts/<%= user._id %>/farms/remove"
+                  action="/accounts/<%= user._id %>/farms/<%= farm._id %>/unassign"
                   onsubmit="return confirm('Unassign this Dairy Farm from this worker?');"
                 >
-
-                  <input
-                    type="hidden"
-                    name="farmId"
-                    value="<%= farm._id %>"
-                  >
 
                   <button
                     type="submit"
