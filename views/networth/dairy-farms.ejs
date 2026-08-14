@@ -16,118 +16,121 @@
 
      This partial therefore displays ONLY records whose
      `code` is negative.
-
-     `assetCode` is always null for a Dairy Farm.
-========================================================== --><section class="networth-section"><!-- ======================================================
-     SECTION HEADER
-======================================================= -->
-
-<div class="networth-section-header">
-
-    <div>
-
-        <h2>
-            Dairy Farms
-        </h2>
-
-        <p>
-            Dairy farms and their current estimated worth.
-        </p>
-
-    </div>
-
-</div>
+========================================================== -->
 
 
-<!-- ======================================================
-     DAIRY FARM LIST
-======================================================= -->
-
-<div class="networth-list">
+<section class="networth-section">
 
 
-    <%
-        /*
-         * `structures` is the collection supplied by the
-         * controller/service for this partial.
-         *
-         * The model defines a Dairy Farm exclusively by
-         * a negative `code`.
-         *
-         * We keep the filtering defensive here so the
-         * partial cannot accidentally display animals or
-         * standalone structures.
-         */
+    <!-- ======================================================
+         SECTION HEADER
+    ======================================================= -->
 
-        const dairyFarms =
-            Array.isArray(structures)
+    <div class="networth-section-header">
 
-                ? structures.filter(function (dairy) {
+        <div>
 
-                    return (
+            <h2>
+                Dairy Farms
+            </h2>
 
-                        dairy &&
-
-                        dairy.code !== null &&
-
-                        dairy.code !== undefined &&
-
-                        Number(dairy.code) < 0
-
-                    );
-
-                })
-
-                : [];
-    %>
-
-
-    <% if (dairyFarms.length > 0) { %>
-
-
-        <% dairyFarms.forEach(function (dairy) { %>
-
-
-            <!-- ==========================================
-                 DAIRY FARM
-            =========================================== -->
-
-            <a
-                href="/networth/structure/<%= dairy._id %>"
-                class="networth-list-item networth-structure-item"
-            >
-
-
-                <span class="networth-list-name">
-
-                    <%= dairy.name || dairy.code %>
-
-                </span>
-
-
-            </a>
-
-
-        <% }); %>
-
-
-    <% } else { %>
-
-
-        <!-- ==========================================
-             EMPTY STATE
-        =========================================== -->
-
-        <div class="networth-empty">
-
-            No Dairy Farms found.
+            <p>
+                Dairy farms and their current estimated worth.
+            </p>
 
         </div>
 
+    </div>
 
-    <% } %>
+
+    <!-- ======================================================
+         DAIRY FARM LIST
+    ======================================================= -->
+
+    <div class="networth-list">
 
 
-</div>
+        <%
+            /*
+             * `structures` is the collection supplied by the
+             * controller/service for this partial.
+             *
+             * A Dairy Farm is identified exclusively by
+             * a negative `code`.
+             *
+             * Keep the filtering defensive so animals or
+             * other records cannot appear here.
+             */
+
+            const dairyFarms =
+                Array.isArray(structures)
+
+                    ? structures.filter(function (dairy) {
+
+                        return (
+
+                            dairy &&
+
+                            dairy.code !== null &&
+
+                            dairy.code !== undefined &&
+
+                            Number(dairy.code) < 0
+
+                        );
+
+                    })
+
+                    : [];
+        %>
+
+
+        <% if (dairyFarms.length > 0) { %>
+
+
+            <% dairyFarms.forEach(function (dairy) { %>
+
+
+                <!-- ==========================================
+                     DAIRY FARM
+                     
+                     Clicking the farm opens its dairy page.
+                =========================================== -->
+
+                <a
+                    href="/dairy/<%= dairy._id %>"
+                    class="networth-list-item networth-structure-item"
+                >
+
+                    <span class="networth-list-name">
+
+                        <%= dairy.name || dairy.code %>
+
+                    </span>
+
+                </a>
+
+
+            <% }); %>
+
+
+        <% } else { %>
+
+
+            <!-- ==========================================
+                 EMPTY STATE
+            =========================================== -->
+
+            <div class="networth-empty">
+
+                No Dairy Farms found.
+
+            </div>
+
+
+        <% } %>
+
+
+    </div>
 
 </section>
