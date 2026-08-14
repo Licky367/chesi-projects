@@ -1,0 +1,893 @@
+<% /*
+==========================================================
+DAIRY FARM INTRODUCTION / H1
+
+FILE:
+views/update/h1.ejs
+
+PURPOSE:
+Editorial introductory section for a Dairy Farm.
+
+BACKGROUND:
+CFP logo from:
+public/images/h1.png
+
+DATA REQUIRED:
+dairy
+==========================================================
+*/ %>
+
+<section
+    class="dairy-h1"
+    aria-label="Dairy Farm Introduction"
+>
+
+
+    <!-- =================================================
+         LOGO BACKGROUND
+    ================================================== -->
+
+    <div
+        class="dairy-h1-background"
+        aria-hidden="true"
+    >
+
+        <img
+            src="/images/h1.png"
+            alt=""
+            class="dairy-h1-logo"
+        >
+
+    </div>
+
+
+    <!-- =================================================
+         MAIN CONTENT
+    ================================================== -->
+
+    <div class="dairy-h1-content">
+
+
+        <!-- =================================================
+             LABEL
+        ================================================== -->
+
+        <div class="dairy-h1-label">
+
+            <span class="dairy-h1-label-line"></span>
+
+            <span>
+                DAIRY FARM
+            </span>
+
+            <span class="dairy-h1-label-line"></span>
+
+        </div>
+
+
+        <!-- =================================================
+             FARM NAME
+        ================================================== -->
+
+        <h1 class="dairy-h1-title">
+
+            Welcome to
+
+            <span>
+                <%= dairy.name || "Our Dairy Farm" %>
+            </span>
+
+        </h1>
+
+
+        <!-- =================================================
+             FARM CODE
+        ================================================== -->
+
+        <% if (dairy && dairy.code != null) { %>
+
+            <div class="dairy-h1-code">
+                FARM #<%= dairy.code %>
+            </div>
+
+        <% } %>
+
+
+        <!-- =================================================
+             INTRODUCTORY MESSAGE
+        ================================================== -->
+
+        <div class="dairy-h1-message">
+
+            <p>
+                Welcome to
+                <strong>
+                    <%= dairy.name || "this dairy farm" %>
+                </strong>.
+                We're glad to have you here.
+            </p>
+
+            <p>
+                Support the activities here by updating
+                us about the welfare of all assets within
+                the dairy farm.
+            </p>
+
+            <p>
+                In case of any inconveniences, keep us
+                updated on this site.
+            </p>
+
+        </div>
+
+
+        <!-- =================================================
+             FARM VALUES
+        ================================================== -->
+
+        <div class="dairy-h1-values">
+
+
+            <!-- =============================================
+                 ANIMAL WELFARE
+            ============================================== -->
+
+            <div class="dairy-h1-value">
+
+                <span
+                    class="dairy-h1-value-icon"
+                    aria-hidden="true"
+                >
+                    ♧
+                </span>
+
+                <div>
+
+                    <strong>
+                        Animal Welfare
+                    </strong>
+
+                    <span>
+                        Care for every animal
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- =============================================
+                 FARM ASSETS
+            ============================================== -->
+
+            <div class="dairy-h1-value">
+
+                <span
+                    class="dairy-h1-value-icon"
+                    aria-hidden="true"
+                >
+                    ◈
+                </span>
+
+                <div>
+
+                    <strong>
+                        Farm Assets
+                    </strong>
+
+                    <span>
+                        Maintain every resource
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- =============================================
+                 STAY UPDATED
+            ============================================== -->
+
+            <div class="dairy-h1-value">
+
+                <span
+                    class="dairy-h1-value-icon"
+                    aria-hidden="true"
+                >
+                    ↗
+                </span>
+
+                <div>
+
+                    <strong>
+                        Stay Updated
+                    </strong>
+
+                    <span>
+                        Keep the farm informed
+                    </span>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+<style>
+
+/* =========================================================
+   MAIN SECTION
+
+   Plain white / neutral background.
+   No card.
+   No border.
+   No shadow.
+   No tint.
+========================================================= */
+
+.dairy-h1 {
+
+    position: relative;
+
+    width: 100%;
+
+    min-height: 520px;
+
+    margin: 0 0 35px;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+}
+
+
+/* =========================================================
+   LOGO BACKGROUND
+========================================================= */
+
+.dairy-h1-background {
+
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    overflow: hidden;
+
+    pointer-events: none;
+
+}
+
+
+/* =========================================================
+   BACKGROUND LOGO
+
+   Approximately 80% larger than the previous version.
+
+   The logo remains centered and contained within
+   the section.
+========================================================= */
+
+.dairy-h1-logo {
+
+    display: block;
+
+    width:
+        min(
+            936px,
+            126vw
+        );
+
+    height: auto;
+
+    max-height: 135%;
+
+    object-fit: contain;
+
+    opacity: .12;
+
+}
+
+
+/* =========================================================
+   MAIN CONTENT
+========================================================= */
+
+.dairy-h1-content {
+
+    position: relative;
+
+    z-index: 2;
+
+    width: 100%;
+
+    max-width: 1180px;
+
+    min-height: 520px;
+
+    margin: 0 auto;
+
+    padding:
+        clamp(50px, 7vw, 80px)
+        clamp(24px, 6vw, 70px)
+        50px;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: flex-start;
+
+}
+
+
+/* =========================================================
+   LABEL
+========================================================= */
+
+.dairy-h1-label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 16px;
+
+    color: #426b4d;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 2.8px;
+
+}
+
+
+.dairy-h1-label-line {
+
+    width: 30px;
+
+    height: 1px;
+
+    display: block;
+
+    background:
+        rgba(66, 107, 77, .7);
+
+}
+
+
+/* =========================================================
+   TITLE
+========================================================= */
+
+.dairy-h1-title {
+
+    max-width: 820px;
+
+    margin: 0;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:
+        clamp(
+            36px,
+            5vw,
+            64px
+        );
+
+    line-height: 1.04;
+
+    letter-spacing: -1.5px;
+
+    font-weight: 700;
+
+    color: #263d2d;
+
+}
+
+
+.dairy-h1-title span {
+
+    display: block;
+
+    margin-top: 6px;
+
+    color: #3d6849;
+
+}
+
+
+/* =========================================================
+   FARM CODE
+========================================================= */
+
+.dairy-h1-code {
+
+    margin-top: 13px;
+
+    color: #55765c;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.7px;
+
+    text-transform: uppercase;
+
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+.dairy-h1-message {
+
+    max-width: 680px;
+
+    margin-top: 26px;
+
+}
+
+
+.dairy-h1-message p {
+
+    margin: 0 0 10px;
+
+    color:
+        rgba(39, 58, 45, .86);
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size:
+        clamp(
+            13px,
+            1.5vw,
+            15px
+        );
+
+    line-height: 1.7;
+
+    font-weight: 400;
+
+}
+
+
+.dairy-h1-message p:last-child {
+
+    margin-bottom: 0;
+
+}
+
+
+.dairy-h1-message strong {
+
+    color: #3f6848;
+
+    font-weight: 700;
+
+}
+
+
+/* =========================================================
+   VALUES
+========================================================= */
+
+.dairy-h1-values {
+
+    width: 100%;
+
+    max-width: 800px;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    margin-top: 34px;
+
+}
+
+
+/* =========================================================
+   VALUE
+========================================================= */
+
+.dairy-h1-value {
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    padding:
+        4px 18px 4px 0;
+
+}
+
+
+/* =========================================================
+   VALUE SEPARATOR
+========================================================= */
+
+.dairy-h1-value + .dairy-h1-value {
+
+    padding-left: 18px;
+
+    border-left:
+        1px solid
+        rgba(62, 101, 70, .22);
+
+}
+
+
+/* =========================================================
+   VALUE ICON
+========================================================= */
+
+.dairy-h1-value-icon {
+
+    flex: 0 0 34px;
+
+    width: 34px;
+
+    height: 34px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    border:
+        1px solid
+        rgba(62, 101, 70, .35);
+
+    color: #477451;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size: 17px;
+
+}
+
+
+/* =========================================================
+   VALUE TEXT
+========================================================= */
+
+.dairy-h1-value div {
+
+    min-width: 0;
+
+}
+
+
+.dairy-h1-value strong {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #365d40;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+}
+
+
+.dairy-h1-value span:not(.dairy-h1-value-icon) {
+
+    display: block;
+
+    color:
+        rgba(53, 78, 59, .66);
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 9px;
+
+    line-height: 1.35;
+
+}
+
+
+/* =========================================================
+   LARGE SCREENS
+========================================================= */
+
+@media (min-width: 1400px) {
+
+    .dairy-h1 {
+
+        min-height: 560px;
+
+    }
+
+
+    .dairy-h1-content {
+
+        min-height: 560px;
+
+        padding-left: 80px;
+
+        padding-right: 80px;
+
+    }
+
+
+    .dairy-h1-logo {
+
+        width:
+            min(
+                1080px,
+                99vw
+            );
+
+        max-height: 150%;
+
+    }
+
+}
+
+
+/* =========================================================
+   TABLETS
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .dairy-h1 {
+
+        min-height: 500px;
+
+    }
+
+
+    .dairy-h1-content {
+
+        min-height: 500px;
+
+    }
+
+
+    .dairy-h1-logo {
+
+        width: 774px;
+
+        max-width: 123vw;
+
+        max-height: 135%;
+
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 650px) {
+
+    .dairy-h1 {
+
+        min-height: 620px;
+
+        margin-bottom: 25px;
+
+    }
+
+
+    /* -----------------------------------------------
+       LARGE BUT FULLY CENTERED LOGO
+    ----------------------------------------------- */
+
+    .dairy-h1-logo {
+
+        width: 594px;
+
+        max-width: 130vw;
+
+        max-height: 115%;
+
+        opacity: .11;
+
+    }
+
+
+    /* -----------------------------------------------
+       CONTENT
+    ----------------------------------------------- */
+
+    .dairy-h1-content {
+
+        min-height: 620px;
+
+        padding:
+            42px 20px 35px;
+
+        justify-content: center;
+
+    }
+
+
+    .dairy-h1-label {
+
+        font-size: 9px;
+
+        letter-spacing: 2px;
+
+    }
+
+
+    .dairy-h1-title {
+
+        font-size:
+            clamp(
+                32px,
+                10vw,
+                43px
+            );
+
+        letter-spacing: -.8px;
+
+    }
+
+
+    .dairy-h1-message {
+
+        margin-top: 21px;
+
+    }
+
+
+    .dairy-h1-message p {
+
+        font-size: 13px;
+
+        line-height: 1.65;
+
+    }
+
+
+    .dairy-h1-values {
+
+        grid-template-columns: 1fr;
+
+        margin-top: 25px;
+
+    }
+
+
+    .dairy-h1-value {
+
+        padding: 9px 0;
+
+    }
+
+
+    .dairy-h1-value + .dairy-h1-value {
+
+        padding-left: 0;
+
+        border-left: none;
+
+        border-top:
+            1px solid
+            rgba(62, 101, 70, .18);
+
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .dairy-h1 {
+
+        min-height: 650px;
+
+    }
+
+
+    .dairy-h1-content {
+
+        min-height: 650px;
+
+        padding-left: 16px;
+
+        padding-right: 16px;
+
+    }
+
+
+    .dairy-h1-title {
+
+        font-size: 30px;
+
+    }
+
+
+    .dairy-h1-message p {
+
+        font-size: 12px;
+
+    }
+
+
+    .dairy-h1-logo {
+
+        width: 486px;
+
+        max-width: 135vw;
+
+        max-height: 105%;
+
+    }
+
+}
+
+</style>
