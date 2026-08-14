@@ -40,16 +40,17 @@ const {
 //     1. Updates posted directly on the Dairy Farm.
 //     2. Updates posted on every asset whose
 //        assetCode === Dairy Farm code.
-//
-// No Update documents are duplicated.
+//     3. Weekly milk feeds belonging to the Dairy Farm.
+//     4. Weekly milk feeds belonging to every asset
+//        belonging to the Dairy Farm.
 //
 // ASSET FEED:
 //
 // When the current Dairy is an animal, structure, machine,
 // tool, or other asset:
 //
-//     Only updates belonging to that specific asset
-//     are loaded.
+//     Only updates belonging to that specific asset.
+//     Only weekly milk feeds belonging to that asset.
 //
 // ==========================================================
 
@@ -95,29 +96,6 @@ async (
 
     // ======================================================
     // GET ASSETS BELONGING TO THIS DAIRY FARM
-    //
-    // Dairy Farm:
-    //
-    //     code < 0
-    //
-    // Child assets:
-    //
-    //     assetCode === dairy.code
-    //
-    // This includes:
-    //
-    // - Animals
-    // - Structures
-    // - Machines
-    // - Tools
-    // - Other farm property
-    //
-    // It does NOT include:
-    //
-    // - Other Dairy Farms
-    // - Assets belonging to other farms
-    // - Standalone assets
-    //
     // ======================================================
 
     let assetDairies = [];
@@ -147,13 +125,6 @@ async (
     // GET ASSIGNED FARMS
     //
     // Only dairyWorkers need this.
-    //
-    // The IDs come from:
-    //
-    //     ProjectUser.assignedFarm
-    //
-    // We then retrieve the actual Dairy documents.
-    //
     // ======================================================
 
     let assignedFarms = [];
@@ -200,16 +171,6 @@ async (
 
     // ======================================================
     // PRESERVE ASSIGNED FARM ORDER
-    //
-    // MongoDB $in does not guarantee that the returned
-    // documents will have the same order as assignedFarm.
-    //
-    // The invitation/assignment order matters because:
-    //
-    //     assignedFarm[0]
-    //
-    // is the first assigned farm.
-    //
     // ======================================================
 
     if (
@@ -265,17 +226,26 @@ async (
 
 
     // ======================================================
-    // DETERMINE WHICH DAIRY RECORDS CAN SUPPLY FEED
+    // DETERMINE WHICH DAIRY RECORDS SUPPLY THE FEED
+    //
+    // THIS IS THE IMPORTANT PART.
     //
     // For a Dairy Farm:
     //
     //     Farm itself
     //     +
-    //     all assets where assetCode === farm.code
+    //     every asset belonging to that farm
     //
     // For an asset:
     //
     //     Current asset only.
+    //
+    // The SAME list is now used for:
+    //
+    //     - normal posts
+    //     - medical updates
+    //     - maintenance updates
+    //     - weekly milk feeds
     //
     // ======================================================
 
@@ -294,9 +264,6 @@ async (
 
         // ==================================================
         // FIND ALL ASSETS BELONGING TO THIS FARM
-        //
-        // assetCode is always the negative code of the
-        // parent Dairy Farm.
         // ==================================================
 
         const farmAssets =
@@ -312,9 +279,7 @@ async (
 
 
         // ==================================================
-        // ADD ALL FARM ASSET IDs
-        //
-        // The farm's own ID was already included above.
+        // ADD ALL ASSET IDS
         // ==================================================
 
         updateDairyIds.push(
@@ -330,31 +295,46 @@ async (
 
 
     // ======================================================
+    // REMOVE DUPLICATE IDS
+    //
+    // Normally there should not be duplicates, but this
+    // protects the feed from accidentally loading the same
+    // Dairy twice.
+    // ======================================================
+
+    updateDairyIds =
+        Array.from(
+
+            new Map(
+
+                updateDairyIds.map(
+                    dairyId => [
+
+                        dairyId.toString(),
+
+                        dairyId
+
+                    ]
+                )
+
+            ).values()
+
+        );
+
+
+    // ======================================================
     // GET UPDATES
     //
-    // IMPORTANT:
+    // The same updateDairyIds list is used here.
     //
-    // Populate the Dairy record attached to each Update.
+    // Therefore a Dairy Farm sees:
     //
-    // This allows formatFeed() to expose information about
-    // the actual Dairy / asset the post or update belongs to.
-    //
-    // Example:
-    //
-    //     Update
-    //         dairy -> Cow Shed C
-    //
-    // The feed item can therefore identify:
-    //
-    //     dairyId
-    //     dairyName
-    //     dairyCode
-    //     dairyAssetCode
-    //     dairyImage
-    //
-    // This is especially important on a Dairy Farm feed,
-    // because the farm feed may contain updates belonging
-    // to many different assets.
+    //     Farm posts
+    //     Asset posts
+    //     Farm medical updates
+    //     Asset medical updates
+    //     Farm maintenance
+    //     Asset maintenance
     //
     // ======================================================
 
@@ -386,14 +366,7 @@ async (
 
 
     // ======================================================
-    // FORMAT FEED
-    //
-    // formatFeed() remains synchronous.
-    //
-    // The Dairy information has already been populated
-    // above, so the formatter can safely expose the
-    // subject information without performing a database
-    // query for every feed item.
+    // FORMAT NORMAL FEED
     // ======================================================
 
     const feed =
@@ -403,17 +376,167 @@ async (
 
 
     // ======================================================
-    // BUILD WEEKLY MILK FEEDS
+    // GET DAIRY INFORMATION FOR MILK FEEDS
+    //
+    // We need this because the weekly milk feed must know
+    // which Dairy produced the milk.
+    //
+    // Example:
+    //
+    //     Weekly Milk Report for Daisy Freshman
+    //
+    // or:
+    //
+    //     Weekly Milk Report for Cowshed C
+    //
     // ======================================================
 
-    const weeklyFeeds =
-        await buildWeeklyMilkFeeds(
-            id
+    const milkDairies =
+        await Dairy.find({
+
+            _id: {
+
+                $in:
+                    updateDairyIds
+
+            }
+
+        })
+        .select(
+            "_id name code assetCode profileImage"
         );
 
 
     // ======================================================
-    // ADD WEEKLY MILK FEEDS
+    // CREATE A QUICK DAIRY LOOKUP MAP
+    // ======================================================
+
+    const milkDairyMap =
+        new Map(
+
+            milkDairies.map(
+                dairyRecord => [
+
+                    dairyRecord._id.toString(),
+
+                    dairyRecord
+
+                ]
+            )
+
+        );
+
+
+    // ======================================================
+    // BUILD WEEKLY MILK FEEDS
+    //
+    // IMPORTANT:
+    //
+    // Previously this was:
+    //
+    //     buildWeeklyMilkFeeds(id)
+    //
+    // which meant that when viewing a Dairy Farm, milk
+    // records belonging to its assets were NOT included.
+    //
+    // Now we build a weekly milk feed for EVERY Dairy
+    // record that belongs in the current feed.
+    // ======================================================
+
+    let weeklyFeeds = [];
+
+
+    for (
+        const dairyId of updateDairyIds
+    ) {
+
+        const dairyKey =
+            dairyId.toString();
+
+
+        const dairyRecord =
+            milkDairyMap.get(
+                dairyKey
+            );
+
+
+        if (!dairyRecord) {
+
+            continue;
+
+        }
+
+
+        // ==================================================
+        // BUILD WEEKLY MILK FEEDS FOR THIS DAIRY
+        // ==================================================
+
+        const dairyWeeklyFeeds =
+            await buildWeeklyMilkFeeds(
+                dairyId
+            );
+
+
+        // ==================================================
+        // ATTACH DAIRY INFORMATION TO EACH MILK FEED
+        //
+        // This is what allows milk.ejs to display:
+        //
+        //     Weekly Milk Report for Daisy Freshman
+        //
+        // and also gives us the ID for:
+        //
+        //     /dairy/:id
+        //
+        // ==================================================
+
+        dairyWeeklyFeeds.forEach(
+            milkFeed => {
+
+                milkFeed.dairyId =
+                    dairyRecord._id;
+
+
+                milkFeed.dairyName =
+                    dairyRecord.name || "";
+
+
+                milkFeed.dairyCode =
+                    dairyRecord.code !== undefined
+
+                        ? dairyRecord.code
+
+                        : null;
+
+
+                milkFeed.dairyAssetCode =
+                    dairyRecord.assetCode !== undefined
+
+                        ? dairyRecord.assetCode
+
+                        : null;
+
+
+                milkFeed.dairyImage =
+                    dairyRecord.profileImage || "";
+
+            }
+        );
+
+
+        // ==================================================
+        // ADD THIS DAIRY'S MILK FEEDS TO COMPLETE FEED
+        // ==================================================
+
+        weeklyFeeds.push(
+            ...dairyWeeklyFeeds
+        );
+
+    }
+
+
+    // ======================================================
+    // ADD WEEKLY MILK FEEDS TO COMPLETE FEED
     // ======================================================
 
     feed.push(
@@ -424,16 +547,15 @@ async (
     // ======================================================
     // SORT COMPLETE FEED
     //
-    // This ensures that:
+    // Everything is sorted together:
     //
     // - Normal posts
-    // - Images
+    // - Image posts
     // - Medical updates
     // - Maintenance updates
-    // - Weekly milk feeds
+    // - Weekly milk reports
     //
-    // all appear according to their actual creation/update
-    // date rather than being grouped by type.
+    // Newest item appears first.
     // ======================================================
 
     feed.sort(
