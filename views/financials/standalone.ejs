@@ -28,14 +28,11 @@ function formatMoney(value) {
     }
 
     return amount.toLocaleString(
-
         "en-KE",
-
         {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         }
-
     );
 
 }
@@ -44,9 +41,7 @@ function formatMoney(value) {
 function profitClass(value) {
 
     return number(value) < 0
-
         ? "financial-negative"
-
         : "financial-positive";
 
 }
@@ -56,7 +51,6 @@ function profitText(value) {
 
     const amount =
         number(value);
-
 
     return amount < 0
 
@@ -83,7 +77,6 @@ const assets =
     Array.isArray(
         standaloneData.assets
     )
-
         ? standaloneData.assets
         : [];
 
@@ -121,7 +114,7 @@ let totalProfit = 0;
 
 
 /* ==========================================================
-CALCULATE ASSET TOTALS
+CALCULATE TOTALS
 ========================================================== */
 
 assets.forEach(function(asset) {
@@ -159,12 +152,12 @@ assets.forEach(function(asset) {
     const profit =
 
         sellingPrice
-
-        - buyingPrice
-
-        - liabilities
-
-        + revenue;
+        -
+        buyingPrice
+        -
+        liabilities
+        +
+        revenue;
 
 
     totalCurrentWorth +=
@@ -298,18 +291,18 @@ if (
     totalProfit =
 
         totalSellingPrice
-
-        - totalBuyingPrice
-
-        - totalLiabilities
-
-        + totalRevenue;
+        -
+        totalBuyingPrice
+        -
+        totalLiabilities
+        +
+        totalRevenue;
 
 }
 
 
 /* ==========================================================
-SORT
+SORT ASSETS
 ========================================================== */
 
 assets.sort(function(a, b) {
@@ -360,9 +353,7 @@ assets.sort(function(a, b) {
     return (
 
         number(b?.currentWorth)
-
         -
-
         number(a?.currentWorth)
 
     );
@@ -419,6 +410,7 @@ assets.sort(function(a, b) {
 
         </a>
 
+
     </div>
 
 
@@ -462,6 +454,7 @@ assets.sort(function(a, b) {
             </small>
 
         </div>
+
 
     </section>
 
@@ -674,7 +667,7 @@ assets.sort(function(a, b) {
                 <tbody>
 
 
-                    <% if (assets.length) { %>
+                    <% if (assets.length > 0) { %>
 
 
                         <% assets.forEach(function(asset) { %>
@@ -726,19 +719,6 @@ assets.sort(function(a, b) {
                                         );
 
 
-                                /*
-                                 * Resolve the MongoDB document ID.
-                                 *
-                                 * Supports both:
-                                 *
-                                 * asset._id
-                                 *
-                                 * and
-                                 *
-                                 * asset.id
-                                 *
-                                 */
-
                                 const assetId =
                                     asset?._id ||
                                     asset?.id ||
@@ -748,18 +728,34 @@ assets.sort(function(a, b) {
 
 
                             <!-- ==================================================
-                                 ENTIRE ROW IS CLICKABLE
+                                 CLICKABLE ASSET ROW
                                  ================================================== -->
 
-                            <tr
-                                class="financial-asset-row"
-                                <% if (assetId) { %>
+                            <% if (assetId) { %>
+
+                                <tr
+                                    class="financial-asset-row"
                                     onclick="window.location.href='/networth/asset/<%= assetId %>'"
                                     tabindex="0"
                                     role="link"
-                                    onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href='/networth/asset/<%= assetId %>'; }"
-                                <% end if %>
-                            >
+                                    onkeydown="
+                                        if (
+                                            event.key === 'Enter' ||
+                                            event.key === ' '
+                                        ) {
+                                            event.preventDefault();
+                                            window.location.href='/networth/asset/<%= assetId %>';
+                                        }
+                                    "
+                                >
+
+                            <% } else { %>
+
+                                <tr
+                                    class="financial-asset-row financial-asset-row-disabled"
+                                >
+
+                            <% } %>
 
 
                                 <!-- ==============================================
@@ -922,7 +918,6 @@ assets.sort(function(a, b) {
 
                                 <td>
 
-
                                     <strong
                                         class="<%= profitClass(
                                             assetProfit
@@ -934,7 +929,6 @@ assets.sort(function(a, b) {
                                         ) %>
 
                                     </strong>
-
 
                                 </td>
 
@@ -976,7 +970,6 @@ assets.sort(function(a, b) {
 
 
                             </td>
-
 
                         </tr>
 
@@ -1056,7 +1049,6 @@ assets.sort(function(a, b) {
 
                         <th>
 
-
                             <strong
                                 class="<%= profitClass(
                                     totalProfit
@@ -1068,7 +1060,6 @@ assets.sort(function(a, b) {
                                 ) %>
 
                             </strong>
-
 
                         </th>
 
@@ -1668,24 +1659,22 @@ assets.sort(function(a, b) {
 
 
 /* ==========================================================
-   CLICKABLE ASSET ROW
+   CLICKABLE ROW
    ========================================================== */
 
 .standalone-financial-page
-.financial-table tbody
 .financial-asset-row{
 
     cursor:pointer;
 
     transition:
         background .15s ease,
-        transform .1s ease;
+        box-shadow .15s ease;
 
 }
 
 
 .standalone-financial-page
-.financial-table tbody
 .financial-asset-row:hover{
 
     background:var(--financial-green-soft);
@@ -1694,7 +1683,6 @@ assets.sort(function(a, b) {
 
 
 .standalone-financial-page
-.financial-table tbody
 .financial-asset-row:active{
 
     background:var(--financial-green-light);
@@ -1703,7 +1691,6 @@ assets.sort(function(a, b) {
 
 
 .standalone-financial-page
-.financial-table tbody
 .financial-asset-row:focus{
 
     outline:none;
@@ -1716,24 +1703,17 @@ assets.sort(function(a, b) {
 
 
 .standalone-financial-page
-.financial-table tbody
-.financial-asset-row
-.financial-table-name
-strong{
+.financial-asset-row-disabled{
 
-    transition:
-        color .15s ease;
+    cursor:default;
 
 }
 
 
 .standalone-financial-page
-.financial-table tbody
-.financial-asset-row:hover
-.financial-table-name
-strong{
+.financial-asset-row-disabled:hover{
 
-    color:var(--financial-green-dark);
+    background:transparent;
 
 }
 
