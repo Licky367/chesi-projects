@@ -1,55 +1,15 @@
+Rewritten "views/milk.ejs"
+
 <!-- =========================================================
      MILK RECORDING PAGE
-
-     FILE:
-     views/milk.ejs
-
-     TABLE:
-     ---------------------------------------------------------
-     Name | Input (Litres) | Remarks | Cumulative
-
-     SESSION MODEL
-     ---------------------------------------------------------
-     MORNING:
-         00:00 - 10:00
-
-     CLOSED MORNING:
-         10:00 - 16:00
-
-     EVENING:
-         16:00 - 00:00
-
-     RULES
-     ---------------------------------------------------------
-     Only ONE active recording session is displayed.
-
-     MORNING:
-         Displays morning records.
-
-     EVENING:
-         Displays evening records.
-
-     Previous session remains stored in MongoDB.
-
-     ADMIN:
-         • Can create records
-         • Can edit existing records
-         • Can edit closed-session records
-
-     DAIRY WORKER:
-         • Can create a new session record
-         • Cannot edit submitted records
-         • Can enter missing morning records from 10:00 AM
-           until 4:00 PM
-         • Cannot edit morning records during evening
+     FILE: views/milk.ejs
 ========================================================= -->
 
-
-<!-- =========================================================
-     SAFE VIEW VARIABLES
-========================================================= -->
 
 <%
+    /* ========================================================
+       SAFE VIEW VARIABLES
+    ======================================================== */
 
     const pageDay =
         typeof day !== "undefined" && day
@@ -92,14 +52,11 @@
             : "";
 
 
-
     /* ========================================================
        NAIROBI TIME
     ======================================================== */
 
-    const now =
-        new Date();
-
+    const now = new Date();
 
     const nairobiTime =
         new Intl.DateTimeFormat(
@@ -126,150 +83,54 @@
 
 
     const currentMinutes =
-        (
-            currentHour * 60
-        ) +
+        (currentHour * 60) +
         currentMinute;
 
 
-
     /* ========================================================
-       SESSION WINDOWS
+       SESSION
     ======================================================== */
 
-    const morningStart =
-        0;
+    const morningEnd = 10 * 60;
+    const eveningStart = 16 * 60;
 
 
-    const morningEnd =
-        10 * 60;
+    let currentSession = "morning";
+    let sessionLabel = "Morning";
+    let sessionStatus = "open";
 
-
-    const eveningStart =
-        16 * 60;
-
-
-    let currentSession =
-        "morning";
-
-
-    let sessionLabel =
-        "Morning";
-
-
-    let sessionStatus =
-        "open";
-
-
-
-    /* ========================================================
-       MORNING
-       00:00 - 09:59
-    ======================================================== */
 
     if (
-        currentMinutes >= morningStart &&
+        currentMinutes >= 0 &&
         currentMinutes < morningEnd
     ) {
 
-        currentSession =
-            "morning";
-
-        sessionLabel =
-            "Morning";
-
-        sessionStatus =
-            "open";
+        currentSession = "morning";
+        sessionLabel = "Morning";
+        sessionStatus = "open";
 
     }
-
-
-
-    /* ========================================================
-       CLOSED MORNING
-       10:00 - 15:59
-    ======================================================== */
 
     else if (
         currentMinutes >= morningEnd &&
         currentMinutes < eveningStart
     ) {
 
-        currentSession =
-            "morning";
-
-        sessionLabel =
-            "Morning";
-
-        sessionStatus =
-            "closed";
-
-    }
-
-
-
-    /* ========================================================
-       EVENING
-       16:00 - 23:59
-    ======================================================== */
-
-    else {
-
-        currentSession =
-            "evening";
-
-        sessionLabel =
-            "Evening";
-
-        sessionStatus =
-            "open";
-
-    }
-
-
-
-    /* ========================================================
-       SESSION DESCRIPTION
-    ======================================================== */
-
-    let sessionDescription =
-        "";
-
-
-    if (
-        currentSession === "morning" &&
-        sessionStatus === "open"
-    ) {
-
-        sessionDescription =
-            "Morning recording is open until 10:00 AM.";
-
-    }
-
-    else if (
-        currentSession === "morning" &&
-        sessionStatus === "closed"
-    ) {
-
-        sessionDescription =
-            "Morning session is closed. Missing morning records may still be entered before the evening session begins.";
+        currentSession = "morning";
+        sessionLabel = "Closed";
+        sessionStatus = "closed";
 
     }
 
     else {
 
-        sessionDescription =
-            "Evening recording is open from 4:00 PM until midnight.";
+        currentSession = "evening";
+        sessionLabel = "Evening";
+        sessionStatus = "open";
 
     }
-
 %>
 
-
-
-<!-- =========================================================
-     STYLESHEET
-========================================================= -->
 
 <link
     rel="stylesheet"
@@ -277,10 +138,543 @@
 >
 
 
+<style>
 
-<!-- =========================================================
-     PAGE
-========================================================= -->
+/* =========================================================
+   PAGE
+========================================================= */
+
+.milk-page{
+    width:100%;
+    max-width:1100px;
+    margin:0 auto;
+    padding:10px 10px 30px;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.milk-header{
+    margin:0 0 12px;
+    padding:0 2px;
+}
+
+.milk-header-content{
+    margin:0;
+}
+
+.milk-header h1{
+    margin:0;
+    color:#166534;
+    font-size:23px;
+    line-height:1.15;
+    font-weight:750;
+}
+
+.milk-date{
+    margin:4px 0 0;
+    color:#6b7280;
+    font-size:12px;
+    line-height:1.3;
+}
+
+.milk-date .session{
+    color:#166534;
+    font-weight:700;
+}
+
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+.milk-message{
+    margin:0 0 10px;
+    padding:7px 10px;
+    border-radius:6px;
+    font-size:12px;
+}
+
+.milk-success{
+    border:1px solid #bbf7d0;
+    background:#f0fdf4;
+    color:#166534;
+}
+
+.milk-error{
+    border:1px solid #fecaca;
+    background:#fef2f2;
+    color:#b91c1c;
+}
+
+
+/* =========================================================
+   FARM SECTION
+========================================================= */
+
+.milk-farm-section{
+    margin:0 0 12px;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:7px;
+    overflow:hidden;
+}
+
+
+/* =========================================================
+   FARM HEADER
+========================================================= */
+
+.milk-farm-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:7px 10px;
+    border-bottom:1px solid #e5e7eb;
+    background:#fafcfb;
+}
+
+.milk-farm-information{
+    min-width:0;
+}
+
+.milk-farm-information h2{
+    margin:0;
+    color:#374151;
+    font-size:14px;
+    line-height:1.2;
+    font-weight:700;
+}
+
+.milk-farm-code{
+    display:block;
+    margin-top:2px;
+    color:#9ca3af;
+    font-size:10px;
+}
+
+.milk-farm-total{
+    flex-shrink:0;
+    text-align:right;
+}
+
+.milk-farm-total span{
+    display:block;
+    color:#9ca3af;
+    font-size:9px;
+}
+
+.milk-farm-total strong{
+    display:block;
+    margin-top:1px;
+    color:#166534;
+    font-size:13px;
+}
+
+
+/* =========================================================
+   TABLE WRAPPER
+========================================================= */
+
+.milk-table-wrapper{
+    width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.milk-table{
+    width:100%;
+    min-width:620px;
+    border-collapse:collapse;
+    table-layout:fixed;
+}
+
+
+/* =========================================================
+   TABLE HEAD
+========================================================= */
+
+.milk-table th{
+    padding:6px 8px;
+    background:#f8faf9;
+    border-bottom:1px solid #e5e7eb;
+    color:#6b7280;
+    font-size:9px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.025em;
+    text-align:left;
+    white-space:nowrap;
+}
+
+
+/* =========================================================
+   COLUMN WIDTHS
+========================================================= */
+
+.milk-animal-heading{
+    width:24%;
+}
+
+.milk-input-heading{
+    width:16%;
+}
+
+.milk-remarks-heading{
+    width:42%;
+}
+
+.milk-cumulative-heading{
+    width:18%;
+}
+
+
+/* =========================================================
+   TABLE CELLS
+========================================================= */
+
+.milk-table td{
+    padding:5px 8px;
+    border-bottom:1px solid #f1f5f2;
+    vertical-align:middle;
+    font-size:11px;
+}
+
+.milk-table tbody tr:last-child td{
+    border-bottom:none;
+}
+
+.milk-table tbody tr:hover{
+    background:#fbfefc;
+}
+
+
+/* =========================================================
+   ANIMAL
+========================================================= */
+
+.milk-animal-name{
+    color:#1f2937;
+    font-size:11px;
+    line-height:1.2;
+}
+
+.milk-animal-name strong{
+    font-weight:650;
+}
+
+.milk-animal-code{
+    display:block;
+    margin-top:1px;
+    color:#9ca3af;
+    font-size:9px;
+}
+
+
+/* =========================================================
+   LITERS INPUT
+========================================================= */
+
+.milk-liters-input{
+    width:100%;
+    height:29px;
+    padding:4px 7px;
+    border:1px solid #d1d5db;
+    border-radius:5px;
+    background:#fff;
+    color:#111827;
+    font-size:11px;
+    outline:none;
+}
+
+.milk-liters-input:focus{
+    border-color:#22a35a;
+    box-shadow:0 0 0 2px rgba(34,163,90,.08);
+}
+
+.milk-liters-input[readonly]{
+    background:#f3f4f6;
+    color:#6b7280;
+    cursor:not-allowed;
+}
+
+
+/* =========================================================
+   REMARKS INPUT
+========================================================= */
+
+.milk-remarks-input{
+    width:100%;
+    height:29px;
+    padding:4px 7px;
+    border:1px solid #d1d5db;
+    border-radius:5px;
+    background:#fff;
+    color:#111827;
+    font-size:11px;
+    outline:none;
+}
+
+.milk-remarks-input:focus{
+    border-color:#22a35a;
+    box-shadow:0 0 0 2px rgba(34,163,90,.08);
+}
+
+.milk-remarks-input[readonly]{
+    background:#f3f4f6;
+    color:#6b7280;
+    cursor:not-allowed;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.milk-record-status{
+    margin-top:2px;
+    min-height:11px;
+    line-height:1;
+}
+
+.milk-status-recorded,
+.milk-status-locked,
+.milk-status-pending{
+    font-size:8px;
+    font-weight:600;
+}
+
+.milk-status-recorded{
+    color:#166534;
+}
+
+.milk-status-locked{
+    color:#6b7280;
+}
+
+.milk-status-pending{
+    color:#9ca3af;
+}
+
+
+/* =========================================================
+   CUMULATIVE
+========================================================= */
+
+.milk-cumulative-cell{
+    text-align:right;
+}
+
+.milk-cumulative-value{
+    display:block;
+    color:#166534;
+    font-size:12px;
+    font-weight:700;
+}
+
+.milk-cumulative-label{
+    display:block;
+    margin-top:1px;
+    color:#9ca3af;
+    font-size:8px;
+}
+
+
+/* =========================================================
+   NO ANIMALS
+========================================================= */
+
+.milk-no-animals{
+    padding:12px;
+    color:#9ca3af;
+    font-size:11px;
+    text-align:center;
+}
+
+
+/* =========================================================
+   NO FARMS
+========================================================= */
+
+.milk-empty{
+    padding:25px 15px;
+    border:1px solid #e5e7eb;
+    border-radius:7px;
+    background:#fff;
+    text-align:center;
+}
+
+.milk-empty h2{
+    margin:0 0 5px;
+    color:#374151;
+    font-size:15px;
+}
+
+.milk-empty p{
+    margin:0;
+    color:#9ca3af;
+    font-size:11px;
+}
+
+
+/* =========================================================
+   SUBMIT AREA
+========================================================= */
+
+.milk-submit-area{
+    margin-top:14px;
+    padding-top:10px;
+    border-top:1px solid #e5e7eb;
+    text-align:right;
+}
+
+.milk-submit-button{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-height:34px;
+    padding:0 16px;
+    border:none;
+    border-radius:6px;
+    background:#15803d;
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.milk-submit-button:hover{
+    background:#166534;
+}
+
+.milk-submit-button:disabled{
+    background:#9ca3af;
+    cursor:not-allowed;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:650px){
+
+    .milk-page{
+        padding:8px 7px 24px;
+    }
+
+    .milk-header{
+        margin-bottom:9px;
+    }
+
+    .milk-header h1{
+        font-size:20px;
+    }
+
+    .milk-date{
+        font-size:11px;
+    }
+
+    .milk-farm-section{
+        margin-bottom:9px;
+        border-radius:6px;
+    }
+
+    .milk-farm-header{
+        padding:6px 8px;
+    }
+
+    .milk-farm-information h2{
+        font-size:12px;
+    }
+
+    .milk-farm-code{
+        font-size:9px;
+    }
+
+    .milk-farm-total span{
+        font-size:8px;
+    }
+
+    .milk-farm-total strong{
+        font-size:11px;
+    }
+
+    .milk-table{
+        min-width:560px;
+    }
+
+    .milk-table th{
+        padding:5px 6px;
+        font-size:8px;
+    }
+
+    .milk-table td{
+        padding:4px 6px;
+        font-size:10px;
+    }
+
+    .milk-animal-name{
+        font-size:10px;
+    }
+
+    .milk-animal-code{
+        font-size:8px;
+    }
+
+    .milk-liters-input,
+    .milk-remarks-input{
+        height:27px;
+        font-size:10px;
+        padding:4px 6px;
+    }
+
+    .milk-status-recorded,
+    .milk-status-locked,
+    .milk-status-pending{
+        font-size:7px;
+    }
+
+    .milk-cumulative-value{
+        font-size:10px;
+    }
+
+    .milk-submit-area{
+        margin-top:10px;
+        padding-top:8px;
+    }
+
+    .milk-submit-button{
+        width:100%;
+        min-height:34px;
+        font-size:11px;
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL SCREENS
+========================================================= */
+
+@media(max-width:380px){
+
+    .milk-table{
+        min-width:530px;
+    }
+
+}
+
+</style>
+
 
 <div
     class="milk-page"
@@ -293,7 +687,7 @@
 
 
     <!-- =====================================================
-         PAGE HEADER
+         SIMPLE PAGE HEADER
     ====================================================== -->
 
     <header class="milk-header">
@@ -305,23 +699,16 @@
             </h1>
 
             <p class="milk-date">
+
                 <%= pageDay %>
+
+                <span class="session">
+
+                    (<%= sessionLabel %>)
+
+                </span>
+
             </p>
-
-        </div>
-
-
-        <div class="milk-role-badge">
-
-            <% if (pageIsAdmin) { %>
-
-                Administrator
-
-            <% } else { %>
-
-                Dairy Worker
-
-            <% } %>
 
         </div>
 
@@ -330,81 +717,7 @@
 
 
     <!-- =====================================================
-         SESSION BAR
-    ====================================================== -->
-
-    <section
-        class="milk-session-bar"
-        aria-label="Milk recording session"
-    >
-
-        <div class="milk-session-information">
-
-            <span class="milk-session-label">
-                Current Recording
-            </span>
-
-            <strong class="milk-session-name">
-                <%= sessionLabel %> Session
-            </strong>
-
-            <span class="milk-session-time">
-
-                <% if (currentSession === "morning") { %>
-
-                    12:00 AM – 10:00 AM
-
-                <% } else { %>
-
-                    4:00 PM – 12:00 AM
-
-                <% } %>
-
-            </span>
-
-        </div>
-
-
-        <div
-            class="milk-session-status milk-session-status-<%= sessionStatus %>"
-        >
-
-            <% if (sessionStatus === "open") { %>
-
-                Session Open
-
-            <% } else { %>
-
-                Morning Session Closed
-
-            <% } %>
-
-        </div>
-
-    </section>
-
-
-
-    <!-- =====================================================
-         SESSION INFORMATION
-    ====================================================== -->
-
-    <div class="milk-session-note">
-
-        <strong>
-            <%= sessionLabel %> recording:
-        </strong>
-
-        <span>
-            <%= sessionDescription %>
-        </span>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         SUCCESS MESSAGE
+         MESSAGES
     ====================================================== -->
 
     <% if (pageSuccess) { %>
@@ -420,11 +733,6 @@
 
     <% } %>
 
-
-
-    <!-- =====================================================
-         ERROR MESSAGE
-    ====================================================== -->
 
     <% if (pageError) { %>
 
@@ -484,7 +792,6 @@
 
             <% pageFarms.forEach(function(farm) { %>
 
-
                 <%
 
                     const farmAnimals =
@@ -499,9 +806,8 @@
                 %>
 
 
-
                 <!-- =============================================
-                     FARM SECTION
+                     FARM
                 ============================================== -->
 
                 <section
@@ -516,7 +822,6 @@
                     ========================================== -->
 
                     <div class="milk-farm-header">
-
 
                         <div class="milk-farm-information">
 
@@ -534,15 +839,10 @@
                         </div>
 
 
-
-                        <!-- =====================================
-                             FARM TOTAL
-                        ====================================== -->
-
                         <div class="milk-farm-total">
 
                             <span>
-                                Today's Farm Total
+                                Farm Total
                             </span>
 
                             <strong>
@@ -572,7 +872,6 @@
                     <% } else { %>
 
 
-
                         <!-- =====================================
                              TABLE
                         ====================================== -->
@@ -584,100 +883,50 @@
                                 data-farm-code="<%= farm.code %>"
                             >
 
-
-                                <!-- =================================
-                                     TABLE HEADER
-                                ================================== -->
-
                                 <thead>
 
                                     <tr>
-
-
-                                        <!-- =============================
-                                             COLUMN 1 — NAME
-                                        ============================== -->
 
                                         <th
                                             scope="col"
                                             class="milk-animal-heading"
                                         >
-
                                             Name
-
                                         </th>
-
-
-
-                                        <!-- =============================
-                                             COLUMN 2 — INPUT
-                                        ============================== -->
 
                                         <th
                                             scope="col"
                                             class="milk-input-heading"
                                         >
-
                                             Input
-
-                                            <span>
-                                                (Litres)
-                                            </span>
-
+                                            <span>(L)</span>
                                         </th>
-
-
-
-                                        <!-- =============================
-                                             COLUMN 3 — REMARKS
-                                        ============================== -->
 
                                         <th
                                             scope="col"
                                             class="milk-remarks-heading"
                                         >
-
                                             Remarks
-
                                         </th>
-
-
-
-                                        <!-- =============================
-                                             COLUMN 4 — CUMULATIVE
-                                        ============================== -->
 
                                         <th
                                             scope="col"
                                             class="milk-cumulative-heading"
                                         >
-
                                             Cumulative
-
                                         </th>
-
 
                                     </tr>
 
                                 </thead>
 
 
-
-                                <!-- =================================
-                                     TABLE BODY
-                                ================================== -->
-
                                 <tbody>
 
 
                                     <% farmAnimals.forEach(function(animal) { %>
 
-
                                         <%
-
-                                            /* ==========================================
-                                               CURRENT SESSION RECORD
-                                            ========================================== */
 
                                             const activeRecord =
                                                 currentSession === "morning"
@@ -693,21 +942,9 @@
                                                     );
 
 
-
-                                            /* ==========================================
-                                               RECORD EXISTS
-                                            ========================================== */
-
                                             const hasRecord =
-                                                Boolean(
-                                                    activeRecord
-                                                );
+                                                Boolean(activeRecord);
 
-
-
-                                            /* ==========================================
-                                               CURRENT LITERS
-                                            ========================================== */
 
                                             const activeLiters =
                                                 activeRecord &&
@@ -719,11 +956,6 @@
                                                     : "";
 
 
-
-                                            /* ==========================================
-                                               CURRENT REMARKS
-                                            ========================================== */
-
                                             const activeRemarks =
                                                 activeRecord &&
                                                 activeRecord.remarks
@@ -733,25 +965,14 @@
                                                     : "";
 
 
-
-                                            /* ==========================================
-                                               WORKER LOCK
-                                            ========================================== */
-
                                             const recordLocked =
                                                 !pageIsAdmin &&
                                                 hasRecord;
 
 
-
-                                            /* ==========================================
-                                               MORNING RECORD
-                                            ========================================== */
-
                                             const morningRecord =
                                                 animal.morning ||
                                                 null;
-
 
 
                                             const morningLiters =
@@ -766,15 +987,9 @@
                                                     : 0;
 
 
-
-                                            /* ==========================================
-                                               EVENING RECORD
-                                            ========================================== */
-
                                             const eveningRecord =
                                                 animal.evening ||
                                                 null;
-
 
 
                                             const eveningLiters =
@@ -789,46 +1004,22 @@
                                                     : 0;
 
 
-
-                                            /* ==========================================
-                                               SAFE VALUES
-                                            ========================================== */
-
                                             const safeMorning =
-                                                Number.isFinite(
-                                                    morningLiters
-                                                )
-
+                                                Number.isFinite(morningLiters)
                                                     ? morningLiters
-
                                                     : 0;
-
 
 
                                             const safeEvening =
-                                                Number.isFinite(
-                                                    eveningLiters
-                                                )
-
+                                                Number.isFinite(eveningLiters)
                                                     ? eveningLiters
-
                                                     : 0;
 
-
-
-                                            /* ==========================================
-                                               DAILY CUMULATIVE
-                                            ========================================== */
 
                                             const cumulative =
                                                 safeMorning +
                                                 safeEvening;
 
-
-
-                                            /* ==========================================
-                                               ANIMAL DISPLAY CODE
-                                            ========================================== */
 
                                             const animalCode =
                                                 animal.code ||
@@ -838,11 +1029,6 @@
                                         %>
 
 
-
-                                        <!-- =================================
-                                             ANIMAL ROW
-                                        ================================== -->
-
                                         <tr
                                             class="milk-animal-row"
                                             data-animal-id="<%= animal._id %>"
@@ -850,22 +1036,16 @@
                                         >
 
 
-                                            <!-- =================================
-                                                 COLUMN 1 — NAME
-                                            ================================== -->
+                                            <!-- =========================
+                                                 NAME
+                                            ========================== -->
 
-                                            <td
-                                                class="milk-animal-cell"
-                                            >
+                                            <td class="milk-animal-cell">
 
-                                                <div
-                                                    class="milk-animal-name"
-                                                >
+                                                <div class="milk-animal-name">
 
                                                     <strong>
-
                                                         <%= animal.name || "Unnamed Animal" %>
-
                                                     </strong>
 
                                                 </div>
@@ -873,9 +1053,7 @@
 
                                                 <% if (animalCode) { %>
 
-                                                    <small
-                                                        class="milk-animal-code"
-                                                    >
+                                                    <small class="milk-animal-code">
 
                                                         #<%= animalCode %>
 
@@ -887,9 +1065,9 @@
 
 
 
-                                            <!-- =================================
-                                                 COLUMN 2 — INPUT
-                                            ================================== -->
+                                            <!-- =========================
+                                                 INPUT
+                                            ========================== -->
 
                                             <td
                                                 class="milk-input-cell"
@@ -911,27 +1089,23 @@
                                                     aria-label="<%= sessionLabel %> milk liters for <%= animal.name || 'animal' %>"
 
                                                     <% if (recordLocked) { %>
-
                                                         readonly
                                                         aria-readonly="true"
-
                                                     <% } %>
-
                                                 >
 
                                             </td>
 
 
 
-                                            <!-- =================================
-                                                 COLUMN 3 — REMARKS
-                                            ================================== -->
+                                            <!-- =========================
+                                                 REMARKS
+                                            ========================== -->
 
                                             <td
                                                 class="milk-remarks-cell"
                                                 data-session="<%= currentSession %>"
                                             >
-
 
                                                 <input
                                                     type="text"
@@ -946,59 +1120,34 @@
                                                     aria-label="<%= sessionLabel %> remarks for <%= animal.name || 'animal' %>"
 
                                                     <% if (recordLocked) { %>
-
                                                         readonly
                                                         aria-readonly="true"
-
                                                     <% } %>
-
                                                 >
 
 
-
-                                                <!-- =================================
-                                                     STATUS INSIDE REMARKS CELL
-                                                ================================== -->
-
-                                                <div
-                                                    class="milk-record-status"
-                                                >
+                                                <div class="milk-record-status">
 
                                                     <% if (hasRecord) { %>
 
-
                                                         <% if (recordLocked) { %>
 
-                                                            <span
-                                                                class="milk-status-locked"
-                                                            >
-
+                                                            <span class="milk-status-locked">
                                                                 Submitted — Read Only
-
                                                             </span>
-
 
                                                         <% } else { %>
 
-                                                            <span
-                                                                class="milk-status-recorded"
-                                                            >
-
+                                                            <span class="milk-status-recorded">
                                                                 Recorded — Admin Editable
-
                                                             </span>
 
                                                         <% } %>
 
-
                                                     <% } else { %>
 
-                                                        <span
-                                                            class="milk-status-pending"
-                                                        >
-
+                                                        <span class="milk-status-pending">
                                                             Not Recorded
-
                                                         </span>
 
                                                     <% } %>
@@ -1009,29 +1158,20 @@
 
 
 
-                                            <!-- =================================
-                                                 COLUMN 4 — CUMULATIVE
-                                            ================================== -->
+                                            <!-- =========================
+                                                 CUMULATIVE
+                                            ========================== -->
 
-                                            <td
-                                                class="milk-cumulative-cell"
-                                            >
+                                            <td class="milk-cumulative-cell">
 
-                                                <strong
-                                                    class="milk-cumulative-value"
-                                                >
+                                                <strong class="milk-cumulative-value">
 
                                                     <%= cumulative.toFixed(2) %> L
 
                                                 </strong>
 
-
-                                                <small
-                                                    class="milk-cumulative-label"
-                                                >
-
+                                                <small class="milk-cumulative-label">
                                                     Today
-
                                                 </small>
 
                                             </td>
@@ -1052,7 +1192,6 @@
 
                     <% } %>
 
-
                 </section>
 
 
@@ -1061,60 +1200,10 @@
 
 
             <!-- =================================================
-                 SUBMIT AREA
+                 BOTTOM SAVE BUTTON
             ================================================== -->
 
             <div class="milk-submit-area">
-
-
-                <!-- =============================================
-                     WORKER NOTE
-                ============================================== -->
-
-                <% if (!pageIsAdmin) { %>
-
-                    <p class="milk-worker-note">
-
-                        Once you submit a milk record, it becomes
-                        read-only for you. Administrators can still
-                        edit submitted records.
-
-                    </p>
-
-                <% } else { %>
-
-                    <p class="milk-admin-note">
-
-                        Administrator mode:
-                        existing records can be edited.
-
-                    </p>
-
-                <% } %>
-
-
-
-                <!-- =============================================
-                     ZERO RECORD NOTE
-                ============================================== -->
-
-                <p class="milk-zero-note">
-
-                    If a cow is not milked or no record is entered
-                    before the session closes, the session is
-                    automatically recorded as:
-
-                    <strong>
-                        0 L — Not Milked/recorded
-                    </strong>
-
-                </p>
-
-
-
-                <!-- =============================================
-                     SUBMIT BUTTON
-                ============================================== -->
 
                 <button
                     type="submit"
@@ -1134,7 +1223,6 @@
 
                 </button>
 
-
             </div>
 
 
@@ -1148,7 +1236,7 @@
 
 
 <!-- =========================================================
-     PAGE JAVASCRIPT
+     JAVASCRIPT
 ========================================================= -->
 
 <script>
@@ -1158,10 +1246,6 @@ document.addEventListener(
     function () {
 
 
-        /* =====================================================
-           FORM
-        ====================================================== */
-
         const form =
             document.getElementById(
                 "milkCollectionForm"
@@ -1169,27 +1253,15 @@ document.addEventListener(
 
 
         if (!form) {
-
             return;
-
         }
 
-
-
-        /* =====================================================
-           SUBMIT BUTTON
-        ====================================================== */
 
         const submitButton =
             document.getElementById(
                 "milkSubmitButton"
             );
 
-
-
-        /* =====================================================
-           LITERS INPUTS
-        ====================================================== */
 
         const litersInputs =
             form.querySelectorAll(
@@ -1200,46 +1272,31 @@ document.addEventListener(
         litersInputs.forEach(
             function (input) {
 
-
                 input.addEventListener(
                     "input",
                     function () {
-
 
                         const rawValue =
                             input.value;
 
 
-                        /*
-                         * Empty input is allowed.
-                         */
-
                         if (
                             rawValue === ""
                         ) {
-
                             return;
-
                         }
 
 
                         const value =
-                            Number(
-                                rawValue
-                            );
+                            Number(rawValue);
 
-
-                        /*
-                         * Prevent invalid or negative values.
-                         */
 
                         if (
                             !Number.isFinite(value) ||
                             value < 0
                         ) {
 
-                            input.value =
-                                "";
+                            input.value = "";
 
                         }
 
@@ -1250,19 +1307,10 @@ document.addEventListener(
         );
 
 
-
-        /* =====================================================
-           FORM SUBMISSION
-        ====================================================== */
-
         form.addEventListener(
             "submit",
             function (event) {
 
-
-                /*
-                 * Prevent duplicate submissions.
-                 */
 
                 if (
                     form.dataset.submitting === "true"
@@ -1279,12 +1327,10 @@ document.addEventListener(
                     "true";
 
 
-
                 /*
-                 * Inputs must NOT be disabled.
-                 *
-                 * Disabled inputs are not included in a normal
-                 * browser form submission.
+                 * Do NOT disable the input fields here.
+                 * Disabled form controls are excluded from
+                 * normal form submission.
                  */
 
                 if (submitButton) {
@@ -1292,12 +1338,10 @@ document.addEventListener(
                     submitButton.disabled =
                         true;
 
-
                     submitButton.setAttribute(
                         "aria-disabled",
                         "true"
                     );
-
 
                     submitButton.textContent =
                         "Saving...";
