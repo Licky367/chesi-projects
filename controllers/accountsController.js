@@ -217,7 +217,7 @@ async (req, res) => {
 
       req.params.id,
 
-      req.body.farmId
+      req.params.farmId
 
     );
 
