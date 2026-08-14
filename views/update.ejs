@@ -1,85 +1,108 @@
-<!-- =====================================================  
-     UPDATE PAGE ASSETS  
-===================================================== -->  <link  
-    rel="stylesheet"  
-    href="/css/update/update.css"  
->  <script src="/socket.io/socket.io.js"></script>  <!-- =====================================================  
-     UPDATE PAGE  
-===================================================== -->  <div class="dairy-page">  <!-- =================================================  
-     TOP-RIGHT PAGE ACTION  
-================================================== -->  
+<!-- =====================================================
+     UPDATE PAGE ASSETS
+===================================================== -->
 
-<div class="dairy-page-actions">  
+<link
+    rel="stylesheet"
+    href="/css/update/update.css"
+>
+
+<script src="/socket.io/socket.io.js"></script>
 
 
-    <button  
-        type="button"  
-        id="viewPropertyButton"  
-        class="asset-bar-trigger"  
-        aria-controls="assetBar"  
-        aria-expanded="false"  
-    >  
+<!-- =====================================================
+     UPDATE PAGE
+===================================================== -->
 
-        <span  
-            class="asset-bar-trigger-icon"  
-            aria-hidden="true"  
-        >  
-            ◉  
-        </span>  
+<div class="dairy-page">
 
 
-        <span class="asset-bar-trigger-text">  
-            View Assets  
-        </span>  
+    <!-- =================================================
+         TOP-RIGHT PAGE ACTION
+    ================================================== -->
+
+    <div class="dairy-page-actions">
+
+        <button
+            type="button"
+            id="viewPropertyButton"
+            class="asset-bar-trigger"
+            aria-controls="assetBar"
+            aria-expanded="false"
+        >
+
+            <span
+                class="asset-bar-trigger-icon"
+                aria-hidden="true"
+            >
+                ◉
+            </span>
+
+            <span class="asset-bar-trigger-text">
+                View Assets
+            </span>
+
+        </button>
+
+    </div>
 
 
-    </button>  
+    <!-- =================================================
+         HERO SECTION
+    ================================================== -->
+
+    <%- include("update/h1", {
+        dairy: dairy,
+        user: user
+    }) %>
 
 
-</div>  
+    <!-- =================================================
+         CREATE POST
+    ================================================== -->
+
+    <%- include("update/create-post", {
+        dairy: dairy,
+        user: user
+    }) %>
 
 
-<!-- =================================================  
-     HERO SECTION  
-================================================== -->  
+    <!-- =================================================
+         ASSET SIDEBAR
 
-<%- include("update/h1", {  
-    dairy: dairy,  
-    user: user  
-}) %>  
+         The partial contains:
 
+         • Overlay
+         • Sidebar
+         • Animals
+         • Structures
+         • Sidebar JavaScript
+    ================================================== -->
 
-
-<!-- =================================================  
-     ASSET SIDEBAR  
-       
-     The partial contains:  
-       
-     • Overlay  
-     • Sidebar  
-     • Animals  
-     • Structures  
-     • Sidebar JavaScript  
-================================================== -->  
-
-<%- include("dairy/assetBar", {  
-    dairy: dairy,  
-    assetDairies: assetDairies || []  
-}) %>  
+    <%- include("dairy/assetBar", {
+        dairy: dairy,
+        assetDairies: assetDairies || []
+    }) %>
 
 
-<!-- =================================================  
-     FEED  
-================================================== -->  
+    <!-- =================================================
+         FEED
+    ================================================== -->
 
-<%- include("update/feed", {  
-    feed: feed,  
-    user: user  
-}) %>
+    <%- include("update/feed", {
+        feed: feed,
+        user: user
+    }) %>
 
-</div>  <!-- =====================================================  
-     UPDATE PAGE JAVASCRIPT  
-===================================================== -->  <script  
-    src="/js/update/index.js"  
-    defer  
+
+</div>
+
+
+<!-- =====================================================
+     UPDATE PAGE JAVASCRIPT
+===================================================== -->
+
+<script
+    src="/js/update/index.js"
+    defer
 ></script>
