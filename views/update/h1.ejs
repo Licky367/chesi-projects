@@ -114,25 +114,27 @@ dairy
 
     border-radius: 22px;
 
-    border: 1px solid rgba(49, 105, 66, .28);
+    /*
+       Main visual accent:
+       thick green left border.
+    */
+    border-left: 7px solid #4d8a5d;
 
     /*
-       Light green in the centre,
-       gradually becoming darker toward
-       the outer edges.
+       Almost white background.
+       Only a very subtle green tint.
     */
     background:
         radial-gradient(
             circle at 50% 45%,
-            #edf8ef 0%,
-            #e4f3e7 42%,
-            #d3e9d8 72%,
-            #bdd8c3 100%
+            #ffffff 0%,
+            #fcfefc 55%,
+            #f3faf4 100%
         );
 
     box-shadow:
-        0 10px 28px rgba(42, 78, 51, .12),
-        inset 0 0 0 1px rgba(255, 255, 255, .42);
+        0 8px 24px rgba(42, 78, 51, .09),
+        inset 0 0 18px rgba(76, 135, 88, .035);
 
 }
 
@@ -156,8 +158,7 @@ dairy
     border-radius: inherit;
 
     box-shadow:
-        inset 0 0 35px rgba(42, 91, 53, .10),
-        inset 0 0 8px rgba(35, 78, 44, .08);
+        inset 0 0 22px rgba(55, 105, 67, .045);
 
 }
 
@@ -195,11 +196,14 @@ dairy
 
     height: auto;
 
-    opacity: .075;
+    /*
+       Extremely subtle logo.
+    */
+    opacity: .035;
 
     filter:
-        saturate(.75)
-        contrast(.9);
+        saturate(.6)
+        contrast(.85);
 
 }
 
@@ -409,7 +413,10 @@ dairy
 
         border-radius: 20px;
 
+        border-left-width: 7px;
+
     }
+
 
     .dairy-h1-content {
 
@@ -421,6 +428,7 @@ dairy
             29px;
 
     }
+
 
     .dairy-h1-logo {
 
@@ -450,9 +458,19 @@ dairy
 
         border-radius: 18px;
 
+        border-left-width: 6px;
+
+        background:
+            radial-gradient(
+                circle at 50% 45%,
+                #ffffff 0%,
+                #fdfefd 60%,
+                #f5faf6 100%
+            );
+
         box-shadow:
-            0 8px 22px rgba(42, 78, 51, .11),
-            inset 0 0 0 1px rgba(255, 255, 255, .40);
+            0 7px 20px rgba(42, 78, 51, .08),
+            inset 0 0 15px rgba(76, 135, 88, .03);
 
     }
 
@@ -475,7 +493,7 @@ dairy
 
         max-width: 130vw;
 
-        opacity: .07;
+        opacity: .03;
 
     }
 
@@ -550,6 +568,8 @@ dairy
         min-height: 355px;
 
         border-radius: 16px;
+
+        border-left-width: 6px;
 
     }
 
