@@ -32,23 +32,39 @@
         <!-- HEADING -->
         <div class="create-post-heading">
 
-            <div class="heading-line">
+            <% if (dairy.code < 0) { %>
 
-                <strong>
-                    <%= user.name.split(" ")[0] %>
-                </strong>
+                <div class="heading-line">
 
-                , update us about
+                    <strong>
+                        <%= user.name.split(" ")[0] %>
+                    </strong>
 
-            </div>
+                    , update us about the overall conditions of this dairy Farm.
 
-            <div class="heading-line">
+                </div>
 
-                <strong>
-                    <%= dairy.name %>
-                </strong>
+            <% } else { %>
 
-            </div>
+                <div class="heading-line">
+
+                    <strong>
+                        <%= user.name.split(" ")[0] %>
+                    </strong>
+
+                    , update us about
+
+                </div>
+
+                <div class="heading-line">
+
+                    <strong>
+                        <%= dairy.name %>
+                    </strong>
+
+                </div>
+
+            <% } %>
 
         </div>
 
@@ -221,7 +237,7 @@
 
 
                     <!-- =====================================
-                         TEXT INPUT
+                         TEXT INPUT AREA
                     ====================================== -->
 
                     <div class="composer-input-area">
@@ -1437,7 +1453,7 @@
 
         /* =================================================
            INITIAL STATE
-        ================================================== */
+        ================================================= */
 
         updateCharacterCounter();
 
