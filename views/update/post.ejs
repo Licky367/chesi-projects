@@ -1,878 +1,796 @@
-<!-- =======================================================
+<!-- =========================================================
      POST
-     FILE:
-     views/dairy/update/post.ejs
-======================================================= -->
-
-
-<%
-    /* =====================================================
-       POST PHOTOS
-       -----------------------------------------------------
-       Multiple photos:
-           item.images
-
-       Single photo:
-           item.image
-    ====================================================== */
-
-    let postPhotos = [];
-
-
-    if (Array.isArray(item.images)) {
-
-        postPhotos = item.images;
-
-    } else if (item.image) {
-
-        postPhotos = [item.image];
-
-    }
-
-
-    const photoCount =
-        postPhotos.length;
-
-
-    const hasPostImage =
-        photoCount > 0;
-
-
-    /* =====================================================
-       POST OWNER
-    ====================================================== */
-
-    const authorName =
-        item.userName || "User";
-
-
-    const authorImage =
-        item.userImage ||
-        (
-            "https://ui-avatars.com/api/?name=" +
-            encodeURIComponent(
-                item.userName || "User"
-            )
-        );
-
-
-    /* =====================================================
-       FULL POST TEXT
-       -----------------------------------------------------
-       IMPORTANT:
-       -----------------------------------------------------
-       No sentence manipulation is performed here.
-
-       The browser/JS determines whether the rendered
-       text exceeds:
-
-           WITHOUT IMAGE = 5 lines
-           WITH IMAGE    = 2.5 lines
-    ====================================================== */
-
-    const fullPostText =
-        item.text
-            ? String(item.text).trim()
-            : "";
-%>
-
-
-<!-- =======================================================
-     POST CARD
-======================================================= -->
+========================================================= -->
 
 <article
-    class="feed-card post-card"
-    data-id="<%= item._id %>"
-    data-type="post"
+    class="feed-post"
+    data-post-id="<%= post._id %>"
 >
 
 
-    <!-- =================================================
-         HEADER
-    ================================================== -->
+    <!-- =====================================================
+         POST HEADER
+    ====================================================== -->
 
-    <div class="feed-header">
+    <header class="feed-post-header">
 
-
-        <!-- =================================================
-             POST OWNER + SUBJECT
-        ================================================== -->
-
-        <div class="feed-user">
-
+        <div class="feed-post-user">
 
             <img
-                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
-                alt="<%= item.userName || 'User' %>"
-                class="avatar-sm"
-                loading="lazy"
-                onerror="this.src='https://ui-avatars.com/api/?name=User'"
+                src="<%= post.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(post.userName || 'User')) %>"
+                alt="<%= post.userName || 'User' %>"
+                class="feed-post-avatar"
             >
 
 
-            <div class="feed-user-info">
+            <div class="feed-post-user-info">
 
+                <strong>
+                    <%= post.userName || "User" %>
+                </strong>
 
-                <!-- =============================================
-                     POST META
-                ============================================== -->
-
-                <div class="post-meta-line">
-
-
-                    <strong class="post-user-name">
-
-                        <%= item.userName || "User" %>
-
-                    </strong>
-
-
-                    <% if (
-                        item.dairyName &&
-                        item.dairyId
-                    ) { %>
-
-
-                        <span class="post-meta-action">
-
-                            updated about
-
-                        </span>
-
-
-                        <!-- =====================================
-                             CLICKABLE DAIRY / ASSET NAME
-                        ====================================== -->
-
-                        <a
-                            href="/dairy/<%= item.dairyId %>"
-                            class="post-subject"
-                            title="View <%= item.dairyName %>"
-                        >
-
-                            <%= item.dairyName %>
-
-                        </a>
-
-
-                    <% } %>
-
-
-                </div>
-
-
-                <!-- =============================================
-                     POST DATE / TIME
-                ============================================== -->
-
-                <small class="post-time">
-
-                    <%= item.dateText %>
-
-                </small>
-
+                <span>
+                    <%= post.dateText || new Date(post.createdAt).toLocaleString() %>
+                </span>
 
             </div>
 
         </div>
 
 
-
         <!-- =================================================
-             DELETE POST
+             DELETE
         ================================================== -->
 
         <% if (
             user &&
             (
-                user.role === "admin" ||
-                (
-                    user._id &&
-                    item.userId &&
-                    user._id.toString() ===
-                    item.userId.toString()
-                )
+                String(post.userId) === String(user._id) ||
+                user.role === "admin"
             )
         ) { %>
 
-
             <button
-                class="delete-post"
-                data-id="<%= item._id %>"
-                title="Delete Post"
-                aria-label="Delete Post"
                 type="button"
+                class="feed-post-menu-button"
+                data-post-id="<%= post._id %>"
+                aria-label="Post options"
             >
 
-                <i
-                    class="bi bi-trash3-fill"
-                    aria-hidden="true"
-                ></i>
+                <i class="bi bi-three-dots-vertical"></i>
 
             </button>
 
-
         <% } %>
 
-
-    </div>
-
+    </header>
 
 
-    <!-- =================================================
-         POST BODY
-         -------------------------------------------------
-         IMPORTANT:
-         -------------------------------------------------
-         No fixed height.
-         No vertical centering.
-         No artificial empty space.
 
-         The body height is determined by:
-             title
-             text
-             images
-             actions
-    ================================================== -->
+    <!-- =====================================================
+         POST CONTENT
+    ====================================================== -->
 
-    <div class="feed-body post-body">
+    <div class="feed-post-content">
 
 
-        <!-- =============================================
+        <!-- =================================================
              TITLE
-        ============================================== -->
+        ================================================== -->
 
-        <% if (item.title) { %>
+        <% if (post.title) { %>
 
+            <h2 class="feed-post-title">
 
-            <h3 class="post-title">
+                <%= post.title %>
 
-                <%= item.title %>
-
-            </h3>
-
-
-        <% } %>
-
-
-
-        <!-- =============================================
-             POST TEXT
-             ------------------------------------------------
-             LINE LIMITS:
-
-             WITHOUT IMAGE:
-                 5 lines
-
-             WITH IMAGE:
-                 2.5 lines
-
-             The text itself is NOT modified.
-
-             CSS/JS controls only how much is visible.
-        ============================================== -->
-
-        <% if (fullPostText) { %>
-
-
-            <div
-                class="
-                    post-text-wrapper
-                    <%= hasPostImage
-                        ? 'post-text-with-image'
-                        : 'post-text-without-image'
-                    %>
-                "
-                data-post-text-wrapper="<%= item._id %>"
-                data-post-text-limit="<%= hasPostImage ? '2.5' : '5' %>"
-            >
-
-
-                <!-- =========================================
-                     TEXT PREVIEW
-                ========================================== -->
-
-                <p
-                    class="
-                        post-text
-                        <%= hasPostImage
-                            ? 'post-text-image-preview'
-                            : 'post-text-line-preview'
-                        %>
-                    "
-                    data-post-text="<%= item._id %>"
-                >
-
-                    <%= fullPostText %>
-
-                </p>
-
-
-
-                <!-- =========================================
-                     SEE MORE
-                     ------------------------------------------------
-                     Hidden initially.
-
-                     post.js should reveal it only when the
-                     rendered text exceeds the appropriate
-                     line limit.
-                ========================================== -->
-
-                <button
-                    type="button"
-                    class="post-see-more"
-                    data-action="see-more"
-                    data-post-id="<%= item._id %>"
-                    hidden
-                >
-
-                    See more
-
-                </button>
-
-
-            </div>
-
+            </h2>
 
         <% } %>
 
 
 
         <!-- =================================================
-             PHOTO GALLERY
+             TEXT
         ================================================== -->
 
-        <% if (photoCount > 0) { %>
+        <% if (post.text) { %>
 
+            <div class="feed-post-text">
 
-            <div
-                class="
-                    post-gallery
-                    post-gallery-count-<%= Math.min(photoCount, 5) %>
-                "
-                data-gallery="<%= item._id %>"
-            >
-
-
-                <!-- =========================================
-                     ONE PHOTO
-                ========================================== -->
-
-                <% if (photoCount === 1) { %>
-
-
-                    <button
-                        type="button"
-                        class="
-                            post-photo
-                            post-photo-single
-                        "
-                        data-photo-index="0"
-                        data-gallery-id="<%= item._id %>"
-                        aria-label="View photo"
-                    >
-
-
-                        <img
-                            src="/uploads/<%= postPhotos[0] %>"
-                            alt="Post image"
-                            class="
-                                feed-img
-                                post-image
-                            "
-                            loading="lazy"
-                        >
-
-
-                    </button>
-
-
-                <% } %>
-
-
-
-                <!-- =========================================
-                     TWO PHOTOS
-                ========================================== -->
-
-                <% if (photoCount === 2) { %>
-
-
-                    <% postPhotos.forEach(
-                        (photo, index) => {
-                    %>
-
-
-                        <button
-                            type="button"
-                            class="post-photo"
-                            data-photo-index="<%= index %>"
-                            data-gallery-id="<%= item._id %>"
-                            aria-label="View photo <%= index + 1 %>"
-                        >
-
-
-                            <img
-                                src="/uploads/<%= photo %>"
-                                alt="Post image <%= index + 1 %>"
-                                class="
-                                    feed-img
-                                    post-image
-                                "
-                                loading="lazy"
-                            >
-
-
-                        </button>
-
-
-                    <% }) %>
-
-
-                <% } %>
-
-
-
-                <!-- =========================================
-                     THREE PHOTOS
-                     -----------------------------------------
-                     First photo is large.
-                     Remaining two are stacked.
-                ========================================== -->
-
-                <% if (photoCount === 3) { %>
-
-
-                    <button
-                        type="button"
-                        class="
-                            post-photo
-                            post-photo-large
-                        "
-                        data-photo-index="0"
-                        data-gallery-id="<%= item._id %>"
-                        aria-label="View photo 1"
-                    >
-
-
-                        <img
-                            src="/uploads/<%= postPhotos[0] %>"
-                            alt="Post image 1"
-                            class="
-                                feed-img
-                                post-image
-                            "
-                            loading="lazy"
-                        >
-
-
-                    </button>
-
-
-                    <div class="post-gallery-side">
-
-
-                        <button
-                            type="button"
-                            class="post-photo"
-                            data-photo-index="1"
-                            data-gallery-id="<%= item._id %>"
-                            aria-label="View photo 2"
-                        >
-
-
-                            <img
-                                src="/uploads/<%= postPhotos[1] %>"
-                                alt="Post image 2"
-                                class="
-                                    feed-img
-                                    post-image
-                                "
-                                loading="lazy"
-                            >
-
-
-                        </button>
-
-
-                        <button
-                            type="button"
-                            class="post-photo"
-                            data-photo-index="2"
-                            data-gallery-id="<%= item._id %>"
-                            aria-label="View photo 3"
-                        >
-
-
-                            <img
-                                src="/uploads/<%= postPhotos[2] %>"
-                                alt="Post image 3"
-                                class="
-                                    feed-img
-                                    post-image
-                                "
-                                loading="lazy"
-                            >
-
-
-                        </button>
-
-
-                    </div>
-
-
-                <% } %>
-
-
-
-                <!-- =========================================
-                     FOUR PHOTOS
-                ========================================== -->
-
-                <% if (photoCount === 4) { %>
-
-
-                    <% postPhotos.forEach(
-                        (photo, index) => {
-                    %>
-
-
-                        <button
-                            type="button"
-                            class="post-photo"
-                            data-photo-index="<%= index %>"
-                            data-gallery-id="<%= item._id %>"
-                            aria-label="View photo <%= index + 1 %>"
-                        >
-
-
-                            <img
-                                src="/uploads/<%= photo %>"
-                                alt="Post image <%= index + 1 %>"
-                                class="
-                                    feed-img
-                                    post-image
-                                "
-                                loading="lazy"
-                            >
-
-
-                        </button>
-
-
-                    <% }) %>
-
-
-                <% } %>
-
-
-
-                <!-- =========================================
-                     FIVE OR MORE PHOTOS
-                     -----------------------------------------
-                     Display five slots.
-
-                     The fifth slot shows the number of
-                     additional photos.
-                ========================================== -->
-
-                <% if (photoCount >= 5) { %>
-
-
-                    <% postPhotos
-                        .slice(0, 5)
-                        .forEach(
-                            (photo, index) => {
-                    %>
-
-
-                        <button
-                            type="button"
-                            class="
-                                post-photo
-                                <%= index === 4
-                                    ? 'post-photo-more'
-                                    : ''
-                                %>
-                            "
-                            data-photo-index="<%= index %>"
-                            data-gallery-id="<%= item._id %>"
-                            aria-label="View photo <%= index + 1 %>"
-                        >
-
-
-                            <img
-                                src="/uploads/<%= photo %>"
-                                alt="Post image <%= index + 1 %>"
-                                class="
-                                    feed-img
-                                    post-image
-                                "
-                                loading="lazy"
-                            >
-
-
-                            <% if (index === 4) { %>
-
-
-                                <span
-                                    class="
-                                        post-photo-more-overlay
-                                    "
-                                >
-
-                                    +<%= photoCount - 4 %>
-
-                                </span>
-
-
-                            <% } %>
-
-
-                        </button>
-
-
-                    <% }) %>
-
-
-                <% } %>
-
+                <%= post.text %>
 
             </div>
 
-
         <% } %>
 
+
+
+        <!-- =================================================
+             IMAGES
+        ================================================== -->
+
+        <%
+            const postImages =
+                Array.isArray(post.images) &&
+                post.images.length
+                    ? post.images
+                    : (
+                        post.image
+                            ? [post.image]
+                            : []
+                    );
+        %>
+
+
+        <% if (postImages.length > 0) { %>
+
+            <div
+                class="feed-post-images images-count-<%= Math.min(postImages.length, 4) %>"
+            >
+
+                <% postImages.forEach(
+                    function (image, index) {
+                %>
+
+                    <div
+                        class="feed-post-image-wrapper"
+                        data-image-index="<%= index %>"
+                    >
+
+                        <img
+                            src="/uploads/<%= image %>"
+                            alt="Post image <%= index + 1 %>"
+                            class="feed-post-image"
+                            loading="lazy"
+                        >
+
+                    </div>
+
+                <% }) %>
+
+            </div>
+
+        <% } %>
 
     </div>
 
 
 
-    <!-- =================================================
-         EXISTING ACTIONS
-         -------------------------------------------------
-         IMPORTANT:
+    <!-- =====================================================
+         POST ACTIONS
+    ====================================================== -->
 
-         DO NOT ADD:
-             likes
-             comments
-             counts
+    <footer class="feed-post-actions">
 
-         Your existing partial handles them.
-    ================================================== -->
+        <button
+            type="button"
+            class="post-action-button like-post-button"
+            data-post-id="<%= post._id %>"
+            data-dairy-id="<%= post.dairy || dairy?._id || '' %>"
+        >
 
-    <%- include("partials/feed-actions", {
-        item,
-        type: "post"
-    }) %>
+            <i class="bi bi-heart"></i>
+
+            <span class="post-like-count">
+                <%= Array.isArray(post.likes)
+                    ? post.likes.length
+                    : (post.likes || 0)
+                %>
+            </span>
+
+        </button>
+
+
+        <button
+            type="button"
+            class="post-action-button comment-post-button"
+            data-post-id="<%= post._id %>"
+        >
+
+            <i class="bi bi-chat"></i>
+
+            <span>
+                <%= Array.isArray(post.comments)
+                    ? post.comments.length
+                    : 0
+                %>
+            </span>
+
+        </button>
+
+    </footer>
 
 
 
-    <!-- =================================================
-         EXISTING COMMENTS
-    ================================================== -->
+    <!-- =====================================================
+         COMMENTS
+    ====================================================== -->
 
-    <%- include("comment-section", {
-        item,
-        user,
-        type: "post"
-    }) %>
+    <% if (
+        Array.isArray(post.comments) &&
+        post.comments.length
+    ) { %>
 
+        <div class="post-comments">
+
+            <% post.comments.forEach(
+                function (comment) {
+            %>
+
+                <div
+                    class="post-comment"
+                    data-comment-id="<%= comment._id %>"
+                >
+
+                    <img
+                        src="<%= comment.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.userName || 'User')) %>"
+                        alt="<%= comment.userName || 'User' %>"
+                        class="comment-avatar"
+                    >
+
+
+                    <div class="comment-content">
+
+                        <strong>
+                            <%= comment.userName || "User" %>
+                        </strong>
+
+
+                        <p>
+                            <%= comment.text %>
+                        </p>
+
+
+                        <span class="comment-date">
+
+                            <%= comment.createdAt
+                                ? new Date(
+                                    comment.createdAt
+                                ).toLocaleString()
+                                : ""
+                            %>
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            <% }) %>
+
+        </div>
+
+    <% } %>
 
 </article>
 
 
 
-<!-- =======================================================
-     FULL POST VIEWER
-     -------------------------------------------------------
-     Used by "See more".
-     
-     Contains the ORIGINAL full text, not the truncated
-     preview.
-======================================================= -->
+<style>
 
-<div
-    class="post-full-viewer"
-    id="postFullViewer-<%= item._id %>"
-    data-post-viewer="<%= item._id %>"
-    hidden
-    aria-hidden="true"
->
+/* =========================================================
+   POST
+========================================================= */
 
+.feed-post {
 
-    <!-- =================================================
-         BACKDROP
-    ================================================== -->
+    width: 100%;
 
-    <div
-        class="post-full-viewer-backdrop"
-        data-post-viewer-close
-    ></div>
+    background: #ffffff;
 
+    border: 1px solid #e5ebe7;
 
+    border-radius: 16px;
 
-    <!-- =================================================
-         FULL POST CARD
-    ================================================== -->
+    margin-bottom: 16px;
 
-    <div
-        class="post-full-viewer-card"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Full post"
-    >
+    overflow: hidden;
 
+}
 
-        <!-- =================================================
-             MODAL HEADER
-        ================================================== -->
 
-        <div class="post-full-viewer-header">
 
+/* =========================================================
+   HEADER
+========================================================= */
 
-            <div class="feed-user">
+.feed-post-header {
 
+    display: flex;
 
-                <img
-                    src="<%= authorImage %>"
-                    alt="<%= authorName %>"
-                    class="avatar-sm"
-                    loading="lazy"
-                    onerror="this.src='https://ui-avatars.com/api/?name=User'"
-                >
+    align-items: center;
 
+    justify-content: space-between;
 
-                <div class="feed-user-info">
+    padding: 14px 16px 10px;
 
+}
 
-                    <div class="post-meta-line">
 
+.feed-post-user {
 
-                        <strong class="post-user-name">
+    display: flex;
 
-                            <%= item.userName || "User" %>
+    align-items: center;
 
-                        </strong>
+    gap: 10px;
 
+    min-width: 0;
 
-                        <% if (
-                            item.dairyName &&
-                            item.dairyId
-                        ) { %>
+}
 
 
-                            <span class="post-meta-action">
+.feed-post-avatar {
 
-                                updated about
+    width: 42px;
 
-                            </span>
+    height: 42px;
 
+    border-radius: 50%;
 
-                            <a
-                                href="/dairy/<%= item.dairyId %>"
-                                class="post-subject"
-                            >
+    object-fit: cover;
 
-                                <%= item.dairyName %>
+    flex-shrink: 0;
 
-                            </a>
+}
 
 
-                        <% } %>
+.feed-post-user-info {
 
+    min-width: 0;
 
-                    </div>
+    display: flex;
 
+    flex-direction: column;
 
-                    <small class="post-time">
+}
 
-                        <%= item.dateText %>
 
-                    </small>
+.feed-post-user-info strong {
 
+    color: #202520;
 
-                </div>
+    font-size: 14px;
 
+}
 
-            </div>
 
+.feed-post-user-info span {
 
+    margin-top: 2px;
 
-            <!-- =============================================
-                 CLOSE
-            ============================================== -->
+    color: #858d88;
 
-            <button
-                type="button"
-                class="post-full-viewer-close"
-                data-post-viewer-close
-                aria-label="Close post"
-            >
+    font-size: 11px;
 
-                <i class="bi bi-x-lg"></i>
+}
 
-            </button>
 
+.feed-post-menu-button {
 
-        </div>
+    width: 38px;
 
+    height: 38px;
 
+    border: none;
 
-        <!-- =================================================
-             FULL TITLE
-        ================================================== -->
+    background: transparent;
 
-        <% if (item.title) { %>
+    color: #777f7a;
 
+    display: flex;
 
-            <h3 class="post-full-viewer-title">
+    align-items: center;
 
-                <%= item.title %>
+    justify-content: center;
 
-            </h3>
+    cursor: pointer;
 
+    font-size: 20px;
 
-        <% } %>
+}
 
 
 
-        <!-- =================================================
-             FULL TEXT
-        ================================================== -->
+/* =========================================================
+   CONTENT
+========================================================= */
 
-        <% if (fullPostText) { %>
+.feed-post-content {
 
+    padding:
+        4px
+        16px
+        16px;
 
-            <div class="post-full-viewer-text">
+}
 
-                <%= fullPostText %>
 
-            </div>
+.feed-post-title {
 
+    margin:
+        4px
+        0
+        8px;
 
-        <% } %>
+    font-size: 21px;
 
+    line-height: 1.3;
 
-    </div>
+    font-weight: 700;
 
+    color: #202520;
 
-</div>
+    overflow-wrap: anywhere;
 
+}
 
 
-<!-- =======================================================
-     PHOTO DATA
-     -------------------------------------------------------
-     Used by post.js for the photo gallery.
-======================================================= -->
+.feed-post-text {
 
-<script
-    type="application/json"
-    class="post-gallery-data"
-    data-gallery-data="<%= item._id %>"
->
-    <%- JSON.stringify(postPhotos) %>
-</script>
+    font-size: 15px;
+
+    line-height: 1.6;
+
+    color: #3f4742;
+
+    white-space: pre-wrap;
+
+    overflow-wrap: anywhere;
+
+    margin-bottom: 14px;
+
+}
+
+
+
+/* =========================================================
+   IMAGES
+========================================================= */
+
+.feed-post-images {
+
+    width: 100%;
+
+    display: grid;
+
+    gap: 4px;
+
+    overflow: hidden;
+
+    border-radius: 12px;
+
+}
+
+
+.feed-post-image-wrapper {
+
+    position: relative;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    background: #f2f5f3;
+
+}
+
+
+.feed-post-image {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+
+/* =========================================================
+   ONE IMAGE
+========================================================= */
+
+.feed-post-images.images-count-1 {
+
+    grid-template-columns: 1fr;
+
+}
+
+
+.feed-post-images.images-count-1
+.feed-post-image-wrapper {
+
+    max-height: 600px;
+
+}
+
+
+.feed-post-images.images-count-1
+.feed-post-image {
+
+    max-height: 600px;
+
+    object-fit: contain;
+
+}
+
+
+
+/* =========================================================
+   TWO IMAGES
+========================================================= */
+
+.feed-post-images.images-count-2 {
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+}
+
+
+.feed-post-images.images-count-2
+.feed-post-image-wrapper {
+
+    aspect-ratio: 1 / 1;
+
+}
+
+
+
+/* =========================================================
+   THREE IMAGES
+========================================================= */
+
+.feed-post-images.images-count-3 {
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+}
+
+
+.feed-post-images.images-count-3
+.feed-post-image-wrapper:first-child {
+
+    grid-row:
+        span 2;
+
+    aspect-ratio:
+        1 / 1;
+
+}
+
+
+.feed-post-images.images-count-3
+.feed-post-image-wrapper:not(:first-child) {
+
+    aspect-ratio:
+        1 / 1;
+
+}
+
+
+
+/* =========================================================
+   FOUR OR MORE
+========================================================= */
+
+.feed-post-images.images-count-4 {
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+}
+
+
+.feed-post-images.images-count-4
+.feed-post-image-wrapper {
+
+    aspect-ratio:
+        1 / 1;
+
+}
+
+
+
+/* =========================================================
+   ACTIONS
+========================================================= */
+
+.feed-post-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    padding:
+        8px
+        12px;
+
+    border-top:
+        1px solid #edf1ee;
+
+}
+
+
+.post-action-button {
+
+    min-height: 38px;
+
+    padding:
+        0
+        10px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #68716b;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+}
+
+
+.post-action-button i {
+
+    font-size: 18px;
+
+}
+
+
+
+/* =========================================================
+   COMMENTS
+========================================================= */
+
+.post-comments {
+
+    border-top:
+        1px solid #edf1ee;
+
+    padding:
+        10px
+        16px
+        14px;
+
+}
+
+
+.post-comment {
+
+    display: flex;
+
+    gap: 9px;
+
+    margin-bottom: 12px;
+
+}
+
+
+.post-comment:last-child {
+
+    margin-bottom: 0;
+
+}
+
+
+.comment-avatar {
+
+    width: 32px;
+
+    height: 32px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+    flex-shrink: 0;
+
+}
+
+
+.comment-content {
+
+    min-width: 0;
+
+}
+
+
+.comment-content strong {
+
+    display: block;
+
+    font-size: 12px;
+
+    color: #252b27;
+
+}
+
+
+.comment-content p {
+
+    margin:
+        2px
+        0;
+
+    font-size: 13px;
+
+    line-height: 1.45;
+
+    color: #4e5651;
+
+    white-space: pre-wrap;
+
+    overflow-wrap: anywhere;
+
+}
+
+
+.comment-date {
+
+    font-size: 10px;
+
+    color: #909792;
+
+}
+
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .feed-post-title {
+
+        font-size: 19px;
+
+    }
+
+
+    .feed-post-text {
+
+        font-size: 14px;
+
+    }
+
+
+    .feed-post-header {
+
+        padding:
+            12px
+            12px
+            8px;
+
+    }
+
+
+    .feed-post-content {
+
+        padding:
+            4px
+            12px
+            12px;
+
+    }
+
+}
+
+</style>
