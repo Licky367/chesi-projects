@@ -126,7 +126,9 @@
 
             <div class="post-modal-title">
 
-                <strong>New Update</strong>
+                <strong>
+                    New Update
+                </strong>
 
                 <span>
                     <%= dairy.name %>
@@ -135,7 +137,6 @@
             </div>
 
 
-            <!-- Spacer -->
             <div class="post-header-spacer"></div>
 
         </header>
@@ -149,9 +150,37 @@
         <main class="post-modal-body">
 
 
-            <!-- =============================================
+            <!-- =================================================
+                 POST TITLE
+            ================================================== -->
+
+            <div class="post-title-wrapper">
+
+                <input
+                    type="text"
+                    id="postTitle"
+                    name="title"
+                    maxlength="150"
+                    placeholder="Post title..."
+                    aria-label="Post title"
+                    autocomplete="off"
+                >
+
+                <div class="post-title-counter">
+
+                    <span id="titleCharacterCounter">
+                        0/150
+                    </span>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
                  IMAGE PREVIEW
-            ============================================== -->
+            ================================================== -->
 
             <div
                 id="imagePreviewContainer"
@@ -159,27 +188,10 @@
                 hidden
             >
 
-                <div class="image-preview-wrapper">
-
-                    <img
-                        id="imagePreview"
-                        src=""
-                        alt="Selected image"
-                        class="image-preview"
-                    >
-
-                    <button
-                        type="button"
-                        id="removeImage"
-                        class="remove-image-button"
-                        aria-label="Remove image"
-                    >
-
-                        <i class="bi bi-x-lg"></i>
-
-                    </button>
-
-                </div>
+                <div
+                    id="imagePreviewGrid"
+                    class="image-preview-grid"
+                ></div>
 
             </div>
 
@@ -203,6 +215,37 @@
             >
 
 
+                <!-- =================================================
+                     HIDDEN TITLE
+                     -------------------------------------------------
+                     The visible title input is outside the form
+                     because the modal body and composer are separate.
+
+                     JavaScript copies its value here before submit.
+                ================================================== -->
+
+                <input
+                    type="hidden"
+                    id="formPostTitle"
+                    name="title"
+                    value=""
+                >
+
+
+                <!-- =========================================
+                     IMAGE INPUT
+                ========================================== -->
+
+                <input
+                    type="file"
+                    id="postImage"
+                    name="images"
+                    accept="image/*"
+                    multiple
+                    hidden
+                >
+
+
                 <!-- =========================================
                      MESSAGE COMPOSER
                 ========================================== -->
@@ -217,22 +260,13 @@
                     <label
                         for="postImage"
                         class="composer-icon-button attachment-button"
-                        aria-label="Attach image"
-                        title="Attach image"
+                        aria-label="Attach images"
+                        title="Attach images"
                     >
 
                         <i class="bi bi-paperclip"></i>
 
                     </label>
-
-
-                    <input
-                        type="file"
-                        id="postImage"
-                        name="image"
-                        accept="image/*"
-                        hidden
-                    >
 
 
 
@@ -304,10 +338,15 @@
 .create-post-card {
 
     width: 100%;
+
     background: #ffffff;
+
     border-radius: 16px;
+
     padding: 16px;
+
     margin-bottom: 16px;
+
     box-sizing: border-box;
 
     border: 1px solid #e7eee9;
@@ -318,20 +357,25 @@
 .create-post-header {
 
     display: flex;
+
     align-items: center;
+
     gap: 12px;
+
 }
 
 
 .create-post-avatar {
 
     flex-shrink: 0;
+
 }
 
 
 .avatar-sm {
 
     width: 44px;
+
     height: 44px;
 
     border-radius: 50%;
@@ -348,6 +392,7 @@
     min-width: 0;
 
     font-size: 14px;
+
     line-height: 1.5;
 
     color: #555;
@@ -382,6 +427,7 @@
     border-radius: 24px;
 
     display: flex;
+
     align-items: center;
 
     color: #888;
@@ -426,6 +472,7 @@
     inset: 0;
 
     width: 100vw;
+
     height: 100dvh;
 
     background: #ffffff;
@@ -451,6 +498,7 @@
     position: relative;
 
     width: 100%;
+
     height: 100%;
 
     display: flex;
@@ -479,8 +527,7 @@
 
     align-items: center;
 
-    padding:
-        0 16px;
+    padding: 0 16px;
 
     box-sizing: border-box;
 
@@ -494,6 +541,7 @@
 .post-back-button {
 
     width: 44px;
+
     height: 44px;
 
     border: none;
@@ -505,6 +553,7 @@
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
     cursor: pointer;
@@ -594,7 +643,83 @@
 
 
 /* =========================================================
-   IMAGE PREVIEW
+   POST TITLE
+========================================================= */
+
+.post-title-wrapper {
+
+    position: relative;
+
+    width: 100%;
+
+    margin-bottom: 20px;
+
+}
+
+
+#postTitle {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    border: none;
+
+    outline: none;
+
+    background: transparent;
+
+    padding: 6px 0 10px;
+
+    margin: 0;
+
+    font-family: inherit;
+
+    font-size: 23px;
+
+    font-weight: 700;
+
+    color: #202520;
+
+    border-bottom: 1px solid #e2e9e4;
+
+}
+
+
+#postTitle::placeholder {
+
+    color: #a0a7a2;
+
+    font-weight: 600;
+
+}
+
+
+#postTitle:focus {
+
+    border-bottom-color: #198754;
+
+}
+
+
+.post-title-counter {
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    padding-top: 5px;
+
+    font-size: 10px;
+
+    color: #8a928d;
+
+}
+
+
+
+/* =========================================================
+   IMAGE PREVIEW CONTAINER
 ========================================================= */
 
 .image-preview-container {
@@ -604,15 +729,32 @@
 }
 
 
-.image-preview-wrapper {
+.image-preview-grid {
+
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 10px;
+
+}
+
+
+
+/* =========================================================
+   INDIVIDUAL IMAGE PREVIEW
+========================================================= */
+
+.image-preview-item {
 
     position: relative;
 
     width: 100%;
 
-    max-width: 600px;
-
-    margin: 0 auto;
+    aspect-ratio: 1 / 1;
 
     border-radius: 14px;
 
@@ -623,28 +765,75 @@
 }
 
 
-.image-preview {
-
-    display: block;
+.image-preview-item img {
 
     width: 100%;
 
-    max-height: 55vh;
+    height: 100%;
 
-    object-fit: contain;
+    display: block;
+
+    object-fit: cover;
 
 }
 
+
+
+/* =========================================================
+   IMAGE NUMBER
+========================================================= */
+
+.image-preview-number {
+
+    position: absolute;
+
+    left: 8px;
+
+    bottom: 8px;
+
+    min-width: 24px;
+
+    height: 24px;
+
+    padding: 0 7px;
+
+    box-sizing: border-box;
+
+    border-radius: 12px;
+
+    background: rgba(0, 0, 0, 0.6);
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+}
+
+
+
+/* =========================================================
+   REMOVE IMAGE BUTTON
+========================================================= */
 
 .remove-image-button {
 
     position: absolute;
 
-    top: 10px;
-    right: 10px;
+    top: 8px;
 
-    width: 38px;
-    height: 38px;
+    right: 8px;
+
+    width: 34px;
+
+    height: 34px;
 
     border: none;
 
@@ -657,11 +846,91 @@
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
     cursor: pointer;
 
-    font-size: 16px;
+    font-size: 14px;
+
+    padding: 0;
+
+}
+
+
+.remove-image-button:hover {
+
+    background: rgba(0, 0, 0, 0.8);
+
+}
+
+
+
+/* =========================================================
+   ADD MORE IMAGES
+========================================================= */
+
+.add-more-images {
+
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+
+    border: 2px dashed #cbd8cf;
+
+    border-radius: 14px;
+
+    background: #f8faf8;
+
+    color: #198754;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+    gap: 6px;
+
+}
+
+
+.add-more-images i {
+
+    font-size: 24px;
+
+}
+
+
+.add-more-images:hover {
+
+    background: #f1f7f3;
+
+    border-color: #198754;
+
+}
+
+
+
+/* =========================================================
+   IMAGE COUNT
+========================================================= */
+
+.image-count-message {
+
+    margin-top: 10px;
+
+    text-align: center;
+
+    font-size: 11px;
+
+    color: #7d857f;
 
 }
 
@@ -690,11 +959,6 @@
 
 }
 
-
-
-/* =========================================================
-   FORM
-========================================================= */
 
 .post-form {
 
@@ -745,6 +1009,7 @@
     flex: 0 0 42px;
 
     width: 42px;
+
     height: 42px;
 
     border: none;
@@ -756,6 +1021,7 @@
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
     cursor: pointer;
@@ -893,6 +1159,7 @@
     flex: 0 0 42px;
 
     width: 42px;
+
     height: 42px;
 
     border: none;
@@ -906,6 +1173,7 @@
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
     cursor: pointer;
@@ -976,6 +1244,13 @@
     }
 
 
+    #postTitle {
+
+        font-size: 21px;
+
+    }
+
+
     .post-composer-wrapper {
 
         padding:
@@ -1000,6 +1275,7 @@
     .composer-icon-button {
 
         width: 40px;
+
         height: 40px;
 
         flex-basis: 40px;
@@ -1012,6 +1288,7 @@
     .composer-send-button {
 
         width: 40px;
+
         height: 40px;
 
         flex-basis: 40px;
@@ -1026,6 +1303,16 @@
         font-size: 15px;
 
         min-height: 38px;
+
+    }
+
+
+    .image-preview-grid {
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 8px;
 
     }
 
@@ -1049,6 +1336,13 @@
     .post-modal-body {
 
         padding: 10px;
+
+    }
+
+
+    #postTitle {
+
+        font-size: 19px;
 
     }
 
@@ -1091,6 +1385,12 @@
         const closeButton =
             document.getElementById("closePostModal");
 
+        const titleInput =
+            document.getElementById("postTitle");
+
+        const formTitleInput =
+            document.getElementById("formPostTitle");
+
         const textarea =
             document.getElementById("postText");
 
@@ -1100,11 +1400,11 @@
         const imagePreviewContainer =
             document.getElementById("imagePreviewContainer");
 
-        const imagePreview =
-            document.getElementById("imagePreview");
+        const imagePreviewGrid =
+            document.getElementById("imagePreviewGrid");
 
-        const removeImage =
-            document.getElementById("removeImage");
+        const titleCharacterCounter =
+            document.getElementById("titleCharacterCounter");
 
         const characterCounter =
             document.getElementById("characterCounter");
@@ -1124,11 +1424,13 @@
             !modal ||
             !openComposer ||
             !closeButton ||
+            !titleInput ||
+            !formTitleInput ||
             !textarea ||
             !imageInput ||
             !imagePreviewContainer ||
-            !imagePreview ||
-            !removeImage ||
+            !imagePreviewGrid ||
+            !titleCharacterCounter ||
             !characterCounter ||
             !sendButton ||
             !form
@@ -1141,6 +1443,26 @@
             return;
 
         }
+
+
+        /* =================================================
+           CONSTANTS
+        ================================================== */
+
+        const MAX_IMAGES = 10;
+
+
+
+        /* =================================================
+           SELECTED IMAGES
+           
+           We maintain our own array because replacing
+           imageInput.files directly is not reliable for
+           removing individual files.
+        ================================================== */
+
+        let selectedImages = [];
+
 
 
         /* =================================================
@@ -1161,11 +1483,12 @@
 
             setTimeout(function () {
 
-                textarea.focus();
+                titleInput.focus();
 
             }, 100);
 
         }
+
 
 
         /* =================================================
@@ -1186,8 +1509,25 @@
         }
 
 
+
         /* =================================================
-           CHARACTER COUNTER
+           TITLE COUNTER
+        ================================================== */
+
+        function updateTitleCounter() {
+
+            const length =
+                titleInput.value.length;
+
+            titleCharacterCounter.textContent =
+                length + "/150";
+
+        }
+
+
+
+        /* =================================================
+           TEXT COUNTER
         ================================================== */
 
         function updateCharacterCounter() {
@@ -1201,23 +1541,27 @@
         }
 
 
+
         /* =================================================
            SEND BUTTON
         ================================================== */
 
         function updateSendButton() {
 
+            const hasTitle =
+                titleInput.value.trim().length > 0;
+
             const hasText =
                 textarea.value.trim().length > 0;
 
-            const hasImage =
-                imageInput.files &&
-                imageInput.files.length > 0;
+            const hasImages =
+                selectedImages.length > 0;
 
             sendButton.disabled =
-                !(hasText || hasImage);
+                !(hasTitle || hasText || hasImages);
 
         }
+
 
 
         /* =================================================
@@ -1240,6 +1584,340 @@
         }
 
 
+
+        /* =================================================
+           SYNC FILE INPUT
+           
+           This allows individual files to be removed while
+           keeping the final multipart upload as name="images".
+        ================================================== */
+
+        function syncFileInput() {
+
+            const dataTransfer =
+                new DataTransfer();
+
+
+            selectedImages.forEach(function (file) {
+
+                dataTransfer.items.add(file);
+
+            });
+
+
+            imageInput.files =
+                dataTransfer.files;
+
+        }
+
+
+
+        /* =================================================
+           RENDER IMAGE PREVIEWS
+        ================================================== */
+
+        function renderImagePreviews() {
+
+            imagePreviewGrid.innerHTML = "";
+
+
+            if (selectedImages.length === 0) {
+
+                imagePreviewContainer.hidden = true;
+
+                return;
+
+            }
+
+
+            imagePreviewContainer.hidden = false;
+
+
+            selectedImages.forEach(
+                function (file, index) {
+
+                    const reader =
+                        new FileReader();
+
+
+                    reader.onload =
+                        function (event) {
+
+                            const item =
+                                document.createElement("div");
+
+                            item.className =
+                                "image-preview-item";
+
+
+                            const image =
+                                document.createElement("img");
+
+                            image.src =
+                                event.target.result;
+
+                            image.alt =
+                                "Selected image " +
+                                (index + 1);
+
+
+                            const removeButton =
+                                document.createElement("button");
+
+                            removeButton.type =
+                                "button";
+
+                            removeButton.className =
+                                "remove-image-button";
+
+                            removeButton.setAttribute(
+                                "aria-label",
+                                "Remove image " +
+                                (index + 1)
+                            );
+
+
+                            removeButton.innerHTML =
+                                '<i class="bi bi-x-lg"></i>';
+
+
+                            removeButton.addEventListener(
+                                "click",
+                                function () {
+
+                                    removeImage(index);
+
+                                }
+                            );
+
+
+                            const number =
+                                document.createElement("span");
+
+                            number.className =
+                                "image-preview-number";
+
+                            number.textContent =
+                                index + 1;
+
+
+                            item.appendChild(image);
+
+                            item.appendChild(number);
+
+                            item.appendChild(removeButton);
+
+                            imagePreviewGrid.appendChild(item);
+
+                        };
+
+
+                    reader.readAsDataURL(file);
+
+                }
+            );
+
+
+            /* =================================================
+               ADD MORE BUTTON
+            ================================================== */
+
+            if (
+                selectedImages.length < MAX_IMAGES
+            ) {
+
+                const addMore =
+                    document.createElement("label");
+
+                addMore.className =
+                    "add-more-images";
+
+                addMore.setAttribute(
+                    "for",
+                    "postImage"
+                );
+
+
+                addMore.innerHTML =
+                    '<i class="bi bi-plus-lg"></i>' +
+                    '<span>Add photos</span>';
+
+
+                imagePreviewGrid.appendChild(
+                    addMore
+                );
+
+            }
+
+
+            /* =================================================
+               IMAGE COUNT
+            ================================================== */
+
+            const countMessage =
+                document.createElement("div");
+
+            countMessage.className =
+                "image-count-message";
+
+            countMessage.textContent =
+                selectedImages.length +
+                " of " +
+                MAX_IMAGES +
+                " photos selected";
+
+
+            imagePreviewContainer.appendChild(
+                countMessage
+            );
+
+        }
+
+
+
+        /* =================================================
+           REMOVE IMAGE
+        ================================================== */
+
+        function removeImage(index) {
+
+            if (
+                index < 0 ||
+                index >= selectedImages.length
+            ) {
+
+                return;
+
+            }
+
+
+            selectedImages.splice(
+                index,
+                1
+            );
+
+
+            syncFileInput();
+
+            renderImagePreviews();
+
+            updateSendButton();
+
+        }
+
+
+
+        /* =================================================
+           ADD SELECTED IMAGES
+        ================================================== */
+
+        function addImages(files) {
+
+            const incomingFiles =
+                Array.from(files);
+
+
+            if (!incomingFiles.length) {
+
+                return;
+
+            }
+
+
+            for (
+                let i = 0;
+                i < incomingFiles.length;
+                i++
+            ) {
+
+                const file =
+                    incomingFiles[i];
+
+
+                /* =========================================
+                   IMAGE CHECK
+                ========================================== */
+
+                if (
+                    !file.type.startsWith("image/")
+                ) {
+
+                    continue;
+
+                }
+
+
+                /* =========================================
+                   MAXIMUM IMAGE CHECK
+                ========================================== */
+
+                if (
+                    selectedImages.length >= MAX_IMAGES
+                ) {
+
+                    break;
+
+                }
+
+
+                /* =========================================
+                   DUPLICATE CHECK
+                ========================================== */
+
+                const duplicate =
+                    selectedImages.some(
+                        function (existingFile) {
+
+                            return (
+                                existingFile.name === file.name &&
+                                existingFile.size === file.size &&
+                                existingFile.lastModified ===
+                                    file.lastModified
+                            );
+
+                        }
+                    );
+
+
+                if (duplicate) {
+
+                    continue;
+
+                }
+
+
+                selectedImages.push(file);
+
+            }
+
+
+            syncFileInput();
+
+            renderImagePreviews();
+
+            updateSendButton();
+
+        }
+
+
+
+        /* =================================================
+           TITLE INPUT
+        ================================================== */
+
+        titleInput.addEventListener(
+            "input",
+            function () {
+
+                updateTitleCounter();
+
+                updateSendButton();
+
+            }
+        );
+
+
+
         /* =================================================
            TEXT INPUT
         ================================================== */
@@ -1258,6 +1936,7 @@
         );
 
 
+
         /* =================================================
            OPEN COMPOSER
         ================================================== */
@@ -1271,10 +1950,6 @@
             }
         );
 
-
-        /* =================================================
-           KEYBOARD OPEN
-        ================================================== */
 
         openComposer.addEventListener(
             "keydown",
@@ -1295,8 +1970,9 @@
         );
 
 
+
         /* =================================================
-           CLOSE
+           CLOSE BUTTON
         ================================================== */
 
         closeButton.addEventListener(
@@ -1307,6 +1983,7 @@
 
             }
         );
+
 
 
         /* =================================================
@@ -1330,89 +2007,22 @@
         );
 
 
+
         /* =================================================
-           IMAGE SELECTED
+           IMAGE SELECTION
         ================================================== */
 
         imageInput.addEventListener(
             "change",
             function () {
 
-                const file =
-                    imageInput.files[0];
-
-                if (!file) {
-
-                    imagePreviewContainer.hidden = true;
-
-                    imagePreview.src = "";
-
-                    updateSendButton();
-
-                    return;
-
-                }
-
-
-                if (
-                    !file.type.startsWith("image/")
-                ) {
-
-                    imageInput.value = "";
-
-                    imagePreviewContainer.hidden = true;
-
-                    imagePreview.src = "";
-
-                    updateSendButton();
-
-                    return;
-
-                }
-
-
-                const reader =
-                    new FileReader();
-
-
-                reader.onload =
-                    function (event) {
-
-                        imagePreview.src =
-                            event.target.result;
-
-                        imagePreviewContainer.hidden =
-                            false;
-
-                    };
-
-
-                reader.readAsDataURL(file);
-
-                updateSendButton();
+                addImages(
+                    imageInput.files
+                );
 
             }
         );
 
-
-        /* =================================================
-           REMOVE IMAGE
-        ================================================== */
-
-        removeImage.addEventListener(
-            "click",
-            function () {
-
-                imageInput.value = "";
-
-                imagePreview.src = "";
-
-                imagePreviewContainer.hidden = true;
-
-                updateSendButton();
-
-            }
-        );
 
 
         /* =================================================
@@ -1423,26 +2033,57 @@
             "submit",
             function (event) {
 
+                const title =
+                    titleInput.value.trim();
+
                 const text =
                     textarea.value.trim();
 
-                const hasImage =
-                    imageInput.files &&
-                    imageInput.files.length > 0;
+                const hasImages =
+                    selectedImages.length > 0;
 
 
-                if (!text && !hasImage) {
+                /* =========================================
+                   VALIDATION
+                ========================================== */
+
+                if (
+                    !title &&
+                    !text &&
+                    !hasImages
+                ) {
 
                     event.preventDefault();
 
-                    textarea.focus();
+                    titleInput.focus();
 
                     return;
 
                 }
 
 
-                sendButton.disabled = true;
+                /* =========================================
+                   COPY TITLE INTO FORM
+                ========================================== */
+
+                formTitleInput.value =
+                    title;
+
+
+                /* =========================================
+                   FINAL FILE SYNC
+                ========================================== */
+
+                syncFileInput();
+
+
+                /* =========================================
+                   DISABLE SEND BUTTON
+                ========================================== */
+
+                sendButton.disabled =
+                    true;
+
 
                 sendButton.innerHTML =
                     '<i class="bi bi-hourglass-split"></i>';
@@ -1451,9 +2092,12 @@
         );
 
 
+
         /* =================================================
            INITIAL STATE
-        ================================================= */
+        ================================================== */
+
+        updateTitleCounter();
 
         updateCharacterCounter();
 
@@ -1462,6 +2106,7 @@
         resizeTextarea();
 
     }
+
 
 
     /* =====================================================
