@@ -249,6 +249,144 @@ const maintenanceSchema = new mongoose.Schema(
 
 
 // ==========================================================
+// ASSET UPDATE SUBDOCUMENT
+// ==========================================================
+
+const assetSchema = new mongoose.Schema(
+
+  {
+
+    /*
+     * Actual Dairy document representing
+     * the manually added asset.
+     */
+
+    assetId: {
+
+      type: mongoose.Schema.Types.ObjectId,
+
+      ref: "Dairy",
+
+      default: null
+
+    },
+
+
+    /*
+     * Asset name.
+     */
+
+    name: {
+
+      type: String,
+
+      default: ""
+
+    },
+
+
+    /*
+     * Asset type.
+     */
+
+    type: {
+
+      type: String,
+
+      default: ""
+
+    },
+
+
+    /*
+     * Original buying price.
+     */
+
+    buyingPrice: {
+
+      type: Number,
+
+      default: 0
+
+    },
+
+
+    /*
+     * Current estimated worth.
+     */
+
+    currentWorth: {
+
+      type: Number,
+
+      default: 0
+
+    },
+
+
+    /*
+     * Asset description.
+     */
+
+    description: {
+
+      type: String,
+
+      default: ""
+
+    },
+
+
+    /*
+     * Physical condition.
+     */
+
+    condition: {
+
+      type: String,
+
+      default: ""
+
+    },
+
+
+    /*
+     * Physical location.
+     */
+
+    location: {
+
+      type: String,
+
+      default: ""
+
+    },
+
+
+    /*
+     * Asset status.
+     */
+
+    status: {
+
+      type: String,
+
+      default: "active"
+
+    }
+
+  },
+
+  {
+
+    _id: false
+
+  }
+
+);
+
+
+// ==========================================================
 // UPDATE SCHEMA
 // ==========================================================
 
@@ -264,7 +402,7 @@ const updateSchema = new mongoose.Schema(
 
       type: mongoose.Schema.Types.ObjectId,
 
-ref: "Dairy",
+      ref: "Dairy",
 
       required: true,
 
@@ -313,7 +451,9 @@ ref: "Dairy",
 
         "medical",
 
-        "maintenance"
+        "maintenance",
+
+        "asset"
 
       ],
 
@@ -408,6 +548,19 @@ ref: "Dairy",
 
       default: undefined
 
+    },
+
+
+    // ------------------------------------------------------
+    // ASSET
+    // ------------------------------------------------------
+
+    asset: {
+
+      type: assetSchema,
+
+      default: undefined
+
     }
 
   },
@@ -426,5 +579,10 @@ ref: "Dairy",
 // ==========================================================
 
 module.exports =
+
   mongoose.models.Update ||
-  mongoose.model("Update", updateSchema);
+
+  mongoose.model(
+    "Update",
+    updateSchema
+  );
