@@ -1,13 +1,20 @@
+// ==========================================================
+// services/networth/add.js
+// ==========================================================
+
 const mongoose =
     require("mongoose");
 
 const Dairy =
     require("../../models/dairy");
 
+const Update =
+    require("../../models/Update");
 
-/* ==========================================================
-   GET PARENT DAIRY FARM
-========================================================== */
+
+// ==========================================================
+// GET PARENT DAIRY FARM
+// ==========================================================
 
 async function getParentDairyFarm(id) {
 
@@ -22,10 +29,8 @@ async function getParentDairyFarm(id) {
 
 
     /*
-     * A Dairy Farm is identified by a negative
-     * Dairy code.
-     *
-     * We also verify the record exists.
+     * A Dairy Farm is identified by
+     * a negative Dairy code.
      */
 
     const dairy =
@@ -46,14 +51,28 @@ async function getParentDairyFarm(id) {
 }
 
 
-/* ==========================================================
-   CREATE ASSET
-========================================================== */
+// ==========================================================
+// CREATE ASSET
+// ==========================================================
+//
+// Creates:
+//
+// 1. The actual Dairy asset
+// 2. The corresponding Update feed record
+//
+// The feed record belongs to the PARENT DAIRY FARM.
+//
+// ==========================================================
 
 async function createAsset(
     dairyFarmId,
-    assetData
+    assetData,
+    user
 ) {
+
+    // ======================================================
+    // VALIDATE DAIRY FARM ID
+    // ======================================================
 
     if (
         !dairyFarmId ||
@@ -75,10 +94,9 @@ async function createAsset(
     }
 
 
-    /*
-     * Verify that the parent is actually
-     * a Dairy Farm.
-     */
+    // ======================================================
+    // VERIFY PARENT DAIRY FARM
+    // ======================================================
 
     const parentFarm =
         await Dairy.findOne({
@@ -107,9 +125,9 @@ async function createAsset(
     }
 
 
-    /*
-     * Normalize numeric values.
-     */
+    // ======================================================
+    // NORMALIZE NUMERIC VALUES
+    // ======================================================
 
     const buyingPrice =
         Number(
@@ -123,19 +141,21 @@ async function createAsset(
         );
 
 
-    /*
-     * Build the new asset.
-     *
-     * IMPORTANT:
-     *
-     * code is intentionally NOT supplied.
-     *
-     * This makes the record a manual asset rather
-     * than an identified Dairy animal.
-     *
-     * The parent relationship is represented by
-     * assetCode = parentFarm.code.
-     */
+    // ======================================================
+    // BUILD ASSET
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // No "code" is supplied.
+    //
+    // Therefore this remains a manual asset.
+    //
+    // The relationship to the parent Dairy Farm is:
+    //
+    //     assetCode = parentFarm.code
+    //
+    // ======================================================
 
     const asset =
         new Dairy({
@@ -172,25 +192,151 @@ async function createAsset(
             status:
                 assetData.status || "active",
 
-            /*
-             * Parent Dairy Farm.
-             *
-             * This is the important relationship.
-             */
-
             assetCode:
                 parentFarm.code
 
         });
 
 
+    // ======================================================
+    // SAVE ACTUAL ASSET FIRST
+    // ======================================================
+
     await asset.save();
 
+
+    // ======================================================
+    // PREPARE USER INFORMATION
+    // ======================================================
+
+    let userId = null;
+
+    let userName = "User";
+
+
+    if (user) {
+
+        /*
+         * Support either:
+         *
+         * req.session.user._id
+         *
+         * or
+         *
+         * req.session.user.id
+         */
+
+        userId =
+            user._id ||
+            user.id ||
+            null;
+
+
+        userName =
+            user.name ||
+            user.userName ||
+            user.username ||
+            "User";
+
+    }
+
+
+    // ======================================================
+    // CREATE ASSET FEED UPDATE
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // "dairy" points to the PARENT FARM.
+    //
+    // This means the event appears immediately when
+    // viewing the Dairy Farm feed.
+    //
+    // ======================================================
+
+    try {
+
+        await Update.create({
+
+            dairy:
+                parentFarm._id,
+
+            user:
+                userId,
+
+            userName:
+                userName,
+
+            type:
+                "asset",
+
+            asset: {
+
+                name:
+                    asset.name,
+
+                type:
+                    asset.type,
+
+                buyingPrice:
+                    asset.buyingPrice,
+
+                currentWorth:
+                    asset.currentWorth,
+
+                description:
+                    asset.description,
+
+                condition:
+                    asset.condition,
+
+                location:
+                    asset.location,
+
+                status:
+                    asset.status,
+
+                assetId:
+                    asset._id,
+
+                parentFarmCode:
+                    parentFarm.code
+
+            }
+
+        });
+
+    } catch (updateError) {
+
+        /*
+         * The actual asset has already been saved.
+         *
+         * We do NOT delete the asset here automatically.
+         *
+         * The feed record failing should not cause the
+         * newly-created financial asset to disappear.
+         */
+
+        console.error(
+            "Asset Feed Update Creation Error:",
+            updateError
+        );
+
+    }
+
+
+    // ======================================================
+    // RETURN ASSET
+    // ======================================================
 
     return asset;
 
 }
 
+
+// ==========================================================
+// EXPORTS
+// ==========================================================
 
 module.exports = {
 
