@@ -1080,11 +1080,31 @@ if (
 
 // ==========================================================
 // STRUCTURE TYPES
+//
+// IMPORTANT:
+//
+// `structureTypesList` may not be supplied by the controller
+// when this view is rendered through:
+//
+//     /networth/structure/:id/add
+//
+// Referencing an undeclared EJS variable directly causes:
+//
+//     structureTypesList is not defined
+//
+// `typeof` safely checks whether the variable exists before
+// attempting to use it.
+//
+// This preserves the existing fallback structure types and
+// does not change the /add route or its functionality.
 // ==========================================================
 
 const structureTypes =
+    typeof structureTypesList !== "undefined" &&
     Array.isArray(structureTypesList)
+
         ? [...structureTypesList]
+
         : [
 
             "machine",
@@ -1126,8 +1146,10 @@ const statusValues =
 // PARENT DAIRY FARMS
 //
 // Controller should preferably provide `structures` as
-// Dairy Farm records. The template additionally filters
-// them using their negative code.
+// Dairy Farm records.
+//
+// The template additionally filters them using their
+// negative code.
 // ==========================================================
 
 const parentDairyFarms =
@@ -1235,7 +1257,7 @@ const parentDairyFarms =
 
             <!-- =================================================
                  PROFILE IMAGE
-            ================================================== -->
+            ================================================= -->
 
             <div class="profile-image-section">
 
@@ -2197,7 +2219,7 @@ const parentDairyFarms =
 
             <!-- =================================================
                  MEDICAL ATTENTION
-                 
+
                  Only meaningful for animals.
             ================================================== -->
 
