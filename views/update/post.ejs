@@ -115,11 +115,20 @@
              POST TITLE
         ================================================== -->
 
-        <% if (item.title) { %>
+        <% if (
+            item.title &&
+            item.title.trim()
+        ) { %>
 
-            <h3 class="feed-post-title">
-                <%= item.title %>
-            </h3>
+            <div class="feed-post-title-wrapper">
+
+                <div class="feed-post-title-accent"></div>
+
+                <h3 class="feed-post-title">
+                    <%= item.title %>
+                </h3>
+
+            </div>
 
         <% } %>
 
@@ -129,7 +138,10 @@
              POST TEXT
         ================================================== -->
 
-        <% if (item.text) { %>
+        <% if (
+            item.text &&
+            item.text.trim()
+        ) { %>
 
             <div class="feed-post-text">
 
@@ -184,7 +196,7 @@
 
             <!-- =================================================
                  BACKWARD COMPATIBILITY
-                 FOR OLD POSTS HAVING ONE IMAGE
+                 FOR OLD POSTS WITH ONE IMAGE
             ================================================== -->
 
             <div class="feed-post-images single-image">
@@ -227,7 +239,14 @@
             aria-label="Like post"
         >
 
-            <i class="bi bi-heart"></i>
+            <i
+                class="bi bi-heart"
+                aria-hidden="true"
+            ></i>
+
+            <span class="post-like-label">
+                Like
+            </span>
 
             <span class="post-like-count">
 
@@ -253,7 +272,14 @@
             aria-label="Comment on post"
         >
 
-            <i class="bi bi-chat"></i>
+            <i
+                class="bi bi-chat"
+                aria-hidden="true"
+            ></i>
+
+            <span class="post-comment-label">
+                Comment
+            </span>
 
             <span class="post-comment-count">
 
@@ -272,16 +298,62 @@
 
 
     <!-- =====================================================
+         COMMENT COMPOSER
+    ====================================================== -->
+
+    <div
+        class="post-comment-composer"
+        data-post-id="<%= item._id %>"
+        hidden
+    >
+
+        <div class="post-comment-input-wrapper">
+
+            <textarea
+                class="post-comment-input"
+                rows="1"
+                maxlength="500"
+                placeholder="Write a comment..."
+                aria-label="Write a comment"
+            ></textarea>
+
+
+            <button
+                type="button"
+                class="post-comment-send"
+                aria-label="Send comment"
+                title="Send comment"
+            >
+
+                <i class="bi bi-send-fill"></i>
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
          COMMENTS
     ====================================================== -->
 
-    <% if (
-        Array.isArray(item.comments) &&
-        item.comments.length
-    ) { %>
+    <div
+        class="feed-post-comments"
+        data-comments-container="<%= item._id %>"
+        <% if (
+            !Array.isArray(item.comments) ||
+            !item.comments.length
+        ) { %>
+            hidden
+        <% } %>
+    >
 
-
-        <div class="feed-post-comments">
+        <% if (
+            Array.isArray(item.comments) &&
+            item.comments.length
+        ) { %>
 
 
             <% item.comments.forEach(function(comment) { %>
@@ -291,6 +363,10 @@
                     data-comment-id="<%= comment._id %>"
                 >
 
+
+                    <!-- =====================================
+                         COMMENT AVATAR
+                    ====================================== -->
 
                     <div class="comment-avatar">
 
@@ -302,13 +378,49 @@
                     </div>
 
 
+                    <!-- =====================================
+                         COMMENT BODY
+                    ====================================== -->
+
                     <div class="comment-body">
 
-                        <div class="comment-user">
+                        <div class="comment-top-row">
 
-                            <strong>
-                                <%= comment.userName || "User" %>
-                            </strong>
+                            <div class="comment-user">
+
+                                <strong>
+                                    <%= comment.userName || "User" %>
+                                </strong>
+
+                            </div>
+
+
+                            <!-- =================================
+                                 DELETE COMMENT
+                            ================================== -->
+
+                            <% if (
+                                user &&
+                                (
+                                    String(comment.userId) === String(user._id) ||
+                                    user.role === "admin"
+                                )
+                            ) { %>
+
+                                <button
+                                    type="button"
+                                    class="comment-delete-button"
+                                    data-comment-id="<%= comment._id %>"
+                                    data-post-id="<%= item._id %>"
+                                    aria-label="Delete comment"
+                                    title="Delete comment"
+                                >
+
+                                    <i class="bi bi-x"></i>
+
+                                </button>
+
+                            <% } %>
 
                         </div>
 
@@ -336,10 +448,9 @@
             <% }); %>
 
 
-        </div>
+        <% } %>
 
-
-    <% } %>
+    </div>
 
 </article>
 
@@ -350,6 +461,10 @@
 ========================================================= -->
 
 <style>
+
+/* =========================================================
+   POST CARD
+========================================================= */
 
 .feed-post {
 
@@ -369,6 +484,11 @@
 
 }
 
+
+
+/* =========================================================
+   HEADER
+========================================================= */
 
 .feed-post-header {
 
@@ -444,6 +564,11 @@
 }
 
 
+
+/* =========================================================
+   DELETE POST
+========================================================= */
+
 .feed-post-delete {
 
     width: 38px;
@@ -468,6 +593,11 @@
 
     cursor: pointer;
 
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
+
 }
 
 
@@ -480,6 +610,18 @@
 }
 
 
+.feed-post-delete:active {
+
+    transform: scale(0.92);
+
+}
+
+
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
 .feed-post-content {
 
     padding: 0 16px 14px;
@@ -487,20 +629,69 @@
 }
 
 
-.feed-post-title {
 
-    margin: 0 0 8px;
+/* =========================================================
+   POST TITLE
+========================================================= */
 
-    color: #202520;
+.feed-post-title-wrapper {
 
-    font-size: 18px;
+    display: flex;
 
-    line-height: 1.35;
+    align-items: stretch;
 
-    font-weight: 700;
+    gap: 10px;
+
+    margin-bottom: 10px;
 
 }
 
+
+.feed-post-title-accent {
+
+    width: 4px;
+
+    flex: 0 0 4px;
+
+    border-radius: 4px;
+
+    background:
+        linear-gradient(
+            to bottom,
+            #198754,
+            #0b5d1e
+        );
+
+}
+
+
+.feed-post-title {
+
+    flex: 1;
+
+    margin: 0;
+
+    padding: 2px 0;
+
+    color: #173b24;
+
+    font-size: 19px;
+
+    line-height: 1.35;
+
+    font-weight: 750;
+
+    letter-spacing: -0.2px;
+
+    word-break: break-word;
+
+}
+
+
+
+/* =========================================================
+   POST TEXT
+========================================================= */
 
 .feed-post-text {
 
@@ -517,6 +708,7 @@
 }
 
 
+
 /* =========================================================
    IMAGE GRID
 ========================================================= */
@@ -529,7 +721,8 @@
 
     display: grid;
 
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
 
     gap: 4px;
 
@@ -595,6 +788,7 @@
 }
 
 
+
 /* =========================================================
    ACTIONS
 ========================================================= */
@@ -605,7 +799,7 @@
 
     align-items: center;
 
-    gap: 8px;
+    gap: 6px;
 
     padding: 8px 12px;
 
@@ -616,11 +810,11 @@
 
 .feed-post-action {
 
-    min-width: 70px;
+    min-width: 82px;
 
     height: 38px;
 
-    padding: 0 10px;
+    padding: 0 11px;
 
     border: none;
 
@@ -640,7 +834,14 @@
 
     cursor: pointer;
 
-    font-size: 14px;
+    font-family: inherit;
+
+    font-size: 13px;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
 
 }
 
@@ -650,6 +851,13 @@
     background: #f1f6f3;
 
     color: #198754;
+
+}
+
+
+.feed-post-action:active {
+
+    transform: scale(0.95);
 
 }
 
@@ -664,9 +872,158 @@
 .post-like-count,
 .post-comment-count {
 
-    font-size: 13px;
+    font-size: 12px;
+
+    font-weight: 600;
 
 }
+
+
+.like-post-button.liked {
+
+    color: #198754;
+
+    background: #edf8f1;
+
+}
+
+
+.like-post-button.liked i {
+
+    font-weight: 900;
+
+}
+
+
+
+/* =========================================================
+   COMMENT COMPOSER
+========================================================= */
+
+.post-comment-composer {
+
+    padding: 8px 12px 10px;
+
+    border-top: 1px solid #edf1ee;
+
+    background: #fbfcfb;
+
+}
+
+
+.post-comment-input-wrapper {
+
+    display: flex;
+
+    align-items: flex-end;
+
+    gap: 8px;
+
+    width: 100%;
+
+}
+
+
+.post-comment-input {
+
+    flex: 1;
+
+    min-width: 0;
+
+    min-height: 40px;
+
+    max-height: 100px;
+
+    resize: none;
+
+    border: 1px solid #dce6df;
+
+    border-radius: 20px;
+
+    background: #ffffff;
+
+    padding: 10px 13px;
+
+    box-sizing: border-box;
+
+    outline: none;
+
+    font-family: inherit;
+
+    font-size: 14px;
+
+    line-height: 19px;
+
+    color: #202520;
+
+}
+
+
+.post-comment-input:focus {
+
+    border-color: #198754;
+
+    box-shadow:
+        0 0 0 2px rgba(25, 135, 84, 0.08);
+
+}
+
+
+.post-comment-send {
+
+    width: 40px;
+
+    height: 40px;
+
+    flex: 0 0 40px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+    transition:
+        background 0.2s ease,
+        transform 0.15s ease;
+
+}
+
+
+.post-comment-send:hover {
+
+    background: #146c43;
+
+}
+
+
+.post-comment-send:active {
+
+    transform: scale(0.92);
+
+}
+
+
+.post-comment-send:disabled {
+
+    opacity: 0.5;
+
+    cursor: default;
+
+}
+
 
 
 /* =========================================================
@@ -732,11 +1089,69 @@
 }
 
 
+.comment-top-row {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+}
+
+
+.comment-user {
+
+    flex: 1;
+
+    min-width: 0;
+
+}
+
+
 .comment-user strong {
 
     font-size: 12px;
 
     color: #202520;
+
+}
+
+
+.comment-delete-button {
+
+    width: 24px;
+
+    height: 24px;
+
+    flex: 0 0 24px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #909792;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    padding: 0;
+
+}
+
+
+.comment-delete-button:hover {
+
+    color: #c62828;
+
+    background: #ffffff;
 
 }
 
@@ -767,6 +1182,7 @@
     font-size: 10px;
 
 }
+
 
 
 /* =========================================================
@@ -809,6 +1225,967 @@
 
     }
 
+
+    .feed-post-action {
+
+        min-width: 72px;
+
+        padding: 0 8px;
+
+    }
+
+
+    .post-like-label,
+    .post-comment-label {
+
+        display: none;
+
+    }
+
+}
+
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .feed-post-action {
+
+        min-width: 58px;
+
+    }
+
 }
 
 </style>
+
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+<script>
+
+(function () {
+
+    "use strict";
+
+
+    /* =====================================================
+       GET POST ELEMENT
+    ====================================================== */
+
+    function getPostElement(element) {
+
+        return element.closest(".feed-post");
+
+    }
+
+
+    /* =====================================================
+       LIKE POST
+    ====================================================== */
+
+    async function likePost(button) {
+
+        const post =
+            getPostElement(button);
+
+        if (!post) return;
+
+
+        const postId =
+            post.dataset.postId;
+
+        if (!postId) return;
+
+
+        const countElement =
+            post.querySelector(
+                ".post-like-count"
+            );
+
+        const icon =
+            button.querySelector("i");
+
+
+        button.disabled = true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `/post/${postId}/like`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        credentials: "same-origin",
+
+                        body: JSON.stringify({})
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok || !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    "Failed to like post"
+                );
+
+            }
+
+
+            /* =========================================
+               UPDATE COUNT
+            ========================================== */
+
+            if (countElement) {
+
+                countElement.textContent =
+                    result.likes;
+
+            }
+
+
+            /* =========================================
+               UPDATE ICON
+            ========================================== */
+
+            if (result.liked) {
+
+                button.classList.add("liked");
+
+                if (icon) {
+
+                    icon.className =
+                        "bi bi-heart-fill";
+
+                }
+
+                button.setAttribute(
+                    "aria-label",
+                    "Unlike post"
+                );
+
+            } else {
+
+                button.classList.remove("liked");
+
+                if (icon) {
+
+                    icon.className =
+                        "bi bi-heart";
+
+                }
+
+                button.setAttribute(
+                    "aria-label",
+                    "Like post"
+                );
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "LIKE POST ERROR:",
+                error
+            );
+
+        } finally {
+
+            button.disabled = false;
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       OPEN COMMENT COMPOSER
+    ====================================================== */
+
+    function openCommentComposer(button) {
+
+        const post =
+            getPostElement(button);
+
+        if (!post) return;
+
+
+        const composer =
+            post.querySelector(
+                ".post-comment-composer"
+            );
+
+        const input =
+            post.querySelector(
+                ".post-comment-input"
+            );
+
+
+        if (!composer) return;
+
+
+        composer.hidden =
+            !composer.hidden;
+
+
+        if (!composer.hidden && input) {
+
+            setTimeout(
+                function () {
+
+                    input.focus();
+
+                },
+                50
+            );
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       RESIZE COMMENT TEXTAREA
+    ====================================================== */
+
+    function resizeCommentInput(input) {
+
+        input.style.height =
+            "auto";
+
+
+        input.style.height =
+            Math.min(
+                input.scrollHeight,
+                100
+            ) + "px";
+
+    }
+
+
+
+    /* =====================================================
+       ADD COMMENT
+    ====================================================== */
+
+    async function addComment(button) {
+
+        const composer =
+            button.closest(
+                ".post-comment-composer"
+            );
+
+        if (!composer) return;
+
+
+        const post =
+            getPostElement(button);
+
+        if (!post) return;
+
+
+        const postId =
+            post.dataset.postId;
+
+
+        const input =
+            composer.querySelector(
+                ".post-comment-input"
+            );
+
+
+        if (!input) return;
+
+
+        const text =
+            input.value.trim();
+
+
+        if (!text) {
+
+            input.focus();
+
+            return;
+
+        }
+
+
+        button.disabled = true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `/post/${postId}/comment`,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        credentials: "same-origin",
+
+                        body: JSON.stringify({
+                            text: text
+                        })
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok || !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    "Failed to add comment"
+                );
+
+            }
+
+
+            const comment =
+                result.comment;
+
+
+            /* =========================================
+               COMMENTS CONTAINER
+            ========================================== */
+
+            const commentsContainer =
+                post.querySelector(
+                    ".feed-post-comments"
+                );
+
+
+            if (!commentsContainer) {
+
+                throw new Error(
+                    "Comments container not found"
+                );
+
+            }
+
+
+            /* =========================================
+               CREATE COMMENT ELEMENT
+            ========================================== */
+
+            const commentElement =
+                document.createElement("div");
+
+
+            commentElement.className =
+                "feed-post-comment";
+
+
+            commentElement.dataset.commentId =
+                comment._id;
+
+
+            const userImage =
+                comment.userImage ||
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.userName || "User")}`;
+
+
+            commentElement.innerHTML = `
+
+                <div class="comment-avatar">
+
+                    <img
+                        src="${userImage}"
+                        alt="${escapeHtml(comment.userName || "User")}"
+                    >
+
+                </div>
+
+
+                <div class="comment-body">
+
+                    <div class="comment-top-row">
+
+                        <div class="comment-user">
+
+                            <strong>
+                                ${escapeHtml(comment.userName || "User")}
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="comment-text">
+
+                        ${escapeHtml(comment.text)}
+
+                    </div>
+
+
+                    <div class="comment-date">
+
+                        ${comment.dateText || ""}
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            commentsContainer.appendChild(
+                commentElement
+            );
+
+
+            commentsContainer.hidden =
+                false;
+
+
+            /* =========================================
+               UPDATE COMMENT COUNT
+            ========================================== */
+
+            const countElement =
+                post.querySelector(
+                    ".post-comment-count"
+                );
+
+
+            if (countElement) {
+
+                const currentCount =
+                    parseInt(
+                        countElement.textContent,
+                        10
+                    ) || 0;
+
+
+                countElement.textContent =
+                    currentCount + 1;
+
+            }
+
+
+            /* =========================================
+               CLEAR INPUT
+            ========================================== */
+
+            input.value = "";
+
+            resizeCommentInput(input);
+
+
+            composer.hidden =
+                true;
+
+        } catch (error) {
+
+            console.error(
+                "ADD COMMENT ERROR:",
+                error
+            );
+
+            alert(
+                error.message ||
+                "Failed to add comment"
+            );
+
+        } finally {
+
+            button.disabled = false;
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       DELETE POST
+    ====================================================== */
+
+    async function deletePost(button) {
+
+        const post =
+            getPostElement(button);
+
+        if (!post) return;
+
+
+        const postId =
+            post.dataset.postId;
+
+
+        if (!postId) return;
+
+
+        const confirmed =
+            window.confirm(
+                "Are you sure you want to delete this post?"
+            );
+
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+
+        button.disabled = true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `/post/${postId}`,
+                    {
+                        method: "DELETE",
+
+                        credentials:
+                            "same-origin",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({})
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok || !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    "Failed to delete post"
+                );
+
+            }
+
+
+            /* =========================================
+               REMOVE POST FROM PAGE
+            ========================================== */
+
+            post.remove();
+
+        } catch (error) {
+
+            console.error(
+                "DELETE POST ERROR:",
+                error
+            );
+
+
+            alert(
+                error.message ||
+                "Failed to delete post"
+            );
+
+
+            button.disabled = false;
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       DELETE COMMENT
+    ====================================================== */
+
+    async function deleteComment(button) {
+
+        const comment =
+            button.closest(
+                ".feed-post-comment"
+            );
+
+        if (!comment) return;
+
+
+        const post =
+            getPostElement(button);
+
+        if (!post) return;
+
+
+        const commentId =
+            button.dataset.commentId;
+
+
+        if (!commentId) return;
+
+
+        const confirmed =
+            window.confirm(
+                "Delete this comment?"
+            );
+
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+
+        button.disabled = true;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    `/comment/${commentId}`,
+                    {
+                        method: "DELETE",
+
+                        credentials:
+                            "same-origin",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body: JSON.stringify({
+
+                            dairyId:
+                                post.dataset.dairyId || "",
+
+                            postId:
+                                post.dataset.postId
+
+                        })
+                    }
+                );
+
+
+            const result =
+                await response.json();
+
+
+            if (!response.ok || !result.success) {
+
+                throw new Error(
+                    result.message ||
+                    "Failed to delete comment"
+                );
+
+            }
+
+
+            comment.remove();
+
+
+            /* =========================================
+               UPDATE COMMENT COUNT
+            ========================================== */
+
+            const countElement =
+                post.querySelector(
+                    ".post-comment-count"
+                );
+
+
+            if (countElement) {
+
+                const currentCount =
+                    parseInt(
+                        countElement.textContent,
+                        10
+                    ) || 0;
+
+
+                countElement.textContent =
+                    Math.max(
+                        0,
+                        currentCount - 1
+                    );
+
+            }
+
+
+            const commentsContainer =
+                post.querySelector(
+                    ".feed-post-comments"
+                );
+
+
+            if (
+                commentsContainer &&
+                !commentsContainer.querySelector(
+                    ".feed-post-comment"
+                )
+            ) {
+
+                commentsContainer.hidden =
+                    true;
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "DELETE COMMENT ERROR:",
+                error
+            );
+
+
+            alert(
+                error.message ||
+                "Failed to delete comment"
+            );
+
+
+            button.disabled = false;
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       ESCAPE HTML
+    ====================================================== */
+
+    function escapeHtml(value) {
+
+        const div =
+            document.createElement("div");
+
+
+        div.textContent =
+            value == null
+                ? ""
+                : String(value);
+
+
+        return div.innerHTML;
+
+    }
+
+
+
+    /* =====================================================
+       EVENT DELEGATION
+    ====================================================== */
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            const likeButton =
+                event.target.closest(
+                    ".like-post-button"
+                );
+
+
+            if (likeButton) {
+
+                event.preventDefault();
+
+                likePost(
+                    likeButton
+                );
+
+                return;
+
+            }
+
+
+            const commentButton =
+                event.target.closest(
+                    ".comment-post-button"
+                );
+
+
+            if (commentButton) {
+
+                event.preventDefault();
+
+                openCommentComposer(
+                    commentButton
+                );
+
+                return;
+
+            }
+
+
+            const commentSendButton =
+                event.target.closest(
+                    ".post-comment-send"
+                );
+
+
+            if (commentSendButton) {
+
+                event.preventDefault();
+
+                addComment(
+                    commentSendButton
+                );
+
+                return;
+
+            }
+
+
+            const deletePostButton =
+                event.target.closest(
+                    ".feed-post-delete"
+                );
+
+
+            if (deletePostButton) {
+
+                event.preventDefault();
+
+                deletePost(
+                    deletePostButton
+                );
+
+                return;
+
+            }
+
+
+            const deleteCommentButton =
+                event.target.closest(
+                    ".comment-delete-button"
+                );
+
+
+            if (deleteCommentButton) {
+
+                event.preventDefault();
+
+                deleteComment(
+                    deleteCommentButton
+                );
+
+            }
+
+        }
+    );
+
+
+
+    /* =====================================================
+       COMMENT ENTER KEY
+    ====================================================== */
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+
+            const input =
+                event.target.closest(
+                    ".post-comment-input"
+                );
+
+
+            if (!input) return;
+
+
+            if (
+                event.key === "Enter" &&
+                !event.shiftKey
+            ) {
+
+                event.preventDefault();
+
+
+                const composer =
+                    input.closest(
+                        ".post-comment-composer"
+                    );
+
+
+                if (!composer) return;
+
+
+                const sendButton =
+                    composer.querySelector(
+                        ".post-comment-send"
+                    );
+
+
+                if (sendButton) {
+
+                    addComment(
+                        sendButton
+                    );
+
+                }
+
+            }
+
+        }
+    );
+
+
+
+    /* =====================================================
+       COMMENT TEXTAREA AUTO RESIZE
+    ====================================================== */
+
+    document.addEventListener(
+        "input",
+        function (event) {
+
+            if (
+                event.target.matches(
+                    ".post-comment-input"
+                )
+            ) {
+
+                resizeCommentInput(
+                    event.target
+                );
+
+            }
+
+        }
+    );
+
+})();
+
+</script>
