@@ -7,10 +7,13 @@
   --primary: #0b5d1e;
   --primary-dark: #084814;
   --primary-light: #eaf7ee;
+
   --sidebar-width: 275px;
   --sidebar-collapsed-width: 64px;
+
   --background: #f5f7f6;
   --white: #ffffff;
+
   --text: #263238;
   --muted: #667085;
   --border: #e5e7eb;
@@ -24,8 +27,11 @@
 .page {
   width: 100%;
   max-width: 1200px;
+
   margin: 0 auto;
+
   padding: 30px 25px 50px;
+
   box-sizing: border-box;
 }
 
@@ -33,8 +39,8 @@
 /* ==========================================================
    SIDEBAR
    ----------------------------------------------------------
-   The sidebar is navigation ONLY.
-   It does not contain the hero or main page content.
+   Navigation only.
+   The hero section is NOT inside the sidebar.
    ========================================================== */
 
 .dashboard-sidebar {
@@ -53,16 +59,70 @@
   overflow-x: hidden;
   overflow-y: auto;
 
-  box-shadow: 3px 0 15px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    3px 0 15px rgba(0, 0, 0, 0.08);
 
-  transition: width 0.25s ease;
+  transition:
+    width 0.25s ease;
 }
 
 
-/* Expanded navigation */
+/* ==========================================================
+   EXPANDED SIDEBAR
+   ========================================================== */
 
 .dashboard-sidebar.open {
   width: var(--sidebar-width);
+}
+
+
+/* ==========================================================
+   THREE-DOT MENU BUTTON
+   ----------------------------------------------------------
+   The button is INSIDE the sidebar.
+   It sits above the navigation icons.
+   ========================================================== */
+
+.sidebar-toggle {
+  width: 100%;
+
+  height: 70px;
+
+  padding: 0;
+
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+
+  background: transparent;
+
+  color: #ffffff;
+
+  font-size: 28px;
+  font-weight: 700;
+
+  line-height: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  flex-shrink: 0;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+
+.sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+
+.sidebar-toggle:active {
+  background: rgba(255, 255, 255, 0.16);
 }
 
 
@@ -74,7 +134,7 @@
   list-style: none;
 
   margin: 0;
-  padding: 78px 0 0;
+  padding: 0;
 }
 
 
@@ -110,7 +170,8 @@
 
   white-space: nowrap;
 
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.10);
 
   transition:
     background 0.2s ease,
@@ -123,8 +184,13 @@
 }
 
 
+/* ==========================================================
+   ACTIVE LINK
+   ========================================================== */
+
 .sidebar-link.active {
-  background: #eaf7ee;
+  background: var(--primary-light);
+
   color: var(--primary);
 }
 
@@ -212,65 +278,10 @@
 
 
 /* ==========================================================
-   THREE-DOT MENU BUTTON
-   ----------------------------------------------------------
-   This button is independent of the sidebar.
-   ========================================================== */
-
-.sidebar-toggle {
-  position: fixed;
-
-  top: 16px;
-  left: 12px;
-
-  width: 40px;
-  height: 40px;
-
-  padding: 0;
-
-  border: none;
-  border-radius: 9px;
-
-  background: #ffffff;
-
-  color: var(--primary);
-
-  font-size: 25px;
-  font-weight: 700;
-
-  line-height: 1;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  cursor: pointer;
-
-  z-index: 1200;
-
-  box-shadow:
-    0 3px 12px rgba(0, 0, 0, 0.16);
-
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease;
-}
-
-
-.sidebar-toggle:hover {
-  background: var(--primary-light);
-}
-
-
-.sidebar-toggle:active {
-  transform: scale(0.94);
-}
-
-
-/* ==========================================================
    SIDEBAR OVERLAY
    ----------------------------------------------------------
-   Only appears while the navigation is expanded.
+   Appears only when sidebar is expanded.
+   Clicking it closes the sidebar.
    ========================================================== */
 
 .sidebar-overlay {
@@ -300,7 +311,8 @@
 /* ==========================================================
    MAIN PAGE CONTENT
    ----------------------------------------------------------
-   The hero belongs here, not inside the sidebar.
+   The hero is the actual page content.
+   The sidebar only provides navigation.
    ========================================================== */
 
 .main-content {
@@ -310,16 +322,19 @@
 
   background: var(--background);
 
-  transition: margin-left 0.25s ease;
+  transition:
+    margin-left 0.25s ease;
 }
 
 
 /*
  * IMPORTANT:
  *
- * The sidebar expanding does NOT change this margin.
- * Therefore the sidebar overlays the main content instead
- * of pushing the hero sideways.
+ * The sidebar DOES NOT push the main content when opened.
+ *
+ * It expands over the page.
+ *
+ * Therefore the hero remains in its position.
  */
 
 
@@ -336,13 +351,12 @@
 
   box-sizing: border-box;
 
-  margin-bottom: 25px;
-
   padding: 48px 45px;
 
-  background: #ffffff;
+  background: var(--white);
 
-  border: 1px solid #e5e7eb;
+  border:
+    1px solid var(--border);
 
   border-radius: 18px;
 
@@ -411,7 +425,7 @@
 
 
 /* ==========================================================
-   HERO SMALL TITLE
+   HERO KICKER
    ========================================================== */
 
 .hero-kicker {
@@ -469,69 +483,6 @@
 
 
 /* ==========================================================
-   PROJECT MANAGEMENT CARD
-   ========================================================== */
-
-.card {
-  background: #ffffff;
-
-  padding: 25px;
-
-  border-radius: 14px;
-
-  border: 1px solid #e5e7eb;
-
-  box-shadow:
-    0 8px 20px rgba(0, 0, 0, 0.05);
-
-  margin-bottom: 20px;
-}
-
-
-.card h2 {
-  margin: 0 0 20px;
-
-  color: var(--primary-dark);
-
-  font-size: 22px;
-}
-
-
-/* ==========================================================
-   INFORMATION BELOW HERO
-   ========================================================== */
-
-.project-introduction {
-  margin-bottom: 20px;
-
-  color: var(--muted);
-
-  font-size: 15px;
-
-  line-height: 1.7;
-}
-
-
-/* ==========================================================
-   ACCESS DENIED
-   ========================================================== */
-
-.access-denied {
-  padding: 18px;
-
-  border-radius: 10px;
-
-  background: #fff5f5;
-
-  border: 1px solid #f0cccc;
-
-  color: #b42318;
-
-  font-weight: 600;
-}
-
-
-/* ==========================================================
    RESPONSIVE
    ========================================================== */
 
@@ -569,8 +520,8 @@
   }
 
 
-  .card {
-    padding: 19px;
+  .sidebar-toggle {
+    height: 64px;
   }
 }
 
@@ -606,8 +557,7 @@
 <!-- ==========================================================
      NAVIGATION SIDEBAR
      ----------------------------------------------------------
-     NAVIGATION ONLY.
-     The hero is NOT inside this element.
+     This contains ONLY the navigation.
      ========================================================== -->
 
 <aside
@@ -615,6 +565,29 @@
   class="dashboard-sidebar"
   aria-label="Project navigation"
 >
+
+
+  <!-- ========================================================
+       THREE-DOT BUTTON
+       --------------------------------------------------------
+       It is physically INSIDE the sidebar and sits above
+       all navigation icons.
+       ======================================================== -->
+
+  <button
+    id="sidebarToggle"
+    class="sidebar-toggle"
+    type="button"
+    aria-label="Open navigation"
+    aria-expanded="false"
+  >
+    ⋮
+  </button>
+
+
+  <!-- ========================================================
+       NAVIGATION
+       ======================================================== -->
 
   <ul class="sidebar-menu">
 
@@ -813,6 +786,7 @@
 
   </div>
 
+
 </aside>
 
 
@@ -828,26 +802,9 @@
 
 
 <!-- ==========================================================
-     THREE-DOT BUTTON
-     ----------------------------------------------------------
-     This is NOT part of the sidebar.
-     ========================================================== -->
-
-<button
-  id="sidebarToggle"
-  class="sidebar-toggle"
-  type="button"
-  aria-label="Open navigation"
-  aria-expanded="false"
->
-  ⋮
-</button>
-
-
-<!-- ==========================================================
      MAIN PAGE CONTENT
      ----------------------------------------------------------
-     The hero starts here.
+     HERO IS THE FIRST AND ONLY CONTENT SECTION.
      ========================================================== -->
 
 <main class="main-content">
@@ -862,6 +819,7 @@
     <section class="hero">
 
       <div class="hero-content">
+
 
         <div class="hero-kicker">
           Chesi Project Management System
@@ -890,49 +848,10 @@
 
         </p>
 
+
       </div>
 
     </section>
-
-
-    <!-- ======================================================
-         PROJECT MANAGEMENT CONTENT
-         ====================================================== -->
-
-    <div class="card">
-
-
-      <h2>
-        🐄 Dairy Project Management
-      </h2>
-
-
-      <% if (user && user.role === "admin") { %>
-
-
-        <p class="project-introduction">
-
-          Manage the dairy project's assets, milk production,
-          sales, statistics, and financial information using
-          the navigation menu.
-
-        </p>
-
-
-      <% } else { %>
-
-
-        <div class="access-denied">
-
-          Access denied. Admins only.
-
-        </div>
-
-
-      <% } %>
-
-
-    </div>
 
 
   </div>
@@ -1016,9 +935,14 @@
     "click",
     function (event) {
 
+      event.preventDefault();
+
       event.stopPropagation();
 
-      if (sidebar.classList.contains("open")) {
+
+      if (
+        sidebar.classList.contains("open")
+      ) {
 
         closeSidebar();
 
