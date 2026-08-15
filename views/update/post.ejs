@@ -13,11 +13,7 @@
      type
 
      IMPORTANT:
-     This file is designed to work with:
-
-         feed-actions.ejs
-
-     Therefore the required classes such as:
+     ACTION CLASSES MUST MATCH feed-actions.ejs:
 
          .feed-card
          .like-btn
@@ -27,8 +23,6 @@
          .comment-form
          .comment-section
          .delete-comment
-
-     MUST NOT be renamed.
 ========================================================= -->
 
 
@@ -55,6 +49,35 @@
             : [];
 
 
+    const postImages =
+        Array.isArray(item.images)
+            ? item.images.filter(Boolean)
+            : (
+                item.image
+                    ? [item.image]
+                    : []
+            );
+
+
+    const hasImages =
+        postImages.length > 0;
+
+
+    const hasMultipleImages =
+        postImages.length > 1;
+
+
+    const hasMoreThanFourImages =
+        postImages.length > 4;
+
+
+    const remainingImages =
+        Math.max(
+            0,
+            postImages.length - 4
+        );
+
+
     const postUserId =
         item.user
             ? String(
@@ -76,7 +99,44 @@
             postUserId === currentUserId ||
             user.role === "admin"
         );
+
+
+    const dairyId =
+        item.dairyId ||
+        (
+            item.dairy
+                ? (
+                    item.dairy._id ||
+                    item.dairy
+                )
+                : ""
+        );
+
+
+    const dairyName =
+        item.dairyName ||
+        (
+            item.dairy &&
+            item.dairy.name
+                ? item.dairy.name
+                : ""
+        );
+
+
+    const cleanTitle =
+        item.title &&
+        String(item.title).trim()
+            ? String(item.title).trim()
+            : "";
+
+
+    const cleanText =
+        item.text &&
+        String(item.text).trim()
+            ? String(item.text).trim()
+            : "";
 %>
+
 
 
 <!-- =========================================================
@@ -89,6 +149,17 @@
     data-post-id="<%= item._id %>"
     data-feed-type="<%= postType %>"
 >
+
+
+    <!-- =====================================================
+         EXPANSION BACKDROP
+    ====================================================== -->
+
+    <div
+        class="post-expand-backdrop"
+        aria-hidden="true"
+    ></div>
+
 
 
     <!-- =====================================================
@@ -150,39 +221,91 @@
                 type="button"
                 class="post-menu-button delete-post"
                 data-id="<%= item._id %>"
+                data-type="<%= postType %>"
                 aria-label="Delete post"
                 title="Delete post"
             >
 
-                <i class="bi bi-trash3"></i>
+                <i
+                    class="bi bi-trash3"
+                    aria-hidden="true"
+                ></i>
 
             </button>
 
         <% } %>
+
 
     </header>
 
 
 
     <!-- =====================================================
-         POST CONTENT
-    ====================================================== -->
+         POST MESSAGE
+========================================================= -->
 
     <div class="post-content">
 
 
         <!-- =================================================
-             POST TITLE
+             DAIRY / SUBJECT
         ================================================== -->
 
-        <% if (
-            item.title &&
-            String(item.title).trim()
-        ) { %>
+        <% if (dairyName) { %>
+
+            <div class="post-dairy-line">
+
+                <% if (dairyId) { %>
+
+                    <a
+                        href="/dairy/<%= dairyId %>"
+                        class="post-dairy-link"
+                        title="View <%= dairyName %>"
+                    >
+
+                        <i
+                            class="bi bi-building"
+                            aria-hidden="true"
+                        ></i>
+
+                        <span>
+                            <%= dairyName %>
+                        </span>
+
+                    </a>
+
+                <% } else { %>
+
+                    <span class="post-dairy-link post-dairy-static">
+
+                        <i
+                            class="bi bi-building"
+                            aria-hidden="true"
+                        ></i>
+
+                        <span>
+                            <%= dairyName %>
+                        </span>
+
+                    </span>
+
+                <% } %>
+
+            </div>
+
+        <% } %>
+
+
+
+        <!-- =================================================
+             TITLE
+        ================================================== -->
+
+        <% if (cleanTitle) { %>
 
             <h2 class="post-title">
 
-                <%= item.title %>
+                <%= cleanTitle %>
 
             </h2>
 
@@ -194,14 +317,40 @@
              POST TEXT
         ================================================== -->
 
-        <% if (
-            item.text &&
-            String(item.text).trim()
-        ) { %>
+        <% if (cleanText) { %>
 
-            <div class="post-text">
+            <div
+                class="
+                    post-text-wrapper
+                    <%= hasImages ? 'has-post-image' : '' %>
+                "
+            >
 
-                <%= item.text %>
+                <div class="post-text">
+
+                    <%= cleanText %>
+
+                </div>
+
+
+                <!-- =========================================
+                     SEE MORE
+                ========================================== -->
+
+                <% if (hasImages) { %>
+
+                    <button
+                        type="button"
+                        class="post-see-more"
+                        aria-label="See more of this post"
+                        hidden
+                    >
+
+                        See more
+
+                    </button>
+
+                <% } %>
 
             </div>
 
@@ -210,32 +359,28 @@
 
 
         <!-- =================================================
-             MULTIPLE IMAGES
+             IMAGES
         ================================================== -->
 
-        <%
-            const postImages =
-                Array.isArray(item.images)
-                    ? item.images.filter(Boolean)
-                    : [];
-        %>
-
-
         <% if (postImages.length > 0) { %>
-
 
             <div
                 class="
                     post-image-grid
                     post-image-count-<%= Math.min(postImages.length, 4) %>
+                    <%= hasMoreThanFourImages ? 'has-more-images' : '' %>
                 "
             >
 
 
                 <% postImages.forEach(function(image, index) { %>
 
+
                     <div
-                        class="post-image-item"
+                        class="
+                            post-image-item
+                            <%= index >= 4 ? 'post-image-extra' : '' %>
+                        "
                         data-image-index="<%= index %>"
                     >
 
@@ -247,47 +392,61 @@
                         >
 
 
+                        <!-- =================================
+                             MORE IMAGES OVERLAY
+                        ================================== -->
+
                         <% if (
-                            postImages.length > 4 &&
+                            hasMoreThanFourImages &&
                             index === 3
                         ) { %>
 
-                            <div class="post-more-images">
+                            <div
+                                class="post-more-images"
+                                aria-hidden="true"
+                            >
 
-                                +<%= postImages.length - 4 %>
+                                <span>
+                                    +<%= remainingImages %>
+                                </span>
 
                             </div>
 
                         <% } %>
 
+
                     </div>
+
 
                 <% }); %>
 
 
             </div>
 
-
-        <% } else if (item.image) { %>
-
-
-            <!-- =================================================
-                 OLD SINGLE IMAGE SUPPORT
-            ================================================== -->
-
-            <div class="post-single-image">
-
-                <img
-                    src="/uploads/<%= item.image %>"
-                    alt="Post image"
-                    class="post-image"
-                    loading="lazy"
-                >
-
-            </div>
-
-
         <% } %>
+
+
+
+        <!-- =================================================
+             EXPAND BUTTON
+
+             Used when the text is longer than three
+             lines on a photo post.
+        ================================================== -->
+
+        <button
+            type="button"
+            class="post-expand-button"
+            hidden
+            aria-label="Open full post"
+        >
+
+            <i
+                class="bi bi-arrows-angle-expand"
+                aria-hidden="true"
+            ></i>
+
+        </button>
 
 
     </div>
@@ -295,12 +454,29 @@
 
 
     <!-- =====================================================
+         EXPANDED POST CLOSE BUTTON
+    ====================================================== -->
+
+    <button
+        type="button"
+        class="post-expanded-close"
+        aria-label="Close expanded post"
+        title="Close"
+    >
+
+        <i
+            class="bi bi-x-lg"
+            aria-hidden="true"
+        ></i>
+
+    </button>
+
+
+
+    <!-- =====================================================
          POST ACTIONS
 
-         IMPORTANT:
-
-         These class names intentionally match
-         feed-actions.ejs.
+         DO NOT CHANGE THESE CLASS NAMES.
     ====================================================== -->
 
     <div
@@ -322,7 +498,10 @@
             aria-label="Like"
         >
 
-            <i class="bi bi-hand-thumbs-up-fill"></i>
+            <i
+                class="bi bi-hand-thumbs-up-fill"
+                aria-hidden="true"
+            ></i>
 
             <span class="like-count">
 
@@ -344,7 +523,10 @@
             aria-label="Comments"
         >
 
-            <i class="bi bi-chat-dots-fill"></i>
+            <i
+                class="bi bi-chat-dots-fill"
+                aria-hidden="true"
+            ></i>
 
             <span class="comment-count">
 
@@ -386,9 +568,7 @@
                     </strong>
 
                     <span>
-
                         <%= comments.length %>
-
                     </span>
 
                 </div>
@@ -400,9 +580,13 @@
                     aria-label="Close comments"
                 >
 
-                    <i class="bi bi-x-lg"></i>
+                    <i
+                        class="bi bi-x-lg"
+                        aria-hidden="true"
+                    ></i>
 
                 </button>
+
 
             </header>
 
@@ -419,7 +603,10 @@
 
                     <div class="comment-empty-state">
 
-                        <i class="bi bi-chat-dots"></i>
+                        <i
+                            class="bi bi-chat-dots"
+                            aria-hidden="true"
+                        ></i>
 
                         <span>
                             No comments yet.
@@ -506,7 +693,10 @@
                                         title="Delete comment"
                                     >
 
-                                        <i class="bi bi-trash3"></i>
+                                        <i
+                                            class="bi bi-trash3"
+                                            aria-hidden="true"
+                                        ></i>
 
                                     </button>
 
@@ -584,7 +774,10 @@
                             aria-label="Send comment"
                         >
 
-                            <i class="bi bi-send-fill"></i>
+                            <i
+                                class="bi bi-send-fill"
+                                aria-hidden="true"
+                            ></i>
 
                         </button>
 
@@ -620,19 +813,40 @@
 
 .feed-card.post-card {
 
+    position: relative;
+
     width: 100%;
 
     box-sizing: border-box;
 
+    margin: 0 0 16px;
+
     background: #ffffff;
 
-    border: 1px solid #e3eae5;
+    border:
+        1px solid
+        #e5ebe7;
 
-    border-radius: 16px;
-
-    margin-bottom: 16px;
+    border-radius: 18px;
 
     overflow: hidden;
+
+    box-shadow:
+        0 2px 5px rgba(25, 45, 32, 0.04),
+        0 8px 24px rgba(25, 45, 32, 0.06);
+
+    transition:
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+
+}
+
+
+.feed-card.post-card:hover {
+
+    box-shadow:
+        0 3px 8px rgba(25, 45, 32, 0.06),
+        0 12px 30px rgba(25, 45, 32, 0.08);
 
 }
 
@@ -646,13 +860,17 @@
 
     width: 100%;
 
+    min-height: 68px;
+
     display: flex;
 
     align-items: center;
 
-    gap: 10px;
+    gap: 11px;
 
-    padding: 14px 16px;
+    padding:
+        12px
+        15px;
 
     box-sizing: border-box;
 
@@ -661,24 +879,30 @@
 
 .post-avatar {
 
-    width: 42px;
-    height: 42px;
+    width: 43px;
 
-    flex: 0 0 42px;
+    height: 43px;
+
+    flex:
+        0 0
+        43px;
 
 }
 
 
 .post-avatar img {
 
-    width: 42px;
-    height: 42px;
+    width: 43px;
+
+    height: 43px;
 
     display: block;
 
     border-radius: 50%;
 
     object-fit: cover;
+
+    background: #edf2ee;
 
 }
 
@@ -693,16 +917,24 @@
 
     flex-direction: column;
 
+    justify-content: center;
+
 }
 
 
 .post-user-name {
 
-    color: #202520;
+    display: block;
+
+    max-width: 100%;
+
+    color: #18201b;
 
     font-size: 14px;
 
-    line-height: 1.3;
+    font-weight: 700;
+
+    line-height: 1.25;
 
     overflow: hidden;
 
@@ -715,13 +947,15 @@
 
 .post-date {
 
+    display: block;
+
     margin-top: 3px;
 
-    color: #89918c;
+    color: #8a938d;
 
     font-size: 11px;
 
-    line-height: 1.3;
+    line-height: 1.25;
 
 }
 
@@ -729,17 +963,22 @@
 .post-menu-button {
 
     width: 38px;
+
     height: 38px;
 
-    flex: 0 0 38px;
+    flex:
+        0 0
+        38px;
 
-    border: none;
+    padding: 0;
+
+    border: 0;
 
     border-radius: 50%;
 
     background: transparent;
 
-    color: #7c857f;
+    color: #7b857f;
 
     display: flex;
 
@@ -751,7 +990,9 @@
 
     font-size: 17px;
 
-    padding: 0;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
 
 }
 
@@ -765,48 +1006,177 @@
 }
 
 
+.post-menu-button:active {
+
+    transform: scale(0.94);
+
+}
+
+
 
 /* =========================================================
-   CONTENT
+   MESSAGE CONTENT
+
+   Intentionally tight.
+
+   There is NO large padding above or below the message.
 ========================================================= */
 
 .post-content {
+
+    position: relative;
 
     width: 100%;
 
     box-sizing: border-box;
 
-    padding: 0 16px 14px;
+    padding:
+        0
+        15px
+        12px;
 
 }
 
 
-.post-title {
 
-    margin: 0 0 9px;
+/* =========================================================
+   DAIRY NAME
+========================================================= */
 
-    color: #18201b;
+.post-dairy-line {
 
-    font-size: 20px;
+    margin:
+        0
+        0
+        6px;
 
-    font-weight: 750;
+    padding: 0;
+
+}
+
+
+.post-dairy-link {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    max-width: 100%;
+
+    color: #198754;
+
+    font-size: 13px;
+
+    font-weight: 700;
 
     line-height: 1.3;
 
-    letter-spacing: -0.2px;
+    text-decoration: none;
+
+}
+
+
+.post-dairy-link i {
+
+    font-size: 13px;
+
+}
+
+
+.post-dairy-link span {
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+}
+
+
+a.post-dairy-link:hover {
+
+    color: #146c43;
+
+    text-decoration: underline;
+
+}
+
+
+.post-dairy-static {
+
+    cursor: default;
+
+}
+
+
+
+/* =========================================================
+   TITLE
+========================================================= */
+
+.post-title {
+
+    margin:
+        0
+        0
+        6px;
+
+    padding: 0;
+
+    color: #172019;
+
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    font-size: 21px;
+
+    font-weight: 800;
+
+    line-height: 1.22;
+
+    letter-spacing: -0.35px;
 
     word-break: break-word;
 
 }
 
 
+
+/* =========================================================
+   TEXT
+========================================================= */
+
+.post-text-wrapper {
+
+    position: relative;
+
+    margin: 0;
+
+    padding: 0;
+
+}
+
+
 .post-text {
 
-    color: #303833;
+    margin: 0;
+
+    padding: 0;
+
+    color: #303832;
 
     font-size: 15px;
 
-    line-height: 1.6;
+    font-weight: 400;
+
+    line-height: 1.55;
 
     white-space: pre-wrap;
 
@@ -815,51 +1185,91 @@
 }
 
 
+/* ---------------------------------------------------------
+   THREE-LINE LIMIT
 
-/* =========================================================
-   SINGLE IMAGE
-========================================================= */
+   Applied by JavaScript only when the actual text
+   exceeds three lines AND the post contains photos.
+--------------------------------------------------------- */
 
-.post-single-image {
+.post-text-wrapper.has-post-image
+.is-truncated .post-text {
 
-    width: 100%;
+    display: -webkit-box;
 
-    margin-top: 14px;
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 3;
 
     overflow: hidden;
 
-    border-radius: 13px;
-
-    background: #f2f5f3;
+    max-height:
+        calc(
+            1.55em * 3
+        );
 
 }
 
 
-.post-single-image .post-image {
+.post-see-more {
 
-    width: 100%;
+    display: inline-flex;
 
-    height: auto;
+    align-items: center;
 
-    max-height: 650px;
+    margin:
+        5px
+        0
+        0;
 
-    display: block;
+    padding: 0;
 
-    object-fit: contain;
+    border: 0;
+
+    background: transparent;
+
+    color: #198754;
+
+    font-size: 13px;
+
+    font-weight: 750;
+
+    line-height: 1.3;
+
+    cursor: pointer;
+
+}
+
+
+.post-see-more:hover {
+
+    color: #146c43;
+
+    text-decoration: underline;
+
+}
+
+
+.post-see-more:active {
+
+    transform: scale(0.97);
 
 }
 
 
 
 /* =========================================================
-   IMAGE GRID
+   IMAGE AREA
 ========================================================= */
 
 .post-image-grid {
 
     width: 100%;
 
-    margin-top: 14px;
+    margin:
+        12px
+        0
+        0;
 
     display: grid;
 
@@ -873,7 +1283,9 @@
 
     overflow: hidden;
 
-    border-radius: 13px;
+    border-radius: 14px;
+
+    background: #f1f4f2;
 
 }
 
@@ -884,11 +1296,11 @@
 
     min-width: 0;
 
-    aspect-ratio: 1 / 1;
-
     overflow: hidden;
 
-    background: #f1f4f2;
+    aspect-ratio: 1 / 1;
+
+    background: #edf1ee;
 
 }
 
@@ -903,40 +1315,27 @@
 
     object-fit: cover;
 
+    transition:
+        transform 0.25s ease;
+
 }
 
 
-.post-more-images {
+.post-image-item:hover .post-image {
 
-    position: absolute;
-
-    inset: 0;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    background: rgba(0, 0, 0, 0.45);
-
-    color: #ffffff;
-
-    font-size: 28px;
-
-    font-weight: 700;
+    transform: scale(1.025);
 
 }
 
 
 
 /* =========================================================
-   IMAGE COUNT VARIATIONS
+   ONE IMAGE
 ========================================================= */
 
 .post-image-count-1 {
 
-    grid-template-columns: 1fr;
+    display: block;
 
 }
 
@@ -946,28 +1345,29 @@
 
     aspect-ratio: auto;
 
+    max-height: 620px;
+
 }
 
 
 .post-image-count-1
 .post-image {
 
+    width: 100%;
+
     height: auto;
 
-    max-height: 650px;
+    max-height: 620px;
 
     object-fit: contain;
 
 }
 
 
-.post-image-count-3
-.post-image-item:first-child {
 
-    grid-row: span 2;
-
-}
-
+/* =========================================================
+   THREE IMAGE LAYOUT
+========================================================= */
 
 .post-image-count-3 {
 
@@ -978,17 +1378,491 @@
 }
 
 
-.post-image-count-4 {
+.post-image-count-3
+.post-image-item:first-child {
 
-    grid-template-columns:
-        repeat(2, 1fr);
+    grid-row:
+        span 2;
 
 }
 
 
 
 /* =========================================================
-   FEED ACTIONS
+   FOUR IMAGE LAYOUT
+========================================================= */
+
+.post-image-count-4 {
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+}
+
+
+
+/* =========================================================
+   HIDE EXTRA IMAGES INITIALLY
+
+   Only first four are visible.
+========================================================= */
+
+.post-image-item.post-image-extra {
+
+    display: none;
+
+}
+
+
+.feed-card.post-card.is-expanded
+.post-image-item.post-image-extra {
+
+    display: block;
+
+}
+
+
+
+/* =========================================================
+   MORE IMAGES OVERLAY
+========================================================= */
+
+.post-more-images {
+
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 2;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background:
+        rgba(
+            0,
+            0,
+            0,
+            0.46
+        );
+
+    color: #ffffff;
+
+    pointer-events: none;
+
+}
+
+
+.post-more-images span {
+
+    font-size: 25px;
+
+    font-weight: 800;
+
+    line-height: 1;
+
+    text-shadow:
+        0 1px 4px
+        rgba(0,0,0,0.35);
+
+}
+
+
+
+/* =========================================================
+   EXPAND BUTTON
+
+   Small floating control appears when necessary.
+========================================================= */
+
+.post-expand-button {
+
+    position: absolute;
+
+    right: 20px;
+
+    bottom: 18px;
+
+    width: 34px;
+
+    height: 34px;
+
+    padding: 0;
+
+    border: 1px solid
+        rgba(255,255,255,0.8);
+
+    border-radius: 50%;
+
+    background:
+        rgba(20, 30, 24, 0.72);
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    z-index: 5;
+
+    backdrop-filter:
+        blur(8px);
+
+    box-shadow:
+        0 4px 12px
+        rgba(0,0,0,0.18);
+
+}
+
+
+.post-expand-button:hover {
+
+    background:
+        rgba(20, 30, 24, 0.88);
+
+}
+
+
+.post-expand-button:active {
+
+    transform: scale(0.94);
+
+}
+
+
+
+/* =========================================================
+   EXPANSION BACKDROP
+========================================================= */
+
+.post-expand-backdrop {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 99998;
+
+    background:
+        rgba(
+            10,
+            16,
+            12,
+            0.68
+        );
+
+    backdrop-filter:
+        blur(5px);
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    pointer-events: none;
+
+    transition:
+        opacity 0.2s ease,
+        visibility 0.2s ease;
+
+}
+
+
+.feed-card.post-card.is-expanded
+.post-expand-backdrop {
+
+    opacity: 1;
+
+    visibility: visible;
+
+    pointer-events: auto;
+
+}
+
+
+
+/* =========================================================
+   EXPANDED CARD
+========================================================= */
+
+.feed-card.post-card.is-expanded {
+
+    position: fixed;
+
+    top: 50%;
+
+    left: 50%;
+
+    width:
+        min(
+            720px,
+            calc(100vw - 24px)
+        );
+
+    max-height:
+        min(
+            92dvh,
+            900px
+        );
+
+    margin: 0;
+
+    transform:
+        translate(
+            -50%,
+            -50%
+        );
+
+    z-index: 99999;
+
+    overflow-y: auto;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 20px 60px
+        rgba(0,0,0,0.30);
+
+    animation:
+        postPopIn
+        0.2s
+        ease-out;
+
+}
+
+
+@keyframes postPopIn {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translate(
+                -50%,
+                -48%
+            )
+            scale(0.96);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translate(
+                -50%,
+                -50%
+            )
+            scale(1);
+
+    }
+
+}
+
+
+
+/* =========================================================
+   EXPANDED POST TEXT
+
+   Remove the three-line limitation.
+========================================================= */
+
+.feed-card.post-card.is-expanded
+.post-text-wrapper.has-post-image
+.is-truncated
+.post-text {
+
+    display: block;
+
+    max-height: none;
+
+    overflow: visible;
+
+}
+
+
+.feed-card.post-card.is-expanded
+.post-see-more {
+
+    display: none !important;
+
+}
+
+
+
+/* =========================================================
+   EXPANDED IMAGES
+
+   All images become visible.
+========================================================= */
+
+.feed-card.post-card.is-expanded
+.post-image-grid {
+
+    max-height: none;
+
+}
+
+
+.feed-card.post-card.is-expanded
+.post-image-item.post-image-extra {
+
+    display: block;
+
+}
+
+
+
+/* =========================================================
+   EXPANDED IMAGE GRID
+
+   Keep a clean 2-column gallery.
+========================================================= */
+
+.feed-card.post-card.is-expanded
+.post-image-grid {
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+}
+
+
+.feed-card.post-card.is-expanded
+.post-image-count-3 {
+
+    grid-template-columns:
+        1fr
+        1fr;
+
+}
+
+
+.feed-card.post-card.is-expanded
+.post-image-count-3
+.post-image-item:first-child {
+
+    grid-row: auto;
+
+}
+
+
+.feed-card.post-card.is-expanded
+.post-image-item {
+
+    aspect-ratio: 1 / 1;
+
+}
+
+
+.feed-card.post-card.is-expanded
+.post-image-count-1
+.post-image-item {
+
+    aspect-ratio: auto;
+
+}
+
+
+
+/* =========================================================
+   EXPANDED CLOSE
+========================================================= */
+
+.post-expanded-close {
+
+    position: absolute;
+
+    top: 12px;
+
+    right: 12px;
+
+    z-index: 100001;
+
+    width: 38px;
+
+    height: 38px;
+
+    padding: 0;
+
+    border: 1px solid
+        rgba(255,255,255,0.5);
+
+    border-radius: 50%;
+
+    background:
+        rgba(
+            20,
+            25,
+            22,
+            0.72
+        );
+
+    color: #ffffff;
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    backdrop-filter:
+        blur(8px);
+
+    box-shadow:
+        0 4px 15px
+        rgba(0,0,0,0.20);
+
+}
+
+
+.feed-card.post-card.is-expanded
+.post-expanded-close {
+
+    display: flex;
+
+}
+
+
+.post-expanded-close:hover {
+
+    background:
+        rgba(
+            20,
+            25,
+            22,
+            0.9
+        );
+
+}
+
+
+.post-expanded-close:active {
+
+    transform: scale(0.94);
+
+}
+
+
+
+/* =========================================================
+   ACTIONS
 ========================================================= */
 
 .post-actions {
@@ -997,11 +1871,19 @@
 
     align-items: center;
 
-    gap: 6px;
+    gap: 5px;
 
-    padding: 8px 12px;
+    min-height: 52px;
 
-    border-top: 1px solid #edf1ee;
+    padding:
+        7px
+        11px;
+
+    border-top:
+        1px solid
+        #edf1ee;
+
+    background: #ffffff;
 
 }
 
@@ -1009,11 +1891,13 @@
 .post-actions .like-btn,
 .post-actions .toggle-comments {
 
-    min-width: 72px;
+    min-width: 76px;
 
     height: 38px;
 
-    padding: 0 11px;
+    padding:
+        0
+        12px;
 
     border: none;
 
@@ -1021,7 +1905,7 @@
 
     background: transparent;
 
-    color: #66706a;
+    color: #68726c;
 
     display: inline-flex;
 
@@ -1029,11 +1913,15 @@
 
     justify-content: center;
 
-    gap: 6px;
+    gap: 7px;
 
     cursor: pointer;
 
+    font-family: inherit;
+
     font-size: 14px;
+
+    font-weight: 600;
 
     transition:
         background 0.15s ease,
@@ -1046,7 +1934,7 @@
 .post-actions .like-btn:hover,
 .post-actions .toggle-comments:hover {
 
-    background: #f0f6f2;
+    background: #eef6f1;
 
     color: #198754;
 
@@ -1056,23 +1944,23 @@
 .post-actions .like-btn:active,
 .post-actions .toggle-comments:active {
 
-    transform: scale(0.96);
+    transform: scale(0.95);
 
 }
 
 
 .post-actions .like-btn.liked {
 
-    color: #198754;
+    background: #e9f6ee;
 
-    background: #edf7f1;
+    color: #198754;
 
 }
 
 
 .post-actions .like-btn:disabled {
 
-    opacity: 0.6;
+    opacity: 0.55;
 
     cursor: wait;
 
@@ -1091,9 +1979,9 @@
 
     min-width: 12px;
 
-    font-size: 13px;
-
     line-height: 1;
+
+    font-size: 13px;
 
 }
 
@@ -1117,7 +2005,13 @@
 
     justify-content: center;
 
-    background: rgba(0, 0, 0, 0.45);
+    background:
+        rgba(
+            0,
+            0,
+            0,
+            0.48
+        );
 
 }
 
@@ -1144,16 +2038,16 @@
     background: #ffffff;
 
     border-radius:
-        18px
-        18px
+        20px
+        20px
         0
         0;
 
     overflow: hidden;
 
     box-shadow:
-        0 -8px 30px
-        rgba(0, 0, 0, 0.18);
+        0 -10px 35px
+        rgba(0,0,0,0.20);
 
 }
 
@@ -1165,7 +2059,9 @@
 
 .comment-modal-header {
 
-    flex: 0 0 auto;
+    flex:
+        0 0
+        58px;
 
     height: 58px;
 
@@ -1175,11 +2071,15 @@
 
     justify-content: space-between;
 
-    padding: 0 14px 0 18px;
+    padding:
+        0
+        14px
+        0
+        18px;
 
-    box-sizing: border-box;
-
-    border-bottom: 1px solid #e8eee9;
+    border-bottom:
+        1px solid
+        #e8eee9;
 
 }
 
@@ -1210,7 +2110,9 @@
 
     height: 22px;
 
-    padding: 0 6px;
+    padding:
+        0
+        6px;
 
     border-radius: 11px;
 
@@ -1234,6 +2136,7 @@
 .close-comment-modal {
 
     width: 38px;
+
     height: 38px;
 
     border: none;
@@ -1273,13 +2176,19 @@
 
 .comment-section {
 
-    flex: 1 1 auto;
+    flex:
+        1
+        1
+        auto;
 
     min-height: 0;
 
     overflow-y: auto;
 
-    padding: 10px 15px 14px;
+    padding:
+        10px
+        15px
+        14px;
 
 }
 
@@ -1305,11 +2214,11 @@
 
 .comment-empty-state i {
 
-    font-size: 34px;
-
     margin-bottom: 10px;
 
     color: #aeb8b2;
+
+    font-size: 34px;
 
 }
 
@@ -1353,9 +2262,12 @@
 .comment-user-avatar {
 
     width: 34px;
+
     height: 34px;
 
-    flex: 0 0 34px;
+    flex:
+        0 0
+        34px;
 
 }
 
@@ -1363,13 +2275,14 @@
 .comment-user-avatar img {
 
     width: 34px;
+
     height: 34px;
+
+    display: block;
 
     border-radius: 50%;
 
     object-fit: cover;
-
-    display: block;
 
 }
 
@@ -1419,7 +2332,10 @@
 
 .comment-text {
 
-    margin: 3px 0 0;
+    margin:
+        3px
+        0
+        0;
 
     color: #343a36;
 
@@ -1450,9 +2366,14 @@
 .delete-comment {
 
     width: 28px;
+
     height: 28px;
 
-    flex: 0 0 28px;
+    flex:
+        0 0
+        28px;
+
+    padding: 0;
 
     border: none;
 
@@ -1469,8 +2390,6 @@
     justify-content: center;
 
     cursor: pointer;
-
-    padding: 0;
 
 }
 
@@ -1500,7 +2419,9 @@
 
 .comment-composer-wrapper {
 
-    flex: 0 0 auto;
+    flex:
+        0 0
+        auto;
 
     padding:
         9px
@@ -1510,7 +2431,9 @@
             env(safe-area-inset-bottom)
         );
 
-    border-top: 1px solid #e8eee9;
+    border-top:
+        1px solid
+        #e8eee9;
 
     background: #ffffff;
 
@@ -1544,7 +2467,9 @@
 
     box-sizing: border-box;
 
-    border: 1px solid #dce5df;
+    border:
+        1px solid
+        #dce5df;
 
     border-radius: 24px;
 
@@ -1555,9 +2480,9 @@
 
 .comment-input-wrapper {
 
-    flex: 1;
-
     min-width: 0;
+
+    flex: 1;
 
 }
 
@@ -1574,12 +2499,6 @@
 
     overflow-y: auto;
 
-    border: none;
-
-    outline: none;
-
-    background: transparent;
-
     padding:
         9px
         0
@@ -1589,13 +2508,19 @@
 
     box-sizing: border-box;
 
+    border: none;
+
+    outline: none;
+
+    background: transparent;
+
+    color: #202520;
+
     font-family: inherit;
 
     font-size: 14px;
 
     line-height: 20px;
-
-    color: #202520;
 
 }
 
@@ -1610,9 +2535,12 @@
 .comment-submit-button {
 
     width: 38px;
+
     height: 38px;
 
-    flex: 0 0 38px;
+    flex:
+        0 0
+        38px;
 
     border: none;
 
@@ -1669,16 +2597,37 @@
 
     .feed-card.post-card {
 
-        border-radius: 13px;
-
         margin-bottom: 12px;
+
+        border-radius: 15px;
 
     }
 
 
     .post-card-header {
 
-        padding: 12px;
+        min-height: 62px;
+
+        padding:
+            10px
+            12px;
+
+    }
+
+
+    .post-avatar,
+    .post-avatar img {
+
+        width: 40px;
+
+        height: 40px;
+
+    }
+
+
+    .post-avatar {
+
+        flex-basis: 40px;
 
     }
 
@@ -1688,14 +2637,25 @@
         padding:
             0
             12px
-            12px;
+            10px;
+
+    }
+
+
+    .post-dairy-line {
+
+        margin-bottom: 5px;
 
     }
 
 
     .post-title {
 
+        margin-bottom: 5px;
+
         font-size: 18px;
+
+        line-height: 1.24;
 
     }
 
@@ -1704,16 +2664,29 @@
 
         font-size: 14px;
 
-        line-height: 1.55;
+        line-height: 1.52;
+
+    }
+
+
+    .post-image-grid {
+
+        margin-top: 10px;
+
+        border-radius: 11px;
+
+        gap: 3px;
 
     }
 
 
     .post-actions {
 
+        min-height: 48px;
+
         padding:
-            7px
-            9px;
+            5px
+            8px;
 
     }
 
@@ -1725,6 +2698,56 @@
 
         height: 36px;
 
+        padding:
+            0
+            9px;
+
+    }
+
+
+    .feed-card.post-card.is-expanded {
+
+        width:
+            calc(
+                100vw - 14px
+            );
+
+        max-height:
+            94dvh;
+
+        border-radius: 17px;
+
+    }
+
+
+    .feed-card.post-card.is-expanded
+    .post-card-header {
+
+        padding-right: 55px;
+
+    }
+
+
+    .feed-card.post-card.is-expanded
+    .post-content {
+
+        padding:
+            0
+            12px
+            12px;
+
+    }
+
+
+    .feed-card.post-card.is-expanded
+    .post-image-grid {
+
+        grid-template-columns:
+            repeat(
+                2,
+                minmax(0, 1fr)
+            );
+
     }
 
 
@@ -1733,8 +2756,8 @@
         max-height: 92dvh;
 
         border-radius:
-            16px
-            16px
+            17px
+            17px
             0
             0;
 
@@ -1767,9 +2790,16 @@
     }
 
 
+    .post-dairy-link {
+
+        font-size: 12px;
+
+    }
+
+
     .post-image-grid {
 
-        gap: 3px;
+        gap: 2px;
 
     }
 
@@ -1781,10 +2811,644 @@
 
         padding:
             0
-            8px;
+            7px;
+
+    }
+
+}
+
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .feed-card.post-card,
+    .post-image,
+    .post-expand-backdrop {
+
+        transition: none;
+
+    }
+
+
+    .feed-card.post-card.is-expanded {
+
+        animation: none;
 
     }
 
 }
 
 </style>
+
+
+
+<!-- =========================================================
+     POST INTERACTION SCRIPT
+
+     ONLY HANDLES:
+
+     • Detecting long photo-post text
+     • See more
+     • Opening expanded post
+     • Closing expanded post
+
+     LIKE / COMMENT / DELETE ARE STILL HANDLED BY
+     feed-actions.ejs.
+========================================================= -->
+
+<script>
+
+(function () {
+
+    /* =====================================================
+       PREVENT DUPLICATE INITIALIZATION
+    ====================================================== */
+
+    if (
+        window.__postCardExpansionInitialized
+    ) {
+
+        return;
+
+    }
+
+
+    window.__postCardExpansionInitialized =
+        true;
+
+
+
+    /* =====================================================
+       DETECT LONG TEXT
+    ====================================================== */
+
+    function checkPostText(card) {
+
+        if (!card) {
+
+            return;
+
+        }
+
+
+        const wrapper =
+            card.querySelector(
+                ".post-text-wrapper.has-post-image"
+            );
+
+
+        if (!wrapper) {
+
+            return;
+
+        }
+
+
+        const text =
+            wrapper.querySelector(
+                ".post-text"
+            );
+
+
+        const seeMore =
+            wrapper.querySelector(
+                ".post-see-more"
+            );
+
+
+        const expandButton =
+            card.querySelector(
+                ".post-expand-button"
+            );
+
+
+        if (
+            !text ||
+            !seeMore
+        ) {
+
+            return;
+
+        }
+
+
+        /*
+         * Temporarily remove truncation so we can
+         * measure the real text height.
+         */
+
+        wrapper.classList.remove(
+            "is-truncated"
+        );
+
+
+        /*
+         * Three lines based on the actual line height.
+         */
+
+        const styles =
+            window.getComputedStyle(
+                text
+            );
+
+
+        const lineHeight =
+            parseFloat(
+                styles.lineHeight
+            );
+
+
+        const threeLineHeight =
+            lineHeight * 3;
+
+
+        const isLong =
+            text.scrollHeight >
+            threeLineHeight + 2;
+
+
+        if (isLong) {
+
+            wrapper.classList.add(
+                "is-truncated"
+            );
+
+
+            seeMore.hidden =
+                false;
+
+
+            if (expandButton) {
+
+                expandButton.hidden =
+                    false;
+
+            }
+
+        }
+        else {
+
+            seeMore.hidden =
+                true;
+
+
+            if (expandButton) {
+
+                expandButton.hidden =
+                    true;
+
+            }
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       OPEN POST
+    ====================================================== */
+
+    function openPost(card) {
+
+        if (!card) {
+
+            return;
+
+        }
+
+
+        card.classList.add(
+            "is-expanded"
+        );
+
+
+        document.body.classList.add(
+            "post-expanded-open"
+        );
+
+
+        document.body.style.overflow =
+            "hidden";
+
+
+        const backdrop =
+            card.querySelector(
+                ".post-expand-backdrop"
+            );
+
+
+        if (backdrop) {
+
+            backdrop.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       CLOSE POST
+    ====================================================== */
+
+    function closePost(card) {
+
+        if (!card) {
+
+            return;
+
+        }
+
+
+        card.classList.remove(
+            "is-expanded"
+        );
+
+
+        document.body.classList.remove(
+            "post-expanded-open"
+        );
+
+
+        /*
+         * Only restore scrolling when there isn't
+         * another modal open.
+         */
+
+        const activeCommentModal =
+            document.querySelector(
+                ".comment-modal.active"
+            );
+
+
+        if (!activeCommentModal) {
+
+            document.body.style.overflow =
+                "";
+
+        }
+
+
+        const backdrop =
+            card.querySelector(
+                ".post-expand-backdrop"
+            );
+
+
+        if (backdrop) {
+
+            backdrop.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       CLOSE ALL EXPANDED POSTS
+    ====================================================== */
+
+    function closeAllPosts() {
+
+        document
+            .querySelectorAll(
+                ".feed-card.post-card.is-expanded"
+            )
+            .forEach(
+                closePost
+            );
+
+    }
+
+
+
+    /* =====================================================
+       INITIAL CHECK
+    ====================================================== */
+
+    function initializePostCards() {
+
+        document
+            .querySelectorAll(
+                ".feed-card.post-card"
+            )
+            .forEach(
+                checkPostText
+            );
+
+    }
+
+
+    /*
+     * Run after the page has painted.
+     *
+     * This gives the browser the correct width before
+     * measuring how many lines the text occupies.
+     */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializePostCards,
+            {
+                once: true
+            }
+        );
+
+    }
+    else {
+
+        initializePostCards();
+
+    }
+
+
+
+    /* =====================================================
+       WINDOW RESIZE
+
+       Recalculate because a change in width can turn
+       a three-line post into a four-line post or vice versa.
+    ====================================================== */
+
+    let resizeTimer = null;
+
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            clearTimeout(
+                resizeTimer
+            );
+
+
+            resizeTimer =
+                setTimeout(
+                    function () {
+
+                        document
+                            .querySelectorAll(
+                                ".feed-card.post-card:not(.is-expanded)"
+                            )
+                            .forEach(
+                                checkPostText
+                            );
+
+                    },
+                    150
+                );
+
+        }
+    );
+
+
+
+    /* =====================================================
+       CLICK HANDLER
+    ====================================================== */
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+
+            /* =============================================
+               SEE MORE
+            ============================================== */
+
+            const seeMore =
+                event.target.closest(
+                    ".post-see-more"
+                );
+
+
+            if (seeMore) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                const card =
+                    seeMore.closest(
+                        ".feed-card.post-card"
+                    );
+
+
+                openPost(card);
+
+                return;
+
+            }
+
+
+
+            /* =============================================
+               EXPAND ICON
+            ============================================== */
+
+            const expandButton =
+                event.target.closest(
+                    ".post-expand-button"
+                );
+
+
+            if (expandButton) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                const card =
+                    expandButton.closest(
+                        ".feed-card.post-card"
+                    );
+
+
+                openPost(card);
+
+                return;
+
+            }
+
+
+
+            /* =============================================
+               CLOSE EXPANDED POST
+            ============================================== */
+
+            const closeButton =
+                event.target.closest(
+                    ".post-expanded-close"
+                );
+
+
+            if (closeButton) {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+
+                const card =
+                    closeButton.closest(
+                        ".feed-card.post-card"
+                    );
+
+
+                closePost(card);
+
+                return;
+
+            }
+
+
+
+            /* =============================================
+               CLICK BACKDROP
+            ============================================== */
+
+            if (
+                event.target.classList.contains(
+                    "post-expand-backdrop"
+                )
+            ) {
+
+                const card =
+                    event.target.closest(
+                        ".feed-card.post-card"
+                    );
+
+
+                closePost(card);
+
+                return;
+
+            }
+
+
+
+            /* =============================================
+               CLICK IMAGE OVERLAY
+
+               If the user taps +N, open the full post.
+            ============================================== */
+
+            const moreImages =
+                event.target.closest(
+                    ".post-more-images"
+                );
+
+
+            if (moreImages) {
+
+                const card =
+                    moreImages.closest(
+                        ".feed-card.post-card"
+                    );
+
+
+                if (card) {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+                    openPost(card);
+
+                }
+
+                return;
+
+            }
+
+        }
+    );
+
+
+
+    /* =====================================================
+       ESCAPE KEY
+    ====================================================== */
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (
+                event.key !==
+                "Escape"
+            ) {
+
+                return;
+
+            }
+
+
+            closeAllPosts();
+
+        }
+    );
+
+
+
+    /* =====================================================
+       IMAGE LOAD RECALCULATION
+    ====================================================== */
+
+    document.addEventListener(
+        "load",
+        function (event) {
+
+            if (
+                event.target &&
+                event.target.matches &&
+                event.target.matches(
+                    ".post-image"
+                )
+            ) {
+
+                const card =
+                    event.target.closest(
+                        ".feed-card.post-card"
+                    );
+
+
+                if (
+                    card &&
+                    !card.classList.contains(
+                        "is-expanded"
+                    )
+                ) {
+
+                    checkPostText(card);
+
+                }
+
+            }
+
+        },
+        true
+    );
+
+})();
+
+</script>
