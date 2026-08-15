@@ -172,11 +172,6 @@ body{
 
     justify-content:space-evenly;
 
-    /*
-       IMPORTANT:
-       The navigation must not take 100% of the row,
-       because the profile must remain on the far right.
-    */
     width:auto;
 
     height:100%;
@@ -265,6 +260,48 @@ body{
 
 
 /* =========================================================
+   HOME BUTTON
+   Used for admin instead of the menu icon.
+========================================================= */
+
+.admin-home-btn{
+    width:44px;
+    height:44px;
+
+    border-radius:8px;
+
+    background:#fff;
+
+    color:#0b5d1e;
+
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    cursor:pointer;
+
+    font-size:23px;
+
+    text-decoration:none;
+
+    user-select:none;
+
+    flex-shrink:0;
+
+    transition:.2s;
+}
+
+.admin-home-btn:hover{
+    background:#f2f2f2;
+}
+
+.admin-home-btn:active{
+    transform:scale(.96);
+}
+
+
+/* =========================================================
    MENU BUTTON
 ========================================================= */
 
@@ -301,12 +338,6 @@ body{
 .profile-box{
     position:relative;
 
-    /*
-       THIS IS THE IMPORTANT PART.
-       It pushes the profile all the way to the right
-       regardless of whether the menu button or worker
-       navigation is being displayed.
-    */
     margin-left:auto;
 
     flex-shrink:0;
@@ -584,10 +615,6 @@ body{
     .dairy-worker-nav{
         gap:3px;
 
-        /*
-           Keep navigation flexible while leaving
-           the profile at the far right.
-        */
         flex:1 1 auto;
 
         min-width:0;
@@ -694,7 +721,32 @@ const isAuthPage =
 
 let homeLink = "/";
 
+
+/*
+   ADMIN
+   ---------------------------------------------------------
+   Admin home page is always:
+
+   /dashboard/dairy
+*/
+
 if(
+    user &&
+    user.role === "admin"
+){
+
+    homeLink = "/dashboard/dairy";
+
+}
+
+
+/*
+   DAIRY WORKER
+   ---------------------------------------------------------
+   Dairy worker home page is their assigned farm.
+*/
+
+else if(
     user &&
     user.role === "dairyWorker" &&
     Array.isArray(user.assignedFarm) &&
@@ -704,6 +756,7 @@ if(
     const firstFarm = user.assignedFarm[0];
 
     homeLink = `/dairy/${firstFarm}`;
+
 }
 
 
@@ -744,6 +797,23 @@ if(user){
 
 }
 
+
+/* =========================================================
+   ROLE FLAGS
+========================================================= */
+
+const isAdmin =
+    !!user &&
+    user.role === "admin";
+
+const isDairyWorker =
+    !!user &&
+    user.role === "dairyWorker";
+
+const isPoultryWorker =
+    !!user &&
+    user.role === "poultryWorker";
+
 %>
 
 
@@ -762,9 +832,7 @@ if(user){
     ====================================================== -->
 
     <a
-        href="<%= user && user.role === "dairyWorker"
-            ? homeLink
-            : "/" %>"
+        href="<%= homeLink %>"
 
         class="header-logo-link"
 
@@ -805,7 +873,7 @@ if(user){
 <div class="top-menu">
 
 
-<% if(user && user.role === "dairyWorker"){ %>
+<% if(isDairyWorker){ %>
 
 
     <!-- =====================================================
@@ -872,11 +940,36 @@ if(user){
     </div>
 
 
+<% }else if(isAdmin){ %>
+
+
+    <!-- =====================================================
+       ADMIN HOME LINK
+       
+       Admin does NOT receive a sidebar.
+       The menu button is replaced by a home link.
+    ====================================================== -->
+
+    <a
+        href="/dashboard/dairy"
+
+        class="admin-home-btn"
+
+        aria-label="Dairy Dashboard Home"
+
+        title="Dairy Dashboard"
+    >
+
+        🏠
+
+    </a>
+
+
 <% }else{ %>
 
 
     <!-- =====================================================
-       SIDEBAR MENU BUTTON
+       POULTRY WORKER MENU BUTTON
     ====================================================== -->
 
     <div
@@ -901,10 +994,6 @@ if(user){
 
 <!-- =========================================================
    PROFILE
-
-   IMPORTANT:
-   .profile-box uses margin-left:auto, so the profile
-   always stays at the far right of the top menu.
 ========================================================= -->
 
 <div
@@ -949,7 +1038,7 @@ if(user){
             </a>
 
 
-            <% if(user.role === "admin"){ %>
+            <% if(isAdmin){ %>
 
                 <a href="/accounts">
                     👥 People
@@ -977,10 +1066,17 @@ if(user){
 <!-- =========================================================
    SIDEBAR
 
-   Dairy workers DO NOT receive the sidebar.
+   ADMIN:
+       NO SIDEBAR
+
+   DAIRY WORKER:
+       NO SIDEBAR
+
+   POULTRY WORKER:
+       SIDEBAR ENABLED
 ========================================================= -->
 
-<% if(!user || user.role !== "dairyWorker"){ %>
+<% if(isPoultryWorker){ %>
 
 
 <div
@@ -989,68 +1085,34 @@ if(user){
 >
 
 
-    <% if(user && user.role === "admin"){ %>
+    <a href="/">
+        🏠 Home
+    </a>
 
 
-        <a href="/">
-            🏠 Home
-        </a>
+    <a href="/incubation">
+        🥚 Incubate Eggs
+    </a>
 
 
-        <a href="/create-invite">
-            👥 Add Staff
-        </a>
+    <a href="/nursing">
+        🐣 Poultry Progress
+    </a>
 
 
-        <a href="/dashboard/dairy">
-            🐄 Dairy Dashboard
-        </a>
+    <a href="/cage">
+        🐔 Caged Chicken
+    </a>
 
 
-        <a href="/dashboard/poultry">
-            🐔 Poultry Dashboard
-        </a>
+    <a href="/poultry-stats">
+        📊 Track Production
+    </a>
 
 
-        <a href="/dashboard/agriculture">
-            🌾 Agriculture Dashboard
-        </a>
-
-
-    <% }else if(user && user.role === "poultryWorker"){ %>
-
-
-        <a href="/">
-            🏠 Home
-        </a>
-
-
-        <a href="/incubation">
-            🥚 Incubate Eggs
-        </a>
-
-
-        <a href="/nursing">
-            🐣 Poultry Progress
-        </a>
-
-
-        <a href="/cage">
-            🐔 Caged Chicken
-        </a>
-
-
-        <a href="/poultry-stats">
-            📊 Track Production
-        </a>
-
-
-        <a href="/eggs">
-            🥚 Sell Eggs
-        </a>
-
-
-    <% } %>
+    <a href="/eggs">
+        🥚 Sell Eggs
+    </a>
 
 
 </div>
