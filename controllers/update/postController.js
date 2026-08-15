@@ -3,12 +3,14 @@
 // ==========================================================
 
 const updateService =
-    require("../../services/update");
+    require("../../services/update/postService");
 
 
 // ==========================================================
 // CREATE POST
 // ==========================================================
+//
+// Creates a normal feed post.
 //
 // Supports:
 //
@@ -16,15 +18,9 @@ const updateService =
 //     text
 //     multiple images
 //
-// Images are supplied by:
-//
-//     upload.array("images", 10)
-//
-// Therefore:
+// Uploaded files are supplied by:
 //
 //     req.files
-//
-// is an array.
 //
 // ==========================================================
 
@@ -43,7 +39,7 @@ async (req, res) => {
 
 
         // ==================================================
-        // LOGGED-IN USER
+        // USER
         // ==================================================
 
         const user =
@@ -60,47 +56,47 @@ async (req, res) => {
 
 
         // ==================================================
-        // POST CONTENT
+        // POST DATA
         // ==================================================
 
         const title =
-            req.body.title
-                ?.trim() || "";
+            typeof req.body.title === "string"
+                ? req.body.title.trim()
+                : "";
 
 
         const text =
-            req.body.text
-                ?.trim() || "";
+            typeof req.body.text === "string"
+                ? req.body.text.trim()
+                : "";
 
 
         // ==================================================
-        // IMAGES
+        // MULTIPLE IMAGES
         // ==================================================
-        //
-        // upload.array("images", 10)
-        //
-        // produces:
-        //
-        // req.files = [
-        //     file,
-        //     file,
-        //     file
-        // ]
-        //
-        // ==================================================
+
+        const files =
+            Array.isArray(req.files)
+                ? req.files
+                : [];
+
 
         const images =
-            Array.isArray(req.files)
-
-                ? req.files
-                    .map(file => file.filename)
-                    .filter(Boolean)
-
-                : [];
+            files
+                .map(file => file.filename)
+                .filter(Boolean);
 
 
         // ==================================================
         // VALIDATION
+        // ==================================================
+        //
+        // A post must contain at least one of:
+        //
+        //     title
+        //     text
+        //     image
+        //
         // ==================================================
 
         if (
@@ -134,34 +130,31 @@ async (req, res) => {
                 userName:
                     user.name,
 
-                title:
-                    title,
+                userImage:
+                    user.profileImage || "",
 
-                text:
-                    text,
+                title,
 
-                images:
-                    images
+                text,
+
+                images
 
             });
 
 
         // ==================================================
-        // USER IMAGE
+        // REAL USER IMAGE
         // ==================================================
 
         const userImage =
             user.profileImage ||
-
-            `https://ui-avatars.com/api/?name=${
-                encodeURIComponent(
-                    user.name
-                )
-            }`;
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                user.name
+            )}`;
 
 
         // ==================================================
-        // SOCKET.IO PAYLOAD
+        // SOCKET PAYLOAD
         // ==================================================
 
         const payload = {
@@ -170,7 +163,7 @@ async (req, res) => {
                 post._id,
 
             dairyId:
-                id,
+                post.dairy,
 
             userId:
                 user._id,
@@ -178,8 +171,10 @@ async (req, res) => {
             userName:
                 user.name,
 
-            userImage:
-                userImage,
+            userImage,
+
+            type:
+                post.type,
 
             title:
                 post.title || "",
@@ -192,9 +187,9 @@ async (req, res) => {
                     ? post.images
                     : [],
 
-            // ------------------------------------------------
-            // Backward compatibility for existing frontend
-            // ------------------------------------------------
+            // ----------------------------------------------
+            // Backwards compatibility
+            // ----------------------------------------------
 
             image:
                 post.image || null,
@@ -289,8 +284,7 @@ async (req, res) => {
 
             return res.status(401).json({
 
-                success:
-                    false,
+                success: false,
 
                 message:
                     "Unauthorized"
@@ -299,6 +293,10 @@ async (req, res) => {
 
         }
 
+
+        // ==================================================
+        // TOGGLE LIKE
+        // ==================================================
 
         const result =
             await updateService.toggleLike({
@@ -312,16 +310,28 @@ async (req, res) => {
             });
 
 
+        // ==================================================
+        // DAIRY ROOM
+        // ==================================================
+
+        const dairyId =
+            req.body &&
+            req.body.dairyId
+                ? req.body.dairyId
+                : "all";
+
+
+        // ==================================================
+        // SOCKET
+        // ==================================================
+
         const io =
             req.app.get("io");
 
 
         if (io) {
 
-            io.to(
-                req.body.dairyId ||
-                "all"
-            ).emit(
+            io.to(dairyId).emit(
 
                 "postLiked",
 
@@ -343,6 +353,10 @@ async (req, res) => {
         }
 
 
+        // ==================================================
+        // RESPONSE
+        // ==================================================
+
         return res.json({
 
             success:
@@ -361,7 +375,7 @@ async (req, res) => {
 
         console.error(
             "LIKE POST ERROR:",
-            err.message
+            err
         );
 
 
@@ -403,8 +417,7 @@ async (req, res) => {
 
             return res.status(401).json({
 
-                success:
-                    false,
+                success: false,
 
                 message:
                     "Unauthorized"
@@ -414,17 +427,21 @@ async (req, res) => {
         }
 
 
+        // ==================================================
+        // COMMENT TEXT
+        // ==================================================
+
         const text =
-            req.body.text
-                ?.trim();
+            typeof req.body.text === "string"
+                ? req.body.text.trim()
+                : "";
 
 
         if (!text) {
 
             return res.status(400).json({
 
-                success:
-                    false,
+                success: false,
 
                 message:
                     "Comment text required"
@@ -433,6 +450,10 @@ async (req, res) => {
 
         }
 
+
+        // ==================================================
+        // ADD COMMENT
+        // ==================================================
 
         const comment =
             await updateService.addPostComment({
@@ -449,11 +470,14 @@ async (req, res) => {
                 userImage:
                     user.profileImage || "",
 
-                text:
-                    text
+                text
 
             });
 
+
+        // ==================================================
+        // PAYLOAD
+        // ==================================================
 
         const payload = {
 
@@ -469,22 +493,19 @@ async (req, res) => {
                     comment._id,
 
                 userId:
-                    user._id,
+                    comment.userId,
 
                 userName:
-                    user.name,
+                    comment.userName,
 
                 userImage:
-                    user.profileImage ||
-
-                    `https://ui-avatars.com/api/?name=${
-                        encodeURIComponent(
-                            user.name
-                        )
-                    }`,
+                    comment.userImage,
 
                 text:
                     comment.text,
+
+                createdAt:
+                    comment.createdAt,
 
                 dateText:
                     new Date(
@@ -496,16 +517,24 @@ async (req, res) => {
         };
 
 
+        // ==================================================
+        // SOCKET
+        // ==================================================
+
+        const dairyId =
+            req.body &&
+            req.body.dairyId
+                ? req.body.dairyId
+                : "all";
+
+
         const io =
             req.app.get("io");
 
 
         if (io) {
 
-            io.to(
-                req.body.dairyId ||
-                "all"
-            ).emit(
+            io.to(dairyId).emit(
                 "postCommentAdded",
                 payload
             );
@@ -522,7 +551,7 @@ async (req, res) => {
 
         console.error(
             "POST COMMENT ERROR:",
-            err.message
+            err
         );
 
 
@@ -564,8 +593,7 @@ async (req, res) => {
 
             return res.status(401).json({
 
-                success:
-                    false,
+                success: false,
 
                 message:
                     "Unauthorized"
@@ -575,15 +603,29 @@ async (req, res) => {
         }
 
 
+        // ==================================================
+        // DELETE
+        // ==================================================
+
         await updateService.deletePost({
 
             postId:
                 id,
 
-            user:
-                user
+            user
 
         });
+
+
+        // ==================================================
+        // SOCKET
+        // ==================================================
+
+        const dairyId =
+            req.body &&
+            req.body.dairyId
+                ? req.body.dairyId
+                : "all";
 
 
         const io =
@@ -592,10 +634,7 @@ async (req, res) => {
 
         if (io) {
 
-            io.to(
-                req.body.dairyId ||
-                "all"
-            ).emit(
+            io.to(dairyId).emit(
 
                 "postDeleted",
 
@@ -623,7 +662,7 @@ async (req, res) => {
 
         console.error(
             "DELETE POST ERROR:",
-            err.message
+            err
         );
 
 
@@ -633,6 +672,7 @@ async (req, res) => {
                 false,
 
             message:
+                err.message ||
                 "Failed to delete post"
 
         });
@@ -665,8 +705,7 @@ async (req, res) => {
 
             return res.status(401).json({
 
-                success:
-                    false,
+                success: false,
 
                 message:
                     "Unauthorized"
@@ -676,15 +715,29 @@ async (req, res) => {
         }
 
 
+        // ==================================================
+        // DELETE COMMENT
+        // ==================================================
+
         await updateService.deleteComment({
 
             commentId:
                 id,
 
-            user:
-                user
+            user
 
         });
+
+
+        // ==================================================
+        // SOCKET
+        // ==================================================
+
+        const dairyId =
+            req.body &&
+            req.body.dairyId
+                ? req.body.dairyId
+                : "all";
 
 
         const io =
@@ -693,10 +746,7 @@ async (req, res) => {
 
         if (io) {
 
-            io.to(
-                req.body.dairyId ||
-                "all"
-            ).emit(
+            io.to(dairyId).emit(
 
                 "commentDeleted",
 
@@ -727,7 +777,7 @@ async (req, res) => {
 
         console.error(
             "DELETE COMMENT ERROR:",
-            err.message
+            err
         );
 
 
@@ -737,6 +787,7 @@ async (req, res) => {
                 false,
 
             message:
+                err.message ||
                 "Failed to delete comment"
 
         });
