@@ -13,18 +13,17 @@ const {
 } = require("./helpers");
 
 
-
 // ==========================================================
 // CREATE POST
 // ==========================================================
+//
+// Creates a normal feed post.
 //
 // Supports:
 //
 //     title
 //     text
-//     images[]
-//
-// The user's actual name is resolved from ProjectUser.
+//     multiple images
 //
 // ==========================================================
 
@@ -37,11 +36,13 @@ async ({
 
     userName,
 
+    userImage = "",
+
     title,
 
     text,
 
-    images
+    images = []
 
 }) => {
 
@@ -53,21 +54,42 @@ async ({
         userName || "";
 
 
+    // ======================================================
+    // RESOLVE USER IMAGE
+    // ======================================================
+
+    let resolvedUserImage =
+        userImage || "";
+
+
+    // ======================================================
+    // GET REAL USER DATA
+    // ======================================================
+
     if (userId) {
 
         const user =
             await ProjectUser
                 .findById(userId)
-                .select("name");
+                .select("name profileImage");
 
 
-        if (
-            user &&
-            user.name
-        ) {
+        if (user) {
 
-            resolvedUserName =
-                user.name;
+            if (user.name) {
+
+                resolvedUserName =
+                    user.name;
+
+            }
+
+
+            if (user.profileImage) {
+
+                resolvedUserImage =
+                    user.profileImage;
+
+            }
 
         }
 
@@ -80,10 +102,9 @@ async ({
 
     const normalizedImages =
         Array.isArray(images)
-
             ? images
                 .filter(Boolean)
-
+                .map(String)
             : [];
 
 
@@ -102,6 +123,9 @@ async ({
         userName:
             resolvedUserName,
 
+        userImage:
+            resolvedUserImage,
+
         type:
             "post",
 
@@ -114,12 +138,12 @@ async ({
         images:
             normalizedImages,
 
-        // --------------------------------------------------
-        // Keep old field empty for new posts.
+        // ----------------------------------------------
+        // New posts use `images`.
         //
-        // This allows old posts containing `image` to remain
-        // readable while new posts use `images`.
-        // --------------------------------------------------
+        // Keep `image` empty for compatibility with
+        // older records.
+        // ----------------------------------------------
 
         image:
             null,
@@ -186,7 +210,8 @@ async ({
         );
 
 
-    let liked = false;
+    let liked =
+        false;
 
 
     if (index >= 0) {
@@ -196,17 +221,17 @@ async ({
             1
         );
 
-        liked = false;
+        liked =
+            false;
 
-    }
-
-    else {
+    } else {
 
         post.likes.push(
             userId
         );
 
-        liked = true;
+        liked =
+            true;
 
     }
 
@@ -274,13 +299,17 @@ async ({
 
     const comment = {
 
-        userId,
+        userId:
+            userId,
 
-        userName,
+        userName:
+            userName || "",
 
-        userImage,
+        userImage:
+            userImage || "",
 
-        text,
+        text:
+            text,
 
         createdAt:
             new Date()
@@ -332,17 +361,31 @@ async ({
     }
 
 
+    // ======================================================
+    // OWNER
+    // ======================================================
+
     const owner =
 
         post.user &&
+
+        user._id &&
 
         post.user.toString() ===
         user._id.toString();
 
 
+    // ======================================================
+    // ADMIN
+    // ======================================================
+
     const admin =
         user.role === "admin";
 
+
+    // ======================================================
+    // AUTHORIZATION
+    // ======================================================
 
     if (
         !owner &&
@@ -355,6 +398,10 @@ async ({
 
     }
 
+
+    // ======================================================
+    // DELETE
+    // ======================================================
 
     await Update.findByIdAndDelete(
         postId
@@ -398,6 +445,10 @@ async ({
     }
 
 
+    // ======================================================
+    // FIND COMMENT
+    // ======================================================
+
     const comment =
         post.comments.find(
 
@@ -418,6 +469,10 @@ async ({
     }
 
 
+    // ======================================================
+    // OWNER
+    // ======================================================
+
     const owner =
 
         comment.userId &&
@@ -428,9 +483,17 @@ async ({
         user._id.toString();
 
 
+    // ======================================================
+    // ADMIN
+    // ======================================================
+
     const admin =
         user.role === "admin";
 
+
+    // ======================================================
+    // AUTHORIZATION
+    // ======================================================
 
     if (
         !owner &&
@@ -443,6 +506,10 @@ async ({
 
     }
 
+
+    // ======================================================
+    // REMOVE COMMENT
+    // ======================================================
 
     post.comments =
         post.comments.filter(
