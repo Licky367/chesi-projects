@@ -38,7 +38,11 @@
 
                 <small>
 
-                    <%= item.dateText || "" %>
+                    <%= item.dateText || (
+                        item.createdAt
+                            ? new Date(item.createdAt).toLocaleString()
+                            : ""
+                    ) %>
 
                 </small>
 
@@ -60,8 +64,8 @@
                 user.role === "admin" ||
                 (
                     user._id &&
-                    item.userId &&
-                    user._id.toString() === item.userId.toString()
+                    item.user &&
+                    user._id.toString() === item.user.toString()
                 )
             )
         ) { %>
@@ -110,17 +114,24 @@
              ASSET NAME
         ============================================== -->
 
-        <% if (item.assetName || item.name) { %>
+        <% if (
+            item.asset &&
+            item.asset.name
+        ) { %>
+
 
             <div class="asset-feed-name">
 
+
                 <strong>
 
-                    <%= item.assetName || item.name %>
+                    <%= item.asset.name %>
 
                 </strong>
 
+
             </div>
+
 
         <% } %>
 
@@ -130,7 +141,11 @@
              ASSET TYPE
         ============================================== -->
 
-        <% if (item.assetType || item.typeName) { %>
+        <% if (
+            item.asset &&
+            item.asset.type
+        ) { %>
+
 
             <p>
 
@@ -138,9 +153,21 @@
                     Type:
                 </strong>
 
-                <%= item.assetType || item.typeName %>
+                <%= item.asset.type
+                    .replace(
+                        /([A-Z])/g,
+                        " $1"
+                    )
+                    .replace(
+                        /^./,
+                        function(char) {
+                            return char.toUpperCase();
+                        }
+                    )
+                %>
 
             </p>
+
 
         <% } %>
 
@@ -151,9 +178,11 @@
         ============================================== -->
 
         <% if (
-            item.buyingPrice !== undefined &&
-            item.buyingPrice !== null
+            item.asset &&
+            item.asset.buyingPrice !== undefined &&
+            item.asset.buyingPrice !== null
         ) { %>
+
 
             <p>
 
@@ -162,9 +191,12 @@
                 </strong>
 
                 KES
-                <%= Number(item.buyingPrice).toLocaleString() %>
+                <%= Number(
+                    item.asset.buyingPrice
+                ).toLocaleString() %>
 
             </p>
+
 
         <% } %>
 
@@ -175,9 +207,11 @@
         ============================================== -->
 
         <% if (
-            item.currentWorth !== undefined &&
-            item.currentWorth !== null
+            item.asset &&
+            item.asset.currentWorth !== undefined &&
+            item.asset.currentWorth !== null
         ) { %>
+
 
             <p>
 
@@ -186,9 +220,12 @@
                 </strong>
 
                 KES
-                <%= Number(item.currentWorth).toLocaleString() %>
+                <%= Number(
+                    item.asset.currentWorth
+                ).toLocaleString() %>
 
             </p>
+
 
         <% } %>
 
@@ -198,7 +235,11 @@
              CONDITION
         ============================================== -->
 
-        <% if (item.condition) { %>
+        <% if (
+            item.asset &&
+            item.asset.condition
+        ) { %>
+
 
             <p>
 
@@ -206,9 +247,10 @@
                     Condition:
                 </strong>
 
-                <%= item.condition %>
+                <%= item.asset.condition %>
 
             </p>
+
 
         <% } %>
 
@@ -218,7 +260,11 @@
              LOCATION
         ============================================== -->
 
-        <% if (item.location) { %>
+        <% if (
+            item.asset &&
+            item.asset.location
+        ) { %>
+
 
             <p>
 
@@ -226,9 +272,10 @@
                     Location:
                 </strong>
 
-                <%= item.location %>
+                <%= item.asset.location %>
 
             </p>
+
 
         <% } %>
 
@@ -238,7 +285,11 @@
              STATUS
         ============================================== -->
 
-        <% if (item.status) { %>
+        <% if (
+            item.asset &&
+            item.asset.status
+        ) { %>
+
 
             <p>
 
@@ -246,10 +297,11 @@
                     Status:
                 </strong>
 
-                <%= item.status.charAt(0).toUpperCase() +
-                    item.status.slice(1) %>
+                <%= item.asset.status.charAt(0).toUpperCase() +
+                    item.asset.status.slice(1) %>
 
             </p>
+
 
         <% } %>
 
@@ -259,13 +311,18 @@
              DESCRIPTION
         ============================================== -->
 
-        <% if (item.description) { %>
+        <% if (
+            item.asset &&
+            item.asset.description
+        ) { %>
+
 
             <p>
 
-                <%= item.description %>
+                <%= item.asset.description %>
 
             </p>
+
 
         <% } %>
 
@@ -354,7 +411,7 @@
 
 
 /* =========================================================
-   BODY PARAGRAPHS
+   BODY
 ========================================================= */
 
 .asset-added-card .feed-body p {
@@ -380,12 +437,12 @@
 
 
 /* =========================================================
-   ASSET TYPE
+   DESCRIPTION
 ========================================================= */
 
-.asset-added-card .feed-body p:first-of-type {
+.asset-added-card .feed-body p:last-child {
 
-    margin-top: 0;
+    margin-bottom: 0;
 
 }
 
