@@ -39,8 +39,14 @@
 /* ==========================================================
    SIDEBAR
    ----------------------------------------------------------
-   Navigation only.
-   The hero section is NOT inside the sidebar.
+   Collapsed:
+   • Only the icon rail is visible.
+   • Tapping anywhere on the rail opens it.
+
+   Expanded:
+   • Labels become visible.
+   • Navigation links can be clicked normally.
+   • Clicking outside closes it.
    ========================================================== */
 
 .dashboard-sidebar {
@@ -62,6 +68,8 @@
   box-shadow:
     3px 0 15px rgba(0, 0, 0, 0.08);
 
+  cursor: pointer;
+
   transition:
     width 0.25s ease;
 }
@@ -73,56 +81,8 @@
 
 .dashboard-sidebar.open {
   width: var(--sidebar-width);
-}
 
-
-/* ==========================================================
-   THREE-DOT MENU BUTTON
-   ----------------------------------------------------------
-   The button is INSIDE the sidebar.
-   It sits above the navigation icons.
-   ========================================================== */
-
-.sidebar-toggle {
-  width: 100%;
-
-  height: 70px;
-
-  padding: 0;
-
-  border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
-
-  background: transparent;
-
-  color: #ffffff;
-
-  font-size: 28px;
-  font-weight: 700;
-
-  line-height: 1;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  cursor: pointer;
-
-  flex-shrink: 0;
-
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
-}
-
-
-.sidebar-toggle:hover {
-  background: rgba(255, 255, 255, 0.10);
-}
-
-
-.sidebar-toggle:active {
-  background: rgba(255, 255, 255, 0.16);
+  cursor: default;
 }
 
 
@@ -134,6 +94,7 @@
   list-style: none;
 
   margin: 0;
+
   padding: 0;
 }
 
@@ -214,6 +175,8 @@
   border-radius: 8px;
 
   color: #ffffff;
+
+  pointer-events: none;
 }
 
 
@@ -233,6 +196,7 @@
   visibility: hidden;
 
   font-size: 15px;
+
   font-weight: 600;
 
   transition:
@@ -243,6 +207,7 @@
 
 .dashboard-sidebar.open .sidebar-label {
   opacity: 1;
+
   visibility: visible;
 }
 
@@ -263,6 +228,7 @@
   white-space: nowrap;
 
   opacity: 0;
+
   visibility: hidden;
 
   transition:
@@ -273,6 +239,7 @@
 
 .dashboard-sidebar.open .sidebar-footer {
   opacity: 1;
+
   visibility: visible;
 }
 
@@ -280,8 +247,10 @@
 /* ==========================================================
    SIDEBAR OVERLAY
    ----------------------------------------------------------
-   Appears only when sidebar is expanded.
-   Clicking it closes the sidebar.
+   This is invisible while the sidebar is closed.
+
+   When the sidebar opens, it covers the rest of the page.
+   Tapping it closes the sidebar.
    ========================================================== */
 
 .sidebar-overlay {
@@ -294,7 +263,10 @@
   z-index: 900;
 
   opacity: 0;
+
   visibility: hidden;
+
+  cursor: pointer;
 
   transition:
     opacity 0.2s ease,
@@ -304,6 +276,7 @@
 
 .sidebar-overlay.active {
   opacity: 1;
+
   visibility: visible;
 }
 
@@ -312,7 +285,8 @@
    MAIN PAGE CONTENT
    ----------------------------------------------------------
    The hero is the actual page content.
-   The sidebar only provides navigation.
+
+   The sidebar does not contain or push the hero.
    ========================================================== */
 
 .main-content {
@@ -328,13 +302,12 @@
 
 
 /*
- * IMPORTANT:
+ * The sidebar remains an independent navigation layer.
  *
- * The sidebar DOES NOT push the main content when opened.
+ * Opening it does NOT change the main-content margin.
  *
- * It expands over the page.
- *
- * Therefore the hero remains in its position.
+ * Therefore the expanded sidebar overlays the page instead
+ * of pushing or repositioning the hero.
  */
 
 
@@ -518,11 +491,6 @@
 
     line-height: 1.7;
   }
-
-
-  .sidebar-toggle {
-    height: 64px;
-  }
 }
 
 
@@ -557,7 +525,14 @@
 <!-- ==========================================================
      NAVIGATION SIDEBAR
      ----------------------------------------------------------
-     This contains ONLY the navigation.
+     The sidebar contains navigation only.
+
+     CLOSED:
+     The narrow visible icon rail itself is clickable and
+     opens the sidebar.
+
+     OPEN:
+     The navigation links become normally clickable.
      ========================================================== -->
 
 <aside
@@ -565,24 +540,6 @@
   class="dashboard-sidebar"
   aria-label="Project navigation"
 >
-
-
-  <!-- ========================================================
-       THREE-DOT BUTTON
-       --------------------------------------------------------
-       It is physically INSIDE the sidebar and sits above
-       all navigation icons.
-       ======================================================== -->
-
-  <button
-    id="sidebarToggle"
-    class="sidebar-toggle"
-    type="button"
-    aria-label="Open navigation"
-    aria-expanded="false"
-  >
-    ⋮
-  </button>
 
 
   <!-- ========================================================
@@ -791,7 +748,10 @@
 
 
 <!-- ==========================================================
-     OUTSIDE-CLICK OVERLAY
+     OUTSIDE-CLICK AREA
+     ----------------------------------------------------------
+     Invisible when sidebar is closed.
+     Becomes the clickable outside area when sidebar opens.
      ========================================================== -->
 
 <div
@@ -803,8 +763,6 @@
 
 <!-- ==========================================================
      MAIN PAGE CONTENT
-     ----------------------------------------------------------
-     HERO IS THE FIRST AND ONLY CONTENT SECTION.
      ========================================================== -->
 
 <main class="main-content">
@@ -869,14 +827,11 @@
   const sidebar =
     document.getElementById("dashboardSidebar");
 
-  const toggle =
-    document.getElementById("sidebarToggle");
-
   const overlay =
     document.getElementById("sidebarOverlay");
 
 
-  if (!sidebar || !toggle || !overlay) {
+  if (!sidebar || !overlay) {
     return;
   }
 
@@ -891,14 +846,9 @@
 
     overlay.classList.add("active");
 
-    toggle.setAttribute(
+    sidebar.setAttribute(
       "aria-expanded",
       "true"
-    );
-
-    toggle.setAttribute(
-      "aria-label",
-      "Close navigation"
     );
 
   }
@@ -914,50 +864,87 @@
 
     overlay.classList.remove("active");
 
-    toggle.setAttribute(
+    sidebar.setAttribute(
       "aria-expanded",
       "false"
-    );
-
-    toggle.setAttribute(
-      "aria-label",
-      "Open navigation"
     );
 
   }
 
 
   /* ========================================================
-     THREE-DOT BUTTON
+     CLICK ON COLLAPSED ICON RAIL
+     --------------------------------------------------------
+     When the sidebar is closed, ANYWHERE on the visible
+     narrow rail opens it.
      ======================================================== */
 
-  toggle.addEventListener(
+  sidebar.addEventListener(
     "click",
     function (event) {
+
+      /*
+       * If the sidebar is already open, do nothing here.
+       * Individual links are then handled normally.
+       */
+
+      if (sidebar.classList.contains("open")) {
+        return;
+      }
+
+
+      /*
+       * Sidebar is collapsed.
+       *
+       * Prevent the click from following a link because the
+       * first tap is only intended to open the navigation.
+       */
 
       event.preventDefault();
 
       event.stopPropagation();
 
-
-      if (
-        sidebar.classList.contains("open")
-      ) {
-
-        closeSidebar();
-
-      } else {
-
-        openSidebar();
-
-      }
+      openSidebar();
 
     }
   );
 
 
   /* ========================================================
-     CLICK OUTSIDE SIDEBAR
+     PREVENT LINK NAVIGATION WHILE CLOSED
+     --------------------------------------------------------
+     The first tap opens the sidebar.
+     A second tap on a visible link selects it.
+     ======================================================== */
+
+  const sidebarLinks =
+    sidebar.querySelectorAll(".sidebar-link");
+
+
+  sidebarLinks.forEach(
+    function (link) {
+
+      link.addEventListener(
+        "click",
+        function (event) {
+
+          if (
+            !sidebar.classList.contains("open")
+          ) {
+
+            event.preventDefault();
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+
+  /* ========================================================
+     CLICK OUTSIDE
      ======================================================== */
 
   overlay.addEventListener(
