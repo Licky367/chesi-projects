@@ -13,29 +13,18 @@ const {
 } = require("./helpers");
 
 
+
 // ==========================================================
 // CREATE POST
 // ==========================================================
 //
-// Creates a normal feed post.
+// Supports:
 //
-// IMPORTANT:
-//
-// The post owner's name is obtained directly from
-// ProjectUser using userId.
-//
-// This means the caller does NOT need to remember to
-// provide userName.
-//
-// Saved Update:
-//
-//     dairy
-//     user
-//     userName
-//     type
 //     title
-text
-images
+//     text
+//     images[]
+//
+// The user's actual name is resolved from ProjectUser.
 //
 // ==========================================================
 
@@ -48,28 +37,21 @@ async ({
 
     userName,
 
-title,
+    title,
 
     text,
 
-    image
+    images
 
 }) => {
 
     // ======================================================
-    // VERIFY USER
+    // RESOLVE USER NAME
     // ======================================================
 
     let resolvedUserName =
         userName || "";
 
-
-    // ======================================================
-    // GET REAL USER NAME
-    //
-    // Prefer the database value over anything supplied
-    // by the browser/client.
-    // ======================================================
 
     if (userId) {
 
@@ -79,7 +61,10 @@ title,
                 .select("name");
 
 
-        if (user && user.name) {
+        if (
+            user &&
+            user.name
+        ) {
 
             resolvedUserName =
                 user.name;
@@ -87,6 +72,19 @@ title,
         }
 
     }
+
+
+    // ======================================================
+    // NORMALIZE IMAGES
+    // ======================================================
+
+    const normalizedImages =
+        Array.isArray(images)
+
+            ? images
+                .filter(Boolean)
+
+            : [];
 
 
     // ======================================================
@@ -107,14 +105,24 @@ title,
         type:
             "post",
 
-       title:
+        title:
             title || "",
 
         text:
             text || "",
 
+        images:
+            normalizedImages,
+
+        // --------------------------------------------------
+        // Keep old field empty for new posts.
+        //
+        // This allows old posts containing `image` to remain
+        // readable while new posts use `images`.
+        // --------------------------------------------------
+
         image:
-            image || null,
+            null,
 
         likes:
             [],
@@ -125,6 +133,7 @@ title,
     });
 
 };
+
 
 
 // ==========================================================
@@ -217,6 +226,7 @@ async ({
 };
 
 
+
 // ==========================================================
 // ADD COMMENT TO POST
 // ==========================================================
@@ -293,6 +303,7 @@ async ({
 };
 
 
+
 // ==========================================================
 // DELETE POST
 // ==========================================================
@@ -353,6 +364,7 @@ async ({
     return true;
 
 };
+
 
 
 // ==========================================================
