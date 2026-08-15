@@ -459,6 +459,11 @@ const updateSchema = new mongoose.Schema(
 
         },
 
+images: {
+    type: [String],
+    default: []
+}
+
 
         // --------------------------------------------------
         // GENERAL COMMENT
