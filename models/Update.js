@@ -249,34 +249,19 @@ const maintenanceSchema = new mongoose.Schema(
 
 
 // ==========================================================
-// ASSET ADDED UPDATE SUBDOCUMENT
+// ASSET ADDITION UPDATE SUBDOCUMENT
 // ==========================================================
 //
-// Created whenever a manual asset is added to a Dairy Farm.
+// This records the information needed by addAsset.ejs.
 //
-// The Update belongs to the PARENT DAIRY FARM, not the newly
-// created asset. This is intentional because the farm feed
-// must immediately show:
+// The actual asset remains stored in Dairy.
 //
-//     "Asset Added"
-//     "New Tractor"
-//     etc.
-//
+// This subdocument is only the feed/event record.
 // ==========================================================
 
-const assetAddSchema = new mongoose.Schema(
+const assetSchema = new mongoose.Schema(
 
     {
-
-        assetId: {
-
-            type: mongoose.Schema.Types.ObjectId,
-
-            ref: "Dairy",
-
-            default: null
-
-        },
 
         name: {
 
@@ -340,6 +325,24 @@ const assetAddSchema = new mongoose.Schema(
 
             default: "active"
 
+        },
+
+        assetId: {
+
+            type: mongoose.Schema.Types.ObjectId,
+
+            ref: "Dairy",
+
+            default: null
+
+        },
+
+        parentFarmCode: {
+
+            type: Number,
+
+            default: null
+
         }
 
     },
@@ -400,15 +403,6 @@ const updateSchema = new mongoose.Schema(
         },
 
 
-        userImage: {
-
-            type: String,
-
-            default: ""
-
-        },
-
-
         // --------------------------------------------------
         // UPDATE TYPE
         // --------------------------------------------------
@@ -429,7 +423,7 @@ const updateSchema = new mongoose.Schema(
 
                 "maintenance",
 
-                "assetAdd"
+                "asset"
 
             ],
 
@@ -528,12 +522,12 @@ const updateSchema = new mongoose.Schema(
 
 
         // --------------------------------------------------
-        // ASSET ADDED
+        // ASSET
         // --------------------------------------------------
 
         asset: {
 
-            type: assetAddSchema,
+            type: assetSchema,
 
             default: undefined
 
