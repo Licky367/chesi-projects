@@ -41,6 +41,21 @@
 
 
         <!-- =========================
+             ASSET ADDITIONS
+        ========================== -->
+
+        <% if (item.type === "asset") { %>
+
+            <%- include("addAsset", {
+                item,
+                user
+            }) %>
+
+        <% } %>
+
+
+
+        <!-- =========================
              MEDICAL RECORDS
         ========================== -->
 
@@ -94,21 +109,6 @@
         ) { %>
 
             <%- include("maintenance-cleared", {
-                item,
-                user
-            }) %>
-
-        <% } %>
-
-
-
-        <!-- =========================
-             ASSET ADDED
-        ========================== -->
-
-        <% if (item.type === "asset") { %>
-
-            <%- include("addAsset", {
                 item,
                 user
             }) %>
