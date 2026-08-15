@@ -255,6 +255,7 @@ exports.login = async (req, res) => {
     //
     // The first assigned farm is used for the login
     // redirect.
+    //
     // ======================================================
 
     req.session.user = {
@@ -285,6 +286,7 @@ exports.login = async (req, res) => {
     //
     // This is especially important when using a persistent
     // session store such as MongoDB.
+    //
     // ======================================================
 
     req.session.save(
@@ -306,6 +308,24 @@ exports.login = async (req, res) => {
               error:
                 "Login succeeded, but your session could not be saved. Please try again."
             }
+          );
+
+        }
+
+
+        // ==================================================
+        // ADMINISTRATOR
+        //
+        // Administrators always go directly to the
+        // Dairy dashboard after successful login.
+        // ==================================================
+
+        if (
+          user.role === "admin"
+        ) {
+
+          return res.redirect(
+            "/dashboard/dairy"
           );
 
         }
@@ -351,7 +371,6 @@ exports.login = async (req, res) => {
         //
         // - Dairy worker without assigned farms
         // - Poultry worker
-        // - Administrator
         //
         // ==================================================
 
