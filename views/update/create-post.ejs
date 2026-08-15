@@ -29,7 +29,7 @@
 
         <div class="create-post-heading">
 
-            <% if (dairy.code < 0) { %>
+            <% if (Number(dairy.code) < 0) { %>
 
                 <div class="heading-line">
 
@@ -67,6 +67,10 @@
 
     </div>
 
+
+    <!-- =====================================================
+         COMPOSER TRIGGER
+    ====================================================== -->
 
     <div
         id="openPostComposer"
@@ -142,53 +146,43 @@
 
         <main class="post-modal-body">
 
+            <div class="post-fields">
 
-            <!-- =================================================
-                 TITLE
-            ================================================== -->
 
-            <div class="post-title-wrapper">
+                <!-- =========================================
+                     POST TITLE
+                ========================================== -->
 
-                <input
-                    type="text"
-                    id="postTitle"
-                    maxlength="150"
-                    placeholder="Post title..."
-                    autocomplete="off"
-                    aria-label="Post title"
-                >
+                <div class="post-title-wrapper">
 
-                <div class="post-title-counter">
-
-                    <span id="titleCharacterCounter">
-                        0/150
-                    </span>
+                    <input
+                        type="text"
+                        id="postTitle"
+                        name="title"
+                        maxlength="200"
+                        placeholder="Post title"
+                        aria-label="Post title"
+                    >
 
                 </div>
 
-            </div>
 
-
-
-            <!-- =================================================
-                 IMAGE PREVIEW
-            ================================================== -->
-
-            <div
-                id="imagePreviewContainer"
-                class="image-preview-container"
-                hidden
-            >
+                <!-- =========================================
+                     IMAGE PREVIEWS
+                ========================================== -->
 
                 <div
-                    id="imagePreviewGrid"
-                    class="image-preview-grid"
-                ></div>
+                    id="imagePreviewContainer"
+                    class="image-preview-container"
+                    hidden
+                >
 
-                <div
-                    id="imageCountMessage"
-                    class="image-count-message"
-                ></div>
+                    <div
+                        id="imagePreviewGrid"
+                        class="image-preview-grid"
+                    ></div>
+
+                </div>
 
             </div>
 
@@ -210,33 +204,31 @@
                 class="post-form"
             >
 
-                <!-- TITLE -->
+                <!-- Hidden title field.
+                     JavaScript keeps this synchronized
+                     with the title input above. -->
+
                 <input
                     type="hidden"
-                    id="formPostTitle"
+                    id="postTitleHidden"
                     name="title"
                     value=""
                 >
 
 
-                <!-- MULTIPLE IMAGES -->
-                <input
-                    type="file"
-                    id="postImage"
-                    name="images"
-                    accept="image/*"
-                    multiple
-                    hidden
-                >
-
+                <!-- =========================================
+                     COMPOSER
+                ========================================== -->
 
                 <div class="post-composer">
 
 
-                    <!-- ATTACHMENT -->
+                    <!-- =====================================
+                         MULTIPLE IMAGE ATTACHMENT
+                    ====================================== -->
 
                     <label
-                        for="postImage"
+                        for="postImages"
                         class="composer-icon-button attachment-button"
                         aria-label="Attach images"
                         title="Attach images"
@@ -247,8 +239,19 @@
                     </label>
 
 
+                    <input
+                        type="file"
+                        id="postImages"
+                        name="images"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        multiple
+                        hidden
+                    >
 
-                    <!-- TEXT -->
+
+                    <!-- =====================================
+                         TEXT
+                    ====================================== -->
 
                     <div class="composer-input-area">
 
@@ -272,8 +275,9 @@
                     </div>
 
 
-
-                    <!-- SEND -->
+                    <!-- =====================================
+                         SEND
+                    ====================================== -->
 
                     <button
                         type="submit"
@@ -302,7 +306,7 @@
 <style>
 
 /* =========================================================
-   CREATE POST
+   CREATE POST CARD
 ========================================================= */
 
 .create-post-card {
@@ -406,6 +410,11 @@
 
     cursor: pointer;
 
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.15s ease;
+
 }
 
 
@@ -418,9 +427,16 @@
 }
 
 
+.composer-trigger:active {
+
+    transform: scale(0.99);
+
+}
+
+
 
 /* =========================================================
-   MODAL
+   FULL SCREEN MODAL
 ========================================================= */
 
 .post-modal {
@@ -479,6 +495,8 @@
 
     height: 64px;
 
+    width: 100%;
+
     display: flex;
 
     align-items: center;
@@ -488,6 +506,8 @@
     box-sizing: border-box;
 
     border-bottom: 1px solid #e8eee9;
+
+    background: #ffffff;
 
 }
 
@@ -514,6 +534,10 @@
 
     font-size: 27px;
 
+    padding: 0;
+
+    flex-shrink: 0;
+
 }
 
 
@@ -524,6 +548,8 @@
     display: flex;
 
     flex-direction: column;
+
+    line-height: 1.25;
 
 }
 
@@ -575,6 +601,17 @@
 }
 
 
+.post-fields {
+
+    width: 100%;
+
+    max-width: 700px;
+
+    margin: 0 auto;
+
+}
+
+
 
 /* =========================================================
    TITLE
@@ -584,7 +621,7 @@
 
     width: 100%;
 
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 
 }
 
@@ -599,53 +636,31 @@
 
     outline: none;
 
-    border-bottom: 1px solid #e2e9e4;
-
     background: transparent;
-
-    padding: 6px 0 10px;
 
     font-family: inherit;
 
-    font-size: 23px;
+    font-size: 24px;
 
     font-weight: 700;
 
     color: #202520;
+
+    padding: 4px 0;
 
 }
 
 
 #postTitle::placeholder {
 
-    color: #a0a7a2;
-
-}
-
-
-#postTitle:focus {
-
-    border-bottom-color: #198754;
-
-}
-
-
-.post-title-counter {
-
-    text-align: right;
-
-    padding-top: 5px;
-
-    font-size: 10px;
-
-    color: #8a928d;
+    color: #a0a6a2;
 
 }
 
 
 
 /* =========================================================
-   IMAGE GRID
+   IMAGE PREVIEW GRID
 ========================================================= */
 
 .image-preview-container {
@@ -656,6 +671,8 @@
 
 
 .image-preview-grid {
+
+    width: 100%;
 
     display: grid;
 
@@ -671,13 +688,15 @@
 
     position: relative;
 
+    width: 100%;
+
     aspect-ratio: 1 / 1;
 
     overflow: hidden;
 
-    border-radius: 14px;
+    border-radius: 12px;
 
-    background: #f4f6f4;
+    background: #f3f5f3;
 
 }
 
@@ -688,55 +707,24 @@
 
     height: 100%;
 
-    object-fit: cover;
-
     display: block;
 
-}
-
-
-.image-preview-number {
-
-    position: absolute;
-
-    left: 8px;
-
-    bottom: 8px;
-
-    min-width: 24px;
-
-    height: 24px;
-
-    padding: 0 7px;
-
-    border-radius: 12px;
-
-    background: rgba(0, 0, 0, 0.6);
-
-    color: #ffffff;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    font-size: 11px;
+    object-fit: cover;
 
 }
 
 
-.remove-image-button {
+.remove-preview-image {
 
     position: absolute;
 
-    top: 8px;
+    top: 7px;
 
-    right: 8px;
+    right: 7px;
 
-    width: 34px;
+    width: 32px;
 
-    height: 34px;
+    height: 32px;
 
     border: none;
 
@@ -757,56 +745,9 @@
 }
 
 
-.add-more-images {
-
-    aspect-ratio: 1 / 1;
-
-    border: 2px dashed #cbd8cf;
-
-    border-radius: 14px;
-
-    background: #f8faf8;
-
-    color: #198754;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 6px;
-
-    cursor: pointer;
-
-}
-
-
-.add-more-images i {
-
-    font-size: 24px;
-
-}
-
-
-.image-count-message {
-
-    margin-top: 10px;
-
-    text-align: center;
-
-    font-size: 11px;
-
-    color: #7d857f;
-
-}
-
-
 
 /* =========================================================
-   COMPOSER
+   BOTTOM COMPOSER
 ========================================================= */
 
 .post-composer-wrapper {
@@ -863,6 +804,11 @@
 }
 
 
+
+/* =========================================================
+   ATTACHMENT
+========================================================= */
+
 .composer-icon-button {
 
     flex: 0 0 42px;
@@ -887,15 +833,24 @@
 
     font-size: 23px;
 
+    padding: 0;
+
 }
 
 
 .attachment-button i {
 
+    display: block;
+
     transform: rotate(-20deg);
 
 }
 
+
+
+/* =========================================================
+   TEXT
+========================================================= */
 
 .composer-input-area {
 
@@ -904,6 +859,10 @@
     flex: 1;
 
     min-width: 0;
+
+    display: flex;
+
+    align-items: flex-end;
 
 }
 
@@ -931,6 +890,8 @@
         4px
         5px;
 
+    margin: 0;
+
     box-sizing: border-box;
 
     font-family: inherit;
@@ -939,8 +900,22 @@
 
     line-height: 20px;
 
+    color: #202520;
+
 }
 
+
+#postText::placeholder {
+
+    color: #8b928d;
+
+}
+
+
+
+/* =========================================================
+   CHARACTER COUNTER
+========================================================= */
 
 .character-counter {
 
@@ -958,8 +933,15 @@
 
     background: #f7faf8;
 
+    padding-left: 3px;
+
 }
 
+
+
+/* =========================================================
+   SEND
+========================================================= */
 
 .composer-send-button {
 
@@ -986,6 +968,8 @@
     cursor: pointer;
 
     font-size: 20px;
+
+    padding: 0;
 
 }
 
@@ -1015,6 +999,13 @@
     }
 
 
+    .post-modal-title strong {
+
+        font-size: 16px;
+
+    }
+
+
     .post-modal-body {
 
         padding: 14px;
@@ -1029,6 +1020,16 @@
     }
 
 
+    .image-preview-grid {
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 7px;
+
+    }
+
+
     .post-composer-wrapper {
 
         padding:
@@ -1039,9 +1040,39 @@
     }
 
 
-    .image-preview-grid {
+    .post-composer {
 
-        gap: 8px;
+        min-height: 48px;
+
+        gap: 4px;
+
+        padding: 4px 5px;
+
+    }
+
+
+    .composer-icon-button {
+
+        width: 40px;
+
+        height: 40px;
+
+        flex-basis: 40px;
+
+        font-size: 22px;
+
+    }
+
+
+    .composer-send-button {
+
+        width: 40px;
+
+        height: 40px;
+
+        flex-basis: 40px;
+
+        font-size: 19px;
 
     }
 
@@ -1064,9 +1095,9 @@
     }
 
 
-    #postTitle {
+    .character-counter {
 
-        font-size: 19px;
+        font-size: 9px;
 
     }
 
@@ -1097,14 +1128,14 @@
         const titleInput =
             document.getElementById("postTitle");
 
-        const formTitleInput =
-            document.getElementById("formPostTitle");
+        const hiddenTitle =
+            document.getElementById("postTitleHidden");
 
         const textarea =
             document.getElementById("postText");
 
         const imageInput =
-            document.getElementById("postImage");
+            document.getElementById("postImages");
 
         const previewContainer =
             document.getElementById(
@@ -1114,16 +1145,6 @@
         const previewGrid =
             document.getElementById(
                 "imagePreviewGrid"
-            );
-
-        const imageCountMessage =
-            document.getElementById(
-                "imageCountMessage"
-            );
-
-        const titleCounter =
-            document.getElementById(
-                "titleCharacterCounter"
             );
 
         const characterCounter =
@@ -1147,32 +1168,23 @@
             !openComposer ||
             !closeButton ||
             !titleInput ||
-            !formTitleInput ||
+            !hiddenTitle ||
             !textarea ||
             !imageInput ||
             !previewContainer ||
             !previewGrid ||
-            !imageCountMessage ||
-            !titleCounter ||
             !characterCounter ||
             !sendButton ||
             !form
         ) {
 
             console.error(
-                "Post modal could not initialize."
+                "Post modal initialization failed."
             );
 
             return;
 
         }
-
-
-        const MAX_IMAGES = 10;
-
-
-        let selectedImages = [];
-
 
 
         // ==================================================
@@ -1194,14 +1206,16 @@
                 "hidden";
 
 
-            setTimeout(function () {
+            setTimeout(
+                function () {
 
-                titleInput.focus();
+                    titleInput.focus();
 
-            }, 100);
+                },
+                100
+            );
 
         }
-
 
 
         // ==================================================
@@ -1225,24 +1239,17 @@
         }
 
 
-
         // ==================================================
-        // COUNTERS
+        // CHARACTER COUNTER
         // ==================================================
 
-        function updateCounters() {
-
-            titleCounter.textContent =
-                titleInput.value.length +
-                "/150";
-
+        function updateCharacterCounter() {
 
             characterCounter.textContent =
                 textarea.value.length +
                 "/1000";
 
         }
-
 
 
         // ==================================================
@@ -1252,17 +1259,16 @@
         function updateSendButton() {
 
             const hasTitle =
-                titleInput.value.trim()
-                    .length > 0;
+                titleInput.value.trim().length > 0;
 
 
             const hasText =
-                textarea.value.trim()
-                    .length > 0;
+                textarea.value.trim().length > 0;
 
 
             const hasImages =
-                selectedImages.length > 0;
+                imageInput.files &&
+                imageInput.files.length > 0;
 
 
             sendButton.disabled =
@@ -1275,7 +1281,6 @@
         }
 
 
-
         // ==================================================
         // RESIZE TEXTAREA
         // ==================================================
@@ -1286,63 +1291,39 @@
                 "auto";
 
 
-            textarea.style.height =
+            const height =
                 Math.min(
                     textarea.scrollHeight,
                     120
-                ) + "px";
+                );
+
+
+            textarea.style.height =
+                height + "px";
 
         }
 
 
-
         // ==================================================
-        // SYNC FILE INPUT
-        // ==================================================
-
-        function syncFileInput() {
-
-            const dataTransfer =
-                new DataTransfer();
-
-
-            selectedImages.forEach(
-                function (file) {
-
-                    dataTransfer.items.add(
-                        file
-                    );
-
-                }
-            );
-
-
-            imageInput.files =
-                dataTransfer.files;
-
-        }
-
-
-
-        // ==================================================
-        // RENDER PREVIEWS
+        // RENDER IMAGE PREVIEWS
         // ==================================================
 
-        function renderImagePreviews() {
+        function renderPreviews() {
 
             previewGrid.innerHTML =
                 "";
 
 
-            if (
-                selectedImages.length === 0
-            ) {
+            const files =
+                Array.from(
+                    imageInput.files || []
+                );
+
+
+            if (!files.length) {
 
                 previewContainer.hidden =
                     true;
-
-                imageCountMessage.textContent =
-                    "";
 
                 return;
 
@@ -1353,8 +1334,19 @@
                 false;
 
 
-            selectedImages.forEach(
-                function (file, index) {
+            files.forEach(
+                function (file) {
+
+                    if (
+                        !file.type.startsWith(
+                            "image/"
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
 
                     const reader =
                         new FileReader();
@@ -1373,77 +1365,22 @@
                                 "image-preview-item";
 
 
-                            const img =
+                            const image =
                                 document.createElement(
                                     "img"
                                 );
 
 
-                            img.src =
+                            image.src =
                                 event.target.result;
 
 
-                            img.alt =
-                                "Selected image " +
-                                (index + 1);
-
-
-                            const number =
-                                document.createElement(
-                                    "span"
-                                );
-
-
-                            number.className =
-                                "image-preview-number";
-
-
-                            number.textContent =
-                                index + 1;
-
-
-                            const removeButton =
-                                document.createElement(
-                                    "button"
-                                );
-
-
-                            removeButton.type =
-                                "button";
-
-
-                            removeButton.className =
-                                "remove-image-button";
-
-
-                            removeButton.innerHTML =
-                                '<i class="bi bi-x-lg"></i>';
-
-
-                            removeButton.addEventListener(
-                                "click",
-                                function () {
-
-                                    removeImage(
-                                        index
-                                    );
-
-                                }
-                            );
+                            image.alt =
+                                "Selected image";
 
 
                             item.appendChild(
-                                img
-                            );
-
-
-                            item.appendChild(
-                                number
-                            );
-
-
-                            item.appendChild(
-                                removeButton
+                                image
                             );
 
 
@@ -1461,193 +1398,47 @@
                 }
             );
 
-
-            if (
-                selectedImages.length <
-                MAX_IMAGES
-            ) {
-
-                const addMore =
-                    document.createElement(
-                        "label"
-                    );
-
-
-                addMore.className =
-                    "add-more-images";
-
-
-                addMore.setAttribute(
-                    "for",
-                    "postImage"
-                );
-
-
-                addMore.innerHTML =
-                    '<i class="bi bi-plus-lg"></i>' +
-                    '<span>Add photos</span>';
-
-
-                previewGrid.appendChild(
-                    addMore
-                );
-
-            }
-
-
-            imageCountMessage.textContent =
-                selectedImages.length +
-                " of " +
-                MAX_IMAGES +
-                " photos selected";
-
         }
 
 
-
         // ==================================================
-        // REMOVE IMAGE
-        // ==================================================
-
-        function removeImage(index) {
-
-            selectedImages.splice(
-                index,
-                1
-            );
-
-
-            syncFileInput();
-
-            renderImagePreviews();
-
-            updateSendButton();
-
-        }
-
-
-
-        // ==================================================
-        // ADD IMAGES
-        // ==================================================
-
-        function addImages(files) {
-
-            const incoming =
-                Array.from(files);
-
-
-            incoming.forEach(
-                function (file) {
-
-                    if (
-                        selectedImages.length >=
-                        MAX_IMAGES
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    if (
-                        !file.type.startsWith(
-                            "image/"
-                        )
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    const duplicate =
-                        selectedImages.some(
-                            function (
-                                existing
-                            ) {
-
-                                return (
-                                    existing.name ===
-                                    file.name &&
-
-                                    existing.size ===
-                                    file.size &&
-
-                                    existing.lastModified ===
-                                    file.lastModified
-                                );
-
-                            }
-                        );
-
-
-                    if (duplicate) {
-
-                        return;
-
-                    }
-
-
-                    selectedImages.push(
-                        file
-                    );
-
-                }
-            );
-
-
-            syncFileInput();
-
-            renderImagePreviews();
-
-            updateSendButton();
-
-        }
-
-
-
-        // ==================================================
-        // EVENTS
+        // TITLE
         // ==================================================
 
         titleInput.addEventListener(
             "input",
             function () {
 
-                updateCounters();
+                hiddenTitle.value =
+                    titleInput.value;
 
                 updateSendButton();
 
             }
         );
 
+
+        // ==================================================
+        // TEXT
+        // ==================================================
 
         textarea.addEventListener(
             "input",
             function () {
 
-                updateCounters();
-
-                updateSendButton();
+                updateCharacterCounter();
 
                 resizeTextarea();
 
-            }
-        );
-
-
-        imageInput.addEventListener(
-            "change",
-            function () {
-
-                addImages(
-                    imageInput.files
-                );
+                updateSendButton();
 
             }
         );
 
+
+        // ==================================================
+        // OPEN
+        // ==================================================
 
         openComposer.addEventListener(
             "click",
@@ -1674,11 +1465,19 @@
         );
 
 
+        // ==================================================
+        // CLOSE
+        // ==================================================
+
         closeButton.addEventListener(
             "click",
             closeModal
         );
 
+
+        // ==================================================
+        // ESCAPE
+        // ==================================================
 
         document.addEventListener(
             "keydown",
@@ -1699,14 +1498,33 @@
         );
 
 
+        // ==================================================
+        // IMAGE SELECTION
+        // ==================================================
+
+        imageInput.addEventListener(
+            "change",
+            function () {
+
+                renderPreviews();
+
+                updateSendButton();
+
+            }
+        );
+
 
         // ==================================================
-        // SUBMIT
+        // FORM SUBMIT
         // ==================================================
 
         form.addEventListener(
             "submit",
             function (event) {
+
+                hiddenTitle.value =
+                    titleInput.value.trim();
+
 
                 const title =
                     titleInput.value.trim();
@@ -1716,26 +1534,22 @@
                     textarea.value.trim();
 
 
+                const hasImages =
+                    imageInput.files &&
+                    imageInput.files.length > 0;
+
+
                 if (
                     !title &&
                     !text &&
-                    selectedImages.length === 0
+                    !hasImages
                 ) {
 
                     event.preventDefault();
 
-                    titleInput.focus();
-
                     return;
 
                 }
-
-
-                formTitleInput.value =
-                    title;
-
-
-                syncFileInput();
 
 
                 sendButton.disabled =
@@ -1749,15 +1563,22 @@
         );
 
 
+        // ==================================================
+        // INITIAL STATE
+        // ==================================================
 
-        updateCounters();
-
-        updateSendButton();
+        updateCharacterCounter();
 
         resizeTextarea();
 
+        updateSendButton();
+
     }
 
+
+    // ======================================================
+    // DOM READY
+    // ======================================================
 
     if (
         document.readyState === "loading"
