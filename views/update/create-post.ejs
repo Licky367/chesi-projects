@@ -2,7 +2,6 @@
      CREATE POST + FULL SCREEN POST MODAL
 ========================================================= -->
 
-<!-- Bootstrap Icons -->
 <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
@@ -17,7 +16,6 @@
 
     <div class="create-post-header">
 
-        <!-- USER AVATAR -->
         <div class="create-post-avatar">
 
             <img
@@ -29,7 +27,6 @@
         </div>
 
 
-        <!-- HEADING -->
         <div class="create-post-heading">
 
             <% if (dairy.code < 0) { %>
@@ -71,10 +68,6 @@
     </div>
 
 
-    <!-- =====================================================
-         CLICKABLE COMPOSER TRIGGER
-    ====================================================== -->
-
     <div
         id="openPostComposer"
         class="composer-trigger"
@@ -107,7 +100,7 @@
 
 
         <!-- =================================================
-             MODAL HEADER
+             HEADER
         ================================================== -->
 
         <header class="post-modal-header">
@@ -144,14 +137,14 @@
 
 
         <!-- =================================================
-             POST BODY
+             BODY
         ================================================== -->
 
         <main class="post-modal-body">
 
 
             <!-- =================================================
-                 POST TITLE
+                 TITLE
             ================================================== -->
 
             <div class="post-title-wrapper">
@@ -159,11 +152,10 @@
                 <input
                     type="text"
                     id="postTitle"
-                    name="title"
                     maxlength="150"
                     placeholder="Post title..."
-                    aria-label="Post title"
                     autocomplete="off"
+                    aria-label="Post title"
                 >
 
                 <div class="post-title-counter">
@@ -193,15 +185,19 @@
                     class="image-preview-grid"
                 ></div>
 
-            </div>
+                <div
+                    id="imageCountMessage"
+                    class="image-count-message"
+                ></div>
 
+            </div>
 
         </main>
 
 
 
         <!-- =================================================
-             BOTTOM MESSAGE COMPOSER
+             BOTTOM COMPOSER
         ================================================== -->
 
         <div class="post-composer-wrapper">
@@ -214,16 +210,7 @@
                 class="post-form"
             >
 
-
-                <!-- =================================================
-                     HIDDEN TITLE
-                     -------------------------------------------------
-                     The visible title input is outside the form
-                     because the modal body and composer are separate.
-
-                     JavaScript copies its value here before submit.
-                ================================================== -->
-
+                <!-- TITLE -->
                 <input
                     type="hidden"
                     id="formPostTitle"
@@ -232,10 +219,7 @@
                 >
 
 
-                <!-- =========================================
-                     IMAGE INPUT
-                ========================================== -->
-
+                <!-- MULTIPLE IMAGES -->
                 <input
                     type="file"
                     id="postImage"
@@ -246,16 +230,10 @@
                 >
 
 
-                <!-- =========================================
-                     MESSAGE COMPOSER
-                ========================================== -->
-
                 <div class="post-composer">
 
 
-                    <!-- =====================================
-                         ATTACHMENT
-                    ====================================== -->
+                    <!-- ATTACHMENT -->
 
                     <label
                         for="postImage"
@@ -270,9 +248,7 @@
 
 
 
-                    <!-- =====================================
-                         TEXT INPUT AREA
-                    ====================================== -->
+                    <!-- TEXT -->
 
                     <div class="composer-input-area">
 
@@ -297,9 +273,7 @@
 
 
 
-                    <!-- =====================================
-                         SEND
-                    ====================================== -->
+                    <!-- SEND -->
 
                     <button
                         type="submit"
@@ -325,14 +299,10 @@
 
 
 
-<!-- =========================================================
-     CSS
-========================================================= -->
-
 <style>
 
 /* =========================================================
-   CREATE POST CARD
+   CREATE POST
 ========================================================= */
 
 .create-post-card {
@@ -436,11 +406,6 @@
 
     cursor: pointer;
 
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        transform 0.15s ease;
-
 }
 
 
@@ -453,16 +418,9 @@
 }
 
 
-.composer-trigger:active {
-
-    transform: scale(0.99);
-
-}
-
-
 
 /* =========================================================
-   FULL SCREEN MODAL
+   MODAL
 ========================================================= */
 
 .post-modal {
@@ -521,8 +479,6 @@
 
     height: 64px;
 
-    width: 100%;
-
     display: flex;
 
     align-items: center;
@@ -532,8 +488,6 @@
     box-sizing: border-box;
 
     border-bottom: 1px solid #e8eee9;
-
-    background: #ffffff;
 
 }
 
@@ -560,24 +514,6 @@
 
     font-size: 27px;
 
-    padding: 0;
-
-    flex-shrink: 0;
-
-}
-
-
-.post-back-button i {
-
-    display: block;
-
-}
-
-
-.post-back-button:hover {
-
-    color: #146c43;
-
 }
 
 
@@ -588,8 +524,6 @@
     display: flex;
 
     flex-direction: column;
-
-    line-height: 1.25;
 
 }
 
@@ -643,12 +577,10 @@
 
 
 /* =========================================================
-   POST TITLE
+   TITLE
 ========================================================= */
 
 .post-title-wrapper {
-
-    position: relative;
 
     width: 100%;
 
@@ -667,11 +599,11 @@
 
     outline: none;
 
+    border-bottom: 1px solid #e2e9e4;
+
     background: transparent;
 
     padding: 6px 0 10px;
-
-    margin: 0;
 
     font-family: inherit;
 
@@ -681,16 +613,12 @@
 
     color: #202520;
 
-    border-bottom: 1px solid #e2e9e4;
-
 }
 
 
 #postTitle::placeholder {
 
     color: #a0a7a2;
-
-    font-weight: 600;
 
 }
 
@@ -704,9 +632,7 @@
 
 .post-title-counter {
 
-    display: flex;
-
-    justify-content: flex-end;
+    text-align: right;
 
     padding-top: 5px;
 
@@ -719,7 +645,7 @@
 
 
 /* =========================================================
-   IMAGE PREVIEW CONTAINER
+   IMAGE GRID
 ========================================================= */
 
 .image-preview-container {
@@ -731,8 +657,6 @@
 
 .image-preview-grid {
 
-    width: 100%;
-
     display: grid;
 
     grid-template-columns:
@@ -743,22 +667,15 @@
 }
 
 
-
-/* =========================================================
-   INDIVIDUAL IMAGE PREVIEW
-========================================================= */
-
 .image-preview-item {
 
     position: relative;
 
-    width: 100%;
-
     aspect-ratio: 1 / 1;
 
-    border-radius: 14px;
-
     overflow: hidden;
+
+    border-radius: 14px;
 
     background: #f4f6f4;
 
@@ -771,17 +688,12 @@
 
     height: 100%;
 
-    display: block;
-
     object-fit: cover;
+
+    display: block;
 
 }
 
-
-
-/* =========================================================
-   IMAGE NUMBER
-========================================================= */
 
 .image-preview-number {
 
@@ -797,8 +709,6 @@
 
     padding: 0 7px;
 
-    box-sizing: border-box;
-
     border-radius: 12px;
 
     background: rgba(0, 0, 0, 0.6);
@@ -813,15 +723,8 @@
 
     font-size: 11px;
 
-    font-weight: 600;
-
 }
 
-
-
-/* =========================================================
-   REMOVE IMAGE BUTTON
-========================================================= */
 
 .remove-image-button {
 
@@ -851,28 +754,10 @@
 
     cursor: pointer;
 
-    font-size: 14px;
-
-    padding: 0;
-
 }
 
-
-.remove-image-button:hover {
-
-    background: rgba(0, 0, 0, 0.8);
-
-}
-
-
-
-/* =========================================================
-   ADD MORE IMAGES
-========================================================= */
 
 .add-more-images {
-
-    width: 100%;
 
     aspect-ratio: 1 / 1;
 
@@ -892,11 +777,9 @@
 
     justify-content: center;
 
-    cursor: pointer;
-
-    font-size: 13px;
-
     gap: 6px;
+
+    cursor: pointer;
 
 }
 
@@ -907,20 +790,6 @@
 
 }
 
-
-.add-more-images:hover {
-
-    background: #f1f7f3;
-
-    border-color: #198754;
-
-}
-
-
-
-/* =========================================================
-   IMAGE COUNT
-========================================================= */
 
 .image-count-message {
 
@@ -937,7 +806,7 @@
 
 
 /* =========================================================
-   BOTTOM COMPOSER WRAPPER
+   COMPOSER
 ========================================================= */
 
 .post-composer-wrapper {
@@ -969,11 +838,6 @@
 }
 
 
-
-/* =========================================================
-   WHATSAPP-STYLE COMPOSER
-========================================================= */
-
 .post-composer {
 
     width: 100%;
@@ -999,11 +863,6 @@
 }
 
 
-
-/* =========================================================
-   ATTACHMENT ICON
-========================================================= */
-
 .composer-icon-button {
 
     flex: 0 0 42px;
@@ -1028,31 +887,15 @@
 
     font-size: 23px;
 
-    padding: 0;
-
-}
-
-
-.composer-icon-button:hover {
-
-    color: #146c43;
-
 }
 
 
 .attachment-button i {
 
-    display: block;
-
     transform: rotate(-20deg);
 
 }
 
-
-
-/* =========================================================
-   TEXT INPUT AREA
-========================================================= */
 
 .composer-input-area {
 
@@ -1061,10 +904,6 @@
     flex: 1;
 
     min-width: 0;
-
-    display: flex;
-
-    align-items: flex-end;
 
 }
 
@@ -1092,8 +931,6 @@
         4px
         5px;
 
-    margin: 0;
-
     box-sizing: border-box;
 
     font-family: inherit;
@@ -1102,31 +939,8 @@
 
     line-height: 20px;
 
-    color: #202520;
-
 }
 
-
-#postText::placeholder {
-
-    color: #8b928d;
-
-}
-
-
-#postText:focus {
-
-    outline: none;
-
-    box-shadow: none;
-
-}
-
-
-
-/* =========================================================
-   CHARACTER COUNTER
-========================================================= */
 
 .character-counter {
 
@@ -1144,15 +958,8 @@
 
     background: #f7faf8;
 
-    padding-left: 3px;
-
 }
 
-
-
-/* =========================================================
-   SEND BUTTON
-========================================================= */
 
 .composer-send-button {
 
@@ -1179,28 +986,6 @@
     cursor: pointer;
 
     font-size: 20px;
-
-    padding: 0;
-
-    transition:
-        color 0.2s ease,
-        transform 0.15s ease;
-
-}
-
-
-.composer-send-button:not(:disabled):hover {
-
-    color: #146c43;
-
-    transform: scale(1.08);
-
-}
-
-
-.composer-send-button:not(:disabled):active {
-
-    transform: scale(0.94);
 
 }
 
@@ -1230,13 +1015,6 @@
     }
 
 
-    .post-modal-title strong {
-
-        font-size: 16px;
-
-    }
-
-
     .post-modal-body {
 
         padding: 14px;
@@ -1261,56 +1039,7 @@
     }
 
 
-    .post-composer {
-
-        min-height: 48px;
-
-        gap: 4px;
-
-        padding: 4px 5px;
-
-    }
-
-
-    .composer-icon-button {
-
-        width: 40px;
-
-        height: 40px;
-
-        flex-basis: 40px;
-
-        font-size: 22px;
-
-    }
-
-
-    .composer-send-button {
-
-        width: 40px;
-
-        height: 40px;
-
-        flex-basis: 40px;
-
-        font-size: 19px;
-
-    }
-
-
-    #postText {
-
-        font-size: 15px;
-
-        min-height: 38px;
-
-    }
-
-
     .image-preview-grid {
-
-        grid-template-columns:
-            repeat(2, minmax(0, 1fr));
 
         gap: 8px;
 
@@ -1318,11 +1047,6 @@
 
 }
 
-
-
-/* =========================================================
-   SMALL PHONES
-========================================================= */
 
 @media (max-width: 380px) {
 
@@ -1346,22 +1070,11 @@
 
     }
 
-
-    .character-counter {
-
-        font-size: 9px;
-
-    }
-
 }
 
 </style>
 
 
-
-<!-- =========================================================
-     JAVASCRIPT
-========================================================= -->
 
 <script>
 
@@ -1369,10 +1082,6 @@
 
     "use strict";
 
-
-    /* =====================================================
-       INITIALIZE
-    ====================================================== */
 
     function initializePostModal() {
 
@@ -1397,28 +1106,41 @@
         const imageInput =
             document.getElementById("postImage");
 
-        const imagePreviewContainer =
-            document.getElementById("imagePreviewContainer");
+        const previewContainer =
+            document.getElementById(
+                "imagePreviewContainer"
+            );
 
-        const imagePreviewGrid =
-            document.getElementById("imagePreviewGrid");
+        const previewGrid =
+            document.getElementById(
+                "imagePreviewGrid"
+            );
 
-        const titleCharacterCounter =
-            document.getElementById("titleCharacterCounter");
+        const imageCountMessage =
+            document.getElementById(
+                "imageCountMessage"
+            );
+
+        const titleCounter =
+            document.getElementById(
+                "titleCharacterCounter"
+            );
 
         const characterCounter =
-            document.getElementById("characterCounter");
+            document.getElementById(
+                "characterCounter"
+            );
 
         const sendButton =
-            document.getElementById("submitPostButton");
+            document.getElementById(
+                "submitPostButton"
+            );
 
         const form =
-            document.getElementById("postForm");
+            document.getElementById(
+                "postForm"
+            );
 
-
-        /* =================================================
-           REQUIRED ELEMENT CHECK
-        ================================================== */
 
         if (
             !modal ||
@@ -1428,16 +1150,17 @@
             !formTitleInput ||
             !textarea ||
             !imageInput ||
-            !imagePreviewContainer ||
-            !imagePreviewGrid ||
-            !titleCharacterCounter ||
+            !previewContainer ||
+            !previewGrid ||
+            !imageCountMessage ||
+            !titleCounter ||
             !characterCounter ||
             !sendButton ||
             !form
         ) {
 
             console.error(
-                "Post modal could not initialize. Required element missing."
+                "Post modal could not initialize."
             );
 
             return;
@@ -1445,40 +1168,30 @@
         }
 
 
-        /* =================================================
-           CONSTANTS
-        ================================================== */
-
         const MAX_IMAGES = 10;
 
-
-
-        /* =================================================
-           SELECTED IMAGES
-           
-           We maintain our own array because replacing
-           imageInput.files directly is not reliable for
-           removing individual files.
-        ================================================== */
 
         let selectedImages = [];
 
 
 
-        /* =================================================
-           OPEN MODAL
-        ================================================== */
+        // ==================================================
+        // OPEN
+        // ==================================================
 
         function openModal() {
 
-            modal.classList.add("active");
+            modal.classList.add(
+                "active"
+            );
 
             modal.setAttribute(
                 "aria-hidden",
                 "false"
             );
 
-            document.body.style.overflow = "hidden";
+            document.body.style.overflow =
+                "hidden";
 
 
             setTimeout(function () {
@@ -1491,106 +1204,101 @@
 
 
 
-        /* =================================================
-           CLOSE MODAL
-        ================================================== */
+        // ==================================================
+        // CLOSE
+        // ==================================================
 
         function closeModal() {
 
-            modal.classList.remove("active");
+            modal.classList.remove(
+                "active"
+            );
 
             modal.setAttribute(
                 "aria-hidden",
                 "true"
             );
 
-            document.body.style.overflow = "";
+            document.body.style.overflow =
+                "";
 
         }
 
 
 
-        /* =================================================
-           TITLE COUNTER
-        ================================================== */
+        // ==================================================
+        // COUNTERS
+        // ==================================================
 
-        function updateTitleCounter() {
+        function updateCounters() {
 
-            const length =
-                titleInput.value.length;
+            titleCounter.textContent =
+                titleInput.value.length +
+                "/150";
 
-            titleCharacterCounter.textContent =
-                length + "/150";
-
-        }
-
-
-
-        /* =================================================
-           TEXT COUNTER
-        ================================================== */
-
-        function updateCharacterCounter() {
-
-            const length =
-                textarea.value.length;
 
             characterCounter.textContent =
-                length + "/1000";
+                textarea.value.length +
+                "/1000";
 
         }
 
 
 
-        /* =================================================
-           SEND BUTTON
-        ================================================== */
+        // ==================================================
+        // SEND BUTTON
+        // ==================================================
 
         function updateSendButton() {
 
             const hasTitle =
-                titleInput.value.trim().length > 0;
+                titleInput.value.trim()
+                    .length > 0;
+
 
             const hasText =
-                textarea.value.trim().length > 0;
+                textarea.value.trim()
+                    .length > 0;
+
 
             const hasImages =
                 selectedImages.length > 0;
 
+
             sendButton.disabled =
-                !(hasTitle || hasText || hasImages);
+                !(
+                    hasTitle ||
+                    hasText ||
+                    hasImages
+                );
 
         }
 
 
 
-        /* =================================================
-           TEXTAREA AUTO HEIGHT
-        ================================================== */
+        // ==================================================
+        // RESIZE TEXTAREA
+        // ==================================================
 
         function resizeTextarea() {
 
-            textarea.style.height = "auto";
+            textarea.style.height =
+                "auto";
 
-            const newHeight =
+
+            textarea.style.height =
                 Math.min(
                     textarea.scrollHeight,
                     120
-                );
-
-            textarea.style.height =
-                newHeight + "px";
+                ) + "px";
 
         }
 
 
 
-        /* =================================================
-           SYNC FILE INPUT
-           
-           This allows individual files to be removed while
-           keeping the final multipart upload as name="images".
-        ================================================== */
+        // ==================================================
+        // SYNC FILE INPUT
+        // ==================================================
 
         function syncFileInput() {
 
@@ -1598,11 +1306,15 @@
                 new DataTransfer();
 
 
-            selectedImages.forEach(function (file) {
+            selectedImages.forEach(
+                function (file) {
 
-                dataTransfer.items.add(file);
+                    dataTransfer.items.add(
+                        file
+                    );
 
-            });
+                }
+            );
 
 
             imageInput.files =
@@ -1612,25 +1324,33 @@
 
 
 
-        /* =================================================
-           RENDER IMAGE PREVIEWS
-        ================================================== */
+        // ==================================================
+        // RENDER PREVIEWS
+        // ==================================================
 
         function renderImagePreviews() {
 
-            imagePreviewGrid.innerHTML = "";
+            previewGrid.innerHTML =
+                "";
 
 
-            if (selectedImages.length === 0) {
+            if (
+                selectedImages.length === 0
+            ) {
 
-                imagePreviewContainer.hidden = true;
+                previewContainer.hidden =
+                    true;
+
+                imageCountMessage.textContent =
+                    "";
 
                 return;
 
             }
 
 
-            imagePreviewContainer.hidden = false;
+            previewContainer.hidden =
+                false;
 
 
             selectedImages.forEach(
@@ -1644,37 +1364,56 @@
                         function (event) {
 
                             const item =
-                                document.createElement("div");
+                                document.createElement(
+                                    "div"
+                                );
+
 
                             item.className =
                                 "image-preview-item";
 
 
-                            const image =
-                                document.createElement("img");
+                            const img =
+                                document.createElement(
+                                    "img"
+                                );
 
-                            image.src =
+
+                            img.src =
                                 event.target.result;
 
-                            image.alt =
+
+                            img.alt =
                                 "Selected image " +
                                 (index + 1);
 
 
+                            const number =
+                                document.createElement(
+                                    "span"
+                                );
+
+
+                            number.className =
+                                "image-preview-number";
+
+
+                            number.textContent =
+                                index + 1;
+
+
                             const removeButton =
-                                document.createElement("button");
+                                document.createElement(
+                                    "button"
+                                );
+
 
                             removeButton.type =
                                 "button";
 
+
                             removeButton.className =
                                 "remove-image-button";
-
-                            removeButton.setAttribute(
-                                "aria-label",
-                                "Remove image " +
-                                (index + 1)
-                            );
 
 
                             removeButton.innerHTML =
@@ -1685,52 +1424,58 @@
                                 "click",
                                 function () {
 
-                                    removeImage(index);
+                                    removeImage(
+                                        index
+                                    );
 
                                 }
                             );
 
 
-                            const number =
-                                document.createElement("span");
-
-                            number.className =
-                                "image-preview-number";
-
-                            number.textContent =
-                                index + 1;
+                            item.appendChild(
+                                img
+                            );
 
 
-                            item.appendChild(image);
+                            item.appendChild(
+                                number
+                            );
 
-                            item.appendChild(number);
 
-                            item.appendChild(removeButton);
+                            item.appendChild(
+                                removeButton
+                            );
 
-                            imagePreviewGrid.appendChild(item);
+
+                            previewGrid.appendChild(
+                                item
+                            );
 
                         };
 
 
-                    reader.readAsDataURL(file);
+                    reader.readAsDataURL(
+                        file
+                    );
 
                 }
             );
 
 
-            /* =================================================
-               ADD MORE BUTTON
-            ================================================== */
-
             if (
-                selectedImages.length < MAX_IMAGES
+                selectedImages.length <
+                MAX_IMAGES
             ) {
 
                 const addMore =
-                    document.createElement("label");
+                    document.createElement(
+                        "label"
+                    );
+
 
                 addMore.className =
                     "add-more-images";
+
 
                 addMore.setAttribute(
                     "for",
@@ -1743,53 +1488,28 @@
                     '<span>Add photos</span>';
 
 
-                imagePreviewGrid.appendChild(
+                previewGrid.appendChild(
                     addMore
                 );
 
             }
 
 
-            /* =================================================
-               IMAGE COUNT
-            ================================================== */
-
-            const countMessage =
-                document.createElement("div");
-
-            countMessage.className =
-                "image-count-message";
-
-            countMessage.textContent =
+            imageCountMessage.textContent =
                 selectedImages.length +
                 " of " +
                 MAX_IMAGES +
                 " photos selected";
 
-
-            imagePreviewContainer.appendChild(
-                countMessage
-            );
-
         }
 
 
 
-        /* =================================================
-           REMOVE IMAGE
-        ================================================== */
+        // ==================================================
+        // REMOVE IMAGE
+        // ==================================================
 
         function removeImage(index) {
-
-            if (
-                index < 0 ||
-                index >= selectedImages.length
-            ) {
-
-                return;
-
-            }
-
 
             selectedImages.splice(
                 index,
@@ -1807,88 +1527,74 @@
 
 
 
-        /* =================================================
-           ADD SELECTED IMAGES
-        ================================================== */
+        // ==================================================
+        // ADD IMAGES
+        // ==================================================
 
         function addImages(files) {
 
-            const incomingFiles =
+            const incoming =
                 Array.from(files);
 
 
-            if (!incomingFiles.length) {
+            incoming.forEach(
+                function (file) {
 
-                return;
+                    if (
+                        selectedImages.length >=
+                        MAX_IMAGES
+                    ) {
 
-            }
+                        return;
 
-
-            for (
-                let i = 0;
-                i < incomingFiles.length;
-                i++
-            ) {
-
-                const file =
-                    incomingFiles[i];
+                    }
 
 
-                /* =========================================
-                   IMAGE CHECK
-                ========================================== */
+                    if (
+                        !file.type.startsWith(
+                            "image/"
+                        )
+                    ) {
 
-                if (
-                    !file.type.startsWith("image/")
-                ) {
+                        return;
 
-                    continue;
-
-                }
+                    }
 
 
-                /* =========================================
-                   MAXIMUM IMAGE CHECK
-                ========================================== */
+                    const duplicate =
+                        selectedImages.some(
+                            function (
+                                existing
+                            ) {
 
-                if (
-                    selectedImages.length >= MAX_IMAGES
-                ) {
+                                return (
+                                    existing.name ===
+                                    file.name &&
 
-                    break;
+                                    existing.size ===
+                                    file.size &&
 
-                }
-
-
-                /* =========================================
-                   DUPLICATE CHECK
-                ========================================== */
-
-                const duplicate =
-                    selectedImages.some(
-                        function (existingFile) {
-
-                            return (
-                                existingFile.name === file.name &&
-                                existingFile.size === file.size &&
-                                existingFile.lastModified ===
+                                    existing.lastModified ===
                                     file.lastModified
-                            );
+                                );
 
-                        }
+                            }
+                        );
+
+
+                    if (duplicate) {
+
+                        return;
+
+                    }
+
+
+                    selectedImages.push(
+                        file
                     );
 
-
-                if (duplicate) {
-
-                    continue;
-
                 }
-
-
-                selectedImages.push(file);
-
-            }
+            );
 
 
             syncFileInput();
@@ -1901,15 +1607,15 @@
 
 
 
-        /* =================================================
-           TITLE INPUT
-        ================================================== */
+        // ==================================================
+        // EVENTS
+        // ==================================================
 
         titleInput.addEventListener(
             "input",
             function () {
 
-                updateTitleCounter();
+                updateCounters();
 
                 updateSendButton();
 
@@ -1917,16 +1623,11 @@
         );
 
 
-
-        /* =================================================
-           TEXT INPUT
-        ================================================== */
-
         textarea.addEventListener(
             "input",
             function () {
 
-                updateCharacterCounter();
+                updateCounters();
 
                 updateSendButton();
 
@@ -1936,18 +1637,21 @@
         );
 
 
+        imageInput.addEventListener(
+            "change",
+            function () {
 
-        /* =================================================
-           OPEN COMPOSER
-        ================================================== */
+                addImages(
+                    imageInput.files
+                );
+
+            }
+        );
+
 
         openComposer.addEventListener(
             "click",
-            function () {
-
-                openModal();
-
-            }
+            openModal
         );
 
 
@@ -1970,25 +1674,11 @@
         );
 
 
-
-        /* =================================================
-           CLOSE BUTTON
-        ================================================== */
-
         closeButton.addEventListener(
             "click",
-            function () {
-
-                closeModal();
-
-            }
+            closeModal
         );
 
-
-
-        /* =================================================
-           ESCAPE
-        ================================================== */
 
         document.addEventListener(
             "keydown",
@@ -1996,7 +1686,9 @@
 
                 if (
                     event.key === "Escape" &&
-                    modal.classList.contains("active")
+                    modal.classList.contains(
+                        "active"
+                    )
                 ) {
 
                     closeModal();
@@ -2008,26 +1700,9 @@
 
 
 
-        /* =================================================
-           IMAGE SELECTION
-        ================================================== */
-
-        imageInput.addEventListener(
-            "change",
-            function () {
-
-                addImages(
-                    imageInput.files
-                );
-
-            }
-        );
-
-
-
-        /* =================================================
-           FORM SUBMIT
-        ================================================== */
+        // ==================================================
+        // SUBMIT
+        // ==================================================
 
         form.addEventListener(
             "submit",
@@ -2036,21 +1711,15 @@
                 const title =
                     titleInput.value.trim();
 
+
                 const text =
                     textarea.value.trim();
 
-                const hasImages =
-                    selectedImages.length > 0;
-
-
-                /* =========================================
-                   VALIDATION
-                ========================================== */
 
                 if (
                     !title &&
                     !text &&
-                    !hasImages
+                    selectedImages.length === 0
                 ) {
 
                     event.preventDefault();
@@ -2062,24 +1731,12 @@
                 }
 
 
-                /* =========================================
-                   COPY TITLE INTO FORM
-                ========================================== */
-
                 formTitleInput.value =
                     title;
 
 
-                /* =========================================
-                   FINAL FILE SYNC
-                ========================================== */
-
                 syncFileInput();
 
-
-                /* =========================================
-                   DISABLE SEND BUTTON
-                ========================================== */
 
                 sendButton.disabled =
                     true;
@@ -2093,13 +1750,7 @@
 
 
 
-        /* =================================================
-           INITIAL STATE
-        ================================================== */
-
-        updateTitleCounter();
-
-        updateCharacterCounter();
+        updateCounters();
 
         updateSendButton();
 
@@ -2107,11 +1758,6 @@
 
     }
 
-
-
-    /* =====================================================
-       DOM READY
-    ====================================================== */
 
     if (
         document.readyState === "loading"
