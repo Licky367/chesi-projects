@@ -9,10 +9,10 @@
     /* =====================================================
        POST PHOTOS
        -----------------------------------------------------
-       Multiple images:
+       Multiple photos:
            item.images
 
-       Single-image fallback:
+       Single photo:
            item.image
     ====================================================== */
 
@@ -34,6 +34,10 @@
         postPhotos.length;
 
 
+    const hasPostImage =
+        photoCount > 0;
+
+
     /* =====================================================
        POST OWNER
     ====================================================== */
@@ -50,8 +54,32 @@
                 item.userName || "User"
             )
         );
+
+
+    /* =====================================================
+       FULL POST TEXT
+       -----------------------------------------------------
+       IMPORTANT:
+       -----------------------------------------------------
+       No sentence manipulation is performed here.
+
+       The browser/JS determines whether the rendered
+       text exceeds:
+
+           WITHOUT IMAGE = 5 lines
+           WITH IMAGE    = 2.5 lines
+    ====================================================== */
+
+    const fullPostText =
+        item.text
+            ? String(item.text).trim()
+            : "";
 %>
 
+
+<!-- =======================================================
+     POST CARD
+======================================================= -->
 
 <article
     class="feed-card post-card"
@@ -105,10 +133,17 @@
                         item.dairyId
                     ) { %>
 
+
                         <span class="post-meta-action">
+
                             updated about
+
                         </span>
 
+
+                        <!-- =====================================
+                             CLICKABLE DAIRY / ASSET NAME
+                        ====================================== -->
 
                         <a
                             href="/dairy/<%= item.dairyId %>"
@@ -119,6 +154,7 @@
                             <%= item.dairyName %>
 
                         </a>
+
 
                     <% } %>
 
@@ -160,6 +196,7 @@
             )
         ) { %>
 
+
             <button
                 class="delete-post"
                 data-id="<%= item._id %>"
@@ -175,6 +212,7 @@
 
             </button>
 
+
         <% } %>
 
 
@@ -183,12 +221,19 @@
 
 
     <!-- =================================================
-         BODY
+         POST BODY
          -------------------------------------------------
          IMPORTANT:
+         -------------------------------------------------
          No fixed height.
          No vertical centering.
-         The body grows according to the content.
+         No artificial empty space.
+
+         The body height is determined by:
+             title
+             text
+             images
+             actions
     ================================================== -->
 
     <div class="feed-body post-body">
@@ -200,56 +245,79 @@
 
         <% if (item.title) { %>
 
+
             <h3 class="post-title">
 
                 <%= item.title %>
 
             </h3>
 
+
         <% } %>
 
 
 
         <!-- =============================================
-             TEXT
+             POST TEXT
              ------------------------------------------------
-             The CSS should limit this to 5 lines.
+             LINE LIMITS:
 
-             The full text is NOT altered here.
-             post.js can use the full text when opening
-             the "See more" modal.
+             WITHOUT IMAGE:
+                 5 lines
+
+             WITH IMAGE:
+                 2.5 lines
+
+             The text itself is NOT modified.
+
+             CSS/JS controls only how much is visible.
         ============================================== -->
 
-        <% if (
-            item.text &&
-            String(item.text).trim()
-        ) { %>
+        <% if (fullPostText) { %>
 
 
             <div
-                class="post-text-wrapper"
+                class="
+                    post-text-wrapper
+                    <%= hasPostImage
+                        ? 'post-text-with-image'
+                        : 'post-text-without-image'
+                    %>
+                "
                 data-post-text-wrapper="<%= item._id %>"
+                data-post-text-limit="<%= hasPostImage ? '2.5' : '5' %>"
             >
 
 
+                <!-- =========================================
+                     TEXT PREVIEW
+                ========================================== -->
+
                 <p
-                    class="post-text post-text-preview"
+                    class="
+                        post-text
+                        <%= hasPostImage
+                            ? 'post-text-image-preview'
+                            : 'post-text-line-preview'
+                        %>
+                    "
                     data-post-text="<%= item._id %>"
                 >
 
-                    <%= item.text %>
+                    <%= fullPostText %>
 
                 </p>
+
 
 
                 <!-- =========================================
                      SEE MORE
                      ------------------------------------------------
-                     Hidden by default.
+                     Hidden initially.
 
-                     JavaScript should display this only when
-                     the text actually exceeds the five-line
-                     preview.
+                     post.js should reveal it only when the
+                     rendered text exceeds the appropriate
+                     line limit.
                 ========================================== -->
 
                 <button
@@ -294,6 +362,7 @@
 
                 <% if (photoCount === 1) { %>
 
+
                     <button
                         type="button"
                         class="
@@ -305,14 +374,20 @@
                         aria-label="View photo"
                     >
 
+
                         <img
                             src="/uploads/<%= postPhotos[0] %>"
                             alt="Post image"
-                            class="feed-img post-image"
+                            class="
+                                feed-img
+                                post-image
+                            "
                             loading="lazy"
                         >
 
+
                     </button>
+
 
                 <% } %>
 
@@ -324,9 +399,11 @@
 
                 <% if (photoCount === 2) { %>
 
+
                     <% postPhotos.forEach(
                         (photo, index) => {
                     %>
+
 
                         <button
                             type="button"
@@ -336,16 +413,23 @@
                             aria-label="View photo <%= index + 1 %>"
                         >
 
+
                             <img
                                 src="/uploads/<%= photo %>"
                                 alt="Post image <%= index + 1 %>"
-                                class="feed-img post-image"
+                                class="
+                                    feed-img
+                                    post-image
+                                "
                                 loading="lazy"
                             >
 
+
                         </button>
 
+
                     <% }) %>
+
 
                 <% } %>
 
@@ -353,6 +437,9 @@
 
                 <!-- =========================================
                      THREE PHOTOS
+                     -----------------------------------------
+                     First photo is large.
+                     Remaining two are stacked.
                 ========================================== -->
 
                 <% if (photoCount === 3) { %>
@@ -360,18 +447,26 @@
 
                     <button
                         type="button"
-                        class="post-photo post-photo-large"
+                        class="
+                            post-photo
+                            post-photo-large
+                        "
                         data-photo-index="0"
                         data-gallery-id="<%= item._id %>"
                         aria-label="View photo 1"
                     >
 
+
                         <img
                             src="/uploads/<%= postPhotos[0] %>"
                             alt="Post image 1"
-                            class="feed-img post-image"
+                            class="
+                                feed-img
+                                post-image
+                            "
                             loading="lazy"
                         >
+
 
                     </button>
 
@@ -387,12 +482,17 @@
                             aria-label="View photo 2"
                         >
 
+
                             <img
                                 src="/uploads/<%= postPhotos[1] %>"
                                 alt="Post image 2"
-                                class="feed-img post-image"
+                                class="
+                                    feed-img
+                                    post-image
+                                "
                                 loading="lazy"
                             >
+
 
                         </button>
 
@@ -405,12 +505,17 @@
                             aria-label="View photo 3"
                         >
 
+
                             <img
                                 src="/uploads/<%= postPhotos[2] %>"
                                 alt="Post image 3"
-                                class="feed-img post-image"
+                                class="
+                                    feed-img
+                                    post-image
+                                "
                                 loading="lazy"
                             >
+
 
                         </button>
 
@@ -428,9 +533,11 @@
 
                 <% if (photoCount === 4) { %>
 
+
                     <% postPhotos.forEach(
                         (photo, index) => {
                     %>
+
 
                         <button
                             type="button"
@@ -440,16 +547,23 @@
                             aria-label="View photo <%= index + 1 %>"
                         >
 
+
                             <img
                                 src="/uploads/<%= photo %>"
                                 alt="Post image <%= index + 1 %>"
-                                class="feed-img post-image"
+                                class="
+                                    feed-img
+                                    post-image
+                                "
                                 loading="lazy"
                             >
 
+
                         </button>
 
+
                     <% }) %>
+
 
                 <% } %>
 
@@ -457,15 +571,22 @@
 
                 <!-- =========================================
                      FIVE OR MORE PHOTOS
+                     -----------------------------------------
+                     Display five slots.
+
+                     The fifth slot shows the number of
+                     additional photos.
                 ========================================== -->
 
                 <% if (photoCount >= 5) { %>
+
 
                     <% postPhotos
                         .slice(0, 5)
                         .forEach(
                             (photo, index) => {
                     %>
+
 
                         <button
                             type="button"
@@ -481,15 +602,20 @@
                             aria-label="View photo <%= index + 1 %>"
                         >
 
+
                             <img
                                 src="/uploads/<%= photo %>"
                                 alt="Post image <%= index + 1 %>"
-                                class="feed-img post-image"
+                                class="
+                                    feed-img
+                                    post-image
+                                "
                                 loading="lazy"
                             >
 
 
                             <% if (index === 4) { %>
+
 
                                 <span
                                     class="
@@ -501,12 +627,15 @@
 
                                 </span>
 
+
                             <% } %>
 
 
                         </button>
 
+
                     <% }) %>
+
 
                 <% } %>
 
@@ -525,9 +654,13 @@
          EXISTING ACTIONS
          -------------------------------------------------
          IMPORTANT:
-         No like/comment counts are added here.
-         Your existing partial remains the owner of the
-         action area.
+
+         DO NOT ADD:
+             likes
+             comments
+             counts
+
+         Your existing partial handles them.
     ================================================== -->
 
     <%- include("partials/feed-actions", {
@@ -552,13 +685,14 @@
 
 
 
-<!-- =========================================================
-     FULL POST / SEE MORE MODAL
-     ---------------------------------------------------------
-     This is opened when "See more" is tapped.
-
-     The complete message is displayed here.
-========================================================= -->
+<!-- =======================================================
+     FULL POST VIEWER
+     -------------------------------------------------------
+     Used by "See more".
+     
+     Contains the ORIGINAL full text, not the truncated
+     preview.
+======================================================= -->
 
 <div
     class="post-full-viewer"
@@ -581,7 +715,7 @@
 
 
     <!-- =================================================
-         MODAL
+         FULL POST CARD
     ================================================== -->
 
     <div
@@ -607,17 +741,50 @@
                     alt="<%= authorName %>"
                     class="avatar-sm"
                     loading="lazy"
+                    onerror="this.src='https://ui-avatars.com/api/?name=User'"
                 >
 
 
                 <div class="feed-user-info">
 
 
-                    <strong class="post-user-name">
+                    <div class="post-meta-line">
 
-                        <%= authorName %>
 
-                    </strong>
+                        <strong class="post-user-name">
+
+                            <%= item.userName || "User" %>
+
+                        </strong>
+
+
+                        <% if (
+                            item.dairyName &&
+                            item.dairyId
+                        ) { %>
+
+
+                            <span class="post-meta-action">
+
+                                updated about
+
+                            </span>
+
+
+                            <a
+                                href="/dairy/<%= item.dairyId %>"
+                                class="post-subject"
+                            >
+
+                                <%= item.dairyName %>
+
+                            </a>
+
+
+                        <% } %>
+
+
+                    </div>
 
 
                     <small class="post-time">
@@ -632,6 +799,11 @@
 
             </div>
 
+
+
+            <!-- =============================================
+                 CLOSE
+            ============================================== -->
 
             <button
                 type="button"
@@ -655,11 +827,13 @@
 
         <% if (item.title) { %>
 
-            <div class="post-full-viewer-title">
+
+            <h3 class="post-full-viewer-title">
 
                 <%= item.title %>
 
-            </div>
+            </h3>
+
 
         <% } %>
 
@@ -669,24 +843,31 @@
              FULL TEXT
         ================================================== -->
 
-        <div class="post-full-viewer-text">
+        <% if (fullPostText) { %>
 
-            <%= item.text %>
 
-        </div>
+            <div class="post-full-viewer-text">
+
+                <%= fullPostText %>
+
+            </div>
+
+
+        <% } %>
 
 
     </div>
+
 
 </div>
 
 
 
-<!-- =========================================================
+<!-- =======================================================
      PHOTO DATA
-     ---------------------------------------------------------
-     Used by the existing/new gallery JavaScript.
-========================================================= -->
+     -------------------------------------------------------
+     Used by post.js for the photo gallery.
+======================================================= -->
 
 <script
     type="application/json"
