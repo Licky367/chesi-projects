@@ -33,8 +33,9 @@ const {
 //     user
 //     userName
 //     type
-//     text
-//     image
+//     title
+text
+images
 //
 // ==========================================================
 
@@ -46,6 +47,8 @@ async ({
     userId,
 
     userName,
+
+title,
 
     text,
 
@@ -103,6 +106,9 @@ async ({
 
         type:
             "post",
+
+       title:
+            title || "",
 
         text:
             text || "",
