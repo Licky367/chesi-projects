@@ -4,137 +4,198 @@
      FILE:
      views/update/post.ejs
 
-     EXPECTED VARIABLES:
+     FEATURES:
+     ---------------------------------------------------------
+     • Modern post-card design
+     • User header
+     • Clickable dairy/farm name
+     • Post title
+     • 100-character text preview
+     • "See more" expansion
+     • Full readable expanded post
+     • Up to 4 images in feed
+     • +N indicator for additional images
+     • Full-screen image viewer
+     • Swipeable image viewer on mobile
+     • Previous / next image controls
+     • Existing feed-actions compatibility
+     • Comment modal
+     • Delete post
+     • Delete comment
 
+     EXPECTED VARIABLES:
+     ---------------------------------------------------------
      item
      user
 
      OPTIONAL:
      type
-
-     IMPORTANT:
-     ACTION CLASSES MUST MATCH feed-actions.ejs:
-
-         .feed-card
-         .like-btn
-         .toggle-comments
-         .delete-post
-         .comment-modal
-         .comment-form
-         .comment-section
-         .delete-comment
 ========================================================= -->
 
 
 <%
-    /* =====================================================
-       SAFE VALUES
-    ====================================================== */
+/* =========================================================
+   SAFE VALUES
+========================================================= */
 
-    const postType =
-        typeof type !== "undefined" && type
-            ? type
-            : "post";
-
-
-    const likes =
-        Array.isArray(item.likes)
-            ? item.likes.length
-            : Number(item.likes || 0);
+const postType =
+    typeof type !== "undefined" && type
+        ? type
+        : "post";
 
 
-    const comments =
-        Array.isArray(item.comments)
-            ? item.comments
-            : [];
+/* =========================================================
+   LIKES
+========================================================= */
+
+const likes =
+    Array.isArray(item.likes)
+        ? item.likes.length
+        : Number(item.likes || 0);
 
 
-    const postImages =
-        Array.isArray(item.images)
-            ? item.images.filter(Boolean)
-            : (
-                item.image
-                    ? [item.image]
-                    : []
-            );
+/* =========================================================
+   COMMENTS
+========================================================= */
+
+const comments =
+    Array.isArray(item.comments)
+        ? item.comments
+        : [];
 
 
-    const hasImages =
-        postImages.length > 0;
+/* =========================================================
+   USER ID
+========================================================= */
+
+const postUserId =
+    item.user
+        ? String(
+            item.user._id ||
+            item.user
+        )
+        : "";
 
 
-    const hasMultipleImages =
-        postImages.length > 1;
+const currentUserId =
+    user && user._id
+        ? String(user._id)
+        : "";
 
 
-    const hasMoreThanFourImages =
-        postImages.length > 4;
+/* =========================================================
+   DELETE PERMISSION
+========================================================= */
+
+const canDeletePost =
+    user &&
+    (
+        postUserId === currentUserId ||
+        user.role === "admin"
+    );
 
 
-    const remainingImages =
-        Math.max(
-            0,
-            postImages.length - 4
+/* =========================================================
+   POST TEXT
+========================================================= */
+
+const fullPostText =
+    item.text
+        ? String(item.text).trim()
+        : "";
+
+
+/* =========================================================
+   LONG TEXT
+========================================================= */
+
+const isLongPost =
+    fullPostText.length > 100;
+
+
+/* =========================================================
+   TEXT PREVIEW
+
+   Only used when text exceeds 100 characters.
+========================================================= */
+
+const postPreview =
+    isLongPost
+        ? fullPostText.substring(0, 100).trimEnd() + "…"
+        : fullPostText;
+
+
+/* =========================================================
+   POST IMAGES
+
+   Keep ALL images available to the full-screen viewer,
+   but display only the first four in the feed.
+========================================================= */
+
+const postImages =
+    Array.isArray(item.images)
+        ? item.images.filter(Boolean)
+        : (
+            item.image
+                ? [item.image]
+                : []
         );
 
 
-    const postUserId =
-        item.user
-            ? String(
-                item.user._id ||
-                item.user
-            )
-            : "";
+const visibleImages =
+    postImages.slice(0, 4);
 
 
-    const currentUserId =
-        user && user._id
-            ? String(user._id)
-            : "";
+const additionalImages =
+    Math.max(
+        0,
+        postImages.length - 4
+    );
 
 
-    const canDeletePost =
-        user &&
+/* =========================================================
+   DAIRY INFORMATION
+
+   Supports both:
+       dairyId / dairyName
+
+   and, where available:
+       dairy._id / dairy.name
+========================================================= */
+
+const dairyId =
+    item.dairyId ||
+    (
+        item.dairy &&
         (
-            postUserId === currentUserId ||
-            user.role === "admin"
-        );
-
-
-    const dairyId =
-        item.dairyId ||
-        (
+            item.dairy._id ||
             item.dairy
-                ? (
-                    item.dairy._id ||
-                    item.dairy
-                )
-                : ""
+        )
+    ) ||
+    "";
+
+
+const dairyName =
+    item.dairyName ||
+    (
+        item.dairy &&
+        item.dairy.name
+    ) ||
+    "";
+
+
+/* =========================================================
+   DATE
+========================================================= */
+
+const postDate =
+    item.createdAt
+        ? new Date(item.createdAt).toLocaleString()
+        : (
+            item.dateText ||
+            ""
         );
 
-
-    const dairyName =
-        item.dairyName ||
-        (
-            item.dairy &&
-            item.dairy.name
-                ? item.dairy.name
-                : ""
-        );
-
-
-    const cleanTitle =
-        item.title &&
-        String(item.title).trim()
-            ? String(item.title).trim()
-            : "";
-
-
-    const cleanText =
-        item.text &&
-        String(item.text).trim()
-            ? String(item.text).trim()
-            : "";
 %>
 
 
@@ -152,18 +213,7 @@
 
 
     <!-- =====================================================
-         EXPANSION BACKDROP
-    ====================================================== -->
-
-    <div
-        class="post-expand-backdrop"
-        aria-hidden="true"
-    ></div>
-
-
-
-    <!-- =====================================================
-         POST HEADER
+         HEADER
     ====================================================== -->
 
     <header class="post-card-header">
@@ -200,10 +250,7 @@
 
             <span class="post-date">
 
-                <%= item.createdAt
-                    ? new Date(item.createdAt).toLocaleString()
-                    : ""
-                %>
+                <%= postDate %>
 
             </span>
 
@@ -212,7 +259,7 @@
 
 
         <!-- =================================================
-             DELETE POST
+             DELETE
         ================================================== -->
 
         <% if (canDeletePost) { %>
@@ -221,7 +268,7 @@
                 type="button"
                 class="post-menu-button delete-post"
                 data-id="<%= item._id %>"
-                data-type="<%= postType %>"
+                data-type="post"
                 aria-label="Delete post"
                 title="Delete post"
             >
@@ -241,55 +288,47 @@
 
 
     <!-- =====================================================
-         POST MESSAGE
-========================================================= -->
+         POST BODY
+    ====================================================== -->
 
     <div class="post-content">
 
 
         <!-- =================================================
-             DAIRY / SUBJECT
+             DAIRY / FARM NAME
         ================================================== -->
 
-        <% if (dairyName) { %>
+        <% if (dairyName && dairyId) { %>
 
-            <div class="post-dairy-line">
+            <a
+                href="/dairy/<%= dairyId %>"
+                class="post-dairy-link"
+                title="View <%= dairyName %>"
+            >
 
-                <% if (dairyId) { %>
+                <i
+                    class="bi bi-building"
+                    aria-hidden="true"
+                ></i>
 
-                    <a
-                        href="/dairy/<%= dairyId %>"
-                        class="post-dairy-link"
-                        title="View <%= dairyName %>"
-                    >
+                <span>
+                    <%= dairyName %>
+                </span>
 
-                        <i
-                            class="bi bi-building"
-                            aria-hidden="true"
-                        ></i>
+            </a>
 
-                        <span>
-                            <%= dairyName %>
-                        </span>
+        <% } else if (dairyName) { %>
 
-                    </a>
+            <div class="post-dairy-link non-clickable">
 
-                <% } else { %>
+                <i
+                    class="bi bi-building"
+                    aria-hidden="true"
+                ></i>
 
-                    <span class="post-dairy-link post-dairy-static">
-
-                        <i
-                            class="bi bi-building"
-                            aria-hidden="true"
-                        ></i>
-
-                        <span>
-                            <%= dairyName %>
-                        </span>
-
-                    </span>
-
-                <% } %>
+                <span>
+                    <%= dairyName %>
+                </span>
 
             </div>
 
@@ -301,11 +340,14 @@
              TITLE
         ================================================== -->
 
-        <% if (cleanTitle) { %>
+        <% if (
+            item.title &&
+            String(item.title).trim()
+        ) { %>
 
             <h2 class="post-title">
 
-                <%= cleanTitle %>
+                <%= item.title %>
 
             </h2>
 
@@ -314,43 +356,58 @@
 
 
         <!-- =================================================
-             POST TEXT
+             TEXT
         ================================================== -->
 
-        <% if (cleanText) { %>
+        <% if (fullPostText) { %>
 
             <div
                 class="
-                    post-text-wrapper
-                    <%= hasImages ? 'has-post-image' : '' %>
+                    post-text-area
+                    <%= isLongPost ? 'post-text-is-long' : '' %>
                 "
             >
 
-                <div class="post-text">
 
-                    <%= cleanText %>
+                <% if (isLongPost) { %>
 
-                </div>
+                    <div
+                        class="post-text post-text-preview"
+                    >
 
+                        <%= postPreview %>
 
-                <!-- =========================================
-                     SEE MORE
-                ========================================== -->
+                    </div>
 
-                <% if (hasImages) { %>
 
                     <button
                         type="button"
                         class="post-see-more"
-                        aria-label="See more of this post"
-                        hidden
+                        data-post-expand="<%= item._id %>"
                     >
 
                         See more
 
+                        <i
+                            class="bi bi-arrow-right"
+                            aria-hidden="true"
+                        ></i>
+
                     </button>
 
+
+                <% } else { %>
+
+
+                    <div class="post-text">
+
+                        <%= fullPostText %>
+
+                    </div>
+
+
                 <% } %>
+
 
             </div>
 
@@ -359,63 +416,66 @@
 
 
         <!-- =================================================
-             IMAGES
+             IMAGE GRID
         ================================================== -->
 
-        <% if (postImages.length > 0) { %>
+        <% if (visibleImages.length > 0) { %>
+
 
             <div
                 class="
                     post-image-grid
-                    post-image-count-<%= Math.min(postImages.length, 4) %>
-                    <%= hasMoreThanFourImages ? 'has-more-images' : '' %>
+                    post-image-count-<%= visibleImages.length %>
                 "
+                data-photo-count="<%= postImages.length %>"
             >
 
 
-                <% postImages.forEach(function(image, index) { %>
+                <% visibleImages.forEach(function(image, index) { %>
 
 
-                    <div
-                        class="
-                            post-image-item
-                            <%= index >= 4 ? 'post-image-extra' : '' %>
-                        "
-                        data-image-index="<%= index %>"
+                    <button
+                        type="button"
+                        class="post-image-item"
+                        data-photo-index="<%= index %>"
+                        aria-label="Open photo <%= index + 1 %>"
                     >
+
 
                         <img
                             src="/uploads/<%= image %>"
-                            alt="Post image <%= index + 1 %>"
+                            alt="Post photo <%= index + 1 %>"
                             class="post-image"
                             loading="lazy"
                         >
 
 
                         <!-- =================================
-                             MORE IMAGES OVERLAY
+                             +N OVERLAY
                         ================================== -->
 
                         <% if (
-                            hasMoreThanFourImages &&
-                            index === 3
+                            index === 3 &&
+                            additionalImages > 0
                         ) { %>
 
-                            <div
-                                class="post-more-images"
-                                aria-hidden="true"
-                            >
+                            <span class="post-more-images">
 
-                                <span>
-                                    +<%= remainingImages %>
-                                </span>
+                                <i
+                                    class="bi bi-images"
+                                    aria-hidden="true"
+                                ></i>
 
-                            </div>
+                                <strong>
+                                    +<%= additionalImages %>
+                                </strong>
+
+                            </span>
 
                         <% } %>
 
 
-                    </div>
+                    </button>
 
 
                 <% }); %>
@@ -423,30 +483,8 @@
 
             </div>
 
+
         <% } %>
-
-
-
-        <!-- =================================================
-             EXPAND BUTTON
-
-             Used when the text is longer than three
-             lines on a photo post.
-        ================================================== -->
-
-        <button
-            type="button"
-            class="post-expand-button"
-            hidden
-            aria-label="Open full post"
-        >
-
-            <i
-                class="bi bi-arrows-angle-expand"
-                aria-hidden="true"
-            ></i>
-
-        </button>
 
 
     </div>
@@ -454,29 +492,10 @@
 
 
     <!-- =====================================================
-         EXPANDED POST CLOSE BUTTON
-    ====================================================== -->
+         FEED ACTIONS
 
-    <button
-        type="button"
-        class="post-expanded-close"
-        aria-label="Close expanded post"
-        title="Close"
-    >
-
-        <i
-            class="bi bi-x-lg"
-            aria-hidden="true"
-        ></i>
-
-    </button>
-
-
-
-    <!-- =====================================================
-         POST ACTIONS
-
-         DO NOT CHANGE THESE CLASS NAMES.
+         IMPORTANT:
+         Existing class names are preserved.
     ====================================================== -->
 
     <div
@@ -542,6 +561,326 @@
 
 
     <!-- =====================================================
+         EXPANDED POST MODAL
+
+         IMPORTANT:
+         This is NOT the grey overlay shown previously.
+
+         The actual post remains clearly visible inside
+         a white, readable card.
+    ====================================================== -->
+
+    <% if (isLongPost) { %>
+
+        <div
+            class="post-expand-modal"
+            data-post-expand-modal="<%= item._id %>"
+            aria-hidden="true"
+        >
+
+
+            <div
+                class="post-expand-backdrop"
+                data-close-post-expand
+            ></div>
+
+
+            <div
+                class="post-expand-card"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Expanded post"
+            >
+
+
+                <!-- =========================================
+                     EXPANDED HEADER
+                ========================================== -->
+
+                <header class="post-expand-header">
+
+
+                    <div class="post-expand-user">
+
+
+                        <img
+                            src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
+                            alt="<%= item.userName || 'User' %>"
+                            loading="lazy"
+                        >
+
+
+                        <div>
+
+                            <strong>
+                                <%= item.userName || "User" %>
+                            </strong>
+
+                            <small>
+                                <%= postDate %>
+                            </small>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        class="post-expand-close"
+                        data-close-post-expand
+                        aria-label="Close post"
+                    >
+
+                        <i
+                            class="bi bi-x-lg"
+                            aria-hidden="true"
+                        ></i>
+
+                    </button>
+
+
+                </header>
+
+
+
+                <!-- =========================================
+                     EXPANDED BODY
+                ========================================== -->
+
+                <div class="post-expand-body">
+
+
+                    <% if (dairyName && dairyId) { %>
+
+                        <a
+                            href="/dairy/<%= dairyId %>"
+                            class="post-dairy-link expanded-dairy-link"
+                        >
+
+                            <i
+                                class="bi bi-building"
+                                aria-hidden="true"
+                            ></i>
+
+                            <span>
+                                <%= dairyName %>
+                            </span>
+
+                        </a>
+
+                    <% } %>
+
+
+
+                    <% if (
+                        item.title &&
+                        String(item.title).trim()
+                    ) { %>
+
+                        <h2 class="post-expand-title">
+
+                            <%= item.title %>
+
+                        </h2>
+
+                    <% } %>
+
+
+
+                    <div class="post-expand-text">
+
+                        <%= fullPostText %>
+
+                    </div>
+
+
+
+                    <!-- =====================================
+                         EXPANDED IMAGES
+                    ====================================== -->
+
+                    <% if (postImages.length > 0) { %>
+
+                        <div class="post-expand-images">
+
+
+                            <% postImages.forEach(function(image, index) { %>
+
+                                <button
+                                    type="button"
+                                    class="post-expand-image"
+                                    data-photo-index="<%= index %>"
+                                >
+
+                                    <img
+                                        src="/uploads/<%= image %>"
+                                        alt="Post photo <%= index + 1 %>"
+                                        loading="lazy"
+                                    >
+
+                                </button>
+
+                            <% }); %>
+
+
+                        </div>
+
+                    <% } %>
+
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+    <% } %>
+
+
+
+    <!-- =====================================================
+         FULL-SCREEN PHOTO VIEWER
+    ====================================================== -->
+
+    <% if (postImages.length > 0) { %>
+
+
+        <div
+            class="post-photo-viewer"
+            data-photo-viewer="<%= item._id %>"
+            aria-hidden="true"
+        >
+
+
+            <!-- =============================================
+                 BACKDROP
+            ============================================== -->
+
+            <div
+                class="photo-viewer-backdrop"
+                data-close-photo-viewer
+            ></div>
+
+
+
+            <!-- =============================================
+                 TOP BAR
+            ============================================== -->
+
+            <div class="photo-viewer-topbar">
+
+
+                <span class="photo-viewer-counter">
+
+                    <span class="photo-current">
+                        1
+                    </span>
+
+                    /
+
+                    <span>
+                        <%= postImages.length %>
+                    </span>
+
+                </span>
+
+
+                <button
+                    type="button"
+                    class="photo-viewer-close"
+                    data-close-photo-viewer
+                    aria-label="Close photo viewer"
+                >
+
+                    <i
+                        class="bi bi-x-lg"
+                        aria-hidden="true"
+                    ></i>
+
+                </button>
+
+
+            </div>
+
+
+
+            <!-- =============================================
+                 PREVIOUS
+            ============================================== -->
+
+            <% if (postImages.length > 1) { %>
+
+                <button
+                    type="button"
+                    class="photo-viewer-nav photo-viewer-prev"
+                    data-photo-prev
+                    aria-label="Previous photo"
+                >
+
+                    <i
+                        class="bi bi-chevron-left"
+                        aria-hidden="true"
+                    ></i>
+
+                </button>
+
+            <% } %>
+
+
+
+            <!-- =============================================
+                 PHOTO
+            ============================================== -->
+
+            <div class="photo-viewer-stage">
+
+
+                <img
+                    class="photo-viewer-image"
+                    src="/uploads/<%= postImages[0] %>"
+                    alt="Post photo"
+                >
+
+
+            </div>
+
+
+
+            <!-- =============================================
+                 NEXT
+            ============================================== -->
+
+            <% if (postImages.length > 1) { %>
+
+                <button
+                    type="button"
+                    class="photo-viewer-nav photo-viewer-next"
+                    data-photo-next
+                    aria-label="Next photo"
+                >
+
+                    <i
+                        class="bi bi-chevron-right"
+                        aria-hidden="true"
+                    ></i>
+
+                </button>
+
+            <% } %>
+
+
+        </div>
+
+
+    <% } %>
+
+
+
+    <!-- =====================================================
          COMMENT MODAL
     ====================================================== -->
 
@@ -555,7 +894,7 @@
 
 
             <!-- =============================================
-                 COMMENT MODAL HEADER
+                 COMMENT HEADER
             ============================================== -->
 
             <header class="comment-modal-header">
@@ -603,10 +942,7 @@
 
                     <div class="comment-empty-state">
 
-                        <i
-                            class="bi bi-chat-dots"
-                            aria-hidden="true"
-                        ></i>
+                        <i class="bi bi-chat-dots"></i>
 
                         <span>
                             No comments yet.
@@ -631,10 +967,6 @@
                     >
 
 
-                        <!-- =================================
-                             COMMENT AVATAR
-                        ================================== -->
-
                         <div class="comment-user-avatar">
 
                             <img
@@ -646,10 +978,6 @@
                         </div>
 
 
-
-                        <!-- =================================
-                             COMMENT CONTENT
-                        ================================== -->
 
                         <div class="comment-content">
 
@@ -706,13 +1034,11 @@
                             </div>
 
 
-
                             <p class="comment-text">
 
                                 <%= comment.text %>
 
                             </p>
-
 
 
                             <small class="comment-date">
@@ -774,10 +1100,7 @@
                             aria-label="Send comment"
                         >
 
-                            <i
-                                class="bi bi-send-fill"
-                                aria-hidden="true"
-                            ></i>
+                            <i class="bi bi-send-fill"></i>
 
                         </button>
 
@@ -808,12 +1131,10 @@
 <style>
 
 /* =========================================================
-   POST CARD
+   CARD
 ========================================================= */
 
 .feed-card.post-card {
-
-    position: relative;
 
     width: 100%;
 
@@ -825,15 +1146,15 @@
 
     border:
         1px solid
-        #e5ebe7;
+        #e4ebe6;
 
     border-radius: 18px;
 
     overflow: hidden;
 
     box-shadow:
-        0 2px 5px rgba(25, 45, 32, 0.04),
-        0 8px 24px rgba(25, 45, 32, 0.06);
+        0 2px 8px
+        rgba(24, 42, 30, 0.045);
 
     transition:
         box-shadow 0.2s ease,
@@ -845,8 +1166,8 @@
 .feed-card.post-card:hover {
 
     box-shadow:
-        0 3px 8px rgba(25, 45, 32, 0.06),
-        0 12px 30px rgba(25, 45, 32, 0.08);
+        0 8px 24px
+        rgba(24, 42, 30, 0.08);
 
 }
 
@@ -860,58 +1181,57 @@
 
     width: 100%;
 
-    min-height: 68px;
+    min-height: 66px;
+
+    box-sizing: border-box;
+
+    padding:
+        12px
+        14px;
 
     display: flex;
 
     align-items: center;
 
-    gap: 11px;
-
-    padding:
-        12px
-        15px;
-
-    box-sizing: border-box;
+    gap: 10px;
 
 }
 
 
 .post-avatar {
 
-    width: 43px;
-
-    height: 43px;
+    width: 44px;
+    height: 44px;
 
     flex:
-        0 0
-        43px;
+        0 0 44px;
 
 }
 
 
 .post-avatar img {
 
-    width: 43px;
-
-    height: 43px;
+    width: 44px;
+    height: 44px;
 
     display: block;
 
-    border-radius: 50%;
-
     object-fit: cover;
 
-    background: #edf2ee;
+    border-radius: 50%;
+
+    border:
+        2px solid
+        #edf5ef;
 
 }
 
 
 .post-user-info {
 
-    min-width: 0;
-
     flex: 1;
+
+    min-width: 0;
 
     display: flex;
 
@@ -926,21 +1246,19 @@
 
     display: block;
 
-    max-width: 100%;
+    overflow: hidden;
 
-    color: #18201b;
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+    color: #172019;
 
     font-size: 14px;
 
     font-weight: 700;
 
     line-height: 1.25;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
 
 }
 
@@ -951,11 +1269,11 @@
 
     margin-top: 3px;
 
-    color: #8a938d;
+    color: #89928c;
 
     font-size: 11px;
 
-    line-height: 1.25;
+    line-height: 1.2;
 
 }
 
@@ -963,22 +1281,20 @@
 .post-menu-button {
 
     width: 38px;
-
     height: 38px;
 
     flex:
-        0 0
-        38px;
+        0 0 38px;
 
     padding: 0;
 
-    border: 0;
+    border: none;
 
     border-radius: 50%;
 
     background: transparent;
 
-    color: #7b857f;
+    color: #7c867f;
 
     display: flex;
 
@@ -999,32 +1315,19 @@
 
 .post-menu-button:hover {
 
-    background: #fff1f1;
-
     color: #c62828;
 
-}
-
-
-.post-menu-button:active {
-
-    transform: scale(0.94);
+    background: #fff1f1;
 
 }
 
 
 
 /* =========================================================
-   MESSAGE CONTENT
-
-   Intentionally tight.
-
-   There is NO large padding above or below the message.
+   CONTENT
 ========================================================= */
 
 .post-content {
-
-    position: relative;
 
     width: 100%;
 
@@ -1032,30 +1335,27 @@
 
     padding:
         0
-        15px
-        12px;
+        14px
+        14px;
 
 }
-
 
 
 /* =========================================================
-   DAIRY NAME
+   DAIRY LINK
 ========================================================= */
 
-.post-dairy-line {
+.post-dairy-link {
+
+    width: fit-content;
+
+    max-width: 100%;
 
     margin:
-        0
-        0
-        6px;
+        0 0 7px;
 
-    padding: 0;
-
-}
-
-
-.post-dairy-link {
+    padding:
+        0;
 
     display: inline-flex;
 
@@ -1063,17 +1363,15 @@
 
     gap: 5px;
 
-    max-width: 100%;
-
     color: #198754;
+
+    text-decoration: none;
 
     font-size: 13px;
 
     font-weight: 700;
 
     line-height: 1.3;
-
-    text-decoration: none;
 
 }
 
@@ -1105,7 +1403,7 @@ a.post-dairy-link:hover {
 }
 
 
-.post-dairy-static {
+.post-dairy-link.non-clickable {
 
     cursor: default;
 
@@ -1122,26 +1420,20 @@ a.post-dairy-link:hover {
     margin:
         0
         0
-        6px;
+        7px;
 
     padding: 0;
 
-    color: #172019;
-
-    font-family:
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
+    color: #18201b;
 
     font-size: 21px;
 
     font-weight: 800;
 
-    line-height: 1.22;
+    line-height: 1.28;
 
-    letter-spacing: -0.35px;
+    letter-spacing:
+        -0.3px;
 
     word-break: break-word;
 
@@ -1153,9 +1445,7 @@ a.post-dairy-link:hover {
    TEXT
 ========================================================= */
 
-.post-text-wrapper {
-
-    position: relative;
+.post-text-area {
 
     margin: 0;
 
@@ -1170,7 +1460,7 @@ a.post-dairy-link:hover {
 
     padding: 0;
 
-    color: #303832;
+    color: #303833;
 
     font-size: 15px;
 
@@ -1185,37 +1475,28 @@ a.post-dairy-link:hover {
 }
 
 
-/* ---------------------------------------------------------
-   THREE-LINE LIMIT
+.post-text-preview {
 
-   Applied by JavaScript only when the actual text
-   exceeds three lines AND the post contains photos.
---------------------------------------------------------- */
+    margin: 0;
 
-.post-text-wrapper.has-post-image
-.is-truncated .post-text {
-
-    display: -webkit-box;
-
-    -webkit-box-orient: vertical;
-
-    -webkit-line-clamp: 3;
-
-    overflow: hidden;
-
-    max-height:
-        calc(
-            1.55em * 3
-        );
+    padding: 0;
 
 }
 
+
+/* =========================================================
+   SEE MORE
+
+   No giant gap above or below.
+========================================================= */
 
 .post-see-more {
 
     display: inline-flex;
 
     align-items: center;
+
+    gap: 5px;
 
     margin:
         5px
@@ -1224,13 +1505,15 @@ a.post-dairy-link:hover {
 
     padding: 0;
 
-    border: 0;
+    border: none;
 
     background: transparent;
 
     color: #198754;
 
-    font-size: 13px;
+    font-family: inherit;
+
+    font-size: 14px;
 
     font-weight: 750;
 
@@ -1241,25 +1524,34 @@ a.post-dairy-link:hover {
 }
 
 
-.post-see-more:hover {
+.post-see-more i {
 
-    color: #146c43;
+    font-size: 12px;
 
-    text-decoration: underline;
+    transition:
+        transform 0.15s ease;
 
 }
 
 
-.post-see-more:active {
+.post-see-more:hover {
 
-    transform: scale(0.97);
+    color: #146c43;
+
+}
+
+
+.post-see-more:hover i {
+
+    transform:
+        translateX(2px);
 
 }
 
 
 
 /* =========================================================
-   IMAGE AREA
+   IMAGE GRID
 ========================================================= */
 
 .post-image-grid {
@@ -1267,7 +1559,7 @@ a.post-dairy-link:hover {
     width: 100%;
 
     margin:
-        12px
+        13px
         0
         0;
 
@@ -1279,13 +1571,13 @@ a.post-dairy-link:hover {
             minmax(0, 1fr)
         );
 
-    gap: 4px;
+    gap: 3px;
 
     overflow: hidden;
 
     border-radius: 14px;
 
-    background: #f1f4f2;
+    background: #f0f3f1;
 
 }
 
@@ -1294,13 +1586,48 @@ a.post-dairy-link:hover {
 
     position: relative;
 
-    min-width: 0;
+    display: block;
 
-    overflow: hidden;
+    width: 100%;
+
+    min-width: 0;
 
     aspect-ratio: 1 / 1;
 
-    background: #edf1ee;
+    padding: 0;
+
+    border: none;
+
+    background: #eef2ef;
+
+    overflow: hidden;
+
+    cursor: pointer;
+
+}
+
+
+.post-image-item::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        rgba(0, 0, 0, 0);
+
+    transition:
+        background 0.15s ease;
+
+}
+
+
+.post-image-item:hover::after {
+
+    background:
+        rgba(0, 0, 0, 0.08);
 
 }
 
@@ -1323,7 +1650,8 @@ a.post-dairy-link:hover {
 
 .post-image-item:hover .post-image {
 
-    transform: scale(1.025);
+    transform:
+        scale(1.025);
 
 }
 
@@ -1335,7 +1663,7 @@ a.post-dairy-link:hover {
 
 .post-image-count-1 {
 
-    display: block;
+    grid-template-columns: 1fr;
 
 }
 
@@ -1345,7 +1673,7 @@ a.post-dairy-link:hover {
 
     aspect-ratio: auto;
 
-    max-height: 620px;
+    max-height: 650px;
 
 }
 
@@ -1353,11 +1681,9 @@ a.post-dairy-link:hover {
 .post-image-count-1
 .post-image {
 
-    width: 100%;
-
     height: auto;
 
-    max-height: 620px;
+    max-height: 650px;
 
     object-fit: contain;
 
@@ -1395,39 +1721,14 @@ a.post-dairy-link:hover {
 .post-image-count-4 {
 
     grid-template-columns:
-        repeat(
-            2,
-            minmax(0, 1fr)
-        );
+        repeat(2, 1fr);
 
 }
 
 
 
 /* =========================================================
-   HIDE EXTRA IMAGES INITIALLY
-
-   Only first four are visible.
-========================================================= */
-
-.post-image-item.post-image-extra {
-
-    display: none;
-
-}
-
-
-.feed-card.post-card.is-expanded
-.post-image-item.post-image-extra {
-
-    display: block;
-
-}
-
-
-
-/* =========================================================
-   MORE IMAGES OVERLAY
+   +N IMAGE OVERLAY
 ========================================================= */
 
 .post-more-images {
@@ -1436,7 +1737,7 @@ a.post-dairy-link:hover {
 
     inset: 0;
 
-    z-index: 2;
+    z-index: 3;
 
     display: flex;
 
@@ -1444,418 +1745,32 @@ a.post-dairy-link:hover {
 
     justify-content: center;
 
+    gap: 7px;
+
     background:
-        rgba(
-            0,
-            0,
-            0,
-            0.46
-        );
+        rgba(0, 0, 0, 0.43);
 
     color: #ffffff;
+
+    font-size: 18px;
+
+    font-weight: 700;
 
     pointer-events: none;
 
 }
 
 
-.post-more-images span {
+.post-more-images i {
 
-    font-size: 25px;
-
-    font-weight: 800;
-
-    line-height: 1;
-
-    text-shadow:
-        0 1px 4px
-        rgba(0,0,0,0.35);
+    font-size: 20px;
 
 }
 
 
+.post-more-images strong {
 
-/* =========================================================
-   EXPAND BUTTON
-
-   Small floating control appears when necessary.
-========================================================= */
-
-.post-expand-button {
-
-    position: absolute;
-
-    right: 20px;
-
-    bottom: 18px;
-
-    width: 34px;
-
-    height: 34px;
-
-    padding: 0;
-
-    border: 1px solid
-        rgba(255,255,255,0.8);
-
-    border-radius: 50%;
-
-    background:
-        rgba(20, 30, 24, 0.72);
-
-    color: #ffffff;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    cursor: pointer;
-
-    z-index: 5;
-
-    backdrop-filter:
-        blur(8px);
-
-    box-shadow:
-        0 4px 12px
-        rgba(0,0,0,0.18);
-
-}
-
-
-.post-expand-button:hover {
-
-    background:
-        rgba(20, 30, 24, 0.88);
-
-}
-
-
-.post-expand-button:active {
-
-    transform: scale(0.94);
-
-}
-
-
-
-/* =========================================================
-   EXPANSION BACKDROP
-========================================================= */
-
-.post-expand-backdrop {
-
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 99998;
-
-    background:
-        rgba(
-            10,
-            16,
-            12,
-            0.68
-        );
-
-    backdrop-filter:
-        blur(5px);
-
-    opacity: 0;
-
-    visibility: hidden;
-
-    pointer-events: none;
-
-    transition:
-        opacity 0.2s ease,
-        visibility 0.2s ease;
-
-}
-
-
-.feed-card.post-card.is-expanded
-.post-expand-backdrop {
-
-    opacity: 1;
-
-    visibility: visible;
-
-    pointer-events: auto;
-
-}
-
-
-
-/* =========================================================
-   EXPANDED CARD
-========================================================= */
-
-.feed-card.post-card.is-expanded {
-
-    position: fixed;
-
-    top: 50%;
-
-    left: 50%;
-
-    width:
-        min(
-            720px,
-            calc(100vw - 24px)
-        );
-
-    max-height:
-        min(
-            92dvh,
-            900px
-        );
-
-    margin: 0;
-
-    transform:
-        translate(
-            -50%,
-            -50%
-        );
-
-    z-index: 99999;
-
-    overflow-y: auto;
-
-    border-radius: 20px;
-
-    box-shadow:
-        0 20px 60px
-        rgba(0,0,0,0.30);
-
-    animation:
-        postPopIn
-        0.2s
-        ease-out;
-
-}
-
-
-@keyframes postPopIn {
-
-    from {
-
-        opacity: 0;
-
-        transform:
-            translate(
-                -50%,
-                -48%
-            )
-            scale(0.96);
-
-    }
-
-    to {
-
-        opacity: 1;
-
-        transform:
-            translate(
-                -50%,
-                -50%
-            )
-            scale(1);
-
-    }
-
-}
-
-
-
-/* =========================================================
-   EXPANDED POST TEXT
-
-   Remove the three-line limitation.
-========================================================= */
-
-.feed-card.post-card.is-expanded
-.post-text-wrapper.has-post-image
-.is-truncated
-.post-text {
-
-    display: block;
-
-    max-height: none;
-
-    overflow: visible;
-
-}
-
-
-.feed-card.post-card.is-expanded
-.post-see-more {
-
-    display: none !important;
-
-}
-
-
-
-/* =========================================================
-   EXPANDED IMAGES
-
-   All images become visible.
-========================================================= */
-
-.feed-card.post-card.is-expanded
-.post-image-grid {
-
-    max-height: none;
-
-}
-
-
-.feed-card.post-card.is-expanded
-.post-image-item.post-image-extra {
-
-    display: block;
-
-}
-
-
-
-/* =========================================================
-   EXPANDED IMAGE GRID
-
-   Keep a clean 2-column gallery.
-========================================================= */
-
-.feed-card.post-card.is-expanded
-.post-image-grid {
-
-    grid-template-columns:
-        repeat(
-            2,
-            minmax(0, 1fr)
-        );
-
-}
-
-
-.feed-card.post-card.is-expanded
-.post-image-count-3 {
-
-    grid-template-columns:
-        1fr
-        1fr;
-
-}
-
-
-.feed-card.post-card.is-expanded
-.post-image-count-3
-.post-image-item:first-child {
-
-    grid-row: auto;
-
-}
-
-
-.feed-card.post-card.is-expanded
-.post-image-item {
-
-    aspect-ratio: 1 / 1;
-
-}
-
-
-.feed-card.post-card.is-expanded
-.post-image-count-1
-.post-image-item {
-
-    aspect-ratio: auto;
-
-}
-
-
-
-/* =========================================================
-   EXPANDED CLOSE
-========================================================= */
-
-.post-expanded-close {
-
-    position: absolute;
-
-    top: 12px;
-
-    right: 12px;
-
-    z-index: 100001;
-
-    width: 38px;
-
-    height: 38px;
-
-    padding: 0;
-
-    border: 1px solid
-        rgba(255,255,255,0.5);
-
-    border-radius: 50%;
-
-    background:
-        rgba(
-            20,
-            25,
-            22,
-            0.72
-        );
-
-    color: #ffffff;
-
-    display: none;
-
-    align-items: center;
-
-    justify-content: center;
-
-    cursor: pointer;
-
-    backdrop-filter:
-        blur(8px);
-
-    box-shadow:
-        0 4px 15px
-        rgba(0,0,0,0.20);
-
-}
-
-
-.feed-card.post-card.is-expanded
-.post-expanded-close {
-
-    display: flex;
-
-}
-
-
-.post-expanded-close:hover {
-
-    background:
-        rgba(
-            20,
-            25,
-            22,
-            0.9
-        );
-
-}
-
-
-.post-expanded-close:active {
-
-    transform: scale(0.94);
+    font-size: 20px;
 
 }
 
@@ -1871,19 +1786,15 @@ a.post-dairy-link:hover {
 
     align-items: center;
 
-    gap: 5px;
-
-    min-height: 52px;
+    gap: 4px;
 
     padding:
-        7px
-        11px;
+        6px
+        10px;
 
     border-top:
         1px solid
         #edf1ee;
-
-    background: #ffffff;
 
 }
 
@@ -1891,13 +1802,13 @@ a.post-dairy-link:hover {
 .post-actions .like-btn,
 .post-actions .toggle-comments {
 
-    min-width: 76px;
+    min-width: 70px;
 
     height: 38px;
 
     padding:
         0
-        12px;
+        11px;
 
     border: none;
 
@@ -1905,7 +1816,7 @@ a.post-dairy-link:hover {
 
     background: transparent;
 
-    color: #68726c;
+    color: #66706a;
 
     display: inline-flex;
 
@@ -1913,15 +1824,13 @@ a.post-dairy-link:hover {
 
     justify-content: center;
 
-    gap: 7px;
-
-    cursor: pointer;
+    gap: 6px;
 
     font-family: inherit;
 
     font-size: 14px;
 
-    font-weight: 600;
+    cursor: pointer;
 
     transition:
         background 0.15s ease,
@@ -1934,7 +1843,7 @@ a.post-dairy-link:hover {
 .post-actions .like-btn:hover,
 .post-actions .toggle-comments:hover {
 
-    background: #eef6f1;
+    background: #f0f6f2;
 
     color: #198754;
 
@@ -1944,16 +1853,17 @@ a.post-dairy-link:hover {
 .post-actions .like-btn:active,
 .post-actions .toggle-comments:active {
 
-    transform: scale(0.95);
+    transform:
+        scale(0.96);
 
 }
 
 
 .post-actions .like-btn.liked {
 
-    background: #e9f6ee;
-
     color: #198754;
+
+    background: #edf7f1;
 
 }
 
@@ -1988,6 +1898,599 @@ a.post-dairy-link:hover {
 
 
 /* =========================================================
+   EXPANDED POST MODAL
+========================================================= */
+
+.post-expand-modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 200000;
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding:
+        18px;
+
+    box-sizing: border-box;
+
+}
+
+
+.post-expand-modal.active {
+
+    display: flex;
+
+}
+
+
+.post-expand-backdrop {
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        rgba(8, 20, 12, 0.62);
+
+    backdrop-filter:
+        blur(3px);
+
+}
+
+
+.post-expand-card {
+
+    position: relative;
+
+    z-index: 2;
+
+    width: 100%;
+
+    max-width: 680px;
+
+    max-height: 90dvh;
+
+    display: flex;
+
+    flex-direction: column;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0
+        20px
+        70px
+        rgba(0, 0, 0, 0.30);
+
+    animation:
+        postPopIn
+        0.18s
+        ease-out;
+
+}
+
+
+@keyframes postPopIn {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            scale(0.96)
+            translateY(10px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            scale(1)
+            translateY(0);
+
+    }
+
+}
+
+
+
+/* =========================================================
+   EXPANDED HEADER
+========================================================= */
+
+.post-expand-header {
+
+    flex:
+        0 0 auto;
+
+    min-height: 64px;
+
+    padding:
+        10px
+        12px;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    border-bottom:
+        1px solid
+        #e9efeb;
+
+}
+
+
+.post-expand-user {
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+}
+
+
+.post-expand-user img {
+
+    width: 40px;
+    height: 40px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+}
+
+
+.post-expand-user > div {
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+.post-expand-user strong {
+
+    color: #202720;
+
+    font-size: 14px;
+
+}
+
+
+.post-expand-user small {
+
+    margin-top: 2px;
+
+    color: #8a938d;
+
+    font-size: 10px;
+
+}
+
+
+.post-expand-close {
+
+    width: 40px;
+    height: 40px;
+
+    padding: 0;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: #f1f4f2;
+
+    color: #505a54;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 16px;
+
+}
+
+
+.post-expand-close:hover {
+
+    background: #e7ece9;
+
+    color: #202520;
+
+}
+
+
+
+/* =========================================================
+   EXPANDED BODY
+========================================================= */
+
+.post-expand-body {
+
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    padding:
+        14px 16px 20px;
+
+    box-sizing: border-box;
+
+}
+
+
+.expanded-dairy-link {
+
+    margin-bottom: 8px;
+
+}
+
+
+.post-expand-title {
+
+    margin:
+        0
+        0
+        10px;
+
+    padding: 0;
+
+    color: #172019;
+
+    font-size: 24px;
+
+    line-height: 1.28;
+
+    font-weight: 800;
+
+    letter-spacing:
+        -0.4px;
+
+}
+
+
+.post-expand-text {
+
+    margin: 0;
+
+    padding: 0;
+
+    color: #303833;
+
+    font-size: 15px;
+
+    line-height: 1.65;
+
+    white-space: pre-wrap;
+
+    word-break: break-word;
+
+}
+
+
+
+/* =========================================================
+   EXPANDED IMAGES
+========================================================= */
+
+.post-expand-images {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 5px;
+
+    margin-top: 15px;
+
+}
+
+
+.post-expand-image {
+
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+
+    padding: 0;
+
+    border: none;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+
+    background: #eef2ef;
+
+    cursor: pointer;
+
+}
+
+
+.post-expand-image img {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+
+/* =========================================================
+   FULL-SCREEN PHOTO VIEWER
+========================================================= */
+
+.post-photo-viewer {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 300000;
+
+    display: none;
+
+    background:
+        rgba(0, 0, 0, 0.96);
+
+    touch-action: pan-y;
+
+}
+
+
+.post-photo-viewer.active {
+
+    display: block;
+
+}
+
+
+.photo-viewer-backdrop {
+
+    position: absolute;
+
+    inset: 0;
+
+}
+
+
+.photo-viewer-topbar {
+
+    position: absolute;
+
+    z-index: 5;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: 64px;
+
+    padding:
+        10px
+        14px;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    background:
+        linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.55),
+            transparent
+        );
+
+}
+
+
+.photo-viewer-counter {
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    padding:
+        7px
+        10px;
+
+    border-radius: 20px;
+
+    background:
+        rgba(0,0,0,0.35);
+
+}
+
+
+.photo-viewer-close {
+
+    width: 42px;
+    height: 42px;
+
+    padding: 0;
+
+    border:
+        1px solid
+        rgba(255,255,255,0.35);
+
+    border-radius: 50%;
+
+    background:
+        rgba(0,0,0,0.35);
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 17px;
+
+}
+
+
+.photo-viewer-stage {
+
+    position: absolute;
+
+    inset:
+        64px
+        55px
+        20px
+        55px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    overflow: hidden;
+
+}
+
+
+.photo-viewer-image {
+
+    max-width: 100%;
+
+    max-height: 100%;
+
+    width: auto;
+
+    height: auto;
+
+    object-fit: contain;
+
+    user-select: none;
+
+    -webkit-user-drag: none;
+
+    touch-action: none;
+
+    transition:
+        transform 0.2s ease;
+
+}
+
+
+
+/* =========================================================
+   PHOTO NAVIGATION
+========================================================= */
+
+.photo-viewer-nav {
+
+    position: absolute;
+
+    z-index: 6;
+
+    top: 50%;
+
+    transform:
+        translateY(-50%);
+
+    width: 46px;
+    height: 46px;
+
+    padding: 0;
+
+    border:
+        1px solid
+        rgba(255,255,255,0.3);
+
+    border-radius: 50%;
+
+    background:
+        rgba(0,0,0,0.38);
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 20px;
+
+}
+
+
+.photo-viewer-nav:hover {
+
+    background:
+        rgba(255,255,255,0.16);
+
+}
+
+
+.photo-viewer-prev {
+
+    left: 14px;
+
+}
+
+
+.photo-viewer-next {
+
+    right: 14px;
+
+}
+
+
+
+/* =========================================================
    COMMENT MODAL
 ========================================================= */
 
@@ -2006,12 +2509,7 @@ a.post-dairy-link:hover {
     justify-content: center;
 
     background:
-        rgba(
-            0,
-            0,
-            0,
-            0.48
-        );
+        rgba(0, 0, 0, 0.45);
 
 }
 
@@ -2038,16 +2536,16 @@ a.post-dairy-link:hover {
     background: #ffffff;
 
     border-radius:
-        20px
-        20px
+        18px
+        18px
         0
         0;
 
     overflow: hidden;
 
     box-shadow:
-        0 -10px 35px
-        rgba(0,0,0,0.20);
+        0 -8px 30px
+        rgba(0,0,0,0.18);
 
 }
 
@@ -2060,10 +2558,15 @@ a.post-dairy-link:hover {
 .comment-modal-header {
 
     flex:
-        0 0
-        58px;
+        0 0 auto;
 
     height: 58px;
+
+    padding:
+        0
+        14px
+        0
+        18px;
 
     display: flex;
 
@@ -2071,11 +2574,7 @@ a.post-dairy-link:hover {
 
     justify-content: space-between;
 
-    padding:
-        0
-        14px
-        0
-        18px;
+    box-sizing: border-box;
 
     border-bottom:
         1px solid
@@ -2136,8 +2635,9 @@ a.post-dairy-link:hover {
 .close-comment-modal {
 
     width: 38px;
-
     height: 38px;
+
+    padding: 0;
 
     border: none;
 
@@ -2155,16 +2655,12 @@ a.post-dairy-link:hover {
 
     cursor: pointer;
 
-    font-size: 17px;
-
 }
 
 
 .close-comment-modal:hover {
 
     background: #f1f4f2;
-
-    color: #202520;
 
 }
 
@@ -2177,9 +2673,7 @@ a.post-dairy-link:hover {
 .comment-section {
 
     flex:
-        1
-        1
-        auto;
+        1 1 auto;
 
     min-height: 0;
 
@@ -2254,7 +2748,9 @@ a.post-dairy-link:hover {
 
     gap: 9px;
 
-    padding: 8px 0;
+    padding:
+        8px
+        0;
 
 }
 
@@ -2262,12 +2758,10 @@ a.post-dairy-link:hover {
 .comment-user-avatar {
 
     width: 34px;
-
     height: 34px;
 
     flex:
-        0 0
-        34px;
+        0 0 34px;
 
 }
 
@@ -2275,7 +2769,6 @@ a.post-dairy-link:hover {
 .comment-user-avatar img {
 
     width: 34px;
-
     height: 34px;
 
     display: block;
@@ -2325,8 +2818,6 @@ a.post-dairy-link:hover {
 
     font-size: 12px;
 
-    line-height: 1.3;
-
 }
 
 
@@ -2366,12 +2857,10 @@ a.post-dairy-link:hover {
 .delete-comment {
 
     width: 28px;
-
     height: 28px;
 
     flex:
-        0 0
-        28px;
+        0 0 28px;
 
     padding: 0;
 
@@ -2420,8 +2909,7 @@ a.post-dairy-link:hover {
 .comment-composer-wrapper {
 
     flex:
-        0 0
-        auto;
+        0 0 auto;
 
     padding:
         9px
@@ -2480,9 +2968,9 @@ a.post-dairy-link:hover {
 
 .comment-input-wrapper {
 
-    min-width: 0;
-
     flex: 1;
+
+    min-width: 0;
 
 }
 
@@ -2514,13 +3002,13 @@ a.post-dairy-link:hover {
 
     background: transparent;
 
-    color: #202520;
-
     font-family: inherit;
 
     font-size: 14px;
 
     line-height: 20px;
+
+    color: #202520;
 
 }
 
@@ -2535,12 +3023,12 @@ a.post-dairy-link:hover {
 .comment-submit-button {
 
     width: 38px;
-
     height: 38px;
 
     flex:
-        0 0
-        38px;
+        0 0 38px;
+
+    padding: 0;
 
     border: none;
 
@@ -2567,15 +3055,6 @@ a.post-dairy-link:hover {
 
     background: #e9f5ed;
 
-    color: #146c43;
-
-}
-
-
-.comment-submit-button:active {
-
-    transform: scale(0.94);
-
 }
 
 
@@ -2595,18 +3074,19 @@ a.post-dairy-link:hover {
 
 @media (max-width: 600px) {
 
+
     .feed-card.post-card {
 
         margin-bottom: 12px;
 
-        border-radius: 15px;
+        border-radius: 14px;
 
     }
 
 
     .post-card-header {
 
-        min-height: 62px;
+        min-height: 60px;
 
         padding:
             10px
@@ -2619,7 +3099,6 @@ a.post-dairy-link:hover {
     .post-avatar img {
 
         width: 40px;
-
         height: 40px;
 
     }
@@ -2637,25 +3116,16 @@ a.post-dairy-link:hover {
         padding:
             0
             12px
-            10px;
-
-    }
-
-
-    .post-dairy-line {
-
-        margin-bottom: 5px;
+            12px;
 
     }
 
 
     .post-title {
 
-        margin-bottom: 5px;
+        font-size: 19px;
 
-        font-size: 18px;
-
-        line-height: 1.24;
+        margin-bottom: 6px;
 
     }
 
@@ -2664,28 +3134,24 @@ a.post-dairy-link:hover {
 
         font-size: 14px;
 
-        line-height: 1.52;
+        line-height: 1.55;
 
     }
 
 
     .post-image-grid {
 
-        margin-top: 10px;
+        margin-top: 11px;
 
         border-radius: 11px;
-
-        gap: 3px;
 
     }
 
 
     .post-actions {
 
-        min-height: 48px;
-
         padding:
-            5px
+            6px
             8px;
 
     }
@@ -2694,7 +3160,7 @@ a.post-dairy-link:hover {
     .post-actions .like-btn,
     .post-actions .toggle-comments {
 
-        min-width: 66px;
+        min-width: 64px;
 
         height: 36px;
 
@@ -2705,59 +3171,112 @@ a.post-dairy-link:hover {
     }
 
 
-    .feed-card.post-card.is-expanded {
+    /* =============================================
+       EXPANDED POST
+    ============================================== */
 
-        width:
-            calc(
-                100vw - 14px
-            );
+    .post-expand-modal {
 
-        max-height:
-            94dvh;
+        padding: 8px;
+
+    }
+
+
+    .post-expand-card {
+
+        max-height: 94dvh;
 
         border-radius: 17px;
 
     }
 
 
-    .feed-card.post-card.is-expanded
-    .post-card-header {
-
-        padding-right: 55px;
-
-    }
-
-
-    .feed-card.post-card.is-expanded
-    .post-content {
+    .post-expand-body {
 
         padding:
-            0
-            12px
-            12px;
+            13px
+            13px
+            18px;
 
     }
 
 
-    .feed-card.post-card.is-expanded
-    .post-image-grid {
+    .post-expand-title {
 
-        grid-template-columns:
-            repeat(
-                2,
-                minmax(0, 1fr)
-            );
+        font-size: 21px;
 
     }
 
+
+    .post-expand-text {
+
+        font-size: 14px;
+
+        line-height: 1.6;
+
+    }
+
+
+    /* =============================================
+       PHOTO VIEWER
+    ============================================== */
+
+    .photo-viewer-stage {
+
+        inset:
+            65px
+            5px
+            10px
+            5px;
+
+    }
+
+
+    .photo-viewer-nav {
+
+        width: 40px;
+        height: 40px;
+
+        background:
+            rgba(0,0,0,0.30);
+
+    }
+
+
+    .photo-viewer-prev {
+
+        left: 7px;
+
+    }
+
+
+    .photo-viewer-next {
+
+        right: 7px;
+
+    }
+
+
+    .photo-viewer-image {
+
+        max-width: 100%;
+
+        max-height: 100%;
+
+    }
+
+
+    /* =============================================
+       COMMENTS
+    ============================================== */
 
     .comment-modal-content {
 
         max-height: 92dvh;
 
         border-radius:
-            17px
-            17px
+            16px
+            16px
             0
             0;
 
@@ -2783,16 +3302,17 @@ a.post-dairy-link:hover {
 
 @media (max-width: 380px) {
 
+
     .post-title {
 
-        font-size: 17px;
+        font-size: 18px;
 
     }
 
 
-    .post-dairy-link {
+    .post-text {
 
-        font-size: 12px;
+        font-size: 14px;
 
     }
 
@@ -2807,36 +3327,11 @@ a.post-dairy-link:hover {
     .post-actions .like-btn,
     .post-actions .toggle-comments {
 
-        min-width: 60px;
+        min-width: 58px;
 
         padding:
             0
             7px;
-
-    }
-
-}
-
-
-
-/* =========================================================
-   REDUCED MOTION
-========================================================= */
-
-@media (prefers-reduced-motion: reduce) {
-
-    .feed-card.post-card,
-    .post-image,
-    .post-expand-backdrop {
-
-        transition: none;
-
-    }
-
-
-    .feed-card.post-card.is-expanded {
-
-        animation: none;
 
     }
 
@@ -2847,188 +3342,97 @@ a.post-dairy-link:hover {
 
 
 <!-- =========================================================
-     POST INTERACTION SCRIPT
-
-     ONLY HANDLES:
-
-     • Detecting long photo-post text
-     • See more
-     • Opening expanded post
-     • Closing expanded post
-
-     LIKE / COMMENT / DELETE ARE STILL HANDLED BY
-     feed-actions.ejs.
+     POST INTERACTION JAVASCRIPT
 ========================================================= -->
 
 <script>
 
-(function () {
+(function(){
 
-    /* =====================================================
-       PREVENT DUPLICATE INITIALIZATION
-    ====================================================== */
+    /*
+     * Prevent this script from registering its global
+     * handlers repeatedly if EJS renders multiple posts.
+     */
 
-    if (
-        window.__postCardExpansionInitialized
-    ) {
+    if(
+        window.__modernPostInteractionsInitialized
+    ){
 
         return;
 
     }
 
 
-    window.__postCardExpansionInitialized =
+    window.__modernPostInteractionsInitialized =
         true;
 
 
 
     /* =====================================================
-       DETECT LONG TEXT
+       STATE
     ====================================================== */
 
-    function checkPostText(card) {
+    let activePhotoViewer = null;
 
-        if (!card) {
+    let activePhotoIndex = 0;
 
-            return;
+    let activePhotoImages = [];
 
-        }
+    let touchStartX = 0;
 
-
-        const wrapper =
-            card.querySelector(
-                ".post-text-wrapper.has-post-image"
-            );
-
-
-        if (!wrapper) {
-
-            return;
-
-        }
-
-
-        const text =
-            wrapper.querySelector(
-                ".post-text"
-            );
-
-
-        const seeMore =
-            wrapper.querySelector(
-                ".post-see-more"
-            );
-
-
-        const expandButton =
-            card.querySelector(
-                ".post-expand-button"
-            );
-
-
-        if (
-            !text ||
-            !seeMore
-        ) {
-
-            return;
-
-        }
-
-
-        /*
-         * Temporarily remove truncation so we can
-         * measure the real text height.
-         */
-
-        wrapper.classList.remove(
-            "is-truncated"
-        );
-
-
-        /*
-         * Three lines based on the actual line height.
-         */
-
-        const styles =
-            window.getComputedStyle(
-                text
-            );
-
-
-        const lineHeight =
-            parseFloat(
-                styles.lineHeight
-            );
-
-
-        const threeLineHeight =
-            lineHeight * 3;
-
-
-        const isLong =
-            text.scrollHeight >
-            threeLineHeight + 2;
-
-
-        if (isLong) {
-
-            wrapper.classList.add(
-                "is-truncated"
-            );
-
-
-            seeMore.hidden =
-                false;
-
-
-            if (expandButton) {
-
-                expandButton.hidden =
-                    false;
-
-            }
-
-        }
-        else {
-
-            seeMore.hidden =
-                true;
-
-
-            if (expandButton) {
-
-                expandButton.hidden =
-                    true;
-
-            }
-
-        }
-
-    }
+    let touchStartY = 0;
 
 
 
     /* =====================================================
-       OPEN POST
+       OPEN EXPANDED POST
     ====================================================== */
 
-    function openPost(card) {
+    function openExpandedPost(button){
 
-        if (!card) {
+        if(!button){
 
             return;
 
         }
 
 
-        card.classList.add(
-            "is-expanded"
+        const postId =
+            button.dataset.postExpand;
+
+
+        if(!postId){
+
+            return;
+
+        }
+
+
+        const modal =
+            document.querySelector(
+                `[data-post-expand-modal="${postId}"]`
+            );
+
+
+        if(!modal){
+
+            console.error(
+                "POST: Expanded post modal not found."
+            );
+
+            return;
+
+        }
+
+
+        modal.classList.add(
+            "active"
         );
 
 
-        document.body.classList.add(
-            "post-expanded-open"
+        modal.setAttribute(
+            "aria-hidden",
+            "false"
         );
 
 
@@ -3036,18 +3440,19 @@ a.post-dairy-link:hover {
             "hidden";
 
 
-        const backdrop =
-            card.querySelector(
-                ".post-expand-backdrop"
+        /*
+         * Scroll the expanded post to the top.
+         */
+
+        const body =
+            modal.querySelector(
+                ".post-expand-body"
             );
 
 
-        if (backdrop) {
+        if(body){
 
-            backdrop.setAttribute(
-                "aria-hidden",
-                "false"
-            );
+            body.scrollTop = 0;
 
         }
 
@@ -3056,167 +3461,365 @@ a.post-dairy-link:hover {
 
 
     /* =====================================================
-       CLOSE POST
+       CLOSE EXPANDED POST
     ====================================================== */
 
-    function closePost(card) {
+    function closeExpandedPost(modal){
 
-        if (!card) {
+        if(!modal){
 
             return;
 
         }
 
 
-        card.classList.remove(
-            "is-expanded"
+        modal.classList.remove(
+            "active"
         );
 
 
-        document.body.classList.remove(
-            "post-expanded-open"
+        modal.setAttribute(
+            "aria-hidden",
+            "true"
         );
 
 
         /*
-         * Only restore scrolling when there isn't
-         * another modal open.
+         * Only restore body scrolling if no other
+         * full-screen/modal interface is open.
          */
 
-        const activeCommentModal =
-            document.querySelector(
+        if(
+            !document.querySelector(
+                ".post-photo-viewer.active"
+            ) &&
+            !document.querySelector(
                 ".comment-modal.active"
-            );
-
-
-        if (!activeCommentModal) {
+            )
+        ){
 
             document.body.style.overflow =
                 "";
 
         }
 
-
-        const backdrop =
-            card.querySelector(
-                ".post-expand-backdrop"
-            );
+    }
 
 
-        if (backdrop) {
 
-            backdrop.setAttribute(
-                "aria-hidden",
-                "true"
-            );
+    /* =====================================================
+       COLLECT POST IMAGES
+    ====================================================== */
+
+    function getPostImagesFromCard(card){
+
+        if(!card){
+
+            return [];
 
         }
 
-    }
+
+        const images = [];
 
 
+        /*
+         * The expanded image list contains ALL images.
+         */
 
-    /* =====================================================
-       CLOSE ALL EXPANDED POSTS
-    ====================================================== */
-
-    function closeAllPosts() {
-
-        document
+        card
             .querySelectorAll(
-                ".feed-card.post-card.is-expanded"
+                ".post-expand-image img"
             )
             .forEach(
-                closePost
-            );
+                img => {
 
-    }
+                    if(img.src){
 
+                        images.push(
+                            img.src
+                        );
 
+                    }
 
-    /* =====================================================
-       INITIAL CHECK
-    ====================================================== */
-
-    function initializePostCards() {
-
-        document
-            .querySelectorAll(
-                ".feed-card.post-card"
-            )
-            .forEach(
-                checkPostText
-            );
-
-    }
-
-
-    /*
-     * Run after the page has painted.
-     *
-     * This gives the browser the correct width before
-     * measuring how many lines the text occupies.
-     */
-
-    if (
-        document.readyState ===
-        "loading"
-    ) {
-
-        document.addEventListener(
-            "DOMContentLoaded",
-            initializePostCards,
-            {
-                once: true
-            }
-        );
-
-    }
-    else {
-
-        initializePostCards();
-
-    }
-
-
-
-    /* =====================================================
-       WINDOW RESIZE
-
-       Recalculate because a change in width can turn
-       a three-line post into a four-line post or vice versa.
-    ====================================================== */
-
-    let resizeTimer = null;
-
-
-    window.addEventListener(
-        "resize",
-        function () {
-
-            clearTimeout(
-                resizeTimer
+                }
             );
 
 
-            resizeTimer =
-                setTimeout(
-                    function () {
+        /*
+         * For a post that isn't long and therefore
+         * doesn't have an expanded-post section,
+         * collect the feed images.
+         */
 
-                        document
-                            .querySelectorAll(
-                                ".feed-card.post-card:not(.is-expanded)"
-                            )
-                            .forEach(
-                                checkPostText
+        if(!images.length){
+
+            card
+                .querySelectorAll(
+                    ".post-image-item img"
+                )
+                .forEach(
+                    img => {
+
+                        if(img.src){
+
+                            images.push(
+                                img.src
                             );
 
-                    },
-                    150
+                        }
+
+                    }
                 );
 
         }
-    );
+
+
+        return images;
+
+    }
+
+
+
+    /* =====================================================
+       OPEN PHOTO VIEWER
+    ====================================================== */
+
+    function openPhotoViewer(
+        card,
+        index
+    ){
+
+        if(!card){
+
+            return;
+
+        }
+
+
+        const viewer =
+            card.querySelector(
+                ".post-photo-viewer"
+            );
+
+
+        if(!viewer){
+
+            return;
+
+        }
+
+
+        const images =
+            getPostImagesFromCard(
+                card
+            );
+
+
+        if(!images.length){
+
+            return;
+
+        }
+
+
+        activePhotoViewer =
+            viewer;
+
+
+        activePhotoImages =
+            images;
+
+
+        activePhotoIndex =
+            Math.max(
+                0,
+                Math.min(
+                    Number(index) || 0,
+                    images.length - 1
+                )
+            );
+
+
+        updatePhotoViewer();
+
+
+        viewer.classList.add(
+            "active"
+        );
+
+
+        viewer.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+
+        document.body.style.overflow =
+            "hidden";
+
+    }
+
+
+
+    /* =====================================================
+       UPDATE PHOTO VIEWER
+    ====================================================== */
+
+    function updatePhotoViewer(){
+
+        if(
+            !activePhotoViewer ||
+            !activePhotoImages.length
+        ){
+
+            return;
+
+        }
+
+
+        const image =
+            activePhotoViewer.querySelector(
+                ".photo-viewer-image"
+            );
+
+
+        const current =
+            activePhotoViewer.querySelector(
+                ".photo-current"
+            );
+
+
+        if(image){
+
+            image.src =
+                activePhotoImages[
+                    activePhotoIndex
+                ];
+
+        }
+
+
+        if(current){
+
+            current.textContent =
+                activePhotoIndex + 1;
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       CLOSE PHOTO VIEWER
+    ====================================================== */
+
+    function closePhotoViewer(){
+
+        if(!activePhotoViewer){
+
+            return;
+
+        }
+
+
+        activePhotoViewer.classList.remove(
+            "active"
+        );
+
+
+        activePhotoViewer.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+
+        activePhotoViewer =
+            null;
+
+
+        activePhotoImages =
+            [];
+
+
+        activePhotoIndex =
+            0;
+
+
+        if(
+            !document.querySelector(
+                ".post-expand-modal.active"
+            ) &&
+            !document.querySelector(
+                ".comment-modal.active"
+            )
+        ){
+
+            document.body.style.overflow =
+                "";
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       NEXT PHOTO
+    ====================================================== */
+
+    function nextPhoto(){
+
+        if(
+            !activePhotoImages.length
+        ){
+
+            return;
+
+        }
+
+
+        activePhotoIndex =
+            (
+                activePhotoIndex + 1
+            ) %
+            activePhotoImages.length;
+
+
+        updatePhotoViewer();
+
+    }
+
+
+
+    /* =====================================================
+       PREVIOUS PHOTO
+    ====================================================== */
+
+    function previousPhoto(){
+
+        if(
+            !activePhotoImages.length
+        ){
+
+            return;
+
+        }
+
+
+        activePhotoIndex =
+            (
+                activePhotoIndex -
+                1 +
+                activePhotoImages.length
+            ) %
+            activePhotoImages.length;
+
+
+        updatePhotoViewer();
+
+    }
 
 
 
@@ -3226,7 +3829,7 @@ a.post-dairy-link:hover {
 
     document.addEventListener(
         "click",
-        function (event) {
+        function(event){
 
 
             /* =============================================
@@ -3239,51 +3842,15 @@ a.post-dairy-link:hover {
                 );
 
 
-            if (seeMore) {
+            if(seeMore){
 
                 event.preventDefault();
 
                 event.stopPropagation();
 
-
-                const card =
-                    seeMore.closest(
-                        ".feed-card.post-card"
-                    );
-
-
-                openPost(card);
-
-                return;
-
-            }
-
-
-
-            /* =============================================
-               EXPAND ICON
-            ============================================== */
-
-            const expandButton =
-                event.target.closest(
-                    ".post-expand-button"
+                openExpandedPost(
+                    seeMore
                 );
-
-
-            if (expandButton) {
-
-                event.preventDefault();
-
-                event.stopPropagation();
-
-
-                const card =
-                    expandButton.closest(
-                        ".feed-card.post-card"
-                    );
-
-
-                openPost(card);
 
                 return;
 
@@ -3295,26 +3862,25 @@ a.post-dairy-link:hover {
                CLOSE EXPANDED POST
             ============================================== */
 
-            const closeButton =
+            const closeExpanded =
                 event.target.closest(
-                    ".post-expanded-close"
+                    "[data-close-post-expand]"
                 );
 
 
-            if (closeButton) {
+            if(closeExpanded){
 
                 event.preventDefault();
 
-                event.stopPropagation();
-
-
-                const card =
-                    closeButton.closest(
-                        ".feed-card.post-card"
+                const modal =
+                    closeExpanded.closest(
+                        ".post-expand-modal"
                     );
 
 
-                closePost(card);
+                closeExpandedPost(
+                    modal
+                );
 
                 return;
 
@@ -3323,58 +3889,102 @@ a.post-dairy-link:hover {
 
 
             /* =============================================
-               CLICK BACKDROP
+               PHOTO CLICK
             ============================================== */
 
-            if (
-                event.target.classList.contains(
-                    "post-expand-backdrop"
-                )
-            ) {
-
-                const card =
-                    event.target.closest(
-                        ".feed-card.post-card"
-                    );
-
-
-                closePost(card);
-
-                return;
-
-            }
-
-
-
-            /* =============================================
-               CLICK IMAGE OVERLAY
-
-               If the user taps +N, open the full post.
-            ============================================== */
-
-            const moreImages =
+            const photoButton =
                 event.target.closest(
-                    ".post-more-images"
+                    ".post-image-item, .post-expand-image"
                 );
 
 
-            if (moreImages) {
+            if(photoButton){
+
+                event.preventDefault();
 
                 const card =
-                    moreImages.closest(
-                        ".feed-card.post-card"
+                    photoButton.closest(
+                        ".post-card"
                     );
 
 
-                if (card) {
+                const index =
+                    Number(
+                        photoButton.dataset.photoIndex ||
+                        0
+                    );
 
-                    event.preventDefault();
 
-                    event.stopPropagation();
+                openPhotoViewer(
+                    card,
+                    index
+                );
 
-                    openPost(card);
+                return;
 
-                }
+            }
+
+
+
+            /* =============================================
+               CLOSE PHOTO VIEWER
+            ============================================== */
+
+            const closeViewer =
+                event.target.closest(
+                    "[data-close-photo-viewer]"
+                );
+
+
+            if(closeViewer){
+
+                event.preventDefault();
+
+                closePhotoViewer();
+
+                return;
+
+            }
+
+
+
+            /* =============================================
+               NEXT PHOTO
+            ============================================== */
+
+            const next =
+                event.target.closest(
+                    "[data-photo-next]"
+                );
+
+
+            if(next){
+
+                event.preventDefault();
+
+                nextPhoto();
+
+                return;
+
+            }
+
+
+
+            /* =============================================
+               PREVIOUS PHOTO
+            ============================================== */
+
+            const previous =
+                event.target.closest(
+                    "[data-photo-prev]"
+                );
+
+
+            if(previous){
+
+                event.preventDefault();
+
+                previousPhoto();
 
                 return;
 
@@ -3386,67 +3996,196 @@ a.post-dairy-link:hover {
 
 
     /* =====================================================
-       ESCAPE KEY
+       TOUCH / SWIPE
     ====================================================== */
 
     document.addEventListener(
-        "keydown",
-        function (event) {
+        "touchstart",
+        function(event){
 
-            if (
-                event.key !==
-                "Escape"
-            ) {
-
-                return;
-
-            }
-
-
-            closeAllPosts();
-
-        }
-    );
-
-
-
-    /* =====================================================
-       IMAGE LOAD RECALCULATION
-    ====================================================== */
-
-    document.addEventListener(
-        "load",
-        function (event) {
-
-            if (
-                event.target &&
-                event.target.matches &&
-                event.target.matches(
-                    ".post-image"
+            if(
+                !activePhotoViewer ||
+                !activePhotoViewer.classList.contains(
+                    "active"
                 )
-            ) {
+            ){
 
-                const card =
-                    event.target.closest(
-                        ".feed-card.post-card"
-                    );
+                return;
+
+            }
 
 
-                if (
-                    card &&
-                    !card.classList.contains(
-                        "is-expanded"
-                    )
-                ) {
+            const touch =
+                event.touches[0];
 
-                    checkPostText(card);
 
-                }
+            if(!touch){
+
+                return;
+
+            }
+
+
+            touchStartX =
+                touch.clientX;
+
+
+            touchStartY =
+                touch.clientY;
+
+        },
+        {
+            passive: true
+        }
+    );
+
+
+
+    document.addEventListener(
+        "touchend",
+        function(event){
+
+            if(
+                !activePhotoViewer ||
+                !activePhotoViewer.classList.contains(
+                    "active"
+                )
+            ){
+
+                return;
+
+            }
+
+
+            const touch =
+                event.changedTouches[0];
+
+
+            if(!touch){
+
+                return;
+
+            }
+
+
+            const deltaX =
+                touch.clientX -
+                touchStartX;
+
+
+            const deltaY =
+                touch.clientY -
+                touchStartY;
+
+
+            /*
+             * Only treat the gesture as horizontal
+             * when horizontal movement is clearly
+             * greater than vertical movement.
+             */
+
+            if(
+                Math.abs(deltaX) < 50 ||
+                Math.abs(deltaX) <= Math.abs(deltaY)
+            ){
+
+                return;
+
+            }
+
+
+            if(deltaX < 0){
+
+                nextPhoto();
+
+            }
+            else{
+
+                previousPhoto();
 
             }
 
         },
-        true
+        {
+            passive: true
+        }
+    );
+
+
+
+    /* =====================================================
+       KEYBOARD
+    ====================================================== */
+
+    document.addEventListener(
+        "keydown",
+        function(event){
+
+            /* =============================================
+               ESCAPE
+            ============================================== */
+
+            if(
+                event.key === "Escape"
+            ){
+
+                if(activePhotoViewer){
+
+                    closePhotoViewer();
+
+                    return;
+
+                }
+
+
+                const expanded =
+                    document.querySelector(
+                        ".post-expand-modal.active"
+                    );
+
+
+                if(expanded){
+
+                    closeExpandedPost(
+                        expanded
+                    );
+
+                }
+
+                return;
+
+            }
+
+
+
+            /* =============================================
+               PHOTO LEFT / RIGHT
+            ============================================== */
+
+            if(
+                activePhotoViewer
+            ){
+
+                if(
+                    event.key === "ArrowRight"
+                ){
+
+                    nextPhoto();
+
+                }
+
+
+                if(
+                    event.key === "ArrowLeft"
+                ){
+
+                    previousPhoto();
+
+                }
+
+            }
+
+        }
     );
 
 })();
