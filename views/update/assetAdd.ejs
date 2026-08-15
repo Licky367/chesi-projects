@@ -31,18 +31,14 @@
 
                 <strong>
 
-                    🏗️ <%= item.userName || "User" %>
+                    <%= item.userName || "User" %>
 
                 </strong>
 
 
                 <small>
 
-                    <%= item.dateText || (
-                        item.createdAt
-                            ? new Date(item.createdAt).toLocaleString()
-                            : ""
-                    ) %>
+                    <%= item.dateText %>
 
                 </small>
 
@@ -53,10 +49,9 @@
         </div>
 
 
-
-        <!-- =============================================
+        <!-- =================================================
              DELETE
-        ============================================== -->
+        ================================================== -->
 
         <% if (
             user &&
@@ -64,8 +59,9 @@
                 user.role === "admin" ||
                 (
                     user._id &&
-                    item.user &&
-                    user._id.toString() === item.user.toString()
+                    item.userId &&
+                    user._id.toString() ===
+                    item.userId.toString()
                 )
             )
         ) { %>
@@ -98,54 +94,62 @@
     <div class="feed-body">
 
 
-        <!-- =============================================
+        <!-- =================================================
              TITLE
-        ============================================== -->
+        ================================================== -->
 
         <h3>
 
-            🏗️ Asset Added
+            🏗️ New Asset Added
 
         </h3>
 
 
+        <!-- =================================================
+             INTRODUCTION
+        ================================================== -->
 
-        <!-- =============================================
+        <p>
+
+            <strong>
+                <%= item.userName || "A user" %>
+            </strong>
+
+            added a new asset to
+
+            <strong>
+                <%= item.dairyName || "this Dairy Farm" %>
+            </strong>.
+
+        </p>
+
+
+
+        <!-- =================================================
              ASSET NAME
-        ============================================== -->
+        ================================================== -->
 
-        <% if (
-            item.asset &&
-            item.asset.name
-        ) { %>
+        <% if (item.asset && item.asset.name) { %>
 
-
-            <div class="asset-feed-name">
-
+            <p>
 
                 <strong>
-
-                    <%= item.asset.name %>
-
+                    Asset:
                 </strong>
 
+                <%= item.asset.name %>
 
-            </div>
-
+            </p>
 
         <% } %>
 
 
 
-        <!-- =============================================
+        <!-- =================================================
              ASSET TYPE
-        ============================================== -->
+        ================================================== -->
 
-        <% if (
-            item.asset &&
-            item.asset.type
-        ) { %>
-
+        <% if (item.asset && item.asset.type) { %>
 
             <p>
 
@@ -168,21 +172,19 @@
 
             </p>
 
-
         <% } %>
 
 
 
-        <!-- =============================================
+        <!-- =================================================
              BUYING PRICE
-        ============================================== -->
+        ================================================== -->
 
         <% if (
             item.asset &&
             item.asset.buyingPrice !== undefined &&
             item.asset.buyingPrice !== null
         ) { %>
-
 
             <p>
 
@@ -193,25 +195,29 @@
                 KES
                 <%= Number(
                     item.asset.buyingPrice
-                ).toLocaleString() %>
+                ).toLocaleString(
+                    "en-KE",
+                    {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }
+                ) %>
 
             </p>
-
 
         <% } %>
 
 
 
-        <!-- =============================================
+        <!-- =================================================
              CURRENT WORTH
-        ============================================== -->
+        ================================================== -->
 
         <% if (
             item.asset &&
             item.asset.currentWorth !== undefined &&
             item.asset.currentWorth !== null
         ) { %>
-
 
             <p>
 
@@ -222,24 +228,51 @@
                 KES
                 <%= Number(
                     item.asset.currentWorth
-                ).toLocaleString() %>
+                ).toLocaleString(
+                    "en-KE",
+                    {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }
+                ) %>
 
             </p>
-
 
         <% } %>
 
 
 
-        <!-- =============================================
+        <!-- =================================================
+             DESCRIPTION
+        ================================================== -->
+
+        <% if (
+            item.asset &&
+            item.asset.description
+        ) { %>
+
+            <p>
+
+                <strong>
+                    Description:
+                </strong>
+
+                <%= item.asset.description %>
+
+            </p>
+
+        <% } %>
+
+
+
+        <!-- =================================================
              CONDITION
-        ============================================== -->
+        ================================================== -->
 
         <% if (
             item.asset &&
             item.asset.condition
         ) { %>
-
 
             <p>
 
@@ -251,20 +284,18 @@
 
             </p>
 
-
         <% } %>
 
 
 
-        <!-- =============================================
+        <!-- =================================================
              LOCATION
-        ============================================== -->
+        ================================================== -->
 
         <% if (
             item.asset &&
             item.asset.location
         ) { %>
-
 
             <p>
 
@@ -276,53 +307,36 @@
 
             </p>
 
-
         <% } %>
 
 
 
-        <!-- =============================================
+        <!-- =================================================
              STATUS
-        ============================================== -->
+        ================================================== -->
 
         <% if (
             item.asset &&
             item.asset.status
         ) { %>
 
+            <div
+                class="asset-status"
+            >
 
-            <p>
+                Status:
 
                 <strong>
-                    Status:
+
+                    <%= item.asset.status
+                        .charAt(0)
+                        .toUpperCase() +
+                        item.asset.status.slice(1)
+                    %>
+
                 </strong>
 
-                <%= item.asset.status.charAt(0).toUpperCase() +
-                    item.asset.status.slice(1) %>
-
-            </p>
-
-
-        <% } %>
-
-
-
-        <!-- =============================================
-             DESCRIPTION
-        ============================================== -->
-
-        <% if (
-            item.asset &&
-            item.asset.description
-        ) { %>
-
-
-            <p>
-
-                <%= item.asset.description %>
-
-            </p>
-
+            </div>
 
         <% } %>
 
@@ -354,127 +368,3 @@
 
 
 </article>
-
-
-
-<!-- =====================================================
-     ASSET CARD STYLING
-====================================================== -->
-
-<style>
-
-/* =========================================================
-   ASSET FEED CARD
-========================================================= */
-
-.asset-added-card {
-
-    overflow: hidden;
-
-}
-
-
-/* =========================================================
-   ASSET NAME
-========================================================= */
-
-.asset-added-card .asset-feed-name {
-
-    margin: 4px 0 16px;
-
-    padding: 13px 15px;
-
-    background: #f3f8f4;
-
-    border: 1px solid #dce9df;
-
-    border-radius: 11px;
-
-}
-
-
-.asset-added-card .asset-feed-name strong {
-
-    display: block;
-
-    color: #244d34;
-
-    font-size: 18px;
-
-    font-weight: 800;
-
-    line-height: 1.35;
-
-    overflow-wrap: anywhere;
-
-}
-
-
-/* =========================================================
-   BODY
-========================================================= */
-
-.asset-added-card .feed-body p {
-
-    margin: 9px 0;
-
-    color: #536159;
-
-    font-size: 14px;
-
-    line-height: 1.55;
-
-}
-
-
-.asset-added-card .feed-body p strong {
-
-    color: #304139;
-
-    font-weight: 750;
-
-}
-
-
-/* =========================================================
-   DESCRIPTION
-========================================================= */
-
-.asset-added-card .feed-body p:last-child {
-
-    margin-bottom: 0;
-
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 650px) {
-
-    .asset-added-card .asset-feed-name {
-
-        padding: 12px 13px;
-
-        margin-bottom: 14px;
-
-    }
-
-
-    .asset-added-card .asset-feed-name strong {
-
-        font-size: 16px;
-
-    }
-
-
-    .asset-added-card .feed-body p {
-
-        font-size: 13.5px;
-
-    }
-
-}
-
-</style>
