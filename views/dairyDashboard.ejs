@@ -12,7 +12,7 @@
   --sidebar-collapsed-width: 64px;
 
   /*
-   * The existing layout has:
+   * Existing layout:
    * Header     = 70px
    * Top menu   = 50px
    * Total      = 120px
@@ -46,17 +46,6 @@
 
 /* ==========================================================
    SIDEBAR
-   ----------------------------------------------------------
-   CLOSED:
-   • A 64px icon rail remains visible.
-   • The entire visible rail is clickable.
-   • Clicking anywhere on it opens the sidebar.
-
-   OPEN:
-   • Sidebar expands.
-   • Labels become visible.
-   • Navigation links become clickable.
-   • Clicking outside closes it.
 ========================================================== */
 
 .dashboard-sidebar {
@@ -172,14 +161,15 @@
 }
 
 
+.sidebar-link.active .sidebar-icon {
+  color: var(--primary);
+}
+
+
 /* ==========================================================
    SIDEBAR MENU BUTTON
    ----------------------------------------------------------
-   This is the first item in the sidebar.
-
-   It is deliberately NOT a normal navigation link.
-   When the sidebar is collapsed, it is visible as the
-   first icon. Tapping it opens the sidebar.
+   First item in sidebar.
 ========================================================== */
 
 .sidebar-menu-button {
@@ -196,6 +186,7 @@
   box-sizing: border-box;
 
   border: 0;
+
   border-bottom:
     1px solid rgba(255, 255, 255, 0.10);
 
@@ -273,11 +264,6 @@
 }
 
 
-.sidebar-link.active .sidebar-icon {
-  color: var(--primary);
-}
-
-
 /* ==========================================================
    SIDEBAR LABEL
 ========================================================== */
@@ -303,6 +289,160 @@
   opacity: 1;
 
   visibility: visible;
+}
+
+
+/* ==========================================================
+   DAIRY ACTIVITIES BUTTON
+========================================================== */
+
+.sidebar-section-button {
+  width: 100%;
+  min-height: 58px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 15px;
+
+  padding: 0 15px;
+
+  box-sizing: border-box;
+
+  border: 0;
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.10);
+
+  background: transparent;
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  font: inherit;
+
+  text-align: left;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease;
+}
+
+
+.sidebar-section-button:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+
+/* ==========================================================
+   ACTIVE / EXPANDED DAIRY ACTIVITIES BUTTON
+========================================================== */
+
+.sidebar-section-button.expanded {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+
+/* ==========================================================
+   DAIRY ACTIVITIES ARROW
+========================================================== */
+
+.sidebar-section-arrow {
+  margin-left: auto;
+
+  font-size: 14px;
+
+  line-height: 1;
+
+  opacity: 0;
+
+  visibility: hidden;
+
+  transition:
+    transform 0.2s ease,
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+}
+
+
+.dashboard-sidebar.open
+.sidebar-section-arrow {
+  opacity: 0.9;
+
+  visibility: visible;
+}
+
+
+.sidebar-section-button.expanded
+.sidebar-section-arrow {
+  transform: rotate(90deg);
+}
+
+
+/* ==========================================================
+   DAIRY ACTIVITIES SUBMENU
+   ----------------------------------------------------------
+   Hidden by default.
+========================================================== */
+
+.sidebar-submenu {
+  display: none;
+
+  width: 100%;
+
+  margin: 0;
+
+  padding: 0;
+
+  list-style: none;
+
+  background: rgba(0, 0, 0, 0.12);
+}
+
+
+.sidebar-submenu.open {
+  display: block;
+}
+
+
+/* ==========================================================
+   SUBMENU LINKS
+========================================================== */
+
+.sidebar-submenu .sidebar-link {
+  min-height: 52px;
+
+  padding-left: 28px;
+
+  gap: 12px;
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.07);
+}
+
+
+/* ==========================================================
+   SUBMENU ICON
+========================================================== */
+
+.sidebar-submenu .sidebar-icon {
+  width: 30px;
+  min-width: 30px;
+
+  height: 30px;
+
+  font-size: 18px;
+}
+
+
+/* ==========================================================
+   SUBMENU LABEL
+========================================================== */
+
+.sidebar-submenu .sidebar-label {
+  font-size: 14px;
 }
 
 
@@ -340,11 +480,6 @@
 
 /* ==========================================================
    SIDEBAR OVERLAY
-   ----------------------------------------------------------
-   Only appears when the sidebar is open.
-
-   It starts below the existing top navigation so the
-   existing header/top-menu remain visible.
 ========================================================== */
 
 .sidebar-overlay {
@@ -380,9 +515,6 @@
 
 /* ==========================================================
    MAIN PAGE CONTENT
-   ----------------------------------------------------------
-   The collapsed sidebar occupies 64px on the left.
-   The expanded sidebar overlays the content.
 ========================================================== */
 
 .main-content {
@@ -580,7 +712,8 @@
 
 
   .sidebar-link,
-  .sidebar-menu-button {
+  .sidebar-menu-button,
+  .sidebar-section-button {
     height: 56px;
 
     min-height: 56px;
@@ -594,6 +727,11 @@
   .sidebar-menu-icon {
     width: 34px;
     min-width: 34px;
+  }
+
+
+  .sidebar-submenu .sidebar-link {
+    padding-left: 25px;
   }
 
 }
@@ -709,29 +847,163 @@
 
 
       <!-- ====================================================
-           ADD ASSET
+           DAIRY ACTIVITIES
       ==================================================== -->
 
       <li class="sidebar-item">
 
-        <a
-          href="/add"
-          class="sidebar-link"
-          title="Add an Asset"
+        <button
+          type="button"
+          id="dairyActivitiesButton"
+          class="sidebar-section-button"
+          aria-expanded="false"
+          aria-controls="dairyActivitiesSubmenu"
         >
 
           <span
             class="sidebar-icon"
             aria-hidden="true"
           >
-            ＋
+            🐄
           </span>
 
           <span class="sidebar-label">
-            Add an Asset
+            Dairy Activities
           </span>
 
-        </a>
+          <span
+            class="sidebar-section-arrow"
+            aria-hidden="true"
+          >
+            ▶
+          </span>
+
+        </button>
+
+
+        <!-- ==================================================
+             DAIRY ACTIVITIES SUBMENU
+        =================================================== -->
+
+        <ul
+          id="dairyActivitiesSubmenu"
+          class="sidebar-submenu"
+        >
+
+
+          <!-- ================================================
+               ADD AN ASSET
+          ================================================= -->
+
+          <li class="sidebar-item">
+
+            <a
+              href="/add"
+              class="sidebar-link"
+              title="Add an Asset"
+            >
+
+              <span
+                class="sidebar-icon"
+                aria-hidden="true"
+              >
+                ＋
+              </span>
+
+              <span class="sidebar-label">
+                Add an Asset
+              </span>
+
+            </a>
+
+          </li>
+
+
+          <!-- ================================================
+               RECORD MILK PRODUCTION
+          ================================================= -->
+
+          <li class="sidebar-item">
+
+            <a
+              href="/milk"
+              class="sidebar-link"
+              title="Record Milk Production"
+            >
+
+              <span
+                class="sidebar-icon"
+                aria-hidden="true"
+              >
+                🥛
+              </span>
+
+              <span class="sidebar-label">
+                Record Milk Production
+              </span>
+
+            </a>
+
+          </li>
+
+
+          <!-- ================================================
+               RECORD MILK SALES
+          ================================================= -->
+
+          <li class="sidebar-item">
+
+            <a
+              href="/sales"
+              class="sidebar-link"
+              title="Record Milk Sales"
+            >
+
+              <span
+                class="sidebar-icon"
+                aria-hidden="true"
+              >
+                💰
+              </span>
+
+              <span class="sidebar-label">
+                Record Milk Sales
+              </span>
+
+            </a>
+
+          </li>
+
+
+          <!-- ================================================
+               MILK STATISTICS
+          ================================================= -->
+
+          <li class="sidebar-item">
+
+            <a
+              href="/stats"
+              class="sidebar-link"
+              title="Milk Statistics"
+            >
+
+              <span
+                class="sidebar-icon"
+                aria-hidden="true"
+              >
+                📊
+              </span>
+
+              <span class="sidebar-label">
+                Milk Statistics
+              </span>
+
+            </a>
+
+          </li>
+
+
+        </ul>
 
       </li>
 
@@ -757,90 +1029,6 @@
 
           <span class="sidebar-label">
             View Assets
-          </span>
-
-        </a>
-
-      </li>
-
-
-      <!-- ====================================================
-           MILK PRODUCTION
-      ==================================================== -->
-
-      <li class="sidebar-item">
-
-        <a
-          href="/milk"
-          class="sidebar-link"
-          title="Record Milk Production"
-        >
-
-          <span
-            class="sidebar-icon"
-            aria-hidden="true"
-          >
-            🥛
-          </span>
-
-          <span class="sidebar-label">
-            Record Milk Production
-          </span>
-
-        </a>
-
-      </li>
-
-
-      <!-- ====================================================
-           MILK SALES
-      ==================================================== -->
-
-      <li class="sidebar-item">
-
-        <a
-          href="/sales"
-          class="sidebar-link"
-          title="Record Milk Sales"
-        >
-
-          <span
-            class="sidebar-icon"
-            aria-hidden="true"
-          >
-            💰
-          </span>
-
-          <span class="sidebar-label">
-            Record Milk Sales
-          </span>
-
-        </a>
-
-      </li>
-
-
-      <!-- ====================================================
-           MILK STATISTICS
-      ==================================================== -->
-
-      <li class="sidebar-item">
-
-        <a
-          href="/stats"
-          class="sidebar-link"
-          title="Milk Production Statistics"
-        >
-
-          <span
-            class="sidebar-icon"
-            aria-hidden="true"
-          >
-            📊
-          </span>
-
-          <span class="sidebar-label">
-            Milk Production Statistics
           </span>
 
         </a>
@@ -933,6 +1121,7 @@
         <h1>
 
           Welcome,
+
           <span>
             <%= user && user.name ? user.name : "User" %>
           </span>
@@ -971,17 +1160,47 @@
 (function () {
 
   const sidebar =
-    document.getElementById("dashboardSidebar");
+    document.getElementById(
+      "dashboardSidebar"
+    );
+
 
   const overlay =
-    document.getElementById("sidebarOverlay");
+    document.getElementById(
+      "sidebarOverlay"
+    );
+
 
   const menuButton =
-    document.getElementById("sidebarMenuButton");
+    document.getElementById(
+      "sidebarMenuButton"
+    );
 
 
-  if (!sidebar || !overlay || !menuButton) {
+  const dairyActivitiesButton =
+    document.getElementById(
+      "dairyActivitiesButton"
+    );
+
+
+  const dairyActivitiesSubmenu =
+    document.getElementById(
+      "dairyActivitiesSubmenu"
+    );
+
+
+  /* ========================================================
+     SAFETY CHECK
+  ========================================================= */
+
+  if (
+    !sidebar ||
+    !overlay ||
+    !menuButton
+  ) {
+
     return;
+
   }
 
 
@@ -995,19 +1214,56 @@
 
     overlay.classList.add("active");
 
+
     sidebar.setAttribute(
       "aria-expanded",
       "true"
     );
+
 
     menuButton.setAttribute(
       "aria-expanded",
       "true"
     );
 
+
     overlay.setAttribute(
       "aria-hidden",
       "false"
+    );
+
+  }
+
+
+  /* ========================================================
+     CLOSE DAIRY ACTIVITIES
+  ========================================================= */
+
+  function closeDairyActivities() {
+
+    if (
+      !dairyActivitiesButton ||
+      !dairyActivitiesSubmenu
+    ) {
+
+      return;
+
+    }
+
+
+    dairyActivitiesButton.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
+
+    dairyActivitiesButton.classList.remove(
+      "expanded"
+    );
+
+
+    dairyActivitiesSubmenu.classList.remove(
+      "open"
     );
 
   }
@@ -1023,28 +1279,38 @@
 
     overlay.classList.remove("active");
 
+
     sidebar.setAttribute(
       "aria-expanded",
       "false"
     );
+
 
     menuButton.setAttribute(
       "aria-expanded",
       "false"
     );
 
+
     overlay.setAttribute(
       "aria-hidden",
       "true"
     );
 
+
+    /*
+     * Also close Dairy Activities.
+     */
+
+    closeDairyActivities();
+
   }
 
 
   /* ========================================================
-     FIRST SIDEBAR ITEM
+     MENU BUTTON
      --------------------------------------------------------
-     Menu button opens the sidebar.
+     Opens the sidebar.
   ========================================================= */
 
   menuButton.addEventListener(
@@ -1062,12 +1328,72 @@
 
 
   /* ========================================================
+     DAIRY ACTIVITIES TOGGLE
+  ========================================================= */
+
+  if (
+    dairyActivitiesButton &&
+    dairyActivitiesSubmenu
+  ) {
+
+    dairyActivitiesButton.addEventListener(
+      "click",
+      function (event) {
+
+        event.preventDefault();
+
+        event.stopPropagation();
+
+
+        /*
+         * If sidebar is closed, first open it.
+         */
+
+        if (
+          !sidebar.classList.contains("open")
+        ) {
+
+          openSidebar();
+
+          return;
+
+        }
+
+
+        const isExpanded =
+          dairyActivitiesButton.getAttribute(
+            "aria-expanded"
+          ) === "true";
+
+
+        dairyActivitiesButton.setAttribute(
+          "aria-expanded",
+          String(!isExpanded)
+        );
+
+
+        dairyActivitiesButton.classList.toggle(
+          "expanded",
+          !isExpanded
+        );
+
+
+        dairyActivitiesSubmenu.classList.toggle(
+          "open",
+          !isExpanded
+        );
+
+      }
+    );
+
+  }
+
+
+  /* ========================================================
      COLLAPSED SIDEBAR RAIL
      --------------------------------------------------------
-     When closed, tapping anywhere on the visible sidebar
-     opens it.
-
-     The menu button above also opens it directly.
+     When the sidebar is closed, tapping anywhere on the
+     visible icon rail opens it.
   ========================================================= */
 
   sidebar.addEventListener(
@@ -1075,19 +1401,22 @@
     function (event) {
 
       /*
-       * If the sidebar is already open, links must behave
-       * normally.
+       * If already open, allow normal interactions.
        */
 
-      if (sidebar.classList.contains("open")) {
+      if (
+        sidebar.classList.contains("open")
+      ) {
+
         return;
+
       }
 
 
       /*
-       * The sidebar is collapsed.
+       * Sidebar is collapsed.
        *
-       * Any tap anywhere on its visible 60/64px rail opens it.
+       * Any tap on the visible rail opens it.
        */
 
       event.preventDefault();
@@ -1103,13 +1432,13 @@
   /* ========================================================
      SIDEBAR LINKS
      --------------------------------------------------------
-     Once open:
-       • First tap follows the link.
-       • Sidebar does not intercept navigation.
+     When open, links navigate normally.
   ========================================================= */
 
   const sidebarLinks =
-    sidebar.querySelectorAll(".sidebar-link");
+    sidebar.querySelectorAll(
+      ".sidebar-link"
+    );
 
 
   sidebarLinks.forEach(
@@ -1120,8 +1449,8 @@
         function (event) {
 
           /*
-           * If the sidebar is closed, the parent sidebar
-           * handles the tap by opening it.
+           * If sidebar is closed, tapping the link should
+           * only open the sidebar.
            */
 
           if (
@@ -1129,6 +1458,8 @@
           ) {
 
             event.preventDefault();
+
+            openSidebar();
 
             return;
 
@@ -1138,7 +1469,7 @@
           /*
            * Sidebar is open.
            *
-           * Allow the browser to follow the link normally.
+           * Allow normal navigation.
            */
 
         }
@@ -1151,7 +1482,7 @@
   /* ========================================================
      OUTSIDE CLICK
      --------------------------------------------------------
-     Tapping anywhere outside the expanded sidebar closes it.
+     Clicking the overlay closes the sidebar.
   ========================================================= */
 
   overlay.addEventListener(
@@ -1172,7 +1503,9 @@
     "keydown",
     function (event) {
 
-      if (event.key === "Escape") {
+      if (
+        event.key === "Escape"
+      ) {
 
         closeSidebar();
 
@@ -1189,12 +1522,6 @@
   window.addEventListener(
     "resize",
     function () {
-
-      /*
-       * Keep the sidebar closed when the viewport changes.
-       * The existing layout remains responsible for its
-       * header/top-menu behavior.
-       */
 
       closeSidebar();
 
