@@ -51,22 +51,6 @@ function formatDate(date) {
 // ==========================================================
 // WEEK START DATE FORMATTER
 // ==========================================================
-//
-// Used specifically by weekly milk reports.
-//
-// Unlike formatDate(), this intentionally does NOT include
-// the time because the weekly report date represents the
-// first day of the week being summarized.
-//
-// Example:
-//
-//     Aug 10, 2026
-//
-// rather than:
-//
-//     Aug 10, 2026, 00:00
-//
-// ==========================================================
 
 function formatWeekStart(date) {
 
@@ -125,19 +109,6 @@ function getMonthKey(
 
 // ==========================================================
 // WEEK RANGE
-// ==========================================================
-//
-// Returns:
-//
-//     start = Monday 00:00:00.000
-//     end   = Sunday 23:59:59.999
-//
-// Example:
-//
-//     Monday Aug 10
-//     through
-//     Sunday Aug 16
-//
 // ==========================================================
 
 function getWeekRange(
@@ -242,33 +213,17 @@ function formatComment(
 // FEED FORMATTER
 // ==========================================================
 //
-// pageService.js populates:
+// Converts Update documents into the common object used
+// by the feed EJS files.
 //
-//     item.dairy
+// Supported feed types:
 //
-// with:
-//
-//     name
-//     code
-//     assetCode
-//     profileImage
-//
-// This formatter exposes the populated Dairy / asset as:
-//
-//     dairyId
-//     dairyName
-//     dairyCode
-//     dairyAssetCode
-//     dairyImage
-//
-// It also preserves:
-//
-//     userName
-//
-// so post.ejs can display:
-//
-//     Nelson updated about Cow Shed C
-//     Aug 14, 2026, 10:35
+//     post
+//     comment
+//     image
+//     medical
+//     maintenance
+//     asset
 //
 // ==========================================================
 
@@ -293,10 +248,6 @@ function formatFeed(
         item.user || null;
 
 
-    // ------------------------------------------------------
-    // PRESERVE POST OWNER NAME
-    // ------------------------------------------------------
-
     item.userName =
         item.userName || "User";
 
@@ -315,11 +266,12 @@ function formatFeed(
     // DAIRY / ASSET SUBJECT
     // ======================================================
     //
-    // pageService.js has already populated:
+    // pageService.js populates item.dairy with:
     //
-    //     item.dairy
-    //
-    // Therefore no additional database query is required.
+    //     name
+    //     code
+    //     assetCode
+    //     profileImage
     //
     // ======================================================
 
@@ -327,25 +279,13 @@ function formatFeed(
         item.dairy
     ) {
 
-        // --------------------------------------------------
-        // Dairy / Asset ID
-        // --------------------------------------------------
-
         item.dairyId =
             item.dairy._id || null;
 
 
-        // --------------------------------------------------
-        // Dairy / Asset Name
-        // --------------------------------------------------
-
         item.dairyName =
             item.dairy.name || "";
 
-
-        // --------------------------------------------------
-        // Dairy / Asset Code
-        // --------------------------------------------------
 
         item.dairyCode =
             item.dairy.code !== undefined
@@ -355,10 +295,6 @@ function formatFeed(
                 : null;
 
 
-        // --------------------------------------------------
-        // Parent Farm Code
-        // --------------------------------------------------
-
         item.dairyAssetCode =
             item.dairy.assetCode !== undefined
 
@@ -367,20 +303,12 @@ function formatFeed(
                 : null;
 
 
-        // --------------------------------------------------
-        // Dairy / Asset Image
-        // --------------------------------------------------
-
         item.dairyImage =
             item.dairy.profileImage || "";
 
     }
 
     else {
-
-        // --------------------------------------------------
-        // No populated Dairy
-        // --------------------------------------------------
 
         item.dairyId =
             null;
@@ -432,7 +360,7 @@ function formatFeed(
 
 
     // ======================================================
-    // POST
+    // NORMAL POST
     // ======================================================
 
     if (
@@ -514,6 +442,154 @@ function formatFeed(
 
 
     // ======================================================
+    // ASSET ADDED
+    // ======================================================
+    //
+    // This is the feed type used by addAsset.ejs.
+    //
+    // The asset itself is represented by item.dairy
+    // because an asset is a Dairy document.
+    //
+    // Example:
+    //
+    //     A new asset was added
+    //
+    //     Asset:
+    //         Generator
+    //
+    //     Type:
+    //         Generator
+    //
+    //     Current Worth:
+    //         KES 150,000
+    //
+    // ======================================================
+
+    if (
+        item.type === "asset"
+    ) {
+
+        // --------------------------------------------------
+        // Asset name
+        // --------------------------------------------------
+
+        item.assetName =
+
+            item.assetName ||
+
+            item.dairyName ||
+
+            "New Asset";
+
+
+        // --------------------------------------------------
+        // Asset type
+        // --------------------------------------------------
+
+        item.assetType =
+            item.assetType ||
+            item.asset?.type ||
+            item.dairy?.type ||
+            "";
+
+
+        // --------------------------------------------------
+        // Buying price
+        // --------------------------------------------------
+
+        item.buyingPrice =
+            Number(
+                item.buyingPrice ||
+                (
+                    item.asset &&
+                    item.asset.buyingPrice
+                ) ||
+                0
+            );
+
+
+        // --------------------------------------------------
+        // Current worth
+        // --------------------------------------------------
+
+        item.currentWorth =
+            Number(
+                item.currentWorth ||
+                (
+                    item.asset &&
+                    item.asset.currentWorth
+                ) ||
+                0
+            );
+
+
+        // --------------------------------------------------
+        // Description
+        // --------------------------------------------------
+
+        item.description =
+            item.description ||
+            (
+                item.asset &&
+                item.asset.description
+            ) ||
+            item.dairy?.description ||
+            "";
+
+
+        // --------------------------------------------------
+        // Condition
+        // --------------------------------------------------
+
+        item.condition =
+            item.condition ||
+            (
+                item.asset &&
+                item.asset.condition
+            ) ||
+            item.dairy?.condition ||
+            "";
+
+
+        // --------------------------------------------------
+        // Physical location
+        // --------------------------------------------------
+
+        item.location =
+            item.location ||
+            (
+                item.asset &&
+                item.asset.location
+            ) ||
+            item.dairy?.location ||
+            "";
+
+
+        // --------------------------------------------------
+        // Status
+        // --------------------------------------------------
+
+        item.assetStatus =
+            item.assetStatus ||
+            (
+                item.asset &&
+                item.asset.status
+            ) ||
+            item.dairy?.status ||
+            "active";
+
+
+        // --------------------------------------------------
+        // Keep a simple title for the EJS
+        // --------------------------------------------------
+
+        item.title =
+            "New Asset Added";
+
+    }
+
+
+    // ======================================================
     // RETURN FORMATTED FEED ITEM
     // ======================================================
 
@@ -524,29 +600,6 @@ function formatFeed(
 
 // ==========================================================
 // WEEKLY MILK FEED
-// ==========================================================
-//
-// Builds weekly milk reports for a specific Dairy / asset.
-//
-// Each generated weekly feed contains:
-//
-//     dairyId
-//     dairyName
-//
-// The weekly report date represents the FIRST DAY of the
-// week being summarized.
-//
-// Example:
-//
-//     Week:
-//         Monday Aug 10
-//         through
-//         Sunday Aug 16
-//
-// Report timestamp:
-//
-//     Aug 10, 2026
-//
 // ==========================================================
 
 async function buildWeeklyMilkFeeds(
@@ -760,38 +813,19 @@ async function buildWeeklyMilkFeeds(
 
                 return {
 
-                    // --------------------------------------
-                    // UNIQUE WEEKLY FEED ID
-                    // --------------------------------------
-
                     _id:
                         `weekly-${dairy._id}-${getDayKey(
                             week.start
                         )}`,
 
-
-                    // --------------------------------------
-                    // TYPE
-                    // --------------------------------------
-
                     type:
                         "milk",
-
-
-                    // --------------------------------------
-                    // DAIRY / ASSET
-                    // --------------------------------------
 
                     dairyId:
                         dairy._id,
 
                     dairyName:
                         dairy.name || "",
-
-
-                    // --------------------------------------
-                    // USER
-                    // --------------------------------------
 
                     userId:
                         null,
@@ -802,20 +836,6 @@ async function buildWeeklyMilkFeeds(
                     userImage:
                         "",
 
-
-                    // --------------------------------------
-                    // DATE
-                    // --------------------------------------
-                    //
-                    // IMPORTANT:
-                    //
-                    // The weekly report is dated using
-                    // the FIRST DAY of the week.
-                    //
-                    // It must NOT use week.end.
-                    //
-                    // --------------------------------------
-
                     createdAt:
                         week.start,
 
@@ -824,18 +844,8 @@ async function buildWeeklyMilkFeeds(
                             week.start
                         ),
 
-
-                    // --------------------------------------
-                    // TITLE
-                    // --------------------------------------
-
                     title:
                         "Weekly Production Summary",
-
-
-                    // --------------------------------------
-                    // WEEK RANGE
-                    // --------------------------------------
 
                     weekStart:
                         getDayKey(
@@ -847,34 +857,14 @@ async function buildWeeklyMilkFeeds(
                             week.end
                         ),
 
-
-                    // --------------------------------------
-                    // DAILY PRODUCTION
-                    // --------------------------------------
-
                     days,
-
-
-                    // --------------------------------------
-                    // TOTAL PRODUCTION
-                    // --------------------------------------
 
                     total:
                         Number(
                             total.toFixed(2)
                         ),
 
-
-                    // --------------------------------------
-                    // AVERAGE PRODUCTION
-                    // --------------------------------------
-
                     average,
-
-
-                    // --------------------------------------
-                    // SOCIAL DATA
-                    // --------------------------------------
 
                     likes:
                         0,
