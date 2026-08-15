@@ -4,8 +4,10 @@
 //
 // CENTRAL FINANCIAL BUSINESS-LOGIC SERVICE
 //
-// IMPORTANT FINANCIAL RULES
+// IMPORTANT FINANCIAL CONCEPTS
 // ----------------------------------------------------------
+//
+// 1. REVENUE
 //
 // Revenue comes from MilkSummary.
 //
@@ -23,20 +25,119 @@
 //
 //     farm.revenue
 //
-// is already the aggregate revenue of its assigned assets.
+// is the aggregate revenue of its assigned assets.
 //
 // Therefore:
 //
 //     FARM REVENUE MUST NOT BE ADDED AGAIN
 //     TO THE REVENUE OF ITS ASSETS.
 //
-// Otherwise totals are doubled.
+// ----------------------------------------------------------
+//
+// 2. SALES AMOUNT
+//
+// A sold record contributes:
+//
+//     sellingPrice
+//
+// Therefore:
+//
+//     salesAmount = sellingPrice
+//
+// only when:
+//
+//     status === "sold"
+//
+// ----------------------------------------------------------
+//
+// 3. MONETARY ASSETS
+//
+// Monetary assets represent cash/value generated from:
+//
+//     revenue
+//
+// AND:
+//
+//     salesAmount
+//
+// Therefore:
+//
+//     monetaryAssets
+//
+// =
+//
+//     revenue + salesAmount
+//
+// IMPORTANT:
+//
+// For a farm, farm.revenue is already the aggregate revenue
+// of its assets.
+//
+// Therefore farm revenue must not be counted twice.
+//
+// For farm totals:
+//
+//     monetaryAssets
+//
+// =
+//
+//     asset revenue
+//     +
+//     farm direct salesAmount
+//
+// ----------------------------------------------------------
+//
+// 4. PROPERTY ASSETS
+//
+// Active / unsold assets remain property.
+//
+// Therefore:
+//
+//     propertyAssets
+//
+// =
+//
+//     sum of currentWorth
+//
+// for records that are NOT sold.
+//
+// Sold records contribute:
+//
+//     0
+//
+// to propertyAssets.
+//
+// Their value has moved into monetaryAssets through:
+//
+//     salesAmount
+//
+// ----------------------------------------------------------
+//
+// 5. NET WORTH
+//
+//     netWorth
+//
+//         =
+//
+//     monetaryAssets
+//     +
+//     propertyAssets
+//
+// ----------------------------------------------------------
+//
+// 6. LIABILITIES
+//
+// Liabilities remain separately calculated.
+//
+// Profit continues to use:
+//
+//     revenue
+//     sales proceeds
+//     buying price
+//     liabilities
 //
 // ==========================================================
 
-
-const mongoose =
-    require("mongoose");
 
 const Dairy =
     require("../models/dairy");
@@ -59,10 +160,12 @@ function getDateRange(
 
     const range = {};
 
+
     if (startDate) {
 
         const start =
             new Date(startDate);
+
 
         if (
             !Number.isNaN(
@@ -77,6 +180,7 @@ function getDateRange(
                 0
             );
 
+
             range.$gte =
                 start;
 
@@ -90,6 +194,7 @@ function getDateRange(
         const end =
             new Date(endDate);
 
+
         if (
             !Number.isNaN(
                 end.getTime()
@@ -102,6 +207,7 @@ function getDateRange(
                 59,
                 999
             );
+
 
             range.$lte =
                 end;
@@ -127,6 +233,7 @@ function number(
     const parsed =
         Number(value);
 
+
     return Number.isFinite(parsed)
         ? parsed
         : 0;
@@ -151,6 +258,82 @@ function isSold(
         .toLowerCase() ===
         "sold"
 
+    );
+
+}
+
+
+// ==========================================================
+// PROPERTY ASSET CHECK
+// ==========================================================
+//
+// Active / unsold records are property assets.
+//
+// Sold records are no longer property assets because their
+// value has moved into monetary assets.
+//
+// Disposed records are excluded by getAllDairies().
+//
+// ==========================================================
+
+function isPropertyAsset(
+    dairy
+) {
+
+    if (!dairy) {
+
+        return false;
+
+    }
+
+
+    return !isSold(
+        dairy
+    );
+
+}
+
+
+// ==========================================================
+// MONETARY ASSET CHECK
+// ==========================================================
+//
+// A record contributes to monetary assets through:
+//
+//     revenue
+//
+// and, when sold:
+//
+//     salesAmount
+//
+// ==========================================================
+
+function isMonetaryAsset(
+    dairy
+) {
+
+    if (!dairy) {
+
+        return false;
+
+    }
+
+
+    const revenue =
+        number(
+            dairy?.revenue
+        );
+
+
+    const salesAmount =
+        getSalesAmount(
+            dairy
+        );
+
+
+    return (
+        revenue !== 0 ||
+        salesAmount !== 0
     );
 
 }
@@ -650,12 +833,6 @@ async function getAllDairies() {
 // ==========================================================
 // GET FARM ASSETS
 // ==========================================================
-//
-// Relationship:
-//
-//     asset.assetCode === farm.code
-//
-// ==========================================================
 
 function getFarmAssets(
     farm,
@@ -1121,14 +1298,6 @@ async function calculateAndStoreRevenue(
     // ------------------------------------------------------
     // CALCULATE FARM REVENUE
     // ------------------------------------------------------
-    //
-    // IMPORTANT:
-    //
-    // Farm revenue is an aggregate of asset revenue.
-    //
-    // It is therefore NOT an independent revenue stream.
-    //
-    // ------------------------------------------------------
 
     const farmRevenueOperations =
         [];
@@ -1271,18 +1440,16 @@ async function refreshRevenue(
 // CALCULATE PROFIT / LOSS
 // ==========================================================
 //
-// Asset:
+// UNSOLD:
 //
-//     UNSOLD:
+//     revenue - liabilities
 //
-//         revenue - liabilities
+// SOLD:
 //
-//     SOLD:
-//
-//         sellingPrice
-//         - buyingPrice
-//         - liabilities
-//         + revenue
+//     sellingPrice
+//     - buyingPrice
+//     - liabilities
+//     + revenue
 //
 // ==========================================================
 
@@ -1349,24 +1516,22 @@ function calculateProfit(
 // CALCULATE FARM DIRECT PROFIT
 // ==========================================================
 //
-// IMPORTANT:
+// farm.revenue is NOT used.
 //
-// farm.revenue is NOT used here.
+// Farm revenue is already represented by the revenue of
+// its assets.
 //
-// farm.revenue already contains the revenue of its assets.
+// Therefore the farm contributes only:
 //
-// Therefore adding it to asset profits would double-count
-// revenue.
+//     sellingPrice
+//     - buyingPrice
+//     - direct liabilities
 //
-// This function calculates only the farm's own contribution:
+// when sold.
 //
-//     SOLD farm:
+// An unsold farm contributes:
 //
-//         sellingPrice - buyingPrice - direct liabilities
-//
-//     UNSOLD farm:
-//
-//         - direct liabilities
+//     -direct liabilities
 //
 // ==========================================================
 
@@ -1420,6 +1585,12 @@ function calculateFarmDirectProfit(
 // ==========================================================
 // GET SALES AMOUNT
 // ==========================================================
+//
+// Sales amount exists only when the record is sold.
+//
+//     salesAmount = sellingPrice
+//
+// ==========================================================
 
 function getSalesAmount(
     dairy
@@ -1436,6 +1607,90 @@ function getSalesAmount(
 
     return number(
         dairy?.sellingPrice
+    );
+
+}
+
+
+// ==========================================================
+// GET PROPERTY ASSET VALUE
+// ==========================================================
+//
+// Active / unsold:
+//
+//     currentWorth
+//
+// Sold:
+//
+//     0
+//
+// ==========================================================
+
+function getPropertyAssetValue(
+    dairy
+) {
+
+    if (
+        !isPropertyAsset(dairy)
+    ) {
+
+        return 0;
+
+    }
+
+
+    return number(
+        dairy?.currentWorth
+    );
+
+}
+
+
+// ==========================================================
+// GET MONETARY ASSET VALUE
+// ==========================================================
+//
+// IMPORTANT:
+//
+//     monetaryAssets
+//
+//     =
+//
+//     revenue + salesAmount
+//
+// This means revenue is itself part of monetary assets.
+//
+// ==========================================================
+
+function getMonetaryAssetValue(
+    dairy
+) {
+
+    if (!dairy) {
+
+        return 0;
+
+    }
+
+
+    const revenue =
+        number(
+            dairy?.revenue
+        );
+
+
+    const salesAmount =
+        getSalesAmount(
+            dairy
+        );
+
+
+    return (
+
+        revenue +
+
+        salesAmount
+
     );
 
 }
@@ -1491,6 +1746,23 @@ async function buildFinancialData(
         );
 
 
+    const monetaryAssets =
+        getMonetaryAssetValue(
+            dairy
+        );
+
+
+    const propertyAssets =
+        getPropertyAssetValue(
+            dairy
+        );
+
+
+    const netWorth =
+        monetaryAssets +
+        propertyAssets;
+
+
     return {
 
         ...dairy,
@@ -1514,7 +1786,13 @@ async function buildFinancialData(
         totalLiabilities:
             liabilities,
 
-        profit
+        profit,
+
+        monetaryAssets,
+
+        propertyAssets,
+
+        netWorth
 
     };
 
@@ -1746,33 +2024,34 @@ async function getStandaloneFinancial(
 //       ├── Cow B
 //       └── Structure C
 //
-// The farm.revenue field already represents:
-//
-//     Cow A revenue
-//     + Cow B revenue
-//     + Structure C revenue
+// Farm revenue is already the aggregate revenue of its
+// assigned assets.
 //
 // Therefore:
 //
 //     totalRevenue
 //
-// MUST NOT be:
+// uses asset revenue only.
 //
-//     farm.revenue
-//     + Cow A revenue
-//     + Cow B revenue
-//     + Structure C revenue
+// Financial wealth:
 //
-// Instead:
+//     monetaryAssets
+//     +
+//     propertyAssets
+//     =
+//     netWorth
 //
-//     totalRevenue
+// IMPORTANT:
 //
-// =
+// Farm monetary assets are:
 //
-//     sum of asset revenue
+//     farm direct salesAmount
+//     +
+//     revenue generated by farm assets
 //
-// The farm's direct liabilities and sale information are
-// still included.
+// The farm's stored revenue is NOT added separately because
+// it already represents those asset revenues.
+//
 // ==========================================================
 
 async function getFarmFinancialTotals(
@@ -1804,7 +2083,7 @@ async function getFarmFinancialTotals(
 
 
     // ------------------------------------------------------
-    // FARM'S OWN FINANCIAL DATA
+    // FARM FINANCIAL DATA
     // ------------------------------------------------------
 
     const farmFinancial =
@@ -1813,18 +2092,13 @@ async function getFarmFinancialTotals(
             farm,
 
             startDate,
-
             endDate
 
         );
 
 
     // ------------------------------------------------------
-    // IMPORTANT:
-    //
-    // farmFinancial.revenue is an aggregate of assets.
-    //
-    // Do NOT use it in totalRevenue.
+    // FARM DIRECT VALUES
     // ------------------------------------------------------
 
     let totalCurrentWorth =
@@ -1839,16 +2113,14 @@ async function getFarmFinancialTotals(
         farmFinancial.salesAmount;
 
 
+    // Farm revenue is aggregate asset revenue.
+    //
+    // Therefore total revenue starts at zero and receives
+    // asset revenue below.
+
     let totalRevenue =
         0;
 
-
-    // ------------------------------------------------------
-    // FARM DIRECT PROFIT
-    //
-    // Excludes farm.revenue because that revenue belongs
-    // to the assets and will be included below.
-    // ------------------------------------------------------
 
     let totalProfit =
         calculateFarmDirectProfit(
@@ -1860,12 +2132,44 @@ async function getFarmFinancialTotals(
         );
 
 
+    // ------------------------------------------------------
+    // FARM PROPERTY ASSETS
+    // ------------------------------------------------------
+    //
+    // If the farm itself is active, its currentWorth remains
+    // property.
+    //
+    // If sold, it contributes zero property value.
+    //
+    let propertyAssets =
+        farmFinancial.propertyAssets;
+
+
+    // ------------------------------------------------------
+    // FARM MONETARY ASSETS
+    // ------------------------------------------------------
+    //
+    // IMPORTANT:
+    //
+    // Do NOT use farmFinancial.monetaryAssets directly here
+    // because that contains:
+    //
+    //     farm.revenue + farm.salesAmount
+    //
+    // and farm.revenue already represents asset revenue.
+    //
+    // We start with only the farm's direct sale amount.
+    //
+    let monetaryAssets =
+        farmFinancial.salesAmount;
+
+
     const assetFinancials =
         [];
 
 
     // ======================================================
-    // PROCESS ASSETS
+    // PROCESS FARM ASSETS
     // ======================================================
 
     for (
@@ -1878,7 +2182,6 @@ async function getFarmFinancialTotals(
                 asset,
 
                 startDate,
-
                 endDate
 
             );
@@ -1904,11 +2207,28 @@ async function getFarmFinancialTotals(
             financial.profit;
 
 
+        monetaryAssets +=
+            financial.monetaryAssets;
+
+
+        propertyAssets +=
+            financial.propertyAssets;
+
+
         assetFinancials.push(
             financial
         );
 
     }
+
+
+    // ======================================================
+    // TOTAL NET WORTH
+    // ======================================================
+
+    const netWorth =
+        monetaryAssets +
+        propertyAssets;
 
 
     // ======================================================
@@ -1977,8 +2297,6 @@ async function getFarmFinancialTotals(
         farmSalesAmount:
             farmFinancial.salesAmount,
 
-        // This is the stored aggregate farm revenue.
-        // It is provided for display/reference only.
         farmRevenue:
             farmFinancial.revenue,
 
@@ -1990,6 +2308,15 @@ async function getFarmFinancialTotals(
                 farmFinancial.totalLiabilities
 
             ),
+
+        farmMonetaryAssets:
+            farmFinancial.monetaryAssets,
+
+        farmPropertyAssets:
+            farmFinancial.propertyAssets,
+
+        farmNetWorth:
+            farmFinancial.netWorth,
 
         // --------------------------------------------------
         // COMBINED FARM + ASSET VALUES
@@ -2011,6 +2338,12 @@ async function getFarmFinancialTotals(
         profit:
             totalProfit,
 
+        monetaryAssets,
+
+        propertyAssets,
+
+        netWorth,
+
         assets:
             assetFinancials
 
@@ -2027,10 +2360,6 @@ async function getFinancialSummary(
     startDate,
     endDate
 ) {
-
-    // ------------------------------------------------------
-    // Rebuild revenue first.
-    // ------------------------------------------------------
 
     await refreshRevenue();
 
@@ -2068,6 +2397,14 @@ async function getFinancialSummary(
 
 
     let totalProfit =
+        0;
+
+
+    let totalMonetaryAssets =
+        0;
+
+
+    let totalPropertyAssets =
         0;
 
 
@@ -2121,6 +2458,14 @@ async function getFinancialSummary(
         totalProfit +=
             financial.profit;
 
+
+        totalMonetaryAssets +=
+            financial.monetaryAssets;
+
+
+        totalPropertyAssets +=
+            financial.propertyAssets;
+
     }
 
 
@@ -2149,6 +2494,14 @@ async function getFinancialSummary(
 
 
     let standaloneProfit =
+        0;
+
+
+    let standaloneMonetaryAssets =
+        0;
+
+
+    let standalonePropertyAssets =
         0;
 
 
@@ -2192,6 +2545,14 @@ async function getFinancialSummary(
         standaloneProfit +=
             financial.profit;
 
+
+        standaloneMonetaryAssets +=
+            financial.monetaryAssets;
+
+
+        standalonePropertyAssets +=
+            financial.propertyAssets;
+
     }
 
 
@@ -2217,6 +2578,23 @@ async function getFinancialSummary(
 
     totalProfit +=
         standaloneProfit;
+
+
+    totalMonetaryAssets +=
+        standaloneMonetaryAssets;
+
+
+    totalPropertyAssets +=
+        standalonePropertyAssets;
+
+
+    // ======================================================
+    // TOTAL NET WORTH
+    // ======================================================
+
+    const totalNetWorth =
+        totalMonetaryAssets +
+        totalPropertyAssets;
 
 
     // ======================================================
@@ -2330,12 +2708,23 @@ async function getFinancialSummary(
                 totalRevenue,
 
             profit:
-                totalProfit
+                totalProfit,
+
+            monetaryAssets:
+                totalMonetaryAssets,
+
+            propertyAssets:
+                totalPropertyAssets,
+
+            netWorth:
+                totalNetWorth
 
         },
 
+
         farms:
             farmFinancials,
+
 
         standalone: {
 
@@ -2353,6 +2742,18 @@ async function getFinancialSummary(
 
             profit:
                 standaloneProfit,
+
+            monetaryAssets:
+                standaloneMonetaryAssets,
+
+            propertyAssets:
+                standalonePropertyAssets,
+
+            netWorth:
+                (
+                    standaloneMonetaryAssets +
+                    standalonePropertyAssets
+                ),
 
             assets:
                 standaloneFinancials
@@ -2580,6 +2981,22 @@ module.exports = {
 
     updateDairyRevenues,
 
-    refreshRevenue
+    refreshRevenue,
+
+    // ------------------------------------------------------
+    // Financial classification helpers
+    // ------------------------------------------------------
+
+    isSold,
+
+    isPropertyAsset,
+
+    isMonetaryAsset,
+
+    getSalesAmount,
+
+    getPropertyAssetValue,
+
+    getMonetaryAssetValue
 
 };
