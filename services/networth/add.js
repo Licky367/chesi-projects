@@ -28,11 +28,6 @@ async function getParentDairyFarm(id) {
     }
 
 
-    /*
-     * A Dairy Farm is identified by
-     * a negative Dairy code.
-     */
-
     const dairy =
         await Dairy.findOne({
 
@@ -57,10 +52,8 @@ async function getParentDairyFarm(id) {
 //
 // Creates:
 //
-// 1. The actual Dairy asset
-// 2. The corresponding Update feed record
-//
-// The feed record belongs to the PARENT DAIRY FARM.
+// 1. The actual Dairy asset.
+// 2. The Update feed record.
 //
 // ==========================================================
 
@@ -71,7 +64,7 @@ async function createAsset(
 ) {
 
     // ======================================================
-    // VALIDATE DAIRY FARM ID
+    // VALIDATE FARM ID
     // ======================================================
 
     if (
@@ -95,7 +88,7 @@ async function createAsset(
 
 
     // ======================================================
-    // VERIFY PARENT DAIRY FARM
+    // FIND PARENT FARM
     // ======================================================
 
     const parentFarm =
@@ -126,8 +119,20 @@ async function createAsset(
 
 
     // ======================================================
-    // NORMALIZE NUMERIC VALUES
+    // NORMALIZE VALUES
     // ======================================================
+
+    const name =
+        String(
+            assetData.name || ""
+        ).trim();
+
+
+    const type =
+        String(
+            assetData.type || ""
+        ).trim();
+
 
     const buyingPrice =
         Number(
@@ -141,56 +146,55 @@ async function createAsset(
         );
 
 
+    const description =
+        String(
+            assetData.description || ""
+        ).trim();
+
+
+    const condition =
+        String(
+            assetData.condition || ""
+        ).trim();
+
+
+    const location =
+        String(
+            assetData.location || ""
+        ).trim();
+
+
+    const status =
+        assetData.status ||
+        "active";
+
+
     // ======================================================
-    // BUILD ASSET
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // No "code" is supplied.
-    //
-    // Therefore this remains a manual asset.
-    //
-    // The relationship to the parent Dairy Farm is:
-    //
-    //     assetCode = parentFarm.code
-    //
+    // CREATE ACTUAL ASSET
     // ======================================================
 
     const asset =
         new Dairy({
 
-            name:
-                String(
-                    assetData.name || ""
-                ).trim(),
+            name,
 
-            type:
-                String(
-                    assetData.type || ""
-                ).trim(),
+            type,
 
             buyingPrice,
 
             currentWorth,
 
-            description:
-                String(
-                    assetData.description || ""
-                ).trim(),
+            description,
 
-            condition:
-                String(
-                    assetData.condition || ""
-                ).trim(),
+            condition,
 
-            location:
-                String(
-                    assetData.location || ""
-                ).trim(),
+            location,
 
-            status:
-                assetData.status || "active",
+            status,
+
+            // ----------------------------------------------
+            // Parent Dairy Farm
+            // ----------------------------------------------
 
             assetCode:
                 parentFarm.code
@@ -198,39 +202,36 @@ async function createAsset(
         });
 
 
-    // ======================================================
-    // SAVE ACTUAL ASSET FIRST
-    // ======================================================
-
     await asset.save();
 
 
     // ======================================================
-    // PREPARE USER INFORMATION
+    // CREATE FEED UPDATE
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // The update belongs to the PARENT FARM.
+    //
+    // This guarantees that pageService.js will find it
+    // whenever somebody opens the farm feed.
+    //
     // ======================================================
 
-    let userId = null;
+    let userId =
+        null;
 
-    let userName = "User";
+    let userName =
+        "User";
+
+    let userImage =
+        "";
 
 
     if (user) {
 
-        /*
-         * Support either:
-         *
-         * req.session.user._id
-         *
-         * or
-         *
-         * req.session.user.id
-         */
-
         userId =
-            user._id ||
-            user.id ||
-            null;
-
+            user._id || null;
 
         userName =
             user.name ||
@@ -238,95 +239,82 @@ async function createAsset(
             user.username ||
             "User";
 
+        userImage =
+            user.profileImage ||
+            user.image ||
+            user.avatar ||
+            "";
+
     }
 
 
-    // ======================================================
-    // CREATE ASSET FEED UPDATE
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // "dairy" points to the PARENT FARM.
-    //
-    // This means the event appears immediately when
-    // viewing the Dairy Farm feed.
-    //
-    // ======================================================
+    await Update.create({
 
-    try {
+        // ----------------------------------------------
+        // IMPORTANT: PARENT FARM
+        // ----------------------------------------------
 
-        await Update.create({
+        dairy:
+            parentFarm._id,
 
-            dairy:
-                parentFarm._id,
+        // ----------------------------------------------
+        // USER
+        // ----------------------------------------------
 
-            user:
-                userId,
+        user:
+            userId,
 
-            userName:
-                userName,
+        userName,
+
+        userImage,
+
+        // ----------------------------------------------
+        // FEED TYPE
+        // ----------------------------------------------
+
+        type:
+            "assetAdd",
+
+        // ----------------------------------------------
+        // ASSET INFORMATION
+        // ----------------------------------------------
+
+        asset: {
+
+            assetId:
+                asset._id,
+
+            name:
+                asset.name,
 
             type:
-                "asset",
+                asset.type,
 
-            asset: {
+            buyingPrice:
+                asset.buyingPrice,
 
-                name:
-                    asset.name,
+            currentWorth:
+                asset.currentWorth,
 
-                type:
-                    asset.type,
+            description:
+                asset.description,
 
-                buyingPrice:
-                    asset.buyingPrice,
+            condition:
+                asset.condition,
 
-                currentWorth:
-                    asset.currentWorth,
+            location:
+                asset.location,
 
-                description:
-                    asset.description,
+            status:
+                asset.status
 
-                condition:
-                    asset.condition,
+        }
 
-                location:
-                    asset.location,
-
-                status:
-                    asset.status,
-
-                assetId:
-                    asset._id,
-
-                parentFarmCode:
-                    parentFarm.code
-
-            }
-
-        });
-
-    } catch (updateError) {
-
-        /*
-         * The actual asset has already been saved.
-         *
-         * We do NOT delete the asset here automatically.
-         *
-         * The feed record failing should not cause the
-         * newly-created financial asset to disappear.
-         */
-
-        console.error(
-            "Asset Feed Update Creation Error:",
-            updateError
-        );
-
-    }
+    });
 
 
     // ======================================================
-    // RETURN ASSET
+    // RETURN CREATED ASSET
     // ======================================================
 
     return asset;
