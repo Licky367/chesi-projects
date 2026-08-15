@@ -1,6 +1,135 @@
-<!-- =======================================================
-     POST
-======================================================= -->
+<!-- =========================================================
+     POST CARD
+     FILE:
+     views/dairy/update/post.ejs
+
+     PURPOSE:
+     ---------------------------------------------------------
+     Displays a normal feed post.
+
+     POST DATA:
+     ---------------------------------------------------------
+     item._id
+     item.userImage
+     item.userName
+     item.dairyName
+     item.dairyId
+     item.dateText
+     item.userId
+     item.title
+     item.text
+     item.image
+     item.images
+========================================================= -->
+
+
+<%
+    /* =====================================================
+       POST PHOTOS
+       -----------------------------------------------------
+       item.images = multiple photos
+       item.image  = single photo fallback
+    ====================================================== */
+
+    let postPhotos = [];
+
+
+    if (Array.isArray(item.images)) {
+
+        postPhotos = item.images;
+
+    } else if (item.image) {
+
+        postPhotos = [item.image];
+
+    }
+
+
+    const photoCount = postPhotos.length;
+
+
+    /* =====================================================
+       POST OWNER
+    ====================================================== */
+
+    const authorName =
+        item.userName || "User";
+
+
+    const authorImage =
+        item.userImage ||
+        (
+            "https://ui-avatars.com/api/?name=" +
+            encodeURIComponent(item.userName || "User")
+        );
+
+
+    /* =====================================================
+       POST ID
+    ====================================================== */
+
+    const postId =
+        item._id;
+
+
+    /* =====================================================
+       ENGAGEMENT COUNTS
+    ====================================================== */
+
+    const likes =
+        Array.isArray(item.likes)
+            ? item.likes.length
+            : Number(item.likeCount || item.likes || 0);
+
+
+    const comments =
+        Array.isArray(item.comments)
+            ? item.comments.length
+            : Number(item.commentCount || item.comments || 0);
+
+
+    /* =====================================================
+       CURRENT USER LIKE STATE
+    ====================================================== */
+
+    const currentUserId =
+        user?.id ||
+        user?._id ||
+        null;
+
+
+    let isLiked = false;
+
+
+    if (
+        Array.isArray(item.likes) &&
+        currentUserId
+    ) {
+
+        isLiked = item.likes.some(like => {
+
+            const likeId =
+                like?.id ||
+                like?._id ||
+                like?.userId ||
+                like?.user;
+
+            return (
+                String(likeId) ===
+                String(currentUserId)
+            );
+
+        });
+
+    } else {
+
+        isLiked =
+            item.isLiked === true ||
+            item.liked === true;
+
+    }
+%>
+
 
 <article
     class="feed-card post-card"
@@ -8,11 +137,13 @@
     data-type="post"
 >
 
+
     <!-- =================================================
          HEADER
     ================================================== -->
 
     <div class="feed-header">
+
 
         <!-- =================================================
              POST OWNER + SUBJECT
@@ -20,13 +151,18 @@
 
         <div class="feed-user">
 
+
             <img
                 src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
                 alt="<%= item.userName || 'User' %>"
                 class="avatar-sm"
+                loading="lazy"
+                onerror="this.src='https://ui-avatars.com/api/?name=User'"
             >
 
+
             <div class="feed-user-info">
+
 
                 <!-- =============================================
                      POST META
@@ -34,12 +170,16 @@
 
                 <div class="post-meta-line">
 
+
                     <strong class="post-user-name">
                         <%= item.userName || "User" %>
                     </strong>
 
 
-                    <% if (item.dairyName && item.dairyId) { %>
+                    <% if (
+                        item.dairyName &&
+                        item.dairyId
+                    ) { %>
 
                         <span class="post-meta-action">
                             updated about
@@ -62,6 +202,7 @@
 
                     <% } %>
 
+
                 </div>
 
 
@@ -75,46 +216,55 @@
 
                 </small>
 
+
             </div>
 
         </div>
 
 
+
         <!-- =================================================
-             DELETE POST
+             DELETE / POST MENU
         ================================================== -->
 
-        <% if (
-            user &&
-            (
-                user.role === "admin" ||
+        <div class="post-menu-wrapper">
+
+
+            <% if (
+                user &&
                 (
-                    user._id &&
-                    item.userId &&
-                    user._id.toString() ===
-                    item.userId.toString()
+                    user.role === "admin" ||
+                    (
+                        user._id &&
+                        item.userId &&
+                        user._id.toString() ===
+                        item.userId.toString()
+                    )
                 )
-            )
-        ) { %>
+            ) { %>
 
-            <button
-                class="delete-post"
-                data-id="<%= item._id %>"
-                title="Delete Post"
-                aria-label="Delete Post"
-                type="button"
-            >
+                <button
+                    class="delete-post post-menu-button"
+                    data-id="<%= item._id %>"
+                    title="Delete Post"
+                    aria-label="Delete Post"
+                    type="button"
+                >
 
-                <i
-                    class="bi bi-trash3-fill"
-                    aria-hidden="true"
-                ></i>
+                    <i
+                        class="bi bi-trash3-fill"
+                        aria-hidden="true"
+                    ></i>
 
-            </button>
+                </button>
 
-        <% } %>
+            <% } %>
+
+
+        </div>
 
     </div>
+
 
 
     <!-- =================================================
@@ -122,6 +272,7 @@
     ================================================== -->
 
     <div class="feed-body">
+
 
         <!-- =============================================
              TITLE
@@ -136,6 +287,7 @@
             </h3>
 
         <% } %>
+
 
 
         <!-- =============================================
@@ -153,26 +305,303 @@
         <% } %>
 
 
+
         <!-- =============================================
-             IMAGE
+             PHOTO GALLERY
         ============================================== -->
 
-        <% if (item.image) { %>
+        <% if (photoCount > 0) { %>
 
-            <div class="post-image-container">
+            <div
+                class="
+                    post-gallery
+                    post-gallery-count-<%= Math.min(photoCount, 5) %>
+                "
+                data-gallery="<%= postId %>"
+            >
 
-                <img
-                    src="/uploads/<%= item.image %>"
-                    alt="Post image"
-                    class="feed-img post-image"
-                    loading="lazy"
-                >
+
+                <!-- =========================================
+                     ONE PHOTO
+                ========================================== -->
+
+                <% if (photoCount === 1) { %>
+
+                    <button
+                        type="button"
+                        class="post-photo post-photo-single"
+                        data-photo-index="0"
+                        data-gallery-id="<%= postId %>"
+                        aria-label="View photo"
+                    >
+
+                        <img
+                            src="/uploads/<%= postPhotos[0] %>"
+                            alt="Post image"
+                            class="feed-img post-image"
+                            loading="lazy"
+                        >
+
+                    </button>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     TWO PHOTOS
+                ========================================== -->
+
+                <% if (photoCount === 2) { %>
+
+                    <% postPhotos.forEach((photo, index) => { %>
+
+                        <button
+                            type="button"
+                            class="post-photo"
+                            data-photo-index="<%= index %>"
+                            data-gallery-id="<%= postId %>"
+                            aria-label="View photo <%= index + 1 %>"
+                        >
+
+                            <img
+                                src="/uploads/<%= photo %>"
+                                alt="Post image <%= index + 1 %>"
+                                class="feed-img post-image"
+                                loading="lazy"
+                            >
+
+                        </button>
+
+                    <% }) %>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     THREE PHOTOS
+                     -----------------------------------------
+                     First image is large.
+                     Second and third stack vertically.
+                ========================================== -->
+
+                <% if (photoCount === 3) { %>
+
+                    <button
+                        type="button"
+                        class="post-photo post-photo-large"
+                        data-photo-index="0"
+                        data-gallery-id="<%= postId %>"
+                    >
+
+                        <img
+                            src="/uploads/<%= postPhotos[0] %>"
+                            alt="Post image 1"
+                            class="feed-img post-image"
+                            loading="lazy"
+                        >
+
+                    </button>
+
+
+                    <div class="post-gallery-side">
+
+
+                        <button
+                            type="button"
+                            class="post-photo"
+                            data-photo-index="1"
+                            data-gallery-id="<%= postId %>"
+                        >
+
+                            <img
+                                src="/uploads/<%= postPhotos[1] %>"
+                                alt="Post image 2"
+                                class="feed-img post-image"
+                                loading="lazy"
+                            >
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="post-photo"
+                            data-photo-index="2"
+                            data-gallery-id="<%= postId %>"
+                        >
+
+                            <img
+                                src="/uploads/<%= postPhotos[2] %>"
+                                alt="Post image 3"
+                                class="feed-img post-image"
+                                loading="lazy"
+                            >
+
+                        </button>
+
+
+                    </div>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     FOUR PHOTOS
+                ========================================== -->
+
+                <% if (photoCount === 4) { %>
+
+                    <% postPhotos.forEach((photo, index) => { %>
+
+                        <button
+                            type="button"
+                            class="post-photo"
+                            data-photo-index="<%= index %>"
+                            data-gallery-id="<%= postId %>"
+                            aria-label="View photo <%= index + 1 %>"
+                        >
+
+                            <img
+                                src="/uploads/<%= photo %>"
+                                alt="Post image <%= index + 1 %>"
+                                class="feed-img post-image"
+                                loading="lazy"
+                            >
+
+                        </button>
+
+                    <% }) %>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     FIVE OR MORE PHOTOS
+                     -----------------------------------------
+                     First four photos are displayed normally.
+                     Fifth slot displays the remaining count.
+                ========================================== -->
+
+                <% if (photoCount >= 5) { %>
+
+                    <% postPhotos.slice(0, 5).forEach((photo, index) => { %>
+
+                        <button
+                            type="button"
+                            class="
+                                post-photo
+                                <%= index === 4
+                                    ? 'post-photo-more'
+                                    : ''
+                                %>
+                            "
+                            data-photo-index="<%= index %>"
+                            data-gallery-id="<%= postId %>"
+                            aria-label="View photo <%= index + 1 %>"
+                        >
+
+                            <img
+                                src="/uploads/<%= photo %>"
+                                alt="Post image <%= index + 1 %>"
+                                class="feed-img post-image"
+                                loading="lazy"
+                            >
+
+
+                            <% if (index === 4) { %>
+
+                                <span class="post-photo-more-overlay">
+
+                                    <span>
+                                        +<%= photoCount - 4 %>
+                                    </span>
+
+                                </span>
+
+                            <% } %>
+
+
+                        </button>
+
+                    <% }) %>
+
+                <% } %>
+
 
             </div>
 
         <% } %>
 
+
     </div>
+
+
+
+    <!-- =================================================
+         ENGAGEMENT SUMMARY
+    ================================================== -->
+
+    <% if (
+        likes > 0 ||
+        comments > 0
+    ) { %>
+
+        <div class="post-engagement-summary">
+
+
+            <% if (likes > 0) { %>
+
+                <button
+                    type="button"
+                    class="post-like-summary"
+                    data-action="show-likes"
+                    data-post-id="<%= postId %>"
+                >
+
+                    <span class="post-like-icon">
+
+                        <i class="bi bi-hand-thumbs-up-fill"></i>
+
+                    </span>
+
+                    <span class="post-like-count">
+                        <%= likes %>
+                    </span>
+
+                </button>
+
+            <% } %>
+
+
+
+            <% if (comments > 0) { %>
+
+                <button
+                    type="button"
+                    class="post-comment-summary"
+                    data-action="show-comments"
+                    data-post-id="<%= postId %>"
+                >
+
+                    <%= comments %>
+                    <%= comments === 1
+                        ? "comment"
+                        : "comments"
+                    %>
+
+                </button>
+
+            <% } %>
+
+
+        </div>
+
+    <% } %>
+
 
 
     <!-- =================================================
@@ -185,6 +614,7 @@
     }) %>
 
 
+
     <!-- =================================================
          COMMENTS
     ================================================== -->
@@ -195,4 +625,165 @@
         type: "post"
     }) %>
 
+
 </article>
+
+
+
+<!-- =========================================================
+     FULL SCREEN PHOTO VIEWER
+========================================================= -->
+
+<div
+    class="post-photo-viewer"
+    id="photoViewer-<%= postId %>"
+    data-viewer-post="<%= postId %>"
+    hidden
+    aria-hidden="true"
+>
+
+
+    <!-- BACKDROP -->
+
+    <div
+        class="post-photo-viewer-backdrop"
+        data-viewer-close
+    ></div>
+
+
+
+    <!-- VIEWER CONTENT -->
+
+    <div class="post-photo-viewer-content">
+
+
+        <!-- CLOSE -->
+
+        <button
+            type="button"
+            class="post-photo-viewer-close"
+            data-viewer-close
+            aria-label="Close photo viewer"
+        >
+
+            <i class="bi bi-x-lg"></i>
+
+        </button>
+
+
+
+        <!-- COUNTER -->
+
+        <div class="post-photo-viewer-counter">
+
+            <span data-viewer-current>
+                1
+            </span>
+
+            <span>
+                /
+            </span>
+
+            <span>
+                <%= photoCount %>
+            </span>
+
+        </div>
+
+
+
+        <!-- PREVIOUS -->
+
+        <% if (photoCount > 1) { %>
+
+            <button
+                type="button"
+                class="
+                    post-photo-viewer-nav
+                    post-photo-viewer-prev
+                "
+                data-viewer-prev
+                aria-label="Previous photo"
+            >
+
+                <i class="bi bi-chevron-left"></i>
+
+            </button>
+
+        <% } %>
+
+
+
+        <!-- IMAGE -->
+
+        <div class="post-photo-viewer-image-wrapper">
+
+            <img
+                class="post-photo-viewer-image"
+                data-viewer-image
+                src=""
+                alt="Post image"
+            >
+
+        </div>
+
+
+
+        <!-- NEXT -->
+
+        <% if (photoCount > 1) { %>
+
+            <button
+                type="button"
+                class="
+                    post-photo-viewer-nav
+                    post-photo-viewer-next
+                "
+                data-viewer-next
+                aria-label="Next photo"
+            >
+
+                <i class="bi bi-chevron-right"></i>
+
+            </button>
+
+        <% } %>
+
+
+
+        <!-- CAPTION -->
+
+        <% if (item.text) { %>
+
+            <div class="post-photo-viewer-caption">
+
+                <strong>
+                    <%= item.userName || "User" %>
+                </strong>
+
+                <span>
+                    <%= item.text %>
+                </span>
+
+            </div>
+
+        <% } %>
+
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     PHOTO DATA
+========================================================= -->
+
+<script
+    type="application/json"
+    class="post-gallery-data"
+    data-gallery-data="<%= postId %>"
+>
+    <%- JSON.stringify(postPhotos) %>
+</script>
