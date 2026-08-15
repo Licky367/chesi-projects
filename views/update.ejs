@@ -18,10 +18,78 @@
 
 
     <!-- =================================================
-         TOP-RIGHT PAGE ACTION
+         TOP PAGE ACTIONS
     ================================================== -->
 
-    <div class="dairy-page-actions">
+    <div
+        class="dairy-page-actions"
+        style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:10px;
+            width:100%;
+        "
+    >
+
+
+        <!-- =============================================
+             TOP-LEFT ADD ASSETS
+             
+             ADMIN ONLY
+        ============================================== -->
+
+        <% if (
+            user &&
+            user.role === "admin"
+        ) { %>
+
+
+            <a
+                href="/networth/structure/<%= dairy._id %>/add"
+                class="asset-bar-trigger"
+                style="
+                    text-decoration:none;
+                    display:inline-flex;
+                    align-items:center;
+                    justify-content:center;
+                "
+            >
+
+                <span
+                    class="asset-bar-trigger-icon"
+                    aria-hidden="true"
+                >
+                    +
+                </span>
+
+                <span class="asset-bar-trigger-text">
+                    Add Assets
+                </span>
+
+            </a>
+
+
+        <% } else { %>
+
+
+            <!--
+                Empty spacer keeps the View Assets
+                button positioned on the right.
+            -->
+
+            <span
+                aria-hidden="true"
+            ></span>
+
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             TOP-RIGHT VIEW ASSETS
+        ============================================== -->
 
         <button
             type="button"
@@ -43,6 +111,7 @@
             </span>
 
         </button>
+
 
     </div>
 
