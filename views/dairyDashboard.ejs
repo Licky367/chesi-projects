@@ -1,106 +1,1068 @@
 <style>
+/* ==========================================================
+   CHESI PROJECT MANAGEMENT SYSTEM
+   ========================================================== */
+
+:root {
+  --primary: #0b5d1e;
+  --primary-dark: #084814;
+  --primary-light: #eaf7ee;
+  --sidebar-width: 275px;
+  --sidebar-collapsed-width: 64px;
+  --background: #f5f7f6;
+  --white: #ffffff;
+  --text: #263238;
+  --muted: #667085;
+  --border: #e5e7eb;
+}
+
+
+/* ==========================================================
+   PAGE
+   ========================================================== */
+
 .page {
-  max-width: 1100px;
-  margin: auto;
-} 
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 25px 50px;
+  box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   SIDEBAR
+   ----------------------------------------------------------
+   The sidebar is navigation ONLY.
+   It does not contain the hero or main page content.
+   ========================================================== */
+
+.dashboard-sidebar {
+  position: fixed;
+
+  top: 0;
+  left: 0;
+  bottom: 0;
+
+  width: var(--sidebar-collapsed-width);
+
+  background: var(--primary);
+
+  z-index: 1000;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  box-shadow: 3px 0 15px rgba(0, 0, 0, 0.08);
+
+  transition: width 0.25s ease;
+}
+
+
+/* Expanded navigation */
+
+.dashboard-sidebar.open {
+  width: var(--sidebar-width);
+}
+
+
+/* ==========================================================
+   SIDEBAR MENU
+   ========================================================== */
+
+.sidebar-menu {
+  list-style: none;
+
+  margin: 0;
+  padding: 78px 0 0;
+}
+
+
+/* ==========================================================
+   SIDEBAR ITEM
+   ========================================================== */
+
+.sidebar-item {
+  width: 100%;
+}
+
+
+/* ==========================================================
+   SIDEBAR LINK
+   ========================================================== */
+
+.sidebar-link {
+  width: 100%;
+  height: 58px;
+
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+
+  gap: 15px;
+
+  padding: 0 15px;
+
+  color: #ffffff;
+
+  text-decoration: none;
+
+  white-space: nowrap;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+
+.sidebar-link.active {
+  background: #eaf7ee;
+  color: var(--primary);
+}
+
+
+/* ==========================================================
+   SIDEBAR ICON
+   ========================================================== */
+
+.sidebar-icon {
+  width: 34px;
+  min-width: 34px;
+
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 21px;
+
+  border-radius: 8px;
+
+  color: #ffffff;
+}
+
+
+.sidebar-link.active .sidebar-icon {
+  color: var(--primary);
+}
+
+
+/* ==========================================================
+   SIDEBAR LABEL
+   ========================================================== */
+
+.sidebar-label {
+  display: block;
+
+  opacity: 0;
+  visibility: hidden;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+}
+
+
+.dashboard-sidebar.open .sidebar-label {
+  opacity: 1;
+  visibility: visible;
+}
+
+
+/* ==========================================================
+   SIDEBAR FOOTER
+   ========================================================== */
+
+.sidebar-footer {
+  padding: 25px 15px 30px;
+
+  color: rgba(255, 255, 255, 0.75);
+
+  font-size: 12px;
+
+  line-height: 1.5;
+
+  white-space: nowrap;
+
+  opacity: 0;
+  visibility: hidden;
+
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+}
+
+
+.dashboard-sidebar.open .sidebar-footer {
+  opacity: 1;
+  visibility: visible;
+}
+
+
+/* ==========================================================
+   THREE-DOT MENU BUTTON
+   ----------------------------------------------------------
+   This button is independent of the sidebar.
+   ========================================================== */
+
+.sidebar-toggle {
+  position: fixed;
+
+  top: 16px;
+  left: 12px;
+
+  width: 40px;
+  height: 40px;
+
+  padding: 0;
+
+  border: none;
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  color: var(--primary);
+
+  font-size: 25px;
+  font-weight: 700;
+
+  line-height: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  z-index: 1200;
+
+  box-shadow:
+    0 3px 12px rgba(0, 0, 0, 0.16);
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+.sidebar-toggle:hover {
+  background: var(--primary-light);
+}
+
+
+.sidebar-toggle:active {
+  transform: scale(0.94);
+}
+
+
+/* ==========================================================
+   SIDEBAR OVERLAY
+   ----------------------------------------------------------
+   Only appears while the navigation is expanded.
+   ========================================================== */
+
+.sidebar-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.18);
+
+  z-index: 900;
+
+  opacity: 0;
+  visibility: hidden;
+
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
+}
+
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+
+/* ==========================================================
+   MAIN PAGE CONTENT
+   ----------------------------------------------------------
+   The hero belongs here, not inside the sidebar.
+   ========================================================== */
+
+.main-content {
+  min-height: 100vh;
+
+  margin-left: var(--sidebar-collapsed-width);
+
+  background: var(--background);
+
+  transition: margin-left 0.25s ease;
+}
+
+
+/*
+ * IMPORTANT:
+ *
+ * The sidebar expanding does NOT change this margin.
+ * Therefore the sidebar overlays the main content instead
+ * of pushing the hero sideways.
+ */
+
+
+/* ==========================================================
+   HERO SECTION
+   ========================================================== */
+
+.hero {
+  position: relative;
+
+  width: 100%;
+
+  min-height: 285px;
+
+  box-sizing: border-box;
+
+  margin-bottom: 25px;
+
+  padding: 48px 45px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 18px;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 8px 25px rgba(0, 0, 0, 0.05);
+}
+
+
+/* ==========================================================
+   HERO DECORATION
+   ========================================================== */
+
+.hero::before {
+  content: "";
+
+  position: absolute;
+
+  width: 300px;
+  height: 300px;
+
+  right: -110px;
+  top: -120px;
+
+  border-radius: 50%;
+
+  background: var(--primary-light);
+
+  opacity: 0.8;
+
+  pointer-events: none;
+}
+
+
+.hero::after {
+  content: "";
+
+  position: absolute;
+
+  width: 120px;
+  height: 120px;
+
+  right: 80px;
+  bottom: -70px;
+
+  border-radius: 50%;
+
+  background: #f2f8f3;
+
+  pointer-events: none;
+}
+
+
+/* ==========================================================
+   HERO CONTENT
+   ========================================================== */
+
+.hero-content {
+  position: relative;
+
+  z-index: 2;
+
+  max-width: 820px;
+}
+
+
+/* ==========================================================
+   HERO SMALL TITLE
+   ========================================================== */
+
+.hero-kicker {
+  margin-bottom: 12px;
+
+  color: var(--primary);
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  letter-spacing: 1.2px;
+
+  text-transform: uppercase;
+}
+
+
+/* ==========================================================
+   HERO HEADING
+   ========================================================== */
+
+.hero h1 {
+  margin: 0 0 18px;
+
+  color: var(--primary-dark);
+
+  font-size: clamp(28px, 4vw, 44px);
+
+  line-height: 1.15;
+
+  font-weight: 750;
+}
+
+
+.hero h1 span {
+  color: var(--primary);
+}
+
+
+/* ==========================================================
+   HERO DESCRIPTION
+   ========================================================== */
+
+.hero p {
+  max-width: 800px;
+
+  margin: 0;
+
+  color: var(--muted);
+
+  font-size: 16px;
+
+  line-height: 1.75;
+}
+
+
+/* ==========================================================
+   PROJECT MANAGEMENT CARD
+   ========================================================== */
 
 .card {
-  background: #fff;
+  background: #ffffff;
+
   padding: 25px;
+
   border-radius: 14px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+
+  border: 1px solid #e5e7eb;
+
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.05);
+
   margin-bottom: 20px;
 }
 
-h2 {
+
+.card h2 {
+  margin: 0 0 20px;
+
+  color: var(--primary-dark);
+
   font-size: 22px;
-  margin-bottom: 15px;
-  color: #0b5d1e;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 15px;
-}
 
-.link-card {
-  background: #f9fafb;
-  border: 1px solid #eee;
-  padding: 18px;
-  border-radius: 12px;
-  text-decoration: none;
-  color: #333;
-  transition: 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+/* ==========================================================
+   INFORMATION BELOW HERO
+   ========================================================== */
+
+.project-introduction {
+  margin-bottom: 20px;
+
+  color: var(--muted);
+
   font-size: 15px;
+
+  line-height: 1.7;
+}
+
+
+/* ==========================================================
+   ACCESS DENIED
+   ========================================================== */
+
+.access-denied {
+  padding: 18px;
+
+  border-radius: 10px;
+
+  background: #fff5f5;
+
+  border: 1px solid #f0cccc;
+
+  color: #b42318;
+
   font-weight: 600;
 }
 
-.link-card:hover {
-  background: #eaf7ee;
-  border-color: #0b5d1e;
-  transform: translateY(-2px);
+
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+
+@media (max-width: 700px) {
+
+  :root {
+    --sidebar-collapsed-width: 60px;
+    --sidebar-width: 270px;
+  }
+
+
+  .page {
+    padding: 20px 14px 35px;
+  }
+
+
+  .hero {
+    min-height: auto;
+
+    padding: 34px 24px;
+
+    border-radius: 14px;
+  }
+
+
+  .hero h1 {
+    font-size: 29px;
+  }
+
+
+  .hero p {
+    font-size: 15px;
+
+    line-height: 1.7;
+  }
+
+
+  .card {
+    padding: 19px;
+  }
 }
 
-.icon {
-  font-size: 20px;
+
+/* ==========================================================
+   SMALL PHONES
+   ========================================================== */
+
+@media (max-width: 400px) {
+
+  :root {
+    --sidebar-width: 250px;
+  }
+
+
+  .hero {
+    padding: 30px 20px;
+  }
+
+
+  .hero h1 {
+    font-size: 26px;
+  }
+
+
+  .hero p {
+    font-size: 14px;
+  }
 }
 </style>
 
 
-<div class="page">
+<!-- ==========================================================
+     NAVIGATION SIDEBAR
+     ----------------------------------------------------------
+     NAVIGATION ONLY.
+     The hero is NOT inside this element.
+     ========================================================== -->
 
-  <div class="card">
+<aside
+  id="dashboardSidebar"
+  class="dashboard-sidebar"
+  aria-label="Project navigation"
+>
 
-    <h2>🐄 Dairy Project Dashboard</h2>
+  <ul class="sidebar-menu">
+
+
+    <!-- ======================================================
+         DASHBOARD
+         ====================================================== -->
+
+    <li class="sidebar-item">
+
+      <a
+        href="/"
+        class="sidebar-link active"
+        title="Dashboard"
+      >
+
+        <span class="sidebar-icon">
+          ⌂
+        </span>
+
+        <span class="sidebar-label">
+          Dashboard
+        </span>
+
+      </a>
+
+    </li>
+
 
     <% if (user && user.role === "admin") { %>
 
-      <div class="grid">
 
-        <a class="link-card" href="/add">
-          <span class="icon">➕</span>
-          <span>Add an Asset</span>
+      <!-- ====================================================
+           ADD ASSET
+           ==================================================== -->
+
+      <li class="sidebar-item">
+
+        <a
+          href="/add"
+          class="sidebar-link"
+          title="Add an Asset"
+        >
+
+          <span class="sidebar-icon">
+            ＋
+          </span>
+
+          <span class="sidebar-label">
+            Add an Asset
+          </span>
+
         </a>
 
+      </li>
 
-        <a class="link-card" href="/networth">
-          <span class="icon">👁</span>
-          <span>View Assets</span>
+
+      <!-- ====================================================
+           VIEW ASSETS
+           ==================================================== -->
+
+      <li class="sidebar-item">
+
+        <a
+          href="/networth"
+          class="sidebar-link"
+          title="View Assets"
+        >
+
+          <span class="sidebar-icon">
+            👁
+          </span>
+
+          <span class="sidebar-label">
+            View Assets
+          </span>
+
         </a>
 
+      </li>
 
-        <a class="link-card" href="/milk">
-          <span class="icon">🥛</span>
-          <span>Record Milk Production</span>
+
+      <!-- ====================================================
+           MILK PRODUCTION
+           ==================================================== -->
+
+      <li class="sidebar-item">
+
+        <a
+          href="/milk"
+          class="sidebar-link"
+          title="Record Milk Production"
+        >
+
+          <span class="sidebar-icon">
+            🥛
+          </span>
+
+          <span class="sidebar-label">
+            Record Milk Production
+          </span>
+
         </a>
 
-<a class="link-card" href="/sales">
-          <span class="icon">💰</span>
-          <span>Record Milk Sales</span>
+      </li>
+
+
+      <!-- ====================================================
+           MILK SALES
+           ==================================================== -->
+
+      <li class="sidebar-item">
+
+        <a
+          href="/sales"
+          class="sidebar-link"
+          title="Record Milk Sales"
+        >
+
+          <span class="sidebar-icon">
+            💰
+          </span>
+
+          <span class="sidebar-label">
+            Record Milk Sales
+          </span>
+
         </a>
-          <a class="link-card" href="/stats"> <span class="icon">📊</span>
-          <span>Milk Production Statistics</span>
+
+      </li>
+
+
+      <!-- ====================================================
+           MILK STATISTICS
+           ==================================================== -->
+
+      <li class="sidebar-item">
+
+        <a
+          href="/stats"
+          class="sidebar-link"
+          title="Milk Production Statistics"
+        >
+
+          <span class="sidebar-icon">
+            📊
+          </span>
+
+          <span class="sidebar-label">
+            Milk Production Statistics
+          </span>
+
         </a>
 
-<a class="link-card" href="/financials/summary">
-          <span class="icon">💱</span>
-          <span>financials</span>
+      </li>
+
+
+      <!-- ====================================================
+           FINANCIALS
+           ==================================================== -->
+
+      <li class="sidebar-item">
+
+        <a
+          href="/financials/summary"
+          class="sidebar-link"
+          title="Financials"
+        >
+
+          <span class="sidebar-icon">
+            💱
+          </span>
+
+          <span class="sidebar-label">
+            Financials
+          </span>
+
         </a>
 
-      </div> 
+      </li>
 
-    <% } else { %>
-
-      <p style="color: red;">
-        Access denied. Admins only.
-      </p>
 
     <% } %>
 
+
+  </ul>
+
+
+  <!-- ========================================================
+       SIDEBAR FOOTER
+       ======================================================== -->
+
+  <div class="sidebar-footer">
+
+    Chesi Project Management System
+
   </div>
 
-</div> 
+</aside>
+
+
+<!-- ==========================================================
+     OUTSIDE-CLICK OVERLAY
+     ========================================================== -->
+
+<div
+  id="sidebarOverlay"
+  class="sidebar-overlay"
+  aria-hidden="true"
+></div>
+
+
+<!-- ==========================================================
+     THREE-DOT BUTTON
+     ----------------------------------------------------------
+     This is NOT part of the sidebar.
+     ========================================================== -->
+
+<button
+  id="sidebarToggle"
+  class="sidebar-toggle"
+  type="button"
+  aria-label="Open navigation"
+  aria-expanded="false"
+>
+  ⋮
+</button>
+
+
+<!-- ==========================================================
+     MAIN PAGE CONTENT
+     ----------------------------------------------------------
+     The hero starts here.
+     ========================================================== -->
+
+<main class="main-content">
+
+  <div class="page">
+
+
+    <!-- ======================================================
+         HERO SECTION
+         ====================================================== -->
+
+    <section class="hero">
+
+      <div class="hero-content">
+
+        <div class="hero-kicker">
+          Chesi Project Management System
+        </div>
+
+
+        <h1>
+
+          Welcome,
+          <span>
+            <%= user && user.name ? user.name : "User" %>
+          </span>
+
+        </h1>
+
+
+        <p>
+
+          Welcome to the Chesi Project Management System.
+          Use this space to keep track of our projects, assets,
+          production, sales, and financial activities. Navigate
+          through the system to update records, monitor progress,
+          and help us maintain accurate information for better
+          project management and decision-making. Thank you for
+          being part of the work.
+
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- ======================================================
+         PROJECT MANAGEMENT CONTENT
+         ====================================================== -->
+
+    <div class="card">
+
+
+      <h2>
+        🐄 Dairy Project Management
+      </h2>
+
+
+      <% if (user && user.role === "admin") { %>
+
+
+        <p class="project-introduction">
+
+          Manage the dairy project's assets, milk production,
+          sales, statistics, and financial information using
+          the navigation menu.
+
+        </p>
+
+
+      <% } else { %>
+
+
+        <div class="access-denied">
+
+          Access denied. Admins only.
+
+        </div>
+
+
+      <% } %>
+
+
+    </div>
+
+
+  </div>
+
+</main>
+
+
+<!-- ==========================================================
+     SIDEBAR JAVASCRIPT
+     ========================================================== -->
+
+<script>
+(function () {
+
+  const sidebar =
+    document.getElementById("dashboardSidebar");
+
+  const toggle =
+    document.getElementById("sidebarToggle");
+
+  const overlay =
+    document.getElementById("sidebarOverlay");
+
+
+  if (!sidebar || !toggle || !overlay) {
+    return;
+  }
+
+
+  /* ========================================================
+     OPEN SIDEBAR
+     ======================================================== */
+
+  function openSidebar() {
+
+    sidebar.classList.add("open");
+
+    overlay.classList.add("active");
+
+    toggle.setAttribute(
+      "aria-expanded",
+      "true"
+    );
+
+    toggle.setAttribute(
+      "aria-label",
+      "Close navigation"
+    );
+
+  }
+
+
+  /* ========================================================
+     CLOSE SIDEBAR
+     ======================================================== */
+
+  function closeSidebar() {
+
+    sidebar.classList.remove("open");
+
+    overlay.classList.remove("active");
+
+    toggle.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
+    toggle.setAttribute(
+      "aria-label",
+      "Open navigation"
+    );
+
+  }
+
+
+  /* ========================================================
+     THREE-DOT BUTTON
+     ======================================================== */
+
+  toggle.addEventListener(
+    "click",
+    function (event) {
+
+      event.stopPropagation();
+
+      if (sidebar.classList.contains("open")) {
+
+        closeSidebar();
+
+      } else {
+
+        openSidebar();
+
+      }
+
+    }
+  );
+
+
+  /* ========================================================
+     CLICK OUTSIDE SIDEBAR
+     ======================================================== */
+
+  overlay.addEventListener(
+    "click",
+    function () {
+
+      closeSidebar();
+
+    }
+  );
+
+
+  /* ========================================================
+     ESCAPE KEY
+     ======================================================== */
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+
+      if (event.key === "Escape") {
+
+        closeSidebar();
+
+      }
+
+    }
+  );
+
+
+})();
+</script>
