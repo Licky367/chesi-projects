@@ -10,7 +10,10 @@ const addAssetService =
 // GET ADD ASSET PAGE
 // ==========================================================
 
-async function getAddAsset(req, res) {
+async function getAddAsset(
+    req,
+    res
+) {
 
     try {
 
@@ -20,7 +23,7 @@ async function getAddAsset(req, res) {
 
 
         // ==================================================
-        // VALIDATE ID
+        // VALIDATE DAIRY FARM ID
         // ==================================================
 
         if (!id) {
@@ -33,16 +36,17 @@ async function getAddAsset(req, res) {
 
 
         // ==================================================
-        // GET PARENT FARM
+        // GET PARENT DAIRY FARM
         // ==================================================
 
         const dairy =
-            await addAssetService
-                .getParentDairyFarm(id);
+            await addAssetService.getParentDairyFarm(
+                id
+            );
 
 
         // ==================================================
-        // FARM NOT FOUND
+        // DAIRY FARM NOT FOUND
         // ==================================================
 
         if (!dairy) {
@@ -55,19 +59,16 @@ async function getAddAsset(req, res) {
 
 
         // ==================================================
-        // RENDER PAGE
+        // RENDER ADD ASSET PAGE
         // ==================================================
 
         return res.render(
-
             "networth-add",
-
             {
 
                 dairy
 
             }
-
         );
 
     } catch (error) {
@@ -91,7 +92,10 @@ async function getAddAsset(req, res) {
 // ADD ASSET
 // ==========================================================
 
-async function addAsset(req, res) {
+async function addAsset(
+    req,
+    res
+) {
 
     try {
 
@@ -101,7 +105,7 @@ async function addAsset(req, res) {
 
 
         // ==================================================
-        // VALIDATE ID
+        // VALIDATE DAIRY FARM ID
         // ==================================================
 
         if (!id) {
@@ -122,7 +126,8 @@ async function addAsset(req, res) {
         // BUILD ASSET DATA
         // ==================================================
         //
-        // The parent farm is NEVER accepted from req.body.
+        // The parent Dairy Farm is intentionally NOT taken
+        // from req.body.
         //
         // It comes from req.params.id.
         //
@@ -158,35 +163,13 @@ async function addAsset(req, res) {
 
 
         // ==================================================
-        // GET LOGGED-IN USER
-        // ==================================================
-        //
-        // Your application uses req.session.user.
-        //
-        // The service only needs this for the feed record.
-        //
-        // ==================================================
-
-        const loggedInUser =
-            req.session &&
-            req.session.user
-                ? req.session.user
-                : null;
-
-
-        // ==================================================
-        // CREATE ASSET + FEED RECORD
+        // CREATE ASSET
         // ==================================================
 
         const asset =
             await addAssetService.createAsset(
-
                 id,
-
-                assetData,
-
-                loggedInUser
-
+                assetData
             );
 
 
@@ -228,7 +211,10 @@ async function addAsset(req, res) {
                     asset.location,
 
                 status:
-                    asset.status
+                    asset.status,
+
+                assetCode:
+                    asset.assetCode
 
             }
 
@@ -243,7 +229,7 @@ async function addAsset(req, res) {
 
 
         // ==================================================
-        // VALIDATION ERRORS
+        // VALIDATION ERROR
         // ==================================================
 
         if (
@@ -252,11 +238,9 @@ async function addAsset(req, res) {
         ) {
 
             const messages =
-
                 Object.values(
                     error.errors || {}
                 )
-
                 .map(
                     item =>
                         item.message
@@ -302,7 +286,7 @@ async function addAsset(req, res) {
 
 
         // ==================================================
-        // PARENT FARM NOT FOUND
+        // PARENT DAIRY FARM NOT FOUND
         // ==================================================
 
         if (
@@ -324,7 +308,7 @@ async function addAsset(req, res) {
 
 
         // ==================================================
-        // SERVER ERROR
+        // GENERAL SERVER ERROR
         // ==================================================
 
         return res.status(500).json({
