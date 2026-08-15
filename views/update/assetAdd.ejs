@@ -1,0 +1,423 @@
+<!-- =====================================================
+     ASSET ADDED FEED CARD
+====================================================== -->
+
+<article
+    class="feed-card asset-card asset-added-card"
+    data-id="<%= item._id %>"
+    data-type="asset"
+>
+
+
+    <!-- =================================================
+         HEADER
+    ================================================== -->
+
+    <div class="feed-header">
+
+
+        <div class="feed-user">
+
+
+            <img
+                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
+                class="avatar-sm"
+                alt="<%= item.userName || 'User' %>"
+            >
+
+
+            <div class="feed-user-info">
+
+
+                <strong>
+
+                    🏗️ <%= item.userName || "User" %>
+
+                </strong>
+
+
+                <small>
+
+                    <%= item.dateText || "" %>
+
+                </small>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =============================================
+             DELETE
+        ============================================== -->
+
+        <% if (
+            user &&
+            (
+                user.role === "admin" ||
+                (
+                    user._id &&
+                    item.userId &&
+                    user._id.toString() === item.userId.toString()
+                )
+            )
+        ) { %>
+
+
+            <button
+                class="delete-post"
+                data-id="<%= item._id %>"
+                data-type="asset"
+                title="Delete Asset Record"
+                type="button"
+            >
+
+                <i class="bi bi-trash3-fill"></i>
+
+            </button>
+
+
+        <% } %>
+
+
+    </div>
+
+
+
+    <!-- =================================================
+         BODY
+    ================================================== -->
+
+    <div class="feed-body">
+
+
+        <!-- =============================================
+             TITLE
+        ============================================== -->
+
+        <h3>
+
+            🏗️ Asset Added
+
+        </h3>
+
+
+
+        <!-- =============================================
+             ASSET NAME
+        ============================================== -->
+
+        <% if (item.assetName || item.name) { %>
+
+            <div class="asset-feed-name">
+
+                <strong>
+
+                    <%= item.assetName || item.name %>
+
+                </strong>
+
+            </div>
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             ASSET TYPE
+        ============================================== -->
+
+        <% if (item.assetType || item.typeName) { %>
+
+            <p>
+
+                <strong>
+                    Type:
+                </strong>
+
+                <%= item.assetType || item.typeName %>
+
+            </p>
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             BUYING PRICE
+        ============================================== -->
+
+        <% if (
+            item.buyingPrice !== undefined &&
+            item.buyingPrice !== null
+        ) { %>
+
+            <p>
+
+                <strong>
+                    Buying Price:
+                </strong>
+
+                KES
+                <%= Number(item.buyingPrice).toLocaleString() %>
+
+            </p>
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             CURRENT WORTH
+        ============================================== -->
+
+        <% if (
+            item.currentWorth !== undefined &&
+            item.currentWorth !== null
+        ) { %>
+
+            <p>
+
+                <strong>
+                    Current Worth:
+                </strong>
+
+                KES
+                <%= Number(item.currentWorth).toLocaleString() %>
+
+            </p>
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             CONDITION
+        ============================================== -->
+
+        <% if (item.condition) { %>
+
+            <p>
+
+                <strong>
+                    Condition:
+                </strong>
+
+                <%= item.condition %>
+
+            </p>
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             LOCATION
+        ============================================== -->
+
+        <% if (item.location) { %>
+
+            <p>
+
+                <strong>
+                    Location:
+                </strong>
+
+                <%= item.location %>
+
+            </p>
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             STATUS
+        ============================================== -->
+
+        <% if (item.status) { %>
+
+            <p>
+
+                <strong>
+                    Status:
+                </strong>
+
+                <%= item.status.charAt(0).toUpperCase() +
+                    item.status.slice(1) %>
+
+            </p>
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             DESCRIPTION
+        ============================================== -->
+
+        <% if (item.description) { %>
+
+            <p>
+
+                <%= item.description %>
+
+            </p>
+
+        <% } %>
+
+
+    </div>
+
+
+
+    <!-- =================================================
+         ACTIONS
+    ================================================== -->
+
+    <%- include("partials/feed-actions", {
+        item,
+        type: "asset"
+    }) %>
+
+
+
+    <!-- =================================================
+         COMMENTS
+    ================================================== -->
+
+    <%- include("comment-section", {
+        item,
+        user,
+        type: "asset"
+    }) %>
+
+
+</article>
+
+
+
+<!-- =====================================================
+     ASSET CARD STYLING
+====================================================== -->
+
+<style>
+
+/* =========================================================
+   ASSET FEED CARD
+========================================================= */
+
+.asset-added-card {
+
+    overflow: hidden;
+
+}
+
+
+/* =========================================================
+   ASSET NAME
+========================================================= */
+
+.asset-added-card .asset-feed-name {
+
+    margin: 4px 0 16px;
+
+    padding: 13px 15px;
+
+    background: #f3f8f4;
+
+    border: 1px solid #dce9df;
+
+    border-radius: 11px;
+
+}
+
+
+.asset-added-card .asset-feed-name strong {
+
+    display: block;
+
+    color: #244d34;
+
+    font-size: 18px;
+
+    font-weight: 800;
+
+    line-height: 1.35;
+
+    overflow-wrap: anywhere;
+
+}
+
+
+/* =========================================================
+   BODY PARAGRAPHS
+========================================================= */
+
+.asset-added-card .feed-body p {
+
+    margin: 9px 0;
+
+    color: #536159;
+
+    font-size: 14px;
+
+    line-height: 1.55;
+
+}
+
+
+.asset-added-card .feed-body p strong {
+
+    color: #304139;
+
+    font-weight: 750;
+
+}
+
+
+/* =========================================================
+   ASSET TYPE
+========================================================= */
+
+.asset-added-card .feed-body p:first-of-type {
+
+    margin-top: 0;
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 650px) {
+
+    .asset-added-card .asset-feed-name {
+
+        padding: 12px 13px;
+
+        margin-bottom: 14px;
+
+    }
+
+
+    .asset-added-card .asset-feed-name strong {
+
+        font-size: 16px;
+
+    }
+
+
+    .asset-added-card .feed-body p {
+
+        font-size: 13.5px;
+
+    }
+
+}
+
+</style>
