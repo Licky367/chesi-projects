@@ -11,57 +11,57 @@ const mongoose = require("mongoose");
 
 const postCommentSchema = new mongoose.Schema(
 
-  {
+    {
 
-    userId: {
+        userId: {
 
-      type: mongoose.Schema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,
 
-      required: true
+            required: true
+
+        },
+
+        userName: {
+
+            type: String,
+
+            default: ""
+
+        },
+
+        userImage: {
+
+            type: String,
+
+            default: ""
+
+        },
+
+        text: {
+
+            type: String,
+
+            required: true,
+
+            trim: true
+
+        },
+
+        createdAt: {
+
+            type: Date,
+
+            default: Date.now
+
+        }
 
     },
 
-    userName: {
+    {
 
-      type: String,
-
-      default: ""
-
-    },
-
-    userImage: {
-
-      type: String,
-
-      default: ""
-
-    },
-
-    text: {
-
-      type: String,
-
-      required: true,
-
-      trim: true
-
-    },
-
-    createdAt: {
-
-      type: Date,
-
-      default: Date.now
+        _id: true
 
     }
-
-  },
-
-  {
-
-    _id: true
-
-  }
 
 );
 
@@ -72,87 +72,87 @@ const postCommentSchema = new mongoose.Schema(
 
 const medicalSchema = new mongoose.Schema(
 
-  {
+    {
 
-    status: {
+        status: {
 
-      type: String,
+            type: String,
 
-      default: ""
+            default: ""
+
+        },
+
+        type: {
+
+            type: String,
+
+            default: ""
+
+        },
+
+        details: {
+
+            type: String,
+
+            default: ""
+
+        },
+
+        markedAt: {
+
+            type: Date,
+
+            default: null
+
+        },
+
+        markedBy: {
+
+            type: mongoose.Schema.Types.ObjectId,
+
+            default: null
+
+        },
+
+        clearedAt: {
+
+            type: Date,
+
+            default: null
+
+        },
+
+        clearedBy: {
+
+            type: mongoose.Schema.Types.ObjectId,
+
+            default: null
+
+        },
+
+        charges: {
+
+            type: Number,
+
+            default: 0
+
+        },
+
+        clearDescription: {
+
+            type: String,
+
+            default: ""
+
+        }
 
     },
 
-    type: {
+    {
 
-      type: String,
-
-      default: ""
-
-    },
-
-    details: {
-
-      type: String,
-
-      default: ""
-
-    },
-
-    markedAt: {
-
-      type: Date,
-
-      default: null
-
-    },
-
-    markedBy: {
-
-      type: mongoose.Schema.Types.ObjectId,
-
-      default: null
-
-    },
-
-    clearedAt: {
-
-      type: Date,
-
-      default: null
-
-    },
-
-    clearedBy: {
-
-      type: mongoose.Schema.Types.ObjectId,
-
-      default: null
-
-    },
-
-    charges: {
-
-      type: Number,
-
-      default: 0
-
-    },
-
-    clearDescription: {
-
-      type: String,
-
-      default: ""
+        _id: false
 
     }
-
-  },
-
-  {
-
-    _id: false
-
-  }
 
 );
 
@@ -163,225 +163,195 @@ const medicalSchema = new mongoose.Schema(
 
 const maintenanceSchema = new mongoose.Schema(
 
-  {
+    {
 
-    status: {
+        status: {
 
-      type: String,
+            type: String,
 
-      default: ""
+            default: ""
+
+        },
+
+        type: {
+
+            type: String,
+
+            default: ""
+
+        },
+
+        description: {
+
+            type: String,
+
+            default: ""
+
+        },
+
+        markedAt: {
+
+            type: Date,
+
+            default: null
+
+        },
+
+        markedBy: {
+
+            type: mongoose.Schema.Types.ObjectId,
+
+            default: null
+
+        },
+
+        clearedAt: {
+
+            type: Date,
+
+            default: null
+
+        },
+
+        clearedBy: {
+
+            type: mongoose.Schema.Types.ObjectId,
+
+            default: null
+
+        },
+
+        charges: {
+
+            type: Number,
+
+            default: 0
+
+        },
+
+        clearDescription: {
+
+            type: String,
+
+            default: ""
+
+        }
 
     },
 
-    type: {
+    {
 
-      type: String,
-
-      default: ""
-
-    },
-
-    description: {
-
-      type: String,
-
-      default: ""
-
-    },
-
-    markedAt: {
-
-      type: Date,
-
-      default: null
-
-    },
-
-    markedBy: {
-
-      type: mongoose.Schema.Types.ObjectId,
-
-      default: null
-
-    },
-
-    clearedAt: {
-
-      type: Date,
-
-      default: null
-
-    },
-
-    clearedBy: {
-
-      type: mongoose.Schema.Types.ObjectId,
-
-      default: null
-
-    },
-
-    charges: {
-
-      type: Number,
-
-      default: 0
-
-    },
-
-    clearDescription: {
-
-      type: String,
-
-      default: ""
+        _id: false
 
     }
-
-  },
-
-  {
-
-    _id: false
-
-  }
 
 );
 
 
 // ==========================================================
-// ASSET UPDATE SUBDOCUMENT
+// ASSET ADDITION UPDATE SUBDOCUMENT
+// ==========================================================
+//
+// This records the information needed by addAsset.ejs.
+//
+// The actual asset remains stored in Dairy.
+//
+// This subdocument is only the feed/event record.
 // ==========================================================
 
 const assetSchema = new mongoose.Schema(
 
-  {
+    {
 
-    /*
-     * Actual Dairy document representing
-     * the manually added asset.
-     */
+        name: {
 
-    assetId: {
+            type: String,
 
-      type: mongoose.Schema.Types.ObjectId,
+            default: ""
 
-      ref: "Dairy",
+        },
 
-      default: null
+        type: {
 
-    },
+            type: String,
 
+            default: ""
 
-    /*
-     * Asset name.
-     */
+        },
 
-    name: {
+        buyingPrice: {
 
-      type: String,
+            type: Number,
 
-      default: ""
+            default: 0
 
-    },
+        },
 
+        currentWorth: {
 
-    /*
-     * Asset type.
-     */
+            type: Number,
 
-    type: {
+            default: 0
 
-      type: String,
+        },
 
-      default: ""
+        description: {
 
-    },
+            type: String,
 
+            default: ""
 
-    /*
-     * Original buying price.
-     */
+        },
 
-    buyingPrice: {
+        condition: {
 
-      type: Number,
+            type: String,
 
-      default: 0
+            default: ""
 
-    },
+        },
 
+        location: {
 
-    /*
-     * Current estimated worth.
-     */
+            type: String,
 
-    currentWorth: {
+            default: ""
 
-      type: Number,
+        },
 
-      default: 0
+        status: {
 
-    },
+            type: String,
 
+            default: "active"
 
-    /*
-     * Asset description.
-     */
+        },
 
-    description: {
+        assetId: {
 
-      type: String,
+            type: mongoose.Schema.Types.ObjectId,
 
-      default: ""
+            ref: "Dairy",
 
-    },
+            default: null
 
+        },
 
-    /*
-     * Physical condition.
-     */
+        parentFarmCode: {
 
-    condition: {
+            type: Number,
 
-      type: String,
+            default: null
 
-      default: ""
+        }
 
     },
 
+    {
 
-    /*
-     * Physical location.
-     */
-
-    location: {
-
-      type: String,
-
-      default: ""
-
-    },
-
-
-    /*
-     * Asset status.
-     */
-
-    status: {
-
-      type: String,
-
-      default: "active"
+        _id: false
 
     }
-
-  },
-
-  {
-
-    _id: false
-
-  }
 
 );
 
@@ -392,184 +362,184 @@ const assetSchema = new mongoose.Schema(
 
 const updateSchema = new mongoose.Schema(
 
-  {
+    {
 
-    // ------------------------------------------------------
-    // DAIRY
-    // ------------------------------------------------------
+        // --------------------------------------------------
+        // DAIRY
+        // --------------------------------------------------
 
-    dairy: {
+        dairy: {
 
-      type: mongoose.Schema.Types.ObjectId,
+            type: mongoose.Schema.Types.ObjectId,
 
-      ref: "Dairy",
+            ref: "Dairy",
 
-      required: true,
+            required: true,
 
-      index: true
+            index: true
+
+        },
+
+
+        // --------------------------------------------------
+        // USER
+        // --------------------------------------------------
+
+        user: {
+
+            type: mongoose.Schema.Types.ObjectId,
+
+            default: null
+
+        },
+
+
+        userName: {
+
+            type: String,
+
+            default: ""
+
+        },
+
+
+        // --------------------------------------------------
+        // UPDATE TYPE
+        // --------------------------------------------------
+
+        type: {
+
+            type: String,
+
+            enum: [
+
+                "post",
+
+                "comment",
+
+                "image",
+
+                "medical",
+
+                "maintenance",
+
+                "asset"
+
+            ],
+
+            required: true
+
+        },
+
+
+        // --------------------------------------------------
+        // POST CONTENT
+        // --------------------------------------------------
+
+        text: {
+
+            type: String,
+
+            default: ""
+
+        },
+
+
+        image: {
+
+            type: String,
+
+            default: null
+
+        },
+
+
+        // --------------------------------------------------
+        // GENERAL COMMENT
+        // --------------------------------------------------
+
+        comment: {
+
+            type: String,
+
+            default: ""
+
+        },
+
+
+        // --------------------------------------------------
+        // POST LIKES
+        // --------------------------------------------------
+
+        likes: [
+
+            {
+
+                type: mongoose.Schema.Types.ObjectId
+
+            }
+
+        ],
+
+
+        // --------------------------------------------------
+        // POST COMMENTS
+        // --------------------------------------------------
+
+        comments: {
+
+            type: [postCommentSchema],
+
+            default: []
+
+        },
+
+
+        // --------------------------------------------------
+        // MEDICAL
+        // --------------------------------------------------
+
+        medical: {
+
+            type: medicalSchema,
+
+            default: undefined
+
+        },
+
+
+        // --------------------------------------------------
+        // MAINTENANCE
+        // --------------------------------------------------
+
+        maintenance: {
+
+            type: maintenanceSchema,
+
+            default: undefined
+
+        },
+
+
+        // --------------------------------------------------
+        // ASSET
+        // --------------------------------------------------
+
+        asset: {
+
+            type: assetSchema,
+
+            default: undefined
+
+        }
 
     },
 
+    {
 
-    // ------------------------------------------------------
-    // USER
-    // ------------------------------------------------------
-
-    user: {
-
-      type: mongoose.Schema.Types.ObjectId,
-
-      default: null
-
-    },
-
-
-    userName: {
-
-      type: String,
-
-      default: ""
-
-    },
-
-
-    // ------------------------------------------------------
-    // UPDATE TYPE
-    // ------------------------------------------------------
-
-    type: {
-
-      type: String,
-
-      enum: [
-
-        "post",
-
-        "comment",
-
-        "image",
-
-        "medical",
-
-        "maintenance",
-
-        "asset"
-
-      ],
-
-      required: true
-
-    },
-
-
-    // ------------------------------------------------------
-    // POST CONTENT
-    // ------------------------------------------------------
-
-    text: {
-
-      type: String,
-
-      default: ""
-
-    },
-
-
-    image: {
-
-      type: String,
-
-      default: null
-
-    },
-
-
-    // ------------------------------------------------------
-    // GENERAL COMMENT
-    // ------------------------------------------------------
-
-    comment: {
-
-      type: String,
-
-      default: ""
-
-    },
-
-
-    // ------------------------------------------------------
-    // POST LIKES
-    // ------------------------------------------------------
-
-    likes: [
-
-      {
-
-        type: mongoose.Schema.Types.ObjectId
-
-      }
-
-    ],
-
-
-    // ------------------------------------------------------
-    // POST COMMENTS
-    // ------------------------------------------------------
-
-    comments: {
-
-      type: [postCommentSchema],
-
-      default: []
-
-    },
-
-
-    // ------------------------------------------------------
-    // MEDICAL
-    // ------------------------------------------------------
-
-    medical: {
-
-      type: medicalSchema,
-
-      default: undefined
-
-    },
-
-
-    // ------------------------------------------------------
-    // MAINTENANCE
-    // ------------------------------------------------------
-
-    maintenance: {
-
-      type: maintenanceSchema,
-
-      default: undefined
-
-    },
-
-
-    // ------------------------------------------------------
-    // ASSET
-    // ------------------------------------------------------
-
-    asset: {
-
-      type: assetSchema,
-
-      default: undefined
+        timestamps: true
 
     }
-
-  },
-
-  {
-
-    timestamps: true
-
-  }
 
 );
 
@@ -580,9 +550,9 @@ const updateSchema = new mongoose.Schema(
 
 module.exports =
 
-  mongoose.models.Update ||
+    mongoose.models.Update ||
 
-  mongoose.model(
-    "Update",
-    updateSchema
-  );
+    mongoose.model(
+        "Update",
+        updateSchema
+    );
