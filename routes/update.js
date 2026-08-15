@@ -1,17 +1,27 @@
 // ==========================================================
 // routes/update.js
-// =====================.=====================================
+// ==========================================================
 
 const express = require("express");
 
 const router =
-  express.Router();
+    express.Router();
+
+
+// ==========================================================
+// CONTROLLER
+// ==========================================================
 
 const controller =
-  require("../controllers/update");
+    require("../controllers/update");
+
+
+// ==========================================================
+// UPLOAD MIDDLEWARE
+// ==========================================================
 
 const upload =
-  require("../middleware/uploadMiddleware");
+    require("../middleware/uploadMiddleware");
 
 
 // ==========================================================
@@ -20,28 +30,28 @@ const upload =
 
 function isAuth(req, res, next) {
 
-  if (!req.session.user) {
+    if (!req.session.user) {
 
-    return res.status(401).json({
+        return res.status(401).json({
 
-      success: false,
+            success: false,
 
-      message: "Unauthorized"
+            message: "Unauthorized"
 
-    });
+        });
 
-  }
-
-
-  // --------------------------------------------------------
-  // Make logged-in user available to controllers
-  // --------------------------------------------------------
-
-  req.user =
-    req.session.user;
+    }
 
 
-  next();
+    // ------------------------------------------------------
+    // Make logged-in user available to controllers
+    // ------------------------------------------------------
+
+    req.user =
+        req.session.user;
+
+
+    next();
 
 }
 
@@ -50,15 +60,23 @@ function isAuth(req, res, next) {
 // LIST PAGES
 // ==========================================================
 
+// ----------------------------------------------------------
+// DAIRY PROJECTS
+// ----------------------------------------------------------
+
 router.get(
-  "/dairyProjects",
-  controller.viewDairyProjects
+    "/dairyProjects",
+    controller.viewDairyProjects
 );
 
 
+// ----------------------------------------------------------
+// STRUCTURES
+// ----------------------------------------------------------
+
 router.get(
-  "/structures",
-  controller.viewStructures
+    "/structures",
+    controller.viewStructures
 );
 
 
@@ -66,20 +84,29 @@ router.get(
 // DAIRY PROFILE
 // ==========================================================
 
+// GET
+//
+// /dairy/:id
+//
+// This displays either:
+//
+// • update.ejs
+// • dairySet.ejs
+//
+// depending on the Dairy code.
+
 router.get(
-  "/dairy/:id",
-  controller.viewPage
+    "/dairy/:id",
+    controller.viewPage
 );
 
 
 // ==========================================================
 // SWITCH DAIRY FARM
+// ==========================================================
 //
-// Used by dairy workers who have more than one
-// assigned Dairy Farm.
-//
-// The controller MUST verify that the requested
-// farm is actually assigned to the logged-in user.
+// Used by dairy workers who have multiple assigned
+// Dairy Farms.
 //
 // Example:
 //
@@ -88,32 +115,46 @@ router.get(
 // ==========================================================
 
 router.get(
-  "/dairy/:id/switch",
-  isAuth,
-  controller.switchDairy
+    "/dairy/:id/switch",
+    isAuth,
+    controller.switchDairy
 );
 
 
 // ==========================================================
-// GENERAL COMMENTS
+// GENERAL DAIRY COMMENTS
+// ==========================================================
+//
+// Example:
+//
+// POST /dairy/:id/comment
+//
 // ==========================================================
 
 router.post(
-  "/dairy/:id/comment",
-  isAuth,
-  controller.comment
+    "/dairy/:id/comment",
+    isAuth,
+    controller.comment
 );
 
 
 // ==========================================================
 // PROFILE IMAGE
 // ==========================================================
+//
+// Single profile image.
+//
+// Field name:
+//
+// profileImage
+//
+// ==========================================================
 
 router.put(
-  "/dairy/:id/image",
-  isAuth,
-  upload.single("profileImage"),
-  controller.image
+    "/dairy/:id/image",
+    isAuth,
+    upload.single("profileImage"),
+    controller.image
 );
 
 
@@ -122,82 +163,154 @@ router.put(
 // ==========================================================
 
 router.put(
-  "/dairy/:id/update",
-  isAuth,
-  controller.updateProfile
+    "/dairy/:id/update",
+    isAuth,
+    controller.updateProfile
 );
 
 
 // ==========================================================
-// POSTS
+// CREATE POST
 // ==========================================================
-
-router.post(
-  "/dairy/:id/post",
-  isAuth,
-  upload.single("image"),
-  controller.createPost
-);
-
-
-router.post(
-  "/post/:id/like",
-  isAuth,
-  controller.likePost
-);
-
-
-router.post(
-  "/post/:id/comment",
-  isAuth,
-  controller.addPostComment
-);
-
-
-// ==========================================================
-// GENERIC LIKE / COMMENT
 //
-// Used for update items such as:
+// A post can contain:
 //
-// - Medical
-// - Maintenance
-// - Milk
-// - Other update types
+// • title
+// • text
+// • zero images
+// • one image
+// • multiple images
+//
+// The EJS form must use:
+//
+// name="images"
+//
+// The middleware therefore uses:
+//
+// upload.array("images", 10)
+//
+// Maximum:
+//
+// 10 images per post.
+//
 // ==========================================================
 
 router.post(
-  "/:type/:id/like",
-  isAuth,
-  controller.likePost
+    "/dairy/:id/post",
+    isAuth,
+    upload.array("images", 10),
+    controller.createPost
 );
 
 
+// ==========================================================
+// POST LIKE
+// ==========================================================
+//
+// Example:
+//
+// POST /post/:id/like
+//
+// ==========================================================
+
 router.post(
-  "/:type/:id/comment",
-  isAuth,
-  controller.addPostComment
+    "/post/:id/like",
+    isAuth,
+    controller.likePost
+);
+
+
+// ==========================================================
+// POST COMMENT
+// ==========================================================
+//
+// Example:
+//
+// POST /post/:id/comment
+//
+// ==========================================================
+
+router.post(
+    "/post/:id/comment",
+    isAuth,
+    controller.addPostComment
+);
+
+
+// ==========================================================
+// GENERIC UPDATE LIKE
+// ==========================================================
+//
+// Used by update types such as:
+//
+// • medical
+// • maintenance
+// • milk
+// • other updates
+//
+// Example:
+//
+// POST /medical/:id/like
+// POST /maintenance/:id/like
+//
+// ==========================================================
+
+router.post(
+    "/:type/:id/like",
+    isAuth,
+    controller.likePost
+);
+
+
+// ==========================================================
+// GENERIC UPDATE COMMENT
+// ==========================================================
+//
+// Example:
+//
+// POST /medical/:id/comment
+// POST /maintenance/:id/comment
+//
+// ==========================================================
+
+router.post(
+    "/:type/:id/comment",
+    isAuth,
+    controller.addPostComment
 );
 
 
 // ==========================================================
 // DELETE POST
 // ==========================================================
+//
+// Example:
+//
+// DELETE /post/:id
+//
+// ==========================================================
 
 router.delete(
-  "/post/:id",
-  isAuth,
-  controller.deletePost
+    "/post/:id",
+    isAuth,
+    controller.deletePost
 );
 
 
 // ==========================================================
 // DELETE COMMENT
 // ==========================================================
+//
+// Example:
+//
+// DELETE /comment/:id
+//
+// ==========================================================
 
 router.delete(
-  "/comment/:id",
-  isAuth,
-  controller.deleteComment
+    "/comment/:id",
+    isAuth,
+    controller.deleteComment
 );
 
 
@@ -205,17 +318,25 @@ router.delete(
 // MEDICAL
 // ==========================================================
 
+// ----------------------------------------------------------
+// MARK MEDICAL
+// ----------------------------------------------------------
+
 router.post(
-  "/dairy/:id/medical-mark",
-  isAuth,
-  controller.markMedical
+    "/dairy/:id/medical-mark",
+    isAuth,
+    controller.markMedical
 );
 
 
+// ----------------------------------------------------------
+// UNMARK / CLEAR MEDICAL
+// ----------------------------------------------------------
+
 router.post(
-  "/dairy/:id/medical-unmark",
-  isAuth,
-  controller.unmarkMedical
+    "/dairy/:id/medical-unmark",
+    isAuth,
+    controller.unmarkMedical
 );
 
 
@@ -223,33 +344,48 @@ router.post(
 // MAINTENANCE
 // ==========================================================
 
+// ----------------------------------------------------------
+// MARK MAINTENANCE
+// ----------------------------------------------------------
+
 router.post(
-  "/dairy/:id/maintenance/mark",
-  isAuth,
-  controller.markMaintenance
+    "/dairy/:id/maintenance/mark",
+    isAuth,
+    controller.markMaintenance
 );
 
 
+// ----------------------------------------------------------
+// CLEAR MAINTENANCE
+// ----------------------------------------------------------
+
 router.post(
-  "/dairy/:id/maintenance/clear",
-  isAuth,
-  controller.clearMaintenance
+    "/dairy/:id/maintenance/clear",
+    isAuth,
+    controller.clearMaintenance
 );
 
 
 // ==========================================================
 // DELETE DAIRY PROFILE
 // ==========================================================
+//
+// Example:
+//
+// DELETE /dairy/:id
+//
+// ==========================================================
 
 router.delete(
-  "/dairy/:id",
-  isAuth,
-  controller.deleteProfile
+    "/dairy/:id",
+    isAuth,
+    controller.deleteProfile
 );
 
 
 // ==========================================================
-// EXPORT
+// EXPORT ROUTER
 // ==========================================================
 
-module.exports = router;
+module.exports =
+    router;
