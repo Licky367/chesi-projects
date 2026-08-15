@@ -1,30 +1,25 @@
 <% /* ==========================================================
+   views/financials/history.ejs
+
    FINANCIAL / LIABILITY HISTORY PAGE
 
-   EXPECTED BACKEND DATA
+   SUPPORTED BACKEND DATA
 
-   farmGroups:
-       Array such as:
+   farms:
+       Array of dairy farms.
 
-       [
-           {
-               farm: Dairy,
-               liabilities: Financials[],
-               totalLiabilities: Number
-           }
-       ]
+       Each farm may contain:
+           farm fields
+           assets[]
+           liabilities[]
 
    standaloneAssets:
-       Array such as:
+       Array of standalone Dairy records/assets.
 
-       [
-           {
-               dairy: Dairy,
-               liabilities: Financials[]
-           }
-       ]
+   farmGroups:
+       Optional legacy structure.
 
-   LIABILITY FIELDS
+   Each liability may contain:
 
        liability.dairy
        liability.amount
@@ -36,10 +31,35 @@
 
 
 /* ==========================================================
+   SAFE DATA
+   ========================================================== */
+
+const historyFarms =
+    typeof farms !== "undefined" &&
+    Array.isArray(farms)
+        ? farms
+        : [];
+
+
+const historyStandaloneAssets =
+    typeof standaloneAssets !== "undefined" &&
+    Array.isArray(standaloneAssets)
+        ? standaloneAssets
+        : [];
+
+
+const legacyFarmGroups =
+    typeof farmGroups !== "undefined" &&
+    Array.isArray(farmGroups)
+        ? farmGroups
+        : [];
+
+
+/* ==========================================================
    HELPERS
    ========================================================== */
 
-function number(value) {
+function historyNumber(value) {
 
     const result = Number(value);
 
@@ -50,17 +70,9 @@ function number(value) {
 }
 
 
-function formatMoney(value) {
+function historyMoney(value) {
 
-    const amount = Number(value);
-
-    if (!Number.isFinite(amount)) {
-
-        return "—";
-
-    }
-
-    return amount.toLocaleString(
+    return historyNumber(value).toLocaleString(
         "en-KE",
         {
             minimumFractionDigits: 2,
@@ -71,59 +83,11 @@ function formatMoney(value) {
 }
 
 
-function safeId(value) {
-
-    if (
-        value === undefined ||
-        value === null
-    ) {
-
-        return "";
-
-    }
-
-    return String(value);
-
-}
-
-
-function recordName(dairy) {
-
-    if (
-        dairy &&
-        dairy.name
-    ) {
-
-        return dairy.name;
-
-    }
-
-    return "Unknown Asset";
-
-}
-
-
-function recordType(dairy) {
-
-    if (
-        dairy &&
-        dairy.type
-    ) {
-
-        return dairy.type;
-
-    }
-
-    return "Dairy Asset";
-
-}
-
-
-function formatDate(value) {
+function historyDate(value) {
 
     if (!value) {
 
-        return "Unknown date";
+        return "—";
 
     }
 
@@ -137,9 +101,10 @@ function formatDate(value) {
         )
     ) {
 
-        return "Unknown date";
+        return "—";
 
     }
+
 
     return date.toLocaleString(
         "en-KE",
@@ -153,91 +118,235 @@ function formatDate(value) {
 
 
 /* ==========================================================
-   SAFE ARRAYS
+   BUILD FARM LIABILITY GROUPS
    ========================================================== */
 
-const safeFarmGroups =
-    Array.isArray(farmGroups)
-        ? farmGroups
-        : [];
-
-
-const safeStandaloneAssets =
-    Array.isArray(standaloneAssets)
-        ? standaloneAssets
-        : [];
+const liabilityFarmGroups = [];
 
 
 /* ==========================================================
-   TOTALS
+   USE NEW FARM STRUCTURE
    ========================================================== */
 
-let farmLiabilityTotal = 0;
+historyFarms.forEach(function(farm) {
 
-let standaloneLiabilityTotal = 0;
+    if (!farm) {
 
-let liabilityRecordCount = 0;
+        return;
+
+    }
 
 
-safeFarmGroups.forEach(
-    function(group) {
+    const farmId =
+        farm?._id
+            ? farm._id.toString()
+            : "";
 
-        if (
-            Array.isArray(
-                group.liabilities
-            )
-        ) {
 
-            group.liabilities.forEach(
-                function(liability) {
+    const liabilities = [];
 
-                    farmLiabilityTotal +=
-                        number(
+
+    /* ======================================================
+       FARM ITSELF
+       ====================================================== */
+
+    if (
+        Array.isArray(
+            farm.liabilities
+        )
+    ) {
+
+        farm.liabilities.forEach(
+            function(liability) {
+
+                liabilities.push(
+                    liability
+                );
+
+            }
+        );
+
+    }
+
+
+    /* ======================================================
+       FARM ASSETS
+       ====================================================== */
+
+    if (
+        Array.isArray(
+            farm.assets
+        )
+    ) {
+
+        farm.assets.forEach(
+            function(asset) {
+
+                if (
+                    !asset ||
+                    !Array.isArray(
+                        asset.liabilities
+                    )
+                ) {
+
+                    return;
+
+                }
+
+
+                asset.liabilities.forEach(
+                    function(liability) {
+
+                        liabilities.push(
+                            liability
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+    }
+
+
+    /*
+     * Some controllers may already return a combined
+     * liability array on the farm.
+     */
+    if (
+        Array.isArray(
+            farm.allLiabilities
+        )
+    ) {
+
+        liabilities.length = 0;
+
+        farm.allLiabilities.forEach(
+            function(liability) {
+
+                liabilities.push(
+                    liability
+                );
+
+            }
+        );
+
+    }
+
+
+    liabilityFarmGroups.push({
+
+        farm: farm,
+
+        farmId: farmId,
+
+        liabilities: liabilities,
+
+        totalLiabilities:
+            liabilities.reduce(
+                function(total, liability) {
+
+                    return total +
+                        historyNumber(
                             liability?.amount
                         );
 
-                    liabilityRecordCount++;
-
-                }
-            );
-
-        }
-
-    }
-);
-
-
-safeStandaloneAssets.forEach(
-    function(group) {
-
-        if (
-            Array.isArray(
-                group.liabilities
+                },
+                0
             )
-        ) {
 
-            group.liabilities.forEach(
-                function(liability) {
+    });
 
-                    standaloneLiabilityTotal +=
-                        number(
-                            liability?.amount
-                        );
+});
 
-                    liabilityRecordCount++;
 
-                }
+/* ==========================================================
+   FALLBACK TO LEGACY FARM GROUPS
+   ========================================================== */
+
+if (
+    liabilityFarmGroups.length === 0 &&
+    legacyFarmGroups.length > 0
+) {
+
+    legacyFarmGroups.forEach(
+        function(group) {
+
+            const liabilities =
+                Array.isArray(
+                    group?.liabilities
+                )
+                    ? group.liabilities
+                    : [];
+
+
+            liabilityFarmGroups.push({
+
+                farm:
+                    group?.farm || {},
+
+                farmId:
+                    group?.farm?._id
+                        ? group.farm._id.toString()
+                        : "",
+
+                liabilities:
+                    liabilities,
+
+                totalLiabilities:
+                    liabilities.reduce(
+                        function(total, liability) {
+
+                            return total +
+                                historyNumber(
+                                    liability?.amount
+                                );
+
+                        },
+                        0
+                    )
+
+            });
+
+        }
+    );
+
+}
+
+
+/* ==========================================================
+   DETERMINE WHETHER THERE IS ANY HISTORY
+   ========================================================== */
+
+const hasFarmHistory =
+    liabilityFarmGroups.some(
+        function(group) {
+
+            return (
+                Array.isArray(
+                    group.liabilities
+                ) &&
+                group.liabilities.length > 0
             );
 
         }
-
-    }
-);
+    );
 
 
-const totalLiabilities =
-    farmLiabilityTotal +
-    standaloneLiabilityTotal;
+const hasStandaloneHistory =
+    historyStandaloneAssets.some(
+        function(group) {
+
+            return (
+                Array.isArray(
+                    group?.liabilities
+                ) &&
+                group.liabilities.length > 0
+            );
+
+        }
+    );
 
 %>
 
@@ -254,40 +363,22 @@ const totalLiabilities =
         <div>
 
             <span class="financial-eyebrow">
-
                 FINANCIALS
-
             </span>
 
             <h1 class="financial-title">
-
                 Liability History
-
             </h1>
 
             <p class="financial-subtitle">
-
                 Review liabilities recorded against
-                dairy farms and their assets.
-
+                dairy farms and assets.
             </p>
 
         </div>
 
 
         <div class="financial-header-actions">
-
-            <a
-                href="/financials/summary"
-                class="financial-button financial-button-secondary"
-            >
-
-                <i class="bi bi-bar-chart-line"></i>
-
-                Summary
-
-            </a>
-
 
             <a
                 href="/financials/liability"
@@ -306,166 +397,34 @@ const totalLiabilities =
 
 
     <!-- ======================================================
-         SUMMARY
-         ====================================================== -->
-
-    <section class="financial-history-summary">
-
-
-        <div class="financial-history-stat">
-
-            <div class="financial-history-stat-icon">
-
-                <i class="bi bi-receipt"></i>
-
-            </div>
-
-            <div>
-
-                <span>
-                    Liability Records
-                </span>
-
-                <strong>
-                    <%= liabilityRecordCount %>
-                </strong>
-
-            </div>
-
-        </div>
-
-
-        <div class="financial-history-stat">
-
-            <div class="financial-history-stat-icon">
-
-                <i class="bi bi-building"></i>
-
-            </div>
-
-            <div>
-
-                <span>
-                    Farm Liabilities
-                </span>
-
-                <strong>
-                    KSh
-                    <%= formatMoney(
-                        farmLiabilityTotal
-                    ) %>
-                </strong>
-
-            </div>
-
-        </div>
-
-
-        <div class="financial-history-stat">
-
-            <div class="financial-history-stat-icon">
-
-                <i class="bi bi-box-seam"></i>
-
-            </div>
-
-            <div>
-
-                <span>
-                    Standalone Liabilities
-                </span>
-
-                <strong>
-                    KSh
-                    <%= formatMoney(
-                        standaloneLiabilityTotal
-                    ) %>
-                </strong>
-
-            </div>
-
-        </div>
-
-
-        <div class="financial-history-stat financial-history-stat-total">
-
-            <div class="financial-history-stat-icon">
-
-                <i class="bi bi-wallet2"></i>
-
-            </div>
-
-            <div>
-
-                <span>
-                    Total Liabilities
-                </span>
-
-                <strong>
-                    KSh
-                    <%= formatMoney(
-                        totalLiabilities
-                    ) %>
-                </strong>
-
-            </div>
-
-        </div>
-
-
-    </section>
-
-
-    <!-- ======================================================
          STANDALONE ASSETS
          ====================================================== -->
 
     <section class="financial-section">
-
 
         <div class="financial-section-header">
 
             <div>
 
                 <span class="financial-eyebrow">
-
                     STANDALONE
-
                 </span>
 
                 <h2>
-
                     Standalone Asset Liabilities
-
                 </h2>
 
                 <p>
-
                     Liabilities belonging to assets that
                     are not assigned to a dairy farm.
-
                 </p>
 
             </div>
 
-
-            <span class="financial-count">
-
-                <%= safeStandaloneAssets.length %>
-
-                <%= safeStandaloneAssets.length === 1
-                    ? "Asset"
-                    : "Assets"
-                %>
-
-            </span>
-
         </div>
 
 
-        <% if (
-            safeStandaloneAssets.length
-        ) { %>
+        <% if (hasStandaloneHistory) { %>
 
 
             <div class="financial-table-card">
@@ -480,6 +439,10 @@ const totalLiabilities =
 
                                 <th>
                                     Asset
+                                </th>
+
+                                <th>
+                                    Type
                                 </th>
 
                                 <th>
@@ -505,8 +468,7 @@ const totalLiabilities =
 
                         <tbody>
 
-
-                            <% safeStandaloneAssets.forEach(
+                            <% historyStandaloneAssets.forEach(
                                 function(group)
                             { %>
 
@@ -523,54 +485,33 @@ const totalLiabilities =
                                         function(liability)
                                     { %>
 
-
                                         <tr>
-
-
-                                            <!-- ==========================
-                                                 ASSET
-                                                 ========================== -->
 
                                             <td>
 
-                                                <div
-                                                    class="financial-record-name"
-                                                >
+                                                <div class="financial-record-name">
 
                                                     <strong>
 
-                                                        <%= recordName(
-                                                            group?.dairy
-                                                        ) %>
+                                                        <%= group?.dairy?.name ||
+                                                            group?.name ||
+                                                            "Unnamed Asset"
+                                                        %>
 
                                                     </strong>
-
-
-                                                    <span>
-
-                                                        <%= recordType(
-                                                            group?.dairy
-                                                        ) %>
-
-                                                    </span>
 
                                                 </div>
 
                                             </td>
 
 
-                                            <!-- ==========================
-                                                 DESCRIPTION
-                                                 ========================== -->
-
                                             <td>
 
-                                                <span
-                                                    class="financial-description"
-                                                >
+                                                <span class="financial-record-type">
 
-                                                    <%= liability?.description ||
-                                                        "No description"
+                                                    <%= group?.dairy?.type ||
+                                                        group?.type ||
+                                                        "Standalone Asset"
                                                     %>
 
                                                 </span>
@@ -578,18 +519,25 @@ const totalLiabilities =
                                             </td>
 
 
-                                            <!-- ==========================
-                                                 AMOUNT
-                                                 ========================== -->
+                                            <td>
+
+                                                <span class="financial-description">
+
+                                                    <%= liability?.description ||
+                                                        "—"
+                                                    %>
+
+                                                </span>
+
+                                            </td>
+
 
                                             <td>
 
-                                                <strong
-                                                    class="financial-liability-amount"
-                                                >
+                                                <strong class="financial-liability-amount">
 
                                                     KSh
-                                                    <%= formatMoney(
+                                                    <%= historyMoney(
                                                         liability?.amount
                                                     ) %>
 
@@ -598,15 +546,9 @@ const totalLiabilities =
                                             </td>
 
 
-                                            <!-- ==========================
-                                                 RECORDED BY
-                                                 ========================== -->
-
                                             <td>
 
-                                                <span
-                                                    class="financial-recorder-name"
-                                                >
+                                                <span class="financial-recorder-name">
 
                                                     <%= liability?.recordedByName ||
                                                         "Unknown"
@@ -617,10 +559,6 @@ const totalLiabilities =
                                             </td>
 
 
-                                            <!-- ==========================
-                                                 DATE
-                                                 ========================== -->
-
                                             <td>
 
                                                 <time
@@ -628,7 +566,7 @@ const totalLiabilities =
                                                     class="financial-date"
                                                 >
 
-                                                    <%= formatDate(
+                                                    <%= historyDate(
                                                         liability?.createdAt
                                                     ) %>
 
@@ -636,9 +574,7 @@ const totalLiabilities =
 
                                             </td>
 
-
                                         </tr>
-
 
                                     <% }); %>
 
@@ -647,7 +583,6 @@ const totalLiabilities =
 
 
                             <% }); %>
-
 
                         </tbody>
 
@@ -663,26 +598,21 @@ const totalLiabilities =
 
             <div class="financial-empty">
 
-                <i class="bi bi-box-seam"></i>
+                <i class="bi bi-inbox"></i>
 
                 <strong>
-
                     No standalone liabilities
-
                 </strong>
 
                 <span>
-
-                    No liabilities have been recorded for
-                    standalone assets.
-
+                    No liabilities have been recorded
+                    for standalone assets.
                 </span>
 
             </div>
 
 
         <% } %>
-
 
     </section>
 
@@ -693,141 +623,58 @@ const totalLiabilities =
 
     <section class="financial-section">
 
-
         <div class="financial-section-header">
 
             <div>
 
                 <span class="financial-eyebrow">
-
                     DAIRY FARMS
-
                 </span>
 
                 <h2>
-
                     Farm Liabilities
-
                 </h2>
 
                 <p>
-
-                    Each farm includes liabilities recorded
-                    against the farm itself and its assets.
-
+                    Liabilities recorded against farms
+                    and assets belonging to those farms.
                 </p>
 
             </div>
 
-
-            <span class="financial-count">
-
-                <%= safeFarmGroups.length %>
-
-                <%= safeFarmGroups.length === 1
-                    ? "Farm"
-                    : "Farms"
-                %>
-
-            </span>
-
         </div>
 
 
-        <% if (
-            safeFarmGroups.length
-        ) { %>
+        <% if (liabilityFarmGroups.length > 0) { %>
 
 
             <div class="financial-farm-list">
 
 
-                <% safeFarmGroups.forEach(
+                <% liabilityFarmGroups.forEach(
                     function(group)
                 { %>
 
 
-                    <%
-
-                        const groupFarm =
-                            group?.farm || {};
-
-                        const groupFarmId =
-                            safeId(
-                                groupFarm?._id
-                            );
-
-                        const groupFarmName =
-                            groupFarm?.name ||
-                            "Unnamed Dairy Farm";
-
-                        const groupFarmCode =
-                            groupFarm?.code;
-
-                        const groupFarmType =
-                            groupFarm?.type;
-
-                        const calculatedGroupTotal =
-                            Array.isArray(
-                                group?.liabilities
-                            )
-                                ? group.liabilities.reduce(
-                                    function(total, liability) {
-
-                                        return total +
-                                            number(
-                                                liability?.amount
-                                            );
-
-                                    },
-                                    0
-                                )
-                                : 0;
-
-                        const groupTotal =
-                            group?.totalLiabilities !==
-                            undefined &&
-                            group?.totalLiabilities !==
-                            null
-
-                                ? number(
-                                    group.totalLiabilities
-                                )
-
-                                : calculatedGroupTotal;
-
-                    %>
-
-
-                    <article
-                        class="financial-farm-card"
-                    >
+                    <article class="financial-farm-card">
 
 
                         <!-- ==================================
                              FARM HEADER
                              ================================== -->
 
-                        <div
-                            class="financial-farm-header"
-                        >
+                        <div class="financial-farm-header">
 
                             <div>
 
                                 <% if (
-                                    groupFarmCode !==
-                                    undefined &&
-                                    groupFarmCode !==
-                                    null &&
-                                    groupFarmCode !== ""
+                                    group.farm?.code
                                 ) { %>
 
-                                    <span
-                                        class="financial-farm-code"
-                                    >
+                                    <span class="financial-farm-code">
 
                                         Farm Code:
-                                        <%= groupFarmCode %>
+                                        <%= group.farm.code %>
 
                                     </span>
 
@@ -836,20 +683,20 @@ const totalLiabilities =
 
                                 <h3>
 
-                                    <%= groupFarmName %>
+                                    <%= group.farm?.name ||
+                                        "Unnamed Dairy Farm"
+                                    %>
 
                                 </h3>
 
 
                                 <% if (
-                                    groupFarmType
+                                    group.farm?.type
                                 ) { %>
 
-                                    <span
-                                        class="financial-farm-type"
-                                    >
+                                    <span class="financial-farm-type">
 
-                                        <%= groupFarmType %>
+                                        <%= group.farm.type %>
 
                                     </span>
 
@@ -858,44 +705,20 @@ const totalLiabilities =
                             </div>
 
 
-                            <div
-                                class="financial-farm-header-actions"
-                            >
+                            <div class="financial-farm-total">
 
-                                <% if (groupFarmId) { %>
+                                <span>
+                                    Total Liabilities
+                                </span>
 
-                                    <a
-                                        href="/financials/farm/<%= groupFarmId %>"
-                                        class="financial-farm-link"
-                                    >
+                                <strong>
 
-                                        View Financials
+                                    KSh
+                                    <%= historyMoney(
+                                        group.totalLiabilities
+                                    ) %>
 
-                                    </a>
-
-                                <% } %>
-
-
-                                <div
-                                    class="financial-farm-total"
-                                >
-
-                                    <span>
-
-                                        Total Liabilities
-
-                                    </span>
-
-                                    <strong>
-
-                                        KSh
-                                        <%= formatMoney(
-                                            groupTotal
-                                        ) %>
-
-                                    </strong>
-
-                                </div>
+                                </strong>
 
                             </div>
 
@@ -908,23 +731,17 @@ const totalLiabilities =
 
                         <% if (
                             Array.isArray(
-                                group?.liabilities
+                                group.liabilities
                             ) &&
                             group.liabilities.length
                         ) { %>
 
 
-                            <div
-                                class="financial-table-card"
-                            >
+                            <div class="financial-table-card">
 
-                                <div
-                                    class="financial-table-wrapper"
-                                >
+                                <div class="financial-table-wrapper">
 
-                                    <table
-                                        class="financial-table"
-                                    >
+                                    <table class="financial-table">
 
                                         <thead>
 
@@ -970,48 +787,41 @@ const totalLiabilities =
                                                         {};
 
                                                     const liabilityDairyId =
-                                                        safeId(
-                                                            liabilityDairy?._id
-                                                        );
+                                                        liabilityDairy?._id
+                                                            ? liabilityDairy._id.toString()
+                                                            : "";
 
-                                                    const isFarm =
-                                                        groupFarmId &&
+                                                    const currentFarmId =
+                                                        group.farmId || "";
+
+                                                    const isFarmItself =
                                                         liabilityDairyId &&
-                                                        groupFarmId ===
-                                                        liabilityDairyId;
+                                                        currentFarmId &&
+                                                        liabilityDairyId ===
+                                                        currentFarmId;
 
                                                 %>
 
 
                                                 <tr>
 
-
-                                                    <!-- ======================
-                                                         RECORD
-                                                         ====================== -->
-
                                                     <td>
 
-                                                        <div
-                                                            class="financial-record-name"
-                                                        >
+                                                        <div class="financial-record-name">
 
                                                             <strong>
 
-                                                                <%= recordName(
-                                                                    liabilityDairy
-                                                                ) %>
+                                                                <%= liabilityDairy?.name ||
+                                                                    group.farm?.name ||
+                                                                    "Unknown"
+                                                                %>
 
                                                             </strong>
 
 
-                                                            <% if (
-                                                                isFarm
-                                                            ) { %>
+                                                            <% if (isFarmItself) { %>
 
-                                                                <span
-                                                                    class="financial-farm-own-label"
-                                                                >
+                                                                <span class="financial-farm-own-label">
 
                                                                     Farm itself
 
@@ -1032,18 +842,12 @@ const totalLiabilities =
                                                     </td>
 
 
-                                                    <!-- ======================
-                                                         DESCRIPTION
-                                                         ====================== -->
-
                                                     <td>
 
-                                                        <span
-                                                            class="financial-description"
-                                                        >
+                                                        <span class="financial-description">
 
                                                             <%= liability?.description ||
-                                                                "No description"
+                                                                "—"
                                                             %>
 
                                                         </span>
@@ -1051,18 +855,12 @@ const totalLiabilities =
                                                     </td>
 
 
-                                                    <!-- ======================
-                                                         AMOUNT
-                                                         ====================== -->
-
                                                     <td>
 
-                                                        <strong
-                                                            class="financial-liability-amount"
-                                                        >
+                                                        <strong class="financial-liability-amount">
 
                                                             KSh
-                                                            <%= formatMoney(
+                                                            <%= historyMoney(
                                                                 liability?.amount
                                                             ) %>
 
@@ -1071,15 +869,9 @@ const totalLiabilities =
                                                     </td>
 
 
-                                                    <!-- ======================
-                                                         RECORDER
-                                                         ====================== -->
-
                                                     <td>
 
-                                                        <span
-                                                            class="financial-recorder-name"
-                                                        >
+                                                        <span class="financial-recorder-name">
 
                                                             <%= liability?.recordedByName ||
                                                                 "Unknown"
@@ -1090,10 +882,6 @@ const totalLiabilities =
                                                     </td>
 
 
-                                                    <!-- ======================
-                                                         DATE
-                                                         ====================== -->
-
                                                     <td>
 
                                                         <time
@@ -1101,14 +889,13 @@ const totalLiabilities =
                                                             class="financial-date"
                                                         >
 
-                                                            <%= formatDate(
+                                                            <%= historyDate(
                                                                 liability?.createdAt
                                                             ) %>
 
                                                         </time>
 
                                                     </td>
-
 
                                                 </tr>
 
@@ -1128,13 +915,9 @@ const totalLiabilities =
                         <% } else { %>
 
 
-                            <div
-                                class="financial-empty financial-empty-small"
-                            >
+                            <div class="financial-empty financial-empty-small">
 
-                                <i
-                                    class="bi bi-check-circle"
-                                ></i>
+                                <i class="bi bi-check-circle"></i>
 
                                 <span>
 
@@ -1166,19 +949,14 @@ const totalLiabilities =
                 <i class="bi bi-building"></i>
 
                 <strong>
-
                     No dairy farms
-
                 </strong>
 
                 <span>
-
                     No dairy farms have been found.
-
                 </span>
 
             </div>
-
 
         <% } %>
 
@@ -1191,10 +969,6 @@ const totalLiabilities =
 
 <style>
 
-/* ==========================================================
-   PAGE
-   ========================================================== */
-
 .liability-history-page{
 
     --financial-green:#2f7d4a;
@@ -1202,36 +976,24 @@ const totalLiabilities =
     --financial-green-light:#eaf6ee;
     --financial-green-soft:#f4faf6;
 
-    --financial-red:#c0392b;
-
     --financial-text:#243329;
     --financial-muted:#718078;
 
     padding:24px;
-
     max-width:1400px;
-
     margin:0 auto;
 
 }
 
 
-/* ==========================================================
-   HEADER
-   ========================================================== */
-
 .liability-history-page
 .financial-page-header{
 
     display:flex;
-
     align-items:center;
-
     justify-content:space-between;
-
     gap:20px;
-
-    margin-bottom:24px;
+    margin-bottom:30px;
 
 }
 
@@ -1240,15 +1002,10 @@ const totalLiabilities =
 .financial-eyebrow{
 
     display:block;
-
     margin-bottom:5px;
-
     color:var(--financial-green);
-
     font-size:.72rem;
-
     font-weight:800;
-
     letter-spacing:.12em;
 
 }
@@ -1258,10 +1015,8 @@ const totalLiabilities =
 .financial-title{
 
     margin:0;
-
     color:var(--financial-text);
-
-    font-size:clamp(1.5rem,4vw,2.2rem);
+    font-size:clamp(1.6rem,4vw,2.2rem);
 
 }
 
@@ -1269,57 +1024,23 @@ const totalLiabilities =
 .liability-history-page
 .financial-subtitle{
 
-    margin:6px 0 0;
-
+    margin:7px 0 0;
     color:var(--financial-muted);
 
-    font-size:.85rem;
-
 }
 
-
-.liability-history-page
-.financial-header-actions{
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:flex-end;
-
-    gap:10px;
-
-}
-
-
-/* ==========================================================
-   BUTTONS
-   ========================================================== */
 
 .liability-history-page
 .financial-button{
 
     display:inline-flex;
-
     align-items:center;
-
     justify-content:center;
-
     gap:8px;
-
     padding:11px 16px;
-
-    border:0;
-
     border-radius:10px;
-
     text-decoration:none;
-
-    font:inherit;
-
     font-weight:600;
-
-    cursor:pointer;
 
 }
 
@@ -1328,130 +1049,15 @@ const totalLiabilities =
 .financial-button-primary{
 
     background:var(--financial-green);
-
     color:#fff;
 
 }
 
 
 .liability-history-page
-.financial-button-secondary{
-
-    background:var(--financial-green-light);
-
-    color:var(--financial-green-dark);
-
-}
-
-
-/* ==========================================================
-   SUMMARY
-   ========================================================== */
-
-.liability-history-page
-.financial-history-summary{
-
-    display:grid;
-
-    grid-template-columns:
-        repeat(4,minmax(0,1fr));
-
-    gap:12px;
-
-    margin-bottom:30px;
-
-}
-
-
-.liability-history-page
-.financial-history-stat{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:12px;
-
-    padding:16px;
-
-    background:#fff;
-
-    border-radius:15px;
-
-    box-shadow:
-        0 3px 16px
-        rgba(0,0,0,.05);
-
-}
-
-
-.liability-history-page
-.financial-history-stat-icon{
-
-    width:42px;
-
-    height:42px;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    flex:0 0 42px;
-
-    border-radius:11px;
-
-    background:var(--financial-green-light);
-
-    color:var(--financial-green);
-
-}
-
-
-.liability-history-page
-.financial-history-stat span{
-
-    display:block;
-
-    color:var(--financial-muted);
-
-    font-size:.7rem;
-
-}
-
-
-.liability-history-page
-.financial-history-stat strong{
-
-    display:block;
-
-    margin-top:2px;
-
-    color:var(--financial-green-dark);
-
-    font-size:1rem;
-
-}
-
-
-.liability-history-page
-.financial-history-stat-total{
-
-    border-left:4px solid
-        var(--financial-green);
-
-}
-
-
-/* ==========================================================
-   SECTIONS
-   ========================================================== */
-
-.liability-history-page
 .financial-section{
 
-    margin-bottom:32px;
+    margin-bottom:38px;
 
 }
 
@@ -1459,15 +1065,7 @@ const totalLiabilities =
 .liability-history-page
 .financial-section-header{
 
-    display:flex;
-
-    align-items:flex-end;
-
-    justify-content:space-between;
-
-    gap:15px;
-
-    margin-bottom:12px;
+    margin-bottom:15px;
 
 }
 
@@ -1476,10 +1074,8 @@ const totalLiabilities =
 .financial-section-header h2{
 
     margin:0;
-
     color:var(--financial-text);
-
-    font-size:1.25rem;
+    font-size:1.35rem;
 
 }
 
@@ -1487,59 +1083,26 @@ const totalLiabilities =
 .liability-history-page
 .financial-section-header p{
 
-    margin:4px 0 0;
-
+    margin:5px 0 0;
     color:var(--financial-muted);
-
-    font-size:.8rem;
-
-}
-
-
-.liability-history-page
-.financial-count{
-
-    flex:0 0 auto;
-
-    padding:6px 10px;
-
-    border-radius:20px;
-
-    background:var(--financial-green-light);
-
-    color:var(--financial-green-dark);
-
-    font-size:.72rem;
-
-    font-weight:700;
+    font-size:.88rem;
 
 }
 
-
-/* ==========================================================
-   TABLE CARD
-   ========================================================== */
 
 .liability-history-page
 .financial-table-card{
 
-    overflow:hidden;
-
     background:#fff;
-
-    border-radius:15px;
-
-    box-shadow:
-        0 3px 16px
-        rgba(0,0,0,.06);
+    border-radius:16px;
+    box-shadow:0 3px 16px rgba(0,0,0,.06);
+    overflow:hidden;
 
 }
 
 
 .liability-history-page
 .financial-table-wrapper{
-
-    width:100%;
 
     overflow-x:auto;
 
@@ -1550,74 +1113,34 @@ const totalLiabilities =
 .financial-table{
 
     width:100%;
-
     min-width:800px;
-
     border-collapse:collapse;
 
 }
 
 
 .liability-history-page
-.financial-table th,
-.liability-history-page
-.financial-table td{
+.financial-table th{
 
-    padding:14px 15px;
-
-    border-bottom:1px solid #edf1ee;
-
+    padding:13px 15px;
+    background:var(--financial-green-soft);
+    color:var(--financial-green-dark);
     text-align:left;
-
-    vertical-align:middle;
-
-    color:var(--financial-text);
-
-    font-size:.82rem;
-
-}
-
-
-.liability-history-page
-.financial-table thead th{
-
-    background:#f8faf9;
-
-    color:var(--financial-muted);
-
-    font-size:.68rem;
-
-    font-weight:800;
-
+    font-size:.76rem;
     text-transform:uppercase;
-
-    letter-spacing:.05em;
-
+    letter-spacing:.04em;
     white-space:nowrap;
 
 }
 
 
 .liability-history-page
-.financial-table tbody tr:hover{
+.financial-table td{
 
-    background:var(--financial-green-soft);
-
-}
-
-
-/* ==========================================================
-   RECORD
-   ========================================================== */
-
-.liability-history-page
-.financial-record-name{
-
-    display:flex;
-
-    flex-direction:column;
-
-    gap:2px;
+    padding:15px;
+    border-top:1px solid #edf1ee;
+    color:var(--financial-text);
+    vertical-align:middle;
 
 }
 
@@ -1625,7 +1148,7 @@ const totalLiabilities =
 .liability-history-page
 .financial-record-name strong{
 
-    color:var(--financial-text);
+    display:block;
 
 }
 
@@ -1633,9 +1156,10 @@ const totalLiabilities =
 .liability-history-page
 .financial-record-name span{
 
+    display:block;
+    margin-top:3px;
     color:var(--financial-muted);
-
-    font-size:.68rem;
+    font-size:.75rem;
 
 }
 
@@ -1644,53 +1168,43 @@ const totalLiabilities =
 .financial-farm-own-label{
 
     color:var(--financial-green) !important;
-
-    font-weight:700;
+    font-weight:600;
 
 }
 
 
-/* ==========================================================
-   DESCRIPTION
-   ========================================================== */
+.liability-history-page
+.financial-record-type{
+
+    color:var(--financial-muted);
+    font-size:.78rem;
+
+}
+
 
 .liability-history-page
 .financial-description{
 
     display:block;
-
-    max-width:340px;
-
+    max-width:320px;
     line-height:1.4;
-
-    white-space:normal;
 
 }
 
-
-/* ==========================================================
-   AMOUNT
-   ========================================================== */
 
 .liability-history-page
 .financial-liability-amount{
 
     color:var(--financial-green-dark);
-
     white-space:nowrap;
 
 }
 
 
-/* ==========================================================
-   RECORDER / DATE
-   ========================================================== */
-
 .liability-history-page
 .financial-recorder-name{
 
     color:var(--financial-muted);
-
     white-space:nowrap;
 
 }
@@ -1700,26 +1214,18 @@ const totalLiabilities =
 .financial-date{
 
     color:var(--financial-muted);
-
     white-space:nowrap;
-
-    font-size:.78rem;
+    font-size:.85rem;
 
 }
 
-
-/* ==========================================================
-   FARM CARDS
-   ========================================================== */
 
 .liability-history-page
 .financial-farm-list{
 
     display:flex;
-
     flex-direction:column;
-
-    gap:20px;
+    gap:22px;
 
 }
 
@@ -1727,15 +1233,10 @@ const totalLiabilities =
 .liability-history-page
 .financial-farm-card{
 
-    padding:17px;
-
     background:#fff;
-
-    border-radius:17px;
-
-    box-shadow:
-        0 3px 16px
-        rgba(0,0,0,.06);
+    border-radius:18px;
+    padding:18px;
+    box-shadow:0 3px 16px rgba(0,0,0,.06);
 
 }
 
@@ -1744,14 +1245,10 @@ const totalLiabilities =
 .financial-farm-header{
 
     display:flex;
-
     align-items:center;
-
     justify-content:space-between;
-
     gap:20px;
-
-    padding:3px 3px 17px;
+    padding:4px 4px 18px;
 
 }
 
@@ -1760,8 +1257,7 @@ const totalLiabilities =
 .financial-farm-code{
 
     color:var(--financial-muted);
-
-    font-size:.7rem;
+    font-size:.75rem;
 
 }
 
@@ -1770,10 +1266,8 @@ const totalLiabilities =
 .financial-farm-header h3{
 
     margin:3px 0;
-
     color:var(--financial-text);
-
-    font-size:1.15rem;
+    font-size:1.2rem;
 
 }
 
@@ -1782,40 +1276,7 @@ const totalLiabilities =
 .financial-farm-type{
 
     color:var(--financial-green);
-
-    font-size:.75rem;
-
-}
-
-
-.liability-history-page
-.financial-farm-header-actions{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:15px;
-
-}
-
-
-.liability-history-page
-.financial-farm-link{
-
-    padding:7px 10px;
-
-    border-radius:8px;
-
-    background:var(--financial-green-light);
-
-    color:var(--financial-green-dark);
-
-    text-decoration:none;
-
-    font-size:.72rem;
-
-    font-weight:700;
+    font-size:.8rem;
 
 }
 
@@ -1832,10 +1293,8 @@ const totalLiabilities =
 .financial-farm-total span{
 
     display:block;
-
     color:var(--financial-muted);
-
-    font-size:.7rem;
+    font-size:.75rem;
 
 }
 
@@ -1844,48 +1303,28 @@ const totalLiabilities =
 .financial-farm-total strong{
 
     display:block;
-
-    margin-top:2px;
-
+    margin-top:3px;
     color:var(--financial-green-dark);
-
-    font-size:1.05rem;
+    font-size:1.15rem;
 
 }
 
-
-/* ==========================================================
-   EMPTY
-   ========================================================== */
 
 .liability-history-page
 .financial-empty{
 
     display:flex;
-
     flex-direction:column;
-
     align-items:center;
-
     justify-content:center;
-
     gap:6px;
-
-    min-height:145px;
-
+    min-height:150px;
     padding:25px;
-
     background:#fff;
-
-    border-radius:15px;
-
+    border-radius:16px;
     color:var(--financial-muted);
-
     text-align:center;
-
-    box-shadow:
-        0 3px 16px
-        rgba(0,0,0,.05);
+    box-shadow:0 3px 16px rgba(0,0,0,.05);
 
 }
 
@@ -1894,9 +1333,7 @@ const totalLiabilities =
 .financial-empty i{
 
     margin-bottom:4px;
-
     color:var(--financial-green);
-
     font-size:1.5rem;
 
 }
@@ -1911,43 +1348,16 @@ const totalLiabilities =
 
 
 .liability-history-page
-.financial-empty span{
-
-    font-size:.75rem;
-
-}
-
-
-.liability-history-page
 .financial-empty-small{
 
-    min-height:85px;
-
+    min-height:90px;
     background:var(--financial-green-soft);
-
     box-shadow:none;
 
 }
 
 
-/* ==========================================================
-   MOBILE
-   ========================================================== */
-
-@media(max-width:800px){
-
-    .liability-history-page
-    .financial-history-summary{
-
-        grid-template-columns:
-            repeat(2,minmax(0,1fr));
-
-    }
-
-}
-
-
-@media(max-width:650px){
+@media(max-width:700px){
 
     .liability-history-page{
 
@@ -1960,45 +1370,17 @@ const totalLiabilities =
     .financial-page-header{
 
         align-items:flex-start;
-
         flex-direction:column;
 
     }
 
 
     .liability-history-page
-    .financial-header-actions{
-
-        width:100%;
-
-        justify-content:stretch;
-
-    }
-
-
+    .financial-header-actions,
     .liability-history-page
-    .financial-header-actions
     .financial-button{
 
-        flex:1;
-
-    }
-
-
-    .liability-history-page
-    .financial-history-summary{
-
-        grid-template-columns:1fr;
-
-    }
-
-
-    .liability-history-page
-    .financial-section-header{
-
-        align-items:flex-start;
-
-        flex-direction:column;
+        width:100%;
 
     }
 
@@ -2007,19 +1389,6 @@ const totalLiabilities =
     .financial-farm-header{
 
         align-items:flex-start;
-
-        flex-direction:column;
-
-    }
-
-
-    .liability-history-page
-    .financial-farm-header-actions{
-
-        width:100%;
-
-        align-items:flex-start;
-
         flex-direction:column;
 
     }
@@ -2029,18 +1398,6 @@ const totalLiabilities =
     .financial-farm-total{
 
         text-align:left;
-
-    }
-
-
-    .liability-history-page
-    .financial-farm-link{
-
-        width:100%;
-
-        box-sizing:border-box;
-
-        text-align:center;
 
     }
 
