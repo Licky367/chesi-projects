@@ -11,6 +11,14 @@
   --sidebar-width: 275px;
   --sidebar-collapsed-width: 64px;
 
+  /*
+   * The existing layout has:
+   * Header     = 70px
+   * Top menu   = 50px
+   * Total      = 120px
+   */
+  --layout-top: 120px;
+
   --background: #f5f7f6;
   --white: #ffffff;
 
@@ -22,7 +30,7 @@
 
 /* ==========================================================
    PAGE
-   ========================================================== */
+========================================================== */
 
 .page {
   width: 100%;
@@ -39,22 +47,24 @@
 /* ==========================================================
    SIDEBAR
    ----------------------------------------------------------
-   Collapsed:
-   • Only the icon rail is visible.
-   • Tapping anywhere on the rail opens it.
+   CLOSED:
+   • A 64px icon rail remains visible.
+   • The entire visible rail is clickable.
+   • Clicking anywhere on it opens the sidebar.
 
-   Expanded:
+   OPEN:
+   • Sidebar expands.
    • Labels become visible.
-   • Navigation links can be clicked normally.
+   • Navigation links become clickable.
    • Clicking outside closes it.
-   ========================================================== */
+========================================================== */
 
 .dashboard-sidebar {
   position: fixed;
 
-  top: 0;
+  top: var(--layout-top);
   left: 0;
-  bottom: 0;
+  bottom: 50px;
 
   width: var(--sidebar-collapsed-width);
 
@@ -66,7 +76,7 @@
   overflow-y: auto;
 
   box-shadow:
-    3px 0 15px rgba(0, 0, 0, 0.08);
+    3px 0 15px rgba(0, 0, 0, 0.12);
 
   cursor: pointer;
 
@@ -77,7 +87,7 @@
 
 /* ==========================================================
    EXPANDED SIDEBAR
-   ========================================================== */
+========================================================== */
 
 .dashboard-sidebar.open {
   width: var(--sidebar-width);
@@ -88,10 +98,12 @@
 
 /* ==========================================================
    SIDEBAR MENU
-   ========================================================== */
+========================================================== */
 
 .sidebar-menu {
   list-style: none;
+
+  width: 100%;
 
   margin: 0;
 
@@ -101,20 +113,24 @@
 
 /* ==========================================================
    SIDEBAR ITEM
-   ========================================================== */
+========================================================== */
 
 .sidebar-item {
   width: 100%;
+
+  margin: 0;
+
+  padding: 0;
 }
 
 
 /* ==========================================================
    SIDEBAR LINK
-   ========================================================== */
+========================================================== */
 
 .sidebar-link {
   width: 100%;
-  height: 58px;
+  min-height: 58px;
 
   box-sizing: border-box;
 
@@ -147,7 +163,7 @@
 
 /* ==========================================================
    ACTIVE LINK
-   ========================================================== */
+========================================================== */
 
 .sidebar-link.active {
   background: var(--primary-light);
@@ -157,8 +173,83 @@
 
 
 /* ==========================================================
+   SIDEBAR MENU BUTTON
+   ----------------------------------------------------------
+   This is the first item in the sidebar.
+
+   It is deliberately NOT a normal navigation link.
+   When the sidebar is collapsed, it is visible as the
+   first icon. Tapping it opens the sidebar.
+========================================================== */
+
+.sidebar-menu-button {
+  width: 100%;
+  height: 58px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 15px;
+
+  padding: 0 15px;
+
+  box-sizing: border-box;
+
+  border: 0;
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.10);
+
+  background: transparent;
+
+  color: #ffffff;
+
+  cursor: pointer;
+
+  font: inherit;
+
+  text-align: left;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease;
+}
+
+
+.sidebar-menu-button:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+
+/* ==========================================================
+   SIDEBAR MENU ICON
+========================================================== */
+
+.sidebar-menu-icon {
+  width: 34px;
+  min-width: 34px;
+
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 25px;
+
+  line-height: 1;
+
+  border-radius: 8px;
+
+  color: #ffffff;
+
+  pointer-events: none;
+}
+
+
+/* ==========================================================
    SIDEBAR ICON
-   ========================================================== */
+========================================================== */
 
 .sidebar-icon {
   width: 34px;
@@ -171,6 +262,8 @@
   justify-content: center;
 
   font-size: 21px;
+
+  line-height: 1;
 
   border-radius: 8px;
 
@@ -187,12 +280,13 @@
 
 /* ==========================================================
    SIDEBAR LABEL
-   ========================================================== */
+========================================================== */
 
 .sidebar-label {
   display: block;
 
   opacity: 0;
+
   visibility: hidden;
 
   font-size: 15px;
@@ -214,7 +308,7 @@
 
 /* ==========================================================
    SIDEBAR FOOTER
-   ========================================================== */
+========================================================== */
 
 .sidebar-footer {
   padding: 25px 15px 30px;
@@ -247,16 +341,19 @@
 /* ==========================================================
    SIDEBAR OVERLAY
    ----------------------------------------------------------
-   This is invisible while the sidebar is closed.
+   Only appears when the sidebar is open.
 
-   When the sidebar opens, it covers the rest of the page.
-   Tapping it closes the sidebar.
-   ========================================================== */
+   It starts below the existing top navigation so the
+   existing header/top-menu remain visible.
+========================================================== */
 
 .sidebar-overlay {
   position: fixed;
 
-  inset: 0;
+  top: var(--layout-top);
+  left: 0;
+  right: 0;
+  bottom: 50px;
 
   background: rgba(0, 0, 0, 0.18);
 
@@ -284,10 +381,9 @@
 /* ==========================================================
    MAIN PAGE CONTENT
    ----------------------------------------------------------
-   The hero is the actual page content.
-
-   The sidebar does not contain or push the hero.
-   ========================================================== */
+   The collapsed sidebar occupies 64px on the left.
+   The expanded sidebar overlays the content.
+========================================================== */
 
 .main-content {
   min-height: 100vh;
@@ -301,19 +397,9 @@
 }
 
 
-/*
- * The sidebar remains an independent navigation layer.
- *
- * Opening it does NOT change the main-content margin.
- *
- * Therefore the expanded sidebar overlays the page instead
- * of pushing or repositioning the hero.
- */
-
-
 /* ==========================================================
    HERO SECTION
-   ========================================================== */
+========================================================== */
 
 .hero {
   position: relative;
@@ -342,7 +428,7 @@
 
 /* ==========================================================
    HERO DECORATION
-   ========================================================== */
+========================================================== */
 
 .hero::before {
   content: "";
@@ -386,7 +472,7 @@
 
 /* ==========================================================
    HERO CONTENT
-   ========================================================== */
+========================================================== */
 
 .hero-content {
   position: relative;
@@ -399,7 +485,7 @@
 
 /* ==========================================================
    HERO KICKER
-   ========================================================== */
+========================================================== */
 
 .hero-kicker {
   margin-bottom: 12px;
@@ -418,7 +504,7 @@
 
 /* ==========================================================
    HERO HEADING
-   ========================================================== */
+========================================================== */
 
 .hero h1 {
   margin: 0 0 18px;
@@ -440,7 +526,7 @@
 
 /* ==========================================================
    HERO DESCRIPTION
-   ========================================================== */
+========================================================== */
 
 .hero p {
   max-width: 800px;
@@ -457,7 +543,7 @@
 
 /* ==========================================================
    RESPONSIVE
-   ========================================================== */
+========================================================== */
 
 @media (max-width: 700px) {
 
@@ -491,12 +577,31 @@
 
     line-height: 1.7;
   }
+
+
+  .sidebar-link,
+  .sidebar-menu-button {
+    height: 56px;
+
+    min-height: 56px;
+
+    padding-left: 13px;
+    padding-right: 13px;
+  }
+
+
+  .sidebar-icon,
+  .sidebar-menu-icon {
+    width: 34px;
+    min-width: 34px;
+  }
+
 }
 
 
 /* ==========================================================
    SMALL PHONES
-   ========================================================== */
+========================================================== */
 
 @media (max-width: 400px) {
 
@@ -518,40 +623,63 @@
   .hero p {
     font-size: 14px;
   }
+
 }
 </style>
 
 
 <!-- ==========================================================
      NAVIGATION SIDEBAR
-     ----------------------------------------------------------
-     The sidebar contains navigation only.
-
-     CLOSED:
-     The narrow visible icon rail itself is clickable and
-     opens the sidebar.
-
-     OPEN:
-     The navigation links become normally clickable.
-     ========================================================== -->
+========================================================== -->
 
 <aside
   id="dashboardSidebar"
   class="dashboard-sidebar"
   aria-label="Project navigation"
+  aria-expanded="false"
 >
 
 
   <!-- ========================================================
-       NAVIGATION
-       ======================================================== -->
+       SIDEBAR NAVIGATION
+  ========================================================= -->
 
   <ul class="sidebar-menu">
 
 
     <!-- ======================================================
+         MENU BUTTON — FIRST ITEM
+    ====================================================== -->
+
+    <li class="sidebar-item">
+
+      <button
+        type="button"
+        id="sidebarMenuButton"
+        class="sidebar-menu-button"
+        aria-label="Open navigation menu"
+        aria-expanded="false"
+      >
+
+        <span
+          class="sidebar-menu-icon"
+          aria-hidden="true"
+        >
+          ☰
+        </span>
+
+        <span class="sidebar-label">
+          Menu
+        </span>
+
+      </button>
+
+    </li>
+
+
+    <!-- ======================================================
          DASHBOARD
-         ====================================================== -->
+    ====================================================== -->
 
     <li class="sidebar-item">
 
@@ -561,7 +689,10 @@
         title="Dashboard"
       >
 
-        <span class="sidebar-icon">
+        <span
+          class="sidebar-icon"
+          aria-hidden="true"
+        >
           ⌂
         </span>
 
@@ -579,7 +710,7 @@
 
       <!-- ====================================================
            ADD ASSET
-           ==================================================== -->
+      ==================================================== -->
 
       <li class="sidebar-item">
 
@@ -589,7 +720,10 @@
           title="Add an Asset"
         >
 
-          <span class="sidebar-icon">
+          <span
+            class="sidebar-icon"
+            aria-hidden="true"
+          >
             ＋
           </span>
 
@@ -604,7 +738,7 @@
 
       <!-- ====================================================
            VIEW ASSETS
-           ==================================================== -->
+      ==================================================== -->
 
       <li class="sidebar-item">
 
@@ -614,7 +748,10 @@
           title="View Assets"
         >
 
-          <span class="sidebar-icon">
+          <span
+            class="sidebar-icon"
+            aria-hidden="true"
+          >
             👁
           </span>
 
@@ -629,7 +766,7 @@
 
       <!-- ====================================================
            MILK PRODUCTION
-           ==================================================== -->
+      ==================================================== -->
 
       <li class="sidebar-item">
 
@@ -639,7 +776,10 @@
           title="Record Milk Production"
         >
 
-          <span class="sidebar-icon">
+          <span
+            class="sidebar-icon"
+            aria-hidden="true"
+          >
             🥛
           </span>
 
@@ -654,7 +794,7 @@
 
       <!-- ====================================================
            MILK SALES
-           ==================================================== -->
+      ==================================================== -->
 
       <li class="sidebar-item">
 
@@ -664,7 +804,10 @@
           title="Record Milk Sales"
         >
 
-          <span class="sidebar-icon">
+          <span
+            class="sidebar-icon"
+            aria-hidden="true"
+          >
             💰
           </span>
 
@@ -679,7 +822,7 @@
 
       <!-- ====================================================
            MILK STATISTICS
-           ==================================================== -->
+      ==================================================== -->
 
       <li class="sidebar-item">
 
@@ -689,7 +832,10 @@
           title="Milk Production Statistics"
         >
 
-          <span class="sidebar-icon">
+          <span
+            class="sidebar-icon"
+            aria-hidden="true"
+          >
             📊
           </span>
 
@@ -704,7 +850,7 @@
 
       <!-- ====================================================
            FINANCIALS
-           ==================================================== -->
+      ==================================================== -->
 
       <li class="sidebar-item">
 
@@ -714,7 +860,10 @@
           title="Financials"
         >
 
-          <span class="sidebar-icon">
+          <span
+            class="sidebar-icon"
+            aria-hidden="true"
+          >
             💱
           </span>
 
@@ -735,7 +884,7 @@
 
   <!-- ========================================================
        SIDEBAR FOOTER
-       ======================================================== -->
+  ========================================================= -->
 
   <div class="sidebar-footer">
 
@@ -748,11 +897,8 @@
 
 
 <!-- ==========================================================
-     OUTSIDE-CLICK AREA
-     ----------------------------------------------------------
-     Invisible when sidebar is closed.
-     Becomes the clickable outside area when sidebar opens.
-     ========================================================== -->
+     OUTSIDE-CLICK OVERLAY
+========================================================== -->
 
 <div
   id="sidebarOverlay"
@@ -763,7 +909,7 @@
 
 <!-- ==========================================================
      MAIN PAGE CONTENT
-     ========================================================== -->
+========================================================== -->
 
 <main class="main-content">
 
@@ -772,7 +918,7 @@
 
     <!-- ======================================================
          HERO SECTION
-         ====================================================== -->
+    ====================================================== -->
 
     <section class="hero">
 
@@ -819,7 +965,7 @@
 
 <!-- ==========================================================
      SIDEBAR JAVASCRIPT
-     ========================================================== -->
+========================================================== -->
 
 <script>
 (function () {
@@ -830,15 +976,18 @@
   const overlay =
     document.getElementById("sidebarOverlay");
 
+  const menuButton =
+    document.getElementById("sidebarMenuButton");
 
-  if (!sidebar || !overlay) {
+
+  if (!sidebar || !overlay || !menuButton) {
     return;
   }
 
 
   /* ========================================================
      OPEN SIDEBAR
-     ======================================================== */
+  ========================================================= */
 
   function openSidebar() {
 
@@ -851,12 +1000,22 @@
       "true"
     );
 
+    menuButton.setAttribute(
+      "aria-expanded",
+      "true"
+    );
+
+    overlay.setAttribute(
+      "aria-hidden",
+      "false"
+    );
+
   }
 
 
   /* ========================================================
      CLOSE SIDEBAR
-     ======================================================== */
+  ========================================================= */
 
   function closeSidebar() {
 
@@ -869,23 +1028,55 @@
       "false"
     );
 
+    menuButton.setAttribute(
+      "aria-expanded",
+      "false"
+    );
+
+    overlay.setAttribute(
+      "aria-hidden",
+      "true"
+    );
+
   }
 
 
   /* ========================================================
-     CLICK ON COLLAPSED ICON RAIL
+     FIRST SIDEBAR ITEM
      --------------------------------------------------------
-     When the sidebar is closed, ANYWHERE on the visible
-     narrow rail opens it.
-     ======================================================== */
+     Menu button opens the sidebar.
+  ========================================================= */
+
+  menuButton.addEventListener(
+    "click",
+    function (event) {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+      openSidebar();
+
+    }
+  );
+
+
+  /* ========================================================
+     COLLAPSED SIDEBAR RAIL
+     --------------------------------------------------------
+     When closed, tapping anywhere on the visible sidebar
+     opens it.
+
+     The menu button above also opens it directly.
+  ========================================================= */
 
   sidebar.addEventListener(
     "click",
     function (event) {
 
       /*
-       * If the sidebar is already open, do nothing here.
-       * Individual links are then handled normally.
+       * If the sidebar is already open, links must behave
+       * normally.
        */
 
       if (sidebar.classList.contains("open")) {
@@ -894,10 +1085,9 @@
 
 
       /*
-       * Sidebar is collapsed.
+       * The sidebar is collapsed.
        *
-       * Prevent the click from following a link because the
-       * first tap is only intended to open the navigation.
+       * Any tap anywhere on its visible 60/64px rail opens it.
        */
 
       event.preventDefault();
@@ -911,11 +1101,12 @@
 
 
   /* ========================================================
-     PREVENT LINK NAVIGATION WHILE CLOSED
+     SIDEBAR LINKS
      --------------------------------------------------------
-     The first tap opens the sidebar.
-     A second tap on a visible link selects it.
-     ======================================================== */
+     Once open:
+       • First tap follows the link.
+       • Sidebar does not intercept navigation.
+  ========================================================= */
 
   const sidebarLinks =
     sidebar.querySelectorAll(".sidebar-link");
@@ -928,13 +1119,27 @@
         "click",
         function (event) {
 
+          /*
+           * If the sidebar is closed, the parent sidebar
+           * handles the tap by opening it.
+           */
+
           if (
             !sidebar.classList.contains("open")
           ) {
 
             event.preventDefault();
 
+            return;
+
           }
+
+
+          /*
+           * Sidebar is open.
+           *
+           * Allow the browser to follow the link normally.
+           */
 
         }
       );
@@ -944,8 +1149,10 @@
 
 
   /* ========================================================
-     CLICK OUTSIDE
-     ======================================================== */
+     OUTSIDE CLICK
+     --------------------------------------------------------
+     Tapping anywhere outside the expanded sidebar closes it.
+  ========================================================= */
 
   overlay.addEventListener(
     "click",
@@ -959,7 +1166,7 @@
 
   /* ========================================================
      ESCAPE KEY
-     ======================================================== */
+  ========================================================= */
 
   document.addEventListener(
     "keydown",
@@ -970,6 +1177,26 @@
         closeSidebar();
 
       }
+
+    }
+  );
+
+
+  /* ========================================================
+     WINDOW RESIZE
+  ========================================================= */
+
+  window.addEventListener(
+    "resize",
+    function () {
+
+      /*
+       * Keep the sidebar closed when the viewport changes.
+       * The existing layout remains responsible for its
+       * header/top-menu behavior.
+       */
+
+      closeSidebar();
 
     }
   );
