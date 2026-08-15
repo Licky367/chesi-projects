@@ -1,10 +1,14 @@
+// ==========================================================
+// controllers/networth/add.js
+// ==========================================================
+
 const addAssetService =
     require("../../services/networth/add");
 
 
-/* =========================================================
-   GET ADD ASSET PAGE
-========================================================== */
+// ==========================================================
+// GET ADD ASSET PAGE
+// ==========================================================
 
 async function getAddAsset(req, res) {
 
@@ -15,6 +19,10 @@ async function getAddAsset(req, res) {
         } = req.params;
 
 
+        // ==================================================
+        // VALIDATE ID
+        // ==================================================
+
         if (!id) {
 
             return res.status(400).send(
@@ -24,9 +32,18 @@ async function getAddAsset(req, res) {
         }
 
 
-        const dairy =
-            await addAssetService.getParentDairyFarm(id);
+        // ==================================================
+        // GET PARENT FARM
+        // ==================================================
 
+        const dairy =
+            await addAssetService
+                .getParentDairyFarm(id);
+
+
+        // ==================================================
+        // FARM NOT FOUND
+        // ==================================================
 
         if (!dairy) {
 
@@ -37,18 +54,20 @@ async function getAddAsset(req, res) {
         }
 
 
-        /*
-         * The EJS only needs the parent Dairy Farm.
-         *
-         * The parent relationship is determined by
-         * the URL /structure/:id/add.
-         */
+        // ==================================================
+        // RENDER PAGE
+        // ==================================================
 
         return res.render(
+
             "networth-add",
+
             {
+
                 dairy
+
             }
+
         );
 
     } catch (error) {
@@ -68,9 +87,9 @@ async function getAddAsset(req, res) {
 }
 
 
-/* ==========================================================
-   ADD ASSET
-========================================================== */
+// ==========================================================
+// ADD ASSET
+// ==========================================================
 
 async function addAsset(req, res) {
 
@@ -80,6 +99,10 @@ async function addAsset(req, res) {
             id
         } = req.params;
 
+
+        // ==================================================
+        // VALIDATE ID
+        // ==================================================
 
         if (!id) {
 
@@ -95,15 +118,15 @@ async function addAsset(req, res) {
         }
 
 
-        /*
-         * Only values actually submitted by the form
-         * are accepted here.
-         *
-         * The parent Dairy Farm is NOT taken from
-         * req.body.
-         *
-         * It comes from req.params.id.
-         */
+        // ==================================================
+        // BUILD ASSET DATA
+        // ==================================================
+        //
+        // The parent farm is NEVER accepted from req.body.
+        //
+        // It comes from req.params.id.
+        //
+        // ==================================================
 
         const assetData = {
 
@@ -134,17 +157,42 @@ async function addAsset(req, res) {
         };
 
 
+        // ==================================================
+        // GET LOGGED-IN USER
+        // ==================================================
+        //
+        // Your application uses req.session.user.
+        //
+        // The service only needs this for the feed record.
+        //
+        // ==================================================
+
+        const loggedInUser =
+            req.session &&
+            req.session.user
+                ? req.session.user
+                : null;
+
+
+        // ==================================================
+        // CREATE ASSET + FEED RECORD
+        // ==================================================
+
         const asset =
             await addAssetService.createAsset(
+
                 id,
-                assetData
+
+                assetData,
+
+                loggedInUser
+
             );
 
 
-        /*
-         * The external networth-add.js can handle
-         * this JSON response.
-         */
+        // ==================================================
+        // SUCCESS RESPONSE
+        // ==================================================
 
         return res.status(201).json({
 
@@ -194,9 +242,9 @@ async function addAsset(req, res) {
         );
 
 
-        /*
-         * Validation errors.
-         */
+        // ==================================================
+        // VALIDATION ERRORS
+        // ==================================================
 
         if (
             error.name ===
@@ -204,9 +252,11 @@ async function addAsset(req, res) {
         ) {
 
             const messages =
+
                 Object.values(
                     error.errors || {}
                 )
+
                 .map(
                     item =>
                         item.message
@@ -218,8 +268,11 @@ async function addAsset(req, res) {
                 success: false,
 
                 message:
+
                     messages.length > 0
+
                         ? messages.join(" ")
+
                         : "Invalid asset data."
 
             });
@@ -227,9 +280,9 @@ async function addAsset(req, res) {
         }
 
 
-        /*
-         * Invalid ObjectId or malformed ID.
-         */
+        // ==================================================
+        // INVALID OBJECT ID
+        // ==================================================
 
         if (
             error.name ===
@@ -248,6 +301,32 @@ async function addAsset(req, res) {
         }
 
 
+        // ==================================================
+        // PARENT FARM NOT FOUND
+        // ==================================================
+
+        if (
+            error.name ===
+            "NotFoundError"
+        ) {
+
+            return res.status(404).json({
+
+                success: false,
+
+                message:
+                    error.message ||
+                    "Dairy Farm not found."
+
+            });
+
+        }
+
+
+        // ==================================================
+        // SERVER ERROR
+        // ==================================================
+
         return res.status(500).json({
 
             success: false,
@@ -261,6 +340,10 @@ async function addAsset(req, res) {
 
 }
 
+
+// ==========================================================
+// EXPORTS
+// ==========================================================
 
 module.exports = {
 
