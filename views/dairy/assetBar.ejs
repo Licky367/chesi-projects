@@ -1,318 +1,618 @@
-<% /* ===================.======================================
+<% /*
+==========================================================
 ASSET BAR
 
 FILE:
 views/dairy/assetBar.ejs
 
 PURPOSE:
+----------------------------------------------------------
+• Displays properties belonging ONLY to the currently
+  viewed dairy farm.
+• Allows a dairyWorker with multiple assigned farms
+  to switch between those farms.
+• Provides Animals and Structures/Machines/Tools tabs.
+• Every asset opens:
+      /dairy/<asset._id>
+• Farm switching opens:
+      /dairy/<farm._id>
 
-Displays properties belonging ONLY to the currently
-viewed Dairy Farm.
+LAYOUT SAFETY:
+----------------------------------------------------------
+• Does NOT modify .page
+• Does NOT modify .main-content
+• Does NOT modify .dashboard-sidebar
+• Does NOT move the header
+• Does NOT change global body positioning
+• Overlay starts below the existing top navigation
+• Sidebar stays inside the available page viewport
 
-Also allows a dairyWorker with multiple assigned
-dairy farms to switch between those farms.
-
-NAVIGATION:
-
-Every animal, structure, machine or tool:
-
-    /dairy/<asset._id>
-
-Farm switching:
-
-    /dairy/<farm._id>
-
-========================================================= */ %>
+EXPECTED DATA:
+----------------------------------------------------------
+• dairy
+• assetDairies
+• assignedFarms
+==========================================================
+*/ %>
 
 
 <%
-/* =========================================================
-PREPARE ASSET DATA
-========================================================= */
+/* ==========================================================
+   PREPARE ASSET DATA
+========================================================== */
 
 const availableAssets =
-Array.isArray(assetDairies)
-? assetDairies.filter(asset => !!asset)
-: [];
+    Array.isArray(assetDairies)
+        ? assetDairies.filter(asset => !!asset)
+        : [];
 
 
-/* =========================================================
-ANIMALS
+/* ==========================================================
+   ANIMALS
 
-code > 0
-========================================================= */
+   Animals use a positive numeric code.
+========================================================== */
 
 const animalDairies =
-availableAssets.filter(asset => {
+    availableAssets.filter(asset => {
 
-    return (
-        asset.code !== null &&
-        asset.code !== undefined &&
-        Number(asset.code) > 0
-    );
+        return (
+            asset.code !== null &&
+            asset.code !== undefined &&
+            Number(asset.code) > 0
+        );
 
-});
+    });
 
 
-/* =========================================================
-STRUCTURES / MACHINES / TOOLS
+/* ==========================================================
+   STRUCTURES / MACHINES / TOOLS
 
-code === null / undefined
-========================================================= */
+   These have no animal code.
+========================================================== */
 
 const structureDairies =
-availableAssets.filter(asset => {
+    availableAssets.filter(asset => {
 
-    return (
-        asset.code === null ||
-        asset.code === undefined
-    );
+        return (
+            asset.code === null ||
+            asset.code === undefined
+        );
 
-});
+    });
 
 
-/* =========================================================
-ASSIGNED FARMS
+/* ==========================================================
+   ASSIGNED FARMS
 
-The parent page should provide:
-
-    assignedFarms
-
-Each item should be a Dairy document.
-
-If unavailable, use an empty array so that the
-asset bar does not crash.
-========================================================= */
+   Always fall back to an empty array so the partial
+   cannot crash if assignedFarms is not supplied.
+========================================================== */
 
 const workerAssignedFarms =
-Array.isArray(assignedFarms)
-? assignedFarms.filter(farm => !!farm)
-: [];
+    Array.isArray(assignedFarms)
+        ? assignedFarms.filter(farm => !!farm)
+        : [];
 
 
-/* =========================================================
-SHOW FARM SWITCHER ONLY WHEN:
+/* ==========================================================
+   FARM SWITCHER
 
-    More than one farm is assigned.
-========================================================= */
+   Only show the switcher when there is more than one
+   assigned farm.
+========================================================== */
 
 const canSwitchFarms =
-workerAssignedFarms.length > 1;
+    workerAssignedFarms.length > 1;
+
+
+/* ==========================================================
+   CURRENT FARM CHECK
+========================================================== */
+
+const isCurrentFarm =
+    dairy &&
+    dairy._id
+        ? true
+        : false;
 
 %>
 
 
-<!-- =========================================================
+<!-- ==========================================================
      ASSET BAR OVERLAY
-========================================================= -->
+     ----------------------------------------------------------
+     Starts below the existing header/top-menu area.
+========================================================== -->
 
 <div
     id="assetBarOverlay"
-    class="asset-bar-overlay"
+    class="asset-bar-component__overlay"
     aria-hidden="true"
 ></div>
 
 
-<!-- =========================================================
+<!-- ==========================================================
      ASSET SIDEBAR
-========================================================= -->
+========================================================== -->
 
 <aside
     id="assetBar"
-    class="asset-bar"
-    aria-label="Farm Assets"
+    class="asset-bar-component"
+    aria-label="Farm assets"
     aria-hidden="true"
 >
 
 
-<!-- =====================================================
-     SIDEBAR TOP AREA
-====================================================== -->
+    <!-- ======================================================
+         HEADER
+    ======================================================= -->
 
-<div class="asset-bar-top">
-
-    <div class="asset-bar-heading">
-
-        <span class="asset-bar-heading-label">
-            FARM ASSETS
-        </span>
-
-        <h2>
-            Your Assets
-        </h2>
-
-    </div>
+    <header class="asset-bar-component__header">
 
 
-    <button
-        type="button"
-        id="closeAssetBar"
-        class="asset-bar-close"
-        aria-label="Close Assets"
-        title="Close Assets"
-    >
+        <div class="asset-bar-component__heading">
 
-        <span aria-hidden="true">
-            ×
-        </span>
+            <span class="asset-bar-component__eyebrow">
+                FARM ASSETS
+            </span>
 
-    </button>
+            <h2 class="asset-bar-component__title">
+                Your Assets
+            </h2>
 
-</div>
+        </div>
 
 
-<!-- =====================================================
-     CURRENT FARM
-====================================================== -->
+        <button
+            type="button"
+            id="closeAssetBar"
+            class="asset-bar-component__close"
+            aria-label="Close assets"
+            title="Close assets"
+        >
 
-<% if (
-    dairy &&
-    dairy.code !== null &&
-    dairy.code !== undefined &&
-    Number(dairy.code) < 0
-) { %>
+            <span aria-hidden="true">
+                ×
+            </span>
 
-<div class="asset-bar-farm">
-
-
-    <!-- =================================================
-         CURRENT FARM INFORMATION
-    ================================================== -->
-
-    <div class="asset-bar-current-farm">
-
-        <span class="asset-bar-farm-label">
-            CURRENT FARM
-        </span>
+        </button>
 
 
-        <span class="asset-bar-farm-name">
-            <%= dairy.name %>
-        </span>
+    </header>
 
 
-        <span class="asset-bar-farm-code">
-            Farm #<%= dairy.code %>
-        </span>
+    <!-- ======================================================
+         CURRENT FARM
+    ======================================================= -->
 
-    </div>
-
-
-    <!-- =================================================
-         FARM SWITCHER
-
-         Only appears when the worker has more than
-         one assigned farm.
-    ================================================== -->
-
-    <% if (canSwitchFarms) { %>
-
-        <div class="asset-bar-farm-switcher">
+    <% if (
+        dairy &&
+        dairy.code !== null &&
+        dairy.code !== undefined &&
+        Number(dairy.code) < 0
+    ) { %>
 
 
-            <!-- =========================================
-                 SWAP BUTTON
-            ========================================== -->
+        <section
+            class="asset-bar-component__farm"
+            aria-label="Current dairy farm"
+        >
 
-            <button
-                type="button"
-                id="farmSwitchButton"
-                class="farm-switch-button"
-                aria-label="Switch Dairy Farm"
-                aria-expanded="false"
-                aria-controls="assignedFarmList"
-                title="Switch Dairy Farm"
-            >
 
-                <!-- Swap icon -->
+            <!-- ==============================================
+                 CURRENT FARM INFORMATION
+            =============================================== -->
 
-                <span
-                    class="farm-switch-icon"
-                    aria-hidden="true"
-                >
-                    ⇄
+            <div class="asset-bar-component__current-farm">
+
+
+                <span class="asset-bar-component__farm-label">
+                    CURRENT FARM
                 </span>
 
-                <span class="farm-switch-text">
-                    Switch Farm
+
+                <span class="asset-bar-component__farm-name">
+                    <%= dairy.name %>
                 </span>
 
-            </button>
+
+                <span class="asset-bar-component__farm-code">
+                    Farm #<%= dairy.code %>
+                </span>
 
 
-            <!-- =========================================
-                 ASSIGNED FARM LIST
-            ========================================== -->
+            </div>
 
-            <div
-                id="assignedFarmList"
-                class="assigned-farm-list"
-                hidden
-            >
 
-                <div class="assigned-farm-list-header">
+            <!-- ==============================================
+                 FARM SWITCHER
+            =============================================== -->
 
-                    <span>
-                        YOUR ASSIGNED FARMS
-                    </span>
+            <% if (canSwitchFarms) { %>
+
+
+                <div class="asset-bar-component__farm-switcher">
+
+
+                    <button
+                        type="button"
+                        id="farmSwitchButton"
+                        class="asset-bar-component__switch-button"
+                        aria-label="Switch dairy farm"
+                        aria-expanded="false"
+                        aria-controls="assignedFarmList"
+                    >
+
+
+                        <span
+                            class="asset-bar-component__switch-icon"
+                            aria-hidden="true"
+                        >
+                            ⇄
+                        </span>
+
+
+                        <span>
+                            Switch Farm
+                        </span>
+
+
+                    </button>
+
+
+                    <!-- ======================================
+                         ASSIGNED FARM LIST
+                    ======================================= -->
+
+                    <div
+                        id="assignedFarmList"
+                        class="asset-bar-component__farm-list"
+                        hidden
+                    >
+
+
+                        <div
+                            class="asset-bar-component__farm-list-title"
+                        >
+                            YOUR ASSIGNED FARMS
+                        </div>
+
+
+                        <div
+                            class="asset-bar-component__farm-options"
+                        >
+
+
+                            <% workerAssignedFarms.forEach(farm => { %>
+
+
+                                <a
+                                    href="/dairy/<%= farm._id %>"
+                                    class="asset-bar-component__farm-option <%= (
+                                        dairy &&
+                                        dairy._id &&
+                                        farm._id &&
+                                        dairy._id.toString() ===
+                                        farm._id.toString()
+                                    ) ? 'is-current' : '' %>"
+                                >
+
+
+                                    <span
+                                        class="asset-bar-component__farm-option-icon"
+                                        aria-hidden="true"
+                                    >
+
+                                        <%= (
+                                            dairy &&
+                                            dairy._id &&
+                                            farm._id &&
+                                            dairy._id.toString() ===
+                                            farm._id.toString()
+                                        ) ? '✓' : '⌂' %>
+
+                                    </span>
+
+
+                                    <span
+                                        class="asset-bar-component__farm-option-details"
+                                    >
+
+
+                                        <span
+                                            class="asset-bar-component__farm-option-name"
+                                        >
+                                            <%= farm.name %>
+                                        </span>
+
+
+                                        <% if (
+                                            farm.code !== null &&
+                                            farm.code !== undefined
+                                        ) { %>
+
+
+                                            <span
+                                                class="asset-bar-component__farm-option-code"
+                                            >
+                                                Farm #<%= farm.code %>
+                                            </span>
+
+
+                                        <% } %>
+
+
+                                    </span>
+
+
+                                    <% if (
+                                        dairy &&
+                                        dairy._id &&
+                                        farm._id &&
+                                        dairy._id.toString() ===
+                                        farm._id.toString()
+                                    ) { %>
+
+
+                                        <span
+                                            class="asset-bar-component__current-label"
+                                        >
+                                            CURRENT
+                                        </span>
+
+
+                                    <% } %>
+
+
+                                </a>
+
+
+                            <% }); %>
+
+
+                        </div>
+
+
+                    </div>
+
 
                 </div>
 
 
-                <div class="assigned-farm-options">
+            <% } %>
 
-                    <% workerAssignedFarms.forEach(farm => { %>
+
+        </section>
+
+
+    <% } %>
+
+
+    <!-- ======================================================
+         CATEGORY TABS
+    ======================================================= -->
+
+    <div
+        class="asset-bar-component__tabs"
+        role="tablist"
+        aria-label="Asset categories"
+    >
+
+
+        <!-- ==================================================
+             ANIMALS TAB
+        =================================================== -->
+
+        <button
+            type="button"
+            id="assetAnimalsTab"
+            class="asset-bar-component__tab is-active"
+            data-asset-category="animals"
+            role="tab"
+            aria-selected="true"
+            aria-controls="assetAnimals"
+        >
+
+
+            <span class="asset-bar-component__tab-title">
+                Animals
+            </span>
+
+
+            <span class="asset-bar-component__tab-count">
+                <%= animalDairies.length %>
+            </span>
+
+
+        </button>
+
+
+        <!-- ==================================================
+             STRUCTURES TAB
+        =================================================== -->
+
+        <button
+            type="button"
+            id="assetStructuresTab"
+            class="asset-bar-component__tab"
+            data-asset-category="structures"
+            role="tab"
+            aria-selected="false"
+            aria-controls="assetStructures"
+        >
+
+
+            <span class="asset-bar-component__tab-title">
+                Structures
+            </span>
+
+
+            <span class="asset-bar-component__tab-subtitle">
+                Machines &amp; Tools
+            </span>
+
+
+            <span class="asset-bar-component__tab-count">
+                <%= structureDairies.length %>
+            </span>
+
+
+        </button>
+
+
+    </div>
+
+
+    <!-- ======================================================
+         SCROLLABLE CONTENT
+    ======================================================= -->
+
+    <div class="asset-bar-component__content">
+
+
+        <!-- ==================================================
+             ANIMALS
+        =================================================== -->
+
+        <section
+            id="assetAnimals"
+            class="asset-bar-component__section is-active"
+            data-asset-section="animals"
+            role="tabpanel"
+            aria-labelledby="assetAnimalsTab"
+        >
+
+
+            <div class="asset-bar-component__section-header">
+
+
+                <div>
+
+                    <span class="asset-bar-component__section-label">
+                        LIVESTOCK
+                    </span>
+
+                    <h3>
+                        Animals
+                    </h3>
+
+                </div>
+
+
+                <span class="asset-bar-component__section-count">
+                    <%= animalDairies.length %>
+                </span>
+
+
+            </div>
+
+
+            <div class="asset-bar-component__list">
+
+
+                <% if (animalDairies.length > 0) { %>
+
+
+                    <% animalDairies.forEach(animal => { %>
 
 
                         <a
-                            href="/dairy/<%= farm._id %>"
-                            class="assigned-farm-option
-                            <%= dairy._id.toString() === farm._id.toString()
-                                ? 'current'
-                                : '' %>"
+                            href="/dairy/<%= animal._id %>"
+                            class="asset-bar-component__item"
+                            data-asset-id="<%= animal._id %>"
+                            data-asset-code="<%= animal.code %>"
+                            data-asset-parent-code="<%= animal.assetCode || '' %>"
+                            data-asset-type="animal"
                         >
 
 
-                            <span class="assigned-farm-option-icon">
-                                <span aria-hidden="true">
-                                    <%= dairy._id.toString() === farm._id.toString()
-                                        ? '✓'
-                                        : '⌂' %>
-                                </span>
-                            </span>
+                            <span
+                                class="asset-bar-component__item-image"
+                            >
 
 
-                            <span class="assigned-farm-option-details">
-
-                                <span class="assigned-farm-option-name">
-                                    <%= farm.name %>
-                                </span>
+                                <% if (animal.displayImage) { %>
 
 
-                                <% if (
-                                    farm.code !== null &&
-                                    farm.code !== undefined
-                                ) { %>
+                                    <img
+                                        src="<%= animal.displayImage %>"
+                                        alt="<%= animal.name %>"
+                                        loading="lazy"
+                                    >
 
-                                    <span class="assigned-farm-option-code">
-                                        Farm #<%= farm.code %>
+
+                                <% } else { %>
+
+
+                                    <span
+                                        class="asset-bar-component__image-placeholder"
+                                        aria-hidden="true"
+                                    >
+                                        🐄
                                     </span>
+
 
                                 <% } %>
 
+
                             </span>
 
 
-                            <% if (
-                                dairy._id.toString() ===
-                                farm._id.toString()
-                            ) { %>
+                            <span
+                                class="asset-bar-component__item-details"
+                            >
 
-                                <span class="assigned-farm-current">
-                                    CURRENT
+
+                                <span
+                                    class="asset-bar-component__item-name"
+                                >
+                                    <%= animal.name %>
                                 </span>
 
-                            <% } %>
+
+                                <span
+                                    class="asset-bar-component__item-code"
+                                >
+                                    Animal #<%= animal.code %>
+                                </span>
+
+
+                                <% if (animal.type) { %>
+
+
+                                    <span
+                                        class="asset-bar-component__item-meta"
+                                    >
+                                        <%= animal.type %>
+                                    </span>
+
+
+                                <% } %>
+
+
+                                <% if (animal.gender) { %>
+
+
+                                    <span
+                                        class="asset-bar-component__item-meta"
+                                    >
+                                        <%= animal.gender %>
+                                    </span>
+
+
+                                <% } %>
+
+
+                            </span>
+
+
+                            <span
+                                class="asset-bar-component__item-arrow"
+                                aria-hidden="true"
+                            >
+                                ›
+                            </span>
 
 
                         </a>
@@ -320,384 +620,239 @@ workerAssignedFarms.length > 1;
 
                     <% }); %>
 
+
+                <% } else { %>
+
+
+                    <div class="asset-bar-component__empty">
+
+
+                        <span
+                            class="asset-bar-component__empty-icon"
+                            aria-hidden="true"
+                        >
+                            🐄
+                        </span>
+
+
+                        <span>
+                            No animals found for this dairy farm.
+                        </span>
+
+
+                    </div>
+
+
+                <% } %>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ==================================================
+             STRUCTURES / MACHINES / TOOLS
+        =================================================== -->
+
+        <section
+            id="assetStructures"
+            class="asset-bar-component__section"
+            data-asset-section="structures"
+            role="tabpanel"
+            aria-labelledby="assetStructuresTab"
+            hidden
+        >
+
+
+            <div class="asset-bar-component__section-header">
+
+
+                <div>
+
+                    <span class="asset-bar-component__section-label">
+                        FARM PROPERTY
+                    </span>
+
+                    <h3>
+                        Structures &amp; Equipment
+                    </h3>
+
                 </div>
 
+
+                <span class="asset-bar-component__section-count">
+                    <%= structureDairies.length %>
+                </span>
+
+
             </div>
 
-        </div>
 
-    <% } %>
-
-
-</div>
-
-<% } %>
+            <div class="asset-bar-component__list">
 
 
-<!-- =====================================================
-     CATEGORY SWITCHER
-====================================================== -->
-
-<div
-    class="asset-bar-tabs"
-    role="tablist"
-    aria-label="Asset categories"
->
+                <% if (structureDairies.length > 0) { %>
 
 
-<!-- =================================================
-     ANIMALS
-================================================== -->
-
-<button
-    type="button"
-    id="assetAnimalsTab"
-    class="asset-bar-tab active"
-    data-asset-category="animals"
-    role="tab"
-    aria-selected="true"
-    aria-controls="assetAnimals"
->
-
-    <span class="asset-bar-tab-title">
-        Animals
-    </span>
-
-    <span class="asset-bar-tab-count">
-        <%= animalDairies.length %>
-    </span>
-
-</button>
+                    <% structureDairies.forEach(asset => { %>
 
 
-<!-- =================================================
-     STRUCTURES
-================================================== -->
-
-<button
-    type="button"
-    id="assetStructuresTab"
-    class="asset-bar-tab"
-    data-asset-category="structures"
-    role="tab"
-    aria-selected="false"
-    aria-controls="assetStructures"
->
-
-    <span class="asset-bar-tab-title">
-        Structures
-    </span>
-
-    <span class="asset-bar-tab-subtitle">
-        Machines &amp; Tools
-    </span>
-
-    <span class="asset-bar-tab-count">
-        <%= structureDairies.length %>
-    </span>
-
-</button>
-
-</div>
-
-
-<!-- =====================================================
-     ASSET CONTENT
-====================================================== -->
-
-<div class="asset-bar-content">
-
-
-<!-- =================================================
-     ANIMALS
-================================================== -->
-
-<section
-    id="assetAnimals"
-    class="asset-bar-section active"
-    data-asset-section="animals"
-    role="tabpanel"
-    aria-labelledby="assetAnimalsTab"
->
-
-
-    <div class="asset-bar-section-header">
-
-        <div>
-
-            <span class="asset-bar-section-label">
-                LIVESTOCK
-            </span>
-
-            <h3>
-                Animals
-            </h3>
-
-        </div>
-
-
-        <span class="asset-bar-count">
-            <%= animalDairies.length %>
-        </span>
-
-    </div>
-
-
-    <div class="asset-bar-list">
-
-
-        <% if (animalDairies.length) { %>
-
-
-            <% animalDairies.forEach(animal => { %>
-
-
-                <a
-                    href="/dairy/<%= animal._id %>"
-                    class="asset-bar-item asset-bar-animal"
-                    data-asset-id="<%= animal._id %>"
-                    data-asset-code="<%= animal.code %>"
-                    data-asset-parent-code="<%= animal.assetCode || '' %>"
-                    data-asset-type="animal"
-                >
-
-
-                    <span class="asset-bar-item-image">
-
-                        <img
-                            src="<%= animal.displayImage %>"
-                            alt="<%= animal.name %>"
-                            loading="lazy"
+                        <a
+                            href="/dairy/<%= asset._id %>"
+                            class="asset-bar-component__item"
+                            data-asset-id="<%= asset._id %>"
+                            data-asset-parent-code="<%= asset.assetCode || '' %>"
+                            data-asset-type="structure"
                         >
 
-                    </span>
+
+                            <span
+                                class="asset-bar-component__item-image"
+                            >
 
 
-                    <span class="asset-bar-item-details">
-
-                        <span class="asset-bar-item-name">
-                            <%= animal.name %>
-                        </span>
+                                <% if (asset.displayImage) { %>
 
 
-                        <span class="asset-bar-item-code">
-                            Animal #<%= animal.code %>
-                        </span>
+                                    <img
+                                        src="<%= asset.displayImage %>"
+                                        alt="<%= asset.name %>"
+                                        loading="lazy"
+                                    >
 
 
-                        <% if (animal.type) { %>
+                                <% } else { %>
 
-                            <span class="asset-bar-item-meta">
-                                <%= animal.type %>
+
+                                    <span
+                                        class="asset-bar-component__image-placeholder"
+                                        aria-hidden="true"
+                                    >
+                                        🏠
+                                    </span>
+
+
+                                <% } %>
+
+
                             </span>
 
-                        <% } %>
+
+                            <span
+                                class="asset-bar-component__item-details"
+                            >
 
 
-                        <% if (animal.gender) { %>
+                                <span
+                                    class="asset-bar-component__item-name"
+                                >
+                                    <%= asset.name %>
+                                </span>
 
-                            <span class="asset-bar-item-meta">
-                                <%= animal.gender %>
+
+                                <% if (asset.type) { %>
+
+
+                                    <span
+                                        class="asset-bar-component__item-meta"
+                                    >
+                                        <%= asset.type %>
+                                    </span>
+
+
+                                <% } %>
+
+
+                                <% if (asset.location) { %>
+
+
+                                    <span
+                                        class="asset-bar-component__item-meta"
+                                    >
+                                        <%= asset.location %>
+                                    </span>
+
+
+                                <% } %>
+
+
                             </span>
 
-                        <% } %>
 
-                    </span>
-
-
-                    <span
-                        class="asset-bar-item-arrow"
-                        aria-hidden="true"
-                    >
-                        ›
-                    </span>
+                            <span
+                                class="asset-bar-component__item-arrow"
+                                aria-hidden="true"
+                            >
+                                ›
+                            </span>
 
 
-                </a>
+                        </a>
 
 
-            <% }); %>
+                    <% }); %>
 
 
-        <% } else { %>
+                <% } else { %>
 
 
-            <div class="asset-bar-empty">
-
-                <span
-                    class="asset-bar-empty-icon"
-                    aria-hidden="true"
-                >
-                    —
-                </span>
-
-                <span>
-                    No animals found for this dairy farm.
-                </span>
-
-            </div>
+                    <div class="asset-bar-component__empty">
 
 
-        <% } %>
-
-
-    </div>
-
-</section>
-
-
-<!-- =================================================
-     STRUCTURES / MACHINES / TOOLS
-================================================== -->
-
-<section
-    id="assetStructures"
-    class="asset-bar-section"
-    data-asset-section="structures"
-    role="tabpanel"
-    aria-labelledby="assetStructuresTab"
-    hidden
->
-
-
-    <div class="asset-bar-section-header">
-
-        <div>
-
-            <span class="asset-bar-section-label">
-                FARM PROPERTY
-            </span>
-
-            <h3>
-                Structures &amp; Equipment
-            </h3>
-
-        </div>
-
-
-        <span class="asset-bar-count">
-            <%= structureDairies.length %>
-        </span>
-
-    </div>
-
-
-    <div class="asset-bar-list">
-
-
-        <% if (structureDairies.length) { %>
-
-
-            <% structureDairies.forEach(asset => { %>
-
-
-                <a
-                    href="/dairy/<%= asset._id %>"
-                    class="asset-bar-item asset-bar-structure"
-                    data-asset-id="<%= asset._id %>"
-                    data-asset-parent-code="<%= asset.assetCode || '' %>"
-                    data-asset-type="structure"
-                >
-
-
-                    <span class="asset-bar-item-image">
-
-                        <img
-                            src="<%= asset.displayImage %>"
-                            alt="<%= asset.name %>"
-                            loading="lazy"
+                        <span
+                            class="asset-bar-component__empty-icon"
+                            aria-hidden="true"
                         >
-
-                    </span>
-
-
-                    <span class="asset-bar-item-details">
-
-                        <span class="asset-bar-item-name">
-                            <%= asset.name %>
+                            🏠
                         </span>
 
 
-                        <% if (asset.type) { %>
-
-                            <span class="asset-bar-item-meta">
-                                <%= asset.type %>
-                            </span>
-
-                        <% } %>
+                        <span>
+                            No structures, machines or tools
+                            found for this dairy farm.
+                        </span>
 
 
-                        <% if (asset.location) { %>
-
-                            <span class="asset-bar-item-meta">
-                                <%= asset.location %>
-                            </span>
-
-                        <% } %>
-
-                    </span>
+                    </div>
 
 
-                    <span
-                        class="asset-bar-item-arrow"
-                        aria-hidden="true"
-                    >
-                        ›
-                    </span>
+                <% } %>
 
-
-                </a>
-
-
-            <% }); %>
-
-
-        <% } else { %>
-
-
-            <div class="asset-bar-empty">
-
-                <span
-                    class="asset-bar-empty-icon"
-                    aria-hidden="true"
-                >
-                    —
-                </span>
-
-                <span>
-                    No structures, machines or tools
-                    found for this dairy farm.
-                </span>
 
             </div>
 
 
-        <% } %>
+        </section>
 
 
     </div>
 
-</section>
-
-</div>
 
 </aside>
 
 
-<!-- =========================================================
+<!-- ==========================================================
      ASSET BAR JAVASCRIPT
-========================================================= -->
+========================================================== -->
 
 <script>
+(function () {
 
-document.addEventListener(
-    "DOMContentLoaded",
-    function() {
+    "use strict";
 
 
-        /* =================================================
+    /* ======================================================
+       INITIALIZE AFTER DOM IS READY
+    ======================================================= */
+
+    function initializeAssetBar() {
+
+
+        /* ==================================================
            ELEMENTS
-        ================================================= */
+        =================================================== */
 
         const assetBar =
             document.getElementById(
@@ -723,22 +878,6 @@ document.addEventListener(
             );
 
 
-        const tabs =
-            document.querySelectorAll(
-                ".asset-bar-tab"
-            );
-
-
-        const sections =
-            document.querySelectorAll(
-                ".asset-bar-section"
-            );
-
-
-        /* =================================================
-           FARM SWITCHER ELEMENTS
-        ================================================= */
-
         const farmSwitchButton =
             document.getElementById(
                 "farmSwitchButton"
@@ -751,150 +890,48 @@ document.addEventListener(
             );
 
 
-        /* =================================================
-           SAFETY CHECK
-        ================================================= */
+        const tabs =
+            document.querySelectorAll(
+                ".asset-bar-component__tab"
+            );
+
+
+        const sections =
+            document.querySelectorAll(
+                ".asset-bar-component__section"
+            );
+
+
+        /* ==================================================
+           REQUIRED ELEMENT CHECK
+        =================================================== */
 
         if (!assetBar) {
 
-            console.warn(
-                "Asset Bar: #assetBar was not found."
-            );
-
             return;
 
         }
 
 
-        if (!openButton) {
-
-            console.warn(
-                "Asset Bar: #viewPropertyButton was not found."
-            );
-
-            return;
-
-        }
-
-
-        /* =================================================
-           FARM SWITCHER
-        ================================================= */
-
-        if (
-            farmSwitchButton &&
-            assignedFarmList
-        ) {
-
-            farmSwitchButton.addEventListener(
-                "click",
-                function(event) {
-
-                    event.preventDefault();
-
-                    const isOpen =
-                        !assignedFarmList.hidden;
-
-
-                    assignedFarmList.hidden =
-                        isOpen;
-
-
-                    farmSwitchButton.setAttribute(
-                        "aria-expanded",
-                        String(!isOpen)
-                    );
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           CATEGORY SWITCHING
-        ================================================= */
-
-        function setCategory(category) {
-
-            if (!category) {
-
-                return;
-
-            }
-
-
-            tabs.forEach(
-                function(tab) {
-
-                    const isActive =
-                        tab.dataset.assetCategory ===
-                        category;
-
-
-                    tab.classList.toggle(
-                        "active",
-                        isActive
-                    );
-
-
-                    tab.setAttribute(
-                        "aria-selected",
-                        String(isActive)
-                    );
-
-                }
-            );
-
-
-            sections.forEach(
-                function(section) {
-
-                    const isActive =
-                        section.dataset.assetSection ===
-                        category;
-
-
-                    section.classList.toggle(
-                        "active",
-                        isActive
-                    );
-
-
-                    section.hidden =
-                        !isActive;
-
-                }
-            );
-
-        }
-
-
-        /* =================================================
-           DEFAULT CATEGORY
-        ================================================= */
-
-        function resetCategory() {
-
-            setCategory(
-                "animals"
-            );
-
-        }
-
-
-        /* =================================================
-           OPEN SIDEBAR
-        ================================================= */
+        /* ==================================================
+           OPEN ASSET BAR
+        =================================================== */
 
         function openAssetBar() {
 
-            resetCategory();
+
+            /*
+             * Always begin on Animals.
+             */
+
+            setCategory("animals");
 
 
-            if (
-                assignedFarmList
-            ) {
+            /*
+             * Close farm switcher when opening.
+             */
+
+            if (assignedFarmList) {
 
                 assignedFarmList.hidden =
                     true;
@@ -902,9 +939,7 @@ document.addEventListener(
             }
 
 
-            if (
-                farmSwitchButton
-            ) {
+            if (farmSwitchButton) {
 
                 farmSwitchButton.setAttribute(
                     "aria-expanded",
@@ -914,15 +949,19 @@ document.addEventListener(
             }
 
 
+            /*
+             * Activate sidebar.
+             */
+
             assetBar.classList.add(
-                "active"
+                "is-open"
             );
 
 
             if (overlay) {
 
                 overlay.classList.add(
-                    "active"
+                    "is-active"
                 );
 
             }
@@ -931,12 +970,6 @@ document.addEventListener(
             assetBar.setAttribute(
                 "aria-hidden",
                 "false"
-            );
-
-
-            openButton.setAttribute(
-                "aria-expanded",
-                "true"
             );
 
 
@@ -950,42 +983,44 @@ document.addEventListener(
             }
 
 
-            document.body.classList.add(
-                "asset-bar-open"
-            );
+            if (openButton) {
 
-
-            if (closeButton) {
-
-                setTimeout(
-                    function() {
-
-                        closeButton.focus();
-
-                    },
-                    50
+                openButton.setAttribute(
+                    "aria-expanded",
+                    "true"
                 );
 
             }
 
+
+            /*
+             * Prevent background page scrolling while
+             * the asset bar is open.
+             */
+
+            document.documentElement.classList.add(
+                "asset-bar-component--open"
+            );
+
         }
 
 
-        /* =================================================
-           CLOSE SIDEBAR
-        ================================================= */
+        /* ==================================================
+           CLOSE ASSET BAR
+        =================================================== */
 
         function closeAssetBar() {
 
+
             assetBar.classList.remove(
-                "active"
+                "is-open"
             );
 
 
             if (overlay) {
 
                 overlay.classList.remove(
-                    "active"
+                    "is-active"
                 );
 
             }
@@ -994,12 +1029,6 @@ document.addEventListener(
             assetBar.setAttribute(
                 "aria-hidden",
                 "true"
-            );
-
-
-            openButton.setAttribute(
-                "aria-expanded",
-                "false"
             );
 
 
@@ -1013,61 +1042,160 @@ document.addEventListener(
             }
 
 
-            document.body.classList.remove(
-                "asset-bar-open"
-            );
-
-
             if (openButton) {
 
-                openButton.focus();
+                openButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
 
             }
+
+
+            /*
+             * Close farm selector.
+             */
+
+            if (assignedFarmList) {
+
+                assignedFarmList.hidden =
+                    true;
+
+            }
+
+
+            if (farmSwitchButton) {
+
+                farmSwitchButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+            }
+
+
+            document.documentElement.classList.remove(
+                "asset-bar-component--open"
+            );
 
         }
 
 
-        /* =================================================
-           VIEW ASSETS BUTTON
-        ================================================= */
+        /* ==================================================
+           CATEGORY SWITCHING
+        =================================================== */
 
-        openButton.addEventListener(
-            "click",
-            function(event) {
-
-                event.preventDefault();
+        function setCategory(category) {
 
 
-                if (
-                    assetBar.classList.contains(
-                        "active"
-                    )
-                ) {
+            if (!category) {
 
-                    closeAssetBar();
-
-                } else {
-
-                    openAssetBar();
-
-                }
+                return;
 
             }
-        );
 
 
-        /* =================================================
-           CLOSE BUTTON
-        ================================================= */
+            tabs.forEach(
+                function (tab) {
 
-        if (closeButton) {
 
-            closeButton.addEventListener(
+                    const isActive =
+                        tab.dataset.assetCategory ===
+                        category;
+
+
+                    tab.classList.toggle(
+                        "is-active",
+                        isActive
+                    );
+
+
+                    tab.setAttribute(
+                        "aria-selected",
+                        String(isActive)
+                    );
+
+
+                }
+            );
+
+
+            sections.forEach(
+                function (section) {
+
+
+                    const isActive =
+                        section.dataset.assetSection ===
+                        category;
+
+
+                    section.classList.toggle(
+                        "is-active",
+                        isActive
+                    );
+
+
+                    section.hidden =
+                        !isActive;
+
+
+                }
+            );
+
+        }
+
+
+        /* ==================================================
+           VIEW PROPERTY BUTTON
+        =================================================== */
+
+        if (openButton) {
+
+
+            openButton.addEventListener(
                 "click",
-                function(event) {
+                function (event) {
 
                     event.preventDefault();
 
+                    event.stopPropagation();
+
+
+                    if (
+                        assetBar.classList.contains(
+                            "is-open"
+                        )
+                    ) {
+
+                        closeAssetBar();
+
+                    } else {
+
+                        openAssetBar();
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* ==================================================
+           CLOSE BUTTON
+        =================================================== */
+
+        if (closeButton) {
+
+
+            closeButton.addEventListener(
+                "click",
+                function (event) {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
                     closeAssetBar();
 
                 }
@@ -1076,15 +1204,16 @@ document.addEventListener(
         }
 
 
-        /* =================================================
-           OVERLAY CLICK
-        ================================================= */
+        /* ==================================================
+           OVERLAY
+        =================================================== */
 
         if (overlay) {
 
+
             overlay.addEventListener(
                 "click",
-                function() {
+                function () {
 
                     closeAssetBar();
 
@@ -1094,41 +1223,59 @@ document.addEventListener(
         }
 
 
-        /* =================================================
-           ESCAPE KEY
-        ================================================= */
+        /* ==================================================
+           FARM SWITCHER
+        =================================================== */
 
-        document.addEventListener(
-            "keydown",
-            function(event) {
+        if (
+            farmSwitchButton &&
+            assignedFarmList
+        ) {
 
-                if (
-                    event.key === "Escape" &&
-                    assetBar.classList.contains(
-                        "active"
-                    )
-                ) {
 
-                    closeAssetBar();
+            farmSwitchButton.addEventListener(
+                "click",
+                function (event) {
+
+                    event.preventDefault();
+
+                    event.stopPropagation();
+
+
+                    const currentlyHidden =
+                        assignedFarmList.hidden;
+
+
+                    assignedFarmList.hidden =
+                        !currentlyHidden;
+
+
+                    farmSwitchButton.setAttribute(
+                        "aria-expanded",
+                        String(currentlyHidden)
+                    );
 
                 }
+            );
 
-            }
-        );
+        }
 
 
-        /* =================================================
-           CATEGORY TAB CLICK
-        ================================================= */
+        /* ==================================================
+           CATEGORY TABS
+        =================================================== */
 
         tabs.forEach(
-            function(tab) {
+            function (tab) {
+
 
                 tab.addEventListener(
                     "click",
-                    function(event) {
+                    function (event) {
 
                         event.preventDefault();
+
+                        event.stopPropagation();
 
 
                         const category =
@@ -1142,26 +1289,43 @@ document.addEventListener(
                     }
                 );
 
+
             }
         );
 
 
-        /* =================================================
-           INITIAL STATE
-        ================================================= */
+        /* ==================================================
+           ESCAPE KEY
+        =================================================== */
 
-        assetBar.classList.remove(
-            "active"
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+
+                if (
+                    event.key === "Escape" &&
+                    assetBar.classList.contains(
+                        "is-open"
+                    )
+                ) {
+
+                    closeAssetBar();
+
+                }
+
+
+            }
         );
 
 
-        if (overlay) {
+        /* ==================================================
+           INITIAL STATE
+        =================================================== */
 
-            overlay.classList.remove(
-                "active"
-            );
-
-        }
+        assetBar.classList.remove(
+            "is-open"
+        );
 
 
         assetBar.setAttribute(
@@ -1172,6 +1336,11 @@ document.addEventListener(
 
         if (overlay) {
 
+            overlay.classList.remove(
+                "is-active"
+            );
+
+
             overlay.setAttribute(
                 "aria-hidden",
                 "true"
@@ -1180,46 +1349,175 @@ document.addEventListener(
         }
 
 
-        openButton.setAttribute(
-            "aria-expanded",
-            "false"
-        );
+        if (openButton) {
+
+            openButton.setAttribute(
+                "aria-expanded",
+                "false"
+            );
+
+        }
 
 
-        document.body.classList.remove(
-            "asset-bar-open"
+        setCategory(
+            "animals"
         );
+
 
     }
 
-);
 
+    /* ======================================================
+       DOM READY
+    ======================================================= */
+
+    if (
+        document.readyState ===
+        "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeAssetBar
+        );
+
+    } else {
+
+        initializeAssetBar();
+
+    }
+
+
+})();
 </script>
 
 
-<!-- =========================================================
-     ASSET BAR STYLES
-========================================================= -->
+<!-- ==========================================================
+     ASSET BAR CSS
+
+     IMPORTANT:
+     All classes are component-scoped to prevent this partial
+     from interfering with layout.ejs or other pages.
+========================================================== -->
 
 <style>
 
-/* =========================================================
-   ASSET BAR OVERLAY
-========================================================= */
+/* ==========================================================
+   ASSET BAR VARIABLES
+   ----------------------------------------------------------
+   These are component-local values.
+========================================================== */
 
-.asset-bar-overlay{
+.asset-bar-component,
+.asset-bar-component__overlay {
+
+    --asset-primary: #0b5d1e;
+    --asset-primary-dark: #084814;
+    --asset-primary-light: #eaf7ee;
+
+    --asset-white: #ffffff;
+
+    --asset-text: #263238;
+    --asset-muted: #667085;
+
+    --asset-border: #e1e8e3;
+
+}
+
+
+/* ==========================================================
+   ROOT SCROLL LOCK
+   ----------------------------------------------------------
+   Does not change page layout dimensions.
+========================================================== */
+
+html.asset-bar-component--open {
+
+    overflow:hidden;
+
+}
+
+
+/* ==========================================================
+   OVERLAY
+   ----------------------------------------------------------
+   Existing layout:
+   Header + top menu = 120px
+   Footer/bottom area = 50px
+
+   Therefore the overlay does not cover those areas.
+========================================================== */
+
+.asset-bar-component__overlay {
 
     position:fixed;
 
     top:120px;
-
+    right:0;
+    bottom:50px;
     left:0;
 
-    right:0;
+    background:rgba(0,0,0,.28);
 
+    opacity:0;
+    visibility:hidden;
+
+    pointer-events:none;
+
+    z-index:1990;
+
+    transition:
+        opacity .25s ease,
+        visibility .25s ease;
+
+}
+
+
+.asset-bar-component__overlay.is-active {
+
+    opacity:1;
+    visibility:visible;
+
+    pointer-events:auto;
+
+}
+
+
+/* ==========================================================
+   ASSET SIDEBAR
+========================================================== */
+
+.asset-bar-component {
+
+    position:fixed;
+
+    top:120px;
+    right:0;
     bottom:50px;
 
-    background:rgba(0,0,0,.38);
+    width:380px;
+
+    max-width:
+        min(380px, calc(100vw - 64px));
+
+    box-sizing:border-box;
+
+    background:
+        var(--asset-white);
+
+    border-left:
+        1px solid var(--asset-border);
+
+    box-shadow:
+        -8px 0 28px rgba(0,0,0,.16);
+
+    display:flex;
+    flex-direction:column;
+
+    overflow:hidden;
+
+    transform:
+        translate3d(100%,0,0);
 
     opacity:0;
 
@@ -1227,16 +1525,24 @@ document.addEventListener(
 
     pointer-events:none;
 
-    transition:
-        opacity .25s ease,
-        visibility .25s ease;
+    z-index:1991;
 
-    z-index:1003;
+    transition:
+        transform .28s ease,
+        opacity .2s ease,
+        visibility .28s ease;
 
 }
 
 
-.asset-bar-overlay.active{
+/* ==========================================================
+   OPEN STATE
+========================================================== */
+
+.asset-bar-component.is-open {
+
+    transform:
+        translate3d(0,0,0);
 
     opacity:1;
 
@@ -1247,68 +1553,18 @@ document.addEventListener(
 }
 
 
-/* =========================================================
-   ASSET SIDEBAR
-========================================================= */
+/* ==========================================================
+   HEADER
+========================================================== */
 
-.asset-bar{
+.asset-bar-component__header {
 
-    position:fixed;
+    flex:
+        0 0 auto;
 
-    top:120px;
+    min-height:66px;
 
-    right:0;
-
-    bottom:50px;
-
-    width:380px;
-
-    max-width:calc(100vw - 20px);
-
-    background:#fff;
-
-    box-shadow:
-        -6px 0 24px rgba(0,0,0,.18);
-
-    transform:translateX(100%);
-
-    visibility:hidden;
-
-    pointer-events:none;
-
-    transition:
-        transform .28s ease,
-        visibility .28s ease;
-
-    z-index:1004;
-
-    display:flex;
-
-    flex-direction:column;
-
-    overflow:hidden;
-
-}
-
-
-.asset-bar.active{
-
-    transform:translateX(0);
-
-    visibility:visible;
-
-    pointer-events:auto;
-
-}
-
-
-/* =========================================================
-   SIDEBAR TOP
-========================================================= */
-
-.asset-bar-top{
-
-    flex-shrink:0;
+    box-sizing:border-box;
 
     display:flex;
 
@@ -1318,81 +1574,93 @@ document.addEventListener(
 
     gap:12px;
 
-    padding:16px 16px 13px;
+    padding:
+        12px 14px;
 
-    border-bottom:1px solid #e8ece9;
+    background:
+        var(--asset-white);
+
+    border-bottom:
+        1px solid var(--asset-border);
 
 }
 
 
-.asset-bar-heading{
+/* ==========================================================
+   HEADING
+========================================================== */
+
+.asset-bar-component__heading {
 
     min-width:0;
 
 }
 
 
-.asset-bar-heading-label{
+.asset-bar-component__eyebrow {
 
     display:block;
 
-    font-size:10px;
+    margin-bottom:3px;
 
-    font-weight:700;
+    color:
+        var(--asset-primary);
+
+    font-size:9px;
+
+    font-weight:800;
 
     letter-spacing:1.3px;
 
-    color:#0b5d1e;
-
-    margin-bottom:3px;
-
 }
 
 
-.asset-bar-heading h2{
+.asset-bar-component__title {
 
     margin:0;
 
-    font-size:21px;
+    color:
+        var(--asset-primary-dark);
+
+    font-size:20px;
 
     line-height:1.2;
 
-    color:#18301f;
+    font-weight:750;
 
 }
 
 
-/* =========================================================
+/* ==========================================================
    CLOSE BUTTON
-========================================================= */
+========================================================== */
 
-.asset-bar-close{
+.asset-bar-component__close {
 
-    flex:0 0 38px;
+    flex:
+        0 0 36px;
 
-    width:38px;
+    width:36px;
+    height:36px;
 
-    height:38px;
+    padding:0;
 
-    border:none;
+    border:0;
 
     border-radius:50%;
 
-    background:#f0f3f1;
+    background:#f1f4f2;
 
-    color:#17351f;
+    color:#294032;
 
     display:flex;
 
     align-items:center;
-
     justify-content:center;
 
     cursor:pointer;
 
-    font-size:27px;
-
-    line-height:1;
+    font:inherit;
 
     transition:
         background .2s ease,
@@ -1402,9 +1670,19 @@ document.addEventListener(
 }
 
 
-.asset-bar-close:hover{
+.asset-bar-component__close span {
 
-    background:#0b5d1e;
+    font-size:25px;
+
+    line-height:1;
+
+}
+
+
+.asset-bar-component__close:hover {
+
+    background:
+        var(--asset-primary);
 
     color:#fff;
 
@@ -1413,88 +1691,98 @@ document.addEventListener(
 }
 
 
-/* =========================================================
-   FARM INFORMATION
-========================================================= */
+.asset-bar-component__close:focus-visible {
 
-.asset-bar-farm{
+    outline:
+        3px solid
+        rgba(11,93,30,.25);
 
-    flex-shrink:0;
-
-    padding:11px 16px;
-
-    background:#f4f8f5;
-
-    border-bottom:1px solid #e4ebe6;
+    outline-offset:2px;
 
 }
 
 
-/* =========================================================
+/* ==========================================================
+   FARM AREA
+========================================================== */
+
+.asset-bar-component__farm {
+
+    flex:
+        0 0 auto;
+
+    padding:
+        11px 14px;
+
+    background:
+        #f5f9f6;
+
+    border-bottom:
+        1px solid var(--asset-border);
+
+}
+
+
+/* ==========================================================
    CURRENT FARM
-========================================================= */
+========================================================== */
 
-.asset-bar-current-farm{
+.asset-bar-component__farm-label {
 
-    min-width:0;
+    display:block;
+
+    margin-bottom:2px;
+
+    color:#6d786f;
+
+    font-size:8px;
+
+    font-weight:800;
+
+    letter-spacing:1.1px;
 
 }
 
 
-.asset-bar-farm-label{
+.asset-bar-component__farm-name {
 
     display:block;
-
-    font-size:9px;
-
-    font-weight:700;
-
-    letter-spacing:1.2px;
-
-    color:#6b756e;
-
-}
-
-
-.asset-bar-farm-name{
-
-    display:block;
-
-    margin-top:2px;
-
-    font-size:14px;
-
-    font-weight:700;
 
     color:#17351f;
 
-    white-space:nowrap;
+    font-size:14px;
+
+    font-weight:750;
+
+    line-height:1.3;
 
     overflow:hidden;
 
     text-overflow:ellipsis;
 
+    white-space:nowrap;
+
 }
 
 
-.asset-bar-farm-code{
+.asset-bar-component__farm-code {
 
     display:block;
 
     margin-top:2px;
 
-    font-size:11px;
+    color:#737c76;
 
-    color:#6b756e;
+    font-size:10px;
 
 }
 
 
-/* =========================================================
+/* ==========================================================
    FARM SWITCHER
-========================================================= */
+========================================================== */
 
-.asset-bar-farm-switcher{
+.asset-bar-component__farm-switcher {
 
     position:relative;
 
@@ -1503,35 +1791,37 @@ document.addEventListener(
 }
 
 
-/* =========================================================
-   SWITCH BUTTON
-========================================================= */
-
-.farm-switch-button{
+.asset-bar-component__switch-button {
 
     width:100%;
 
-    min-height:36px;
+    min-height:35px;
 
-    padding:7px 10px;
+    box-sizing:border-box;
 
-    border:1px solid #cfdad2;
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    gap:7px;
+
+    padding:
+        7px 10px;
+
+    border:
+        1px solid #cad8ce;
 
     border-radius:8px;
 
     background:#fff;
 
-    color:#0b5d1e;
-
-    display:flex;
-
-    align-items:center;
-
-    justify-content:center;
-
-    gap:7px;
+    color:
+        var(--asset-primary);
 
     cursor:pointer;
+
+    font:inherit;
 
     font-size:11px;
 
@@ -1545,89 +1835,99 @@ document.addEventListener(
 }
 
 
-.farm-switch-button:hover{
+.asset-bar-component__switch-button:hover {
 
-    background:#0b5d1e;
+    background:
+        var(--asset-primary);
 
-    border-color:#0b5d1e;
+    border-color:
+        var(--asset-primary);
 
     color:#fff;
 
 }
 
 
-.farm-switch-icon{
+.asset-bar-component__switch-button:focus-visible {
 
-    font-size:18px;
+    outline:
+        3px solid
+        rgba(11,93,30,.2);
+
+    outline-offset:2px;
+
+}
+
+
+.asset-bar-component__switch-icon {
+
+    font-size:17px;
 
     line-height:1;
 
 }
 
 
-.farm-switch-text{
-
-    letter-spacing:.2px;
-
-}
-
-
-/* =========================================================
+/* ==========================================================
    ASSIGNED FARM LIST
-========================================================= */
+========================================================== */
 
-.assigned-farm-list{
+.asset-bar-component__farm-list {
 
     margin-top:7px;
 
-    padding:8px;
+    padding:7px;
 
-    border:1px solid #dfe7e1;
+    border:
+        1px solid var(--asset-border);
 
     border-radius:9px;
 
     background:#fff;
 
     box-shadow:
-        0 6px 18px rgba(0,0,0,.08);
+        0 7px 18px rgba(0,0,0,.08);
 
 }
 
 
-.assigned-farm-list[hidden]{
+.asset-bar-component__farm-list[hidden] {
 
     display:none;
 
 }
 
 
-.assigned-farm-list-header{
+.asset-bar-component__farm-list-title {
 
-    padding:4px 6px 7px;
+    padding:
+        3px 5px 7px;
 
-    font-size:9px;
+    color:#727c75;
 
-    font-weight:700;
+    font-size:8px;
+
+    font-weight:800;
 
     letter-spacing:1px;
-
-    color:#778079;
 
 }
 
 
-.assigned-farm-options{
+.asset-bar-component__farm-options {
 
     display:flex;
 
     flex-direction:column;
 
-    gap:5px;
+    gap:4px;
 
 }
 
 
-.assigned-farm-option{
+.asset-bar-component__farm-option {
+
+    min-width:0;
 
     display:flex;
 
@@ -1635,19 +1935,14 @@ document.addEventListener(
 
     gap:8px;
 
-    width:100%;
-
-    min-width:0;
-
     padding:8px;
 
-    box-sizing:border-box;
-
-    border:1px solid transparent;
+    border:
+        1px solid transparent;
 
     border-radius:7px;
 
-    background:#f8faf9;
+    background:#f7faf8;
 
     color:#17351f;
 
@@ -1660,70 +1955,63 @@ document.addEventListener(
 }
 
 
-.assigned-farm-option:hover{
+.asset-bar-component__farm-option:hover {
 
-    background:#eef6f0;
+    background:#edf6ef;
 
-    border-color:#c6d8ca;
-
-}
-
-
-.assigned-farm-option.current{
-
-    background:#e9f7ef;
-
-    border-color:#bcd5c2;
+    border-color:#c8d9cc;
 
 }
 
 
-/* =========================================================
-   FARM OPTION ICON
-========================================================= */
+.asset-bar-component__farm-option.is-current {
 
-.assigned-farm-option-icon{
+    background:#e8f5eb;
 
-    flex:0 0 27px;
+    border-color:#bad3c0;
+
+}
+
+
+.asset-bar-component__farm-option-icon {
+
+    flex:
+        0 0 27px;
 
     width:27px;
-
     height:27px;
 
     border-radius:50%;
 
-    background:#e3ebe5;
-
-    color:#0b5d1e;
-
     display:flex;
 
     align-items:center;
-
     justify-content:center;
 
-    font-size:13px;
+    background:#e3ebe5;
 
-    font-weight:700;
+    color:
+        var(--asset-primary);
+
+    font-size:12px;
+
+    font-weight:800;
 
 }
 
 
-.assigned-farm-option.current
-.assigned-farm-option-icon{
+.asset-bar-component__farm-option.is-current
+.asset-bar-component__farm-option-icon {
 
-    background:#0b5d1e;
+    background:
+        var(--asset-primary);
 
     color:#fff;
 
 }
 
 
-/* =========================================================
-   FARM OPTION DETAILS
-========================================================= */
-
-.assigned-farm-option-details{
+.asset-bar-component__farm-option-details {
 
     min-width:0;
 
@@ -1738,11 +2026,7 @@ document.addEventListener(
 }
 
 
-.assigned-farm-option-name{
-
-    font-size:12px;
-
-    font-weight:700;
+.asset-bar-component__farm-option-name {
 
     overflow:hidden;
 
@@ -1750,89 +2034,100 @@ document.addEventListener(
 
     white-space:nowrap;
 
+    color:#20352a;
+
+    font-size:11px;
+
+    font-weight:700;
+
 }
 
 
-.assigned-farm-option-code{
+.asset-bar-component__farm-option-code {
+
+    color:#747d77;
 
     font-size:9px;
 
-    color:#6d776f;
-
 }
 
 
-/* =========================================================
-   CURRENT LABEL
-========================================================= */
+.asset-bar-component__current-label {
 
-.assigned-farm-current{
+    flex:
+        0 0 auto;
 
-    flex:0 0 auto;
-
-    padding:4px 6px;
+    padding:
+        4px 6px;
 
     border-radius:5px;
 
-    background:#0b5d1e;
+    background:
+        var(--asset-primary);
 
     color:#fff;
 
-    font-size:8px;
+    font-size:7px;
 
-    font-weight:700;
+    font-weight:800;
 
     letter-spacing:.5px;
 
 }
 
 
-/* =========================================================
-   CATEGORY SWITCHER
-========================================================= */
+/* ==========================================================
+   CATEGORY TABS
+========================================================== */
 
-.asset-bar-tabs{
+.asset-bar-component__tabs {
 
-    flex-shrink:0;
+    flex:
+        0 0 auto;
 
     display:grid;
 
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:
+        1fr 1fr;
 
     gap:6px;
 
-    padding:10px 12px;
+    padding:
+        9px 11px;
 
     background:#fff;
 
-    border-bottom:1px solid #e8ece9;
+    border-bottom:
+        1px solid var(--asset-border);
 
 }
 
 
-/* =========================================================
-   TAB
-========================================================= */
-
-.asset-bar-tab{
+.asset-bar-component__tab {
 
     position:relative;
 
-    min-height:48px;
+    min-height:47px;
 
-    padding:8px 34px 8px 11px;
+    box-sizing:border-box;
 
-    border:1px solid #dfe6e1;
+    padding:
+        8px 35px 8px 10px;
+
+    border:
+        1px solid #dfe6e1;
 
     border-radius:9px;
 
     background:#f8faf9;
 
-    color:#536058;
+    color:#59645d;
 
     text-align:left;
 
     cursor:pointer;
+
+    font:inherit;
 
     transition:
         background .2s ease,
@@ -1842,198 +2137,228 @@ document.addEventListener(
 }
 
 
-.asset-bar-tab:hover{
+.asset-bar-component__tab:hover {
 
-    border-color:#0b5d1e;
+    border-color:
+        var(--asset-primary);
 
 }
 
 
-.asset-bar-tab.active{
+.asset-bar-component__tab.is-active {
 
-    background:#0b5d1e;
+    background:
+        var(--asset-primary);
 
-    border-color:#0b5d1e;
+    border-color:
+        var(--asset-primary);
 
     color:#fff;
 
 }
 
 
-.asset-bar-tab-title{
+.asset-bar-component__tab-title {
 
     display:block;
 
-    font-size:13px;
+    font-size:12px;
 
-    font-weight:700;
+    font-weight:750;
 
 }
 
 
-.asset-bar-tab-subtitle{
+.asset-bar-component__tab-subtitle {
 
     display:block;
 
     margin-top:2px;
 
-    font-size:9px;
+    font-size:8px;
 
     opacity:.78;
 
 }
 
 
-.asset-bar-tab-count{
+.asset-bar-component__tab-count {
 
     position:absolute;
 
     top:50%;
+    right:8px;
 
-    right:9px;
+    min-width:21px;
+    height:21px;
 
-    transform:translateY(-50%);
-
-    min-width:22px;
-
-    height:22px;
+    box-sizing:border-box;
 
     padding:0 5px;
 
+    transform:
+        translateY(-50%);
+
     border-radius:11px;
-
-    background:#e6ece8;
-
-    color:#314237;
 
     display:flex;
 
     align-items:center;
-
     justify-content:center;
 
-    font-size:10px;
+    background:#e5ece7;
 
-    font-weight:700;
+    color:#34453a;
+
+    font-size:9px;
+
+    font-weight:800;
 
 }
 
 
-.asset-bar-tab.active .asset-bar-tab-count{
+.asset-bar-component__tab.is-active
+.asset-bar-component__tab-count {
 
-    background:rgba(255,255,255,.2);
+    background:
+        rgba(255,255,255,.2);
 
     color:#fff;
 
 }
 
 
-/* =========================================================
-   CONTENT
-========================================================= */
+/* ==========================================================
+   SCROLLABLE CONTENT
+========================================================== */
 
-.asset-bar-content{
+.asset-bar-component__content {
 
-    flex:1;
+    flex:
+        1 1 auto;
 
     min-height:0;
 
     overflow-y:auto;
-
     overflow-x:hidden;
 
-    padding:0 12px 18px;
+    padding:
+        0 11px 18px;
+
+    overscroll-behavior:
+        contain;
+
+    scrollbar-width:
+        thin;
 
 }
 
 
-.asset-bar-section{
+/* ==========================================================
+   SECTION
+========================================================== */
 
-    padding-top:14px;
+.asset-bar-component__section {
+
+    padding-top:13px;
 
 }
 
 
-.asset-bar-section[hidden]{
+.asset-bar-component__section[hidden] {
 
     display:none !important;
 
 }
 
 
-.asset-bar-section-header{
+/* ==========================================================
+   SECTION HEADER
+========================================================== */
+
+.asset-bar-component__section-header {
 
     display:flex;
 
     align-items:center;
-
     justify-content:space-between;
 
     gap:10px;
 
-    margin-bottom:10px;
+    margin-bottom:9px;
 
 }
 
 
-.asset-bar-section-label{
+.asset-bar-component__section-label {
 
     display:block;
 
-    font-size:9px;
+    color:#707a73;
 
-    font-weight:700;
+    font-size:8px;
+
+    font-weight:800;
 
     letter-spacing:1px;
 
-    color:#6d786f;
-
 }
 
 
-.asset-bar-section-header h3{
+.asset-bar-component__section-header h3 {
 
-    margin:2px 0 0;
-
-    font-size:17px;
+    margin:
+        2px 0 0;
 
     color:#193322;
 
+    font-size:16px;
+
+    line-height:1.25;
+
+    font-weight:750;
+
 }
 
 
-.asset-bar-count{
+.asset-bar-component__section-count {
 
-    min-width:28px;
+    flex:
+        0 0 auto;
 
-    height:28px;
+    min-width:27px;
+    height:27px;
 
-    padding:0 7px;
+    padding:
+        0 7px;
+
+    box-sizing:border-box;
 
     border-radius:14px;
-
-    background:#e9f1eb;
-
-    color:#0b5d1e;
 
     display:flex;
 
     align-items:center;
-
     justify-content:center;
 
-    font-size:11px;
+    background:
+        var(--asset-primary-light);
 
-    font-weight:700;
+    color:
+        var(--asset-primary);
+
+    font-size:10px;
+
+    font-weight:800;
 
 }
 
 
-/* =========================================================
+/* ==========================================================
    ASSET LIST
-========================================================= */
+========================================================== */
 
-.asset-bar-list{
+.asset-bar-component__list {
 
     display:flex;
 
@@ -2044,81 +2369,99 @@ document.addEventListener(
 }
 
 
-.asset-bar-item{
+/* ==========================================================
+   ASSET ITEM
+========================================================== */
+
+.asset-bar-component__item {
 
     width:100%;
+
+    min-width:0;
+
+    box-sizing:border-box;
 
     display:flex;
 
     align-items:center;
 
-    gap:10px;
+    gap:9px;
 
-    padding:9px;
+    padding:8px;
 
-    border:1px solid #e5eae6;
+    border:
+        1px solid #e3e9e5;
 
-    border-radius:10px;
+    border-radius:9px;
 
     background:#fff;
 
-    text-align:left;
-
-    cursor:pointer;
+    color:#193322;
 
     text-decoration:none;
 
-    box-sizing:border-box;
-
     transition:
-        border-color .2s ease,
-        background .2s ease,
-        transform .15s ease;
+        background .18s ease,
+        border-color .18s ease,
+        transform .18s ease;
 
 }
 
 
-.asset-bar-item:hover{
+.asset-bar-component__item:hover {
 
     background:#f6faf7;
 
-    border-color:#b8cdbd;
+    border-color:#b9cdbd;
 
-    transform:translateX(-2px);
+    transform:
+        translateX(-2px);
 
 }
 
 
-.asset-bar-item:focus-visible{
+.asset-bar-component__item:focus-visible {
 
-    outline:3px solid rgba(11,93,30,.22);
+    outline:
+        3px solid
+        rgba(11,93,30,.2);
 
     outline-offset:1px;
 
 }
 
 
-.asset-bar-item-image{
+/* ==========================================================
+   ITEM IMAGE
+========================================================== */
 
-    flex:0 0 48px;
+.asset-bar-component__item-image {
 
-    width:48px;
+    flex:
+        0 0 46px;
 
-    height:48px;
+    width:46px;
+    height:46px;
 
-    border-radius:8px;
+    box-sizing:border-box;
 
     overflow:hidden;
 
+    border-radius:8px;
+
     background:#edf1ee;
+
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
 
 }
 
 
-.asset-bar-item-image img{
+.asset-bar-component__item-image img {
 
     width:100%;
-
     height:100%;
 
     display:block;
@@ -2128,11 +2471,25 @@ document.addEventListener(
 }
 
 
-.asset-bar-item-details{
+.asset-bar-component__image-placeholder {
+
+    font-size:21px;
+
+    line-height:1;
+
+}
+
+
+/* ==========================================================
+   ITEM DETAILS
+========================================================== */
+
+.asset-bar-component__item-details {
 
     min-width:0;
 
-    flex:1;
+    flex:
+        1 1 auto;
 
     display:flex;
 
@@ -2143,146 +2500,241 @@ document.addEventListener(
 }
 
 
-.asset-bar-item-name{
+.asset-bar-component__item-name {
 
-    font-size:13px;
+    overflow:hidden;
 
-    font-weight:700;
+    text-overflow:ellipsis;
+
+    white-space:nowrap;
 
     color:#193322;
 
+    font-size:12px;
+
+    font-weight:750;
+
+}
+
+
+.asset-bar-component__item-code {
+
+    color:
+        var(--asset-primary);
+
+    font-size:9px;
+
+    font-weight:700;
+
+}
+
+
+.asset-bar-component__item-meta {
+
     overflow:hidden;
 
     text-overflow:ellipsis;
 
     white-space:nowrap;
 
-}
+    color:#727b75;
 
-
-.asset-bar-item-code{
-
-    font-size:10px;
-
-    font-weight:600;
-
-    color:#0b5d1e;
+    font-size:9px;
 
 }
 
 
-.asset-bar-item-meta{
+/* ==========================================================
+   ITEM ARROW
+========================================================== */
 
-    font-size:10px;
+.asset-bar-component__item-arrow {
 
-    color:#707970;
+    flex:
+        0 0 auto;
 
-    overflow:hidden;
+    color:#8a958e;
 
-    text-overflow:ellipsis;
-
-    white-space:nowrap;
-
-}
-
-
-.asset-bar-item-arrow{
-
-    flex:0 0 auto;
-
-    font-size:24px;
+    font-size:22px;
 
     line-height:1;
 
-    color:#8b968e;
-
 }
 
 
-.asset-bar-empty{
+/* ==========================================================
+   EMPTY STATE
+========================================================== */
 
-    padding:25px 15px;
+.asset-bar-component__empty {
 
-    border:1px dashed #ccd5ce;
+    min-height:120px;
 
-    border-radius:10px;
+    box-sizing:border-box;
+
+    padding:
+        20px 15px;
+
+    border:
+        1px dashed #cdd7d0;
+
+    border-radius:9px;
 
     background:#fafcfb;
-
-    color:#69736c;
 
     display:flex;
 
     flex-direction:column;
 
     align-items:center;
-
     justify-content:center;
-
-    text-align:center;
 
     gap:7px;
 
-    font-size:12px;
+    text-align:center;
+
+    color:#6c766f;
+
+    font-size:11px;
+
+    line-height:1.5;
 
 }
 
 
-.asset-bar-empty-icon{
+.asset-bar-component__empty-icon {
 
     font-size:20px;
 
-    color:#a2aaa4;
+    opacity:.7;
 
 }
 
 
-body.asset-bar-open{
+/* ==========================================================
+   SMALL SCREENS
+========================================================== */
 
-    overflow:hidden;
+@media (max-width:700px) {
 
-}
+    .asset-bar-component {
 
+        width:
+            min(350px, calc(100vw - 60px));
 
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-
-@media(max-width:600px){
-
-    .asset-bar{
-
-        width:min(350px, 88vw);
+        max-width:
+            calc(100vw - 60px);
 
     }
 
 
-    .asset-bar-top{
+    .asset-bar-component__header {
 
-        padding:13px 13px 11px;
+        min-height:62px;
+
+        padding:
+            10px 12px;
 
     }
 
 
-    .asset-bar-heading h2{
+    .asset-bar-component__title {
 
         font-size:19px;
 
     }
 
 
-    .asset-bar-tabs{
+    .asset-bar-component__tabs {
 
-        padding:8px 10px;
+        padding:
+            8px 9px;
 
     }
 
 
-    .asset-bar-content{
+    .asset-bar-component__content {
 
-        padding-left:10px;
+        padding:
+            0 9px 15px;
 
-        padding-right:10px;
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL PHONES
+========================================================== */
+
+@media (max-width:400px) {
+
+    .asset-bar-component {
+
+        width:
+            calc(100vw - 48px);
+
+        max-width:
+            calc(100vw - 48px);
+
+    }
+
+
+    .asset-bar-component__title {
+
+        font-size:18px;
+
+    }
+
+
+    .asset-bar-component__farm {
+
+        padding:
+            9px 11px;
+
+    }
+
+
+    .asset-bar-component__item {
+
+        padding:7px;
+
+    }
+
+
+    .asset-bar-component__item-image {
+
+        flex-basis:42px;
+
+        width:42px;
+        height:42px;
+
+    }
+
+
+    .asset-bar-component__item-name {
+
+        font-size:11px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   REDUCED MOTION
+========================================================== */
+
+@media (prefers-reduced-motion:reduce) {
+
+    .asset-bar-component,
+    .asset-bar-component__overlay,
+    .asset-bar-component__item,
+    .asset-bar-component__close,
+    .asset-bar-component__tab,
+    .asset-bar-component__switch-button {
+
+        transition:none;
 
     }
 
