@@ -4,22 +4,33 @@
 //
 // CENTRAL FINANCIAL BUSINESS-LOGIC SERVICE
 //
-// Revenue is NOT manually read from dairy.js.
+// IMPORTANT FINANCIAL RULES
+// ----------------------------------------------------------
 //
-// Revenue is calculated from MilkSummary:
+// Revenue comes from MilkSummary.
 //
-//     cow revenue
+// Cow revenue:
 //
-//         =
-//             (cow litres / total production litres)
-//             ×
-//             total milk sales cash
+//     (cow litres / total production litres)
+//     ×
+//     total milk sales cash
 //
-// The calculated cumulative revenue is then stored in:
+// The calculated revenue is stored in:
 //
 //     Dairy.revenue
 //
-// This prevents duplicate revenue additions.
+// For a Dairy Farm:
+//
+//     farm.revenue
+//
+// is already the aggregate revenue of its assigned assets.
+//
+// Therefore:
+//
+//     FARM REVENUE MUST NOT BE ADDED AGAIN
+//     TO THE REVENUE OF ITS ASSETS.
+//
+// Otherwise totals are doubled.
 //
 // ==========================================================
 
@@ -73,6 +84,7 @@ function getDateRange(
 
     }
 
+
     if (endDate) {
 
         const end =
@@ -98,6 +110,7 @@ function getDateRange(
 
     }
 
+
     return range;
 
 }
@@ -107,7 +120,9 @@ function getDateRange(
 // NUMBER HELPER
 // ==========================================================
 
-function number(value) {
+function number(
+    value
+) {
 
     const parsed =
         Number(value);
@@ -123,7 +138,9 @@ function number(value) {
 // STATUS HELPER
 // ==========================================================
 
-function isSold(dairy) {
+function isSold(
+    dairy
+) {
 
     return (
 
@@ -143,19 +160,22 @@ function isSold(dairy) {
 // FARM IDENTIFICATION
 // ==========================================================
 //
-// A Dairy Farm is identified by:
+// Dairy Farm:
 //
 //     code < 0
 //
 // ==========================================================
 
-function isFarm(dairy) {
+function isFarm(
+    dairy
+) {
 
     if (!dairy) {
 
         return false;
 
     }
+
 
     if (
 
@@ -171,6 +191,7 @@ function isFarm(dairy) {
 
     }
 
+
     return (
         Number(dairy.code) < 0
     );
@@ -182,19 +203,22 @@ function isFarm(dairy) {
 // FARM ASSET IDENTIFICATION
 // ==========================================================
 //
-// Farm asset:
+// Assigned farm asset:
 //
 //     assetCode = farm.code
 //
 // ==========================================================
 
-function isFarmAsset(dairy) {
+function isFarmAsset(
+    dairy
+) {
 
     if (!dairy) {
 
         return false;
 
     }
+
 
     return (
 
@@ -220,13 +244,16 @@ function isFarmAsset(dairy) {
 //
 // ==========================================================
 
-function isStandaloneAsset(dairy) {
+function isStandaloneAsset(
+    dairy
+) {
 
     if (!dairy) {
 
         return false;
 
     }
+
 
     const noCode = (
 
@@ -238,6 +265,7 @@ function isStandaloneAsset(dairy) {
 
     );
 
+
     const noAssetCode = (
 
         dairy.assetCode === null ||
@@ -247,6 +275,7 @@ function isStandaloneAsset(dairy) {
         dairy.assetCode === ""
 
     );
+
 
     return (
 
@@ -276,11 +305,13 @@ function buildLiabilityQuery(
 
     };
 
+
     const dateRange =
         getDateRange(
             startDate,
             endDate
         );
+
 
     if (
         Object.keys(
@@ -292,6 +323,7 @@ function buildLiabilityQuery(
             dateRange;
 
     }
+
 
     return query;
 
@@ -314,6 +346,7 @@ async function getLiabilityTotal(
             startDate,
             endDate
         );
+
 
     const result =
         await Financials.aggregate([
@@ -342,11 +375,13 @@ async function getLiabilityTotal(
 
         ]);
 
+
     if (!result.length) {
 
         return 0;
 
     }
+
 
     return number(
         result[0].total
@@ -371,6 +406,7 @@ async function getLiabilities(
             startDate,
             endDate
         );
+
 
     return Financials.find(
         query
@@ -418,11 +454,13 @@ async function getAllLiabilities(
 
     const query = {};
 
+
     const dateRange =
         getDateRange(
             startDate,
             endDate
         );
+
 
     if (
         Object.keys(
@@ -434,6 +472,7 @@ async function getAllLiabilities(
             dateRange;
 
     }
+
 
     return Financials.find(
         query
@@ -491,6 +530,7 @@ async function recordLiability({
             dairyId
         );
 
+
     if (!dairy) {
 
         throw new Error(
@@ -499,8 +539,10 @@ async function recordLiability({
 
     }
 
+
     const liabilityAmount =
         Number(amount);
+
 
     if (
 
@@ -518,6 +560,7 @@ async function recordLiability({
 
     }
 
+
     if (
 
         !description ||
@@ -533,6 +576,7 @@ async function recordLiability({
         );
 
     }
+
 
     return Financials.create({
 
@@ -626,14 +670,18 @@ function getFarmAssets(
 
     }
 
+
     const farmCode =
         Number(
             farm.code
         );
 
+
     return allDairies.filter(
 
         dairy => (
+
+            !isFarm(dairy) &&
 
             isFarmAsset(
                 dairy
@@ -665,40 +713,9 @@ function getFarmAssets(
 //     ×
 //     total sales cash
 //
-// MilkSummary structure:
-//
-//     {
-//         day,
-//         cowProduction: [
-//             {
-//                 dairy,
-//                 cowCode,
-//                 farmCode,
-//                 liters
-//             }
-//         ],
-//         sales: [
-//             {
-//                 liters,
-//                 cash
-//             }
-//         ]
-//     }
-//
 // Revenue is rebuilt from MilkSummary every time.
 //
-// This is intentional.
-//
-// We DO NOT:
-//
-//     dairy.revenue += dailyRevenue
-//
-// because calling the financial service repeatedly would
-// otherwise duplicate revenue.
-//
-// Instead:
-//
-//     Dairy.revenue = calculated cumulative revenue
+// This prevents duplicate accumulation.
 //
 // ==========================================================
 
@@ -707,30 +724,7 @@ async function calculateAndStoreRevenue(
     endDate
 ) {
 
-    // ------------------------------------------------------
-    // BUILD DATE FILTER
-    // ------------------------------------------------------
-
     const query = {};
-
-    const dateRange =
-        getDateRange(
-            startDate,
-            endDate
-        );
-
-    if (
-        Object.keys(
-            dateRange
-        ).length
-    ) {
-
-        // MilkSummary uses "day" as YYYY-MM-DD.
-        //
-        // Therefore date filtering is handled below using
-        // the string day value rather than createdAt.
-        //
-    }
 
 
     // ------------------------------------------------------
@@ -748,7 +742,7 @@ async function calculateAndStoreRevenue(
 
 
     // ------------------------------------------------------
-    // FILTER BY DAY WHEN DATE RANGE WAS PROVIDED
+    // FILTER BY DATE
     // ------------------------------------------------------
 
     if (
@@ -761,10 +755,12 @@ async function calculateAndStoreRevenue(
                 ? new Date(startDate)
                 : null;
 
+
         const end =
             endDate
                 ? new Date(endDate)
                 : null;
+
 
         if (start) {
 
@@ -777,6 +773,7 @@ async function calculateAndStoreRevenue(
 
         }
 
+
         if (end) {
 
             end.setHours(
@@ -787,6 +784,7 @@ async function calculateAndStoreRevenue(
             );
 
         }
+
 
         summaries =
             summaries.filter(
@@ -800,10 +798,12 @@ async function calculateAndStoreRevenue(
 
                     }
 
+
                     const summaryDate =
                         new Date(
                             `${summary.day}T12:00:00`
                         );
+
 
                     if (
                         Number.isNaN(
@@ -815,6 +815,7 @@ async function calculateAndStoreRevenue(
 
                     }
 
+
                     if (
                         start &&
                         summaryDate < start
@@ -824,6 +825,7 @@ async function calculateAndStoreRevenue(
 
                     }
 
+
                     if (
                         end &&
                         summaryDate > end
@@ -832,6 +834,7 @@ async function calculateAndStoreRevenue(
                         return false;
 
                     }
+
 
                     return true;
 
@@ -844,23 +847,13 @@ async function calculateAndStoreRevenue(
     // ------------------------------------------------------
     // REVENUE MAP
     // ------------------------------------------------------
-    //
-    // Key:
-    //
-    //     Dairy._id
-    //
-    // Value:
-    //
-    //     cumulative revenue
-    //
-    // ------------------------------------------------------
 
     const revenueMap =
         new Map();
 
 
     // ------------------------------------------------------
-    // PROCESS EVERY MILK SUMMARY
+    // PROCESS SUMMARIES
     // ------------------------------------------------------
 
     for (
@@ -883,10 +876,6 @@ async function calculateAndStoreRevenue(
                 : [];
 
 
-        // --------------------------------------------------
-        // TOTAL DAILY PRODUCTION
-        // --------------------------------------------------
-
         const totalProduction =
             production.reduce(
 
@@ -896,10 +885,13 @@ async function calculateAndStoreRevenue(
                 ) => {
 
                     return (
+
                         total +
+
                         number(
                             item?.liters
                         )
+
                     );
 
                 },
@@ -908,10 +900,6 @@ async function calculateAndStoreRevenue(
 
             );
 
-
-        // --------------------------------------------------
-        // TOTAL DAILY SALES CASH
-        // --------------------------------------------------
 
         const totalCash =
             sales.reduce(
@@ -922,10 +910,13 @@ async function calculateAndStoreRevenue(
                 ) => {
 
                     return (
+
                         total +
+
                         number(
                             sale?.cash
                         )
+
                     );
 
                 },
@@ -934,10 +925,6 @@ async function calculateAndStoreRevenue(
 
             );
 
-
-        // --------------------------------------------------
-        // NOTHING TO ALLOCATE
-        // --------------------------------------------------
 
         if (
             totalProduction <= 0 ||
@@ -950,7 +937,7 @@ async function calculateAndStoreRevenue(
 
 
         // --------------------------------------------------
-        // ALLOCATE SALES CASH TO EACH COW
+        // ALLOCATE SALES TO COWS
         // --------------------------------------------------
 
         for (
@@ -986,18 +973,10 @@ async function calculateAndStoreRevenue(
             }
 
 
-            // ----------------------------------------------
-            // COW'S SHARE OF PRODUCTION
-            // ----------------------------------------------
-
             const productionShare =
                 liters /
                 totalProduction;
 
-
-            // ----------------------------------------------
-            // COW'S DAILY REVENUE
-            // ----------------------------------------------
 
             const dailyRevenue =
                 productionShare *
@@ -1040,14 +1019,7 @@ async function calculateAndStoreRevenue(
 
 
     // ------------------------------------------------------
-    // GET ALL DAIRIES
-    // ------------------------------------------------------
-    //
-    // We need the entire Dairy collection because:
-    //
-    //     1. cows receive calculated revenue
-    //     2. farms receive aggregate revenue
-    //
+    // GET DAIRIES
     // ------------------------------------------------------
 
     const dairies =
@@ -1070,16 +1042,7 @@ async function calculateAndStoreRevenue(
 
 
     // ------------------------------------------------------
-    // SAVE ANIMAL REVENUE
-    // ------------------------------------------------------
-    //
-    // IMPORTANT:
-    //
-    // This resets revenue to the value calculated from
-    // MilkSummary.
-    //
-    // Therefore no duplicate accumulation occurs.
-    //
+    // SAVE ASSET REVENUE
     // ------------------------------------------------------
 
     const bulkOperations =
@@ -1140,10 +1103,6 @@ async function calculateAndStoreRevenue(
     }
 
 
-    // ------------------------------------------------------
-    // SAVE ANIMAL REVENUES
-    // ------------------------------------------------------
-
     if (
         bulkOperations.length
     ) {
@@ -1163,8 +1122,11 @@ async function calculateAndStoreRevenue(
     // CALCULATE FARM REVENUE
     // ------------------------------------------------------
     //
-    // A farm's revenue is the sum of the revenue of all
-    // assets whose assetCode equals the farm's code.
+    // IMPORTANT:
+    //
+    // Farm revenue is an aggregate of asset revenue.
+    //
+    // It is therefore NOT an independent revenue stream.
     //
     // ------------------------------------------------------
 
@@ -1229,16 +1191,12 @@ async function calculateAndStoreRevenue(
             }
 
 
-            const assetRevenue =
+            farmRevenue +=
                 number(
                     revenueMap.get(
                         asset._id.toString()
                     )
                 );
-
-
-            farmRevenue +=
-                assetRevenue;
 
         }
 
@@ -1272,10 +1230,6 @@ async function calculateAndStoreRevenue(
     }
 
 
-    // ------------------------------------------------------
-    // SAVE FARM REVENUES
-    // ------------------------------------------------------
-
     if (
         farmRevenueOperations.length
     ) {
@@ -1291,10 +1245,6 @@ async function calculateAndStoreRevenue(
     }
 
 
-    // ------------------------------------------------------
-    // RETURN REVENUE MAP
-    // ------------------------------------------------------
-
     return revenueMap;
 
 }
@@ -1302,13 +1252,6 @@ async function calculateAndStoreRevenue(
 
 // ==========================================================
 // REFRESH REVENUE
-// ==========================================================
-//
-// Public helper.
-//
-// Can be called by controllers when financial data needs to
-// be rebuilt.
-//
 // ==========================================================
 
 async function refreshRevenue(
@@ -1328,17 +1271,18 @@ async function refreshRevenue(
 // CALCULATE PROFIT / LOSS
 // ==========================================================
 //
-// SOLD:
+// Asset:
 //
-//     sellingPrice
-//     - buyingPrice
-//     - liabilities
-//     + revenue
+//     UNSOLD:
 //
-// UNSOLD:
+//         revenue - liabilities
 //
-//     revenue
-//     - liabilities
+//     SOLD:
+//
+//         sellingPrice
+//         - buyingPrice
+//         - liabilities
+//         + revenue
 //
 // ==========================================================
 
@@ -1352,15 +1296,12 @@ function calculateProfit(
             liabilityTotal
         );
 
+
     const revenue =
         number(
             dairy?.revenue
         );
 
-
-    // ======================================================
-    // UNSOLD DAIRY
-    // ======================================================
 
     if (
         !isSold(dairy)
@@ -1377,19 +1318,17 @@ function calculateProfit(
     }
 
 
-    // ======================================================
-    // SOLD DAIRY
-    // ======================================================
-
     const sellingPrice =
         number(
             dairy?.sellingPrice
         );
 
+
     const buyingPrice =
         number(
             dairy?.buyingPrice
         );
+
 
     return (
 
@@ -1400,6 +1339,78 @@ function calculateProfit(
         liabilities +
 
         revenue
+
+    );
+
+}
+
+
+// ==========================================================
+// CALCULATE FARM DIRECT PROFIT
+// ==========================================================
+//
+// IMPORTANT:
+//
+// farm.revenue is NOT used here.
+//
+// farm.revenue already contains the revenue of its assets.
+//
+// Therefore adding it to asset profits would double-count
+// revenue.
+//
+// This function calculates only the farm's own contribution:
+//
+//     SOLD farm:
+//
+//         sellingPrice - buyingPrice - direct liabilities
+//
+//     UNSOLD farm:
+//
+//         - direct liabilities
+//
+// ==========================================================
+
+function calculateFarmDirectProfit(
+    farm,
+    liabilityTotal
+) {
+
+    const liabilities =
+        number(
+            liabilityTotal
+        );
+
+
+    if (
+        !isSold(farm)
+    ) {
+
+        return (
+            -liabilities
+        );
+
+    }
+
+
+    const sellingPrice =
+        number(
+            farm?.sellingPrice
+        );
+
+
+    const buyingPrice =
+        number(
+            farm?.buyingPrice
+        );
+
+
+    return (
+
+        sellingPrice -
+
+        buyingPrice -
+
+        liabilities
 
     );
 
@@ -1421,6 +1432,7 @@ function getSalesAmount(
         return 0;
 
     }
+
 
     return number(
         dairy?.sellingPrice
@@ -1512,21 +1524,8 @@ async function buildFinancialData(
 // ==========================================================
 // GET FINANCIAL STRUCTURE
 // ==========================================================
-//
-// Returns:
-//
-//     farms[]
-//
-//     standaloneAssets[]
-//
-// Each farm contains its own assets.
-//
-// ==========================================================
 
 async function getFinancialStructure() {
-
-    // Refresh the stored revenue before returning the
-    // financial structure.
 
     await refreshRevenue();
 
@@ -1557,6 +1556,7 @@ async function getFinancialStructure() {
                         dairies
                     );
 
+
                 return {
 
                     ...farm,
@@ -1584,36 +1584,12 @@ async function getFinancialStructure() {
 // ==========================================================
 // GET INDIVIDUAL DAIRY FINANCIAL
 // ==========================================================
-//
-// If selected record is:
-//
-//     Animal / asset
-//
-// returns that record.
-//
-// If selected record is:
-//
-//     Farm
-//
-// returns:
-//
-//     farm
-//     +
-//     farm assets
-//     +
-//     totals
-//
-// ==========================================================
 
 async function getDairyFinancial(
     dairyId,
     startDate,
     endDate
 ) {
-
-    // ------------------------------------------------------
-    // Revenue must be current before calculating financials.
-    // ------------------------------------------------------
 
     await refreshRevenue();
 
@@ -1761,12 +1737,42 @@ async function getStandaloneFinancial(
 // GET FARM FINANCIAL TOTALS
 // ==========================================================
 //
-// Includes:
+// A farm is a container.
 //
-//     farm itself
-//     +
-//     all assets belonging to farm
+// Example:
 //
+//     FARM
+//       ├── Cow A
+//       ├── Cow B
+//       └── Structure C
+//
+// The farm.revenue field already represents:
+//
+//     Cow A revenue
+//     + Cow B revenue
+//     + Structure C revenue
+//
+// Therefore:
+//
+//     totalRevenue
+//
+// MUST NOT be:
+//
+//     farm.revenue
+//     + Cow A revenue
+//     + Cow B revenue
+//     + Structure C revenue
+//
+// Instead:
+//
+//     totalRevenue
+//
+// =
+//
+//     sum of asset revenue
+//
+// The farm's direct liabilities and sale information are
+// still included.
 // ==========================================================
 
 async function getFarmFinancialTotals(
@@ -1797,6 +1803,10 @@ async function getFarmFinancialTotals(
         );
 
 
+    // ------------------------------------------------------
+    // FARM'S OWN FINANCIAL DATA
+    // ------------------------------------------------------
+
     const farmFinancial =
         await buildFinancialData(
 
@@ -1808,6 +1818,14 @@ async function getFarmFinancialTotals(
 
         );
 
+
+    // ------------------------------------------------------
+    // IMPORTANT:
+    //
+    // farmFinancial.revenue is an aggregate of assets.
+    //
+    // Do NOT use it in totalRevenue.
+    // ------------------------------------------------------
 
     let totalCurrentWorth =
         farmFinancial.currentWorth;
@@ -1822,16 +1840,33 @@ async function getFarmFinancialTotals(
 
 
     let totalRevenue =
-        farmFinancial.revenue;
+        0;
 
+
+    // ------------------------------------------------------
+    // FARM DIRECT PROFIT
+    //
+    // Excludes farm.revenue because that revenue belongs
+    // to the assets and will be included below.
+    // ------------------------------------------------------
 
     let totalProfit =
-        farmFinancial.profit;
+        calculateFarmDirectProfit(
+
+            farm,
+
+            farmFinancial.totalLiabilities
+
+        );
 
 
     const assetFinancials =
         [];
 
+
+    // ======================================================
+    // PROCESS ASSETS
+    // ======================================================
 
     for (
         const asset of assets
@@ -1876,6 +1911,10 @@ async function getFarmFinancialTotals(
     }
 
 
+    // ======================================================
+    // SORT ASSETS
+    // ======================================================
+
     assetFinancials.sort(
 
         (a, b) => {
@@ -1917,9 +1956,17 @@ async function getFarmFinancialTotals(
     );
 
 
+    // ======================================================
+    // RETURN
+    // ======================================================
+
     return {
 
         ...farmFinancial,
+
+        // --------------------------------------------------
+        // FARM-ONLY VALUES
+        // --------------------------------------------------
 
         farm:
             farmFinancial,
@@ -1930,11 +1977,23 @@ async function getFarmFinancialTotals(
         farmSalesAmount:
             farmFinancial.salesAmount,
 
+        // This is the stored aggregate farm revenue.
+        // It is provided for display/reference only.
         farmRevenue:
             farmFinancial.revenue,
 
         farmProfit:
-            farmFinancial.profit,
+            calculateFarmDirectProfit(
+
+                farm,
+
+                farmFinancial.totalLiabilities
+
+            ),
+
+        // --------------------------------------------------
+        // COMBINED FARM + ASSET VALUES
+        // --------------------------------------------------
 
         currentWorth:
             totalCurrentWorth,
@@ -2052,15 +2111,15 @@ async function getFinancialSummary(
 
 
         totalSalesAmount +=
-            financial.totalSalesAmount;
+            financial.salesAmount;
 
 
         totalRevenue +=
-            financial.totalRevenue;
+            financial.revenue;
 
 
         totalProfit +=
-            financial.totalProfit;
+            financial.profit;
 
     }
 
@@ -2136,6 +2195,10 @@ async function getFinancialSummary(
     }
 
 
+    // ======================================================
+    // ADD STANDALONE TOTALS
+    // ======================================================
+
     totalCurrentWorth +=
         standaloneCurrentWorth;
 
@@ -2202,7 +2265,7 @@ async function getFinancialSummary(
 
 
     // ======================================================
-    // SORT STANDALONE
+    // SORT STANDALONE ASSETS
     // ======================================================
 
     standaloneFinancials.sort(
@@ -2245,6 +2308,10 @@ async function getFinancialSummary(
 
     );
 
+
+    // ======================================================
+    // RETURN
+    // ======================================================
 
     return {
 
@@ -2364,7 +2431,7 @@ async function getLiabilityHistory(
 
 
         // --------------------------------------------------
-        // LIABILITY RECORDED DIRECTLY ON FARM
+        // LIABILITY DIRECTLY ON FARM
         // --------------------------------------------------
 
         if (
@@ -2380,7 +2447,7 @@ async function getLiabilityHistory(
 
 
         // --------------------------------------------------
-        // LIABILITY RECORDED ON FARM ASSET
+        // LIABILITY ON FARM ASSET
         // --------------------------------------------------
 
         else if (
