@@ -1,0 +1,198 @@
+<!-- =======================================================
+     POST
+======================================================= -->
+
+<article
+    class="feed-card post-card"
+    data-id="<%= item._id %>"
+    data-type="post"
+>
+
+    <!-- =================================================
+         HEADER
+    ================================================== -->
+
+    <div class="feed-header">
+
+        <!-- =================================================
+             POST OWNER + SUBJECT
+        ================================================== -->
+
+        <div class="feed-user">
+
+            <img
+                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
+                alt="<%= item.userName || 'User' %>"
+                class="avatar-sm"
+            >
+
+            <div class="feed-user-info">
+
+                <!-- =============================================
+                     POST META
+                ============================================== -->
+
+                <div class="post-meta-line">
+
+                    <strong class="post-user-name">
+                        <%= item.userName || "User" %>
+                    </strong>
+
+
+                    <% if (item.dairyName && item.dairyId) { %>
+
+                        <span class="post-meta-action">
+                            updated about
+                        </span>
+
+
+                        <!-- =====================================
+                             CLICKABLE DAIRY / ASSET NAME
+                        ====================================== -->
+
+                        <a
+                            href="/dairy/<%= item.dairyId %>"
+                            class="post-subject"
+                            title="View <%= item.dairyName %>"
+                        >
+
+                            <%= item.dairyName %>
+
+                        </a>
+
+                    <% } %>
+
+                </div>
+
+
+                <!-- =============================================
+                     POST DATE / TIME
+                ============================================== -->
+
+                <small class="post-time">
+
+                    <%= item.dateText %>
+
+                </small>
+
+            </div>
+
+        </div>
+
+
+        <!-- =================================================
+             DELETE POST
+        ================================================== -->
+
+        <% if (
+            user &&
+            (
+                user.role === "admin" ||
+                (
+                    user._id &&
+                    item.userId &&
+                    user._id.toString() ===
+                    item.userId.toString()
+                )
+            )
+        ) { %>
+
+            <button
+                class="delete-post"
+                data-id="<%= item._id %>"
+                title="Delete Post"
+                aria-label="Delete Post"
+                type="button"
+            >
+
+                <i
+                    class="bi bi-trash3-fill"
+                    aria-hidden="true"
+                ></i>
+
+            </button>
+
+        <% } %>
+
+    </div>
+
+
+    <!-- =================================================
+         BODY
+    ================================================== -->
+
+    <div class="feed-body">
+
+        <!-- =============================================
+             TITLE
+        ============================================== -->
+
+        <% if (item.title) { %>
+
+            <h3 class="post-title">
+
+                <%= item.title %>
+
+            </h3>
+
+        <% } %>
+
+
+        <!-- =============================================
+             TEXT
+        ============================================== -->
+
+        <% if (item.text) { %>
+
+            <p class="post-text">
+
+                <%= item.text %>
+
+            </p>
+
+        <% } %>
+
+
+        <!-- =============================================
+             IMAGE
+        ============================================== -->
+
+        <% if (item.image) { %>
+
+            <div class="post-image-container">
+
+                <img
+                    src="/uploads/<%= item.image %>"
+                    alt="Post image"
+                    class="feed-img post-image"
+                    loading="lazy"
+                >
+
+            </div>
+
+        <% } %>
+
+    </div>
+
+
+    <!-- =================================================
+         ACTIONS
+    ================================================== -->
+
+    <%- include("partials/feed-actions", {
+        item,
+        type: "post"
+    }) %>
+
+
+    <!-- =================================================
+         COMMENTS
+    ================================================== -->
+
+    <%- include("comment-section", {
+        item,
+        user,
+        type: "post"
+    }) %>
+
+</article>
