@@ -692,7 +692,6 @@ const parentFarmCode =
         : "";
 
 
-
 /* ==========================================================
    ASSET TYPES
 ========================================================== */
@@ -715,7 +714,6 @@ const assetTypes = [
     "other"
 
 ];
-
 
 
 /* ==========================================================
@@ -746,12 +744,16 @@ const statusValues = [
         <div>
 
 
+            <!-- ==============================================
+                 BACK TO DAIRY FARM
+            =============================================== -->
+
             <a
-                href="/networth"
+                href="/dairy/<%= parentFarm._id %>"
                 class="financial-back-link"
             >
 
-                ← Net Worth
+                ← Dairy Farm
 
             </a>
 
@@ -1332,16 +1334,11 @@ document.addEventListener(
                     }
 
 
-                    /*
-                     * After successful creation,
-                     * return to Net Worth.
-                     */
-
                     setTimeout(
                         function() {
 
                             window.location.href =
-                                "/networth";
+                                "/dairy/<%= parentFarm._id %>";
 
                         },
                         700
