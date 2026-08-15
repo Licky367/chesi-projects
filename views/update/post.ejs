@@ -1,11 +1,236 @@
 <!-- =========================================================
-     NORMAL FEED POST
+     POST FEED ITEM
+
+     FILE:
+     views/update/post.ejs
+
+     IMPORTANT:
+     This partial receives:
+
+         item
+         user
+
+     from:
+
+         update/feed.ejs
+
+     Example:
+
+         <%- include("post", {
+             item,
+             user
+         }) %>
+
+========================================================= -->
+
+
+<%
+    // =====================================================
+    // CURRENT POST
+    // =====================================================
+
+    const post =
+        item || {};
+
+
+    // =====================================================
+    // POST ID
+    // =====================================================
+
+    const postId =
+        post._id
+            ? post._id.toString()
+            : "";
+
+
+    // =====================================================
+    // USER NAME
+    // =====================================================
+
+    const postUserName =
+        post.userName ||
+        "User";
+
+
+    // =====================================================
+    // USER IMAGE
+    // =====================================================
+
+    const postUserImage =
+        post.userImage ||
+        (
+            "https://ui-avatars.com/api/?name=" +
+            encodeURIComponent(postUserName)
+        );
+
+
+    // =====================================================
+    // POST TITLE
+    // =====================================================
+
+    const postTitle =
+        post.title ||
+        "";
+
+
+    // =====================================================
+    // POST TEXT
+    // =====================================================
+
+    const postText =
+        post.text ||
+        "";
+
+
+    // =====================================================
+    // IMAGES
+    //
+    // New system:
+    //
+    //     post.images = []
+    //
+    // Backward compatibility:
+    //
+    //     post.image
+    //
+    // is also supported.
+    // =====================================================
+
+    let postImages = [];
+
+
+    if (
+        Array.isArray(post.images)
+    ) {
+
+        postImages =
+            post.images.filter(
+                image => image
+            );
+
+    }
+
+
+    // -----------------------------------------------------
+    // BACKWARD COMPATIBILITY WITH OLD SINGLE IMAGE
+    // -----------------------------------------------------
+
+    if (
+        postImages.length === 0 &&
+        post.image
+    ) {
+
+        postImages = [
+            post.image
+        ];
+
+    }
+
+
+    // =====================================================
+    // LIKE COUNT
+    // =====================================================
+
+    const likeCount =
+        Array.isArray(post.likes)
+            ? post.likes.length
+            : (
+                typeof post.likes === "number"
+                    ? post.likes
+                    : 0
+            );
+
+
+    // =====================================================
+    // DETERMINE WHETHER CURRENT USER LIKED POST
+    // =====================================================
+
+    let userLiked =
+        false;
+
+
+    if (
+        user &&
+        user._id &&
+        Array.isArray(post.likes)
+    ) {
+
+        const currentUserId =
+            user._id.toString();
+
+
+        userLiked =
+            post.likes.some(
+                likeId => {
+
+                    if (!likeId) {
+                        return false;
+                    }
+
+                    return likeId.toString() ===
+                        currentUserId;
+
+                }
+            );
+
+    }
+
+
+    // =====================================================
+    // COMMENTS
+    // =====================================================
+
+    const comments =
+        Array.isArray(post.comments)
+            ? post.comments
+            : [];
+
+
+    // =====================================================
+    // COMMENT COUNT
+    // =====================================================
+
+    const commentCount =
+        comments.length;
+
+
+    // =====================================================
+    // CURRENT USER ID
+    // =====================================================
+
+    const currentUserId =
+        user && user._id
+            ? user._id.toString()
+            : "";
+
+
+    // =====================================================
+    // DATE
+    // =====================================================
+
+    let postDateText =
+        "";
+
+
+    if (post.createdAt) {
+
+        postDateText =
+            new Date(
+                post.createdAt
+            ).toLocaleString();
+
+    }
+
+%>
+
+
+<!-- =========================================================
+     POST
 ========================================================= -->
 
 <article
     class="feed-post"
-    data-post-id="<%= post._id %>"
-    data-dairy-id="<%= post.dairy %>"
+    data-post-id="<%= postId %>"
 >
 
 
@@ -16,57 +241,69 @@
     <header class="feed-post-header">
 
 
-        <!-- USER AVATAR -->
-        <div class="feed-post-avatar">
+        <!-- =================================================
+             USER
+        ================================================== -->
 
-            <img
-                src="<%= post.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(post.userName || 'User')) %>"
-                alt="<%= post.userName || 'User' %>"
-            >
-
-        </div>
-
-
-        <!-- USER INFORMATION -->
         <div class="feed-post-user">
 
-            <strong>
-                <%= post.userName || "User" %>
-            </strong>
 
-            <span>
-                <%= new Date(post.createdAt).toLocaleString() %>
-            </span>
+            <!-- USER AVATAR -->
+
+            <img
+                src="<%= postUserImage %>"
+                alt="<%= postUserName %>"
+                class="feed-post-avatar"
+            >
+
+
+            <!-- USER INFORMATION -->
+
+            <div class="feed-post-user-info">
+
+                <strong class="feed-post-user-name">
+                    <%= postUserName %>
+                </strong>
+
+
+                <% if (postDateText) { %>
+
+                    <span class="feed-post-date">
+                        <%= postDateText %>
+                    </span>
+
+                <% } %>
+
+            </div>
 
         </div>
 
 
-        <!-- DELETE -->
-        <% if (
-            user &&
-            (
-                (
-                    post.user &&
-                    user._id &&
-                    post.user.toString() === user._id.toString()
-                ) ||
-                user.role === "admin"
-            )
-        ) { %>
+
+        <!-- =================================================
+             POST MENU
+        ================================================== -->
+
+        <% if (user && (user.role === "admin" || (
+            post.user &&
+            user._id &&
+            post.user.toString() === user._id.toString()
+        ))) { %>
 
             <button
                 type="button"
-                class="feed-post-delete"
-                data-post-id="<%= post._id %>"
-                aria-label="Delete post"
-                title="Delete post"
+                class="feed-post-menu-button"
+                data-post-menu="<%= postId %>"
+                aria-label="Post options"
+                title="Post options"
             >
 
-                <i class="bi bi-trash3"></i>
+                <i class="bi bi-three-dots"></i>
 
             </button>
 
         <% } %>
+
 
     </header>
 
@@ -83,12 +320,10 @@
              TITLE
         ================================================== -->
 
-        <% if (post.title) { %>
+        <% if (postTitle) { %>
 
             <h3 class="feed-post-title">
-
-                <%= post.title %>
-
+                <%= postTitle %>
             </h3>
 
         <% } %>
@@ -99,11 +334,11 @@
              TEXT
         ================================================== -->
 
-        <% if (post.text) { %>
+        <% if (postText) { %>
 
             <div class="feed-post-text">
 
-                <%= post.text %>
+                <%= postText %>
 
             </div>
 
@@ -112,55 +347,48 @@
 
 
         <!-- =================================================
-             IMAGES
+             MULTIPLE IMAGE GALLERY
         ================================================== -->
 
-        <%
-            const postImages =
-                Array.isArray(post.images) &&
-                post.images.length
-                    ? post.images
-                    : (
-                        post.image
-                            ? [post.image]
-                            : []
-                    );
-        %>
+        <% if (postImages.length > 0) { %>
 
-
-        <% if (postImages.length) { %>
 
             <div
-                class="feed-post-images
-                <% if (postImages.length === 1) { %>
-                    single-image
-                <% } else if (postImages.length === 2) { %>
-                    two-images
-                <% } else { %>
-                    multiple-images
-                <% } %>"
+                class="
+                    feed-post-image-gallery
+                    gallery-count-<%= postImages.length > 4
+                        ? 'many'
+                        : postImages.length %>
+                "
             >
 
-                <% postImages.forEach(function(image, index) { %>
 
-                    <div
-                        class="feed-post-image"
+                <% postImages.forEach(function (image, index) { %>
+
+                    <button
+                        type="button"
+                        class="feed-post-image-button"
                         data-image-index="<%= index %>"
+                        data-post-id="<%= postId %>"
+                        aria-label="View image <%= index + 1 %>"
                     >
 
                         <img
-                            src="/uploads/<%= image %>"
+                            src="<%= image.startsWith('/') ? image : '/uploads/' + image %>"
                             alt="Post image <%= index + 1 %>"
+                            class="feed-post-image"
                             loading="lazy"
                         >
 
-                    </div>
+                    </button>
 
-                <% }) %>
+                <% }); %>
+
 
             </div>
 
         <% } %>
+
 
     </div>
 
@@ -170,42 +398,62 @@
          POST ACTIONS
     ====================================================== -->
 
-    <footer class="feed-post-actions">
+    <div class="feed-post-actions">
 
 
-        <!-- LIKE -->
+        <!-- =================================================
+             LIKE
+        ================================================== -->
+
         <button
             type="button"
-            class="feed-post-action like-post-button"
-            data-post-id="<%= post._id %>"
-            data-dairy-id="<%= post.dairy %>"
+            class="
+                feed-post-action
+                like-post-button
+                <%= userLiked ? 'liked' : '' %>
+            "
+            data-post-id="<%= postId %>"
+            aria-label="Like post"
         >
 
-            <i class="bi bi-heart"></i>
+            <i
+                class="
+                    bi
+                    <%= userLiked
+                        ? 'bi-heart-fill'
+                        : 'bi-heart' %>
+                "
+            ></i>
 
             <span class="like-count">
-                <%= Array.isArray(post.likes) ? post.likes.length : 0 %>
+                <%= likeCount %>
             </span>
 
         </button>
 
 
-        <!-- COMMENT -->
+
+        <!-- =================================================
+             COMMENT
+        ================================================== -->
+
         <button
             type="button"
             class="feed-post-action comment-post-button"
-            data-post-id="<%= post._id %>"
+            data-post-id="<%= postId %>"
+            aria-label="Comment on post"
         >
 
             <i class="bi bi-chat"></i>
 
             <span class="comment-count">
-                <%= Array.isArray(post.comments) ? post.comments.length : 0 %>
+                <%= commentCount %>
             </span>
 
         </button>
 
-    </footer>
+
+    </div>
 
 
 
@@ -213,63 +461,220 @@
          COMMENTS
     ====================================================== -->
 
-    <% if (
-        Array.isArray(post.comments) &&
-        post.comments.length
-    ) { %>
+    <% if (comments.length > 0) { %>
 
-        <div class="feed-post-comments">
+        <section
+            class="feed-post-comments"
+            data-comments-for="<%= postId %>"
+        >
 
-            <% post.comments.forEach(function(comment) { %>
+
+            <% comments.forEach(function (comment) { %>
+
+
+                <%
+                    const commentUserName =
+                        comment.userName ||
+                        "User";
+
+
+                    const commentUserImage =
+                        comment.userImage ||
+                        (
+                            "https://ui-avatars.com/api/?name=" +
+                            encodeURIComponent(
+                                commentUserName
+                            )
+                        );
+
+
+                    const commentOwner =
+                        currentUserId &&
+                        comment.userId &&
+                        comment.userId.toString() ===
+                        currentUserId;
+
+
+                    const canDeleteComment =
+                        commentOwner ||
+                        (
+                            user &&
+                            user.role === "admin"
+                        );
+
+
+                    let commentDateText =
+                        "";
+
+
+                    if (comment.createdAt) {
+
+                        commentDateText =
+                            new Date(
+                                comment.createdAt
+                            ).toLocaleString();
+
+                    }
+
+                %>
+
+
+                <!-- =========================================
+                     COMMENT
+                ========================================== -->
 
                 <div
-                    class="feed-post-comment"
+                    class="feed-comment"
                     data-comment-id="<%= comment._id %>"
                 >
 
+
+                    <!-- COMMENT AVATAR -->
+
                     <img
-                        class="comment-avatar"
-                        src="<%= comment.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.userName || 'User')) %>"
-                        alt="<%= comment.userName || 'User' %>"
+                        src="<%= commentUserImage %>"
+                        alt="<%= commentUserName %>"
+                        class="feed-comment-avatar"
                     >
 
 
-                    <div class="comment-content">
+                    <!-- COMMENT CONTENT -->
 
-                        <strong>
-                            <%= comment.userName || "User" %>
-                        </strong>
+                    <div class="feed-comment-body">
 
-                        <p>
-                            <%= comment.text %>
-                        </p>
 
-                        <span class="comment-date">
+                        <div class="feed-comment-bubble">
 
-                            <%= new Date(
-                                comment.createdAt
-                            ).toLocaleString() %>
 
-                        </span>
+                            <strong class="feed-comment-user">
+
+                                <%= commentUserName %>
+
+                            </strong>
+
+
+                            <div class="feed-comment-text">
+
+                                <%= comment.text %>
+
+                            </div>
+
+
+                        </div>
+
+
+                        <!-- COMMENT META -->
+
+                        <div class="feed-comment-meta">
+
+
+                            <% if (commentDateText) { %>
+
+                                <span>
+                                    <%= commentDateText %>
+                                </span>
+
+                            <% } %>
+
+
+                            <% if (canDeleteComment) { %>
+
+                                <button
+                                    type="button"
+                                    class="delete-comment-button"
+                                    data-comment-id="<%= comment._id %>"
+                                    data-post-id="<%= postId %>"
+                                >
+
+                                    Delete
+
+                                </button>
+
+                            <% } %>
+
+
+                        </div>
+
 
                     </div>
 
+
                 </div>
 
-            <% }) %>
+
+            <% }); %>
+
+
+        </section>
+
+    <% } %>
+
+
+
+    <!-- =====================================================
+         COMMENT INPUT
+    ====================================================== -->
+
+    <% if (user) { %>
+
+        <div
+            class="feed-post-comment-composer"
+            data-comment-composer="<%= postId %>"
+        >
+
+
+            <img
+                src="<%= user.profileImage || (
+                    'https://ui-avatars.com/api/?name=' +
+                    encodeURIComponent(user.name)
+                ) %>"
+                alt="<%= user.name %>"
+                class="feed-comment-current-avatar"
+            >
+
+
+            <div class="feed-comment-input-wrapper">
+
+                <input
+                    type="text"
+                    class="feed-comment-input"
+                    data-post-id="<%= postId %>"
+                    maxlength="500"
+                    placeholder="Write a comment..."
+                >
+
+
+                <button
+                    type="button"
+                    class="feed-comment-send-button"
+                    data-post-id="<%= postId %>"
+                    aria-label="Send comment"
+                >
+
+                    <i class="bi bi-send-fill"></i>
+
+                </button>
+
+            </div>
+
 
         </div>
 
     <% } %>
 
+
 </article>
 
 
 
+<!-- =========================================================
+     POST CSS
+========================================================= -->
+
 <style>
 
 /* =========================================================
-   FEED POST
+   POST
 ========================================================= */
 
 .feed-post {
@@ -291,12 +696,30 @@
 }
 
 
-
 /* =========================================================
    HEADER
 ========================================================= */
 
 .feed-post-header {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 14px 16px;
+
+    box-sizing: border-box;
+
+}
+
+
+.feed-post-user {
+
+    min-width: 0;
 
     display: flex;
 
@@ -304,23 +727,16 @@
 
     gap: 10px;
 
-    padding: 14px 16px;
-
 }
 
 
 .feed-post-avatar {
 
-    flex: 0 0 42px;
-
-}
-
-
-.feed-post-avatar img {
-
     width: 42px;
 
     height: 42px;
+
+    flex: 0 0 42px;
 
     border-radius: 50%;
 
@@ -331,11 +747,9 @@
 }
 
 
-.feed-post-user {
+.feed-post-user-info {
 
     min-width: 0;
-
-    flex: 1;
 
     display: flex;
 
@@ -344,29 +758,31 @@
 }
 
 
-.feed-post-user strong {
+.feed-post-user-name {
 
     font-size: 14px;
 
-    color: #202520;
+    line-height: 19px;
 
-    line-height: 1.3;
+    color: #202520;
 
 }
 
 
-.feed-post-user span {
+.feed-post-date {
 
     margin-top: 2px;
 
     font-size: 11px;
 
-    color: #858d88;
+    line-height: 15px;
+
+    color: #89918c;
 
 }
 
 
-.feed-post-delete {
+.feed-post-menu-button {
 
     width: 38px;
 
@@ -374,11 +790,11 @@
 
     border: none;
 
+    border-radius: 50%;
+
     background: transparent;
 
-    color: #8b928d;
-
-    border-radius: 50%;
+    color: #68716c;
 
     display: flex;
 
@@ -388,16 +804,16 @@
 
     cursor: pointer;
 
-    font-size: 17px;
+    font-size: 19px;
+
+    padding: 0;
 
 }
 
 
-.feed-post-delete:hover {
+.feed-post-menu-button:hover {
 
-    color: #c62828;
-
-    background: #fff5f5;
+    background: #f1f5f2;
 
 }
 
@@ -409,128 +825,227 @@
 
 .feed-post-content {
 
-    padding:
-        0
-        16px
-        16px;
+    width: 100%;
+
+    box-sizing: border-box;
 
 }
 
 
 .feed-post-title {
 
-    margin:
+    margin: 0;
+
+    padding:
         0
-        0
+        16px
         8px;
 
-    font-size: 20px;
+    font-size: 18px;
 
-    line-height: 1.3;
-
-    color: #202520;
+    line-height: 24px;
 
     font-weight: 700;
+
+    color: #1f241f;
+
+    word-break: break-word;
 
 }
 
 
 .feed-post-text {
 
-    white-space: pre-wrap;
-
-    word-break: break-word;
+    padding:
+        0
+        16px
+        14px;
 
     font-size: 15px;
 
-    line-height: 1.55;
+    line-height: 23px;
 
-    color: #444b46;
+    color: #3e4541;
+
+    white-space: pre-wrap;
+
+    word-break: break-word;
 
 }
 
 
 
 /* =========================================================
-   IMAGE GRID
+   IMAGE GALLERY
 ========================================================= */
 
-.feed-post-images {
+.feed-post-image-gallery {
 
     width: 100%;
 
-    margin-top: 14px;
-
     display: grid;
 
-    gap: 4px;
+    gap: 3px;
 
-    overflow: hidden;
+    background: #f0f2f1;
 
-    border-radius: 12px;
+    box-sizing: border-box;
 
 }
 
 
-.feed-post-images.single-image {
+.feed-post-image-button {
+
+    position: relative;
+
+    display: block;
+
+    width: 100%;
+
+    min-width: 0;
+
+    padding: 0;
+
+    margin: 0;
+
+    border: none;
+
+    background: #f0f2f1;
+
+    cursor: pointer;
+
+    overflow: hidden;
+
+}
+
+
+.feed-post-image {
+
+    width: 100%;
+
+    height: 100%;
+
+    min-height: 180px;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+/* =========================================================
+   ONE IMAGE
+========================================================= */
+
+.gallery-count-1 {
 
     grid-template-columns: 1fr;
 
 }
 
 
-.feed-post-images.two-images {
-
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-}
-
-
-.feed-post-images.multiple-images {
-
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-}
-
-
+.gallery-count-1
 .feed-post-image {
-
-    position: relative;
-
-    width: 100%;
-
-    aspect-ratio: 1 / 1;
-
-    overflow: hidden;
-
-    background: #f2f4f2;
-
-    cursor: pointer;
-
-}
-
-
-.feed-post-images.single-image
-.feed-post-image {
-
-    aspect-ratio: auto;
 
     max-height: 600px;
 
+    min-height: 0;
+
+    object-fit: contain;
+
+    background: #f5f6f5;
+
 }
 
 
-.feed-post-image img {
+/* =========================================================
+   TWO IMAGES
+========================================================= */
 
-    display: block;
+.gallery-count-2 {
 
-    width: 100%;
+    grid-template-columns:
+        repeat(2, 1fr);
 
-    height: 100%;
+}
 
-    object-fit: cover;
+
+.gallery-count-2
+.feed-post-image {
+
+    aspect-ratio: 1 / 1;
+
+}
+
+
+/* =========================================================
+   THREE IMAGES
+========================================================= */
+
+.gallery-count-3 {
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+}
+
+
+.gallery-count-3
+.feed-post-image-button:first-child {
+
+    grid-row: span 2;
+
+}
+
+
+.gallery-count-3
+.feed-post-image-button:first-child
+.feed-post-image {
+
+    min-height: 300px;
+
+}
+
+
+/* =========================================================
+   FOUR IMAGES
+========================================================= */
+
+.gallery-count-4 {
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+}
+
+
+.gallery-count-4
+.feed-post-image {
+
+    aspect-ratio: 1 / 1;
+
+}
+
+
+/* =========================================================
+   MANY IMAGES
+========================================================= */
+
+.gallery-count-many {
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+}
+
+
+.gallery-count-many
+.feed-post-image {
+
+    aspect-ratio: 1 / 1;
+
+    min-height: 110px;
 
 }
 
@@ -542,16 +1057,14 @@
 
 .feed-post-actions {
 
-    min-height: 48px;
-
     display: flex;
 
     align-items: center;
 
-    gap: 6px;
+    gap: 8px;
 
     padding:
-        0
+        8px
         12px;
 
     border-top: 1px solid #edf1ee;
@@ -561,25 +1074,29 @@
 
 .feed-post-action {
 
-    min-width: 70px;
+    min-width: 58px;
 
-    height: 40px;
+    height: 38px;
+
+    padding:
+        0
+        10px;
 
     border: none;
 
+    border-radius: 19px;
+
     background: transparent;
 
-    color: #68716b;
+    color: #68716c;
 
-    display: flex;
+    display: inline-flex;
 
     align-items: center;
 
     justify-content: center;
 
     gap: 6px;
-
-    border-radius: 20px;
 
     cursor: pointer;
 
@@ -590,7 +1107,7 @@
 
 .feed-post-action:hover {
 
-    background: #f4f7f5;
+    background: #f3f6f4;
 
 }
 
@@ -602,9 +1119,17 @@
 }
 
 
-.like-post-button.liked {
+.feed-post-action.liked {
 
     color: #198754;
+
+}
+
+
+.like-count,
+.comment-count {
+
+    font-size: 13px;
 
 }
 
@@ -616,34 +1141,38 @@
 
 .feed-post-comments {
 
-    border-top: 1px solid #edf1ee;
+    width: 100%;
 
     padding:
-        10px
+        4px
         16px
-        14px;
+        10px;
+
+    box-sizing: border-box;
 
 }
 
 
-.feed-post-comment {
+.feed-comment {
 
     display: flex;
 
-    gap: 9px;
+    align-items: flex-start;
 
-    padding: 7px 0;
+    gap: 8px;
+
+    margin-top: 10px;
 
 }
 
 
-.comment-avatar {
-
-    flex: 0 0 32px;
+.feed-comment-avatar {
 
     width: 32px;
 
     height: 32px;
+
+    flex: 0 0 32px;
 
     border-radius: 50%;
 
@@ -652,7 +1181,7 @@
 }
 
 
-.comment-content {
+.feed-comment-body {
 
     min-width: 0;
 
@@ -661,29 +1190,45 @@
 }
 
 
-.comment-content strong {
+.feed-comment-bubble {
 
-    display: block;
+    display: inline-block;
 
-    font-size: 13px;
+    max-width: 100%;
 
-    color: #202520;
+    padding:
+        8px
+        11px;
+
+    border-radius: 12px;
+
+    background: #f2f5f3;
+
+    box-sizing: border-box;
 
 }
 
 
-.comment-content p {
+.feed-comment-user {
 
-    margin:
-        2px
-        0
-        2px;
+    display: block;
+
+    margin-bottom: 2px;
+
+    font-size: 12px;
+
+    color: #29302b;
+
+}
+
+
+.feed-comment-text {
 
     font-size: 13px;
 
-    line-height: 1.45;
+    line-height: 19px;
 
-    color: #505852;
+    color: #454c48;
 
     white-space: pre-wrap;
 
@@ -692,11 +1237,170 @@
 }
 
 
-.comment-date {
+.feed-comment-meta {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding:
+        3px
+        5px;
 
     font-size: 10px;
 
-    color: #969d98;
+    color: #8a928d;
+
+}
+
+
+.delete-comment-button {
+
+    border: none;
+
+    background: transparent;
+
+    padding: 0;
+
+    color: #b04444;
+
+    cursor: pointer;
+
+    font-size: 10px;
+
+}
+
+
+
+/* =========================================================
+   COMMENT COMPOSER
+========================================================= */
+
+.feed-post-comment-composer {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding:
+        10px
+        12px
+        12px;
+
+    border-top: 1px solid #edf1ee;
+
+}
+
+
+.feed-comment-current-avatar {
+
+    width: 34px;
+
+    height: 34px;
+
+    flex: 0 0 34px;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+}
+
+
+.feed-comment-input-wrapper {
+
+    flex: 1;
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    min-height: 40px;
+
+    border:
+        1px solid #dfe6e1;
+
+    border-radius: 20px;
+
+    background: #f7faf8;
+
+    padding:
+        0
+        5px
+        0
+        12px;
+
+    box-sizing: border-box;
+
+}
+
+
+.feed-comment-input {
+
+    flex: 1;
+
+    min-width: 0;
+
+    height: 38px;
+
+    border: none;
+
+    outline: none;
+
+    background: transparent;
+
+    font-family: inherit;
+
+    font-size: 13px;
+
+    color: #252a26;
+
+}
+
+
+.feed-comment-input::placeholder {
+
+    color: #8c948f;
+
+}
+
+
+.feed-comment-send-button {
+
+    width: 32px;
+
+    height: 32px;
+
+    flex: 0 0 32px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #198754;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+}
+
+
+.feed-comment-send-button:hover {
+
+    background: #e9f4ed;
 
 }
 
@@ -723,33 +1427,41 @@
     }
 
 
-    .feed-post-content {
+    .feed-post-avatar {
 
-        padding:
-            0
-            12px
-            12px;
+        width: 40px;
+
+        height: 40px;
+
+        flex-basis: 40px;
 
     }
 
 
     .feed-post-title {
 
-        font-size: 18px;
+        padding:
+            0
+            12px
+            7px;
+
+        font-size: 17px;
+
+        line-height: 23px;
 
     }
 
 
     .feed-post-text {
 
+        padding:
+            0
+            12px
+            12px;
+
         font-size: 14px;
 
-    }
-
-
-    .feed-post-images {
-
-        margin-top: 12px;
+        line-height: 21px;
 
     }
 
@@ -757,11 +1469,704 @@
     .feed-post-actions {
 
         padding:
-            0
+            6px
             8px;
+
+    }
+
+
+    .feed-post-comments {
+
+        padding-left: 12px;
+
+        padding-right: 12px;
+
+    }
+
+
+    .feed-post-comment-composer {
+
+        padding-left: 10px;
+
+        padding-right: 10px;
+
+    }
+
+
+    .gallery-count-many
+    .feed-post-image {
+
+        min-height: 90px;
+
+    }
+
+}
+
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .feed-post-date {
+
+        font-size: 10px;
+
+    }
+
+
+    .feed-post-title {
+
+        font-size: 16px;
+
+    }
+
+
+    .feed-post-text {
+
+        font-size: 13px;
+
+    }
+
+
+    .gallery-count-many {
+
+        grid-template-columns:
+            repeat(2, 1fr);
 
     }
 
 }
 
 </style>
+
+
+
+<!-- =========================================================
+     POST IMAGE VIEWER
+========================================================= -->
+
+<div
+    id="postImageViewer"
+    class="post-image-viewer"
+    aria-hidden="true"
+>
+
+
+    <button
+        type="button"
+        id="closePostImageViewer"
+        class="post-image-viewer-close"
+        aria-label="Close image"
+    >
+
+        <i class="bi bi-x-lg"></i>
+
+    </button>
+
+
+    <button
+        type="button"
+        id="previousPostImage"
+        class="post-image-viewer-navigation previous"
+        aria-label="Previous image"
+    >
+
+        <i class="bi bi-chevron-left"></i>
+
+    </button>
+
+
+    <img
+        id="postViewerImage"
+        src=""
+        alt="Post image"
+    >
+
+
+    <button
+        type="button"
+        id="nextPostImage"
+        class="post-image-viewer-navigation next"
+        aria-label="Next image"
+    >
+
+        <i class="bi bi-chevron-right"></i>
+
+    </button>
+
+
+    <div
+        id="postImageViewerCounter"
+        class="post-image-viewer-counter"
+    ></div>
+
+
+</div>
+
+
+
+<style>
+
+/* =========================================================
+   IMAGE VIEWER
+========================================================= */
+
+.post-image-viewer {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 100000;
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background:
+        rgba(0, 0, 0, 0.92);
+
+}
+
+
+.post-image-viewer.active {
+
+    display: flex;
+
+}
+
+
+#postViewerImage {
+
+    max-width: 92vw;
+
+    max-height: 88vh;
+
+    width: auto;
+
+    height: auto;
+
+    object-fit: contain;
+
+}
+
+
+.post-image-viewer-close {
+
+    position: absolute;
+
+    top: 18px;
+
+    right: 18px;
+
+    width: 44px;
+
+    height: 44px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 255, 255, 0.12);
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 20px;
+
+}
+
+
+.post-image-viewer-navigation {
+
+    position: absolute;
+
+    top: 50%;
+
+    transform:
+        translateY(-50%);
+
+    width: 46px;
+
+    height: 46px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 255, 255, 0.12);
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 24px;
+
+}
+
+
+.post-image-viewer-navigation.previous {
+
+    left: 15px;
+
+}
+
+
+.post-image-viewer-navigation.next {
+
+    right: 15px;
+
+}
+
+
+.post-image-viewer-counter {
+
+    position: absolute;
+
+    bottom: 20px;
+
+    left: 50%;
+
+    transform:
+        translateX(-50%);
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    background:
+        rgba(0, 0, 0, 0.45);
+
+    padding:
+        5px
+        10px;
+
+    border-radius: 12px;
+
+}
+
+</style>
+
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+<script>
+
+(function () {
+
+    "use strict";
+
+
+    /* =====================================================
+       POST ID
+    ====================================================== */
+
+    const postId =
+        "<%= postId %>";
+
+
+    /* =====================================================
+       IMAGE DATA
+    ====================================================== */
+
+    const postImages =
+        <%- JSON.stringify(postImages) %>;
+
+
+    /* =====================================================
+       IMAGE URL
+    ====================================================== */
+
+    function getImageUrl(image) {
+
+        if (!image) {
+
+            return "";
+
+        }
+
+
+        if (
+            image.startsWith("/")
+        ) {
+
+            return image;
+
+        }
+
+
+        return "/uploads/" + image;
+
+    }
+
+
+    /* =====================================================
+       IMAGE VIEWER ELEMENTS
+    ====================================================== */
+
+    const viewer =
+        document.getElementById(
+            "postImageViewer"
+        );
+
+
+    const viewerImage =
+        document.getElementById(
+            "postViewerImage"
+        );
+
+
+    const closeViewer =
+        document.getElementById(
+            "closePostImageViewer"
+        );
+
+
+    const previousButton =
+        document.getElementById(
+            "previousPostImage"
+        );
+
+
+    const nextButton =
+        document.getElementById(
+            "nextPostImage"
+        );
+
+
+    const counter =
+        document.getElementById(
+            "postImageViewerCounter"
+        );
+
+
+    let currentImageIndex =
+        0;
+
+
+    /* =====================================================
+       SHOW IMAGE
+    ====================================================== */
+
+    function showImage(index) {
+
+        if (
+            !postImages.length ||
+            !viewer ||
+            !viewerImage
+        ) {
+
+            return;
+
+        }
+
+
+        currentImageIndex =
+            (
+                index +
+                postImages.length
+            ) %
+            postImages.length;
+
+
+        viewerImage.src =
+            getImageUrl(
+                postImages[currentImageIndex]
+            );
+
+
+        if (counter) {
+
+            counter.textContent =
+                (
+                    currentImageIndex + 1
+                ) +
+                " / " +
+                postImages.length;
+
+        }
+
+
+        if (previousButton) {
+
+            previousButton.style.display =
+                postImages.length > 1
+                    ? "flex"
+                    : "none";
+
+        }
+
+
+        if (nextButton) {
+
+            nextButton.style.display =
+                postImages.length > 1
+                    ? "flex"
+                    : "none";
+
+        }
+
+    }
+
+
+    /* =====================================================
+       OPEN VIEWER
+    ====================================================== */
+
+    function openViewer(index) {
+
+        if (!viewer) {
+
+            return;
+
+        }
+
+
+        showImage(index);
+
+
+        viewer.classList.add(
+            "active"
+        );
+
+
+        viewer.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+
+        document.body.style.overflow =
+            "hidden";
+
+    }
+
+
+    /* =====================================================
+       CLOSE VIEWER
+    ====================================================== */
+
+    function closeImageViewer() {
+
+        if (!viewer) {
+
+            return;
+
+        }
+
+
+        viewer.classList.remove(
+            "active"
+        );
+
+
+        viewer.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+
+        viewerImage.src =
+            "";
+
+
+        document.body.style.overflow =
+            "";
+
+    }
+
+
+    /* =====================================================
+       IMAGE BUTTONS
+    ====================================================== */
+
+    const imageButtons =
+        document.querySelectorAll(
+            '.feed-post-image-button[data-post-id="' +
+            postId +
+            '"]'
+        );
+
+
+    imageButtons.forEach(
+        function (button) {
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    const index =
+                        Number(
+                            button.dataset.imageIndex
+                        );
+
+
+                    openViewer(index);
+
+                }
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+       CLOSE
+    ====================================================== */
+
+    if (closeViewer) {
+
+        closeViewer.addEventListener(
+            "click",
+            closeImageViewer
+        );
+
+    }
+
+
+    /* =====================================================
+       PREVIOUS
+    ====================================================== */
+
+    if (previousButton) {
+
+        previousButton.addEventListener(
+            "click",
+            function () {
+
+                showImage(
+                    currentImageIndex - 1
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       NEXT
+    ====================================================== */
+
+    if (nextButton) {
+
+        nextButton.addEventListener(
+            "click",
+            function () {
+
+                showImage(
+                    currentImageIndex + 1
+                );
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       CLICK BACKDROP
+    ====================================================== */
+
+    if (viewer) {
+
+        viewer.addEventListener(
+            "click",
+            function (event) {
+
+                if (
+                    event.target === viewer
+                ) {
+
+                    closeImageViewer();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       KEYBOARD
+    ====================================================== */
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (
+                !viewer ||
+                !viewer.classList.contains(
+                    "active"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                closeImageViewer();
+
+            }
+
+
+            if (
+                event.key === "ArrowLeft" &&
+                postImages.length > 1
+            ) {
+
+                showImage(
+                    currentImageIndex - 1
+                );
+
+            }
+
+
+            if (
+                event.key === "ArrowRight" &&
+                postImages.length > 1
+            ) {
+
+                showImage(
+                    currentImageIndex + 1
+                );
+
+            }
+
+        }
+    );
+
+
+})();
+
+</script>
