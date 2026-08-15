@@ -48,12 +48,13 @@ async function getParentDairyFarm(id) {
 
 // ==========================================================
 // CREATE ASSET
-// ==========================================================
 //
-// Creates:
+// Creates the asset AND creates the corresponding
+// feed/update record.
 //
-// 1. The actual Dairy asset.
-// 2. The Update feed record.
+// This is important because the feed is built from
+// models/Update.js. Creating the Dairy asset alone will
+// NOT make anything appear in the update feed.
 //
 // ==========================================================
 
@@ -64,7 +65,7 @@ async function createAsset(
 ) {
 
     // ======================================================
-    // VALIDATE FARM ID
+    // VALIDATE PARENT ID
     // ======================================================
 
     if (
@@ -88,7 +89,7 @@ async function createAsset(
 
 
     // ======================================================
-    // FIND PARENT FARM
+    // GET PARENT FARM
     // ======================================================
 
     const parentFarm =
@@ -119,7 +120,7 @@ async function createAsset(
 
 
     // ======================================================
-    // NORMALIZE VALUES
+    // NORMALIZE DATA
     // ======================================================
 
     const name =
@@ -132,18 +133,6 @@ async function createAsset(
         String(
             assetData.type || ""
         ).trim();
-
-
-    const buyingPrice =
-        Number(
-            assetData.buyingPrice
-        );
-
-
-    const currentWorth =
-        Number(
-            assetData.currentWorth
-        );
 
 
     const description =
@@ -165,12 +154,108 @@ async function createAsset(
 
 
     const status =
-        assetData.status ||
-        "active";
+        String(
+            assetData.status || "active"
+        ).trim();
+
+
+    const buyingPrice =
+        Number(
+            assetData.buyingPrice
+        );
+
+
+    const currentWorth =
+        Number(
+            assetData.currentWorth
+        );
 
 
     // ======================================================
-    // CREATE ACTUAL ASSET
+    // BASIC VALIDATION
+    // ======================================================
+
+    if (!name) {
+
+        const error =
+            new Error(
+                "Asset name is required."
+            );
+
+        error.name =
+            "ValidationError";
+
+        throw error;
+
+    }
+
+
+    if (!type) {
+
+        const error =
+            new Error(
+                "Asset type is required."
+            );
+
+        error.name =
+            "ValidationError";
+
+        throw error;
+
+    }
+
+
+    if (
+        !Number.isFinite(
+            buyingPrice
+        ) ||
+        buyingPrice < 0
+    ) {
+
+        const error =
+            new Error(
+                "Buying price must be a valid number."
+            );
+
+        error.name =
+            "ValidationError";
+
+        throw error;
+
+    }
+
+
+    if (
+        !Number.isFinite(
+            currentWorth
+        ) ||
+        currentWorth < 0
+    ) {
+
+        const error =
+            new Error(
+                "Current worth must be a valid number."
+            );
+
+        error.name =
+            "ValidationError";
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // CREATE ASSET
+    //
+    // IMPORTANT:
+    //
+    // code is deliberately NOT assigned.
+    //
+    // The asset is identified as a manual asset through:
+    //
+    //     assetCode = parentFarm.code
+    //
     // ======================================================
 
     const asset =
@@ -192,10 +277,6 @@ async function createAsset(
 
             status,
 
-            // ----------------------------------------------
-            // Parent Dairy Farm
-            // ----------------------------------------------
-
             assetCode:
                 parentFarm.code
 
@@ -207,117 +288,127 @@ async function createAsset(
 
     // ======================================================
     // CREATE FEED UPDATE
+    //
+    // The feed is loaded from Update documents.
+    //
+    // Therefore this document is what makes the new asset
+    // appear immediately in:
+    //
+    //     update/feed.ejs
+    //
     // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // The update belongs to the PARENT FARM.
-    //
-    // This guarantees that pageService.js will find it
-    // whenever somebody opens the farm feed.
-    //
-    // ======================================================
 
-    let userId =
-        null;
-
-    let userName =
-        "User";
-
-    let userImage =
-        "";
-
-
-    if (user) {
-
-        userId =
-            user._id || null;
-
-        userName =
-            user.name ||
-            user.userName ||
-            user.username ||
-            "User";
-
-        userImage =
-            user.profileImage ||
-            user.image ||
-            user.avatar ||
-            "";
-
-    }
-
-
-    await Update.create({
-
-        // ----------------------------------------------
-        // IMPORTANT: PARENT FARM
-        // ----------------------------------------------
+    const updateData = {
 
         dairy:
             parentFarm._id,
 
-        // ----------------------------------------------
-        // USER
-        // ----------------------------------------------
-
-        user:
-            userId,
-
-        userName,
-
-        userImage,
-
-        // ----------------------------------------------
-        // FEED TYPE
-        // ----------------------------------------------
-
         type:
-            "assetAdd",
+            "asset",
 
-        // ----------------------------------------------
-        // ASSET INFORMATION
-        // ----------------------------------------------
+        text:
+            `${name} was added as a new asset.`
 
-        asset: {
+    };
 
-            assetId:
-                asset._id,
 
-            name:
-                asset.name,
+    // ======================================================
+    // USER INFORMATION
+    // ======================================================
 
-            type:
-                asset.type,
+    if (user) {
 
-            buyingPrice:
-                asset.buyingPrice,
+        if (
+            user._id
+        ) {
 
-            currentWorth:
-                asset.currentWorth,
-
-            description:
-                asset.description,
-
-            condition:
-                asset.condition,
-
-            location:
-                asset.location,
-
-            status:
-                asset.status
+            updateData.user =
+                user._id;
 
         }
 
-    });
+        updateData.userName =
+            user.name ||
+            user.userName ||
+            "User";
+
+    }
 
 
     // ======================================================
-    // RETURN CREATED ASSET
+    // ASSET INFORMATION
+    //
+    // These fields are deliberately stored on the Update
+    // document so the feed card does not need to query the
+    // Dairy collection again just to display the new asset.
+    //
     // ======================================================
 
-    return asset;
+    updateData.asset = {
+
+        assetId:
+            asset._id,
+
+        name:
+            asset.name,
+
+        type:
+            asset.type,
+
+        buyingPrice:
+            asset.buyingPrice,
+
+        currentWorth:
+            asset.currentWorth,
+
+        description:
+            asset.description,
+
+        condition:
+            asset.condition,
+
+        location:
+            asset.location,
+
+        status:
+            asset.status,
+
+        assetCode:
+            asset.assetCode,
+
+        parentDairyId:
+            parentFarm._id,
+
+        parentDairyName:
+            parentFarm.name || "",
+
+        parentDairyCode:
+            parentFarm.code
+
+    };
+
+
+    // ======================================================
+    // SAVE UPDATE
+    // ======================================================
+
+    const update =
+        await Update.create(
+            updateData
+        );
+
+
+    // ======================================================
+    // RETURN BOTH
+    // ======================================================
+
+    return {
+
+        asset,
+
+        update
+
+    };
 
 }
 
