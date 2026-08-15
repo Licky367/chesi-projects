@@ -3,9 +3,9 @@
 ====================================================== -->
 
 <article
-    class="feed-card asset-card asset-added-card"
+    class="feed-card asset-add-card"
     data-id="<%= item._id %>"
-    data-type="asset"
+    data-type="assetAdd"
 >
 
 
@@ -19,11 +19,26 @@
         <div class="feed-user">
 
 
-            <img
-                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
-                class="avatar-sm"
-                alt="<%= item.userName || 'User' %>"
-            >
+            <% if (item.userImage) { %>
+
+                <img
+                    src="<%= item.userImage %>"
+                    class="avatar-sm"
+                    alt="<%= item.userName || 'User' %>"
+                >
+
+            <% } else { %>
+
+                <img
+                    src="<%= 'https://ui-avatars.com/api/?name=' +
+                        encodeURIComponent(
+                            item.userName || 'User'
+                        ) %>"
+                    class="avatar-sm"
+                    alt="<%= item.userName || 'User' %>"
+                >
+
+            <% } %>
 
 
             <div class="feed-user-info">
@@ -49,40 +64,6 @@
         </div>
 
 
-        <!-- =================================================
-             DELETE
-        ================================================== -->
-
-        <% if (
-            user &&
-            (
-                user.role === "admin" ||
-                (
-                    user._id &&
-                    item.userId &&
-                    user._id.toString() ===
-                    item.userId.toString()
-                )
-            )
-        ) { %>
-
-
-            <button
-                class="delete-post"
-                data-id="<%= item._id %>"
-                data-type="asset"
-                title="Delete Asset Record"
-                type="button"
-            >
-
-                <i class="bi bi-trash3-fill"></i>
-
-            </button>
-
-
-        <% } %>
-
-
     </div>
 
 
@@ -94,10 +75,6 @@
     <div class="feed-body">
 
 
-        <!-- =================================================
-             TITLE
-        ================================================== -->
-
         <h3>
 
             🏗️ New Asset Added
@@ -105,238 +82,192 @@
         </h3>
 
 
-        <!-- =================================================
-             INTRODUCTION
-        ================================================== -->
-
         <p>
 
             <strong>
-                <%= item.userName || "A user" %>
+                <%= item.userName || "Someone" %>
             </strong>
 
-            added a new asset to
-
-            <strong>
-                <%= item.dairyName || "this Dairy Farm" %>
-            </strong>.
+            added a new asset to this Dairy Farm.
 
         </p>
 
 
+        <!-- =============================================
+             ASSET INFORMATION
+        ============================================== -->
 
-        <!-- =================================================
-             ASSET NAME
-        ================================================== -->
+        <div class="asset-add-details">
 
-        <% if (item.asset && item.asset.name) { %>
 
-            <p>
+            <!-- =========================================
+                 ASSET NAME
+            ========================================== -->
 
-                <strong>
-                    Asset:
-                </strong>
+            <div class="asset-add-title">
 
-                <%= item.asset.name %>
-
-            </p>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             ASSET TYPE
-        ================================================== -->
-
-        <% if (item.asset && item.asset.type) { %>
-
-            <p>
-
-                <strong>
-                    Type:
-                </strong>
-
-                <%= item.asset.type
-                    .replace(
-                        /([A-Z])/g,
-                        " $1"
-                    )
-                    .replace(
-                        /^./,
-                        function(char) {
-                            return char.toUpperCase();
-                        }
-                    )
-                %>
-
-            </p>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             BUYING PRICE
-        ================================================== -->
-
-        <% if (
-            item.asset &&
-            item.asset.buyingPrice !== undefined &&
-            item.asset.buyingPrice !== null
-        ) { %>
-
-            <p>
-
-                <strong>
-                    Buying Price:
-                </strong>
-
-                KES
-                <%= Number(
-                    item.asset.buyingPrice
-                ).toLocaleString(
-                    "en-KE",
-                    {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }
-                ) %>
-
-            </p>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             CURRENT WORTH
-        ================================================== -->
-
-        <% if (
-            item.asset &&
-            item.asset.currentWorth !== undefined &&
-            item.asset.currentWorth !== null
-        ) { %>
-
-            <p>
-
-                <strong>
-                    Current Worth:
-                </strong>
-
-                KES
-                <%= Number(
-                    item.asset.currentWorth
-                ).toLocaleString(
-                    "en-KE",
-                    {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }
-                ) %>
-
-            </p>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             DESCRIPTION
-        ================================================== -->
-
-        <% if (
-            item.asset &&
-            item.asset.description
-        ) { %>
-
-            <p>
-
-                <strong>
-                    Description:
-                </strong>
-
-                <%= item.asset.description %>
-
-            </p>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             CONDITION
-        ================================================== -->
-
-        <% if (
-            item.asset &&
-            item.asset.condition
-        ) { %>
-
-            <p>
-
-                <strong>
-                    Condition:
-                </strong>
-
-                <%= item.asset.condition %>
-
-            </p>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             LOCATION
-        ================================================== -->
-
-        <% if (
-            item.asset &&
-            item.asset.location
-        ) { %>
-
-            <p>
-
-                <strong>
-                    Location:
-                </strong>
-
-                <%= item.asset.location %>
-
-            </p>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             STATUS
-        ================================================== -->
-
-        <% if (
-            item.asset &&
-            item.asset.status
-        ) { %>
-
-            <div
-                class="asset-status"
-            >
-
-                Status:
-
-                <strong>
-
-                    <%= item.asset.status
-                        .charAt(0)
-                        .toUpperCase() +
-                        item.asset.status.slice(1)
-                    %>
-
-                </strong>
+                <%= item.assetName || "Unnamed Asset" %>
 
             </div>
+
+
+            <!-- =========================================
+                 ASSET TYPE
+            ========================================== -->
+
+            <% if (item.assetType) { %>
+
+                <div class="asset-add-row">
+
+                    <span class="asset-add-label">
+
+                        Type
+
+                    </span>
+
+                    <span class="asset-add-value">
+
+                        <%= item.assetType
+                            .replace(
+                                /([A-Z])/g,
+                                " $1"
+                            )
+                            .replace(
+                                /^./,
+                                function(char) {
+                                    return char.toUpperCase();
+                                }
+                            ) %>
+
+                    </span>
+
+                </div>
+
+            <% } %>
+
+
+            <!-- =========================================
+                 CURRENT WORTH
+            ========================================== -->
+
+            <div class="asset-add-row">
+
+                <span class="asset-add-label">
+
+                    Current Worth
+
+                </span>
+
+                <span class="asset-add-value">
+
+                    KES
+                    <%= Number(
+                        item.assetCurrentWorth || 0
+                    ).toLocaleString(
+                        "en-KE",
+                        {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        }
+                    ) %>
+
+                </span>
+
+            </div>
+
+
+            <!-- =========================================
+                 CONDITION
+            ========================================== -->
+
+            <% if (item.assetCondition) { %>
+
+                <div class="asset-add-row">
+
+                    <span class="asset-add-label">
+
+                        Condition
+
+                    </span>
+
+                    <span class="asset-add-value">
+
+                        <%= item.assetCondition %>
+
+                    </span>
+
+                </div>
+
+            <% } %>
+
+
+            <!-- =========================================
+                 LOCATION
+            ========================================== -->
+
+            <% if (item.assetLocation) { %>
+
+                <div class="asset-add-row">
+
+                    <span class="asset-add-label">
+
+                        Location
+
+                    </span>
+
+                    <span class="asset-add-value">
+
+                        <%= item.assetLocation %>
+
+                    </span>
+
+                </div>
+
+            <% } %>
+
+
+            <!-- =========================================
+                 STATUS
+            ========================================== -->
+
+            <% if (item.assetStatus) { %>
+
+                <div class="asset-add-status">
+
+                    <span>
+
+                        Status
+
+                    </span>
+
+                    <strong>
+
+                        <%= item.assetStatus
+                            .charAt(0)
+                            .toUpperCase() +
+                            item.assetStatus.slice(1) %>
+
+                    </strong>
+
+                </div>
+
+            <% } %>
+
+
+        </div>
+
+
+        <!-- =============================================
+             DESCRIPTION
+        ============================================== -->
+
+        <% if (item.assetDescription) { %>
+
+            <p class="asset-add-description">
+
+                <%= item.assetDescription %>
+
+            </p>
 
         <% } %>
 
@@ -351,9 +282,8 @@
 
     <%- include("partials/feed-actions", {
         item,
-        type: "asset"
+        type: "assetAdd"
     }) %>
-
 
 
     <!-- =================================================
@@ -363,8 +293,177 @@
     <%- include("comment-section", {
         item,
         user,
-        type: "asset"
+        type: "assetAdd"
     }) %>
 
 
 </article>
+
+
+
+<!-- =====================================================
+     ASSET ADD CARD CSS
+====================================================== -->
+
+<style>
+
+.asset-add-card {
+
+    overflow: hidden;
+
+}
+
+
+.asset-add-card .feed-body h3 {
+
+    margin-bottom: 10px;
+
+}
+
+
+.asset-add-details {
+
+    margin-top: 16px;
+
+    padding: 15px;
+
+    background: #f5f9f6;
+
+    border: 1px solid #dce8df;
+
+    border-radius: 13px;
+
+}
+
+
+.asset-add-title {
+
+    margin-bottom: 13px;
+
+    color: #1f4f31;
+
+    font-size: 18px;
+
+    font-weight: 800;
+
+}
+
+
+.asset-add-row {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 9px 0;
+
+    border-top: 1px solid #e6eee8;
+
+}
+
+
+.asset-add-row:first-of-type {
+
+    border-top: none;
+
+}
+
+
+.asset-add-label {
+
+    color: #718078;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+}
+
+
+.asset-add-value {
+
+    color: #304139;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    text-align: right;
+
+}
+
+
+.asset-add-status {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-top: 9px;
+
+    padding-top: 11px;
+
+    border-top: 1px solid #e0e9e3;
+
+    color: #718078;
+
+    font-size: 13px;
+
+}
+
+
+.asset-add-status strong {
+
+    color: #2f8f55;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+    text-transform: capitalize;
+
+}
+
+
+.asset-add-description {
+
+    margin-top: 14px;
+
+    padding-top: 14px;
+
+    border-top: 1px solid #edf1ee;
+
+    color: #536159;
+
+    font-size: 13px;
+
+    line-height: 1.55;
+
+}
+
+
+@media (max-width: 600px) {
+
+    .asset-add-row {
+
+        gap: 12px;
+
+    }
+
+    .asset-add-title {
+
+        font-size: 17px;
+
+    }
+
+}
+
+</style>
