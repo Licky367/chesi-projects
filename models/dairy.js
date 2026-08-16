@@ -123,6 +123,17 @@ const DAIRY_STATUSES = [
 
 
 // ==========================================================
+// PROFILE IMAGE LIMIT
+// ==========================================================
+//
+// A Dairy profile can have at most 5 profile images.
+//
+// ==========================================================
+
+const MAX_PROFILE_IMAGES = 5;
+
+
+// ==========================================================
 // SCHEMA
 // ==========================================================
 
@@ -131,7 +142,83 @@ const dairySchema = new mongoose.Schema(
     {
 
         // ==================================================
-        // PROFILE IMAGE
+        // PROFILE IMAGES
+        // ==================================================
+        //
+        // New profile-image system.
+        //
+        // A Dairy can have a maximum of 5 profile images.
+        //
+        // The first image is treated as the current/display
+        // profile image.
+        //
+        // Example:
+        //
+        // profileImages: [
+        //     "cow-1.jpg",
+        //     "cow-2.jpg",
+        //     "cow-3.jpg"
+        // ]
+        //
+        // ==================================================
+
+        profileImages: {
+
+            type: [
+
+                {
+
+                    type: String,
+
+                    trim: true
+
+                }
+
+            ],
+
+            default: [],
+
+            validate: {
+
+                validator: function(images) {
+
+                    return (
+
+                        Array.isArray(images) &&
+
+                        images.length <=
+                            MAX_PROFILE_IMAGES
+
+                    );
+
+                },
+
+                message:
+                    `A maximum of ${MAX_PROFILE_IMAGES} profile images is allowed.`
+
+            }
+
+        },
+
+
+        // ==================================================
+        // LEGACY PROFILE IMAGE
+        // ==================================================
+        //
+        // Kept for backwards compatibility.
+        //
+        // Existing Dairy records may still contain:
+        //
+        //     profileImage: "old-image.jpg"
+        //
+        // New profile-image operations should use:
+        //
+        //     profileImages
+        //
+        // If profileImages is empty but profileImage exists,
+        // the virtuals below will automatically use this
+        // legacy image as the first profile image.
+        //
         // ==================================================
 
         profileImage: {
@@ -216,11 +303,13 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // DATE OF BIRTH
+        // ==================================================
         //
         // Relevant to animals.
         //
         // Not required at schema level because existing
         // records and non-animal assets do not use it.
+        //
         // ==================================================
 
         dateOfBirth: {
@@ -563,36 +652,40 @@ const dairySchema = new mongoose.Schema(
 
         },
 
-// ==========================================================
-// SELLING PRICE
-//
-// The amount received when the Dairy / Asset is sold.
-//
-// This is kept at 0 for assets that have not yet been sold.
-// ==========================================================
 
-sellingPrice: {
+        // ==================================================
+        // SELLING PRICE
+        //
+        // The amount received when the Dairy / Asset is sold.
+        //
+        // This is kept at 0 for assets that have not yet
+        // been sold.
+        // ==================================================
 
-    type: Number,
+        sellingPrice: {
 
-    min: 0,
+            type: Number,
 
-    default: 0
+            min: 0,
 
-},
+            default: 0
 
-
-revenue: {
-
-    type: Number,
-
-    min: 0,
-
-    default: 0
-
-},
+        },
 
 
+        // ==================================================
+        // REVENUE
+        // ==================================================
+
+        revenue: {
+
+            type: Number,
+
+            min: 0,
+
+            default: 0
+
+        },
 
 
         // ==================================================
@@ -785,13 +878,6 @@ dairySchema.virtual("isStructure").get(function() {
 
 // ==========================================================
 // VIRTUAL: IS MANUAL ASSET
-//
-// Kept for backwards compatibility.
-//
-// In the new system, a manual asset is simply a record
-// without a code.
-//
-// Such records may optionally belong to a Dairy Farm.
 // ==========================================================
 
 dairySchema.virtual("isManualAsset").get(function() {
@@ -809,8 +895,6 @@ dairySchema.virtual("isManualAsset").get(function() {
 
 // ==========================================================
 // VIRTUAL: IS ASSIGNED ASSET
-//
-// True when the record belongs to a Dairy Farm.
 // ==========================================================
 
 dairySchema.virtual("isAssignedAsset").get(function() {
@@ -828,8 +912,6 @@ dairySchema.virtual("isAssignedAsset").get(function() {
 
 // ==========================================================
 // VIRTUAL: IS STANDALONE ASSET
-//
-// A structure/facility without a parent Dairy Farm.
 // ==========================================================
 
 dairySchema.virtual("isStandaloneAsset").get(function() {
@@ -909,8 +991,6 @@ dairySchema.virtual("isFemale").get(function() {
 
 // ==========================================================
 // VIRTUAL: HAS IDENTITY
-//
-// Animals have positive automatically assigned codes.
 // ==========================================================
 
 dairySchema.virtual("hasIdentity").get(function() {
@@ -1107,12 +1187,12 @@ dairySchema.virtual("isMilkingText").get(function() {
 
 
 // ==========================================================
-// VIRTUAL: DISPLAY IMAGE
+// HELPER: NORMALIZE PROFILE IMAGE URL
 // ==========================================================
 
-dairySchema.virtual("displayImage").get(function() {
+function normalizeProfileImage(image, name) {
 
-    if (!this.profileImage) {
+    if (!image) {
 
         return (
 
@@ -1120,7 +1200,7 @@ dairySchema.virtual("displayImage").get(function() {
 
             `${encodeURIComponent(
 
-                this.name || "Dairy"
+                name || "Dairy"
 
             )}`
 
@@ -1131,25 +1211,162 @@ dairySchema.virtual("displayImage").get(function() {
 
     if (
         /^https?:\/\//i.test(
-            this.profileImage
+            image
         )
     ) {
 
-        return this.profileImage;
+        return image;
 
     }
 
 
     if (
-        this.profileImage.startsWith("/")
+        image.startsWith("/")
     ) {
 
-        return this.profileImage;
+        return image;
 
     }
 
 
-    return `/uploads/${this.profileImage}`;
+    return `/uploads/${image}`;
+
+}
+
+
+// ==========================================================
+// VIRTUAL: DISPLAY IMAGES
+// ==========================================================
+//
+// Returns all profile images in display-ready form.
+//
+// New records:
+//
+//     profileImages
+//
+// Old records:
+//
+//     profileImage
+//
+// ==========================================================
+
+dairySchema.virtual("displayImages").get(function() {
+
+    let images = [];
+
+
+    // ======================================================
+    // NEW SYSTEM
+    // ======================================================
+
+    if (
+        Array.isArray(
+            this.profileImages
+        )
+    ) {
+
+        images =
+            this.profileImages
+                .filter(Boolean)
+                .map(
+                    image =>
+                        normalizeProfileImage(
+                            image,
+                            this.name
+                        )
+                );
+
+    }
+
+
+    // ======================================================
+    // LEGACY FALLBACK
+    // ======================================================
+
+    if (
+
+        images.length === 0 &&
+
+        this.profileImage
+
+    ) {
+
+        images.push(
+
+            normalizeProfileImage(
+
+                this.profileImage,
+
+                this.name
+
+            )
+
+        );
+
+    }
+
+
+    // ======================================================
+    // FINAL FALLBACK
+    // ======================================================
+
+    if (images.length === 0) {
+
+        images.push(
+
+            normalizeProfileImage(
+
+                "",
+
+                this.name
+
+            )
+
+        );
+
+    }
+
+
+    return images.slice(
+        0,
+        MAX_PROFILE_IMAGES
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: DISPLAY IMAGE
+// ==========================================================
+//
+// The first profile image is the primary/current image.
+//
+// Existing EJS code using:
+//
+//     dairy.displayImage
+//
+// will continue working.
+//
+// ==========================================================
+
+dairySchema.virtual("displayImage").get(function() {
+
+    const images =
+        this.displayImages;
+
+
+    return (
+
+        images.length > 0
+
+            ? images[0]
+
+            : normalizeProfileImage(
+                "",
+                this.name
+            )
+
+    );
 
 });
 
@@ -1216,10 +1433,6 @@ dairySchema.virtual("isActiveAsset").get(function() {
 
 // ==========================================================
 // VIRTUAL: IS IDENTIFIED DAIRY
-//
-// Backwards-compatible virtual.
-//
-// In the new system this means an identified animal.
 // ==========================================================
 
 dairySchema.virtual("isIdentifiedDairy").get(function() {
@@ -1236,6 +1449,85 @@ dairySchema.virtual("isIdentifiedDairy").get(function() {
 dairySchema.pre(
     "validate",
     function(next) {
+
+        // ==================================================
+        // NORMALIZE PROFILE IMAGES
+        // ==================================================
+
+        if (
+            !Array.isArray(
+                this.profileImages
+            )
+        ) {
+
+            this.profileImages = [];
+
+        }
+
+
+        this.profileImages =
+            this.profileImages
+                .filter(Boolean)
+                .map(
+                    image =>
+                        String(image).trim()
+                )
+                .filter(Boolean)
+                .slice(
+                    0,
+                    MAX_PROFILE_IMAGES
+                );
+
+
+        // ==================================================
+        // BACKWARDS COMPATIBILITY
+        // ==================================================
+        //
+        // If an old record only has profileImage, copy it
+        // into the new profileImages array.
+        //
+        // ==================================================
+
+        if (
+
+            this.profileImages.length === 0 &&
+
+            this.profileImage
+
+        ) {
+
+            this.profileImages = [
+
+                String(
+                    this.profileImage
+                ).trim()
+
+            ];
+
+        }
+
+
+        // ==================================================
+        // KEEP LEGACY FIELD SYNCHRONIZED
+        // ==================================================
+        //
+        // profileImage always represents the first image.
+        //
+        // ==================================================
+
+        if (
+            this.profileImages.length > 0
+        ) {
+
+            this.profileImage =
+                this.profileImages[0];
+
+        } else {
+
+            this.profileImage = "";
+
+        }
+
 
         // ==================================================
         // NORMALIZE NULLABLE VALUES
@@ -1261,22 +1553,11 @@ dairySchema.pre(
 
         // ==================================================
         // DAIRY FARM
-        //
-        // Negative code.
         // ==================================================
 
         if (this.isDairyFarm) {
 
-            // ----------------------------------------------
-            // Dairy Farms cannot have a parent farm.
-            // ----------------------------------------------
-
             this.assetCode = null;
-
-
-            // ----------------------------------------------
-            // Dairy Farms do not use animal fields.
-            // ----------------------------------------------
 
             this.dateOfBirth = null;
 
@@ -1284,10 +1565,6 @@ dairySchema.pre(
 
             this.isMilking = false;
 
-
-            // ----------------------------------------------
-            // Validate farm type.
-            // ----------------------------------------------
 
             if (
 
@@ -1314,15 +1591,9 @@ dairySchema.pre(
 
         // ==================================================
         // ANIMAL
-        //
-        // Positive code.
         // ==================================================
 
         if (this.isAnimal) {
-
-            // ----------------------------------------------
-            // Male animals cannot be milking.
-            // ----------------------------------------------
 
             if (!this.isFemale) {
 
@@ -1330,12 +1601,6 @@ dairySchema.pre(
 
             }
 
-
-            // ----------------------------------------------
-            // Animal must belong to a Dairy Farm.
-            //
-            // assetCode must therefore be negative.
-            // ----------------------------------------------
 
             if (
 
@@ -1371,10 +1636,6 @@ dairySchema.pre(
             }
 
 
-            // ----------------------------------------------
-            // Validate breed.
-            // ----------------------------------------------
-
             if (
 
                 this.type &&
@@ -1400,15 +1661,9 @@ dairySchema.pre(
 
         // ==================================================
         // STRUCTURE / FACILITY
-        //
-        // code === null
         // ==================================================
 
         if (this.isStructure) {
-
-            // ----------------------------------------------
-            // Structures do not have animal information.
-            // ----------------------------------------------
 
             this.dateOfBirth = null;
 
@@ -1416,13 +1671,6 @@ dairySchema.pre(
 
             this.isMilking = false;
 
-
-            // ----------------------------------------------
-            // Parent Dairy Farm is OPTIONAL.
-            //
-            // If supplied, it MUST be a negative Dairy
-            // Farm code.
-            // ----------------------------------------------
 
             if (
 
@@ -1444,10 +1692,6 @@ dairySchema.pre(
 
             }
 
-
-            // ----------------------------------------------
-            // Validate structure type.
-            // ----------------------------------------------
 
             if (
 
@@ -1774,6 +2018,18 @@ function() {
 
 
 // ==========================================================
+// STATIC: GET MAX PROFILE IMAGES
+// ==========================================================
+
+dairySchema.statics.getMaxProfileImages =
+function() {
+
+    return MAX_PROFILE_IMAGES;
+
+};
+
+
+// ==========================================================
 // STATIC: CALCULATE NET WORTH
 // ==========================================================
 
@@ -1871,6 +2127,10 @@ Dairy.STRUCTURE_TYPES =
 
 Dairy.DAIRY_STATUSES =
     DAIRY_STATUSES;
+
+
+Dairy.MAX_PROFILE_IMAGES =
+    MAX_PROFILE_IMAGES;
 
 
 // ==========================================================
