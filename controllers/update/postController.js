@@ -5,31 +5,39 @@
 // PURPOSE:
 //     Handles creation and management of feed posts.
 //
-// CREATE POST TARGET RULES:
+// POST TARGET SYSTEM:
 // ----------------------------------------------------------
 //
 // CURRENT DAIRY HAS POSITIVE CODE:
-//     The post automatically belongs to the current Dairy.
+//     The current Dairy automatically becomes the target.
 //
 // CURRENT DAIRY HAS NEGATIVE CODE:
-//     User must submit targetDairyId.
+//     User MUST select a target.
 //
-// VALID TARGET:
-//     1. Animal
-//            code > 0
+// TARGET CATEGORIES:
 //
-//     2. Structure / Facility / Tool
-//            code === null
-//            code === undefined
-//            code === ""
+//     animal:
+//         code > 0
 //
-// INVALID TARGET:
-//     code < 0
+//     structure:
+//         code === null
+//         code === undefined
+//         code === ""
 //
-// Negative-code records are NEVER valid targets.
+// NEGATIVE-CODE RECORDS:
+//     NEVER valid as post targets.
 //
-// The selected Dairy _id is passed to updateService.createPost()
-// as dairyId.
+// IMPORTANT:
+// ----------------------------------------------------------
+// This controller also provides:
+//
+//     getPostTargets()
+//
+// which allows create-post.ejs to dynamically load the
+// available Phase 2 target list.
+//
+// This avoids depending on the parent Dairy page controller
+// to provide a `dairies` variable.
 // ==========================================================
 
 
@@ -52,29 +60,365 @@ const updateService =
 
 
 // ==========================================================
-// CREATE POST
+// HELPER:
+// DETERMINE WHETHER A VALUE IS A NEGATIVE CODE
+// ==========================================================
+
+function hasNegativeCode(code) {
+
+    return (
+
+        code !== null &&
+
+        code !== undefined &&
+
+        code !== "" &&
+
+        Number.isFinite(
+            Number(code)
+        ) &&
+
+        Number(code) < 0
+
+    );
+
+}
+
+
+
+// ==========================================================
+// HELPER:
+// DETERMINE WHETHER A VALUE IS AN ANIMAL CODE
+// ==========================================================
+
+function hasAnimalCode(code) {
+
+    return (
+
+        code !== null &&
+
+        code !== undefined &&
+
+        code !== "" &&
+
+        Number.isFinite(
+            Number(code)
+        ) &&
+
+        Number(code) > 0
+
+    );
+
+}
+
+
+
+// ==========================================================
+// HELPER:
+// DETERMINE WHETHER A VALUE REPRESENTS A
+// STRUCTURE / FACILITY / TOOL
+// ==========================================================
+
+function hasNoCode(code) {
+
+    return (
+
+        code === null ||
+
+        code === undefined ||
+
+        code === ""
+
+    );
+
+}
+
+
+
+// ==========================================================
+// GET POST TARGETS
 // ==========================================================
 //
-// Creates a normal feed post.
+// PURPOSE:
 //
-// Supports:
+//     Supplies the Phase 2 list used by create-post.ejs.
 //
-//     title
-//     text
-//     multiple images
+// URL:
 //
-// Uploaded files:
+//     GET /dairy/:id/post-targets
 //
-//     req.files
+// RESPONSE:
 //
-// TARGET:
+//     {
+//         success: true,
+//         currentDairy: {...},
+//         animals: [...],
+//         structures: [...]
+//     }
 //
-//     Positive-code page:
-//         current Dairy is automatically the target.
+// RULES:
 //
-//     Negative-code page:
-//         targetDairyId must be submitted.
+//     animals:
+//         code > 0
 //
+//     structures:
+//         code null / undefined / ""
+//
+//     negative-code records:
+//         excluded
+//
+// ==========================================================
+
+exports.getPostTargets =
+async (req, res) => {
+
+    try {
+
+        // ==================================================
+        // USER
+        // ==================================================
+
+        const user =
+            req.session.user;
+
+
+        if (!user) {
+
+            return res
+                .status(401)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Unauthorized"
+
+                });
+
+        }
+
+
+
+        // ==================================================
+        // CURRENT DAIRY ID
+        // ==================================================
+
+        const {
+            id
+        } = req.params;
+
+
+
+        if (
+            !mongoose.Types.ObjectId.isValid(id)
+        ) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Invalid Dairy ID"
+
+                });
+
+        }
+
+
+
+        // ==================================================
+        // VERIFY CURRENT DAIRY
+        // ==================================================
+
+        const currentDairy =
+            await Dairy
+                .findById(id)
+                .select(
+                    "_id name code profileImage"
+                )
+                .lean();
+
+
+        if (!currentDairy) {
+
+            return res
+                .status(404)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Dairy not found"
+
+                });
+
+        }
+
+
+
+        // ==================================================
+        // TARGETS
+        // ==================================================
+        //
+        // IMPORTANT:
+        //
+        // We deliberately do NOT use a generic
+        // `Dairy.find({})` response directly.
+        //
+        // We explicitly divide records according to
+        // the business rules.
+        //
+        // ==================================================
+
+        const allDairies =
+            await Dairy
+                .find({})
+                .select(
+                    "_id name code profileImage"
+                )
+                .sort({
+                    name: 1
+                })
+                .lean();
+
+
+
+        // ==================================================
+        // ANIMALS
+        // ==================================================
+
+        const animals =
+            allDairies.filter(
+                function (item) {
+
+                    if (!item) {
+
+                        return false;
+
+                    }
+
+
+                    // Negative codes are NEVER animals.
+
+                    if (
+                        hasNegativeCode(
+                            item.code
+                        )
+                    ) {
+
+                        return false;
+
+                    }
+
+
+                    return hasAnimalCode(
+                        item.code
+                    );
+
+                }
+            );
+
+
+
+        // ==================================================
+        // STRUCTURES / FACILITIES / TOOLS
+        // ==================================================
+
+        const structures =
+            allDairies.filter(
+                function (item) {
+
+                    if (!item) {
+
+                        return false;
+
+                    }
+
+
+                    // Explicitly exclude negative codes.
+
+                    if (
+                        hasNegativeCode(
+                            item.code
+                        )
+                    ) {
+
+                        return false;
+
+                    }
+
+
+                    return hasNoCode(
+                        item.code
+                    );
+
+                }
+            );
+
+
+
+        // ==================================================
+        // RESPONSE
+        // ==================================================
+
+        return res.json({
+
+            success:
+                true,
+
+            currentDairy: {
+
+                _id:
+                    currentDairy._id,
+
+                name:
+                    currentDairy.name,
+
+                code:
+                    currentDairy.code,
+
+                profileImage:
+                    currentDairy.profileImage || ""
+
+            },
+
+            animals,
+
+            structures
+
+        });
+
+
+    } catch (err) {
+
+        console.error(
+            "GET POST TARGETS ERROR:",
+            err
+        );
+
+
+        return res
+            .status(500)
+            .json({
+
+                success:
+                    false,
+
+                message:
+                    "Failed to load post targets"
+
+            });
+
+    }
+
+};
+
+
+
+// ==========================================================
+// CREATE POST
 // ==========================================================
 
 exports.createPost =
@@ -91,6 +435,7 @@ async (req, res) => {
         } = req.params;
 
 
+
         // ==================================================
         // USER
         // ==================================================
@@ -103,7 +448,9 @@ async (req, res) => {
 
             return res
                 .status(401)
-                .send("Unauthorized");
+                .send(
+                    "Unauthorized"
+                );
 
         }
 
@@ -119,7 +466,9 @@ async (req, res) => {
 
             return res
                 .status(400)
-                .send("Invalid Dairy ID");
+                .send(
+                    "Invalid Dairy ID"
+                );
 
         }
 
@@ -128,33 +477,29 @@ async (req, res) => {
         // ==================================================
         // LOAD CURRENT DAIRY
         // ==================================================
-        //
-        // We always determine the current Dairy from the
-        // database.
-        //
-        // We do NOT trust the browser to tell us whether
-        // this is an animal or a general farm/facility page.
-        //
-        // ==================================================
 
         const currentDairy =
             await Dairy
                 .findById(id)
-                .select("_id name code");
+                .select(
+                    "_id name code"
+                );
 
 
         if (!currentDairy) {
 
             return res
                 .status(404)
-                .send("Dairy not found");
+                .send(
+                    "Dairy not found"
+                );
 
         }
 
 
 
         // ==================================================
-        // DETERMINE CURRENT DAIRY CODE
+        // CURRENT CODE
         // ==================================================
 
         const currentCode =
@@ -163,33 +508,13 @@ async (req, res) => {
 
 
         // ==================================================
-        // DETERMINE WHETHER CURRENT PAGE IS NEGATIVE-CODE
-        // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // Only a NEGATIVE numeric code activates the
-        // target-selection requirement.
-        //
-        // Positive code:
-        //     normal animal page
-        //
-        // Negative code:
-        //     general farm / facility / structure / tool
-        //
-        // No-code records are NOT treated as negative-code
-        // pages.
-        //
+        // DETERMINE NEGATIVE PAGE
         // ==================================================
 
         const currentHasNegativeCode =
-            currentCode !== null &&
-            currentCode !== undefined &&
-            currentCode !== "" &&
-            Number.isFinite(
-                Number(currentCode)
-            ) &&
-            Number(currentCode) < 0;
+            hasNegativeCode(
+                currentCode
+            );
 
 
 
@@ -197,8 +522,8 @@ async (req, res) => {
         // DEFAULT TARGET
         // ==================================================
         //
-        // If the current Dairy has a positive code, the post
-        // automatically belongs to this Dairy.
+        // For a normal positive-code Dairy page,
+        // the current Dairy is automatically the target.
         //
         // ==================================================
 
@@ -210,23 +535,20 @@ async (req, res) => {
         // ==================================================
         // NEGATIVE-CODE PAGE
         // ==================================================
-        //
-        // A negative-code page requires the user to select
-        // what the post is actually about.
-        //
-        // ==================================================
 
         if (
             currentHasNegativeCode
         ) {
 
             // ----------------------------------------------
-            // READ SUBMITTED TARGET
+            // READ TARGET
             // ----------------------------------------------
 
             const submittedTargetId =
                 typeof req.body.targetDairyId === "string"
+
                     ? req.body.targetDairyId.trim()
+
                     : "";
 
 
@@ -248,7 +570,7 @@ async (req, res) => {
 
 
             // ----------------------------------------------
-            // TARGET OBJECT ID
+            // VALIDATE TARGET ID
             // ----------------------------------------------
 
             if (
@@ -267,16 +589,18 @@ async (req, res) => {
 
 
 
-            // ==================================================
-            // LOAD SELECTED TARGET
-            // ==================================================
+            // ----------------------------------------------
+            // LOAD TARGET
+            // ----------------------------------------------
 
             const selectedDairy =
                 await Dairy
                     .findById(
                         submittedTargetId
                     )
-                    .select("_id name code");
+                    .select(
+                        "_id name code"
+                    );
 
 
             if (!selectedDairy) {
@@ -292,33 +616,13 @@ async (req, res) => {
 
 
             // ==================================================
-            // NEVER ALLOW CURRENT NEGATIVE-CODE RECORD
+            // NEVER TARGET A NEGATIVE-CODE RECORD
             // ==================================================
-            //
-            // A negative-code Dairy represents a general
-            // farm/facility/structure/tool context.
-            //
-            // It cannot itself become the target of this post.
-            //
-            // ==================================================
-
-            const selectedCode =
-                selectedDairy.code;
-
-
-
-            const selectedHasNegativeCode =
-                selectedCode !== null &&
-                selectedCode !== undefined &&
-                selectedCode !== "" &&
-                Number.isFinite(
-                    Number(selectedCode)
-                ) &&
-                Number(selectedCode) < 0;
-
 
             if (
-                selectedHasNegativeCode
+                hasNegativeCode(
+                    selectedDairy.code
+                )
             ) {
 
                 return res
@@ -334,46 +638,22 @@ async (req, res) => {
             // ==================================================
             // VALID TARGET TYPES
             // ==================================================
-            //
-            // TYPE 1:
-            //
-            // Animal
-            //
-            //     code > 0
-            //
-            //
-            // TYPE 2:
-            //
-            // Structure / Facility / Tool
-            //
-            //     NO CODE
-            //
-            //     null
-            //     undefined
-            //     ""
-            //
-            // ==================================================
 
             const isAnimal =
-                selectedCode !== null &&
-                selectedCode !== undefined &&
-                selectedCode !== "" &&
-                Number.isFinite(
-                    Number(selectedCode)
-                ) &&
-                Number(selectedCode) > 0;
-
+                hasAnimalCode(
+                    selectedDairy.code
+                );
 
 
             const isStructureFacilityTool =
-                selectedCode === null ||
-                selectedCode === undefined ||
-                selectedCode === "";
+                hasNoCode(
+                    selectedDairy.code
+                );
 
 
 
             // ==================================================
-            // FINAL TARGET VALIDATION
+            // FINAL VALIDATION
             // ==================================================
 
             if (
@@ -392,7 +672,7 @@ async (req, res) => {
 
 
             // ==================================================
-            // ACCEPT SELECTED TARGET
+            // ACCEPT TARGET
             // ==================================================
 
             targetDairyId =
@@ -403,53 +683,61 @@ async (req, res) => {
 
 
         // ==================================================
-        // POST DATA
+        // POST TITLE
         // ==================================================
 
         const title =
             typeof req.body.title === "string"
+
                 ? req.body.title.trim()
-                : "";
 
-
-        const text =
-            typeof req.body.text === "string"
-                ? req.body.text.trim()
                 : "";
 
 
 
         // ==================================================
-        // MULTIPLE IMAGES
+        // POST TEXT
+        // ==================================================
+
+        const text =
+            typeof req.body.text === "string"
+
+                ? req.body.text.trim()
+
+                : "";
+
+
+
+        // ==================================================
+        // IMAGES
         // ==================================================
 
         const files =
             Array.isArray(req.files)
+
                 ? req.files
+
                 : [];
 
 
         const images =
             files
                 .map(
-                    file =>
-                        file &&
-                        file.filename
+                    function (file) {
+
+                        return (
+                            file &&
+                            file.filename
+                        );
+
+                    }
                 )
                 .filter(Boolean);
 
 
 
         // ==================================================
-        // POST CONTENT VALIDATION
-        // ==================================================
-        //
-        // At least one of the following must exist:
-        //
-        //     title
-        //     text
-        //     image
-        //
+        // CONTENT VALIDATION
         // ==================================================
 
         if (
@@ -470,20 +758,6 @@ async (req, res) => {
 
         // ==================================================
         // CREATE POST
-        // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // We save targetDairyId as dairyId.
-        //
-        // Therefore:
-        //
-        // Positive-code page:
-        //     dairy = current Dairy
-        //
-        // Negative-code page:
-        //     dairy = selected target
-        //
         // ==================================================
 
         const post =
@@ -512,11 +786,12 @@ async (req, res) => {
 
 
         // ==================================================
-        // RESOLVE USER IMAGE
+        // USER IMAGE
         // ==================================================
 
         const userImage =
             user.profileImage ||
+
             `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 user.name || "User"
             )}`;
@@ -553,25 +828,33 @@ async (req, res) => {
                 post.text || "",
 
             images:
-                Array.isArray(post.images)
-                    ? post.images
-                    : [],
+                Array.isArray(
+                    post.images
+                )
 
-            // ----------------------------------------------
-            // Backwards compatibility
-            // ----------------------------------------------
+                    ? post.images
+
+                    : [],
 
             image:
                 post.image || null,
 
             likes:
-                Array.isArray(post.likes)
+                Array.isArray(
+                    post.likes
+                )
+
                     ? post.likes.length
+
                     : 0,
 
             comments:
-                Array.isArray(post.comments)
+                Array.isArray(
+                    post.comments
+                )
+
                     ? post.comments
+
                     : [],
 
             createdAt:
@@ -579,9 +862,11 @@ async (req, res) => {
 
             dateText:
                 post.createdAt
+
                     ? new Date(
                         post.createdAt
                     ).toLocaleString()
+
                     : ""
 
         };
@@ -599,16 +884,13 @@ async (req, res) => {
         if (io) {
 
             // ----------------------------------------------
-            // TARGET DAIRY ROOM
-            // ----------------------------------------------
-            //
-            // Users viewing the actual target should receive
-            // the new post.
-            //
+            // ACTUAL TARGET ROOM
             // ----------------------------------------------
 
             io.to(
-                String(targetDairyId)
+                String(
+                    targetDairyId
+                )
             ).emit(
                 "postCreated",
                 payload
@@ -619,15 +901,11 @@ async (req, res) => {
             // ----------------------------------------------
             // ORIGINATING PAGE ROOM
             // ----------------------------------------------
-            //
-            // If the post was created from a negative-code
-            // general page and targeted another Dairy, also
-            // notify the page where the post was created.
-            //
-            // ----------------------------------------------
 
             if (
-                String(targetDairyId) !==
+                String(
+                    targetDairyId
+                ) !==
                 String(id)
             ) {
 
@@ -646,11 +924,6 @@ async (req, res) => {
 
         // ==================================================
         // REDIRECT
-        // ==================================================
-        //
-        // Keep the user on the page from which the post was
-        // created.
-        //
         // ==================================================
 
         return res.redirect(
@@ -702,7 +975,8 @@ async (req, res) => {
                 .status(401)
                 .json({
 
-                    success: false,
+                    success:
+                        false,
 
                     message:
                         "Unauthorized"
@@ -714,7 +988,7 @@ async (req, res) => {
 
 
         // ==================================================
-        // TOGGLE LIKE
+        // TOGGLE
         // ==================================================
 
         const result =
@@ -731,13 +1005,15 @@ async (req, res) => {
 
 
         // ==================================================
-        // DAIRY ROOM
+        // ROOM
         // ==================================================
 
         const dairyId =
             req.body &&
             req.body.dairyId
+
                 ? req.body.dairyId
+
                 : "all";
 
 
@@ -823,7 +1099,7 @@ async (req, res) => {
 
 
 // ==========================================================
-// ADD COMMENT TO POST
+// ADD COMMENT
 // ==========================================================
 
 exports.addPostComment =
@@ -846,7 +1122,8 @@ async (req, res) => {
                 .status(401)
                 .json({
 
-                    success: false,
+                    success:
+                        false,
 
                     message:
                         "Unauthorized"
@@ -863,7 +1140,9 @@ async (req, res) => {
 
         const text =
             typeof req.body.text === "string"
+
                 ? req.body.text.trim()
+
                 : "";
 
 
@@ -886,7 +1165,7 @@ async (req, res) => {
 
 
         // ==================================================
-        // ADD COMMENT
+        // CREATE COMMENT
         // ==================================================
 
         const comment =
@@ -911,7 +1190,7 @@ async (req, res) => {
 
 
         // ==================================================
-        // COMMENT PAYLOAD
+        // PAYLOAD
         // ==================================================
 
         const payload = {
@@ -944,9 +1223,11 @@ async (req, res) => {
 
                 dateText:
                     comment.createdAt
+
                         ? new Date(
                             comment.createdAt
                         ).toLocaleString()
+
                         : ""
 
             }
@@ -956,13 +1237,15 @@ async (req, res) => {
 
 
         // ==================================================
-        // DAIRY ROOM
+        // ROOM
         // ==================================================
 
         const dairyId =
             req.body &&
             req.body.dairyId
+
                 ? req.body.dairyId
+
                 : "all";
 
 
@@ -1076,13 +1359,15 @@ async (req, res) => {
 
 
         // ==================================================
-        // DAIRY ROOM
+        // ROOM
         // ==================================================
 
         const dairyId =
             req.body &&
             req.body.dairyId
+
                 ? req.body.dairyId
+
                 : "all";
 
 
@@ -1192,7 +1477,7 @@ async (req, res) => {
 
 
         // ==================================================
-        // DELETE COMMENT
+        // DELETE
         // ==================================================
 
         await updateService.deleteComment({
@@ -1207,20 +1492,22 @@ async (req, res) => {
 
 
         // ==================================================
-        // DAIRY ROOM
-        // ==========================================================
+        // ROOM
+        // ==================================================
 
         const dairyId =
             req.body &&
             req.body.dairyId
+
                 ? req.body.dairyId
+
                 : "all";
 
 
 
         // ==================================================
         // SOCKET
-        // ==========================================================
+        // ==================================================
 
         const io =
             req.app.get("io");
@@ -1283,7 +1570,7 @@ async (req, res) => {
                     err.message ||
                     "Failed to delete comment"
 
-                });
+            });
 
     }
 
