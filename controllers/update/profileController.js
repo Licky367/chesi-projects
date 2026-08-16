@@ -1,78 +1,48 @@
 // ==========================================================
-// controllers/update/profileController.js
+// controllers/milkController.js
 // ==========================================================
-
-const updateService =
-    require("../../services/update");
 
 const Dairy =
-    require("../../models/dairy");
+    require("../models/dairy");
+
+const Milk =
+    require("../models/milk");
 
 
 // ==========================================================
-// 🟦 UPDATE PROFILE IMAGES
+// GET MILK HISTORY
 // ==========================================================
 //
-// Supports:
+// URL:
 //
-//     • Admin updating ANY dairy profile
-//     • Up to 5 profile images
-//     • req.file
-//     • req.files
-//     • profileImage
-//     • profileImages
+//     GET /milk/history/:dairyId
+//
+// ACCESS RULE:
+//
+//     Milk history can be viewed for:
+//
+//         • Any female animal
+//         • Any animal whose code is EVEN
 //
 // IMPORTANT:
 //
-// The profile image endpoint is called by:
+//     There is deliberately NO requirement for the animal
+//     to be assigned to a dairy farm.
 //
-//     PUT /dairy/:id/image
-//
-// Your current EJS/JavaScript uploads:
-//
-//     profileImage
-//
-// Therefore this controller supports both:
-//
-//     req.file
-//
-// and:
-//
-//     req.files
+//     Assignment to a dairy farm has nothing to do with
+//     whether the animal's milk history can be viewed.
 //
 // ==========================================================
 
-exports.image = async (req, res) => {
+exports.getMilkHistory = async (
+    req,
+    res
+) => {
 
     try {
 
         // ==================================================
-        // PROFILE ID
-        // ==================================================
-
-        const {
-            id
-        } = req.params;
-
-
-        if (!id) {
-
-            return res
-                .status(400)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Dairy profile ID is required."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // USER
+        // AUTHENTICATION
         // ==================================================
 
         const user =
@@ -83,863 +53,219 @@ exports.image = async (req, res) => {
 
             return res
                 .status(401)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Unauthorized."
-
-                });
+                .send(
+                    "Unauthorized"
+                );
 
         }
 
 
         // ==================================================
-        // ADMIN CHECK
+        // DAIRY ANIMAL ID
         // ==================================================
 
-        const isAdmin =
-            user.role === "admin";
+        const {
+            dairyId
+        } = req.params;
+
+
+        if (!dairyId) {
+
+            return res
+                .status(400)
+                .send(
+                    "Dairy animal ID is required."
+                );
+
+        }
 
 
         // ==================================================
-        // VERIFY PROFILE EXISTS
+        // FIND ANIMAL
         // ==================================================
 
         const dairy =
-            await Dairy.findById(id);
+            await Dairy.findById(
+                dairyId
+            );
 
 
         if (!dairy) {
 
             return res
                 .status(404)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Dairy profile not found."
-
-                });
+                .send(
+                    "Dairy animal not found."
+                );
 
         }
 
 
         // ==================================================
-        // COLLECT UPLOADED FILES
+        // FEMALE CHECK
         // ==================================================
         //
-        // Support both multer configurations:
-        //
-        //     upload.single("profileImage")
-        //
-        // and:
-        //
-        //     upload.array("profileImages", 5)
+        // Use the existing virtual/property from the
+        // Dairy model.
         //
         // ==================================================
 
-        let files = [];
+        const isFemale =
+            dairy.isFemale === true;
 
 
-        // --------------------------------------------------
-        // upload.array(...)
-        // --------------------------------------------------
+        // ==================================================
+        // CODE CHECK
+        // ==================================================
+        //
+        // Determine whether the animal has an even code.
+        //
+        // Examples:
+        //
+        //     2       -> even
+        //     4       -> even
+        //     102     -> even
+        //     101     -> odd
+        //
+        // If codes contain text, the numeric portion is used.
+        //
+        // ==================================================
 
-        if (
-            Array.isArray(req.files)
-        ) {
+        const code =
+            dairy.code !== undefined &&
+            dairy.code !== null
+                ? String(
+                    dairy.code
+                  ).trim()
+                : "";
 
-            files =
-                req.files.filter(Boolean);
 
-        }
-
-
-        // --------------------------------------------------
-        // upload.single(...)
-        // --------------------------------------------------
-
-        if (
-            req.file
-        ) {
-
-            files.push(
-                req.file
+        const numericParts =
+            code.match(
+                /\d+/g
             );
 
-        }
 
-
-        // --------------------------------------------------
-        // Remove duplicate file references
-        // --------------------------------------------------
-
-        files =
-            [...new Set(files)];
-
-
-        // ==================================================
-        // VALIDATE FILES
-        // ==================================================
-
-        if (
-            files.length === 0
-        ) {
-
-            return res
-                .status(400)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "No profile image uploaded."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // MAXIMUM IMAGE COUNT
-        // ==================================================
-
-        if (
-            files.length > 5
-        ) {
-
-            return res
-                .status(400)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "A dairy profile can have at most 5 images."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // NORMALIZE FILENAMES
-        // ==================================================
-
-        const images =
-            files
-                .map(
-                    file => {
-
-                        if (
-                            !file
-                        ) {
-
-                            return null;
-
-                        }
-
-
-                        return (
-                            file.filename ||
-                            file.path ||
-                            null
-                        );
-
-                    }
-                )
-                .filter(Boolean);
+        let isEvenCode =
+            false;
 
 
         if (
-            images.length === 0
+            numericParts &&
+            numericParts.length > 0
         ) {
 
-            return res
-                .status(400)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "No valid profile images uploaded."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // UPDATE PROFILE
-        // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // Admins must NOT be treated as ordinary
-        // dairy workers assigned to a farm.
-        //
-        // The service therefore receives:
-        //
-        //     userId: null
-        //
-        // for administrators.
-        //
-        // For ordinary users, their user ID is retained
-        // so the service can enforce its normal farm
-        // assignment rules.
-        //
-        // ==================================================
-
-        const update =
-            await updateService.updateImage({
-
-                dairyId:
-                    id,
-
-                userId:
-                    isAdmin
-                        ? null
-                        : user._id,
-
-                images,
-
-                isAdmin
-
-            });
-
-
-        // ==================================================
-        // PROFILE IMAGES
-        // ==================================================
-
-        const profileImages =
-            Array.isArray(
-                update &&
-                update.profileImages
-            )
-                ? update.profileImages
-                : images;
-
-
-        // ==================================================
-        // CONVERT TO PUBLIC URLS
-        // ==================================================
-
-        const imageUrls =
-            profileImages
-                .filter(Boolean)
-                .map(
-                    image => {
-
-                        const value =
-                            String(image);
-
-
-                        if (
-                            value.startsWith(
-                                "/uploads/"
-                            )
-                        ) {
-
-                            return value;
-
-                        }
-
-
-                        return `/uploads/${value}`;
-
-                    }
+            const numericCode =
+                Number(
+                    numericParts[
+                        numericParts.length - 1
+                    ]
                 );
 
 
-        // ==================================================
-        // PRIMARY IMAGE
-        // ==================================================
+            if (
+                Number.isFinite(
+                    numericCode
+                )
+            ) {
 
-        const primaryImage =
-            imageUrls.length
-                ? imageUrls[0]
-                : null;
+                isEvenCode =
+                    numericCode % 2 === 0;
 
-
-        // ==================================================
-        // SOCKET.IO PAYLOAD
-        // ==================================================
-
-        const payload = {
-
-            dairyId:
-                id,
-
-            images:
-                imageUrls,
-
-            profileImages:
-                imageUrls,
-
-            image:
-                primaryImage,
-
-            displayImage:
-                primaryImage,
-
-            userName:
-                user.name,
-
-            userImage:
-                user.profileImage ||
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    user.name || "User"
-                )}`,
-
-            dateText:
-                update &&
-                update.createdAt
-                    ? new Date(
-                        update.createdAt
-                    ).toLocaleString()
-                    : new Date().toLocaleString()
-
-        };
-
-
-        // ==================================================
-        // SOCKET.IO
-        // ==================================================
-
-        const io =
-            req.app.get("io");
-
-
-        if (io) {
-
-            // ------------------------------------------------
-            // Profile-specific room
-            // ------------------------------------------------
-
-            io.to(id).emit(
-                "profileImagesUpdated",
-                payload
-            );
-
-
-            // ------------------------------------------------
-            // Backwards compatibility
-            // ------------------------------------------------
-
-            io.to(id).emit(
-                "imageUpdated",
-                payload
-            );
+            }
 
         }
 
 
         // ==================================================
-        // RESPONSE
+        // MILK HISTORY ACCESS
         // ==================================================
         //
-        // Your current JavaScript expects JSON because it
-        // calls fetch().
+        // NO ASSIGNMENT CHECK HERE.
         //
-        // Therefore return JSON rather than redirecting.
+        // An animal does NOT need to belong to or be
+        // assigned to a dairy farm.
         //
         // ==================================================
 
-        return res.json({
+        if (
+            !isFemale &&
+            !isEvenCode
+        ) {
 
-            success:
-                true,
+            return res
+                .status(403)
+                .send(
+                    "Milk history is only available for female animals or animals with an even code."
+                );
 
-            message:
-                "Profile images updated successfully.",
+        }
 
-            dairyId:
-                id,
 
-            images:
-                imageUrls,
+        // ==================================================
+        // GET MILK RECORDS
+        // ==================================================
 
-            profileImages:
-                imageUrls,
+        const milkRecords =
+            await Milk.find({
 
-            image:
-                primaryImage,
+                dairy:
+                    dairyId
 
-            displayImage:
-                primaryImage
+            })
+            .sort({
 
-        });
+                date:
+                    -1,
+
+                createdAt:
+                    -1
+
+            })
+            .lean();
+
+
+        // ==================================================
+        // RENDER MILK HISTORY
+        // ==================================================
+
+        return res.render(
+
+            "milkHistory",
+
+            {
+
+                dairy,
+
+                milkRecords,
+
+                user,
+
+                isAdmin:
+                    user.role === "admin",
+
+                isFemale,
+
+                isEvenCode
+
+            }
+
+        );
 
 
     } catch (err) {
 
         console.error(
-            "PROFILE IMAGES UPDATE ERROR:",
-            err
-        );
-
-
-        // ==================================================
-        // KNOWN AUTHORIZATION ERROR
-        // ==================================================
-
-        if (
-            err.status === 401 ||
-            err.statusCode === 401
-        ) {
-
-            return res
-                .status(401)
-                .json({
-
-                    success: false,
-
-                    message:
-                        err.message ||
-                        "Unauthorized."
-
-                });
-
-        }
-
-
-        if (
-            err.status === 403 ||
-            err.statusCode === 403
-        ) {
-
-            return res
-                .status(403)
-                .json({
-
-                    success: false,
-
-                    message:
-                        err.message ||
-                        "You are not authorized to update this dairy profile."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // KNOWN NOT FOUND ERROR
-        // ==================================================
-
-        if (
-            err.status === 404 ||
-            err.statusCode === 404
-        ) {
-
-            return res
-                .status(404)
-                .json({
-
-                    success: false,
-
-                    message:
-                        err.message ||
-                        "Dairy profile not found."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // GENERAL ERROR
-        // ==================================================
-
-        return res
-            .status(500)
-            .json({
-
-                success: false,
-
-                message:
-                    err.message ||
-                    "Failed to update profile images."
-
-            });
-
-    }
-
-};
-
-
-
-// ==========================================================
-// 🗑 DELETE DAIRY PROFILE
-// ==========================================================
-
-exports.deleteProfile = async (req, res) => {
-
-    try {
-
-        // ==================================================
-        // PARAMETERS
-        // ==================================================
-
-        const {
-            id
-        } = req.params;
-
-
-        if (!id) {
-
-            return res
-                .status(400)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Dairy profile ID is required."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // USER
-        // ==================================================
-
-        const user =
-            req.session.user;
-
-
-        if (!user) {
-
-            return res
-                .status(401)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Unauthorized."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // ADMIN CHECK
-        // ==================================================
-
-        if (
-            user.role !== "admin"
-        ) {
-
-            return res
-                .status(403)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Only admin can delete dairy profiles."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // VERIFY PROFILE
-        // ==================================================
-
-        const dairy =
-            await Dairy.findById(id);
-
-
-        if (!dairy) {
-
-            return res
-                .status(404)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Dairy profile not found."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // DELETE
-        // ==================================================
-
-        await updateService.deleteProfile(
-            id
-        );
-
-
-        // ==================================================
-        // SOCKET.IO
-        // ==================================================
-
-        const io =
-            req.app.get("io");
-
-
-        if (io) {
-
-            io.emit(
-                "dairyDeleted",
-                {
-
-                    dairyId:
-                        id
-
-                }
-            );
-
-        }
-
-
-        // ==================================================
-        // RESPONSE
-        // ==================================================
-
-        return res.json({
-
-            success:
-                true,
-
-            message:
-                "Dairy profile deleted successfully."
-
-        });
-
-
-    } catch (err) {
-
-        console.error(
-            "DELETE PROFILE ERROR:",
+            "GET MILK HISTORY ERROR:",
             err
         );
 
 
         return res
             .status(500)
-            .json({
-
-                success: false,
-
-                message:
-                    err.message ||
-                    "Failed to delete dairy profile."
-
-            });
-
-    }
-
-};
-
-
-
-// ==========================================================
-// 📝 UPDATE PROFILE INFORMATION
-// ==========================================================
-//
-// Updates:
-//
-//     name
-//     mass
-//     dateOfBirth
-//
-// The code remains unchanged because the EJS displays
-// the existing dairy code as read-only.
-//
-// ==========================================================
-
-exports.updateProfile = async (req, res) => {
-
-    try {
-
-        // ==================================================
-        // PROFILE ID
-        // ==================================================
-
-        const {
-            id
-        } = req.params;
-
-
-        if (!id) {
-
-            return res
-                .status(400)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Dairy profile ID is required."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // USER
-        // ==================================================
-
-        const user =
-            req.session.user;
-
-
-        if (!user) {
-
-            return res
-                .status(401)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Unauthorized."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // ADMIN CHECK
-        // ==================================================
-
-        if (
-            user.role !== "admin"
-        ) {
-
-            return res
-                .status(403)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Only admin can edit dairy profiles."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // VERIFY PROFILE
-        // ==================================================
-
-        const dairy =
-            await Dairy.findById(id);
-
-
-        if (!dairy) {
-
-            return res
-                .status(404)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Dairy profile not found."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // UPDATE
-        // ==================================================
-
-        const updated =
-            await updateService.updateProfile(
-
-                id,
-
-                req.body
-
+            .send(
+                "Failed to load milk history."
             );
-
-
-        // ==================================================
-        // SOCKET.IO
-        // ==================================================
-
-        const io =
-            req.app.get("io");
-
-
-        if (io) {
-
-            io.to(id).emit(
-
-                "profileUpdated",
-
-                {
-
-                    dairyId:
-                        id,
-
-                    profile:
-                        updated
-
-                }
-
-            );
-
-        }
-
-
-        // ==================================================
-        // RESPONSE
-        // ==================================================
-
-        return res.json({
-
-            success:
-                true,
-
-            profile:
-                updated || null
-
-        });
-
-
-    } catch (err) {
-
-        console.error(
-            "UPDATE PROFILE ERROR:",
-            err
-        );
-
-
-        return res
-            .status(500)
-            .json({
-
-                success: false,
-
-                message:
-                    err.message ||
-                    "Failed to update profile."
-
-            });
 
     }
 
