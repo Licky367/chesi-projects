@@ -1,20 +1,6 @@
 <!-- ======================================================
      PROFILE CARD
-
-     FEATURES
-     ------------------------------------------------------
-     • Responsive three-dot menu
-     • Admin edit mode
-     • Up to 5 profile images during editing
-     • Current profile image remains visible
-     • Tap profile image to open fullscreen viewer
-     • Swipe between profile images
-     • Previous / next controls
-     • Close viewer by tapping outside
-     • Escape key closes viewer
-     • Menu closes when tapping outside
 ====================================================== -->
-
 
 <%
     /* ==================================================
@@ -37,10 +23,8 @@
 
 
     /*
-     * Backwards compatibility.
-
-     * Older Dairy records may only have
-     * dairy.profileImage or dairy.displayImage.
+     * Backwards compatibility for records that
+     * still have only profileImage.
      */
 
     if (
@@ -67,10 +51,6 @@
     }
 
 
-    /*
-     * Maximum five images.
-     */
-
     profileImages =
         profileImages.slice(0, 5);
 
@@ -81,10 +61,6 @@
         "";
 %>
 
-
-<!-- ======================================================
-     PROFILE CARD
-====================================================== -->
 
 <section
     class="profile-card"
@@ -97,7 +73,6 @@
     ================================================== -->
 
     <div class="profile-menu">
-
 
         <button
             id="profileMenuBtn"
@@ -116,13 +91,11 @@
         </button>
 
 
-
         <div
             id="profileDropdown"
             class="profile-dropdown"
             aria-hidden="true"
         >
-
 
             <% if (user?.role === "admin") { %>
 
@@ -146,7 +119,6 @@
             <% } %>
 
 
-
             <% if (dairy.isFemale) { %>
 
                 <a
@@ -166,7 +138,6 @@
                 </a>
 
             <% } %>
-
 
 
             <% if (user?.role === "admin") { %>
@@ -197,7 +168,6 @@
 
             <% } %>
 
-
         </div>
 
     </div>
@@ -209,11 +179,6 @@
     ================================================== -->
 
     <div class="profile-avatar-area">
-
-
-        <!-- ==============================================
-             CURRENT PROFILE IMAGE
-        =============================================== -->
 
         <button
             type="button"
@@ -247,11 +212,6 @@
         </button>
 
 
-
-        <!-- ==============================================
-             EDIT IMAGE AREA
-        =============================================== -->
-
         <% if (user?.role === "admin") { %>
 
             <div
@@ -259,7 +219,6 @@
                 class="profile-image-edit-area edit-mode"
                 hidden
             >
-
 
                 <label
                     for="profileImages"
@@ -301,14 +260,11 @@
                     class="profile-image-preview"
                 ></div>
 
-
             </div>
 
         <% } %>
 
-
     </div>
-
 
 
 
@@ -318,21 +274,13 @@
 
     <div class="profile-name-area">
 
-
-        <!-- DISPLAY NAME -->
-
         <h2
             id="nameText"
             class="view-mode"
         >
-
             <%= dairy.name %>
-
         </h2>
 
-
-
-        <!-- EDIT NAME -->
 
         <input
             id="name"
@@ -343,21 +291,15 @@
         >
 
 
-
         <% if (dairy.hasIdentity) { %>
 
             <span class="gender-badge">
-
                 <%= dairy.gender %>
-
             </span>
 
         <% } %>
 
-
     </div>
-
-
 
 
 
@@ -381,28 +323,15 @@
 
             <div>
 
-                <span
-                    id="codeText"
-                    class="view-mode"
-                >
+                <span id="codeText">
 
                     <%= dairy.code %>
 
                 </span>
 
-
-                <input
-                    id="code"
-                    class="profile-input edit-mode"
-                    type="number"
-                    value="<%= dairy.code %>"
-                    hidden
-                >
-
             </div>
 
         </div>
-
 
 
 
@@ -425,7 +354,6 @@
             </div>
 
         <% } %>
-
 
 
 
@@ -480,7 +408,6 @@
 
 
 
-
         <!-- =================================================
              MASS
         ================================================== -->
@@ -508,6 +435,8 @@
                     id="mass"
                     class="profile-input edit-mode"
                     type="number"
+                    min="0"
+                    step="0.01"
                     value="<%= dairy.mass %>"
                     hidden
                 >
@@ -515,7 +444,6 @@
             </div>
 
         </div>
-
 
 
 
@@ -545,15 +473,12 @@
 
         <% } %>
 
-
     </div>
 
 
 
-
-
     <!-- ==================================================
-         SAVE
+         SAVE AREA
     ================================================== -->
 
     <% if (user?.role === "admin") { %>
@@ -594,10 +519,7 @@
 
     <% } %>
 
-
 </section>
-
-
 
 
 
@@ -610,7 +532,6 @@
     class="profile-image-viewer"
     aria-hidden="true"
 >
-
 
     <div class="profile-viewer-backdrop"></div>
 
@@ -630,25 +551,13 @@
     </button>
 
 
-
-    <!-- ==================================================
-         IMAGE COUNTER
-    ================================================== -->
-
     <div
         id="profileViewerCounter"
         class="profile-viewer-counter"
     >
-
         1 / <%= Math.max(profileImages.length, 1) %>
-
     </div>
 
-
-
-    <!-- ==================================================
-         PREVIOUS
-    ================================================== -->
 
     <% if (profileImages.length > 1) { %>
 
@@ -669,11 +578,6 @@
     <% } %>
 
 
-
-    <!-- ==================================================
-         IMAGE
-    ================================================== -->
-
     <div
         class="profile-viewer-stage"
         id="profileViewerStage"
@@ -688,11 +592,6 @@
 
     </div>
 
-
-
-    <!-- ==================================================
-         NEXT
-    ================================================== -->
 
     <% if (profileImages.length > 1) { %>
 
@@ -712,10 +611,7 @@
 
     <% } %>
 
-
 </div>
-
-
 
 
 
@@ -1494,6 +1390,15 @@
 }
 
 
+.save-profile-button:disabled {
+
+    opacity: .65;
+
+    cursor: wait;
+
+}
+
+
 .cancel-profile-button {
 
     background: #eef2ef;
@@ -1914,8 +1819,6 @@
 
 
 
-
-
 <!-- ======================================================
      PROFILE CARD JAVASCRIPT
 ====================================================== -->
@@ -1944,6 +1847,21 @@
     }
 
 
+    const dairyId =
+        card.dataset.dairyId;
+
+
+    if (!dairyId) {
+
+        console.error(
+            "PROFILE: Dairy ID is missing."
+        );
+
+        return;
+
+    }
+
+
     const menuButton =
         card.querySelector(
             "#profileMenuBtn"
@@ -1965,6 +1883,12 @@
     const saveArea =
         card.querySelector(
             "#saveArea"
+        );
+
+
+    const saveButton =
+        card.querySelector(
+            "#saveProfile"
         );
 
 
@@ -2001,6 +1925,42 @@
     const avatar =
         card.querySelector(
             "#profileAvatar"
+        );
+
+
+    const nameInput =
+        card.querySelector(
+            "#name"
+        );
+
+
+    const massInput =
+        card.querySelector(
+            "#mass"
+        );
+
+
+    const dateOfBirthInput =
+        card.querySelector(
+            "#dateOfBirth"
+        );
+
+
+    const nameText =
+        card.querySelector(
+            "#nameText"
+        );
+
+
+    const massText =
+        card.querySelector(
+            "#massText"
+        );
+
+
+    const dobText =
+        card.querySelector(
+            "#dobText"
         );
 
 
@@ -2051,7 +2011,8 @@
        PROFILE IMAGES
     ===================================================== */
 
-    let profileImages = <%- JSON.stringify(profileImages) %>;
+    let profileImages =
+        <%- JSON.stringify(profileImages) %>;
 
 
     if (!Array.isArray(profileImages)) {
@@ -2064,13 +2025,38 @@
     profileImages =
         profileImages
             .filter(Boolean)
+            .map(String)
             .slice(0, 5);
 
 
     let viewerIndex = 0;
 
-
     let selectedFiles = [];
+
+
+
+    /* =====================================================
+       ORIGINAL VALUES
+    ===================================================== */
+
+    const originalValues = {
+
+        name:
+            nameInput
+                ? nameInput.value
+                : "",
+
+        mass:
+            massInput
+                ? massInput.value
+                : "",
+
+        dateOfBirth:
+            dateOfBirthInput
+                ? dateOfBirthInput.value
+                : ""
+
+    };
 
 
 
@@ -2120,7 +2106,7 @@
         }
 
 
-        const open =
+        const isOpen =
             dropdown.classList.toggle(
                 "open"
             );
@@ -2128,19 +2114,19 @@
 
         menuButton.classList.toggle(
             "is-open",
-            open
+            isOpen
         );
 
 
         menuButton.setAttribute(
             "aria-expanded",
-            String(open)
+            String(isOpen)
         );
 
 
         dropdown.setAttribute(
             "aria-hidden",
-            String(!open)
+            String(!isOpen)
         );
 
     }
@@ -2206,24 +2192,28 @@
             .querySelectorAll(
                 ".edit-mode"
             )
-            .forEach(function (element) {
+            .forEach(
+                function (element) {
 
-                element.hidden =
-                    !enabled;
+                    element.hidden =
+                        !enabled;
 
-            });
+                }
+            );
 
 
         card
             .querySelectorAll(
                 ".view-mode"
             )
-            .forEach(function (element) {
+            .forEach(
+                function (element) {
 
-                element.hidden =
-                    enabled;
+                    element.hidden =
+                        enabled;
 
-            });
+                }
+            );
 
 
         if (saveArea) {
@@ -2253,7 +2243,9 @@
 
     editButton?.addEventListener(
         "click",
-        function () {
+        function (event) {
+
+            event.preventDefault();
 
             setEditMode(true);
 
@@ -2261,11 +2253,44 @@
     );
 
 
+
+    /* =====================================================
+       CANCEL EDIT
+    ===================================================== */
+
     cancelButton?.addEventListener(
         "click",
-        function () {
+        function (event) {
+
+            event.preventDefault();
+
+
+            if (nameInput) {
+
+                nameInput.value =
+                    originalValues.name;
+
+            }
+
+
+            if (massInput) {
+
+                massInput.value =
+                    originalValues.mass;
+
+            }
+
+
+            if (dateOfBirthInput) {
+
+                dateOfBirthInput.value =
+                    originalValues.dateOfBirth;
+
+            }
+
 
             selectedFiles = [];
+
 
             if (imageInput) {
 
@@ -2274,7 +2299,12 @@
             }
 
 
-            renderImagePreview();
+            if (imagePreview) {
+
+                imagePreview.innerHTML = "";
+
+            }
+
 
             setEditMode(false);
 
@@ -2305,7 +2335,9 @@
 
 
             const combined =
-                selectedFiles.concat(files);
+                selectedFiles.concat(
+                    files
+                );
 
 
             const uniqueFiles = [];
@@ -2314,15 +2346,33 @@
             combined.forEach(
                 function (file) {
 
+                    if (
+                        !file.type ||
+                        !file.type.startsWith(
+                            "image/"
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
                     const duplicate =
                         uniqueFiles.some(
                             function (existing) {
 
                                 return (
-                                    existing.name === file.name &&
-                                    existing.size === file.size &&
+
+                                    existing.name ===
+                                        file.name &&
+
+                                    existing.size ===
+                                        file.size &&
+
                                     existing.lastModified ===
                                         file.lastModified
+
                                 );
 
                             }
@@ -2341,22 +2391,28 @@
             );
 
 
-            selectedFiles =
-                uniqueFiles.slice(0, 5);
-
-
             if (
-                combined.length > 5
+                uniqueFiles.length > 5
             ) {
 
-                alert(
+                window.alert(
                     "You can upload a maximum of 5 profile photos."
                 );
 
             }
 
 
+            selectedFiles =
+                uniqueFiles.slice(
+                    0,
+                    5
+                );
+
+
             renderImagePreview();
+
+
+            imageInput.value = "";
 
         }
     );
@@ -2380,7 +2436,7 @@
 
 
         selectedFiles.forEach(
-            function (file) {
+            function (file, index) {
 
                 const wrapper =
                     document.createElement(
@@ -2399,7 +2455,9 @@
 
 
                 image.alt =
-                    "Selected profile photo";
+                    index === 0
+                        ? "Main selected profile photo"
+                        : "Selected profile photo";
 
 
                 const reader =
@@ -2437,7 +2495,387 @@
 
 
     /* =====================================================
-       VIEWER
+       VALIDATE PROFILE
+    ===================================================== */
+
+    function validateProfileData() {
+
+        const name =
+            nameInput
+                ? nameInput.value.trim()
+                : "";
+
+
+        const massValue =
+            massInput
+                ? massInput.value.trim()
+                : "";
+
+
+        const dateOfBirth =
+            dateOfBirthInput
+                ? dateOfBirthInput.value
+                : "";
+
+
+        if (!name) {
+
+            window.alert(
+                "Name is required."
+            );
+
+            nameInput?.focus();
+
+            return null;
+
+        }
+
+
+        if (massValue === "") {
+
+            window.alert(
+                "Mass is required."
+            );
+
+            massInput?.focus();
+
+            return null;
+
+        }
+
+
+        const mass =
+            Number(massValue);
+
+
+        if (
+            !Number.isFinite(mass) ||
+            mass < 0
+        ) {
+
+            window.alert(
+                "Mass must be a valid number greater than or equal to 0."
+            );
+
+            massInput?.focus();
+
+            return null;
+
+        }
+
+
+        return {
+
+            name,
+
+            mass,
+
+            dateOfBirth:
+                dateOfBirth || null
+
+        };
+
+    }
+
+
+
+    /* =====================================================
+       SAVE PROFILE INFORMATION
+       
+       PUT /dairy/:id/update
+    ===================================================== */
+
+    async function saveProfileInformation() {
+
+        const data =
+            validateProfileData();
+
+
+        if (!data) {
+
+            return false;
+
+        }
+
+
+        const response =
+            await fetch(
+                `/dairy/${encodeURIComponent(dairyId)}/update`,
+                {
+
+                    method: "PUT",
+
+                    credentials:
+                        "same-origin",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json",
+
+                        "Accept":
+                            "application/json"
+
+                    },
+
+                    body:
+                        JSON.stringify(data)
+
+                }
+            );
+
+
+        let result = null;
+
+
+        try {
+
+            result =
+                await response.json();
+
+        } catch (error) {
+
+            result = null;
+
+        }
+
+
+        if (!response.ok) {
+
+            throw new Error(
+
+                result?.message ||
+                "Failed to update profile."
+
+            );
+
+        }
+
+
+        if (
+            !result ||
+            result.success !== true
+        ) {
+
+            throw new Error(
+
+                result?.message ||
+                "Failed to update profile."
+
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+
+
+    /* =====================================================
+       SAVE PROFILE IMAGE
+       
+       PUT /dairy/:id/image
+       
+       Current backend:
+       
+       upload.single("profileImage")
+    ===================================================== */
+
+    async function saveProfileImage() {
+
+        if (!selectedFiles.length) {
+
+            return true;
+
+        }
+
+
+        const formData =
+            new FormData();
+
+
+        formData.append(
+            "profileImage",
+            selectedFiles[0]
+        );
+
+
+        const response =
+            await fetch(
+                `/dairy/${encodeURIComponent(dairyId)}/image`,
+                {
+
+                    method: "PUT",
+
+                    credentials:
+                        "same-origin",
+
+                    body:
+                        formData
+
+                }
+            );
+
+
+        if (!response.ok) {
+
+            let message =
+                "Failed to update profile image.";
+
+
+            try {
+
+                const result =
+                    await response.json();
+
+                if (result?.message) {
+
+                    message =
+                        result.message;
+
+                }
+
+            } catch (error) {
+
+                /* Ignore non-JSON response. */
+
+            }
+
+
+            throw new Error(
+                message
+            );
+
+        }
+
+
+        return true;
+
+    }
+
+
+
+    /* =====================================================
+       SAVE CHANGES
+       
+       IMPORTANT:
+       This is the handler that was missing.
+    ===================================================== */
+
+    saveButton?.addEventListener(
+        "click",
+        async function (event) {
+
+            event.preventDefault();
+
+
+            if (
+                saveButton.disabled
+            ) {
+
+                return;
+
+            }
+
+
+            const originalHTML =
+                saveButton.innerHTML;
+
+
+            try {
+
+                saveButton.disabled =
+                    true;
+
+
+                saveButton.innerHTML =
+
+                    `
+                    <i
+                        class="bi bi-arrow-repeat"
+                        aria-hidden="true"
+                    ></i>
+
+                    Saving...
+                    `;
+
+
+                /*
+                 * Save text/profile information.
+                 */
+
+                await saveProfileInformation();
+
+
+                /*
+                 * Save image if selected.
+                 */
+
+                await saveProfileImage();
+
+
+                /*
+                 * Display success state.
+                 */
+
+                saveButton.innerHTML =
+
+                    `
+                    <i
+                        class="bi bi-check2"
+                        aria-hidden="true"
+                    ></i>
+
+                    Saved
+                    `;
+
+
+                /*
+                 * Reload from MongoDB so all displayed
+                 * values come from the saved record.
+                 */
+
+                setTimeout(
+                    function () {
+
+                        window.location.reload();
+
+                    },
+                    400
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "PROFILE SAVE ERROR:",
+                    error
+                );
+
+
+                saveButton.disabled =
+                    false;
+
+
+                saveButton.innerHTML =
+                    originalHTML;
+
+
+                window.alert(
+                    error.message ||
+                    "Failed to save profile."
+                );
+
+            }
+
+        }
+    );
+
+
+
+    /* =====================================================
+       IMAGE VIEWER
     ===================================================== */
 
     function updateViewer() {
@@ -2495,6 +2933,7 @@
     }
 
 
+
     function openViewer(index) {
 
         if (
@@ -2531,6 +2970,7 @@
     }
 
 
+
     function closeViewer() {
 
         if (!viewer) {
@@ -2557,6 +2997,7 @@
     }
 
 
+
     function nextImage() {
 
         if (
@@ -2580,6 +3021,7 @@
     }
 
 
+
     function previousImage() {
 
         if (
@@ -2593,7 +3035,8 @@
 
         viewerIndex =
             (
-                viewerIndex - 1 +
+                viewerIndex -
+                1 +
                 profileImages.length
             ) %
             profileImages.length;
@@ -2604,9 +3047,12 @@
     }
 
 
+
     imageTrigger?.addEventListener(
         "click",
-        function () {
+        function (event) {
+
+            event.preventDefault();
 
             openViewer(0);
 
@@ -2617,6 +3063,8 @@
     viewerClose?.addEventListener(
         "click",
         function (event) {
+
+            event.preventDefault();
 
             event.stopPropagation();
 
@@ -2630,6 +3078,8 @@
         "click",
         function (event) {
 
+            event.preventDefault();
+
             event.stopPropagation();
 
             previousImage();
@@ -2641,6 +3091,8 @@
     viewerNext?.addEventListener(
         "click",
         function (event) {
+
+            event.preventDefault();
 
             event.stopPropagation();
 
@@ -2675,6 +3127,7 @@
     ===================================================== */
 
     let touchStartX = 0;
+
     let touchStartY = 0;
 
 
@@ -2726,11 +3179,6 @@
 
             }
 
-
-            /*
-             * Ignore predominantly vertical
-             * gestures.
-             */
 
             if (
                 Math.abs(deltaX) <=
