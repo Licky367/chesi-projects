@@ -1,1451 +1,518 @@
-<% /*
-=========================================================
- FILE:
- views/update/post.ejs
-
- PURPOSE:
- --------------------------------------------------------
- Completely self-contained Facebook-style post card.
-
- ACTION ENDPOINTS:
- --------------------------------------------------------
- LIKE:
-     POST /post/:id/like
-
- COMMENT:
-     POST /post/:id/comment
-
- DELETE POST:
-     DELETE /post/:id
-
- DELETE COMMENT:
-     DELETE /comment/:id
-
- IMPORTANT:
- --------------------------------------------------------
- This component does NOT depend on:
-
-     feed.css
-     layout.css
-     .feed-card
-     .feed-actions
-     .like-btn
-     .toggle-comments
-     .comment-modal
-     .delete-post
-     .delete-comment
-
- All component selectors use:
-
-     cpost-
-
- The JavaScript is initialized once for the entire page,
- even if this component is included many times.
-=========================================================
-*/ %>
-
+<!-- ==========================================================
+     POST CARD
+     ==========================================================
+     Supports:
+     - User profile
+     - Dairy subject
+     - Delete post
+     - Title
+     - Message
+     - Multi-image grid
+     - Fullscreen image viewer
+     - Image navigation
+     - Long-message expansion
+     - Likes
+     - Comments
+========================================================== -->
 
 <%
-/* =========================================================
-   SAFE TYPE
-========================================================= */
+    /* ========================================================
+       NORMALIZE POST IMAGES
+    ======================================================== */
 
-const cpostType =
-    typeof type !== "undefined" && type
-        ? type
-        : "post";
+    let postImages = [];
 
+    if (
+        Array.isArray(item.images) &&
+        item.images.length
+    ) {
+        postImages = item.images.filter(Boolean);
+    }
+    else if (item.image) {
+        postImages = [item.image];
+    }
 
-/* =========================================================
-   POST ID
-========================================================= */
+    const visibleImages = postImages.slice(0, 4);
 
-const cpostId =
-    item && item._id
-        ? String(item._id)
-        : "";
-
-
-/* =========================================================
-   LIKES
-========================================================= */
-
-const cpostLikes =
-    Array.isArray(item.likes)
-        ? item.likes.length
-        : Number(item.likes || 0);
-
-
-/* =========================================================
-   COMMENTS
-========================================================= */
-
-const cpostComments =
-    Array.isArray(item.comments)
-        ? item.comments
-        : [];
-
-
-/* =========================================================
-   CURRENT USER
-========================================================= */
-
-const cpostCurrentUserId =
-    user && user._id
-        ? String(user._id)
-        : "";
-
-
-/* =========================================================
-   POST USER ID
-========================================================= */
-
-const cpostPostUserId =
-    item.user
-        ? String(
-            item.user._id ||
-            item.user
-        )
-        : "";
-
-
-/* =========================================================
-   DELETE POST PERMISSION
-========================================================= */
-
-const cpostCanDelete =
-    !!user &&
-    (
-        cpostPostUserId === cpostCurrentUserId ||
-        user.role === "admin"
-    );
-
-
-/* =========================================================
-   TITLE
-========================================================= */
-
-const cpostTitle =
-    item.title
-        ? String(item.title).trim()
-        : "";
-
-
-/* =========================================================
-   TEXT
-========================================================= */
-
-const cpostFullText =
-    item.text
-        ? String(item.text).trim()
-        : "";
-
-
-/* =========================================================
-   LONG TEXT
-========================================================= */
-
-const cpostIsLong =
-    cpostFullText.length > 100;
-
-
-/* =========================================================
-   PREVIEW
-========================================================= */
-
-const cpostPreview =
-    cpostIsLong
-        ? cpostFullText
-            .substring(0, 100)
-            .trimEnd() + "…"
-        : cpostFullText;
-
-
-/* =========================================================
-   IMAGES
-========================================================= */
-
-const cpostImages =
-    Array.isArray(item.images)
-        ? item.images.filter(Boolean)
-        : (
-            item.image
-                ? [item.image]
-                : []
-        );
-
-
-const cpostVisibleImages =
-    cpostImages.slice(0, 4);
-
-
-const cpostAdditionalImages =
-    Math.max(
+    const remainingImages = Math.max(
         0,
-        cpostImages.length - 4
+        postImages.length - 4
     );
 
 
-/* =========================================================
-   DAIRY
-========================================================= */
+    /* ========================================================
+       POST TEXT
+    ======================================================== */
 
-const cpostDairyId =
-    item.dairyId ||
-    (
-        item.dairy &&
-        (
-            item.dairy._id ||
-            item.dairy
-        )
-    ) ||
-    "";
+    const postText =
+        item.text ||
+        item.comment ||
+        "";
 
+    const isLongPost =
+        postText.length > 100;
 
-const cpostDairyName =
-    item.dairyName ||
-    (
-        item.dairy &&
-        item.dairy.name
-    ) ||
-    "";
-
-
-/* =========================================================
-   USER NAME
-========================================================= */
-
-const cpostUserName =
-    item.userName ||
-    (
-        item.user &&
-        item.user.name
-    ) ||
-    "User";
-
-
-/* =========================================================
-   USER IMAGE
-========================================================= */
-
-const cpostUserImage =
-    item.userImage ||
-    (
-        item.user &&
-        (
-            item.user.profileImage ||
-            item.user.image
-        )
-    ) ||
-    (
-        "https://ui-avatars.com/api/?name=" +
-        encodeURIComponent(cpostUserName)
-    );
-
-
-/* =========================================================
-   DATE
-========================================================= */
-
-const cpostDate =
-    item.createdAt
-        ? new Date(
-            item.createdAt
-        ).toLocaleString()
-        : (
-            item.dateText ||
-            ""
-        );
-
+    const shortPostText =
+        isLongPost
+            ? postText.substring(0, 100).trim()
+            : postText;
 %>
 
 
-<!-- =========================================================
+<!-- ==========================================================
      POST CARD
-========================================================= -->
+========================================================== -->
 
 <article
-    class="cpost-card"
-    data-cpost-id="<%= cpostId %>"
-    data-cpost-type="<%= cpostType %>"
+    class="feed-card post-card"
+    data-id="<%= item._id %>"
+    data-type="post"
+    data-images="<%= JSON.stringify(postImages).replace(/"/g, '&quot;') %>"
 >
 
-
-    <!-- =====================================================
+    <!-- ======================================================
          HEADER
-    ====================================================== -->
+    ======================================================= -->
 
-    <header class="cpost-header">
+    <div class="feed-header">
 
-
-        <div class="cpost-avatar">
+        <div class="feed-user">
 
             <img
-                src="<%= cpostUserImage %>"
-                alt="<%= cpostUserName %>"
-                loading="lazy"
+                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
+                class="avatar-sm"
+                alt="<%= item.userName || 'User' %>"
             >
 
-        </div>
+            <div class="feed-user-info">
 
+                <div class="post-meta-line">
 
-        <div class="cpost-header-info">
+                    <strong class="post-user-name">
+                        <%= item.userName || "User" %>
+                    </strong>
 
+                    <% if (
+                        item.dairyName &&
+                        item.dairyId
+                    ) { %>
 
-            <div class="cpost-header-main">
-
-
-                <strong class="cpost-user">
-                    <%= cpostUserName %>
-                </strong>
-
-
-                <% if (cpostDairyName) { %>
-
-                    <span class="cpost-about">
-                        about
-                    </span>
-
-
-                    <% if (cpostDairyId) { %>
+                        <span class="post-meta-action">
+                            about
+                        </span>
 
                         <a
-                            href="/dairy/<%= cpostDairyId %>"
-                            class="cpost-dairy"
+                            href="/dairy/<%= item.dairyId %>"
+                            class="post-subject"
                         >
-                            <%= cpostDairyName %>
+                            <%= item.dairyName %>
                         </a>
-
-                    <% } else { %>
-
-                        <span class="cpost-dairy">
-                            <%= cpostDairyName %>
-                        </span>
 
                     <% } %>
 
-                <% } %>
-
-
-            </div>
-
-
-            <% if (cpostDate) { %>
-
-                <time class="cpost-date">
-                    <%= cpostDate %>
-                </time>
-
-            <% } %>
-
-
-            <% if (cpostTitle) { %>
-
-                <div class="cpost-title">
-                    <%= cpostTitle %>
                 </div>
 
-            <% } %>
+                <small class="post-time">
+                    <%= item.dateText || "" %>
+                </small>
 
+            </div>
 
         </div>
 
 
-        <% if (cpostCanDelete) { %>
+        <!-- ==================================================
+             DELETE
+        =================================================== -->
+
+        <% if (
+            user &&
+            (
+                user.role === "admin" ||
+                (
+                    user._id &&
+                    item.userId &&
+                    user._id.toString() ===
+                    item.userId.toString()
+                )
+            )
+        ) { %>
 
             <button
+                class="delete-post"
+                data-id="<%= item._id %>"
+                data-type="post"
+                title="Delete Post"
+                aria-label="Delete Post"
                 type="button"
-                class="cpost-delete"
-                data-cpost-delete
-                aria-label="Delete post"
-                title="Delete post"
             >
-
                 <i
-                    class="bi bi-trash3"
+                    class="bi bi-trash3-fill"
                     aria-hidden="true"
                 ></i>
-
             </button>
 
         <% } %>
 
-
-    </header>
-
+    </div>
 
 
-    <!-- =====================================================
-         CONTENT
-    ====================================================== -->
+    <!-- ======================================================
+         BODY
+    ======================================================= -->
 
-    <div class="cpost-content">
+    <div class="feed-body post-body">
+
+        <!-- ==================================================
+             TITLE
+        =================================================== -->
+
+        <% if (item.title) { %>
+
+            <h3 class="post-title">
+                <%= item.title %>
+            </h3>
+
+        <% } %>
 
 
-        <% if (cpostFullText) { %>
+        <!-- ==================================================
+             MESSAGE
+        =================================================== -->
 
-            <div class="cpost-text-area">
+        <% if (postText) { %>
 
+            <div
+                class="post-message"
+                data-long="<%= isLongPost ? 'true' : 'false' %>"
+            >
 
-                <% if (cpostIsLong) { %>
+                <% if (isLongPost) { %>
 
-                    <p
-                        class="
-                            cpost-text
-                            cpost-text-preview
-                        "
+                    <span class="post-message-short">
+                        <%= shortPostText %>...
+                    </span>
+
+                    <span
+                        class="post-message-full"
+                        hidden
                     >
+                        <%= postText %>
+                    </span>
 
-                        <%= cpostPreview %>
-
-
-                        <button
-                            type="button"
-                            class="cpost-see-more"
-                            data-cpost-expand
-                        >
-                            See more
-                            <i
-                                class="bi bi-arrow-right"
-                                aria-hidden="true"
-                            ></i>
-                        </button>
-
-                    </p>
+                    <button
+                        type="button"
+                        class="see-more-post"
+                        aria-expanded="false"
+                    >
+                        See more
+                    </button>
 
                 <% } else { %>
 
-                    <p class="cpost-text">
-                        <%= cpostFullText %>
-                    </p>
+                    <span class="post-message-full">
+                        <%= postText %>
+                    </span>
 
                 <% } %>
-
 
             </div>
 
         <% } %>
 
 
-
-        <!-- =================================================
+        <!-- ==================================================
              IMAGE GRID
-        ================================================== -->
+        =================================================== -->
 
-        <% if (cpostVisibleImages.length > 0) { %>
+        <% if (visibleImages.length) { %>
 
             <div
                 class="
-                    cpost-images
-                    cpost-images-<%= cpostVisibleImages.length %>
+                    post-image-grid
+                    post-image-count-<%= visibleImages.length %>
+                    <%= remainingImages > 0
+                        ? 'has-more-images'
+                        : '' %>
                 "
-                data-cpost-photo-count="<%= cpostImages.length %>"
             >
 
-
-                <% cpostVisibleImages.forEach(
-                    function(image, index)
-                { %>
-
+                <% visibleImages.forEach((image, index) => { %>
 
                     <button
                         type="button"
-                        class="cpost-image-button"
-                        data-cpost-photo-index="<%= index %>"
-                        aria-label="Open photo <%= index + 1 %>"
+                        class="
+                            post-image-item
+                            <%= index === 3 &&
+                                remainingImages > 0
+                                ? 'has-image-overlay'
+                                : '' %>
+                        "
+                        data-image-index="<%= index %>"
+                        aria-label="View image <%= index + 1 %>"
                     >
 
                         <img
-                            src="/uploads/<%= image %>"
-                            alt="Post photo <%= index + 1 %>"
-                            class="cpost-image"
+                            src="<%= image %>"
+                            alt="Post image <%= index + 1 %>"
                             loading="lazy"
                         >
 
-
                         <% if (
                             index === 3 &&
-                            cpostAdditionalImages > 0
+                            remainingImages > 0
                         ) { %>
 
-                            <span
-                                class="cpost-more-images"
-                            >
-
-                                <i
-                                    class="bi bi-images"
-                                    aria-hidden="true"
-                                ></i>
-
-                                <strong>
-                                    +<%= cpostAdditionalImages %>
-                                </strong>
-
+                            <span class="post-more-images">
+                                +<%= remainingImages %>
                             </span>
 
                         <% } %>
 
-
                     </button>
 
-
-                <% }); %>
-
+                <% }) %>
 
             </div>
 
         <% } %>
 
-
     </div>
 
 
-
-    <!-- =====================================================
+    <!-- ======================================================
          ACTIONS
-    ====================================================== -->
-
-    <footer class="cpost-actions">
-
-
-        <!-- LIKE -->
-
-        <button
-            type="button"
-            class="cpost-like"
-            data-cpost-like
-            aria-label="Like"
-            aria-pressed="false"
-        >
-
-            <i
-                class="bi bi-hand-thumbs-up-fill"
-                aria-hidden="true"
-            ></i>
-
-            <span class="cpost-like-count">
-                <%= cpostLikes %>
-            </span>
-
-        </button>
-
-
-        <!-- COMMENTS -->
-
-        <button
-            type="button"
-            class="cpost-comments-button"
-            data-cpost-open-comments
-            aria-label="Comments"
-        >
-
-            <i
-                class="bi bi-chat-dots-fill"
-                aria-hidden="true"
-            ></i>
-
-            <span class="cpost-comment-count">
-                <%= cpostComments.length %>
-            </span>
-
-        </button>
-
-
-    </footer>
-
-
-
-    <!-- =====================================================
-         EXPANDED POST
-    ====================================================== -->
-
-    <% if (cpostIsLong) { %>
-
-        <div
-            class="cpost-expand"
-            aria-hidden="true"
-        >
-
-
-            <div
-                class="cpost-expand-backdrop"
-                data-cpost-close-expand
-            ></div>
-
-
-            <div
-                class="cpost-expand-card"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Expanded post"
-            >
-
-
-                <header class="cpost-expand-header">
-
-
-                    <div class="cpost-expand-user">
-
-
-                        <img
-                            src="<%= cpostUserImage %>"
-                            alt="<%= cpostUserName %>"
-                        >
-
-
-                        <div class="cpost-expand-user-info">
-
-
-                            <strong>
-                                <%= cpostUserName %>
-                            </strong>
-
-
-                            <% if (cpostDate) { %>
-
-                                <small>
-                                    <%= cpostDate %>
-                                </small>
-
-                            <% } %>
-
-
-                            <% if (cpostTitle) { %>
-
-                                <span>
-                                    <%= cpostTitle %>
-                                </span>
-
-                            <% } %>
-
-
-                        </div>
-
-
-                    </div>
-
-
-                    <button
-                        type="button"
-                        class="cpost-expand-close"
-                        data-cpost-close-expand
-                        aria-label="Close post"
-                    >
-
-                        <i
-                            class="bi bi-x-lg"
-                            aria-hidden="true"
-                        ></i>
-
-                    </button>
-
-
-                </header>
-
-
-                <div class="cpost-expand-body">
-
-
-                    <% if (cpostDairyName) { %>
-
-                        <% if (cpostDairyId) { %>
-
-                            <a
-                                href="/dairy/<%= cpostDairyId %>"
-                                class="cpost-expanded-dairy"
-                            >
-
-                                <i
-                                    class="bi bi-building"
-                                    aria-hidden="true"
-                                ></i>
-
-                                <span>
-                                    <%= cpostDairyName %>
-                                </span>
-
-                            </a>
-
-                        <% } else { %>
-
-                            <div class="cpost-expanded-dairy">
-
-                                <i
-                                    class="bi bi-building"
-                                    aria-hidden="true"
-                                ></i>
-
-                                <span>
-                                    <%= cpostDairyName %>
-                                </span>
-
-                            </div>
-
-                        <% } %>
-
-                    <% } %>
-
-
-                    <div class="cpost-expanded-text">
-                        <%= cpostFullText %>
-                    </div>
-
-
-                    <% if (cpostImages.length > 0) { %>
-
-                        <div class="cpost-expanded-images">
-
-
-                            <% cpostImages.forEach(
-                                function(image, index)
-                            { %>
-
-
-                                <button
-                                    type="button"
-                                    class="cpost-expanded-image"
-                                    data-cpost-photo-index="<%= index %>"
-                                >
-
-                                    <img
-                                        src="/uploads/<%= image %>"
-                                        alt="Post photo <%= index + 1 %>"
-                                        loading="lazy"
-                                    >
-
-                                </button>
-
-
-                            <% }); %>
-
-
-                        </div>
-
-                    <% } %>
-
-
-                </div>
-
-
-            </div>
-
-        </div>
-
-    <% } %>
-
-
-
-    <!-- =====================================================
-         PHOTO VIEWER
-    ====================================================== -->
-
-    <% if (cpostImages.length > 0) { %>
-
-        <div
-            class="cpost-viewer"
-            aria-hidden="true"
-        >
-
-
-            <div
-                class="cpost-viewer-backdrop"
-                data-cpost-close-viewer
-            ></div>
-
-
-            <div class="cpost-viewer-topbar">
-
-
-                <span class="cpost-viewer-counter">
-
-                    <span class="cpost-current-photo">
-                        1
-                    </span>
-
-                    /
-
-                    <span>
-                        <%= cpostImages.length %>
-                    </span>
-
-                </span>
-
-
-                <button
-                    type="button"
-                    class="cpost-viewer-close"
-                    data-cpost-close-viewer
-                    aria-label="Close photo viewer"
-                >
-
-                    <i
-                        class="bi bi-x-lg"
-                        aria-hidden="true"
-                    ></i>
-
-                </button>
-
-
-            </div>
-
-
-            <% if (cpostImages.length > 1) { %>
-
-                <button
-                    type="button"
-                    class="
-                        cpost-viewer-navigation
-                        cpost-viewer-prev
-                    "
-                    data-cpost-photo-prev
-                    aria-label="Previous photo"
-                >
-
-                    <i
-                        class="bi bi-chevron-left"
-                        aria-hidden="true"
-                    ></i>
-
-                </button>
-
-            <% } %>
-
-
-            <div class="cpost-viewer-stage">
-
-                <img
-                    class="cpost-viewer-image"
-                    src="/uploads/<%= cpostImages[0] %>"
-                    alt="Post photo"
-                >
-
-            </div>
-
-
-            <% if (cpostImages.length > 1) { %>
-
-                <button
-                    type="button"
-                    class="
-                        cpost-viewer-navigation
-                        cpost-viewer-next
-                    "
-                    data-cpost-photo-next
-                    aria-label="Next photo"
-                >
-
-                    <i
-                        class="bi bi-chevron-right"
-                        aria-hidden="true"
-                    ></i>
-
-                </button>
-
-            <% } %>
-
-
-        </div>
-
-    <% } %>
-
-
-
-    <!-- =====================================================
-         COMMENT MODAL
-    ====================================================== -->
-
-    <div
-        class="cpost-comment-modal"
-        aria-hidden="true"
-    >
-
-
-        <div class="cpost-comment-modal-content">
-
-
-            <header class="cpost-comment-header">
-
-
-                <div class="cpost-comment-heading">
-
-                    <strong>
-                        Comments
-                    </strong>
-
-                    <span class="cpost-modal-comment-count">
-                        <%= cpostComments.length %>
-                    </span>
-
-                </div>
-
-
-                <button
-                    type="button"
-                    class="cpost-comment-close"
-                    data-cpost-close-comments
-                    aria-label="Close comments"
-                >
-
-                    <i
-                        class="bi bi-x-lg"
-                        aria-hidden="true"
-                    ></i>
-
-                </button>
-
-
-            </header>
-
-
-
-            <!-- =================================================
-                 COMMENT LIST
-            ================================================== -->
-
-            <div class="cpost-comment-list">
-
-
-                <% if (cpostComments.length === 0) { %>
-
-                    <div class="cpost-comment-empty">
-
-                        <i
-                            class="bi bi-chat-dots"
-                            aria-hidden="true"
-                        ></i>
-
-                        <span>
-                            No comments yet.
-                        </span>
-
-                        <small>
-                            Be the first to comment.
-                        </small>
-
-                    </div>
-
-                <% } %>
-
-
-                <% cpostComments.forEach(
-                    function(comment)
-                { %>
-
-
-                    <div
-                        class="cpost-comment-item"
-                        data-cpost-comment-id="<%= comment._id %>"
-                    >
-
-
-                        <div class="cpost-comment-avatar">
-
-                            <img
-                                src="<%= comment.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.userName || 'User')) %>"
-                                alt="<%= comment.userName || 'User' %>"
-                                loading="lazy"
-                            >
-
-                        </div>
-
-
-                        <div class="cpost-comment-body">
-
-
-                            <div class="cpost-comment-top">
-
-
-                                <strong>
-                                    <%= comment.userName || "User" %>
-                                </strong>
-
-
-                                <%
-
-                                    const cpostCommentUserId =
-                                        comment.userId
-                                            ? String(
-                                                comment.userId._id ||
-                                                comment.userId
-                                            )
-                                            : "";
-
-
-                                    const cpostCanDeleteComment =
-                                        user &&
-                                        (
-                                            cpostCommentUserId ===
-                                                cpostCurrentUserId ||
-                                            user.role === "admin"
-                                        );
-
-                                %>
-
-
-                                <% if (cpostCanDeleteComment) { %>
-
-                                    <button
-                                        type="button"
-                                        class="cpost-delete-comment"
-                                        data-cpost-delete-comment
-                                        aria-label="Delete comment"
-                                        title="Delete comment"
-                                    >
-
-                                        <i
-                                            class="bi bi-trash3"
-                                            aria-hidden="true"
-                                        ></i>
-
-                                    </button>
-
-                                <% } %>
-
-
-                            </div>
-
-
-                            <p class="cpost-comment-text">
-                                <%= comment.text %>
-                            </p>
-
-
-                            <% if (comment.createdAt) { %>
-
-                                <small class="cpost-comment-date">
-
-                                    <%= new Date(
-                                        comment.createdAt
-                                    ).toLocaleString() %>
-
-                                </small>
-
-                            <% } %>
-
-
-                        </div>
-
-
-                    </div>
-
-
-                <% }); %>
-
-
-            </div>
-
-
-
-            <!-- =================================================
-                 COMMENT FORM
-            ================================================== -->
-
-            <div class="cpost-comment-composer-wrapper">
-
-
-                <form
-                    class="cpost-comment-form"
-                    data-cpost-comment-form
-                >
-
-
-                    <div class="cpost-comment-composer">
-
-
-                        <div class="cpost-comment-input-wrapper">
-
-                            <textarea
-                                name="text"
-                                rows="1"
-                                maxlength="500"
-                                placeholder="Write a comment..."
-                                aria-label="Write a comment"
-                            ></textarea>
-
-                        </div>
-
-
-                        <button
-                            type="submit"
-                            class="cpost-comment-submit"
-                            aria-label="Send comment"
-                        >
-
-                            <i
-                                class="bi bi-send-fill"
-                                aria-hidden="true"
-                            ></i>
-
-                        </button>
-
-
-                    </div>
-
-
-                </form>
-
-
-            </div>
-
-
-        </div>
-
-    </div>
-
+    ======================================================= -->
+
+    <%- include("partials/feed-actions", {
+        item,
+        type: "post"
+    }) %>
+
+
+    <!-- ======================================================
+         COMMENTS
+    ======================================================= -->
+
+    <%- include("comment-section", {
+        item,
+        user,
+        type: "post"
+    }) %>
 
 </article>
 
 
 
-<!-- =========================================================
-     SELF-CONTAINED CSS
-========================================================= -->
+<!-- ==========================================================
+     FULLSCREEN IMAGE VIEWER
+========================================================== -->
+
+<div
+    class="post-image-viewer"
+    aria-hidden="true"
+>
+
+    <button
+        type="button"
+        class="post-viewer-close"
+        aria-label="Close image viewer"
+    >
+        <i class="bi bi-x-lg"></i>
+    </button>
+
+
+    <button
+        type="button"
+        class="post-viewer-prev"
+        aria-label="Previous image"
+    >
+        <i class="bi bi-chevron-left"></i>
+    </button>
+
+
+    <div class="post-viewer-content">
+
+        <img
+            class="post-viewer-image"
+            src=""
+            alt="Post image"
+        >
+
+        <div class="post-viewer-counter">
+
+            <span class="post-viewer-current">
+                1
+            </span>
+
+            /
+
+            <span class="post-viewer-total">
+                <%= postImages.length %>
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <button
+        type="button"
+        class="post-viewer-next"
+        aria-label="Next image"
+    >
+        <i class="bi bi-chevron-right"></i>
+    </button>
+
+</div>
+
+
+
+<!-- ==========================================================
+     POST CARD STYLES
+========================================================== -->
 
 <style>
 
-.cpost-card,
-.cpost-card *,
-.cpost-card *::before,
-.cpost-card *::after {
-    box-sizing: border-box;
-}
+/* ==========================================================
+   POST BODY
+========================================================== */
 
-
-.cpost-card {
-
-    --cpost-green: #198754;
-    --cpost-green-dark: #146c43;
-    --cpost-text: #303833;
-    --cpost-muted: #89928c;
-    --cpost-border: #dfe8e2;
-
-    position: relative;
+.post-card .post-body {
     width: 100%;
-    margin: 0 0 14px;
-    padding: 0;
-
-    background: #ffffff;
-
-    border: 1px solid var(--cpost-border);
-    border-radius: 14px;
-
-    overflow: hidden;
-    isolation: isolate;
-
-    color: var(--cpost-text);
-    font-family: inherit;
-
-    box-shadow:
-        0 2px 8px rgba(24,42,30,.045);
 }
 
 
-/* =========================================================
-   HEADER
-========================================================= */
+/* ==========================================================
+   TITLE
+========================================================== */
 
-.cpost-header {
-
-    width: 100%;
-    min-width: 0;
-
-    display: flex;
-    align-items: center;
-
-    gap: 10px;
-
-    padding: 10px 13px;
-
-    background: #ffffff;
-
-    border-bottom: 1px solid #e4ebe6;
-}
-
-
-.cpost-avatar {
-
-    width: 42px;
-    height: 42px;
-
-    flex: 0 0 42px;
-}
-
-
-.cpost-avatar img {
-
-    display: block;
-
-    width: 42px;
-    height: 42px;
-
-    border-radius: 50%;
-
-    object-fit: cover;
-
-    border: 2px solid #edf5ef;
-}
-
-
-.cpost-header-info {
-
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-
-.cpost-header-main {
-
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-
-    column-gap: 5px;
-    row-gap: 1px;
-
-    min-width: 0;
-
-    line-height: 1.25;
-}
-
-
-.cpost-user {
-
-    color: #172019;
-
-    font-size: 14px;
+.post-card .post-title {
+    margin: 0 0 7px;
+    font-size: 18px;
+    line-height: 1.35;
     font-weight: 700;
+    color: #111827;
 }
 
 
-.cpost-about {
+/* ==========================================================
+   MESSAGE
+========================================================== */
 
-    color: #7c867f;
-
-    font-size: 12px;
-}
-
-
-.cpost-dairy {
-
-    display: inline;
-
-    min-width: 0;
-    max-width: 100%;
-
-    color: var(--cpost-green);
-
-    font-size: 13px;
-    font-weight: 700;
-
-    text-decoration: none;
-
-    overflow-wrap: anywhere;
-}
-
-
-.cpost-dairy:hover {
-
-    color: var(--cpost-green-dark);
-    text-decoration: underline;
-}
-
-
-.cpost-date {
-
-    display: block;
-
-    margin-top: 2px;
-
-    color: var(--cpost-muted);
-
-    font-size: 10.5px;
-}
-
-
-.cpost-title {
-
-    display: block;
-
-    width: 100%;
-
-    margin-top: 3px;
-
-    color: #18201b;
-
+.post-message {
     font-size: 14px;
-    font-weight: 800;
-
-    line-height: 1.3;
-
-    text-align: left;
-
-    overflow-wrap: anywhere;
-}
-
-
-.cpost-delete {
-
-    width: 34px;
-    height: 34px;
-
-    flex: 0 0 34px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 0;
-
-    border: 0;
-    border-radius: 50%;
-
-    background: transparent;
-
-    color: #7c867f;
-
-    cursor: pointer;
-}
-
-
-.cpost-delete:hover {
-
-    background: #fff1f1;
-    color: #c62828;
-}
-
-
-.cpost-delete:disabled {
-
-    opacity: .5;
-    cursor: wait;
-}
-
-
-
-/* =========================================================
-   CONTENT
-========================================================= */
-
-.cpost-content {
-
-    width: 100%;
-    min-width: 0;
-
-    padding: 12px 14px;
-
-    background: #ffffff;
-}
-
-
-.cpost-text-area {
-
-    width: 100%;
-    margin: 0;
-}
-
-
-.cpost-text {
-
-    width: 100%;
-
-    margin: 0;
-    padding: 0;
-
-    color: var(--cpost-text);
-
-    font-size: 15px;
-    font-weight: 400;
-
-    line-height: 1.5;
-
-    text-align: left;
-
+    line-height: 1.55;
+    color: #374151;
     white-space: pre-wrap;
-
     word-break: break-word;
-    overflow-wrap: anywhere;
+}
+
+.post-message-short,
+.post-message-full {
+    white-space: pre-wrap;
 }
 
 
-.cpost-see-more {
+/* ==========================================================
+   SEE MORE
+========================================================== */
 
-    display: inline;
-
-    margin-left: 4px;
-    padding: 0;
-
+.see-more-post {
     border: 0;
+    padding: 0;
+    margin-left: 4px;
 
     background: transparent;
 
-    color: var(--cpost-green);
+    color: #166534;
 
-    font-family: inherit;
-
-    font-size: 14px;
     font-weight: 700;
+    font-size: inherit;
 
     cursor: pointer;
 }
 
 
-.cpost-see-more:hover {
+/* ==========================================================
+   IMAGE GRID
+========================================================== */
 
-    color: var(--cpost-green-dark);
-}
-
-
-.cpost-see-more i {
-
-    margin-left: 2px;
-    font-size: 10px;
-}
-
-
-
-/* =========================================================
-   IMAGES
-========================================================= */
-
-.cpost-images {
-
-    width: 100%;
+.post-image-grid {
 
     display: grid;
 
-    grid-template-columns:
-        repeat(2,minmax(0,1fr));
-
     gap: 3px;
 
-    margin-top: 10px;
+    width: 100%;
+
+    margin-top: 12px;
 
     overflow: hidden;
 
-    border-radius: 11px;
-
-    background: #eef2ef;
+    border-radius: 9px;
 }
 
 
-.cpost-image-button {
+/* ==========================================================
+   ONE IMAGE
+========================================================== */
+
+.post-image-count-1 {
+    grid-template-columns: 1fr;
+}
+
+
+/* ==========================================================
+   TWO IMAGES
+========================================================== */
+
+.post-image-count-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+
+/* ==========================================================
+   THREE IMAGES
+========================================================== */
+
+.post-image-count-3 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.post-image-count-3
+.post-image-item:first-child {
+    grid-row: span 2;
+}
+
+
+/* ==========================================================
+   FOUR IMAGES
+========================================================== */
+
+.post-image-count-4 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+
+/* ==========================================================
+   IMAGE BUTTON
+========================================================== */
+
+.post-image-item {
 
     position: relative;
 
     display: block;
 
     width: 100%;
-
     min-width: 0;
-
-    aspect-ratio: 1 / 1;
 
     padding: 0;
 
     border: 0;
 
-    background: #eef2ef;
+    background: #f3f4f6;
 
     overflow: hidden;
 
@@ -1453,7 +520,70 @@ const cpostDate =
 }
 
 
-.cpost-image-button::after {
+/* ==========================================================
+   IMAGES
+
+   Reduced from 180px minimum.
+========================================================== */
+
+.post-image-item img {
+
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    min-height: 135px;
+
+    object-fit: cover;
+
+    transition:
+        transform .2s ease;
+}
+
+
+.post-image-item:hover img {
+    transform: scale(1.02);
+}
+
+
+/* ==========================================================
+   SINGLE IMAGE
+
+   Keeps single photos from becoming enormous.
+========================================================== */
+
+.post-image-count-1
+.post-image-item img {
+
+    height: auto;
+
+    max-height: 400px;
+
+    min-height: 0;
+
+    object-fit: contain;
+
+    background: #f3f4f6;
+}
+
+
+/* ==========================================================
+   THREE IMAGE LAYOUT
+========================================================== */
+
+.post-image-count-3
+.post-image-item:first-child img {
+
+    min-height: 273px;
+}
+
+
+/* ==========================================================
+   MORE IMAGES OVERLAY
+========================================================== */
+
+.has-image-overlay::after {
 
     content: "";
 
@@ -1461,69 +591,12 @@ const cpostDate =
 
     inset: 0;
 
-    background: transparent;
-
-    transition: background .15s ease;
+    background:
+        rgba(0, 0, 0, .35);
 }
 
 
-.cpost-image-button:hover::after {
-
-    background: rgba(0,0,0,.07);
-}
-
-
-.cpost-image {
-
-    display: block;
-
-    width: 100%;
-    height: 100%;
-
-    object-fit: cover;
-}
-
-
-.cpost-images-1 {
-
-    grid-template-columns: 1fr;
-}
-
-
-.cpost-images-1 .cpost-image-button {
-
-    aspect-ratio: auto;
-
-    max-height: 650px;
-}
-
-
-.cpost-images-1 .cpost-image {
-
-    width: 100%;
-    height: auto;
-
-    max-height: 650px;
-
-    object-fit: contain;
-}
-
-
-.cpost-images-3 {
-
-    grid-template-columns:
-        1.35fr 1fr;
-}
-
-
-.cpost-images-3
-.cpost-image-button:first-child {
-
-    grid-row: span 2;
-}
-
-
-.cpost-more-images {
+.post-more-images {
 
     position: absolute;
 
@@ -1534,484 +607,77 @@ const cpostDate =
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
-    gap: 7px;
+    color: #fff;
 
-    background: rgba(0,0,0,.43);
+    font-size: 24px;
 
-    color: #ffffff;
-
-    font-size: 18px;
-    font-weight: 700;
+    font-weight: 800;
 
     pointer-events: none;
 }
 
 
+/* ==========================================================
+   FULLSCREEN VIEWER
+========================================================== */
 
-/* =========================================================
-   ACTIONS
-========================================================= */
-
-.cpost-actions {
-
-    width: 100%;
-
-    min-height: 46px;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 4px;
-
-    padding: 5px 9px;
-
-    background: #ffffff;
-
-    border-top: 1px solid #dfe7e2;
-}
-
-
-.cpost-like,
-.cpost-comments-button {
-
-    min-width: 64px;
-
-    height: 35px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    gap: 6px;
-
-    padding: 0 10px;
-
-    border: 0;
-    border-radius: 20px;
-
-    background: transparent;
-
-    color: #66706a;
-
-    font-family: inherit;
-    font-size: 14px;
-
-    cursor: pointer;
-
-    transition:
-        background .15s ease,
-        color .15s ease,
-        transform .1s ease;
-}
-
-
-.cpost-like:hover,
-.cpost-comments-button:hover {
-
-    background: #f0f6f2;
-    color: var(--cpost-green);
-}
-
-
-.cpost-like:active,
-.cpost-comments-button:active {
-
-    transform: scale(.96);
-}
-
-
-.cpost-like.liked {
-
-    color: var(--cpost-green);
-
-    background: #edf7f1;
-}
-
-
-.cpost-like:disabled {
-
-    opacity: .55;
-    cursor: wait;
-}
-
-
-.cpost-like i,
-.cpost-comments-button i {
-
-    font-size: 17px;
-}
-
-
-
-/* =========================================================
-   EXPANDED POST
-========================================================= */
-
-.cpost-expand {
+.post-image-viewer {
 
     position: fixed;
 
     inset: 0;
 
-    z-index: 200000;
+    z-index: 99999;
 
     display: none;
 
     align-items: center;
+
     justify-content: center;
 
-    padding: 16px;
+    background:
+        rgba(0, 0, 0, .94);
+
+    touch-action: none;
 }
 
 
-.cpost-expand.cpost-is-active {
-
+.post-image-viewer.active {
     display: flex;
 }
 
 
-.cpost-expand-backdrop {
+/* ==========================================================
+   VIEWER CONTENT
+========================================================== */
 
-    position: absolute;
-
-    inset: 0;
-
-    background: rgba(8,20,12,.62);
-
-    backdrop-filter: blur(3px);
-}
-
-
-.cpost-expand-card {
+.post-viewer-content {
 
     position: relative;
 
-    z-index: 2;
-
-    width: 100%;
-    max-width: 680px;
-
-    max-height: 90dvh;
-
-    display: flex;
-    flex-direction: column;
-
-    overflow: hidden;
-
-    background: #ffffff;
-
-    border-radius: 18px;
-
-    box-shadow:
-        0 20px 70px rgba(0,0,0,.30);
-}
-
-
-.cpost-expand-header {
-
-    flex: 0 0 auto;
-
-    min-height: 64px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 10px 12px;
-
-    border-bottom: 1px solid #e9efeb;
-}
-
-
-.cpost-expand-user {
-
-    min-width: 0;
-
     display: flex;
 
     align-items: center;
 
-    gap: 9px;
-}
-
-
-.cpost-expand-user > img {
-
-    width: 40px;
-    height: 40px;
-
-    flex: 0 0 40px;
-
-    border-radius: 50%;
-
-    object-fit: cover;
-}
-
-
-.cpost-expand-user-info {
-
-    min-width: 0;
-
-    display: flex;
-    flex-direction: column;
-}
-
-
-.cpost-expand-user-info strong {
-
-    color: #202720;
-    font-size: 14px;
-}
-
-
-.cpost-expand-user-info small {
-
-    margin-top: 2px;
-
-    color: #8a938d;
-
-    font-size: 10px;
-}
-
-
-.cpost-expand-user-info span {
-
-    margin-top: 3px;
-
-    color: #18201b;
-
-    font-size: 13px;
-    font-weight: 800;
-}
-
-
-.cpost-expand-close {
-
-    width: 38px;
-    height: 38px;
-
-    display: inline-flex;
-
-    align-items: center;
     justify-content: center;
-
-    padding: 0;
-
-    border: 0;
-    border-radius: 50%;
-
-    background: #f1f4f2;
-
-    color: #505a54;
-
-    cursor: pointer;
-}
-
-
-.cpost-expand-body {
-
-    flex: 1 1 auto;
-
-    min-height: 0;
-
-    overflow-y: auto;
-
-    padding: 14px 16px 20px;
-}
-
-
-.cpost-expanded-dairy {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    margin-bottom: 9px;
-
-    color: var(--cpost-green);
-
-    font-size: 13px;
-    font-weight: 700;
-
-    text-decoration: none;
-}
-
-
-.cpost-expanded-text {
-
-    color: #303833;
-
-    font-size: 15px;
-
-    line-height: 1.65;
-
-    white-space: pre-wrap;
-
-    word-break: break-word;
-}
-
-
-.cpost-expanded-images {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(2,minmax(0,1fr));
-
-    gap: 5px;
-
-    margin-top: 15px;
-}
-
-
-.cpost-expanded-image {
-
-    width: 100%;
-
-    aspect-ratio: 1 / 1;
-
-    padding: 0;
-
-    border: 0;
-
-    border-radius: 10px;
-
-    overflow: hidden;
-
-    background: #eef2ef;
-
-    cursor: pointer;
-}
-
-
-.cpost-expanded-image img {
-
-    display: block;
 
     width: 100%;
     height: 100%;
 
-    object-fit: cover;
+    padding: 55px 65px;
 }
 
 
+/* ==========================================================
+   VIEWER IMAGE
+========================================================== */
 
-/* =========================================================
-   PHOTO VIEWER
-========================================================= */
-
-.cpost-viewer {
-
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 300000;
-
-    display: none;
-
-    background: rgba(0,0,0,.96);
-
-    touch-action: pan-y;
-}
-
-
-.cpost-viewer.cpost-is-active {
+.post-viewer-image {
 
     display: block;
-}
-
-
-.cpost-viewer-backdrop {
-
-    position: absolute;
-
-    inset: 0;
-}
-
-
-.cpost-viewer-topbar {
-
-    position: absolute;
-
-    z-index: 5;
-
-    top: 0;
-    left: 0;
-    right: 0;
-
-    height: 64px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 10px 14px;
-}
-
-
-.cpost-viewer-counter {
-
-    color: #ffffff;
-
-    font-size: 13px;
-
-    padding: 7px 10px;
-
-    border-radius: 20px;
-
-    background: rgba(0,0,0,.35);
-}
-
-
-.cpost-viewer-close {
-
-    width: 40px;
-    height: 40px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 0;
-
-    border: 1px solid rgba(255,255,255,.35);
-
-    border-radius: 50%;
-
-    background: rgba(0,0,0,.35);
-
-    color: #ffffff;
-
-    cursor: pointer;
-}
-
-
-.cpost-viewer-stage {
-
-    position: absolute;
-
-    inset: 64px 55px 20px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
-    overflow: hidden;
-}
-
-
-.cpost-viewer-image {
 
     max-width: 100%;
     max-height: 100%;
@@ -2022,624 +688,171 @@ const cpostDate =
     object-fit: contain;
 
     user-select: none;
+
+    -webkit-user-drag: none;
 }
 
 
-.cpost-viewer-navigation {
+/* ==========================================================
+   VIEWER BUTTONS
+========================================================== */
+
+.post-viewer-close,
+.post-viewer-prev,
+.post-viewer-next {
 
     position: absolute;
 
-    z-index: 6;
+    z-index: 5;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 255, 255, .14);
+
+    color: #fff;
+
+    cursor: pointer;
+
+    backdrop-filter: blur(5px);
+}
+
+
+.post-viewer-close {
+    top: 16px;
+    right: 16px;
+}
+
+
+.post-viewer-prev {
+
+    left: 16px;
 
     top: 50%;
 
-    width: 44px;
-    height: 44px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 0;
-
-    border: 1px solid rgba(255,255,255,.3);
-
-    border-radius: 50%;
-
-    background: rgba(0,0,0,.38);
-
-    color: #ffffff;
-
-    cursor: pointer;
-
-    transform: translateY(-50%);
+    transform:
+        translateY(-50%);
 }
 
 
-.cpost-viewer-prev {
-    left: 14px;
+.post-viewer-next {
+
+    right: 16px;
+
+    top: 50%;
+
+    transform:
+        translateY(-50%);
 }
 
 
-.cpost-viewer-next {
-    right: 14px;
+.post-viewer-close:hover,
+.post-viewer-prev:hover,
+.post-viewer-next:hover {
+
+    background:
+        rgba(255, 255, 255, .25);
 }
 
 
+/* ==========================================================
+   VIEWER COUNTER
+========================================================== */
 
-/* =========================================================
-   COMMENTS
-========================================================= */
+.post-viewer-counter {
 
-.cpost-comment-modal {
+    position: absolute;
 
-    position: fixed;
+    left: 50%;
+    bottom: 16px;
 
-    inset: 0;
+    transform:
+        translateX(-50%);
 
-    z-index: 100000;
-
-    display: none;
-
-    align-items: flex-end;
-    justify-content: center;
-
-    background: rgba(0,0,0,.45);
-}
-
-
-.cpost-comment-modal.cpost-is-active {
-
-    display: flex;
-}
-
-
-.cpost-comment-modal-content {
-
-    width: 100%;
-    max-width: 650px;
-
-    max-height: 88dvh;
-
-    display: flex;
-    flex-direction: column;
-
-    overflow: hidden;
-
-    background: #ffffff;
-
-    border-radius: 18px 18px 0 0;
-
-    box-shadow:
-        0 -8px 30px rgba(0,0,0,.18);
-}
-
-
-.cpost-comment-header {
-
-    flex: 0 0 auto;
-
-    height: 58px;
-
-    display: flex;
-
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 0 14px 0 18px;
-
-    border-bottom: 1px solid #e8eee9;
-}
-
-
-.cpost-comment-heading {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-}
-
-
-.cpost-comment-heading strong {
-
-    color: #202520;
-
-    font-size: 16px;
-}
-
-
-.cpost-modal-comment-count {
-
-    min-width: 22px;
-    height: 22px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 0 6px;
-
-    border-radius: 11px;
-
-    background: #edf5ef;
-
-    color: var(--cpost-green);
-
-    font-size: 11px;
-    font-weight: 700;
-}
-
-
-.cpost-comment-close {
-
-    width: 36px;
-    height: 36px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 0;
-
-    border: 0;
-
-    border-radius: 50%;
-
-    background: transparent;
-
-    color: #68716b;
-
-    cursor: pointer;
-}
-
-
-.cpost-comment-list {
-
-    flex: 1 1 auto;
-
-    min-height: 0;
-
-    overflow-y: auto;
-
-    padding: 10px 15px 14px;
-}
-
-
-.cpost-comment-empty {
-
-    min-height: 180px;
-
-    display: flex;
-
-    flex-direction: column;
-
-    align-items: center;
-    justify-content: center;
-
-    text-align: center;
-
-    color: #89918c;
-}
-
-
-.cpost-comment-empty i {
-
-    margin-bottom: 10px;
-
-    color: #aeb8b2;
-
-    font-size: 34px;
-}
-
-
-.cpost-comment-empty span {
-
-    color: #606963;
-
-    font-size: 14px;
-    font-weight: 600;
-}
-
-
-.cpost-comment-empty small {
-
-    margin-top: 4px;
-
-    font-size: 12px;
-}
-
-
-.cpost-comment-item {
-
-    display: flex;
-
-    gap: 9px;
-
-    padding: 8px 0;
-}
-
-
-.cpost-comment-avatar {
-
-    width: 34px;
-    height: 34px;
-
-    flex: 0 0 34px;
-}
-
-
-.cpost-comment-avatar img {
-
-    display: block;
-
-    width: 34px;
-    height: 34px;
-
-    border-radius: 50%;
-
-    object-fit: cover;
-}
-
-
-.cpost-comment-body {
-
-    min-width: 0;
-
-    flex: 1;
-
-    padding: 8px 10px;
-
-    border-radius: 13px;
-
-    background: #f5f8f6;
-}
-
-
-.cpost-comment-top {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 8px;
-}
-
-
-.cpost-comment-top strong {
-
-    min-width: 0;
-
-    flex: 1;
-
-    color: #202520;
-
-    font-size: 12px;
-}
-
-
-.cpost-delete-comment {
-
-    width: 27px;
-    height: 27px;
-
-    flex: 0 0 27px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 0;
-
-    border: 0;
-
-    border-radius: 50%;
-
-    background: transparent;
-
-    color: #969d98;
-
-    cursor: pointer;
-}
-
-
-.cpost-delete-comment:disabled {
-
-    opacity: .5;
-
-    cursor: wait;
-}
-
-
-.cpost-comment-text {
-
-    margin: 3px 0 0;
-
-    color: #343a36;
+    color: #fff;
 
     font-size: 13px;
 
-    line-height: 1.45;
+    font-weight: 600;
 
-    white-space: pre-wrap;
+    padding: 5px 11px;
 
-    word-break: break-word;
+    border-radius: 20px;
+
+    background:
+        rgba(0, 0, 0, .45);
 }
 
 
-.cpost-comment-date {
-
-    display: block;
-
-    margin-top: 5px;
-
-    color: #8b938e;
-
-    font-size: 10px;
-}
-
-
-.cpost-comment-composer-wrapper {
-
-    flex: 0 0 auto;
-
-    padding:
-        9px
-        12px
-        calc(
-            9px +
-            env(safe-area-inset-bottom)
-        );
-
-    border-top: 1px solid #e8eee9;
-
-    background: #ffffff;
-}
-
-
-.cpost-comment-form {
-
-    width: 100%;
-
-    margin: 0;
-}
-
-
-.cpost-comment-composer {
-
-    min-height: 46px;
-
-    display: flex;
-
-    align-items: flex-end;
-
-    gap: 6px;
-
-    padding: 4px 5px 4px 12px;
-
-    border: 1px solid #dce5df;
-
-    border-radius: 24px;
-
-    background: #f7faf8;
-}
-
-
-.cpost-comment-input-wrapper {
-
-    flex: 1;
-
-    min-width: 0;
-}
-
-
-.cpost-comment-input-wrapper textarea {
-
-    display: block;
-
-    width: 100%;
-
-    min-height: 36px;
-    max-height: 100px;
-
-    margin: 0;
-
-    padding: 8px 0 6px;
-
-    resize: none;
-
-    overflow-y: auto;
-
-    border: 0;
-    outline: 0;
-
-    background: transparent;
-
-    color: #202520;
-
-    font-family: inherit;
-
-    font-size: 14px;
-
-    line-height: 20px;
-}
-
-
-.cpost-comment-submit {
-
-    width: 37px;
-    height: 37px;
-
-    flex: 0 0 37px;
-
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 0;
-
-    border: 0;
-
-    border-radius: 50%;
-
-    background: transparent;
-
-    color: var(--cpost-green);
-
-    cursor: pointer;
-}
-
-
-.cpost-comment-submit:disabled {
-
-    opacity: .5;
-
-    cursor: wait;
-}
-
-
-
-/* =========================================================
+/* ==========================================================
    MOBILE
-========================================================= */
+========================================================== */
 
-@media (max-width:600px) {
+@media (max-width: 600px) {
 
-    .cpost-card {
-
-        margin-bottom: 11px;
-
-        border-radius: 13px;
+    .post-card .post-title {
+        font-size: 17px;
     }
 
 
-    .cpost-header {
-
-        padding: 8px 11px;
-
-        gap: 9px;
-    }
-
-
-    .cpost-avatar,
-    .cpost-avatar img {
-
-        width: 40px;
-        height: 40px;
-    }
-
-
-    .cpost-avatar {
-
-        flex-basis: 40px;
-    }
-
-
-    .cpost-content {
-
-        padding: 10px 12px;
-    }
-
-
-    .cpost-text {
-
+    .post-message {
         font-size: 14px;
     }
 
 
-    .cpost-actions {
-
-        min-height: 45px;
-
-        padding: 4px 8px;
+    .post-image-grid {
+        margin-top: 10px;
     }
 
 
-    .cpost-like,
-    .cpost-comments-button {
-
-        min-width: 60px;
-
-        height: 34px;
-
-        padding: 0 8px;
+    .post-image-item img {
+        min-height: 105px;
     }
 
 
-    .cpost-expand {
+    .post-image-count-1
+    .post-image-item img {
 
-        padding: 8px;
+        max-height: 320px;
+
+        min-height: 0;
     }
 
 
-    .cpost-expand-card {
-
-        max-height: 94dvh;
-
-        border-radius: 16px;
+    .post-image-count-3
+    .post-image-item:first-child img {
+        min-height: 213px;
     }
 
 
-    .cpost-viewer-stage {
-
-        inset: 65px 5px 10px;
+    .post-viewer-content {
+        padding: 50px 40px;
     }
 
 
-    .cpost-viewer-navigation {
-
-        width: 40px;
-        height: 40px;
-    }
-
-
-    .cpost-viewer-prev {
+    .post-viewer-prev {
         left: 7px;
     }
 
 
-    .cpost-viewer-next {
+    .post-viewer-next {
         right: 7px;
     }
 
 
-    .cpost-comment-modal-content {
-
-        max-height: 92dvh;
-
-        border-radius:
-            16px
-            16px
-            0
-            0;
-    }
-
-
-    .cpost-comment-list {
-
-        padding:
-            8px
-            12px
-            12px;
-    }
-
-}
-
-
-@media (prefers-reduced-motion:reduce) {
-
-    .cpost-card *,
-    .cpost-card *::before,
-    .cpost-card *::after {
-
-        transition: none !important;
-        animation: none !important;
+    .post-viewer-close {
+        top: 10px;
+        right: 10px;
     }
 
 }
@@ -2648,2061 +861,558 @@ const cpostDate =
 
 
 
-<!-- =========================================================
-     SELF-CONTAINED JAVASCRIPT
-
-     IMPORTANT:
-     ---------------------------------------------------------
-     This script uses the same backend routes as
-     feed-actions.ejs.
-
-     It is initialized ONLY ONCE.
-========================================================= -->
+<!-- ==========================================================
+     POST CARD JAVASCRIPT
+========================================================== -->
 
 <script>
 
 (function () {
 
-    "use strict";
+    /* ========================================================
+       PREVENT MULTIPLE INITIALIZATION
+    ======================================================== */
 
-
-    /* =====================================================
-       INITIALIZATION GUARD
-    ===================================================== */
-
-    if (
-        window.__corevesterCpostActionsInitialized
-    ) {
-
+    if (window.__postCardInitialized) {
         return;
-
     }
 
+    window.__postCardInitialized = true;
 
-    window.__corevesterCpostActionsInitialized =
-        true;
 
+    /* ========================================================
+       SEE MORE / SEE LESS
+    ======================================================== */
 
+    document.addEventListener(
+        "click",
+        event => {
 
-    /* =====================================================
-       BODY LOCK
-    ===================================================== */
-
-    function cpostLockBody() {
-
-        document.body.style.overflow = "hidden";
-
-    }
-
-
-    function cpostUnlockBody() {
-
-        if (
-            !document.querySelector(
-                ".cpost-expand.cpost-is-active"
-            ) &&
-            !document.querySelector(
-                ".cpost-viewer.cpost-is-active"
-            ) &&
-            !document.querySelector(
-                ".cpost-comment-modal.cpost-is-active"
-            )
-        ) {
-
-            document.body.style.overflow = "";
-
-        }
-
-    }
-
-
-
-    /* =====================================================
-       MESSAGE
-    ===================================================== */
-
-    function cpostMessage(message) {
-
-        if (
-            typeof window.showMessage ===
-            "function"
-        ) {
-
-            window.showMessage(message);
-
-            return;
-
-        }
-
-
-        window.alert(message);
-
-    }
-
-
-
-    /* =====================================================
-       RESPONSE PARSER
-       -----------------------------------------------------
-       Protects against HTML responses when the server
-       redirects instead of returning JSON.
-    ===================================================== */
-
-    async function cpostReadResponse(response) {
-
-        const contentType =
-            response.headers.get(
-                "content-type"
-            ) || "";
-
-
-        if (
-            contentType.includes(
-                "application/json"
-            )
-        ) {
-
-            return await response.json();
-
-        }
-
-
-        const text =
-            await response.text();
-
-
-        return {
-
-            success:
-                response.ok,
-
-            message:
-                text ||
-                `Request failed (${response.status})`
-
-        };
-
-    }
-
-
-
-    /* =====================================================
-       GET CARD
-    ===================================================== */
-
-    function cpostGetCard(element) {
-
-        if (!element) {
-
-            return null;
-
-        }
-
-
-        return element.closest(
-            ".cpost-card"
-        );
-
-    }
-
-
-
-    /* =====================================================
-       LIKE
-    ===================================================== */
-
-    async function cpostLike(button) {
-
-        const card =
-            cpostGetCard(button);
-
-
-        if (!card) {
-
-            return;
-
-        }
-
-
-        const id =
-            card.dataset.cpostId;
-
-
-        const type =
-            card.dataset.cpostType ||
-            "post";
-
-
-        if (!id) {
-
-            cpostMessage(
-                "Unable to identify this post."
-            );
-
-            return;
-
-        }
-
-
-        if (button.disabled) {
-
-            return;
-
-        }
-
-
-        button.disabled = true;
-
-
-        /*
-         * IMPORTANT:
-         *
-         * Your feed-actions.ejs confirms that
-         * post likes use:
-         *
-         * POST /post/:id/like
-         */
-
-        const url =
-            type === "post"
-                ? `/post/${encodeURIComponent(id)}/like`
-                : `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/like`;
-
-
-        try {
-
-            const response =
-                await fetch(
-                    url,
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Accept":
-                                "application/json"
-                        },
-
-                        credentials: "same-origin"
-                    }
+            const button =
+                event.target.closest(
+                    ".see-more-post"
                 );
 
-
-            const result =
-                await cpostReadResponse(
-                    response
-                );
-
-
-            if (
-                !response.ok ||
-                result.success !== true
-            ) {
-
-                throw new Error(
-                    result.message ||
-                    `Unable to like (${response.status})`
-                );
-
-            }
-
-
-            const count =
-                button.querySelector(
-                    ".cpost-like-count"
-                );
-
-
-            if (count) {
-
-                count.textContent =
-                    result.likes ?? 0;
-
-            }
-
-
-            const liked =
-                result.liked === true;
-
-
-            button.classList.toggle(
-                "liked",
-                liked
-            );
-
-
-            button.setAttribute(
-                "aria-pressed",
-                liked
-                    ? "true"
-                    : "false"
-            );
-
-        }
-        catch (error) {
-
-            console.error(
-                "CPOST LIKE ERROR:",
-                error
-            );
-
-
-            cpostMessage(
-                error.message ||
-                "Unable to like this post."
-            );
-
-        }
-        finally {
-
-            button.disabled = false;
-
-        }
-
-    }
-
-
-
-    /* =====================================================
-       OPEN COMMENTS
-    ===================================================== */
-
-    function cpostOpenComments(button) {
-
-        const card =
-            cpostGetCard(button);
-
-
-        if (!card) {
-
-            return;
-
-        }
-
-
-        const modal =
-            card.querySelector(
-                ".cpost-comment-modal"
-            );
-
-
-        if (!modal) {
-
-            console.error(
-                "CPOST: Comment modal not found."
-            );
-
-            return;
-
-        }
-
-
-        modal.classList.add(
-            "cpost-is-active"
-        );
-
-
-        modal.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-
-        cpostLockBody();
-
-
-        const textarea =
-            modal.querySelector(
-                ".cpost-comment-form textarea"
-            );
-
-
-        setTimeout(
-            function () {
-
-                if (textarea) {
-
-                    textarea.focus();
-
-                }
-
-            },
-            100
-        );
-
-    }
-
-
-
-    /* =====================================================
-       CLOSE COMMENTS
-    ===================================================== */
-
-    function cpostCloseComments(modal) {
-
-        if (!modal) {
-
-            return;
-
-        }
-
-
-        modal.classList.remove(
-            "cpost-is-active"
-        );
-
-
-        modal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-
-        cpostUnlockBody();
-
-    }
-
-
-
-    /* =====================================================
-       UPDATE COMMENT COUNTS
-    ===================================================== */
-
-    function cpostUpdateCommentCounts(
-        card,
-        amount
-    ) {
-
-        if (!card) {
-
-            return;
-
-        }
-
-
-        const visibleCount =
-            card.querySelector(
-                ".cpost-comment-count"
-            );
-
-
-        const modalCount =
-            card.querySelector(
-                ".cpost-modal-comment-count"
-            );
-
-
-        const current =
-            Number(
-                visibleCount
-                    ? visibleCount.textContent
-                    : (
-                        modalCount
-                            ? modalCount.textContent
-                            : 0
-                    )
-            ) || 0;
-
-
-        const next =
-            Math.max(
-                0,
-                current + amount
-            );
-
-
-        if (visibleCount) {
-
-            visibleCount.textContent =
-                next;
-
-        }
-
-
-        if (modalCount) {
-
-            modalCount.textContent =
-                next;
-
-        }
-
-    }
-
-
-
-    /* =====================================================
-       ADD COMMENT TO UI
-    ===================================================== */
-
-    function cpostAddComment(
-        form,
-        comment
-    ) {
-
-        const card =
-            cpostGetCard(form);
-
-
-        if (!card) {
-
-            return;
-
-        }
-
-
-        const list =
-            card.querySelector(
-                ".cpost-comment-list"
-            );
-
-
-        if (!list) {
-
-            return;
-
-        }
-
-
-        const empty =
-            list.querySelector(
-                ".cpost-comment-empty"
-            );
-
-
-        if (empty) {
-
-            empty.remove();
-
-        }
-
-
-        const item =
-            document.createElement(
-                "div"
-            );
-
-
-        item.className =
-            "cpost-comment-item";
-
-
-        if (comment._id) {
-
-            item.dataset.cpostCommentId =
-                comment._id;
-
-        }
-
-
-        const avatar =
-            document.createElement(
-                "div"
-            );
-
-
-        avatar.className =
-            "cpost-comment-avatar";
-
-
-        const image =
-            document.createElement(
-                "img"
-            );
-
-
-        const nameValue =
-            comment.userName ||
-            "User";
-
-
-        image.src =
-            comment.userImage ||
-            (
-                "https://ui-avatars.com/api/?name=" +
-                encodeURIComponent(
-                    nameValue
-                )
-            );
-
-
-        image.alt =
-            nameValue;
-
-
-        avatar.appendChild(
-            image
-        );
-
-
-        const body =
-            document.createElement(
-                "div"
-            );
-
-
-        body.className =
-            "cpost-comment-body";
-
-
-        const top =
-            document.createElement(
-                "div"
-            );
-
-
-        top.className =
-            "cpost-comment-top";
-
-
-        const name =
-            document.createElement(
-                "strong"
-            );
-
-
-        name.textContent =
-            nameValue;
-
-
-        top.appendChild(
-            name
-        );
-
-
-        /*
-         * If the server identifies the newly-created
-         * comment as belonging to the current user,
-         * allow the delete button immediately.
-         *
-         * Admin-created comments are also removable.
-         */
-
-        const commentId =
-            comment._id ||
-            comment.id;
-
-
-        if (commentId) {
-
-            const deleteButton =
-                document.createElement(
-                    "button"
-                );
-
-
-            deleteButton.type =
-                "button";
-
-
-            deleteButton.className =
-                "cpost-delete-comment";
-
-
-            deleteButton.dataset.cpostDeleteComment =
-                "";
-
-
-            deleteButton.setAttribute(
-                "aria-label",
-                "Delete comment"
-            );
-
-
-            deleteButton.title =
-                "Delete comment";
-
-
-            deleteButton.innerHTML =
-                '<i class="bi bi-trash3" aria-hidden="true"></i>';
-
-
-            top.appendChild(
-                deleteButton
-            );
-
-        }
-
-
-        const text =
-            document.createElement(
-                "p"
-            );
-
-
-        text.className =
-            "cpost-comment-text";
-
-
-        text.textContent =
-            comment.text ||
-            "";
-
-
-        body.appendChild(
-            top
-        );
-
-
-        body.appendChild(
-            text
-        );
-
-
-        if (
-            comment.createdAt ||
-            comment.dateText
-        ) {
-
-            const date =
-                document.createElement(
-                    "small"
-                );
-
-
-            date.className =
-                "cpost-comment-date";
-
-
-            date.textContent =
-                comment.dateText ||
-                new Date(
-                    comment.createdAt
-                ).toLocaleString();
-
-
-            body.appendChild(
-                date
-            );
-
-        }
-
-
-        item.appendChild(
-            avatar
-        );
-
-
-        item.appendChild(
-            body
-        );
-
-
-        list.prepend(
-            item
-        );
-
-    }
-
-
-
-    /* =====================================================
-       SUBMIT COMMENT
-    ===================================================== */
-
-    async function cpostSubmitComment(form) {
-
-        if (!form) {
-
-            return;
-
-        }
-
-
-        const card =
-            cpostGetCard(form);
-
-
-        if (!card) {
-
-            return;
-
-        }
-
-
-        const textarea =
-            form.querySelector(
-                "textarea"
-            );
-
-
-        if (!textarea) {
-
-            return;
-
-        }
-
-
-        const text =
-            textarea.value.trim();
-
-
-        if (!text) {
-
-            textarea.focus();
-
-            return;
-
-        }
-
-
-        const id =
-            card.dataset.cpostId;
-
-
-        const type =
-            card.dataset.cpostType ||
-            "post";
-
-
-        if (!id) {
-
-            cpostMessage(
-                "Unable to identify this post."
-            );
-
-            return;
-
-        }
-
-
-        const submitButton =
-            form.querySelector(
-                ".cpost-comment-submit"
-            );
-
-
-        if (
-            submitButton &&
-            submitButton.disabled
-        ) {
-
-            return;
-
-        }
-
-
-        if (submitButton) {
-
-            submitButton.disabled =
-                true;
-
-        }
-
-
-        /*
-         * IMPORTANT:
-         *
-         * Your feed-actions.ejs confirms:
-         *
-         * POST /post/:id/comment
-         */
-
-        const url =
-            type === "post"
-                ? `/post/${encodeURIComponent(id)}/comment`
-                : `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/comment`;
-
-
-        try {
-
-            const response =
-                await fetch(
-                    url,
-                    {
-                        method: "POST",
-
-                        headers: {
-
-                            "Content-Type":
-                                "application/json",
-
-                            "Accept":
-                                "application/json"
-
-                        },
-
-                        credentials:
-                            "same-origin",
-
-                        body:
-                            JSON.stringify({
-                                text
-                            })
-                    }
-                );
-
-
-            const result =
-                await cpostReadResponse(
-                    response
-                );
-
-
-            if (
-                !response.ok ||
-                result.success !== true
-            ) {
-
-                throw new Error(
-                    result.message ||
-                    `Unable to save comment (${response.status})`
-                );
-
-            }
-
-
-            /*
-             * Preferred:
-             *
-             * Server returns:
-             *
-             * {
-             *     success: true,
-             *     comment: {...}
-             * }
-             */
-
-            if (result.comment) {
-
-                cpostAddComment(
-                    form,
-                    result.comment
-                );
-
-
-                cpostUpdateCommentCounts(
-                    card,
-                    1
-                );
-
-
-                textarea.value =
-                    "";
-
-
-                textarea.style.height =
-                    "auto";
-
-
+            if (!button) {
                 return;
+            }
+
+            event.preventDefault();
+
+            const message =
+                button.closest(
+                    ".post-message"
+                );
+
+            if (!message) {
+                return;
+            }
+
+            const shortText =
+                message.querySelector(
+                    ".post-message-short"
+                );
+
+            const fullText =
+                message.querySelector(
+                    ".post-message-full"
+                );
+
+            if (!shortText || !fullText) {
+                return;
+            }
+
+            const expanded =
+                button.getAttribute(
+                    "aria-expanded"
+                ) === "true";
+
+
+            if (expanded) {
+
+                fullText.hidden = true;
+
+                shortText.hidden = false;
+
+                button.textContent =
+                    "See more";
+
+                button.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+            }
+            else {
+
+                shortText.hidden = true;
+
+                fullText.hidden = false;
+
+                button.textContent =
+                    "See less";
+
+                button.setAttribute(
+                    "aria-expanded",
+                    "true"
+                );
 
             }
 
-
-            /*
-             * If no comment was returned,
-             * reload because the server has already
-             * saved the comment.
-             */
-
-            window.location.reload();
-
         }
-        catch (error) {
-
-            console.error(
-                "CPOST COMMENT ERROR:",
-                error
-            );
+    );
 
 
-            cpostMessage(
-                error.message ||
-                "Unable to save comment."
-            );
+    /* ========================================================
+       VIEWER STATE
+    ======================================================== */
 
-        }
-        finally {
+    let viewerImages = [];
 
-            if (submitButton) {
+    let viewerIndex = 0;
 
-                submitButton.disabled =
-                    false;
-
-            }
-
-        }
-
-    }
+    let activeViewer = null;
 
 
+    /* ========================================================
+       OPEN VIEWER
+    ======================================================== */
 
-    /* =====================================================
-       DELETE POST
-    ===================================================== */
-
-    async function cpostDeletePost(button) {
-
-        const card =
-            cpostGetCard(button);
-
+    function openPostImageViewer(
+        card,
+        index
+    ) {
 
         if (!card) {
-
             return;
-
         }
 
 
-        const id =
-            card.dataset.cpostId;
-
-
-        if (!id) {
-
-            cpostMessage(
-                "Unable to identify this post."
-            );
-
-            return;
-
-        }
-
-
-        const confirmed =
-            window.confirm(
-                "Delete this post?"
-            );
-
-
-        if (!confirmed) {
-
-            return;
-
-        }
-
-
-        button.disabled =
-            true;
-
+        /* ----------------------------------------------------
+           READ FULL IMAGE ARRAY FROM CARD
+        ---------------------------------------------------- */
 
         try {
 
-            /*
-             * Confirmed by feed-actions.ejs:
-             *
-             * DELETE /post/:id
-             */
+            const encodedImages =
+                card.dataset.images;
 
-            const response =
-                await fetch(
-                    `/post/${encodeURIComponent(id)}`,
-                    {
-                        method: "DELETE",
+            if (encodedImages) {
 
-                        headers: {
-                            "Accept":
-                                "application/json"
-                        },
-
-                        credentials:
-                            "same-origin"
-                    }
-                );
-
-
-            const result =
-                await cpostReadResponse(
-                    response
-                );
-
-
-            if (
-                !response.ok ||
-                result.success !== true
-            ) {
-
-                throw new Error(
-                    result.message ||
-                    `Delete failed (${response.status})`
-                );
-
-            }
-
-
-            /*
-             * Close any open modal belonging to
-             * this card before removing it.
-             */
-
-            card
-                .querySelectorAll(
-                    ".cpost-expand.cpost-is-active, " +
-                    ".cpost-viewer.cpost-is-active, " +
-                    ".cpost-comment-modal.cpost-is-active"
-                )
-                .forEach(
-                    function(modal) {
-
-                        modal.classList.remove(
-                            "cpost-is-active"
-                        );
-
-                    }
-                );
-
-
-            card.remove();
-
-
-            cpostUnlockBody();
-
-        }
-        catch (error) {
-
-            console.error(
-                "CPOST DELETE ERROR:",
-                error
-            );
-
-
-            cpostMessage(
-                error.message ||
-                "Unable to delete this post."
-            );
-
-        }
-        finally {
-
-            button.disabled =
-                false;
-
-        }
-
-    }
-
-
-
-    /* =====================================================
-       DELETE COMMENT
-    ===================================================== */
-
-    async function cpostDeleteComment(button) {
-
-        const comment =
-            button.closest(
-                ".cpost-comment-item"
-            );
-
-
-        const card =
-            cpostGetCard(button);
-
-
-        if (!comment || !card) {
-
-            return;
-
-        }
-
-
-        const id =
-            comment.dataset.cpostCommentId;
-
-
-        if (!id) {
-
-            cpostMessage(
-                "Unable to identify this comment."
-            );
-
-            return;
-
-        }
-
-
-        const confirmed =
-            window.confirm(
-                "Delete this comment?"
-            );
-
-
-        if (!confirmed) {
-
-            return;
-
-        }
-
-
-        button.disabled =
-            true;
-
-
-        try {
-
-            /*
-             * Confirmed by feed-actions.ejs:
-             *
-             * DELETE /comment/:id
-             */
-
-            const response =
-                await fetch(
-                    `/comment/${encodeURIComponent(id)}`,
-                    {
-                        method: "DELETE",
-
-                        headers: {
-                            "Accept":
-                                "application/json"
-                        },
-
-                        credentials:
-                            "same-origin"
-                    }
-                );
-
-
-            const result =
-                await cpostReadResponse(
-                    response
-                );
-
-
-            if (
-                !response.ok ||
-                result.success !== true
-            ) {
-
-                throw new Error(
-                    result.message ||
-                    `Delete failed (${response.status})`
-                );
-
-            }
-
-
-            comment.remove();
-
-
-            cpostUpdateCommentCounts(
-                card,
-                -1
-            );
-
-
-            const list =
-                card.querySelector(
-                    ".cpost-comment-list"
-                );
-
-
-            if (
-                list &&
-                !list.querySelector(
-                    ".cpost-comment-item"
-                )
-            ) {
-
-                const empty =
-                    document.createElement(
-                        "div"
+                const parsed =
+                    JSON.parse(
+                        encodedImages
                     );
 
+                if (
+                    Array.isArray(parsed) &&
+                    parsed.length
+                ) {
 
-                empty.className =
-                    "cpost-comment-empty";
+                    viewerImages = parsed;
 
-
-                empty.innerHTML =
-
-                    '<i class="bi bi-chat-dots" aria-hidden="true"></i>' +
-
-                    '<span>No comments yet.</span>' +
-
-                    '<small>Be the first to comment.</small>';
-
-
-                list.appendChild(
-                    empty
-                );
+                }
 
             }
 
         }
         catch (error) {
 
-            console.error(
-                "CPOST DELETE COMMENT ERROR:",
+            console.warn(
+                "POST IMAGE VIEWER: Unable to read image list.",
                 error
             );
 
-
-            cpostMessage(
-                error.message ||
-                "Unable to delete comment."
-            );
-
-        }
-        finally {
-
-            button.disabled =
-                false;
-
-        }
-
-    }
-
-
-
-    /* =====================================================
-       EXPAND POST
-    ===================================================== */
-
-    function cpostOpenExpand(button) {
-
-        const card =
-            cpostGetCard(button);
-
-
-        if (!card) {
-
-            return;
-
         }
 
 
-        const modal =
-            card.querySelector(
-                ".cpost-expand"
-            );
+        /* ----------------------------------------------------
+           FALLBACK TO VISIBLE GRID IMAGES
+        ---------------------------------------------------- */
 
+        if (!viewerImages.length) {
 
-        if (!modal) {
+            const imageElements =
+                card.querySelectorAll(
+                    ".post-image-item img"
+                );
 
-            return;
-
-        }
-
-
-        modal.classList.add(
-            "cpost-is-active"
-        );
-
-
-        modal.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-
-        cpostLockBody();
-
-    }
-
-
-
-    function cpostCloseExpand(modal) {
-
-        if (!modal) {
-
-            return;
-
-        }
-
-
-        modal.classList.remove(
-            "cpost-is-active"
-        );
-
-
-        modal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-
-        cpostUnlockBody();
-
-    }
-
-
-
-    /* =====================================================
-       PHOTO VIEWER
-    ===================================================== */
-
-    let cpostViewer = null;
-
-    let cpostViewerImages = [];
-
-    let cpostViewerIndex = 0;
-
-
-    function cpostGetImages(card) {
-
-        const images = [];
-
-
-        card
-            .querySelectorAll(
-                ".cpost-expanded-image img"
-            )
-            .forEach(
-                function(img) {
-
-                    if (img.src) {
-
-                        images.push(
-                            img.src
-                        );
-
-                    }
-
-                }
-            );
-
-
-        if (!images.length) {
-
-            card
-                .querySelectorAll(
-                    ".cpost-image-button img"
-                )
-                .forEach(
-                    function(img) {
-
-                        if (img.src) {
-
-                            images.push(
-                                img.src
-                            );
-
-                        }
-
-                    }
+            viewerImages =
+                Array.from(
+                    imageElements
+                ).map(
+                    image =>
+                        image.currentSrc ||
+                        image.src
                 );
 
         }
 
 
-        return images;
-
-    }
-
-
-
-    function cpostOpenViewer(
-        button
-    ) {
-
-        const card =
-            cpostGetCard(button);
-
-
-        if (!card) {
-
+        if (!viewerImages.length) {
             return;
-
         }
 
 
-        const viewer =
-            card.querySelector(
-                ".cpost-viewer"
-            );
-
-
-        if (!viewer) {
-
-            return;
-
-        }
-
-
-        const images =
-            cpostGetImages(card);
-
-
-        if (!images.length) {
-
-            return;
-
-        }
-
-
-        cpostViewer =
-            viewer;
-
-
-        cpostViewerImages =
-            images;
-
-
-        cpostViewerIndex =
-            Number(
-                button.dataset.cpostPhotoIndex
-            ) || 0;
-
-
-        cpostViewerIndex =
+        viewerIndex =
             Math.max(
                 0,
                 Math.min(
-                    cpostViewerIndex,
-                    images.length - 1
+                    index,
+                    viewerImages.length - 1
                 )
             );
 
 
-        cpostUpdateViewer();
+        activeViewer =
+            document.querySelector(
+                ".post-image-viewer"
+            );
 
 
-        viewer.classList.add(
-            "cpost-is-active"
+        if (!activeViewer) {
+            return;
+        }
+
+
+        activeViewer.classList.add(
+            "active"
         );
 
 
-        viewer.setAttribute(
+        activeViewer.setAttribute(
             "aria-hidden",
             "false"
         );
 
 
-        cpostLockBody();
+        document.body.style.overflow =
+            "hidden";
+
+
+        updatePostViewer();
 
     }
 
 
+    /* ========================================================
+       UPDATE VIEWER
+    ======================================================== */
 
-    function cpostUpdateViewer() {
+    function updatePostViewer() {
 
         if (
-            !cpostViewer ||
-            !cpostViewerImages.length
+            !activeViewer ||
+            !viewerImages.length
         ) {
-
             return;
-
         }
 
 
         const image =
-            cpostViewer.querySelector(
-                ".cpost-viewer-image"
+            activeViewer.querySelector(
+                ".post-viewer-image"
             );
 
+        const current =
+            activeViewer.querySelector(
+                ".post-viewer-current"
+            );
 
-        const counter =
-            cpostViewer.querySelector(
-                ".cpost-current-photo"
+        const total =
+            activeViewer.querySelector(
+                ".post-viewer-total"
             );
 
 
         if (image) {
 
             image.src =
-                cpostViewerImages[
-                    cpostViewerIndex
+                viewerImages[
+                    viewerIndex
                 ];
 
         }
 
 
-        if (counter) {
+        if (current) {
 
-            counter.textContent =
-                cpostViewerIndex + 1;
+            current.textContent =
+                viewerIndex + 1;
 
+        }
+
+
+        if (total) {
+
+            total.textContent =
+                viewerImages.length;
+
+        }
+
+
+        const previous =
+            activeViewer.querySelector(
+                ".post-viewer-prev"
+            );
+
+        const next =
+            activeViewer.querySelector(
+                ".post-viewer-next"
+            );
+
+
+        const multiple =
+            viewerImages.length > 1;
+
+
+        if (previous) {
+            previous.style.display =
+                multiple
+                    ? "flex"
+                    : "none";
+        }
+
+
+        if (next) {
+            next.style.display =
+                multiple
+                    ? "flex"
+                    : "none";
         }
 
     }
 
 
+    /* ========================================================
+       CLOSE VIEWER
+    ======================================================== */
 
-    function cpostCloseViewer() {
+    function closePostImageViewer() {
 
-        if (!cpostViewer) {
-
+        if (!activeViewer) {
             return;
-
         }
 
 
-        cpostViewer.classList.remove(
-            "cpost-is-active"
+        activeViewer.classList.remove(
+            "active"
         );
 
 
-        cpostViewer.setAttribute(
+        activeViewer.setAttribute(
             "aria-hidden",
             "true"
         );
 
 
-        cpostViewer = null;
-
-        cpostViewerImages = [];
-
-        cpostViewerIndex = 0;
+        document.body.style.overflow =
+            "";
 
 
-        cpostUnlockBody();
+        activeViewer = null;
+
+        viewerImages = [];
+
+        viewerIndex = 0;
 
     }
 
 
+    /* ========================================================
+       PREVIOUS
+    ======================================================== */
 
-    function cpostNextPhoto() {
+    function previousPostImage() {
 
-        if (
-            !cpostViewerImages.length
-        ) {
-
+        if (!viewerImages.length) {
             return;
-
         }
 
 
-        cpostViewerIndex =
-            (
-                cpostViewerIndex + 1
-            ) %
-            cpostViewerImages.length;
+        viewerIndex =
+            viewerIndex <= 0
+                ? viewerImages.length - 1
+                : viewerIndex - 1;
 
 
-        cpostUpdateViewer();
+        updatePostViewer();
 
     }
 
 
+    /* ========================================================
+       NEXT
+    ======================================================== */
 
-    function cpostPreviousPhoto() {
+    function nextPostImage() {
 
-        if (
-            !cpostViewerImages.length
-        ) {
-
+        if (!viewerImages.length) {
             return;
-
         }
 
 
-        cpostViewerIndex =
-            (
-                cpostViewerIndex -
-                1 +
-                cpostViewerImages.length
-            ) %
-            cpostViewerImages.length;
+        viewerIndex =
+            viewerIndex >=
+                viewerImages.length - 1
+                ? 0
+                : viewerIndex + 1;
 
 
-        cpostUpdateViewer();
+        updatePostViewer();
 
     }
 
 
-
-    /* =====================================================
-       CLICK HANDLER
-    ===================================================== */
+    /* ========================================================
+       IMAGE CLICK
+    ======================================================== */
 
     document.addEventListener(
         "click",
-        function(event) {
+        event => {
 
-
-            /* =============================================
-               LIKE
-            ============================================= */
-
-            const like =
+            const imageButton =
                 event.target.closest(
-                    "[data-cpost-like]"
+                    ".post-image-item"
                 );
 
-
-            if (like) {
-
-                event.preventDefault();
-
-                cpostLike(like);
-
+            if (!imageButton) {
                 return;
-
-            }
-
-
-            /* =============================================
-               OPEN COMMENTS
-            ============================================= */
-
-            const comments =
-                event.target.closest(
-                    "[data-cpost-open-comments]"
-                );
-
-
-            if (comments) {
-
-                event.preventDefault();
-
-                cpostOpenComments(
-                    comments
-                );
-
-                return;
-
-            }
-
-
-            /* =============================================
-               CLOSE COMMENTS
-            ============================================= */
-
-            const closeComments =
-                event.target.closest(
-                    "[data-cpost-close-comments]"
-                );
-
-
-            if (closeComments) {
-
-                event.preventDefault();
-
-                cpostCloseComments(
-                    closeComments.closest(
-                        ".cpost-comment-modal"
-                    )
-                );
-
-                return;
-
-            }
-
-
-            /* =============================================
-               DELETE POST
-            ============================================= */
-
-            const deletePost =
-                event.target.closest(
-                    "[data-cpost-delete]"
-                );
-
-
-            if (deletePost) {
-
-                event.preventDefault();
-
-                cpostDeletePost(
-                    deletePost
-                );
-
-                return;
-
-            }
-
-
-            /* =============================================
-               DELETE COMMENT
-            ============================================= */
-
-            const deleteComment =
-                event.target.closest(
-                    "[data-cpost-delete-comment]"
-                );
-
-
-            if (deleteComment) {
-
-                event.preventDefault();
-
-                cpostDeleteComment(
-                    deleteComment
-                );
-
-                return;
-
-            }
-
-
-            /* =============================================
-               SEE MORE
-            ============================================= */
-
-            const seeMore =
-                event.target.closest(
-                    "[data-cpost-expand]"
-                );
-
-
-            if (seeMore) {
-
-                event.preventDefault();
-
-                cpostOpenExpand(
-                    seeMore
-                );
-
-                return;
-
-            }
-
-
-            /* =============================================
-               CLOSE EXPANDED POST
-            ============================================= */
-
-            const closeExpand =
-                event.target.closest(
-                    "[data-cpost-close-expand]"
-                );
-
-
-            if (closeExpand) {
-
-                event.preventDefault();
-
-                cpostCloseExpand(
-                    closeExpand.closest(
-                        ".cpost-expand"
-                    )
-                );
-
-                return;
-
-            }
-
-
-            /* =============================================
-               PHOTO
-            ============================================= */
-
-            const photo =
-                event.target.closest(
-                    ".cpost-image-button, .cpost-expanded-image"
-                );
-
-
-            if (photo) {
-
-                event.preventDefault();
-
-                cpostOpenViewer(
-                    photo
-                );
-
-                return;
-
-            }
-
-
-            /* =============================================
-               CLOSE VIEWER
-            ============================================= */
-
-            const closeViewer =
-                event.target.closest(
-                    "[data-cpost-close-viewer]"
-                );
-
-
-            if (closeViewer) {
-
-                event.preventDefault();
-
-                cpostCloseViewer();
-
-                return;
-
-            }
-
-
-            /* =============================================
-               NEXT PHOTO
-            ============================================= */
-
-            const next =
-                event.target.closest(
-                    "[data-cpost-photo-next]"
-                );
-
-
-            if (next) {
-
-                event.preventDefault();
-
-                cpostNextPhoto();
-
-                return;
-
-            }
-
-
-            /* =============================================
-               PREVIOUS PHOTO
-            ============================================= */
-
-            const previous =
-                event.target.closest(
-                    "[data-cpost-photo-prev]"
-                );
-
-
-            if (previous) {
-
-                event.preventDefault();
-
-                cpostPreviousPhoto();
-
-                return;
-
-            }
-
-
-            /* =============================================
-               CLICK OUTSIDE COMMENTS
-            ============================================= */
-
-            const modal =
-                event.target.closest(
-                    ".cpost-comment-modal"
-                );
-
-
-            if (
-                modal &&
-                event.target === modal
-            ) {
-
-                cpostCloseComments(
-                    modal
-                );
-
-                return;
-
-            }
-
-        }
-    );
-
-
-
-    /* =====================================================
-       FORM SUBMISSION
-    ===================================================== */
-
-    document.addEventListener(
-        "submit",
-        function(event) {
-
-            const form =
-                event.target.closest(
-                    "[data-cpost-comment-form]"
-                );
-
-
-            if (!form) {
-
-                return;
-
             }
 
 
             event.preventDefault();
 
 
-            cpostSubmitComment(
-                form
+            const card =
+                imageButton.closest(
+                    ".post-card"
+                );
+
+
+            if (!card) {
+                return;
+            }
+
+
+            const index =
+                Number(
+                    imageButton.dataset.imageIndex
+                );
+
+
+            openPostImageViewer(
+                card,
+                index
             );
 
         }
     );
 
 
-
-    /* =====================================================
-       TEXTAREA AUTO GROW
-    ===================================================== */
+    /* ========================================================
+       VIEWER CONTROLS
+    ======================================================== */
 
     document.addEventListener(
-        "input",
-        function(event) {
+        "click",
+        event => {
 
             if (
-                !event.target.matches(
-                    ".cpost-comment-form textarea"
+                event.target.closest(
+                    ".post-viewer-close"
                 )
             ) {
 
+                closePostImageViewer();
+
                 return;
 
             }
 
 
-            const textarea =
-                event.target;
+            if (
+                event.target.closest(
+                    ".post-viewer-prev"
+                )
+            ) {
+
+                previousPostImage();
+
+                return;
+
+            }
 
 
-            textarea.style.height =
-                "auto";
+            if (
+                event.target.closest(
+                    ".post-viewer-next"
+                )
+            ) {
+
+                nextPostImage();
+
+                return;
+
+            }
 
 
-            textarea.style.height =
-                Math.min(
-                    textarea.scrollHeight,
-                    100
-                ) + "px";
+            const viewer =
+                event.target.closest(
+                    ".post-image-viewer"
+                );
+
+
+            if (
+                viewer &&
+                event.target === viewer
+            ) {
+
+                closePostImageViewer();
+
+            }
 
         }
     );
 
 
-
-    /* =====================================================
-       ESCAPE KEY
-    ===================================================== */
+    /* ========================================================
+       KEYBOARD NAVIGATION
+    ======================================================== */
 
     document.addEventListener(
         "keydown",
-        function(event) {
+        event => {
 
-            if (
-                event.key !== "Escape"
-            ) {
+            if (!activeViewer) {
+                return;
+            }
+
+
+            if (event.key === "Escape") {
+
+                closePostImageViewer();
 
                 return;
 
             }
 
 
-            if (cpostViewer) {
+            if (event.key === "ArrowLeft") {
 
-                cpostCloseViewer();
-
-                return;
-
-            }
-
-
-            const expanded =
-                document.querySelector(
-                    ".cpost-expand.cpost-is-active"
-                );
-
-
-            if (expanded) {
-
-                cpostCloseExpand(
-                    expanded
-                );
+                previousPostImage();
 
                 return;
 
             }
 
 
-            const comments =
-                document.querySelector(
-                    ".cpost-comment-modal.cpost-is-active"
-                );
+            if (event.key === "ArrowRight") {
 
+                nextPostImage();
 
-            if (comments) {
-
-                cpostCloseComments(
-                    comments
-                );
+                return;
 
             }
 
@@ -4710,85 +1420,37 @@ const cpostDate =
     );
 
 
-
-    /* =====================================================
-       ARROW KEYS FOR PHOTO VIEWER
-    ===================================================== */
-
-    document.addEventListener(
-        "keydown",
-        function(event) {
-
-            if (!cpostViewer) {
-
-                return;
-
-            }
-
-
-            if (
-                event.key === "ArrowRight"
-            ) {
-
-                event.preventDefault();
-
-                cpostNextPhoto();
-
-            }
-
-
-            if (
-                event.key === "ArrowLeft"
-            ) {
-
-                event.preventDefault();
-
-                cpostPreviousPhoto();
-
-            }
-
-        }
-    );
-
-
-
-    /* =====================================================
+    /* ========================================================
        TOUCH SWIPE
-    ===================================================== */
+    ======================================================== */
 
-    let cpostTouchStartX = 0;
+    let touchStartX = 0;
 
-    let cpostTouchStartY = 0;
+    let touchStartY = 0;
 
 
     document.addEventListener(
         "touchstart",
-        function(event) {
+        event => {
 
-            if (!cpostViewer) {
-
+            if (!activeViewer) {
                 return;
-
             }
 
 
-            const touch =
-                event.touches[0];
-
-
-            if (!touch) {
-
+            if (
+                !event.touches ||
+                !event.touches.length
+            ) {
                 return;
-
             }
 
 
-            cpostTouchStartX =
-                touch.clientX;
+            touchStartX =
+                event.touches[0].clientX;
 
-
-            cpostTouchStartY =
-                touch.clientY;
+            touchStartY =
+                event.touches[0].clientY;
 
         },
         {
@@ -4799,54 +1461,52 @@ const cpostDate =
 
     document.addEventListener(
         "touchend",
-        function(event) {
+        event => {
 
-            if (!cpostViewer) {
-
+            if (!activeViewer) {
                 return;
-
             }
 
 
-            const touch =
-                event.changedTouches[0];
-
-
-            if (!touch) {
-
+            if (
+                !event.changedTouches ||
+                !event.changedTouches.length
+            ) {
                 return;
-
             }
+
+
+            const endX =
+                event.changedTouches[0].clientX;
+
+            const endY =
+                event.changedTouches[0].clientY;
 
 
             const deltaX =
-                touch.clientX -
-                cpostTouchStartX;
-
+                endX - touchStartX;
 
             const deltaY =
-                touch.clientY -
-                cpostTouchStartY;
+                endY - touchStartY;
 
 
             if (
                 Math.abs(deltaX) < 50 ||
-                Math.abs(deltaX) <=
-                    Math.abs(deltaY)
+                Math.abs(deltaX) <
+                Math.abs(deltaY)
             ) {
-
                 return;
-
             }
 
 
-            if (deltaX < 0) {
+            if (deltaX > 0) {
 
-                cpostNextPhoto();
+                previousPostImage();
 
-            } else {
+            }
+            else {
 
-                cpostPreviousPhoto();
+                nextPostImage();
 
             }
 
@@ -4855,7 +1515,6 @@ const cpostDate =
             passive: true
         }
     );
-
 
 })();
 
