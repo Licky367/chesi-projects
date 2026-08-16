@@ -1,0 +1,1958 @@
+<% /*
+============================================================
+CREATE POST COMPOSER
+
+FILE:
+    views/update/create.ejs
+
+PURPOSE:
+    Composer used when the CURRENT dairy/asset is itself
+    the subject of the update.
+
+USED FOR:
+    1. Positive-code records
+       → Animal
+
+    2. No-code records
+       → Structure / Facility / Tool
+
+TARGET RULE:
+    The current dairy/asset is ALWAYS the target.
+
+    There is intentionally NO:
+        - category selector
+        - target selector
+        - target dropdown
+        - empty target list
+
+EXPECTED SERVER VARIABLES:
+    dairy
+    user
+
+FORM:
+    POST /dairy/:id/post
+============================================================
+*/ %>
+
+
+<section
+    class="core-create-post"
+    aria-label="Create update"
+>
+
+
+    <!-- =====================================================
+         COMPOSER HEADER
+    ====================================================== -->
+
+    <div class="core-create-post__header">
+
+
+        <!-- USER IMAGE -->
+
+        <div class="core-create-post__avatar">
+
+            <img
+                src="<%= user && user.profileImage
+                    ? user.profileImage
+                    : 'https://ui-avatars.com/api/?name=' +
+                      encodeURIComponent(
+                          user && user.name
+                              ? user.name
+                              : 'User'
+                      )
+                %>"
+                alt="<%= user && user.name ? user.name : 'User' %>"
+                class="core-create-post__avatar-image"
+            >
+
+        </div>
+
+
+
+        <!-- HEADING -->
+
+        <div class="core-create-post__heading">
+
+            <div class="core-create-post__heading-text">
+
+                <strong>
+                    <%= user && user.name
+                        ? user.name.split(" ")[0]
+                        : "User"
+                    %>
+                </strong>
+
+                , update us about
+
+            </div>
+
+
+            <div class="core-create-post__heading-target">
+
+                <strong>
+                    <%= dairy && dairy.name
+                        ? dairy.name
+                        : "this dairy asset"
+                    %>
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         OPEN COMPOSER
+    ====================================================== -->
+
+    <button
+        type="button"
+        id="coreCreatePostOpen"
+        class="core-create-post__trigger"
+        aria-label="Create an update"
+    >
+
+        <span>
+            Share an update...
+        </span>
+
+    </button>
+
+</section>
+
+
+
+<!-- =========================================================
+     FULL-SCREEN POST MODAL
+========================================================= -->
+
+<div
+    id="coreCreatePostModal"
+    class="core-create-post-modal"
+    aria-hidden="true"
+>
+
+
+    <div class="core-create-post-modal__content">
+
+
+        <!-- =================================================
+             HEADER
+        ================================================== -->
+
+        <header class="core-create-post-modal__header">
+
+
+            <button
+                type="button"
+                id="coreCreatePostClose"
+                class="core-create-post-modal__back"
+                aria-label="Close"
+            >
+
+                <span aria-hidden="true">
+                    &#8592;
+                </span>
+
+            </button>
+
+
+
+            <div class="core-create-post-modal__title">
+
+                <strong>
+                    New Update
+                </strong>
+
+
+                <span>
+                    <%= dairy && dairy.name
+                        ? dairy.name
+                        : "Dairy asset"
+                    %>
+                </span>
+
+            </div>
+
+
+            <div
+                class="core-create-post-modal__spacer"
+                aria-hidden="true"
+            ></div>
+
+        </header>
+
+
+
+        <!-- =================================================
+             BODY
+        ================================================== -->
+
+        <main class="core-create-post-modal__body">
+
+
+            <div class="core-create-post-modal__fields">
+
+
+                <!-- =================================================
+                     TARGET INFORMATION
+                     NO SELECTOR
+                ================================================== -->
+
+                <section
+                    class="core-create-post-target"
+                    aria-label="Post target"
+                >
+
+                    <div class="core-create-post-target__icon">
+
+                        <span aria-hidden="true">
+                            &#10003;
+                        </span>
+
+                    </div>
+
+
+                    <div class="core-create-post-target__info">
+
+                        <span>
+                            This update is about
+                        </span>
+
+                        <strong>
+                            <%= dairy && dairy.name
+                                ? dairy.name
+                                : "This dairy asset"
+                            %>
+                        </strong>
+
+                    </div>
+
+                </section>
+
+
+
+                <!-- =================================================
+                     TITLE
+                ================================================== -->
+
+                <div class="core-create-post-title">
+
+                    <label
+                        for="coreCreatePostTitle"
+                    >
+                        Title
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="coreCreatePostTitle"
+                        maxlength="200"
+                        placeholder="Give your update a title..."
+                        autocomplete="off"
+                    >
+
+                </div>
+
+
+
+                <!-- =================================================
+                     IMAGE PREVIEW
+                ================================================== -->
+
+                <div
+                    id="coreCreatePostPreview"
+                    class="core-create-post-preview"
+                    hidden
+                >
+
+                    <div
+                        id="coreCreatePostPreviewGrid"
+                        class="core-create-post-preview__grid"
+                    ></div>
+
+                </div>
+
+            </div>
+
+        </main>
+
+
+
+        <!-- =================================================
+             BOTTOM COMPOSER
+        ================================================== -->
+
+        <div class="core-create-post-composer-wrapper">
+
+
+            <form
+                id="coreCreatePostForm"
+                class="core-create-post-form"
+                action="/dairy/<%= dairy._id %>/post"
+                method="POST"
+                enctype="multipart/form-data"
+            >
+
+
+                <!-- =================================================
+                     CURRENT DAIRY / ASSET IS THE TARGET
+                ================================================== -->
+
+                <input
+                    type="hidden"
+                    name="targetDairyId"
+                    value="<%= dairy._id %>"
+                >
+
+
+                <!-- =================================================
+                     TITLE
+                ================================================== -->
+
+                <input
+                    type="hidden"
+                    id="coreCreatePostHiddenTitle"
+                    name="title"
+                    value=""
+                >
+
+
+
+                <!-- =================================================
+                     COMPOSER BAR
+                ================================================== -->
+
+                <div class="core-create-post-composer">
+
+
+                    <!-- ATTACHMENT -->
+
+                    <label
+                        for="coreCreatePostImages"
+                        class="core-create-post-composer__icon"
+                        aria-label="Attach images"
+                        title="Attach images"
+                    >
+
+                        <span aria-hidden="true">
+                            &#128206;
+                        </span>
+
+                    </label>
+
+
+                    <input
+                        type="file"
+                        id="coreCreatePostImages"
+                        name="images"
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        multiple
+                        hidden
+                    >
+
+
+
+                    <!-- TEXT -->
+
+                    <div class="core-create-post-composer__input">
+
+
+                        <textarea
+                            id="coreCreatePostText"
+                            name="text"
+                            maxlength="1000"
+                            rows="1"
+                            placeholder="Type your update..."
+                            aria-label="Type your update"
+                        ></textarea>
+
+
+                        <span
+                            id="coreCreatePostCounter"
+                            class="core-create-post-composer__counter"
+                        >
+                            0/1000
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- SEND -->
+
+                    <button
+                        type="submit"
+                        id="coreCreatePostSend"
+                        class="core-create-post-composer__send"
+                        aria-label="Send update"
+                        disabled
+                    >
+
+                        <span aria-hidden="true">
+                            &#10148;
+                        </span>
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     CSS
+========================================================= -->
+
+<style>
+
+/* =========================================================
+   ROOT NAMESPACE
+========================================================= */
+
+.core-create-post,
+.core-create-post *,
+.core-create-post-modal,
+.core-create-post-modal * {
+
+    box-sizing: border-box;
+
+}
+
+
+
+/* =========================================================
+   CREATE CARD
+========================================================= */
+
+.core-create-post {
+
+    width: 100%;
+    margin: 0 0 16px;
+
+    padding: 15px;
+
+    background: #ffffff;
+
+    border: 1px solid #e4ebe6;
+
+    border-radius: 16px;
+
+}
+
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.core-create-post__header {
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    min-width: 0;
+
+}
+
+
+
+/* =========================================================
+   AVATAR
+========================================================= */
+
+.core-create-post__avatar {
+
+    width: 44px;
+    height: 44px;
+
+    flex: 0 0 44px;
+
+}
+
+
+.core-create-post__avatar-image {
+
+    width: 44px;
+    height: 44px;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+
+}
+
+
+
+/* =========================================================
+   HEADING
+========================================================= */
+
+.core-create-post__heading {
+
+    min-width: 0;
+
+    color: #606862;
+
+    font-size: 14px;
+
+    line-height: 1.45;
+
+}
+
+
+.core-create-post__heading-text {
+
+    display: block;
+
+}
+
+
+.core-create-post__heading-target {
+
+    display: block;
+
+    margin-top: 1px;
+
+}
+
+
+.core-create-post__heading strong {
+
+    color: #202520;
+
+    font-weight: 700;
+
+}
+
+
+
+/* =========================================================
+   TRIGGER
+========================================================= */
+
+.core-create-post__trigger {
+
+    width: 100%;
+
+    min-height: 48px;
+
+    margin-top: 14px;
+
+    padding: 0 16px;
+
+    display: flex;
+    align-items: center;
+
+    border: 1px solid #dce6df;
+
+    border-radius: 25px;
+
+    background: #f7faf8;
+
+    color: #8a928d;
+
+    font: inherit;
+
+    font-size: 14px;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        background .18s ease,
+        border-color .18s ease,
+        transform .12s ease;
+
+}
+
+
+.core-create-post__trigger:hover {
+
+    background: #f1f7f3;
+
+    border-color: #198754;
+
+}
+
+
+.core-create-post__trigger:active {
+
+    transform: scale(.99);
+
+}
+
+
+.core-create-post__trigger:focus-visible {
+
+    outline: none;
+
+    border-color: #198754;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(25, 135, 84, .12);
+
+}
+
+
+
+/* =========================================================
+   FULL SCREEN MODAL
+========================================================= */
+
+.core-create-post-modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    width: 100vw;
+    height: 100dvh;
+
+    z-index: 99999;
+
+    display: none;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+}
+
+
+.core-create-post-modal.core-create-post-modal--active {
+
+    display: block;
+
+}
+
+
+
+/* =========================================================
+   MODAL CONTENT
+========================================================= */
+
+.core-create-post-modal__content {
+
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    background: #ffffff;
+
+}
+
+
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
+
+.core-create-post-modal__header {
+
+    flex: 0 0 64px;
+
+    width: 100%;
+    height: 64px;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 0 15px;
+
+    border-bottom: 1px solid #e7ede9;
+
+    background: #ffffff;
+
+}
+
+
+.core-create-post-modal__back {
+
+    width: 44px;
+    height: 44px;
+
+    flex: 0 0 44px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: none;
+
+    background: transparent;
+
+    color: #198754;
+
+    font-size: 27px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+}
+
+
+.core-create-post-modal__back:focus-visible {
+
+    outline: none;
+
+    border-radius: 50%;
+
+    background: #edf7f1;
+
+}
+
+
+
+/* =========================================================
+   MODAL TITLE
+========================================================= */
+
+.core-create-post-modal__title {
+
+    min-width: 0;
+
+    margin-left: 8px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    line-height: 1.25;
+
+}
+
+
+.core-create-post-modal__title strong {
+
+    color: #202520;
+
+    font-size: 17px;
+
+}
+
+
+.core-create-post-modal__title span {
+
+    max-width: 72vw;
+
+    margin-top: 2px;
+
+    overflow: hidden;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+    color: #7b847e;
+
+    font-size: 12px;
+
+}
+
+
+.core-create-post-modal__spacer {
+
+    flex: 1;
+
+}
+
+
+
+/* =========================================================
+   MODAL BODY
+========================================================= */
+
+.core-create-post-modal__body {
+
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    padding: 20px;
+
+}
+
+
+.core-create-post-modal__fields {
+
+    width: 100%;
+
+    max-width: 700px;
+
+    margin: 0 auto;
+
+}
+
+
+
+/* =========================================================
+   TARGET INFORMATION
+========================================================= */
+
+.core-create-post-target {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 22px;
+
+    padding: 11px 13px;
+
+    border: 1px solid #dcebe2;
+
+    border-radius: 13px;
+
+    background: #f6faf7;
+
+}
+
+
+.core-create-post-target__icon {
+
+    width: 30px;
+    height: 30px;
+
+    flex: 0 0 30px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+}
+
+
+.core-create-post-target__info {
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+.core-create-post-target__info span {
+
+    color: #78827c;
+
+    font-size: 10px;
+
+}
+
+
+.core-create-post-target__info strong {
+
+    margin-top: 2px;
+
+    overflow: hidden;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+    color: #235d3e;
+
+    font-size: 13px;
+
+}
+
+
+
+/* =========================================================
+   TITLE
+========================================================= */
+
+.core-create-post-title {
+
+    width: 100%;
+
+    margin-bottom: 18px;
+
+}
+
+
+.core-create-post-title label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #6d7771;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    letter-spacing: .04em;
+
+    text-transform: uppercase;
+
+}
+
+
+#coreCreatePostTitle {
+
+    width: 100%;
+
+    padding: 13px 14px;
+
+    border: 1px solid #e0e7e2;
+
+    border-radius: 12px;
+
+    outline: none;
+
+    background: #f8faf8;
+
+    color: #202520;
+
+    font: inherit;
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+}
+
+
+#coreCreatePostTitle:focus {
+
+    border-color: #198754;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(25, 135, 84, .10);
+
+}
+
+
+#coreCreatePostTitle::placeholder {
+
+    color: #a1a8a4;
+
+}
+
+
+
+/* =========================================================
+   IMAGE PREVIEW
+========================================================= */
+
+.core-create-post-preview {
+
+    width: 100%;
+
+}
+
+
+.core-create-post-preview__grid {
+
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 9px;
+
+}
+
+
+.core-create-post-preview__item {
+
+    position: relative;
+
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+
+    overflow: hidden;
+
+    border-radius: 12px;
+
+    background: #f1f4f2;
+
+}
+
+
+.core-create-post-preview__item img {
+
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+
+/* =========================================================
+   BOTTOM COMPOSER
+========================================================= */
+
+.core-create-post-composer-wrapper {
+
+    flex: 0 0 auto;
+
+    width: 100%;
+
+    padding:
+        10px
+        12px
+        calc(10px + env(safe-area-inset-bottom));
+
+    border-top: 1px solid #e7ede9;
+
+    background: #ffffff;
+
+}
+
+
+.core-create-post-form {
+
+    width: 100%;
+
+    margin: 0;
+
+}
+
+
+
+/* =========================================================
+   COMPOSER
+========================================================= */
+
+.core-create-post-composer {
+
+    width: 100%;
+
+    min-height: 50px;
+
+    display: flex;
+
+    align-items: flex-end;
+
+    gap: 7px;
+
+    padding: 5px 7px;
+
+    border: 1px solid #dce6df;
+
+    border-radius: 28px;
+
+    background: #f7faf8;
+
+}
+
+
+
+/* =========================================================
+   ATTACHMENT
+========================================================= */
+
+.core-create-post-composer__icon {
+
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    color: #198754;
+
+    font-size: 22px;
+
+    cursor: pointer;
+
+}
+
+
+.core-create-post-composer__icon:active {
+
+    transform: scale(.92);
+
+}
+
+
+
+/* =========================================================
+   TEXT AREA
+========================================================= */
+
+.core-create-post-composer__input {
+
+    position: relative;
+
+    flex: 1;
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: flex-end;
+
+}
+
+
+#coreCreatePostText {
+
+    width: 100%;
+
+    min-height: 40px;
+
+    max-height: 120px;
+
+    resize: none;
+
+    overflow-y: auto;
+
+    padding:
+        10px
+        4px
+        5px;
+
+    margin: 0;
+
+    border: none;
+
+    outline: none;
+
+    background: transparent;
+
+    color: #202520;
+
+    font: inherit;
+
+    font-size: 15px;
+
+    line-height: 20px;
+
+}
+
+
+#coreCreatePostText::placeholder {
+
+    color: #8b928d;
+
+}
+
+
+
+/* =========================================================
+   CHARACTER COUNTER
+========================================================= */
+
+.core-create-post-composer__counter {
+
+    position: absolute;
+
+    right: 5px;
+
+    bottom: 1px;
+
+    padding-left: 3px;
+
+    background: #f7faf8;
+
+    color: #8a928d;
+
+    font-size: 10px;
+
+    pointer-events: none;
+
+}
+
+
+
+/* =========================================================
+   SEND
+========================================================= */
+
+.core-create-post-composer__send {
+
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #198754;
+
+    font-size: 20px;
+
+    cursor: pointer;
+
+}
+
+
+.core-create-post-composer__send:disabled {
+
+    color: #b8c2bc;
+
+    cursor: default;
+
+}
+
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .core-create-post {
+
+        padding: 14px;
+
+        border-radius: 15px;
+
+    }
+
+
+    .core-create-post-modal__header {
+
+        flex-basis: 60px;
+
+        height: 60px;
+
+        padding: 0 10px;
+
+    }
+
+
+    .core-create-post-modal__body {
+
+        padding: 14px;
+
+    }
+
+
+    .core-create-post-target {
+
+        margin-bottom: 18px;
+
+        padding: 10px 11px;
+
+    }
+
+
+    #coreCreatePostTitle {
+
+        font-size: 19px;
+
+    }
+
+
+    .core-create-post-preview__grid {
+
+        gap: 7px;
+
+    }
+
+
+    .core-create-post-composer-wrapper {
+
+        padding:
+            8px
+            8px
+            calc(8px + env(safe-area-inset-bottom));
+
+    }
+
+
+    .core-create-post-composer {
+
+        min-height: 48px;
+
+        gap: 4px;
+
+        padding: 4px 5px;
+
+    }
+
+
+    .core-create-post-composer__icon {
+
+        width: 40px;
+        height: 40px;
+
+        flex-basis: 40px;
+
+        font-size: 21px;
+
+    }
+
+
+    .core-create-post-composer__send {
+
+        width: 40px;
+        height: 40px;
+
+        flex-basis: 40px;
+
+        font-size: 19px;
+
+    }
+
+}
+
+
+@media (max-width: 380px) {
+
+    .core-create-post-modal__title span {
+
+        display: none;
+
+    }
+
+
+    .core-create-post-modal__body {
+
+        padding: 10px;
+
+    }
+
+
+    .core-create-post-composer__counter {
+
+        font-size: 9px;
+
+    }
+
+}
+
+</style>
+
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+<script>
+
+(function () {
+
+    "use strict";
+
+
+    function initializeCoreCreatePost() {
+
+
+        /* =====================================================
+           ELEMENTS
+        ====================================================== */
+
+        const modal =
+            document.getElementById(
+                "coreCreatePostModal"
+            );
+
+
+        const openButton =
+            document.getElementById(
+                "coreCreatePostOpen"
+            );
+
+
+        const closeButton =
+            document.getElementById(
+                "coreCreatePostClose"
+            );
+
+
+        const titleInput =
+            document.getElementById(
+                "coreCreatePostTitle"
+            );
+
+
+        const hiddenTitle =
+            document.getElementById(
+                "coreCreatePostHiddenTitle"
+            );
+
+
+        const textInput =
+            document.getElementById(
+                "coreCreatePostText"
+            );
+
+
+        const imageInput =
+            document.getElementById(
+                "coreCreatePostImages"
+            );
+
+
+        const preview =
+            document.getElementById(
+                "coreCreatePostPreview"
+            );
+
+
+        const previewGrid =
+            document.getElementById(
+                "coreCreatePostPreviewGrid"
+            );
+
+
+        const counter =
+            document.getElementById(
+                "coreCreatePostCounter"
+            );
+
+
+        const sendButton =
+            document.getElementById(
+                "coreCreatePostSend"
+            );
+
+
+        const form =
+            document.getElementById(
+                "coreCreatePostForm"
+            );
+
+
+
+        /* =====================================================
+           SAFETY CHECK
+        ====================================================== */
+
+        if (
+            !modal ||
+            !openButton ||
+            !closeButton ||
+            !titleInput ||
+            !hiddenTitle ||
+            !textInput ||
+            !imageInput ||
+            !preview ||
+            !previewGrid ||
+            !counter ||
+            !sendButton ||
+            !form
+        ) {
+
+            console.error(
+                "CREATE.EJS: Required composer elements are missing."
+            );
+
+            return;
+
+        }
+
+
+
+        /* =====================================================
+           OPEN
+        ====================================================== */
+
+        function openModal() {
+
+            modal.classList.add(
+                "core-create-post-modal--active"
+            );
+
+
+            modal.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+
+            document.body.style.overflow =
+                "hidden";
+
+
+            window.setTimeout(
+                function () {
+
+                    titleInput.focus();
+
+                },
+                100
+            );
+
+        }
+
+
+
+        /* =====================================================
+           CLOSE
+        ====================================================== */
+
+        function closeModal() {
+
+            modal.classList.remove(
+                "core-create-post-modal--active"
+            );
+
+
+            modal.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+
+            document.body.style.overflow =
+                "";
+
+        }
+
+
+
+        /* =====================================================
+           CHARACTER COUNTER
+        ====================================================== */
+
+        function updateCounter() {
+
+            counter.textContent =
+                textInput.value.length +
+                "/1000";
+
+        }
+
+
+
+        /* =====================================================
+           TEXTAREA HEIGHT
+        ====================================================== */
+
+        function resizeTextarea() {
+
+            textInput.style.height =
+                "auto";
+
+
+            const height =
+                Math.min(
+                    textInput.scrollHeight,
+                    120
+                );
+
+
+            textInput.style.height =
+                height + "px";
+
+        }
+
+
+
+        /* =====================================================
+           SEND BUTTON
+        ====================================================== */
+
+        function updateSendButton() {
+
+            const hasTitle =
+                titleInput.value.trim().length > 0;
+
+
+            const hasText =
+                textInput.value.trim().length > 0;
+
+
+            const hasImages =
+                imageInput.files &&
+                imageInput.files.length > 0;
+
+
+            sendButton.disabled =
+                !(
+                    hasTitle ||
+                    hasText ||
+                    hasImages
+                );
+
+        }
+
+
+
+        /* =====================================================
+           IMAGE PREVIEW
+        ====================================================== */
+
+        function renderImagePreviews() {
+
+            previewGrid.innerHTML =
+                "";
+
+
+            const files =
+                Array.from(
+                    imageInput.files || []
+                );
+
+
+            if (!files.length) {
+
+                preview.hidden =
+                    true;
+
+                return;
+
+            }
+
+
+            preview.hidden =
+                false;
+
+
+            files.forEach(
+                function (file) {
+
+                    if (
+                        !file ||
+                        !file.type.startsWith(
+                            "image/"
+                        )
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    const reader =
+                        new FileReader();
+
+
+                    reader.onload =
+                        function (event) {
+
+                            const item =
+                                document.createElement(
+                                    "div"
+                                );
+
+
+                            item.className =
+                                "core-create-post-preview__item";
+
+
+                            const image =
+                                document.createElement(
+                                    "img"
+                                );
+
+
+                            image.src =
+                                event.target.result;
+
+
+                            image.alt =
+                                "Selected image";
+
+
+                            item.appendChild(
+                                image
+                            );
+
+
+                            previewGrid.appendChild(
+                                item
+                            );
+
+                        };
+
+
+                    reader.readAsDataURL(
+                        file
+                    );
+
+                }
+            );
+
+        }
+
+
+
+        /* =====================================================
+           TITLE
+        ====================================================== */
+
+        titleInput.addEventListener(
+            "input",
+            function () {
+
+                hiddenTitle.value =
+                    titleInput.value;
+
+                updateSendButton();
+
+            }
+        );
+
+
+
+        /* =====================================================
+           TEXT
+        ====================================================== */
+
+        textInput.addEventListener(
+            "input",
+            function () {
+
+                updateCounter();
+
+                resizeTextarea();
+
+                updateSendButton();
+
+            }
+        );
+
+
+
+        /* =====================================================
+           IMAGES
+        ====================================================== */
+
+        imageInput.addEventListener(
+            "change",
+            function () {
+
+                renderImagePreviews();
+
+                updateSendButton();
+
+            }
+        );
+
+
+
+        /* =====================================================
+           OPEN BUTTON
+        ====================================================== */
+
+        openButton.addEventListener(
+            "click",
+            openModal
+        );
+
+
+        openButton.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Enter" ||
+                    event.key === " "
+                ) {
+
+                    event.preventDefault();
+
+                    openModal();
+
+                }
+
+            }
+        );
+
+
+
+        /* =====================================================
+           CLOSE BUTTON
+        ====================================================== */
+
+        closeButton.addEventListener(
+            "click",
+            closeModal
+        );
+
+
+
+        /* =====================================================
+           ESCAPE
+        ====================================================== */
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Escape" &&
+                    modal.classList.contains(
+                        "core-create-post-modal--active"
+                    )
+                ) {
+
+                    closeModal();
+
+                }
+
+            }
+        );
+
+
+
+        /* =====================================================
+           SUBMIT
+        ====================================================== */
+
+        form.addEventListener(
+            "submit",
+            function (event) {
+
+                const title =
+                    titleInput.value.trim();
+
+
+                const text =
+                    textInput.value.trim();
+
+
+                const hasImages =
+                    imageInput.files &&
+                    imageInput.files.length > 0;
+
+
+                /*
+                 * Keep the visible title synchronized
+                 * with the actual form field.
+                 */
+
+                hiddenTitle.value =
+                    title;
+
+
+                /*
+                 * Content validation.
+                 */
+
+                if (
+                    !title &&
+                    !text &&
+                    !hasImages
+                ) {
+
+                    event.preventDefault();
+
+                    return;
+
+                }
+
+
+                /*
+                 * Prevent double submission.
+                 */
+
+                sendButton.disabled =
+                    true;
+
+
+                sendButton.innerHTML =
+                    "&#8987;";
+
+            }
+        );
+
+
+
+        /* =====================================================
+           INITIAL STATE
+        ====================================================== */
+
+        updateCounter();
+
+        resizeTextarea();
+
+        updateSendButton();
+
+    }
+
+
+
+    /* =========================================================
+       DOM READY
+    ========================================================= */
+
+    if (
+        document.readyState === "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeCoreCreatePost
+        );
+
+    } else {
+
+        initializeCoreCreatePost();
+
+    }
+
+})();
+
+</script>
