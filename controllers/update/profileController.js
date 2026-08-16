@@ -1,6 +1,42 @@
 // ==========================================================
 // controllers/update/profileController.js
 // ==========================================================
+//
+// DAIRY PROFILE CONTROLLER
+//
+// Responsibilities:
+//
+// • Update Dairy profile images
+// • Set the MAIN profile image
+// • Update Dairy profile information
+// • Delete Dairy profile
+//
+// PROFILE IMAGE DESIGN
+// ----------------------------------------------------------
+//
+// A Dairy profile has:
+//
+//     profileImages
+//         → Array containing up to 5 image URLs
+//
+//     profileImage
+//         → The selected MAIN image
+//
+// Example:
+//
+//     profileImages: [
+//         "/uploads/photo1.jpg",
+//         "/uploads/photo2.jpg",
+//         "/uploads/photo3.jpg"
+//     ]
+//
+//     profileImage:
+//         "/uploads/photo2.jpg"
+//
+// The MAIN image must always be one of the images contained
+// in profileImages.
+//
+// ==========================================================
 
 const updateService =
     require("../../services/update");
@@ -10,28 +46,103 @@ const Dairy =
 
 
 // ==========================================================
-// 🟦 UPDATE PROFILE IMAGES
+// HELPER
 // ==========================================================
 //
-// Supports:
+// Convert an uploaded Multer file into a value that can be
+// stored by the update service.
 //
-//     • Admin updating ANY dairy profile
-//     • Up to 5 profile images
-//     • req.file
-//     • req.files
-//     • profileImage
-//     • profileImages
+// ==========================================================
+
+function getUploadedImageValue(file) {
+
+    if (!file) {
+
+        return null;
+
+    }
+
+
+    return (
+        file.filename ||
+        file.path ||
+        file.location ||
+        null
+    );
+
+}
+
+
+// ==========================================================
+// HELPER
+// ==========================================================
 //
-// IMPORTANT:
+// Convert a stored image value into a public URL.
 //
-// This controller does NOT require the animal to be:
+// ==========================================================
+
+function toPublicImageUrl(image) {
+
+    if (!image) {
+
+        return null;
+
+    }
+
+
+    const value =
+        String(image);
+
+
+    if (
+        value.startsWith("http://") ||
+        value.startsWith("https://") ||
+        value.startsWith("/uploads/")
+    ) {
+
+        return value;
+
+    }
+
+
+    return `/uploads/${value}`;
+
+}
+
+
+// ==========================================================
+// UPDATE PROFILE IMAGES
+// ==========================================================
 //
-//     • assigned to a dairy farm
-//     • assigned to a dairy worker
-//     • attached to any farm
+// ROUTE:
 //
-// A dairy animal is identified directly by its
-// Dairy document ID.
+//     PUT /dairy/:id/image
+//
+// ROUTER:
+//
+//     upload.array("profileImages", 5)
+//
+// Therefore:
+//
+//     req.files
+//
+// contains the uploaded photos.
+//
+// The frontend should also send:
+//
+//     profileImageIndex
+//
+// Example:
+//
+//     profileImageIndex = 2
+//
+// This means:
+//
+//     profileImages[2]
+//
+// becomes:
+//
+//     profileImage
 //
 // ==========================================================
 
@@ -111,7 +222,7 @@ exports.image = async (req, res) => {
 
 
         // ==================================================
-        // VERIFY PROFILE EXISTS
+        // FIND DAIRY
         // ==================================================
 
         const dairy =
@@ -135,7 +246,18 @@ exports.image = async (req, res) => {
 
 
         // ==================================================
-        // COLLECT UPLOADED FILES
+        // COLLECT FILES
+        // ==================================================
+        //
+        // The router uses:
+        //
+        //     upload.array("profileImages", 5)
+        //
+        // Therefore req.files is the expected source.
+        //
+        // req.file is retained as backwards compatibility,
+        // but it is not the normal flow.
+        //
         // ==================================================
 
         let files = [];
@@ -162,16 +284,16 @@ exports.image = async (req, res) => {
         }
 
 
-        // ==================================================
-        // REMOVE DUPLICATES
-        // ==================================================
+        // --------------------------------------------------
+        // Remove duplicate file objects.
+        // --------------------------------------------------
 
         files =
             [...new Set(files)];
 
 
         // ==================================================
-        // VALIDATE FILES
+        // REQUIRE AT LEAST ONE IMAGE
         // ==================================================
 
         if (
@@ -185,7 +307,7 @@ exports.image = async (req, res) => {
                     success: false,
 
                     message:
-                        "No profile image uploaded."
+                        "Please select at least one profile photo."
 
                 });
 
@@ -193,7 +315,7 @@ exports.image = async (req, res) => {
 
 
         // ==================================================
-        // MAXIMUM IMAGE COUNT
+        // MAXIMUM FIVE
         // ==================================================
 
         if (
@@ -207,7 +329,7 @@ exports.image = async (req, res) => {
                     success: false,
 
                     message:
-                        "A dairy profile can have at most 5 images."
+                        "You can select a maximum of 5 profile photos."
 
                 });
 
@@ -215,31 +337,20 @@ exports.image = async (req, res) => {
 
 
         // ==================================================
-        // NORMALIZE FILENAMES
+        // CONVERT FILES TO IMAGE VALUES
         // ==================================================
 
         const images =
             files
                 .map(
-                    file => {
-
-                        if (!file) {
-
-                            return null;
-
-                        }
-
-
-                        return (
-                            file.filename ||
-                            file.path ||
-                            null
-                        );
-
-                    }
+                    getUploadedImageValue
                 )
                 .filter(Boolean);
 
+
+        // ==================================================
+        // VALIDATE IMAGE VALUES
+        // ==================================================
 
         if (
             images.length === 0
@@ -252,7 +363,7 @@ exports.image = async (req, res) => {
                     success: false,
 
                     message:
-                        "No valid profile images uploaded."
+                        "The selected profile photos could not be processed."
 
                 });
 
@@ -260,10 +371,101 @@ exports.image = async (req, res) => {
 
 
         // ==================================================
-        // UPDATE PROFILE
+        // MAIN IMAGE INDEX
+        // ==================================================
+        //
+        // The browser sends:
+        //
+        //     profileImageIndex
+        //
+        // Example:
+        //
+        //     "0"
+        //
+        //     "1"
+        //
+        //     "2"
+        //
+        // etc.
+        //
+        // If no index is supplied, the first image becomes
+        // the main image.
+        //
         // ==================================================
 
-        const update =
+        let profileImageIndex =
+            Number(
+                req.body?.profileImageIndex
+            );
+
+
+        if (
+            !Number.isInteger(
+                profileImageIndex
+            )
+        ) {
+
+            profileImageIndex = 0;
+
+        }
+
+
+        // ==================================================
+        // VALIDATE MAIN IMAGE INDEX
+        // ==================================================
+
+        if (
+            profileImageIndex < 0 ||
+            profileImageIndex >= images.length
+        ) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "The selected main profile photo is invalid."
+
+                });
+
+        }
+
+
+        // ==================================================
+        // DETERMINE MAIN IMAGE
+        // ==================================================
+
+        const profileImage =
+            images[
+                profileImageIndex
+            ];
+
+
+        // ==================================================
+        // UPDATE PROFILE
+        // ==================================================
+        //
+        // IMPORTANT:
+        //
+        // The service receives BOTH:
+        //
+        //     images
+        //
+        // and:
+        //
+        //     profileImage
+        //
+        // so the service can save:
+        //
+        //     profileImages = images
+        //
+        //     profileImage  = selected image
+        //
+        // ==================================================
+
+        const updated =
             await updateService.updateImage({
 
                 dairyId:
@@ -274,6 +476,11 @@ exports.image = async (req, res) => {
 
                 images,
 
+                profileImages:
+                    images,
+
+                profileImage,
+
                 isAdmin:
                     true
 
@@ -281,57 +488,48 @@ exports.image = async (req, res) => {
 
 
         // ==================================================
-        // PROFILE IMAGES
+        // DETERMINE SAVED PROFILE IMAGES
+        // ==================================================
+        //
+        // Prefer the values returned by the service.
+        //
         // ==================================================
 
-        const profileImages =
+        const savedProfileImages =
             Array.isArray(
-                update &&
-                update.profileImages
+                updated?.profileImages
             )
-                ? update.profileImages
+                ? updated.profileImages
                 : images;
 
 
         // ==================================================
-        // CONVERT TO PUBLIC URLS
+        // DETERMINE SAVED MAIN IMAGE
+        // ==================================================
+
+        const savedProfileImage =
+            updated?.profileImage ||
+            profileImage ||
+            savedProfileImages[0] ||
+            null;
+
+
+        // ==================================================
+        // PUBLIC URLS
         // ==================================================
 
         const imageUrls =
-            profileImages
+            savedProfileImages
                 .filter(Boolean)
                 .map(
-                    image => {
-
-                        const value =
-                            String(image);
-
-
-                        if (
-                            value.startsWith(
-                                "/uploads/"
-                            )
-                        ) {
-
-                            return value;
-
-                        }
-
-
-                        return `/uploads/${value}`;
-
-                    }
+                    toPublicImageUrl
                 );
 
 
-        // ==================================================
-        // PRIMARY IMAGE
-        // ==================================================
-
         const primaryImage =
-            imageUrls.length
-                ? imageUrls[0]
-                : null;
+            toPublicImageUrl(
+                savedProfileImage
+            );
 
 
         // ==================================================
@@ -348,6 +546,9 @@ exports.image = async (req, res) => {
 
             profileImages:
                 imageUrls,
+
+            profileImage:
+                primaryImage,
 
             image:
                 primaryImage,
@@ -366,10 +567,9 @@ exports.image = async (req, res) => {
                 )}`,
 
             dateText:
-                update &&
-                update.createdAt
+                updated?.updatedAt
                     ? new Date(
-                        update.createdAt
+                        updated.updatedAt
                     ).toLocaleString()
                     : new Date().toLocaleString()
 
@@ -410,15 +610,22 @@ exports.image = async (req, res) => {
                 true,
 
             message:
-                "Profile images updated successfully.",
+                "Profile photos updated successfully.",
 
             dairyId:
                 id,
 
-            images:
+            profileImages:
                 imageUrls,
 
-            profileImages:
+            profileImage:
+                primaryImage,
+
+            // ------------------------------------------------
+            // Compatibility fields
+            // ------------------------------------------------
+
+            images:
                 imageUrls,
 
             image:
@@ -429,7 +636,6 @@ exports.image = async (req, res) => {
 
         });
 
-
     } catch (err) {
 
         console.error(
@@ -437,6 +643,10 @@ exports.image = async (req, res) => {
             err
         );
 
+
+        // ==================================================
+        // KNOWN HTTP ERRORS
+        // ==================================================
 
         if (
             err.status === 401 ||
@@ -498,6 +708,34 @@ exports.image = async (req, res) => {
         }
 
 
+        // ==================================================
+        // INVALID REQUEST
+        // ==================================================
+
+        if (
+            err.status === 400 ||
+            err.statusCode === 400
+        ) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success: false,
+
+                    message:
+                        err.message ||
+                        "Invalid profile image request."
+
+                });
+
+        }
+
+
+        // ==================================================
+        // SERVER ERROR
+        // ==================================================
+
         return res
             .status(500)
             .json({
@@ -517,36 +755,26 @@ exports.image = async (req, res) => {
 
 
 // ==========================================================
-// 🥛 TOGGLE MILKING STATUS
+// UPDATE PROFILE INFORMATION
 // ==========================================================
 //
-// URL:
+// ROUTE:
 //
-//     POST /dairy/:id/toggle-milking
+//     PUT /dairy/:id/update
 //
-// Purpose:
+// Updates:
 //
-//     Toggle the `isMilking` field of the Dairy document.
+//     • name
+//     • mass
+//     • dateOfBirth
 //
-//     false → true
-//     true  → false
+// Code remains unchanged.
 //
-// AUTHORIZED USERS:
-//
-//     • admin
-//     • dairyWorker
-//
-// IMPORTANT:
-//
-// There is NO dairy-farm assignment check.
-//
-// The Dairy document is identified directly using:
-//
-//     req.params.id
+// There is NO dairy-farm assignment requirement.
 //
 // ==========================================================
 
-exports.toggleMilking = async (req, res) => {
+exports.updateProfile = async (req, res) => {
 
     try {
 
@@ -600,20 +828,12 @@ exports.toggleMilking = async (req, res) => {
 
 
         // ==================================================
-        // ROLE CHECK
-        // ==================================================
-        //
-        // Both admin and dairyWorker can toggle
-        // milking status.
-        //
+        // ADMIN CHECK
         // ==================================================
 
-        const canToggleMilking =
-            user.role === "admin" ||
-            user.role === "dairyWorker";
-
-
-        if (!canToggleMilking) {
+        if (
+            user.role !== "admin"
+        ) {
 
             return res
                 .status(403)
@@ -622,7 +842,7 @@ exports.toggleMilking = async (req, res) => {
                     success: false,
 
                     message:
-                        "Only admin or dairyWorker can change milking status."
+                        "Only admin can edit dairy profiles."
 
                 });
 
@@ -630,7 +850,7 @@ exports.toggleMilking = async (req, res) => {
 
 
         // ==================================================
-        // FIND DAIRY
+        // VERIFY PROFILE EXISTS
         // ==================================================
 
         const dairy =
@@ -654,20 +874,17 @@ exports.toggleMilking = async (req, res) => {
 
 
         // ==================================================
-        // TOGGLE STATUS
+        // UPDATE
         // ==================================================
 
-        dairy.isMilking =
-            !Boolean(
-                dairy.isMilking
+        const updated =
+            await updateService.updateProfile(
+
+                id,
+
+                req.body
+
             );
-
-
-        // ==================================================
-        // SAVE
-        // ==================================================
-
-        await dairy.save();
 
 
         // ==================================================
@@ -682,15 +899,15 @@ exports.toggleMilking = async (req, res) => {
 
             io.to(id).emit(
 
-                "milkingStatusUpdated",
+                "profileUpdated",
 
                 {
 
                     dairyId:
                         id,
 
-                    isMilking:
-                        dairy.isMilking
+                    profile:
+                        updated
 
                 }
 
@@ -702,60 +919,24 @@ exports.toggleMilking = async (req, res) => {
         // ==================================================
         // RESPONSE
         // ==================================================
-        //
-        // If JavaScript/fetch requested JSON,
-        // return JSON.
-        //
-        // Otherwise redirect back to the dairy profile.
-        //
-        // ==================================================
 
-        const wantsJson =
-            req.xhr ||
-            (
-                req.headers.accept &&
-                req.headers.accept.includes(
-                    "application/json"
-                )
-            );
+        return res.json({
 
+            success:
+                true,
 
-        if (wantsJson) {
+            message:
+                "Dairy profile updated successfully.",
 
-            return res.json({
+            profile:
+                updated || null
 
-                success:
-                    true,
-
-                message:
-                    dairy.isMilking
-                        ? "Animal marked as milking."
-                        : "Animal marked as not milking.",
-
-                dairyId:
-                    id,
-
-                isMilking:
-                    dairy.isMilking
-
-            });
-
-        }
-
-
-        // ==================================================
-        // NORMAL LINK REQUEST
-        // ==================================================
-
-        return res.redirect(
-            `/dairy/${id}`
-        );
-
+        });
 
     } catch (err) {
 
         console.error(
-            "TOGGLE MILKING ERROR:",
+            "UPDATE PROFILE ERROR:",
             err
         );
 
@@ -793,7 +974,7 @@ exports.toggleMilking = async (req, res) => {
 
                     message:
                         err.message ||
-                        "Only admin or dairyWorker can change milking status."
+                        "You are not authorized to edit this dairy profile."
 
                 });
 
@@ -828,7 +1009,7 @@ exports.toggleMilking = async (req, res) => {
 
                 message:
                     err.message ||
-                    "Failed to change milking status."
+                    "Failed to update dairy profile."
 
             });
 
@@ -839,12 +1020,24 @@ exports.toggleMilking = async (req, res) => {
 
 
 // ==========================================================
-// 🗑 DELETE DAIRY PROFILE
+// DELETE DAIRY PROFILE
+// ==========================================================
+//
+// ROUTE:
+//
+//     DELETE /dairy/:id
+//
+// Only admin can delete a Dairy profile.
+//
 // ==========================================================
 
 exports.deleteProfile = async (req, res) => {
 
     try {
+
+        // ==================================================
+        // PROFILE ID
+        // ==================================================
 
         const {
             id
@@ -867,6 +1060,10 @@ exports.deleteProfile = async (req, res) => {
         }
 
 
+        // ==================================================
+        // USER
+        // ==================================================
+
         const user =
             req.session.user;
 
@@ -887,6 +1084,10 @@ exports.deleteProfile = async (req, res) => {
         }
 
 
+        // ==================================================
+        // ADMIN CHECK
+        // ==================================================
+
         if (
             user.role !== "admin"
         ) {
@@ -904,6 +1105,10 @@ exports.deleteProfile = async (req, res) => {
 
         }
 
+
+        // ==================================================
+        // VERIFY PROFILE EXISTS
+        // ==================================================
 
         const dairy =
             await Dairy.findById(id);
@@ -925,10 +1130,18 @@ exports.deleteProfile = async (req, res) => {
         }
 
 
+        // ==================================================
+        // DELETE
+        // ==================================================
+
         await updateService.deleteProfile(
             id
         );
 
+
+        // ==================================================
+        // SOCKET.IO
+        // ==================================================
 
         const io =
             req.app.get("io");
@@ -949,6 +1162,10 @@ exports.deleteProfile = async (req, res) => {
         }
 
 
+        // ==================================================
+        // RESPONSE
+        // ==================================================
+
         return res.json({
 
             success:
@@ -959,7 +1176,6 @@ exports.deleteProfile = async (req, res) => {
 
         });
 
-
     } catch (err) {
 
         console.error(
@@ -968,70 +1184,10 @@ exports.deleteProfile = async (req, res) => {
         );
 
 
-        return res
-            .status(500)
-            .json({
-
-                success: false,
-
-                message:
-                    err.message ||
-                    "Failed to delete dairy profile."
-
-            });
-
-    }
-
-};
-
-
-
-// ==========================================================
-// 📝 UPDATE PROFILE INFORMATION
-// ==========================================================
-//
-// Updates:
-//
-//     name
-//     mass
-//     dateOfBirth
-//
-// Code remains unchanged.
-//
-// There is NO farm-assignment requirement here.
-//
-// ==========================================================
-
-exports.updateProfile = async (req, res) => {
-
-    try {
-
-        const {
-            id
-        } = req.params;
-
-
-        if (!id) {
-
-            return res
-                .status(400)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Dairy profile ID is required."
-
-                });
-
-        }
-
-
-        const user =
-            req.session.user;
-
-
-        if (!user) {
+        if (
+            err.status === 401 ||
+            err.statusCode === 401
+        ) {
 
             return res
                 .status(401)
@@ -1040,6 +1196,7 @@ exports.updateProfile = async (req, res) => {
                     success: false,
 
                     message:
+                        err.message ||
                         "Unauthorized."
 
                 });
@@ -1048,7 +1205,8 @@ exports.updateProfile = async (req, res) => {
 
 
         if (
-            user.role !== "admin"
+            err.status === 403 ||
+            err.statusCode === 403
         ) {
 
             return res
@@ -1058,85 +1216,12 @@ exports.updateProfile = async (req, res) => {
                     success: false,
 
                     message:
-                        "Only admin can edit dairy profiles."
+                        err.message ||
+                        "You are not authorized to delete this dairy profile."
 
                 });
 
         }
-
-
-        const dairy =
-            await Dairy.findById(id);
-
-
-        if (!dairy) {
-
-            return res
-                .status(404)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Dairy profile not found."
-
-                });
-
-        }
-
-
-        const updated =
-            await updateService.updateProfile(
-
-                id,
-
-                req.body
-
-            );
-
-
-        const io =
-            req.app.get("io");
-
-
-        if (io) {
-
-            io.to(id).emit(
-
-                "profileUpdated",
-
-                {
-
-                    dairyId:
-                        id,
-
-                    profile:
-                        updated
-
-                }
-
-            );
-
-        }
-
-
-        return res.json({
-
-            success:
-                true,
-
-            profile:
-                updated || null
-
-        });
-
-
-    } catch (err) {
-
-        console.error(
-            "UPDATE PROFILE ERROR:",
-            err
-        );
 
 
         if (
@@ -1167,7 +1252,7 @@ exports.updateProfile = async (req, res) => {
 
                 message:
                     err.message ||
-                    "Failed to update profile."
+                    "Failed to delete dairy profile."
 
             });
 
