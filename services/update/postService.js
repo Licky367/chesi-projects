@@ -1,2963 +1,1489 @@
-<% /*
-==========================================================
-CREATE POST COMPOSER + FULL SCREEN POST MODAL
+// ==========================================================
+// services/update/postService.js
+// ==========================================================
+//
+// PURPOSE:
+//     Handles creation and management of normal feed posts.
+//
+// POST TARGET SYSTEM:
+// ----------------------------------------------------------
+//
+//     The controller determines which Dairy record the post
+//     concerns and passes that record as:
+//
+//         dairyId
+//
+//     This service treats dairyId as the ACTUAL post target.
+//
+// VALID POST TARGETS:
+// ----------------------------------------------------------
+//
+//     1. ANIMAL
+//            code > 0
+//
+//     2. STRUCTURE / FACILITY / TOOL
+//            code === null
+//            code === undefined
+//            code === ""
+//
+// INVALID TARGET:
+//            code < 0
+//
+// IMPORTANT:
+// ----------------------------------------------------------
+//
+//     Negative-code records represent general farm,
+//     facility/farm context pages and must NEVER themselves
+//     become the target of a normal post.
+//
+// ==========================================================
 
-FILE:
-    views/update/create-post.ejs
 
-PURPOSE:
-    Create a normal feed post/update.
 
-TARGET RULES
-----------------------------------------------------------
-CURRENT DAIRY CODE > 0:
-    Current Dairy is automatically the target.
+// ==========================================================
+// DEPENDENCIES
+// ==========================================================
 
-CURRENT DAIRY CODE < 0:
-    User MUST select the target.
+const mongoose =
+    require("mongoose");
 
-PHASE 1:
-    Animal
-    Structure / Facility / Tool
 
-PHASE 2:
-    Animal:
-        code > 0
+const Update =
+    require("../../models/Update");
 
-    Structure / Facility / Tool:
-        code === null
-        code === undefined
+
+const ProjectUser =
+    require("../../models/projectUser");
+
+
+const Dairy =
+    require("../../models/dairy");
+
+
+const {
+    formatComment
+} = require("./helpers");
+
+
+
+// ==========================================================
+// INTERNAL HELPERS
+// ==========================================================
+
+/**
+ * Determines whether a Dairy record is an animal.
+ *
+ * Valid animal:
+ *
+ *     code > 0
+ */
+function isAnimal(dairy) {
+
+    if (!dairy) {
+        return false;
+    }
+
+    const code =
+        dairy.code;
+
+    return (
+        code !== null &&
+        code !== undefined &&
+        code !== "" &&
+        Number(code) > 0
+    );
+}
+
+
+
+/**
+ * Determines whether a Dairy record is a
+ * structure / facility / tool.
+ *
+ * Valid structure/facility/tool:
+ *
+ *     code === null
+ *     code === undefined
+ *     code === ""
+ *
+ * Negative codes are deliberately excluded.
+ */
+function isStructureFacilityTool(dairy) {
+
+    if (!dairy) {
+        return false;
+    }
+
+    const code =
+        dairy.code;
+
+    return (
+        code === null ||
+        code === undefined ||
         code === ""
-
-    Negative-code records are NEVER valid targets.
-
-SUBMITTED FIELD:
-    targetDairyId
-
-IMPORTANT:
-    Phase 2 is an ACTIVE SELECT element.
-    It is NOT read-only.
-==========================================================
-*/ %>
-
-
-<!-- =========================================================
-     BOOTSTRAP ICONS
-========================================================= -->
-
-<link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
->
-
-
-<!-- =========================================================
-     CREATE POST CARD
-========================================================= -->
-
-<section class="create-post-card">
-
-    <div class="create-post-header">
-
-        <div class="create-post-avatar">
-
-            <img
-                src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)) %>"
-                alt="<%= user.name %>"
-                class="avatar-sm"
-            >
-
-        </div>
-
-
-        <div class="create-post-heading">
-
-            <% if (Number(dairy.code) < 0) { %>
-
-                <div class="heading-line">
-
-                    <strong>
-                        <%= user.name.split(" ")[0] %>
-                    </strong>
-
-                    , update us about the overall conditions
-                    of this dairy Farm.
-
-                </div>
-
-            <% } else { %>
-
-                <div class="heading-line">
-
-                    <strong>
-                        <%= user.name.split(" ")[0] %>
-                    </strong>
-
-                    , update us about
-
-                </div>
-
-                <div class="heading-line">
-
-                    <strong>
-                        <%= dairy.name %>
-                    </strong>
-
-                </div>
-
-            <% } %>
-
-        </div>
-
-    </div>
-
-
-    <div
-        id="openPostComposer"
-        class="composer-trigger"
-        role="button"
-        tabindex="0"
-        aria-label="Create post"
-    >
-
-        <span>
-            Share an update...
-        </span>
-
-    </div>
-
-</section>
-
-
-
-<!-- =========================================================
-     FULL SCREEN MODAL
-========================================================= -->
-
-<div
-    id="postModal"
-    class="post-modal"
-    aria-hidden="true"
->
-
-    <div class="post-modal-content">
-
-
-        <!-- =================================================
-             HEADER
-        ================================================== -->
-
-        <header class="post-modal-header">
-
-            <button
-                type="button"
-                id="closePostModal"
-                class="post-back-button"
-                aria-label="Go back"
-            >
-
-                <i class="bi bi-arrow-left"></i>
-
-            </button>
-
-
-            <div class="post-modal-title">
-
-                <strong>
-                    New Update
-                </strong>
-
-                <span id="postTargetHeader">
-                    <%= dairy.name %>
-                </span>
-
-            </div>
-
-
-            <div class="post-header-spacer"></div>
-
-        </header>
-
-
-
-        <!-- =================================================
-             BODY
-        ================================================== -->
-
-        <main class="post-modal-body">
-
-            <div class="post-fields">
-
-
-                <!-- =================================================
-                     TARGET SELECTOR
-                     ONLY ON NEGATIVE-CODE PAGES
-                ================================================== -->
-
-                <% if (Number(dairy.code) < 0) { %>
-
-                    <section
-                        id="postTargetSection"
-                        class="post-target-section"
-                    >
-
-
-                        <!-- =========================================
-                             TARGET HEADER
-                        ========================================== -->
-
-                        <div class="post-section-label">
-
-                            <span class="post-section-label-icon">
-
-                                <i class="bi bi-bullseye"></i>
-
-                            </span>
-
-
-                            <div>
-
-                                <strong>
-                                    What is this update about?
-                                </strong>
-
-                                <span>
-                                    First choose a category, then choose the subject.
-                                </span>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <!-- =========================================
-                             PHASE 1
-                        ========================================== -->
-
-                        <div
-                            id="targetPhaseOne"
-                            class="target-phase"
-                        >
-
-                            <label
-                                for="targetCategory"
-                                class="target-field-label"
-                            >
-
-                                Step 1 — Select category
-
-                            </label>
-
-
-                            <select
-                                id="targetCategory"
-                                class="target-select"
-                            >
-
-                                <option value="">
-                                    Select category
-                                </option>
-
-                                <option value="animal">
-                                    🐄 Animal
-                                </option>
-
-                                <option value="structure">
-                                    🏗️ Structure / Facility / Tool
-                                </option>
-
-                            </select>
-
-                        </div>
-
-
-
-                        <!-- =========================================
-                             PHASE 2
-
-                             THIS IS AN ACTIVE SELECT.
-
-                             IMPORTANT:
-                             It is NOT disabled permanently.
-                        ========================================== -->
-
-                        <div
-                            id="targetPhaseTwo"
-                            class="target-phase target-phase-two"
-                            hidden
-                        >
-
-                            <label
-                                for="targetDairySelect"
-                                class="target-field-label"
-                            >
-
-                                Step 2 — Select subject
-
-                            </label>
-
-
-                            <select
-                                id="targetDairySelect"
-                                class="target-select"
-                            >
-
-                                <option value="">
-                                    Select a subject
-                                </option>
-
-                            </select>
-
-
-                            <div
-                                id="targetSelectionHint"
-                                class="target-selection-hint"
-                            >
-
-                                Choose a category above.
-
-                            </div>
-
-                        </div>
-
-
-
-                        <!-- =========================================
-                             SELECTED TARGET
-                        ========================================== -->
-
-                        <div
-                            id="selectedTargetDisplay"
-                            class="selected-target-display"
-                            hidden
-                        >
-
-                            <div class="selected-target-icon">
-
-                                <i class="bi bi-check-lg"></i>
-
-                            </div>
-
-
-                            <div class="selected-target-info">
-
-                                <span>
-                                    Post concerns
-                                </span>
-
-                                <strong id="selectedTargetName">
-                                </strong>
-
-                            </div>
-
-                        </div>
-
-                    </section>
-
-                <% } %>
-
-
-
-                <!-- =================================================
-                     POST CONTENT
-                ================================================== -->
-
-                <div class="post-fields-content">
-
-
-                    <div class="post-title-wrapper">
-
-                        <label
-                            for="postTitle"
-                            class="post-title-label"
-                        >
-
-                            Title
-
-                        </label>
-
-
-                        <input
-                            type="text"
-                            id="postTitle"
-                            maxlength="200"
-                            placeholder="Give your update a title..."
-                            aria-label="Post title"
-                            autocomplete="off"
-                        >
-
-                    </div>
-
-
-
-                    <!-- IMAGE PREVIEW -->
-
-                    <div
-                        id="imagePreviewContainer"
-                        class="image-preview-container"
-                        hidden
-                    >
-
-                        <div
-                            id="imagePreviewGrid"
-                            class="image-preview-grid"
-                        ></div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </main>
-
-
-
-        <!-- =================================================
-             BOTTOM COMPOSER
-        ================================================== -->
-
-        <div class="post-composer-wrapper">
-
-            <form
-                id="postForm"
-                action="/dairy/<%= dairy._id %>/post"
-                method="POST"
-                enctype="multipart/form-data"
-                class="post-form"
-            >
-
-
-                <!-- =================================================
-                     TARGET DAIRY ID
-                ================================================= -->
-
-                <% if (Number(dairy.code) < 0) { %>
-
-                    <input
-                        type="hidden"
-                        name="targetDairyId"
-                        id="targetDairyId"
-                        value=""
-                    >
-
-                <% } else { %>
-
-                    <input
-                        type="hidden"
-                        name="targetDairyId"
-                        id="targetDairyId"
-                        value="<%= dairy._id %>"
-                    >
-
-                <% } %>
-
-
-
-                <!-- =================================================
-                     TITLE
-                ================================================== -->
-
-                <input
-                    type="hidden"
-                    id="postTitleHidden"
-                    name="title"
-                    value=""
-                >
-
-
-
-                <!-- =================================================
-                     COMPOSER
-                ================================================== -->
-
-                <div class="post-composer">
-
-
-                    <!-- ATTACHMENT -->
-
-                    <label
-                        for="postImages"
-                        class="composer-icon-button attachment-button"
-                        aria-label="Attach images"
-                        title="Attach images"
-                    >
-
-                        <i class="bi bi-paperclip"></i>
-
-                    </label>
-
-
-                    <input
-                        type="file"
-                        id="postImages"
-                        name="images"
-                        accept="image/jpeg,image/jpg,image/png,image/webp"
-                        multiple
-                        hidden
-                    >
-
-
-
-                    <!-- TEXT -->
-
-                    <div class="composer-input-area">
-
-                        <textarea
-                            id="postText"
-                            name="text"
-                            maxlength="1000"
-                            rows="1"
-                            placeholder="Type your update..."
-                            aria-label="Type your update"
-                        ></textarea>
-
-
-                        <span
-                            id="characterCounter"
-                            class="character-counter"
-                        >
-                            0/1000
-                        </span>
-
-                    </div>
-
-
-
-                    <!-- SEND -->
-
-                    <button
-                        type="submit"
-                        id="submitPostButton"
-                        class="composer-send-button"
-                        aria-label="Send update"
-                        disabled
-                    >
-
-                        <i class="bi bi-send-fill"></i>
-
-                    </button>
-
-                </div>
-
-            </form>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-
-<!-- =========================================================
-     CSS
-========================================================= -->
-
-<style>
-
-* {
-    box-sizing: border-box;
+    );
 }
 
 
-/* =========================================================
-   CREATE POST CARD
-========================================================= */
 
-.create-post-card {
+/**
+ * Determines whether a Dairy record is a valid
+ * normal-post target.
+ */
+function isValidPostTarget(dairy) {
 
-    width: 100%;
-
-    background: #ffffff;
-
-    border: 1px solid #e7eee9;
-
-    border-radius: 16px;
-
-    padding: 16px;
-
-    margin-bottom: 16px;
-
-}
-
-
-.create-post-header {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-}
-
-
-.create-post-avatar {
-
-    flex: 0 0 auto;
-
-}
-
-
-.avatar-sm {
-
-    width: 44px;
-
-    height: 44px;
-
-    border-radius: 50%;
-
-    object-fit: cover;
-
-    display: block;
-
-}
-
-
-.create-post-heading {
-
-    min-width: 0;
-
-    color: #555;
-
-    font-size: 14px;
-
-    line-height: 1.5;
-
-}
-
-
-.heading-line {
-
-    display: block;
-
-}
-
-
-.create-post-heading strong {
-
-    color: #222;
+    return (
+        isAnimal(dairy) ||
+        isStructureFacilityTool(dairy)
+    );
 
 }
 
 
 
-/* =========================================================
-   TRIGGER
-========================================================= */
-
-.composer-trigger {
-
-    min-height: 48px;
-
-    margin-top: 14px;
-
-    padding: 0 16px;
-
-    border: 1px solid #dfe8e2;
-
-    border-radius: 24px;
-
-    display: flex;
-
-    align-items: center;
-
-    background: #f8faf8;
-
-    color: #888;
-
-    cursor: pointer;
-
-    transition:
-        background .2s ease,
-        border-color .2s ease,
-        transform .15s ease;
-
-}
-
-
-.composer-trigger:hover {
-
-    background: #f1f7f3;
-
-    border-color: #198754;
-
-}
-
-
-.composer-trigger:active {
-
-    transform: scale(.99);
-
-}
-
-
-
-/* =========================================================
-   MODAL
-========================================================= */
-
-.post-modal {
-
-    position: fixed;
-
-    inset: 0;
-
-    width: 100vw;
-
-    height: 100dvh;
-
-    background: #ffffff;
-
-    z-index: 99999;
-
-    display: none;
-
-    overflow: hidden;
-
-}
-
-
-.post-modal.active {
-
-    display: block;
-
-}
-
-
-.post-modal-content {
-
-    width: 100%;
-
-    height: 100%;
-
-    display: flex;
-
-    flex-direction: column;
-
-    background: #ffffff;
-
-}
-
-
-
-/* =========================================================
-   HEADER
-========================================================= */
-
-.post-modal-header {
-
-    flex: 0 0 auto;
-
-    height: 64px;
-
-    display: flex;
-
-    align-items: center;
-
-    padding: 0 16px;
-
-    border-bottom: 1px solid #e8eee9;
-
-    background: #ffffff;
-
-}
-
-
-.post-back-button {
-
-    width: 44px;
-
-    height: 44px;
-
-    flex: 0 0 44px;
-
-    border: none;
-
-    background: transparent;
-
-    color: #198754;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    cursor: pointer;
-
-    font-size: 27px;
-
-    padding: 0;
-
-}
-
-
-.post-modal-title {
-
-    margin-left: 8px;
-
-    min-width: 0;
-
-    display: flex;
-
-    flex-direction: column;
-
-    line-height: 1.25;
-
-}
-
-
-.post-modal-title strong {
-
-    color: #202520;
-
-    font-size: 17px;
-
-}
-
-
-.post-modal-title span {
-
-    margin-top: 2px;
-
-    color: #7a817d;
-
-    font-size: 12px;
-
-}
-
-
-.post-header-spacer {
-
-    flex: 1;
-
-}
-
-
-
-/* =========================================================
-   BODY
-========================================================= */
-
-.post-modal-body {
-
-    flex: 1 1 auto;
-
-    min-height: 0;
-
-    overflow-y: auto;
-
-    padding: 20px;
-
-}
-
-
-.post-fields {
-
-    width: 100%;
-
-    max-width: 700px;
-
-    margin: 0 auto;
-
-}
-
-
-
-/* =========================================================
-   TARGET SECTION
-========================================================= */
-
-.post-target-section {
-
-    width: 100%;
-
-    margin-bottom: 24px;
-
-    padding: 15px;
-
-    border: 1px solid #e1ebe4;
-
-    border-radius: 15px;
-
-    background: #f7faf8;
-
-}
-
-
-.post-section-label {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 11px;
-
-    margin-bottom: 15px;
-
-}
-
-
-.post-section-label-icon {
-
-    width: 38px;
-
-    height: 38px;
-
-    flex: 0 0 38px;
-
-    border-radius: 50%;
-
-    background: #e2f2e9;
-
-    color: #198754;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    font-size: 17px;
-
-}
-
-
-.post-section-label > div {
-
-    display: flex;
-
-    flex-direction: column;
-
-}
-
-
-.post-section-label strong {
-
-    color: #26312a;
-
-    font-size: 14px;
-
-}
-
-
-.post-section-label span {
-
-    margin-top: 2px;
-
-    color: #7a817d;
-
-    font-size: 11px;
-
-}
-
-
-
-/* =========================================================
-   PHASES
-========================================================= */
-
-.target-phase {
-
-    width: 100%;
-
-}
-
-
-.target-phase-two {
-
-    margin-top: 15px;
-
-}
-
-
-.target-field-label {
-
-    display: block;
-
-    margin-bottom: 7px;
-
-    color: #37413a;
-
-    font-size: 12px;
-
-    font-weight: 700;
-
-}
-
-
-
-/* =========================================================
-   SELECT
-
-   IMPORTANT:
-   NO appearance tricks.
-   NO pointer-events:none.
-   NO readonly.
-   NO permanent disabled state.
-========================================================= */
-
-.target-select {
-
-    display: block;
-
-    width: 100%;
-
-    min-height: 48px;
-
-    height: 48px;
-
-    padding: 0 12px;
-
-    border: 1px solid #d6e0d9;
-
-    border-radius: 11px;
-
-    outline: none;
-
-    background-color: #ffffff;
-
-    color: #202520;
-
-    font-family: inherit;
-
-    font-size: 14px;
-
-    cursor: pointer;
-
-    opacity: 1;
-
-    pointer-events: auto;
-
-}
-
-
-.target-select:focus {
-
-    border-color: #198754;
-
-    box-shadow:
-        0 0 0 3px
-        rgba(25, 135, 84, .10);
-
-}
-
-
-.target-select:disabled {
-
-    background-color: #f0f4f1;
-
-    color: #929a95;
-
-    cursor: not-allowed;
-
-    opacity: .75;
-
-}
-
-
-
-/* =========================================================
-   HINT
-========================================================= */
-
-.target-selection-hint {
-
-    margin-top: 7px;
-
-    color: #7f8983;
-
-    font-size: 11px;
-
-    line-height: 1.4;
-
-}
-
-
-
-/* =========================================================
-   SELECTED TARGET
-========================================================= */
-
-.selected-target-display {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 9px;
-
-    margin-top: 12px;
-
-    padding: 9px 11px;
-
-    border-radius: 10px;
-
-    background: #eaf6ef;
-
-}
-
-
-.selected-target-icon {
-
-    width: 25px;
-
-    height: 25px;
-
-    flex: 0 0 25px;
-
-    border-radius: 50%;
-
-    background: #198754;
-
-    color: #ffffff;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    font-size: 13px;
-
-}
-
-
-.selected-target-info {
-
-    min-width: 0;
-
-    display: flex;
-
-    flex-direction: column;
-
-}
-
-
-.selected-target-info span {
-
-    color: #718078;
-
-    font-size: 10px;
-
-}
-
-
-.selected-target-info strong {
-
-    margin-top: 1px;
-
-    color: #205b3b;
-
-    font-size: 13px;
-
-}
-
-
-
-/* =========================================================
-   TITLE
-========================================================= */
-
-.post-fields-content {
-
-    width: 100%;
-
-}
-
-
-.post-title-wrapper {
-
-    width: 100%;
-
-    margin-bottom: 18px;
-
-}
-
-
-.post-title-label {
-
-    display: block;
-
-    margin-bottom: 7px;
-
-    color: #6d7771;
-
-    font-size: 11px;
-
-    font-weight: 700;
-
-    text-transform: uppercase;
-
-    letter-spacing: .04em;
-
-}
-
-
-#postTitle {
-
-    width: 100%;
-
-    padding: 13px 14px;
-
-    border: 1px solid #e0e7e2;
-
-    border-radius: 12px;
-
-    outline: none;
-
-    background: #f8faf8;
-
-    color: #202520;
-
-    font-family: inherit;
-
-    font-size: 20px;
-
-    font-weight: 700;
-
-}
-
-
-#postTitle:focus {
-
-    border-color: #198754;
-
-    background: #ffffff;
-
-    box-shadow:
-        0 0 0 3px
-        rgba(25, 135, 84, .10);
-
-}
-
-
-#postTitle::placeholder {
-
-    color: #a0a6a2;
-
-}
-
-
-
-/* =========================================================
-   IMAGE PREVIEW
-========================================================= */
-
-.image-preview-container {
-
-    width: 100%;
-
-}
-
-
-.image-preview-grid {
-
-    width: 100%;
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-    gap: 10px;
-
-}
-
-
-.image-preview-item {
-
-    position: relative;
-
-    width: 100%;
-
-    aspect-ratio: 1 / 1;
-
-    overflow: hidden;
-
-    border-radius: 12px;
-
-    background: #f3f5f3;
-
-}
-
-
-.image-preview-item img {
-
-    width: 100%;
-
-    height: 100%;
-
-    display: block;
-
-    object-fit: cover;
-
-}
-
-
-
-/* =========================================================
-   BOTTOM COMPOSER
-========================================================= */
-
-.post-composer-wrapper {
-
-    flex: 0 0 auto;
-
-    width: 100%;
-
-    padding:
-        10px
-        12px
-        calc(10px + env(safe-area-inset-bottom));
-
-    border-top: 1px solid #e8eee9;
-
-    background: #ffffff;
-
-}
-
-
-.post-form {
-
-    width: 100%;
-
-    margin: 0;
-
-}
-
-
-.post-composer {
-
-    width: 100%;
-
-    min-height: 50px;
-
-    display: flex;
-
-    align-items: flex-end;
-
-    gap: 8px;
-
-    padding: 5px 7px;
-
-    border: 1px solid #dce6df;
-
-    border-radius: 28px;
-
-    background: #f7faf8;
-
-}
-
-
-
-/* =========================================================
-   ATTACHMENT
-========================================================= */
-
-.composer-icon-button {
-
-    width: 42px;
-
-    height: 42px;
-
-    flex: 0 0 42px;
-
-    border: none;
-
-    background: transparent;
-
-    color: #198754;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    cursor: pointer;
-
-    font-size: 23px;
-
-    padding: 0;
-
-}
-
-
-.attachment-button i {
-
-    transform: rotate(-20deg);
-
-}
-
-
-
-/* =========================================================
-   TEXTAREA
-========================================================= */
-
-.composer-input-area {
-
-    position: relative;
-
-    flex: 1;
-
-    min-width: 0;
-
-    display: flex;
-
-    align-items: flex-end;
-
-}
-
-
-#postText {
-
-    width: 100%;
-
-    min-height: 40px;
-
-    max-height: 120px;
-
-    resize: none;
-
-    overflow-y: auto;
-
-    border: none;
-
-    outline: none;
-
-    background: transparent;
-
-    padding:
-        10px
-        4px
-        5px;
-
-    margin: 0;
-
-    font-family: inherit;
-
-    font-size: 15px;
-
-    line-height: 20px;
-
-    color: #202520;
-
-}
-
-
-#postText::placeholder {
-
-    color: #8b928d;
-
-}
-
-
-
-/* =========================================================
-   COUNTER
-========================================================= */
-
-.character-counter {
-
-    position: absolute;
-
-    right: 5px;
-
-    bottom: 1px;
-
-    padding-left: 3px;
-
-    background: #f7faf8;
-
-    color: #8a928d;
-
-    font-size: 10px;
-
-    pointer-events: none;
-
-}
-
-
-
-/* =========================================================
-   SEND
-========================================================= */
-
-.composer-send-button {
-
-    width: 42px;
-
-    height: 42px;
-
-    flex: 0 0 42px;
-
-    border: none;
-
-    border-radius: 50%;
-
-    background: transparent;
-
-    color: #198754;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    cursor: pointer;
-
-    font-size: 20px;
-
-    padding: 0;
-
-}
-
-
-.composer-send-button:disabled {
-
-    color: #b8c2bc;
-
-    cursor: default;
-
-}
-
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
-
-@media (max-width: 600px) {
-
-    .post-modal-header {
-
-        height: 60px;
-
-        padding: 0 10px;
-
-    }
-
-
-    .post-modal-title strong {
-
-        font-size: 16px;
-
-    }
-
-
-    .post-modal-body {
-
-        padding: 14px;
-
-    }
-
-
-    .post-target-section {
-
-        padding: 13px;
-
-    }
-
-
-    #postTitle {
-
-        font-size: 19px;
-
-    }
-
-
-    .image-preview-grid {
-
-        gap: 7px;
-
-    }
-
-
-    .post-composer-wrapper {
-
-        padding:
-            8px
-            8px
-            calc(8px + env(safe-area-inset-bottom));
-
-    }
-
-
-    .post-composer {
-
-        min-height: 48px;
-
-        gap: 4px;
-
-        padding: 4px 5px;
-
-    }
-
-
-    .composer-icon-button {
-
-        width: 40px;
-
-        height: 40px;
-
-        flex-basis: 40px;
-
-        font-size: 22px;
-
-    }
-
-
-    .composer-send-button {
-
-        width: 40px;
-
-        height: 40px;
-
-        flex-basis: 40px;
-
-        font-size: 19px;
-
-    }
-
-}
-
-
-@media (max-width: 380px) {
-
-    .post-modal-title span {
-
-        display: none;
-
-    }
-
-
-    .post-modal-body {
-
-        padding: 10px;
-
-    }
-
-
-    .character-counter {
-
-        font-size: 9px;
-
-    }
-
-}
-
-</style>
-
-
-
-<!-- =========================================================
-     JAVASCRIPT
-========================================================= -->
-
-<script>
-
-(function () {
-
-    "use strict";
-
-
-    function initializePostModal() {
-
-
-        /* =====================================================
-           BASIC ELEMENTS
-        ====================================================== */
-
-        const modal =
-            document.getElementById("postModal");
-
-        const openComposer =
-            document.getElementById("openPostComposer");
-
-        const closeButton =
-            document.getElementById("closePostModal");
-
-        const titleInput =
-            document.getElementById("postTitle");
-
-        const hiddenTitle =
-            document.getElementById("postTitleHidden");
-
-        const textarea =
-            document.getElementById("postText");
-
-        const imageInput =
-            document.getElementById("postImages");
-
-        const previewContainer =
-            document.getElementById(
-                "imagePreviewContainer"
-            );
-
-        const previewGrid =
-            document.getElementById(
-                "imagePreviewGrid"
-            );
-
-        const characterCounter =
-            document.getElementById(
-                "characterCounter"
-            );
-
-        const sendButton =
-            document.getElementById(
-                "submitPostButton"
-            );
-
-        const form =
-            document.getElementById(
-                "postForm"
-            );
-
-
-
-        /* =====================================================
-           TARGET ELEMENTS
-        ====================================================== */
-
-        const targetCategory =
-            document.getElementById(
-                "targetCategory"
-            );
-
-        const targetPhaseTwo =
-            document.getElementById(
-                "targetPhaseTwo"
-            );
-
-        const targetDairySelect =
-            document.getElementById(
-                "targetDairySelect"
-            );
-
-        const targetSelectionHint =
-            document.getElementById(
-                "targetSelectionHint"
-            );
-
-        const targetDairyId =
-            document.getElementById(
-                "targetDairyId"
-            );
-
-        const selectedTargetDisplay =
-            document.getElementById(
-                "selectedTargetDisplay"
-            );
-
-        const selectedTargetName =
-            document.getElementById(
-                "selectedTargetName"
-            );
-
-        const postTargetHeader =
-            document.getElementById(
-                "postTargetHeader"
-            );
-
-
-
-        /* =====================================================
-           REQUIRED BASIC ELEMENTS
-        ====================================================== */
-
-        if (
-            !modal ||
-            !openComposer ||
-            !closeButton ||
-            !titleInput ||
-            !hiddenTitle ||
-            !textarea ||
-            !imageInput ||
-            !previewContainer ||
-            !previewGrid ||
-            !characterCounter ||
-            !sendButton ||
-            !form
-        ) {
-
-            console.error(
-                "CREATE POST: required elements missing."
-            );
-
-            return;
-
-        }
-
-
-
-        /* =====================================================
-           AVAILABLE DAIRIES
-
-           Accept any of these controller variable names:
-
-               dairies
-               allDairies
-               targetDairies
-
-           The first available one is used.
-        ====================================================== */
-
-        const serverDairies =
-            <%- JSON.stringify(
-                typeof dairies !== "undefined"
-                    ? dairies
-                    : (
-                        typeof allDairies !== "undefined"
-                            ? allDairies
-                            : (
-                                typeof targetDairies !== "undefined"
-                                    ? targetDairies
-                                    : []
-                            )
-                    )
-            ) %>;
-
-
-        /*
-         * Convert Mongoose documents into simple
-         * browser-safe objects.
-         */
-
-        const availableDairies =
-            Array.isArray(serverDairies)
-                ? serverDairies.map(
-                    function (item) {
-
-                        if (!item) {
-                            return null;
+// ==========================================================
+// GET POST TARGETS
+// ==========================================================
+//
+// PURPOSE:
+//
+//     Supplies the records required by create-post.ejs
+//     Phase 2.
+//
+// RETURNS:
+//
+//     {
+//         animals: [...],
+//         structures: [...]
+//     }
+//
+// IMPORTANT:
+//
+//     Negative-code records are NEVER returned.
+//
+//     Animals:
+//
+//         code > 0
+//
+//     Structures / Facilities / Tools:
+//
+//         no code
+//
+// ==========================================================
+
+exports.getPostTargets =
+async () => {
+
+    // ======================================================
+    // FETCH ONLY POSSIBLE POST TARGETS
+    // ======================================================
+    //
+    // We intentionally do not include negative-code records.
+    //
+    // The query uses $or so that both target categories are
+    // retrieved.
+    //
+    // ======================================================
+
+    const records =
+        await Dairy
+            .find({
+
+                $or: [
+
+                    // --------------------------------------
+                    // ANIMALS
+                    // --------------------------------------
+
+                    {
+                        code: {
+                            $gt: 0
                         }
+                    },
 
-                        return {
 
-                            _id:
-                                item._id
-                                    ? String(item._id)
-                                    : "",
+                    // --------------------------------------
+                    // STRUCTURE / FACILITY / TOOL
+                    //
+                    // Missing code
+                    // --------------------------------------
 
-                            name:
-                                item.name
-                                    ? String(item.name)
-                                    : "Unnamed",
-
-                            code:
-                                item.code
-
-                        };
-
-                    }
-                ).filter(
-                    function (item) {
-
-                        return (
-                            item &&
-                            item._id
-                        );
-
-                    }
-                )
-                : [];
-
-
-
-        console.log(
-            "CREATE POST: available target records:",
-            availableDairies
-        );
-
-
-
-        /* =====================================================
-           OPEN
-        ====================================================== */
-
-        function openModal() {
-
-            modal.classList.add(
-                "active"
-            );
-
-            modal.setAttribute(
-                "aria-hidden",
-                "false"
-            );
-
-            document.body.style.overflow =
-                "hidden";
-
-
-            setTimeout(
-                function () {
-
-                    if (
-                        targetCategory
-                    ) {
-
-                        targetCategory.focus();
-
-                    } else {
-
-                        titleInput.focus();
-
-                    }
-
-                },
-                100
-            );
-
-        }
-
-
-
-        /* =====================================================
-           CLOSE
-        ====================================================== */
-
-        function closeModal() {
-
-            modal.classList.remove(
-                "active"
-            );
-
-            modal.setAttribute(
-                "aria-hidden",
-                "true"
-            );
-
-            document.body.style.overflow =
-                "";
-
-        }
-
-
-
-        /* =====================================================
-           CHARACTER COUNTER
-        ====================================================== */
-
-        function updateCharacterCounter() {
-
-            characterCounter.textContent =
-                textarea.value.length +
-                "/1000";
-
-        }
-
-
-
-        /* =====================================================
-           SEND BUTTON
-        ====================================================== */
-
-        function updateSendButton() {
-
-            const hasTitle =
-                titleInput.value.trim().length > 0;
-
-
-            const hasText =
-                textarea.value.trim().length > 0;
-
-
-            const hasImages =
-                imageInput.files &&
-                imageInput.files.length > 0;
-
-
-            let hasTarget =
-                true;
-
-
-            /*
-             * Negative-code pages have a hidden
-             * targetDairyId which must contain
-             * the selected target.
-             */
-
-            if (
-                targetDairyId &&
-                targetCategory
-            ) {
-
-                hasTarget =
-                    targetDairyId.value.trim()
-                        .length > 0;
-
-            }
-
-
-            sendButton.disabled =
-                !(
-                    hasTarget &&
-                    (
-                        hasTitle ||
-                        hasText ||
-                        hasImages
-                    )
-                );
-
-        }
-
-
-
-        /* =====================================================
-           TEXTAREA RESIZE
-        ====================================================== */
-
-        function resizeTextarea() {
-
-            textarea.style.height =
-                "auto";
-
-
-            const height =
-                Math.min(
-                    textarea.scrollHeight,
-                    120
-                );
-
-
-            textarea.style.height =
-                height + "px";
-
-        }
-
-
-
-        /* =====================================================
-           IMAGE PREVIEWS
-        ====================================================== */
-
-        function renderPreviews() {
-
-            previewGrid.innerHTML =
-                "";
-
-
-            const files =
-                Array.from(
-                    imageInput.files || []
-                );
-
-
-            if (
-                files.length === 0
-            ) {
-
-                previewContainer.hidden =
-                    true;
-
-                return;
-
-            }
-
-
-            previewContainer.hidden =
-                false;
-
-
-            files.forEach(
-                function (file) {
-
-                    if (
-                        !file.type.startsWith(
-                            "image/"
-                        )
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    const reader =
-                        new FileReader();
-
-
-                    reader.onload =
-                        function (event) {
-
-                            const item =
-                                document.createElement(
-                                    "div"
-                                );
-
-                            item.className =
-                                "image-preview-item";
-
-
-                            const image =
-                                document.createElement(
-                                    "img"
-                                );
-
-                            image.src =
-                                event.target.result;
-
-                            image.alt =
-                                "Selected image";
-
-
-                            item.appendChild(
-                                image
-                            );
-
-
-                            previewGrid.appendChild(
-                                item
-                            );
-
-                        };
-
-
-                    reader.readAsDataURL(
-                        file
-                    );
-
-                }
-            );
-
-        }
-
-
-
-        /* =====================================================
-           RESET PHASE 2
-        ====================================================== */
-
-        function resetTargetSelection() {
-
-            if (
-                !targetDairySelect
-            ) {
-
-                return;
-
-            }
-
-
-            targetDairySelect.innerHTML =
-                '<option value="">Select a subject</option>';
-
-
-            /*
-             * IMPORTANT:
-             *
-             * Phase 2 is disabled ONLY because
-             * no category has been selected.
-             *
-             * Once a category is selected,
-             * disabled is explicitly set to false.
-             */
-
-            targetDairySelect.disabled =
-                true;
-
-
-            if (
-                targetDairyId
-            ) {
-
-                targetDairyId.value =
-                    "";
-
-            }
-
-
-            if (
-                selectedTargetDisplay
-            ) {
-
-                selectedTargetDisplay.hidden =
-                    true;
-
-            }
-
-
-            if (
-                selectedTargetName
-            ) {
-
-                selectedTargetName.textContent =
-                    "";
-
-            }
-
-
-            if (
-                postTargetHeader
-            ) {
-
-                postTargetHeader.textContent =
-                    "<%= dairy.name %>";
-
-            }
-
-
-            if (
-                targetSelectionHint
-            ) {
-
-                targetSelectionHint.textContent =
-                    "Choose a category above.";
-
-            }
-
-        }
-
-
-
-        /* =====================================================
-           POPULATE PHASE 2
-
-           THIS IS THE IMPORTANT FIX.
-
-           The select is ACTIVELY POPULATED and then
-           explicitly enabled.
-        ====================================================== */
-
-        function populateTargetList(
-            category
-        ) {
-
-            if (
-                !targetDairySelect ||
-                !targetPhaseTwo
-            ) {
-
-                return;
-
-            }
-
-
-            /*
-             * Clear existing options.
-             */
-
-            targetDairySelect.innerHTML =
-                "";
-
-
-            /*
-             * Always show Phase 2 after a category
-             * has been selected.
-             */
-
-            targetPhaseTwo.hidden =
-                false;
-
-
-            /*
-             * No category:
-             * disable selector.
-             */
-
-            if (!category) {
-
-                targetDairySelect.disabled =
-                    true;
-
-
-                const option =
-                    document.createElement(
-                        "option"
-                    );
-
-                option.value =
-                    "";
-
-                option.textContent =
-                    "Select a subject";
-
-                targetDairySelect.appendChild(
-                    option
-                );
-
-
-                if (
-                    targetSelectionHint
-                ) {
-
-                    targetSelectionHint.textContent =
-                        "Choose a category above.";
-
-                }
-
-
-                clearSelectedTarget();
-
-                updateSendButton();
-
-                return;
-
-            }
-
-
-
-            /* =================================================
-               FILTER TARGETS
-            ================================================== */
-
-            const matchingDairies =
-                availableDairies.filter(
-                    function (item) {
-
-                        if (
-                            !item
-                        ) {
-
-                            return false;
-
+                    {
+                        code: {
+                            $exists: false
                         }
+                    },
 
 
-                        const code =
-                            item.code;
+                    // --------------------------------------
+                    // Explicit null
+                    // --------------------------------------
 
-
-
-                        /* =====================================
-                           ANIMAL
-                        ====================================== */
-
-                        if (
-                            category === "animal"
-                        ) {
-
-                            return (
-                                code !== null &&
-                                code !== undefined &&
-                                code !== "" &&
-                                Number(code) > 0
-                            );
-
-                        }
-
-
-
-                        /* =====================================
-                           STRUCTURE / FACILITY / TOOL
-                        ====================================== */
-
-                        if (
-                            category === "structure"
-                        ) {
-
-                            return (
-                                code === null ||
-                                code === undefined ||
-                                code === ""
-                            );
-
-                        }
-
-
-                        return false;
-
+                    {
+                        code: null
                     }
-                );
+
+                ]
+
+            })
+            .select(
+                "_id name code profileImage dateOfBirth mass isMilking"
+            )
+            .sort({
+                name: 1
+            })
+            .lean();
 
 
 
-            /* =================================================
-               DEFAULT OPTION
-            ================================================== */
+    // ======================================================
+    // SEPARATE TARGET CATEGORIES
+    // ======================================================
 
-            const defaultOption =
-                document.createElement(
-                    "option"
-                );
+    const animals = [];
 
-            defaultOption.value =
-                "";
-
-            defaultOption.textContent =
-                category === "animal"
-                    ? "Select an animal"
-                    : "Select a structure / facility / tool";
-
-            targetDairySelect.appendChild(
-                defaultOption
-            );
+    const structures = [];
 
 
 
-            /* =================================================
-               ADD REAL TARGET OPTIONS
-            ================================================== */
+    records.forEach(
+        function (record) {
 
-            matchingDairies.forEach(
-                function (item) {
-
-                    const option =
-                        document.createElement(
-                            "option"
-                        );
-
-
-                    option.value =
-                        item._id;
-
-
-                    option.textContent =
-                        item.name;
-
-
-                    /*
-                     * Store category and code as data
-                     * attributes too.
-                     */
-
-                    option.dataset.category =
-                        category;
-
-
-                    option.dataset.code =
-                        item.code === null ||
-                        item.code === undefined
-                            ? ""
-                            : String(item.code);
-
-
-                    targetDairySelect.appendChild(
-                        option
-                    );
-
-                }
-            );
-
-
-
-            /* =================================================
-               IMPORTANT FIX:
-               ENABLE PHASE 2.
-
-               DO NOT LEAVE THIS DISABLED.
-            ================================================== */
-
-            targetDairySelect.disabled =
-                false;
-
-
-
-            /* =================================================
-               HINT
-            ================================================== */
+            // ----------------------------------------------
+            // ANIMAL
+            // ----------------------------------------------
 
             if (
-                targetSelectionHint
+                isAnimal(record)
             ) {
 
-                if (
-                    matchingDairies.length > 0
-                ) {
-
-                    targetSelectionHint.textContent =
-                        category === "animal"
-                            ? (
-                                matchingDairies.length +
-                                " animal" +
-                                (
-                                    matchingDairies.length === 1
-                                        ? ""
-                                        : "s"
-                                ) +
-                                " available."
-                            )
-                            : (
-                                matchingDairies.length +
-                                " structure / facility / tool" +
-                                (
-                                    matchingDairies.length === 1
-                                        ? ""
-                                        : "s"
-                                ) +
-                                " available."
-                            );
-
-                } else {
-
-                    /*
-                     * The selector STILL remains enabled.
-                     * We do NOT turn it into a read-only field.
-                     */
-
-                    targetSelectionHint.textContent =
-                        category === "animal"
-                            ? "No animals are available in the supplied Dairy records."
-                            : "No structures, facilities, or tools are available in the supplied Dairy records.";
-
-                }
-
-            }
-
-
-            clearSelectedTarget();
-
-            updateSendButton();
-
-        }
-
-
-
-        /* =====================================================
-           SELECT TARGET
-        ====================================================== */
-
-        function handleTargetSelection() {
-
-            if (
-                !targetDairySelect ||
-                !targetDairyId
-            ) {
+                animals.push(record);
 
                 return;
 
             }
 
 
-            const selectedId =
-                targetDairySelect.value.trim();
-
-
-            /*
-             * Nothing selected.
-             */
-
-            if (!selectedId) {
-
-                clearSelectedTarget();
-
-                updateSendButton();
-
-                return;
-
-            }
-
-
-            const selectedDairy =
-                availableDairies.find(
-                    function (item) {
-
-                        return (
-                            String(item._id) ===
-                            String(selectedId)
-                        );
-
-                    }
-                );
-
-
-            /*
-             * Safety check.
-             */
-
-            if (!selectedDairy) {
-
-                console.error(
-                    "CREATE POST: selected target was not found:",
-                    selectedId
-                );
-
-                clearSelectedTarget();
-
-                updateSendButton();
-
-                return;
-
-            }
-
-
-
-            /* =================================================
-               STORE TARGET ID
-            ================================================== */
-
-            targetDairyId.value =
-                selectedDairy._id;
-
-
-
-            /* =================================================
-               SHOW SELECTED TARGET
-            ================================================== */
+            // ----------------------------------------------
+            // STRUCTURE / FACILITY / TOOL
+            // ----------------------------------------------
 
             if (
-                selectedTargetName
+                isStructureFacilityTool(record)
             ) {
 
-                selectedTargetName.textContent =
-                    selectedDairy.name;
-
-            }
-
-
-            if (
-                selectedTargetDisplay
-            ) {
-
-                selectedTargetDisplay.hidden =
-                    false;
-
-            }
-
-
-            if (
-                postTargetHeader
-            ) {
-
-                postTargetHeader.textContent =
-                    selectedDairy.name;
-
-            }
-
-
-            updateSendButton();
-
-        }
-
-
-
-        /* =====================================================
-           CLEAR TARGET
-        ====================================================== */
-
-        function clearSelectedTarget() {
-
-            if (
-                targetDairyId &&
-                targetCategory
-            ) {
-
-                targetDairyId.value =
-                    "";
-
-            }
-
-
-            if (
-                selectedTargetName
-            ) {
-
-                selectedTargetName.textContent =
-                    "";
-
-            }
-
-
-            if (
-                selectedTargetDisplay
-            ) {
-
-                selectedTargetDisplay.hidden =
-                    true;
-
-            }
-
-
-            if (
-                postTargetHeader &&
-                targetCategory
-            ) {
-
-                postTargetHeader.textContent =
-                    "<%= dairy.name %>";
+                structures.push(record);
 
             }
 
         }
+    );
 
 
 
-        /* =====================================================
-           TITLE
-        ====================================================== */
+    // ======================================================
+    // RETURN
+    // ======================================================
 
-        titleInput.addEventListener(
-            "input",
-            function () {
+    return {
 
-                hiddenTitle.value =
-                    titleInput.value;
+        animals,
 
-                updateSendButton();
+        structures
 
-            }
-        );
+    };
 
+};
 
 
-        /* =====================================================
-           TEXT
-        ====================================================== */
 
-        textarea.addEventListener(
-            "input",
-            function () {
+// ==========================================================
+// GET ALL POST TARGETS
+// ==========================================================
+//
+// This function is useful when the controller wants a single
+// array to send to create-post.ejs.
+//
+// The EJS can then perform its own category filtering.
+//
+// ==========================================================
 
-                updateCharacterCounter();
+exports.getAllPostTargets =
+async () => {
 
-                resizeTextarea();
+    const targets =
+        await exports.getPostTargets();
 
-                updateSendButton();
 
-            }
-        );
 
+    return [
 
+        ...targets.animals,
 
-        /* =====================================================
-           PHASE 1
-        ====================================================== */
+        ...targets.structures
 
-        if (
-            targetCategory
-        ) {
+    ];
 
-            targetCategory.addEventListener(
-                "change",
-                function () {
+};
 
-                    populateTargetList(
-                        targetCategory.value
-                    );
 
-                }
-            );
 
-        }
+// ==========================================================
+// GET SINGLE POST TARGET
+// ==========================================================
+//
+// PURPOSE:
+//
+//     Safely resolve a target Dairy by ID.
+//
+//     This is useful for controller/service validation.
+//
+// ==========================================================
 
+exports.getPostTargetById =
+async (
+    dairyId
+) => {
 
-
-        /* =====================================================
-           PHASE 2
-        ====================================================== */
-
-        if (
-            targetDairySelect
-        ) {
-
-            targetDairySelect.addEventListener(
-                "change",
-                handleTargetSelection
-            );
-
-        }
-
-
-
-        /* =====================================================
-           OPEN
-        ====================================================== */
-
-        openComposer.addEventListener(
-            "click",
-            openModal
-        );
-
-
-        openComposer.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key === "Enter" ||
-                    event.key === " "
-                ) {
-
-                    event.preventDefault();
-
-                    openModal();
-
-                }
-
-            }
-        );
-
-
-
-        /* =====================================================
-           CLOSE
-        ====================================================== */
-
-        closeButton.addEventListener(
-            "click",
-            closeModal
-        );
-
-
-
-        /* =====================================================
-           ESCAPE
-        ====================================================== */
-
-        document.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key === "Escape" &&
-                    modal.classList.contains(
-                        "active"
-                    )
-                ) {
-
-                    closeModal();
-
-                }
-
-            }
-        );
-
-
-
-        /* =====================================================
-           IMAGE INPUT
-        ====================================================== */
-
-        imageInput.addEventListener(
-            "change",
-            function () {
-
-                renderPreviews();
-
-                updateSendButton();
-
-            }
-        );
-
-
-
-        /* =====================================================
-           FORM SUBMIT
-        ====================================================== */
-
-        form.addEventListener(
-            "submit",
-            function (event) {
-
-                hiddenTitle.value =
-                    titleInput.value.trim();
-
-
-                const title =
-                    titleInput.value.trim();
-
-
-                const text =
-                    textarea.value.trim();
-
-
-                const hasImages =
-                    imageInput.files &&
-                    imageInput.files.length > 0;
-
-
-
-                /*
-                 * NEGATIVE-CODE PAGE:
-                 * target is mandatory.
-                 */
-
-                if (
-                    targetCategory &&
-                    targetDairyId &&
-                    !targetDairyId.value.trim()
-                ) {
-
-                    event.preventDefault();
-
-                    alert(
-                        "Please select what this update is about."
-                    );
-
-                    return;
-
-                }
-
-
-
-                /*
-                 * POST CONTENT VALIDATION.
-                 */
-
-                if (
-                    !title &&
-                    !text &&
-                    !hasImages
-                ) {
-
-                    event.preventDefault();
-
-                    return;
-
-                }
-
-
-                sendButton.disabled =
-                    true;
-
-
-                sendButton.innerHTML =
-                    '<i class="bi bi-hourglass-split"></i>';
-
-            }
-        );
-
-
-
-        /* =====================================================
-           INITIAL STATE
-        ====================================================== */
-
-        updateCharacterCounter();
-
-        resizeTextarea();
-
-        /*
-         * Positive-code page:
-         * targetDairyId already contains dairy._id.
-         *
-         * Negative-code page:
-         * targetDairyId remains empty until Phase 2.
-         */
-
-        updateSendButton();
-
-    }
-
-
-
-    /* =========================================================
-       DOM READY
-    ========================================================= */
+    // ======================================================
+    // VALIDATE ID
+    // ======================================================
 
     if (
-        document.readyState === "loading"
+        !dairyId ||
+        !mongoose.Types.ObjectId.isValid(
+            dairyId
+        )
     ) {
 
-        document.addEventListener(
-            "DOMContentLoaded",
-            initializePostModal
-        );
-
-    } else {
-
-        initializePostModal();
+        return null;
 
     }
 
-})();
 
-</script>
+
+    // ======================================================
+    // FIND RECORD
+    // ======================================================
+
+    const dairy =
+        await Dairy
+            .findById(dairyId)
+            .select(
+                "_id name code profileImage dateOfBirth mass isMilking"
+            )
+            .lean();
+
+
+
+    if (!dairy) {
+
+        return null;
+
+    }
+
+
+
+    // ======================================================
+    // TARGET VALIDATION
+    // ======================================================
+
+    if (
+        !isValidPostTarget(dairy)
+    ) {
+
+        return null;
+
+    }
+
+
+
+    return dairy;
+
+};
+
+
+
+// ==========================================================
+// CREATE POST
+// ==========================================================
+//
+// Creates a normal feed post.
+//
+// REQUIRED:
+//
+//     dairyId
+//         Actual Dairy record that the post concerns.
+//
+//     userId
+//         Authenticated user.
+//
+// SUPPORTS:
+//
+//     title
+//     text
+//     images[]
+//
+// ==========================================================
+
+exports.createPost =
+async ({
+
+    dairyId,
+
+    userId,
+
+    userName,
+
+    userImage = "",
+
+    title,
+
+    text,
+
+    images = []
+
+}) => {
+
+
+    // ======================================================
+    // VALIDATE DAIRY ID
+    // ======================================================
+
+    if (
+        !dairyId ||
+        !mongoose.Types.ObjectId.isValid(
+            dairyId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid post Dairy."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // VERIFY TARGET DAIRY EXISTS
+    // ======================================================
+
+    const dairy =
+        await Dairy
+            .findById(dairyId)
+            .select(
+                "_id name code"
+            );
+
+
+
+    if (!dairy) {
+
+        throw new Error(
+            "Post Dairy not found."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // VERIFY TARGET IS VALID
+    // ======================================================
+    //
+    // The controller should already have performed this
+    // validation.
+    //
+    // The service repeats it because the service is the final
+    // persistence boundary.
+    //
+    // ======================================================
+
+    if (
+        !isValidPostTarget(dairy)
+    ) {
+
+        throw new Error(
+            "The selected Dairy cannot be a post target."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // USER ID VALIDATION
+    // ======================================================
+
+    if (
+        !userId ||
+        !mongoose.Types.ObjectId.isValid(
+            userId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid post author."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // RESOLVE USER INFORMATION
+    // ======================================================
+
+    let resolvedUserName =
+        typeof userName === "string"
+            ? userName.trim()
+            : "";
+
+
+    let resolvedUserImage =
+        typeof userImage === "string"
+            ? userImage.trim()
+            : "";
+
+
+
+    // ======================================================
+    // GET CURRENT USER
+    // ======================================================
+    //
+    // Do not rely entirely on browser/session values.
+    //
+    // The database is the source of truth.
+    //
+    // ======================================================
+
+    const user =
+        await ProjectUser
+            .findById(userId)
+            .select(
+                "name profileImage"
+            );
+
+
+
+    if (user) {
+
+        // --------------------------------------------------
+        // NAME
+        // --------------------------------------------------
+
+        if (
+            user.name
+        ) {
+
+            resolvedUserName =
+                user.name;
+
+        }
+
+
+        // --------------------------------------------------
+        // IMAGE
+        // --------------------------------------------------
+
+        if (
+            user.profileImage
+        ) {
+
+            resolvedUserImage =
+                user.profileImage;
+
+        }
+
+    }
+
+
+
+    // ======================================================
+    // NORMALIZE TITLE
+    // ======================================================
+
+    const normalizedTitle =
+        typeof title === "string"
+            ? title.trim()
+            : "";
+
+
+
+    // ======================================================
+    // NORMALIZE TEXT
+    // ======================================================
+
+    const normalizedText =
+        typeof text === "string"
+            ? text.trim()
+            : "";
+
+
+
+    // ======================================================
+    // NORMALIZE IMAGES
+    // ======================================================
+
+    const normalizedImages =
+        Array.isArray(images)
+
+            ? images
+                .filter(
+                    image =>
+                        image !== null &&
+                        image !== undefined &&
+                        String(image).trim() !== ""
+                )
+                .map(
+                    image =>
+                        String(image).trim()
+                )
+
+            : [];
+
+
+
+    // ======================================================
+    // VALIDATE CONTENT
+    // ======================================================
+
+    if (
+        !normalizedTitle &&
+        !normalizedText &&
+        normalizedImages.length === 0
+    ) {
+
+        throw new Error(
+            "Post title, text or image required."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // CREATE POST
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // dairy = ACTUAL TARGET
+    //
+    // NOT the originating page.
+    //
+    // ======================================================
+
+    const post =
+        await Update.create({
+
+            // ----------------------------------------------
+            // TARGET
+            // ----------------------------------------------
+
+            dairy:
+                dairy._id,
+
+
+            // ----------------------------------------------
+            // AUTHOR
+            // ----------------------------------------------
+
+            user:
+                userId,
+
+
+            userName:
+                resolvedUserName,
+
+
+            userImage:
+                resolvedUserImage,
+
+
+            // ----------------------------------------------
+            // TYPE
+            // ----------------------------------------------
+
+            type:
+                "post",
+
+
+            // ----------------------------------------------
+            // CONTENT
+            // ----------------------------------------------
+
+            title:
+                normalizedTitle,
+
+
+            text:
+                normalizedText,
+
+
+            // ----------------------------------------------
+            // MULTIPLE IMAGES
+            // ----------------------------------------------
+
+            images:
+                normalizedImages,
+
+
+            // ----------------------------------------------
+            // LEGACY IMAGE FIELD
+            // ----------------------------------------------
+            //
+            // New posts use `images`.
+            //
+            // Keep legacy field empty.
+            //
+            // ----------------------------------------------
+
+            image:
+                null,
+
+
+            // ----------------------------------------------
+            // ENGAGEMENT
+            // ----------------------------------------------
+
+            likes:
+                [],
+
+
+            comments:
+                []
+
+        });
+
+
+
+    // ======================================================
+    // RETURN
+    // ======================================================
+
+    return post;
+
+};
+
+
+
+// ==========================================================
+// LIKE / UNLIKE POST
+// ==========================================================
+
+exports.toggleLike =
+async ({
+
+    postId,
+
+    userId
+
+}) => {
+
+
+    // ======================================================
+    // VALIDATE IDs
+    // ======================================================
+
+    if (
+        !postId ||
+        !mongoose.Types.ObjectId.isValid(
+            postId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid post."
+        );
+
+    }
+
+
+    if (
+        !userId ||
+        !mongoose.Types.ObjectId.isValid(
+            userId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid user."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // FIND POST
+    // ======================================================
+
+    const post =
+        await Update.findById(
+            postId
+        );
+
+
+    if (!post) {
+
+        throw new Error(
+            "Post not found."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // ENSURE LIKES ARRAY
+    // ======================================================
+
+    if (
+        !Array.isArray(
+            post.likes
+        )
+    ) {
+
+        post.likes = [];
+
+    }
+
+
+
+    // ======================================================
+    // FIND EXISTING LIKE
+    // ======================================================
+
+    const index =
+        post.likes.findIndex(
+
+            id => {
+
+                if (
+                    !id
+                ) {
+
+                    return false;
+
+                }
+
+                return (
+                    id.toString() ===
+                    userId.toString()
+                );
+
+            }
+
+        );
+
+
+
+    // ======================================================
+    // TOGGLE
+    // ======================================================
+
+    let liked =
+        false;
+
+
+
+    // ------------------------------------------------------
+    // UNLIKE
+    // ------------------------------------------------------
+
+    if (
+        index >= 0
+    ) {
+
+        post.likes.splice(
+            index,
+            1
+        );
+
+
+        liked =
+            false;
+
+    }
+
+
+
+    // ------------------------------------------------------
+    // LIKE
+    // ------------------------------------------------------
+
+    else {
+
+        post.likes.push(
+            userId
+        );
+
+
+        liked =
+            true;
+
+    }
+
+
+
+    // ======================================================
+    // SAVE
+    // ======================================================
+
+    await post.save();
+
+
+
+    // ======================================================
+    // RETURN
+    // ======================================================
+
+    return {
+
+        liked,
+
+        likes:
+            post.likes.length
+
+    };
+
+};
+
+
+
+// ==========================================================
+// ADD COMMENT TO POST
+// ==========================================================
+
+exports.addPostComment =
+async ({
+
+    postId,
+
+    userId,
+
+    userName,
+
+    userImage = "",
+
+    text
+
+}) => {
+
+
+    // ======================================================
+    // VALIDATE POST ID
+    // ======================================================
+
+    if (
+        !postId ||
+        !mongoose.Types.ObjectId.isValid(
+            postId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid post."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // VALIDATE USER ID
+    // ======================================================
+
+    if (
+        !userId ||
+        !mongoose.Types.ObjectId.isValid(
+            userId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid comment author."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // FIND POST
+    // ======================================================
+
+    const post =
+        await Update.findById(
+            postId
+        );
+
+
+    if (!post) {
+
+        throw new Error(
+            "Post not found."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // NORMALIZE TEXT
+    // ======================================================
+
+    const normalizedText =
+        typeof text === "string"
+            ? text.trim()
+            : "";
+
+
+
+    if (!normalizedText) {
+
+        throw new Error(
+            "Comment text required."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // ENSURE COMMENTS ARRAY
+    // ======================================================
+
+    if (
+        !Array.isArray(
+            post.comments
+        )
+    ) {
+
+        post.comments = [];
+
+    }
+
+
+
+    // ======================================================
+    // RESOLVE USER
+    // ======================================================
+
+    let resolvedUserName =
+        typeof userName === "string"
+            ? userName.trim()
+            : "";
+
+
+    let resolvedUserImage =
+        typeof userImage === "string"
+            ? userImage.trim()
+            : "";
+
+
+
+    const user =
+        await ProjectUser
+            .findById(userId)
+            .select(
+                "name profileImage"
+            );
+
+
+
+    if (user) {
+
+        if (
+            user.name
+        ) {
+
+            resolvedUserName =
+                user.name;
+
+        }
+
+
+        if (
+            user.profileImage
+        ) {
+
+            resolvedUserImage =
+                user.profileImage;
+
+        }
+
+    }
+
+
+
+    // ======================================================
+    // CREATE COMMENT
+    // ======================================================
+
+    const comment = {
+
+        userId:
+            userId,
+
+        userName:
+            resolvedUserName,
+
+        userImage:
+            resolvedUserImage,
+
+        text:
+            normalizedText,
+
+        createdAt:
+            new Date()
+
+    };
+
+
+
+    // ======================================================
+    // ADD
+    // ======================================================
+
+    post.comments.push(
+        comment
+    );
+
+
+
+    // ======================================================
+    // SAVE
+    // ======================================================
+
+    await post.save();
+
+
+
+    // ======================================================
+    // RETURN FORMATTED COMMENT
+    // ======================================================
+
+    return formatComment(
+        comment
+    );
+
+};
+
+
+
+// ==========================================================
+// DELETE POST
+// ==========================================================
+
+exports.deletePost =
+async ({
+
+    postId,
+
+    user
+
+}) => {
+
+
+    // ======================================================
+    // VALIDATE
+    // ======================================================
+
+    if (
+        !postId ||
+        !mongoose.Types.ObjectId.isValid(
+            postId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid post."
+        );
+
+    }
+
+
+
+    if (
+        !user ||
+        !user._id
+    ) {
+
+        throw new Error(
+            "Unauthorized."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // FIND POST
+    // ======================================================
+
+    const post =
+        await Update.findById(
+            postId
+        );
+
+
+    if (!post) {
+
+        throw new Error(
+            "Post not found."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // OWNER
+    // ======================================================
+
+    const owner =
+        post.user &&
+        String(post.user) ===
+        String(user._id);
+
+
+
+    // ======================================================
+    // ADMIN
+    // ======================================================
+
+    const admin =
+        user.role === "admin";
+
+
+
+    // ======================================================
+    // AUTHORIZATION
+    // ======================================================
+
+    if (
+        !owner &&
+        !admin
+    ) {
+
+        throw new Error(
+            "Not authorized."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // DELETE
+    // ======================================================
+
+    await Update.findByIdAndDelete(
+        postId
+    );
+
+
+
+    return true;
+
+};
+
+
+
+// ==========================================================
+// DELETE COMMENT
+// ==========================================================
+
+exports.deleteComment =
+async ({
+
+    commentId,
+
+    user
+
+}) => {
+
+
+    // ======================================================
+    // VALIDATE COMMENT ID
+    // ======================================================
+
+    if (
+        !commentId ||
+        !mongoose.Types.ObjectId.isValid(
+            commentId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid comment."
+        );
+
+    }
+
+
+
+    if (
+        !user ||
+        !user._id
+    ) {
+
+        throw new Error(
+            "Unauthorized."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // FIND POST
+    // ======================================================
+
+    const post =
+        await Update.findOne({
+
+            "comments._id":
+                commentId
+
+        });
+
+
+
+    if (!post) {
+
+        throw new Error(
+            "Comment not found."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // FIND COMMENT
+    // ======================================================
+
+    const comment =
+        post.comments.find(
+
+            c => {
+
+                return (
+                    c &&
+                    c._id &&
+                    String(c._id) ===
+                    String(commentId)
+                );
+
+            }
+
+        );
+
+
+
+    if (!comment) {
+
+        throw new Error(
+            "Comment not found."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // OWNER
+    // ======================================================
+
+    const owner =
+        comment.userId &&
+        String(comment.userId) ===
+        String(user._id);
+
+
+
+    // ======================================================
+    // ADMIN
+    // ======================================================
+
+    const admin =
+        user.role === "admin";
+
+
+
+    // ======================================================
+    // AUTHORIZATION
+    // ======================================================
+
+    if (
+        !owner &&
+        !admin
+    ) {
+
+        throw new Error(
+            "Not authorized."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // REMOVE COMMENT
+    // ======================================================
+
+    post.comments =
+        post.comments.filter(
+
+            c => {
+
+                return !(
+                    c &&
+                    c._id &&
+                    String(c._id) ===
+                    String(commentId)
+                );
+
+            }
+
+        );
+
+
+
+    // ======================================================
+    // SAVE
+    // ======================================================
+
+    await post.save();
+
+
+
+    return true;
+
+};
+
+
+
+// ==========================================================
+// EXPORT TARGET VALIDATION HELPERS
+// ==========================================================
+//
+// These are intentionally exposed so the controller can use
+// exactly the same target rules as the service.
+//
+// ==========================================================
+
+exports.isAnimal =
+    isAnimal;
+
+
+exports.isStructureFacilityTool =
+    isStructureFacilityTool;
+
+
+exports.isValidPostTarget =
+    isValidPostTarget;
