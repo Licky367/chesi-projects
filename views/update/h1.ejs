@@ -6,31 +6,40 @@ FILE:
 views/update/h1.ejs
 
 PURPOSE:
-Personalized editorial hero section for a Dairy Farm.
+Dashboard-style personalized introduction for a Dairy Farm.
 
 DATA REQUIRED:
 dairy
 user
 
-ROLE BEHAVIOUR:
+BEHAVIOUR:
 
 dairyWorker:
-    Personalized welcome using the user's name.
+    Hello, [first name]
+    Welcome to [dairy name].
+    Existing farm message remains.
 
 admin:
-    Introduces the page as the home page for dairy
-    workers assigned to this farm.
+    Hello, [first name]
+    This is the homepage for dairy workers assigned
+    to [dairy name].
+    Existing farm message remains.
+
+The background logo gently expands and contracts to
+create a subtle "breathing" / bulging effect.
 
 ==========================================================
 */ %>
+
 
 <section
     class="dairy-h1"
     aria-label="Dairy Farm Introduction"
 >
 
+
     <!-- =================================================
-         BACKGROUND LOGO
+         ANIMATED BACKGROUND LOGO
     ================================================== -->
 
     <div
@@ -47,82 +56,178 @@ admin:
     </div>
 
 
-    <!-- =================================================
-         DECORATIVE SIDE ACCENT
-    ================================================== -->
-
-    <div
-        class="dairy-h1-accent"
-        aria-hidden="true"
-    ></div>
-
 
     <!-- =================================================
-         CONTENT
+         MAIN CONTENT
     ================================================== -->
 
     <div class="dairy-h1-content">
 
+
         <!-- =================================================
-             SMALL SECTION LABEL
+             WELCOME PILL
         ================================================== -->
 
-        <div class="dairy-h1-label">
+        <div class="dairy-h1-welcome">
 
-            <span class="dairy-h1-label-line"></span>
+            Welcome Back
 
-            <span>DAIRY FARM</span>
-
-            <span class="dairy-h1-label-line"></span>
+            <span aria-hidden="true">
+                👋
+            </span>
 
         </div>
 
 
+
         <!-- =================================================
-             PERSONALIZED HEADING
+             PERSONAL GREETING
+        ================================================== -->
+
+        <h1 class="dairy-h1-greeting">
+
+            Hello,
+
+            <span>
+                <%= user && user.name
+                    ? user.name.split(" ")[0]
+                    : "there" %>
+            </span>
+
+        </h1>
+
+
+
+        <!-- =================================================
+             INTRODUCTION
         ================================================== -->
 
         <% if (user && user.role === "admin") { %>
 
-            <div class="dairy-h1-greeting">
-                DAIRY MANAGEMENT SPACE
-            </div>
+            <p class="dairy-h1-introduction">
 
-            <h1 class="dairy-h1-title">
+                This is the homepage for all dairy workers
+                assigned to
 
-                Welcome to
+                <strong>
+                    <%= dairy.name || "this dairy farm" %>
+                </strong>.
 
-                <span>
-                    <%= dairy.name || "this Dairy Farm" %>
-                </span>
+                Go through their updates, observations and
+                conversations to see what is happening
+                across the farm.
 
-            </h1>
+            </p>
 
         <% } else { %>
 
-            <div class="dairy-h1-greeting">
-
-                <%= user && user.name
-                    ? user.name.split(" ")[0]
-                    : "Welcome" %>
-
-                <span class="greeting-dot">•</span>
-
-                WELCOME
-
-            </div>
-
-            <h1 class="dairy-h1-title">
+            <p class="dairy-h1-introduction">
 
                 Welcome to
 
-                <span>
-                    <%= dairy.name || "Our Dairy Farm" %>
-                </span>
+                <strong>
+                    <%= dairy.name || "this dairy farm" %>
+                </strong>.
 
-            </h1>
+                This is your space to stay connected with
+                the animals, assets and activities that keep
+                the farm moving.
+
+            </p>
 
         <% } %>
+
+
+
+        <!-- =================================================
+             FARM NAME
+        ================================================== -->
+
+        <div class="dairy-h1-farm">
+
+
+            <span class="dairy-h1-farm-line"></span>
+
+
+            <div>
+
+                <div class="dairy-h1-farm-label">
+                    DAIRY FARM
+                </div>
+
+                <div class="dairy-h1-farm-name">
+
+                    <%= dairy.name || "Our Dairy Farm" %>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             EXISTING FARM MESSAGE
+        ================================================== -->
+
+        <div class="dairy-h1-message">
+
+
+            <% if (user && user.role === "admin") { %>
+
+                <p>
+
+                    Explore what the dairy workers have
+                    shared about this farm and follow the
+                    activities taking place here.
+
+                </p>
+
+
+                <p>
+
+                    Their updates provide a view of the
+                    day-to-day work, observations and
+                    developments across
+
+                    <strong>
+                        <%= dairy.name || "the farm" %>
+                    </strong>.
+
+                </p>
+
+
+            <% } else { %>
+
+                <p>
+
+                    Keep an eye on the welfare of the animals,
+                    the condition of farm assets and the
+                    activities taking place around the farm.
+
+                </p>
+
+
+                <p>
+
+                    When something happens, keep us updated.
+                    Your observations help maintain a clear
+                    picture of what is happening at
+
+                    <strong>
+                        <%= dairy.name || "this farm" %>
+                    </strong>.
+
+                </p>
+
+
+            <% } %>
+
+
+        </div>
+
 
 
         <!-- =================================================
@@ -142,165 +247,49 @@ admin:
         <% } %>
 
 
-        <!-- =================================================
-             DAIRY WORKER MESSAGE
-        ================================================== -->
-
-        <% if (!user || user.role === "dairyWorker") { %>
-
-            <div class="dairy-h1-message">
-
-                <p class="dairy-h1-lead">
-
-                    <strong>
-                        <%= user && user.name
-                            ? user.name.split(" ")[0]
-                            : "Welcome" %>,
-                    </strong>
-
-                    you're now on the home page for
-
-                    <strong>
-                        <%= dairy.name || "this dairy farm" %>
-                    </strong>.
-
-                </p>
-
-
-                <p>
-
-                    This is your space to keep an eye on the
-                    animals, assets and activities that keep the
-                    farm moving.
-
-                </p>
-
-
-                <p>
-
-                    Take a look around, share updates and keep
-                    the farm's story current. Every observation
-                    helps build a clearer picture of what is
-                    happening here.
-
-                </p>
-
-            </div>
-
-
-        <!-- =================================================
-             ADMIN MESSAGE
-        ================================================== -->
-
-        <% } else if (user.role === "admin") { %>
-
-            <div class="dairy-h1-message admin-message">
-
-                <p class="dairy-h1-lead">
-
-                    This is the home page for all dairy workers
-                    assigned to
-
-                    <strong>
-                        <%= dairy.name || "this dairy farm" %>
-                    </strong>.
-
-                </p>
-
-
-                <p>
-
-                    Go through their updates, observations and
-                    conversations to see what is happening
-                    across the farm.
-
-                </p>
-
-
-                <p>
-
-                    Their updates provide a window into the
-                    day-to-day life of this dairy farm and the
-                    work being carried out here.
-
-                </p>
-
-            </div>
-
-        <% } %>
-
-
-        <!-- =================================================
-             SMALL BOTTOM MARKER
-        ================================================== -->
-
-        <div class="dairy-h1-footer">
-
-            <span></span>
-
-            <small>
-                THE CHESI FAMILY PROJECTS
-            </small>
-
-            <span></span>
-
-        </div>
-
     </div>
 
 </section>
 
 
+
 <style>
 
 /* =========================================================
-   MAIN HERO
+   MAIN INTRODUCTION AREA
+
+   IMPORTANT:
+   This intentionally does NOT look like a card.
+
+   No rounded box.
+   No heavy border.
+   No card shadow.
 ========================================================= */
 
 .dairy-h1 {
 
     position: relative;
 
-    width: calc(100% - 24px);
-    max-width: 1180px;
+    width: 100%;
 
-    min-height: 350px;
+    min-height: 390px;
 
-    margin: 12px auto 28px;
+    margin: 0;
 
     overflow: hidden;
 
-    border-radius: 22px;
-
-    /*
-       Keep the background predominantly white.
-
-       The green logo now has enough contrast to actually
-       be visible.
-    */
     background:
         linear-gradient(
-            135deg,
+            180deg,
             #ffffff 0%,
-            #ffffff 58%,
-            #f7fbf8 100%
+            #fbfdfb 100%
         );
-
-    border:
-        1px solid rgba(57, 103, 70, .10);
-
-    border-left:
-        7px solid #4d8a5d;
-
-    box-shadow:
-        0 10px 28px rgba(42, 78, 51, .10),
-        0 2px 5px rgba(42, 78, 51, .04);
 
 }
 
 
 /* =========================================================
-   INNER EDGE
+   SUBTLE BOTTOM SEPARATOR
 ========================================================= */
 
 .dairy-h1::after {
@@ -309,100 +298,149 @@ admin:
 
     position: absolute;
 
-    inset: 0;
+    left: 0;
 
-    z-index: 1;
+    right: 0;
+
+    bottom: 0;
+
+    height: 1px;
+
+    background:
+        rgba(24, 99, 43, .08);
 
     pointer-events: none;
-
-    border-radius: inherit;
-
-    box-shadow:
-        inset 0 0 25px rgba(55, 105, 67, .035);
 
 }
 
 
+
 /* =========================================================
-   BACKGROUND LOGO
+   BACKGROUND LOGO AREA
 ========================================================= */
 
 .dairy-h1-background {
 
     position: absolute;
 
-    inset: 0;
+    top: 0;
 
-    z-index: 0;
+    right: -60px;
+
+    width: 58%;
+
+    height: 100%;
 
     display: flex;
 
     align-items: center;
 
-    justify-content: flex-end;
+    justify-content: center;
 
     overflow: hidden;
 
     pointer-events: none;
 
+    z-index: 0;
+
 }
 
 
-/*
-   The old opacity of .035 made the logo almost disappear.
 
-   This is intentionally much stronger.
-*/
+/* =========================================================
+   BACKGROUND LOGO
+
+   Much more visible than the old .035 opacity.
+
+   It is green, so the white background gives it
+   enough contrast without making it overpowering.
+========================================================= */
 
 .dairy-h1-logo {
 
     display: block;
 
-    width: min(670px, 62vw);
+    width: min(590px, 55vw);
 
     height: auto;
 
-    opacity: .115;
+    opacity: .105;
 
     filter:
         saturate(1.15)
         contrast(1.05);
 
-    transform:
-        translateX(8%)
-        rotate(-2deg);
+    transform-origin: center center;
+
+    animation:
+        dairyLogoBreathing
+        7s
+        ease-in-out
+        infinite;
 
 }
+
 
 
 /* =========================================================
-   DECORATIVE ACCENT
+   LOGO "BULGING / BREATHING" ANIMATION
+
+   The logo slowly grows, relaxes, moves slightly and
+   returns to its original position.
+
+   This is deliberately slow so it feels alive rather
+   than like a distracting animation.
 ========================================================= */
 
-.dairy-h1-accent {
+@keyframes dairyLogoBreathing {
 
-    position: absolute;
+    0% {
 
-    z-index: 1;
+        transform:
+            scale(1)
+            translate3d(0, 0, 0)
+            rotate(-2deg);
 
-    right: 0;
+    }
 
-    top: 0;
+    25% {
 
-    width: 34%;
+        transform:
+            scale(1.045)
+            translate3d(-4px, -3px, 0)
+            rotate(-1deg);
 
-    height: 100%;
+    }
 
-    pointer-events: none;
+    50% {
 
-    background:
-        linear-gradient(
-            90deg,
-            transparent,
-            rgba(77, 138, 93, .025)
-        );
+        transform:
+            scale(1.085)
+            translate3d(-7px, 0, 0)
+            rotate(0deg);
+
+    }
+
+    75% {
+
+        transform:
+            scale(1.045)
+            translate3d(-4px, 3px, 0)
+            rotate(-1deg);
+
+    }
+
+    100% {
+
+        transform:
+            scale(1)
+            translate3d(0, 0, 0)
+            rotate(-2deg);
+
+    }
 
 }
+
 
 
 /* =========================================================
@@ -417,12 +455,16 @@ admin:
 
     width: 100%;
 
-    min-height: 350px;
+    max-width: 1120px;
+
+    min-height: 390px;
+
+    margin: 0 auto;
 
     padding:
-        34px
-        clamp(22px, 5vw, 60px)
-        28px;
+        42px
+        clamp(24px, 6vw, 70px)
+        38px;
 
     box-sizing: border-box;
 
@@ -430,142 +472,183 @@ admin:
 
     flex-direction: column;
 
-    justify-content: center;
-
     align-items: flex-start;
+
+    justify-content: center;
 
 }
 
 
+
 /* =========================================================
-   LABEL
+   WELCOME PILL
+
+   Inspired by the screenshot.
 ========================================================= */
 
-.dairy-h1-label {
+.dairy-h1-welcome {
 
-    display: flex;
+    display: inline-flex;
 
     align-items: center;
 
-    gap: 9px;
+    gap: 6px;
 
-    margin-bottom: 9px;
+    padding:
+        10px
+        24px;
 
-    color: #386247;
+    margin-bottom: 18px;
+
+    border-radius: 999px;
+
+    background:
+        #dcf8e7;
+
+    color:
+        #176b35;
 
     font-family:
         Arial,
         Helvetica,
         sans-serif;
 
-    font-size: 9px;
+    font-size: 15px;
 
-    font-weight: 800;
+    font-weight: 700;
 
-    letter-spacing: 2.5px;
+    letter-spacing: -.2px;
+
+}
+
+
+.dairy-h1-welcome span {
+
+    font-size: 16px;
 
 }
 
-
-.dairy-h1-label-line {
-
-    width: 27px;
-
-    height: 1px;
-
-    background:
-        rgba(56, 98, 71, .62);
-
-}
 
 
 /* =========================================================
-   PERSONAL GREETING
+   MAIN GREETING
 ========================================================= */
 
 .dairy-h1-greeting {
 
-    margin-bottom: 7px;
+    margin: 0;
 
-    color: #4d8a5d;
+    color:
+        #155c32;
 
     font-family:
         Arial,
         Helvetica,
         sans-serif;
 
-    font-size: 10px;
+    font-size:
+        clamp(42px, 6vw, 62px);
+
+    line-height: 1.05;
+
+    letter-spacing: -2.2px;
 
     font-weight: 800;
 
-    letter-spacing: 1.8px;
-
-    text-transform: uppercase;
-
 }
 
 
-.greeting-dot {
+.dairy-h1-greeting span {
 
-    display: inline-block;
-
-    margin:
-        0 5px;
-
-    color: #7ca887;
+    color:
+        #20a052;
 
 }
+
 
 
 /* =========================================================
-   TITLE
+   MAIN INTRODUCTION
+
+   This is the equivalent of the large explanatory
+   paragraph in the screenshot.
 ========================================================= */
 
-.dairy-h1-title {
+.dairy-h1-introduction {
 
-    max-width: 820px;
+    max-width: 720px;
 
-    margin: 0;
+    margin:
+        23px
+        0
+        0;
 
-    color: #263f2e;
+    color:
+        #69737d;
 
     font-family:
-        Georgia,
-        "Times New Roman",
-        serif;
+        Arial,
+        Helvetica,
+        sans-serif;
 
     font-size:
-        clamp(34px, 4.5vw, 56px);
+        clamp(15px, 1.8vw, 19px);
 
-    line-height: 1.02;
+    line-height: 1.75;
 
-    letter-spacing: -1.3px;
+    font-weight: 400;
+
+}
+
+
+.dairy-h1-introduction strong {
+
+    color:
+        #45515b;
 
     font-weight: 700;
 
 }
 
 
-.dairy-h1-title span {
 
-    display: block;
+/* =========================================================
+   FARM IDENTITY
+========================================================= */
 
-    margin-top: 4px;
+.dairy-h1-farm {
 
-    color: #37694a;
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+    margin-top: 27px;
 
 }
 
 
-/* =========================================================
-   FARM CODE
-========================================================= */
+.dairy-h1-farm-line {
 
-.dairy-h1-code {
+    width: 4px;
 
-    margin-top: 9px;
+    height: 42px;
 
-    color: #52775b;
+    border-radius: 5px;
+
+    background:
+        #20a052;
+
+}
+
+
+.dairy-h1-farm-label {
+
+    margin-bottom: 3px;
+
+    color:
+        #799080;
 
     font-family:
         Arial,
@@ -576,32 +659,54 @@ admin:
 
     font-weight: 800;
 
-    letter-spacing: 1.6px;
-
-    text-transform: uppercase;
+    letter-spacing: 2px;
 
 }
 
 
+.dairy-h1-farm-name {
+
+    color:
+        #215d37;
+
+    font-family:
+        Georgia,
+        "Times New Roman",
+        serif;
+
+    font-size:
+        clamp(19px, 2.5vw, 25px);
+
+    font-weight: 700;
+
+    line-height: 1.15;
+
+}
+
+
+
 /* =========================================================
-   MESSAGE
+   EXISTING MESSAGE
 ========================================================= */
 
 .dairy-h1-message {
 
-    max-width: 680px;
+    max-width: 700px;
 
-    margin-top: 18px;
+    margin-top: 23px;
 
 }
 
 
 .dairy-h1-message p {
 
-    margin: 0 0 7px;
+    margin:
+        0
+        0
+        8px;
 
     color:
-        rgba(39, 65, 47, .86);
+        #68737c;
 
     font-family:
         Arial,
@@ -611,9 +716,7 @@ admin:
     font-size:
         clamp(12px, 1.35vw, 14px);
 
-    line-height: 1.55;
-
-    font-weight: 400;
+    line-height: 1.6;
 
 }
 
@@ -627,74 +730,39 @@ admin:
 
 .dairy-h1-message strong {
 
-    color: #356647;
+    color:
+        #356947;
 
     font-weight: 700;
 
 }
 
 
-/* =========================================================
-   LEAD MESSAGE
-========================================================= */
-
-.dairy-h1-message .dairy-h1-lead {
-
-    color: #2d4d36;
-
-    font-size:
-        clamp(13px, 1.45vw, 15px);
-
-    line-height: 1.5;
-
-}
-
 
 /* =========================================================
-   FOOTER MARKER
+   FARM CODE
 ========================================================= */
 
-.dairy-h1-footer {
+.dairy-h1-code {
 
-    display: flex;
+    margin-top: 16px;
 
-    align-items: center;
-
-    gap: 8px;
-
-    margin-top: 18px;
-
-    color: rgba(55, 105, 74, .52);
-
-}
-
-
-.dairy-h1-footer span {
-
-    width: 20px;
-
-    height: 1px;
-
-    background:
-        rgba(55, 105, 74, .25);
-
-}
-
-
-.dairy-h1-footer small {
+    color:
+        #8a9690;
 
     font-family:
         Arial,
         Helvetica,
         sans-serif;
 
-    font-size: 7px;
+    font-size: 8px;
 
     font-weight: 800;
 
-    letter-spacing: 1.5px;
+    letter-spacing: 1.6px;
 
 }
+
 
 
 /* =========================================================
@@ -705,36 +773,50 @@ admin:
 
     .dairy-h1 {
 
-        width: calc(100% - 20px);
-
-        min-height: 340px;
-
-        border-radius: 20px;
+        min-height: 390px;
 
     }
 
 
     .dairy-h1-content {
 
-        min-height: 340px;
+        min-height: 390px;
 
         padding:
-            32px
-            28px
-            27px;
+            38px
+            30px
+            35px;
+
+    }
+
+
+    .dairy-h1-background {
+
+        right: -90px;
+
+        width: 62%;
 
     }
 
 
     .dairy-h1-logo {
 
-        width: min(610px, 72vw);
+        width:
+            min(540px, 68vw);
 
-        opacity: .10;
+        opacity: .09;
+
+    }
+
+
+    .dairy-h1-introduction {
+
+        max-width: 650px;
 
     }
 
 }
+
 
 
 /* =========================================================
@@ -745,114 +827,110 @@ admin:
 
     .dairy-h1 {
 
-        width: calc(100% - 18px);
-
-        min-height: 390px;
-
-        margin:
-            9px
-            auto
-            22px;
-
-        border-radius: 18px;
-
-        border-left-width: 6px;
-
-    }
-
-
-    .dairy-h1-content {
-
-        min-height: 390px;
-
-        padding:
-            29px
-            20px
-            25px;
+        min-height: 520px;
 
     }
 
 
     .dairy-h1-background {
 
+        right: -135px;
+
+        top: 30px;
+
+        width: 100%;
+
+        height: 70%;
+
         align-items: center;
 
-        justify-content: center;
+        justify-content: flex-end;
+
+        opacity: .75;
 
     }
 
 
     .dairy-h1-logo {
 
-        width: 530px;
+        width: 500px;
 
-        max-width: 135vw;
+        max-width: 125vw;
 
         opacity: .085;
 
-        transform:
-            translateX(12%)
-            rotate(-2deg);
+    }
+
+
+    .dairy-h1-content {
+
+        min-height: 520px;
+
+        padding:
+            40px
+            24px
+            35px;
+
+        justify-content: flex-start;
 
     }
 
 
-    .dairy-h1-accent {
+    .dairy-h1-welcome {
 
-        width: 60%;
+        padding:
+            9px
+            21px;
 
-    }
+        margin-bottom: 18px;
 
-
-    .dairy-h1-label {
-
-        margin-bottom: 9px;
-
-        font-size: 8px;
-
-        letter-spacing: 2px;
+        font-size: 14px;
 
     }
 
 
     .dairy-h1-greeting {
 
-        font-size: 8px;
-
-        letter-spacing: 1.5px;
-
-    }
-
-
-    .dairy-h1-title {
-
         font-size:
-            clamp(30px, 9vw, 41px);
+            clamp(42px, 12vw, 54px);
 
-        letter-spacing: -.8px;
-
-    }
-
-
-    .dairy-h1-title span {
-
-        margin-top: 3px;
+        letter-spacing: -1.8px;
 
     }
 
 
-    .dairy-h1-code {
+    .dairy-h1-introduction {
 
-        margin-top: 8px;
+        margin-top: 20px;
 
-        font-size: 7.5px;
+        max-width: 100%;
+
+        font-size: 16px;
+
+        line-height: 1.7;
+
+    }
+
+
+    .dairy-h1-farm {
+
+        margin-top: 25px;
+
+    }
+
+
+    .dairy-h1-farm-name {
+
+        font-size: 20px;
 
     }
 
 
     .dairy-h1-message {
 
-        margin-top: 17px;
+        margin-top: 20px;
+
+        max-width: 100%;
 
     }
 
@@ -861,27 +939,19 @@ admin:
 
         font-size: 12.5px;
 
-        line-height: 1.55;
-
-        margin-bottom: 7px;
+        line-height: 1.6;
 
     }
 
 
-    .dairy-h1-message .dairy-h1-lead {
+    .dairy-h1-code {
 
-        font-size: 13px;
-
-    }
-
-
-    .dairy-h1-footer {
-
-        margin-top: 16px;
+        margin-top: 14px;
 
     }
 
 }
+
 
 
 /* =========================================================
@@ -892,53 +962,53 @@ admin:
 
     .dairy-h1 {
 
-        width: calc(100% - 14px);
-
-        min-height: 375px;
-
-        border-radius: 16px;
+        min-height: 500px;
 
     }
 
 
     .dairy-h1-content {
 
-        min-height: 375px;
+        min-height: 500px;
 
         padding:
-            26px
-            16px
-            23px;
+            34px
+            19px
+            30px;
 
     }
 
 
-    .dairy-h1-title {
+    .dairy-h1-welcome {
 
-        font-size: 29px;
+        padding:
+            8px
+            18px;
 
-    }
-
-
-    .dairy-h1-message {
-
-        margin-top: 15px;
+        font-size: 13px;
 
     }
 
 
-    .dairy-h1-message p {
+    .dairy-h1-greeting {
 
-        font-size: 12px;
-
-        line-height: 1.5;
+        font-size: 40px;
 
     }
 
 
-    .dairy-h1-message .dairy-h1-lead {
+    .dairy-h1-introduction {
 
-        font-size: 12.5px;
+        font-size: 15px;
+
+        line-height: 1.65;
+
+    }
+
+
+    .dairy-h1-background {
+
+        right: -150px;
 
     }
 
@@ -951,10 +1021,21 @@ admin:
 
     }
 
+}
 
-    .dairy-h1-footer {
 
-        margin-top: 13px;
+
+/* =========================================================
+   ACCESSIBILITY
+
+   Respect users who have requested reduced motion.
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .dairy-h1-logo {
+
+        animation: none;
 
     }
 
