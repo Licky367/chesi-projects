@@ -18,10 +18,13 @@ const Milk =
 //
 // Supports:
 //
+//     • Admin updating ANY dairy profile
 //     • Up to 5 profile images
 //     • Multiple profile images
-//     • First image becomes the primary/display image
+//     • First image becomes primary/display image
 //     • Existing `profileImage` remains supported
+//     • Normal users may still be checked against
+//       their assigned dairy farm
 //
 // Expected input:
 //
@@ -31,9 +34,15 @@ const Milk =
 //         images: [
 //             "image-1.jpg",
 //             "image-2.jpg"
-//         ]
+//         ],
+//         isAdmin: true
 //     }
 //
+// IMPORTANT:
+//
+// Admins are NOT required to be assigned to the dairy farm.
+//
+// Normal users continue to require assignment.
 // ==========================================================
 
 exports.updateImage = async ({
@@ -42,9 +51,24 @@ exports.updateImage = async ({
 
     userId,
 
-    images = []
+    images = [],
+
+    isAdmin = false
 
 }) => {
+
+    // ======================================================
+    // VALIDATE DAIRY ID
+    // ======================================================
+
+    if (!dairyId) {
+
+        throw new Error(
+            "Dairy profile ID is required."
+        );
+
+    }
+
 
     // ======================================================
     // FIND DAIRY
@@ -58,9 +82,465 @@ exports.updateImage = async ({
 
     if (!dairy) {
 
-        throw new Error(
-            "Dairy profile not found."
-        );
+        const error =
+            new Error(
+                "Dairy profile not found."
+            );
+
+        error.status = 404;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // NORMALIZE ADMIN FLAG
+    // ======================================================
+
+    const admin =
+        isAdmin === true;
+
+
+    // ======================================================
+    // NORMAL USER AUTHORIZATION
+    // ======================================================
+    //
+    // Admin:
+    //
+    //     Can update any dairy profile.
+    //
+    // Normal user:
+    //
+    //     Must be assigned to the dairy farm.
+    //
+    // The exact assignment fields in the Dairy model can
+    // vary, so this section checks the common assignment
+    // relationships without applying the restriction to
+    // administrators.
+    //
+    // ======================================================
+
+    if (!admin) {
+
+        if (!userId) {
+
+            const error =
+                new Error(
+                    "User identification is required."
+                );
+
+            error.status = 401;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // USER
+        // ==================================================
+
+        const User =
+            require("../../models/User");
+
+
+        const user =
+            await User.findById(
+                userId
+            );
+
+
+        if (!user) {
+
+            const error =
+                new Error(
+                    "User not found."
+                );
+
+            error.status = 401;
+
+            throw error;
+
+        }
+
+
+        // ==================================================
+        // ASSIGNMENT CHECK
+        // ==================================================
+        //
+        // Check the dairy's assigned user/worker fields.
+        //
+        // This is deliberately NOT executed for admins.
+        //
+        // ==================================================
+
+        const dairyObject =
+            dairy.toObject
+                ? dairy.toObject()
+                : dairy;
+
+
+        const assignedUserIds = [];
+
+
+        // --------------------------------------------------
+        // Direct user assignment
+        // --------------------------------------------------
+
+        if (
+            dairyObject.user
+        ) {
+
+            assignedUserIds.push(
+                String(
+                    dairyObject.user
+                )
+            );
+
+        }
+
+
+        if (
+            dairyObject.userId
+        ) {
+
+            assignedUserIds.push(
+                String(
+                    dairyObject.userId
+                )
+            );
+
+        }
+
+
+        if (
+            dairyObject.assignedUser
+        ) {
+
+            assignedUserIds.push(
+                String(
+                    dairyObject.assignedUser
+                )
+            );
+
+        }
+
+
+        if (
+            dairyObject.assignedUserId
+        ) {
+
+            assignedUserIds.push(
+                String(
+                    dairyObject.assignedUserId
+                )
+            );
+
+        }
+
+
+        // --------------------------------------------------
+        // Assigned users array
+        // --------------------------------------------------
+
+        if (
+            Array.isArray(
+                dairyObject.assignedUsers
+            )
+        ) {
+
+            dairyObject.assignedUsers.forEach(
+                assigned => {
+
+                    if (!assigned) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        typeof assigned === "object" &&
+                        assigned._id
+                    ) {
+
+                        assignedUserIds.push(
+                            String(
+                                assigned._id
+                            )
+                        );
+
+                    } else {
+
+                        assignedUserIds.push(
+                            String(
+                                assigned
+                            )
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        // --------------------------------------------------
+        // Workers array
+        // --------------------------------------------------
+
+        if (
+            Array.isArray(
+                dairyObject.workers
+            )
+        ) {
+
+            dairyObject.workers.forEach(
+                worker => {
+
+                    if (!worker) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        typeof worker === "object" &&
+                        worker._id
+                    ) {
+
+                        assignedUserIds.push(
+                            String(
+                                worker._id
+                            )
+                        );
+
+                    } else {
+
+                        assignedUserIds.push(
+                            String(
+                                worker
+                            )
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        // --------------------------------------------------
+        // Farm assignment
+        // --------------------------------------------------
+        //
+        // Some dairy records use a farm-level assignment
+        // rather than assigning every animal directly.
+        //
+        // If the user has assigned dairy farms, check whether
+        // this animal belongs to one of them.
+        //
+        // --------------------------------------------------
+
+        let assignedToDairy =
+            assignedUserIds.includes(
+                String(userId)
+            );
+
+
+        // --------------------------------------------------
+        // Check user's assigned dairy farms
+        // --------------------------------------------------
+
+        if (!assignedToDairy) {
+
+            const userObject =
+                user.toObject
+                    ? user.toObject()
+                    : user;
+
+
+            const assignedFarmIds = [];
+
+
+            if (
+                Array.isArray(
+                    userObject.dairyFarms
+                )
+            ) {
+
+                userObject.dairyFarms.forEach(
+                    farm => {
+
+                        if (!farm) {
+
+                            return;
+
+                        }
+
+
+                        if (
+                            typeof farm === "object" &&
+                            farm._id
+                        ) {
+
+                            assignedFarmIds.push(
+                                String(
+                                    farm._id
+                                )
+                            );
+
+                        } else {
+
+                            assignedFarmIds.push(
+                                String(farm)
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+
+
+            if (
+                Array.isArray(
+                    userObject.assignedDairyFarms
+                )
+            ) {
+
+                userObject.assignedDairyFarms.forEach(
+                    farm => {
+
+                        if (!farm) {
+
+                            return;
+
+                        }
+
+
+                        if (
+                            typeof farm === "object" &&
+                            farm._id
+                        ) {
+
+                            assignedFarmIds.push(
+                                String(
+                                    farm._id
+                                )
+                            );
+
+                        } else {
+
+                            assignedFarmIds.push(
+                                String(farm)
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+
+
+            if (
+                userObject.assignedDairies
+            ) {
+
+                const assignedDairies =
+                    Array.isArray(
+                        userObject.assignedDairies
+                    )
+                        ? userObject.assignedDairies
+                        : [
+                            userObject.assignedDairies
+                        ];
+
+
+                assignedDairies.forEach(
+                    farm => {
+
+                        if (!farm) {
+
+                            return;
+
+                        }
+
+
+                        if (
+                            typeof farm === "object" &&
+                            farm._id
+                        ) {
+
+                            assignedFarmIds.push(
+                                String(
+                                    farm._id
+                                )
+                            );
+
+                        } else {
+
+                            assignedFarmIds.push(
+                                String(farm)
+                            );
+
+                        }
+
+                    }
+                );
+
+            }
+
+
+            // ------------------------------------------------
+            // Direct farm reference on asset
+            // ------------------------------------------------
+
+            const farmId =
+                dairyObject.farm ||
+                dairyObject.farmId ||
+                dairyObject.dairyFarm ||
+                dairyObject.dairyFarmId ||
+                dairyObject.parentDairy;
+
+
+            if (farmId) {
+
+                assignedToDairy =
+                    assignedFarmIds.includes(
+                        String(
+                            farmId._id ||
+                            farmId
+                        )
+                    );
+
+            }
+
+        }
+
+
+        // ==================================================
+        // FINAL NORMAL USER CHECK
+        // ==================================================
+
+        if (!assignedToDairy) {
+
+            const error =
+                new Error(
+                    "You are not assigned to this dairy farm."
+                );
+
+            error.status = 403;
+
+            throw error;
+
+        }
 
     }
 
@@ -78,12 +558,16 @@ exports.updateImage = async ({
                     image =>
                         String(image)
                 )
+                .filter(
+                    image =>
+                        image.trim().length > 0
+                )
 
             : [];
 
 
     // ======================================================
-    // VALIDATE
+    // VALIDATE IMAGES
     // ======================================================
 
     if (
@@ -111,11 +595,6 @@ exports.updateImage = async ({
     // ======================================================
     // PRIMARY IMAGE
     // ======================================================
-    //
-    // The first image is the image displayed directly
-    // on the profile card.
-    //
-    // ======================================================
 
     const primaryImage =
         normalizedImages[0];
@@ -124,21 +603,39 @@ exports.updateImage = async ({
     // ======================================================
     // SAVE PROFILE IMAGES
     // ======================================================
-    //
-    // `profileImages` is the new gallery field.
-    //
-    // `profileImage` remains populated for backwards
-    // compatibility with existing code.
-    //
-    // ======================================================
 
     dairy.profileImages =
         normalizedImages;
 
 
+    // ------------------------------------------------------
+    // Backwards compatibility
+    // ------------------------------------------------------
+
     dairy.profileImage =
         primaryImage;
 
+
+    // ------------------------------------------------------
+    // Optional displayImage support
+    // ------------------------------------------------------
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            dairy.toObject(),
+            "displayImage"
+        )
+    ) {
+
+        dairy.displayImage =
+            primaryImage;
+
+    }
+
+
+    // ======================================================
+    // SAVE DAIRY
+    // ======================================================
 
     await dairy.save();
 
@@ -147,10 +644,11 @@ exports.updateImage = async ({
     // CREATE FEED UPDATE
     // ======================================================
     //
-    // Keep an image update in the feed.
+    // The Update model uses the legacy single `image`
+    // field, therefore the primary image is stored there.
     //
-    // The Update model currently has a legacy single
-    // `image` field, so use the primary image there.
+    // For an administrator there is no assigned worker
+    // relationship required.
     //
     // ======================================================
 
@@ -161,10 +659,12 @@ exports.updateImage = async ({
                 dairyId,
 
             user:
-                userId,
+                userId || undefined,
 
             userName:
-                "System",
+                admin
+                    ? "Administrator"
+                    : "System",
 
             type:
                 "image",
@@ -176,12 +676,7 @@ exports.updateImage = async ({
 
 
     // ======================================================
-    // RETURN UPDATED INFORMATION
-    // ======================================================
-    //
-    // Returning the Dairy document allows the controller
-    // to use the saved profileImages if needed.
-    //
+    // RETURN
     // ======================================================
 
     return {
@@ -194,7 +689,13 @@ exports.updateImage = async ({
             normalizedImages,
 
         profileImage:
-            primaryImage
+            primaryImage,
+
+        displayImage:
+            primaryImage,
+
+        createdAt:
+            update.createdAt
 
     };
 
@@ -209,6 +710,43 @@ exports.updateImage = async ({
 exports.deleteProfile = async (
     dairyId
 ) => {
+
+    // ======================================================
+    // VALIDATE ID
+    // ======================================================
+
+    if (!dairyId) {
+
+        throw new Error(
+            "Dairy profile ID is required."
+        );
+
+    }
+
+
+    // ======================================================
+    // VERIFY DAIRY EXISTS
+    // ======================================================
+
+    const dairy =
+        await Dairy.findById(
+            dairyId
+        );
+
+
+    if (!dairy) {
+
+        const error =
+            new Error(
+                "Dairy profile not found."
+            );
+
+        error.status = 404;
+
+        throw error;
+
+    }
+
 
     // ======================================================
     // DELETE FEED UPDATES
@@ -252,46 +790,138 @@ exports.deleteProfile = async (
 // ==========================================================
 // 📝 UPDATE PROFILE INFO
 // ==========================================================
+//
+// Updates only:
+//
+//     • name
+//     • code
+//     • mass
+//     • dateOfBirth
+//
+// ==========================================================
 
 exports.updateProfile = async (
     id,
-    data
+    data = {}
 ) => {
 
     // ======================================================
-    // UPDATE ONLY ALLOWED PROFILE FIELDS
+    // VALIDATE ID
     // ======================================================
 
-    return await Dairy.findByIdAndUpdate(
+    if (!id) {
 
-        id,
+        throw new Error(
+            "Dairy profile ID is required."
+        );
 
-        {
+    }
 
-            name:
-                data.name,
 
-            code:
-                data.code,
+    // ======================================================
+    // BUILD UPDATE
+    // ======================================================
 
-            mass:
-                data.mass,
+    const updateData = {};
 
-            dateOfBirth:
-                data.dateOfBirth
 
-        },
+    if (
+        Object.prototype.hasOwnProperty.call(
+            data,
+            "name"
+        )
+    ) {
 
-        {
+        updateData.name =
+            data.name;
 
-            new:
-                true,
+    }
 
-            runValidators:
-                true
 
-        }
+    if (
+        Object.prototype.hasOwnProperty.call(
+            data,
+            "code"
+        )
+    ) {
 
-    );
+        updateData.code =
+            data.code;
+
+    }
+
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            data,
+            "mass"
+        )
+    ) {
+
+        updateData.mass =
+            data.mass;
+
+    }
+
+
+    if (
+        Object.prototype.hasOwnProperty.call(
+            data,
+            "dateOfBirth"
+        )
+    ) {
+
+        updateData.dateOfBirth =
+            data.dateOfBirth || null;
+
+    }
+
+
+    // ======================================================
+    // UPDATE
+    // ======================================================
+
+    const updated =
+        await Dairy.findByIdAndUpdate(
+
+            id,
+
+            {
+                $set:
+                    updateData
+            },
+
+            {
+
+                new:
+                    true,
+
+                runValidators:
+                    true
+
+            }
+
+        );
+
+
+    // ======================================================
+    // NOT FOUND
+    // ======================================================
+
+    if (!updated) {
+
+        const error =
+            new Error(
+                "Dairy profile not found."
+            );
+
+        error.status = 404;
+
+        throw error;
+
+    }
+
+
+    return updated;
 
 };
