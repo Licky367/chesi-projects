@@ -30,8 +30,37 @@
 
 html,
 body{
-    height:100%;
+    min-height:100%;
     background:#f4f6f8;
+}
+
+
+/* =========================================================
+   THEME
+========================================================= */
+
+:root{
+
+    --primary:#0b5d1e;
+
+    --primary-dark:#084814;
+
+    --primary-light:#eaf7ee;
+
+    --primary-soft:#f3faf5;
+
+    --text:#263238;
+
+    --muted:#667085;
+
+    --border:#e5e7eb;
+
+    --white:#ffffff;
+
+    --sidebar-width:275px;
+
+    --layout-top:120px;
+
 }
 
 
@@ -51,13 +80,14 @@ body{
     background:#0b5d1e;
 
     display:flex;
+
     align-items:center;
 
     padding:0 18px;
 
     color:#fff;
 
-    z-index:1002;
+    z-index:2000;
 
     box-shadow:
         0 2px 8px rgba(0,0,0,.15);
@@ -75,6 +105,7 @@ body{
     justify-content:flex-start;
 
     width:auto;
+
     height:70px;
 
     text-decoration:none;
@@ -84,6 +115,7 @@ body{
 
 .header-logo{
     height:138px;
+
     width:auto;
 
     display:block;
@@ -91,6 +123,7 @@ body{
     object-fit:contain;
 
     position:relative;
+
     top:10px;
 }
 
@@ -120,6 +153,7 @@ body{
     width:auto;
 
     font-size:18px;
+
     font-weight:700;
 
     letter-spacing:.3px;
@@ -127,10 +161,6 @@ body{
     color:#fff;
 
     white-space:normal;
-
-    overflow:visible;
-
-    text-overflow:clip;
 
     line-height:21px;
 }
@@ -141,10 +171,13 @@ body{
 ========================================================= */
 
 .top-menu{
+
     position:fixed;
 
     top:70px;
+
     left:0;
+
     right:0;
 
     height:50px;
@@ -157,7 +190,7 @@ body{
 
     padding:0 15px;
 
-    z-index:1001;
+    z-index:1999;
 
     box-shadow:
         0 2px 8px rgba(0,0,0,.15);
@@ -166,12 +199,10 @@ body{
 
 /* =========================================================
    TOP NAVIGATION
-   Used by:
-   - Admin
-   - Dairy Worker
 ========================================================= */
 
 .dairy-worker-nav{
+
     display:flex;
 
     align-items:center;
@@ -183,6 +214,7 @@ body{
     height:100%;
 
     overflow-x:auto;
+
     overflow-y:hidden;
 
     flex:1 1 auto;
@@ -198,10 +230,11 @@ body{
 
 
 /* =========================================================
-   NAV LINKS
+   TOP NAV LINKS
 ========================================================= */
 
 .dairy-worker-nav a{
+
     display:flex;
 
     flex-direction:column;
@@ -242,17 +275,19 @@ body{
 }
 
 .dairy-worker-nav a:active{
-    background:rgba(255,255,255,.2);
+
+    background:rgba(255,255,255,.20);
 
     transform:scale(.97);
 }
 
 
 /* =========================================================
-   NAV ICON
+   TOP NAV ICON
 ========================================================= */
 
 .nav-icon{
+
     display:block;
 
     font-size:19px;
@@ -261,6 +296,7 @@ body{
 }
 
 .nav-label{
+
     display:block;
 
     font-size:10px;
@@ -271,36 +307,55 @@ body{
 
 /* =========================================================
    MENU BUTTON
-   Used by poultry worker.
+   ---------------------------------------------------------
+   Used by:
+   - Admin
+   - Poultry Worker
 ========================================================= */
 
 .menu-btn{
+
     width:44px;
+
     height:44px;
 
     border-radius:8px;
 
-    background:#fff;
+    background:transparent;
 
-    color:#0b5d1e;
+    color:#fff;
+
+    border:0;
 
     display:flex;
 
     align-items:center;
+
     justify-content:center;
 
     cursor:pointer;
 
     font-size:28px;
+
     font-weight:bold;
 
     user-select:none;
 
     flex-shrink:0;
+
+    transition:
+        background .2s ease,
+        transform .15s ease;
+}
+
+.menu-btn:hover{
+
+    background:rgba(255,255,255,.12);
 }
 
 .menu-btn:active{
-    transform:scale(.96);
+
+    transform:scale(.94);
 }
 
 
@@ -309,6 +364,7 @@ body{
 ========================================================= */
 
 .profile-box{
+
     position:relative;
 
     margin-left:auto;
@@ -323,6 +379,7 @@ body{
 }
 
 .profile-trigger{
+
     height:48px;
 
     min-width:58px;
@@ -341,6 +398,7 @@ body{
 }
 
 .profile-icon{
+
     font-size:19px;
 
     line-height:19px;
@@ -349,6 +407,7 @@ body{
 }
 
 .profile-name{
+
     font-size:10px;
 
     line-height:12px;
@@ -370,9 +429,11 @@ body{
 ========================================================= */
 
 .dropdown-profile{
+
     position:absolute;
 
     top:52px;
+
     right:0;
 
     width:190px;
@@ -384,11 +445,11 @@ body{
     overflow:hidden;
 
     box-shadow:
-        0 8px 25px rgba(0,0,0,.2);
+        0 8px 25px rgba(0,0,0,.20);
 
     display:none;
 
-    z-index:1100;
+    z-index:2500;
 }
 
 .profile-box.active .dropdown-profile{
@@ -396,6 +457,7 @@ body{
 }
 
 .dropdown-profile a{
+
     display:block;
 
     padding:12px 15px;
@@ -417,13 +479,510 @@ body{
 
 
 /* =========================================================
-   SIDEBAR
+   ADMIN SIDEBAR
+   ---------------------------------------------------------
+   White sidebar.
+   Green theme.
+   Hidden by default.
+========================================================= */
+
+.admin-dashboard-sidebar{
+
+    position:fixed;
+
+    top:var(--layout-top);
+
+    left:calc(-1 * var(--sidebar-width));
+
+    bottom:50px;
+
+    width:var(--sidebar-width);
+
+    background:var(--white);
+
+    z-index:2100;
+
+    overflow-x:hidden;
+
+    overflow-y:auto;
+
+    box-shadow:
+        5px 0 22px rgba(0,0,0,.16);
+
+    border-right:
+        1px solid var(--border);
+
+    transition:
+        left .28s ease;
+
+}
+
+
+/* =========================================================
+   OPEN ADMIN SIDEBAR
+========================================================= */
+
+.admin-dashboard-sidebar.open{
+
+    left:0;
+
+}
+
+
+/* =========================================================
+   ADMIN SIDEBAR MENU
+========================================================= */
+
+.admin-sidebar-menu{
+
+    list-style:none;
+
+    width:100%;
+
+    margin:0;
+
+    padding:0;
+}
+
+
+/* =========================================================
+   SIDEBAR ITEM
+========================================================= */
+
+.admin-sidebar-item{
+
+    width:100%;
+
+    margin:0;
+
+    padding:0;
+}
+
+
+/* =========================================================
+   SIDEBAR MENU BUTTON
+========================================================= */
+
+.admin-sidebar-menu-button{
+
+    width:100%;
+
+    height:58px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:0 15px;
+
+    box-sizing:border-box;
+
+    border:0;
+
+    border-bottom:
+        1px solid var(--border);
+
+    background:
+        var(--primary-soft);
+
+    color:var(--primary);
+
+    cursor:pointer;
+
+    font:inherit;
+
+    text-align:left;
+
+    white-space:nowrap;
+
+    transition:
+        background .2s ease;
+}
+
+.admin-sidebar-menu-button:hover{
+
+    background:var(--primary-light);
+}
+
+
+/* =========================================================
+   SIDEBAR MENU ICON
+========================================================= */
+
+.admin-sidebar-menu-icon{
+
+    width:34px;
+
+    min-width:34px;
+
+    height:34px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:25px;
+
+    line-height:1;
+
+    border-radius:8px;
+
+    color:var(--primary);
+
+    pointer-events:none;
+}
+
+
+/* =========================================================
+   SIDEBAR LINKS
+========================================================= */
+
+.admin-sidebar-link{
+
+    width:100%;
+
+    min-height:58px;
+
+    box-sizing:border-box;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:0 15px;
+
+    color:var(--text);
+
+    text-decoration:none;
+
+    white-space:nowrap;
+
+    border-bottom:
+        1px solid var(--border);
+
+    transition:
+        background .2s ease,
+        color .2s ease;
+}
+
+.admin-sidebar-link:hover{
+
+    background:var(--primary-soft);
+
+    color:var(--primary);
+}
+
+
+/* =========================================================
+   ACTIVE SIDEBAR LINK
+========================================================= */
+
+.admin-sidebar-link.active{
+
+    background:var(--primary-light);
+
+    color:var(--primary);
+
+    font-weight:600;
+}
+
+.admin-sidebar-link.active
+.admin-sidebar-icon{
+
+    color:var(--primary);
+}
+
+
+/* =========================================================
+   SIDEBAR ICON
+========================================================= */
+
+.admin-sidebar-icon{
+
+    width:34px;
+
+    min-width:34px;
+
+    height:34px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:21px;
+
+    line-height:1;
+
+    border-radius:8px;
+
+    color:var(--primary);
+
+    pointer-events:none;
+}
+
+
+/* =========================================================
+   SIDEBAR LABEL
+========================================================= */
+
+.admin-sidebar-label{
+
+    display:block;
+
+    font-size:15px;
+
+    font-weight:600;
+
+    color:inherit;
+}
+
+
+/* =========================================================
+   DAIRY ACTIVITIES BUTTON
+========================================================= */
+
+.admin-sidebar-section-button{
+
+    width:100%;
+
+    min-height:58px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:0 15px;
+
+    box-sizing:border-box;
+
+    border:0;
+
+    border-bottom:
+        1px solid var(--border);
+
+    background:transparent;
+
+    color:var(--text);
+
+    cursor:pointer;
+
+    font:inherit;
+
+    text-align:left;
+
+    white-space:nowrap;
+
+    transition:
+        background .2s ease,
+        color .2s ease;
+}
+
+.admin-sidebar-section-button:hover{
+
+    background:var(--primary-soft);
+
+    color:var(--primary);
+}
+
+
+/* =========================================================
+   EXPANDED DAIRY ACTIVITIES BUTTON
+========================================================= */
+
+.admin-sidebar-section-button.expanded{
+
+    background:var(--primary-light);
+
+    color:var(--primary);
+}
+
+
+/* =========================================================
+   DAIRY ACTIVITIES ARROW
+========================================================= */
+
+.admin-sidebar-section-arrow{
+
+    margin-left:auto;
+
+    font-size:14px;
+
+    line-height:1;
+
+    color:var(--primary);
+
+    opacity:.9;
+
+    transition:
+        transform .2s ease;
+}
+
+.admin-sidebar-section-button.expanded
+.admin-sidebar-section-arrow{
+
+    transform:rotate(90deg);
+}
+
+
+/* =========================================================
+   DAIRY ACTIVITIES SUBMENU
+========================================================= */
+
+.admin-sidebar-submenu{
+
+    display:none;
+
+    width:100%;
+
+    margin:0;
+
+    padding:0;
+
+    list-style:none;
+
+    background:#f7fbf8;
+
+    border-bottom:
+        1px solid var(--border);
+}
+
+.admin-sidebar-submenu.open{
+    display:block;
+}
+
+
+/* =========================================================
+   SUBMENU LINKS
+========================================================= */
+
+.admin-sidebar-submenu
+.admin-sidebar-link{
+
+    min-height:52px;
+
+    padding-left:28px;
+
+    gap:12px;
+
+    border-bottom:
+        1px solid #edf1ee;
+}
+
+.admin-sidebar-submenu
+.admin-sidebar-link:hover{
+
+    background:var(--primary-light);
+}
+
+
+/* =========================================================
+   SUBMENU ICON
+========================================================= */
+
+.admin-sidebar-submenu
+.admin-sidebar-icon{
+
+    width:30px;
+
+    min-width:30px;
+
+    height:30px;
+
+    font-size:18px;
+}
+
+
+/* =========================================================
+   SUBMENU LABEL
+========================================================= */
+
+.admin-sidebar-submenu
+.admin-sidebar-label{
+
+    font-size:14px;
+
+    font-weight:600;
+}
+
+
+/* =========================================================
+   SIDEBAR FOOTER
+========================================================= */
+
+.admin-sidebar-footer{
+
+    padding:25px 15px 30px;
+
+    color:#7a8a80;
+
+    font-size:12px;
+
+    line-height:1.5;
+
+    border-top:
+        1px solid var(--border);
+}
+
+
+/* =========================================================
+   SIDEBAR OVERLAY
+========================================================= */
+
+.admin-sidebar-overlay{
+
+    position:fixed;
+
+    top:var(--layout-top);
+
+    left:0;
+
+    right:0;
+
+    bottom:50px;
+
+    background:rgba(0,0,0,.28);
+
+    z-index:2050;
+
+    opacity:0;
+
+    visibility:hidden;
+
+    cursor:pointer;
+
+    transition:
+        opacity .2s ease,
+        visibility .2s ease;
+}
+
+.admin-sidebar-overlay.active{
+
+    opacity:1;
+
+    visibility:visible;
+}
+
+
+/* =========================================================
+   POULTRY SIDEBAR
 ========================================================= */
 
 .sidebar{
+
     position:fixed;
 
     top:120px;
+
     left:-260px;
 
     width:240px;
@@ -438,7 +997,7 @@ body{
 
     transition:left .3s ease;
 
-    z-index:1002;
+    z-index:2100;
 }
 
 .sidebar.active{
@@ -446,6 +1005,7 @@ body{
 }
 
 .sidebar a{
+
     display:block;
 
     padding:12px;
@@ -464,18 +1024,21 @@ body{
 }
 
 .sidebar a:hover{
+
     background:rgba(255,255,255,.15);
 }
 
 
 /* =========================================================
-   OVERLAY
+   POULTRY OVERLAY
 ========================================================= */
 
 .overlay{
+
     position:fixed;
 
     top:120px;
+
     left:0;
 
     width:100%;
@@ -486,7 +1049,7 @@ body{
 
     display:none;
 
-    z-index:1001;
+    z-index:2050;
 }
 
 .overlay.active{
@@ -499,6 +1062,7 @@ body{
 ========================================================= */
 
 .main{
+
     padding:140px 18px 70px;
 
     min-height:100vh;
@@ -510,10 +1074,13 @@ body{
 ========================================================= */
 
 .footer{
+
     position:fixed;
 
     bottom:0;
+
     left:0;
+
     right:0;
 
     height:50px;
@@ -525,6 +1092,7 @@ body{
     display:flex;
 
     align-items:center;
+
     justify-content:center;
 
     font-size:13px;
@@ -539,14 +1107,8 @@ body{
 
 @media(max-width:600px){
 
-    .sidebar{
-        width:260px;
-
-        left:-280px;
-    }
-
-
     .header{
+
         padding:0 10px;
 
         min-height:70px;
@@ -554,6 +1116,7 @@ body{
 
 
     .header-logo{
+
         height:100px;
 
         top:8px;
@@ -561,6 +1124,7 @@ body{
 
 
     .header-title{
+
         padding-left:6px;
 
         flex:1 1 auto;
@@ -568,24 +1132,21 @@ body{
 
 
     .header-title-text{
+
         font-size:15px;
 
         line-height:18px;
-
-        white-space:normal;
-
-        overflow:visible;
-
-        text-overflow:clip;
     }
 
 
     .top-menu{
+
         padding:0 8px;
     }
 
 
     .dairy-worker-nav{
+
         gap:3px;
 
         flex:1 1 auto;
@@ -595,6 +1156,7 @@ body{
 
 
     .dairy-worker-nav a{
+
         min-width:0;
 
         padding:2px 5px;
@@ -611,13 +1173,47 @@ body{
     }
 
 
+    .menu-btn{
+
+        width:42px;
+
+        min-width:42px;
+
+        height:42px;
+    }
+
+
     .profile-trigger{
+
         min-width:53px;
     }
 
 
     .profile-name{
+
         max-width:60px;
+    }
+
+
+    .admin-dashboard-sidebar{
+
+        width:270px;
+
+        left:-285px;
+    }
+
+
+    .admin-dashboard-sidebar.open{
+
+        left:0;
+    }
+
+
+    .main{
+
+        padding-left:12px;
+
+        padding-right:12px;
     }
 
 }
@@ -630,33 +1226,56 @@ body{
 @media(max-width:380px){
 
     .header{
+
         padding:0 6px;
     }
 
+
     .header-logo{
+
         height:88px;
     }
 
+
     .header-title{
+
         padding-left:4px;
     }
 
+
     .header-title-text{
+
         font-size:14px;
+
         line-height:17px;
     }
 
+
     .profile-trigger{
+
         min-width:48px;
     }
 
+
     .profile-name{
+
         max-width:50px;
     }
 
+
     .dairy-worker-nav a{
+
         padding-left:2px;
+
         padding-right:2px;
+    }
+
+
+    .admin-dashboard-sidebar{
+
+        width:250px;
+
+        left:-265px;
     }
 
 }
@@ -697,9 +1316,6 @@ let homeLink = "/";
 
 /*
    ADMIN
-   ---------------------------------------------------------
-   Admin home page:
-   /dashboard/dairy
 */
 
 if(
@@ -714,8 +1330,6 @@ if(
 
 /*
    DAIRY WORKER
-   ---------------------------------------------------------
-   Dairy worker home page is their assigned farm.
 */
 
 else if(
@@ -725,9 +1339,11 @@ else if(
     user.assignedFarm.length > 0
 ){
 
-    const firstFarm = user.assignedFarm[0];
+    const firstFarm =
+        user.assignedFarm[0];
 
-    homeLink = `/dairy/${firstFarm}`;
+    homeLink =
+        `/dairy/${firstFarm}`;
 
 }
 
@@ -740,21 +1356,30 @@ let headerTitle = "CHESI PROJECTS";
 
 if(user){
 
-    if(user.role === "dairyWorker"){
+    if(
+        user.role === "dairyWorker"
+    ){
 
-        headerTitle = "DAIRY ACTIVITIES";
-
-    }
-
-    else if(user.role === "poultryWorker"){
-
-        headerTitle = "POULTRY ACTIVITIES";
+        headerTitle =
+            "DAIRY ACTIVITIES";
 
     }
 
-    else if(user.role === "admin"){
+    else if(
+        user.role === "poultryWorker"
+    ){
 
-        headerTitle = "CHESI PROJECTS";
+        headerTitle =
+            "POULTRY ACTIVITIES";
+
+    }
+
+    else if(
+        user.role === "admin"
+    ){
+
+        headerTitle =
+            "CHESI PROJECTS";
 
     }
 
@@ -909,47 +1534,42 @@ const isPoultryWorker =
     <!-- =====================================================
        ADMIN TOP NAVIGATION
 
-       Home:
-           /dashboard/dairy
+       MENU ICON:
+           Opens admin sidebar.
 
-       Production:
+       PRODUCTION:
            /milk
 
-       Sales:
+       SALES:
            /sales
 
-       Stats:
+       STATS:
            /stats
 
-       IMPORTANT:
-       The Home icon is intentionally NOT placed
-       inside a white box.
+       PROFILE:
+           Remains on the right.
     ====================================================== -->
 
+    <button
+        type="button"
+
+        id="adminTopMenuButton"
+
+        class="menu-btn"
+
+        aria-label="Open admin navigation menu"
+
+        aria-expanded="false"
+
+        title="Menu"
+    >
+
+        ☰
+
+    </button>
+
+
     <div class="dairy-worker-nav">
-
-
-        <!-- =================================================
-           ADMIN HOME
-        ================================================== -->
-
-        <a
-            href="<%= homeLink %>"
-            title="Dairy Dashboard"
-        >
-
-            <span
-                class="nav-icon"
-                aria-hidden="true"
-            >
-                🏠
-            </span>
-
-            <span class="nav-label">
-                Home
-            </span>
-
-        </a>
 
 
         <!-- =================================================
@@ -1022,21 +1642,21 @@ const isPoultryWorker =
        POULTRY WORKER MENU BUTTON
     ====================================================== -->
 
-    <div
+    <button
+        type="button"
+
         class="menu-btn"
 
         onclick="openSidebar()"
 
-        role="button"
-
-        tabindex="0"
-
         aria-label="Open menu"
+
+        title="Menu"
     >
 
         ☰
 
-    </div>
+    </button>
 
 
 <% } %>
@@ -1044,6 +1664,10 @@ const isPoultryWorker =
 
 <!-- =========================================================
    PROFILE
+   ---------------------------------------------------------
+   IMPORTANT:
+   Profile remains in the top menu for ALL authenticated
+   users, including ADMIN.
 ========================================================= -->
 
 <div
@@ -1114,16 +1738,379 @@ const isPoultryWorker =
 
 
 <!-- =========================================================
-   SIDEBAR
+   ADMIN SIDEBAR
+   ---------------------------------------------------------
+   Only rendered for ADMIN.
+   
+   It is completely hidden until the top-menu ☰ button
+   is tapped.
+========================================================= -->
 
-   ADMIN:
-       NO SIDEBAR
+<% if(isAdmin){ %>
 
-   DAIRY WORKER:
-       NO SIDEBAR
 
-   POULTRY WORKER:
-       SIDEBAR ENABLED
+<aside
+    id="adminDashboardSidebar"
+
+    class="admin-dashboard-sidebar"
+
+    aria-label="Project navigation"
+
+    aria-expanded="false"
+>
+
+
+    <!-- =====================================================
+       ADMIN SIDEBAR NAVIGATION
+    ====================================================== -->
+
+    <ul class="admin-sidebar-menu">
+
+
+        <!-- =================================================
+           MENU BUTTON — FIRST ITEM
+        ================================================== -->
+
+        <li class="admin-sidebar-item">
+
+            <button
+                type="button"
+
+                id="adminSidebarMenuButton"
+
+                class="admin-sidebar-menu-button"
+
+                aria-label="Close navigation menu"
+
+                aria-expanded="true"
+            >
+
+                <span
+                    class="admin-sidebar-menu-icon"
+
+                    aria-hidden="true"
+                >
+                    ☰
+                </span>
+
+                <span class="admin-sidebar-label">
+                    Menu
+                </span>
+
+            </button>
+
+        </li>
+
+
+        <!-- =================================================
+           DASHBOARD
+        ================================================== -->
+
+        <li class="admin-sidebar-item">
+
+            <a
+                href="<%= homeLink %>"
+
+                class="admin-sidebar-link active"
+
+                title="Dashboard"
+            >
+
+                <span
+                    class="admin-sidebar-icon"
+
+                    aria-hidden="true"
+                >
+                    ⌂
+                </span>
+
+                <span class="admin-sidebar-label">
+                    Dashboard
+                </span>
+
+            </a>
+
+        </li>
+
+
+        <!-- =================================================
+           DAIRY ACTIVITIES
+        ================================================== -->
+
+        <li class="admin-sidebar-item">
+
+            <button
+                type="button"
+
+                id="dairyActivitiesButton"
+
+                class="admin-sidebar-section-button"
+
+                aria-expanded="false"
+
+                aria-controls="dairyActivitiesSubmenu"
+            >
+
+                <span
+                    class="admin-sidebar-icon"
+
+                    aria-hidden="true"
+                >
+                    🐄
+                </span>
+
+                <span class="admin-sidebar-label">
+                    Dairy Activities
+                </span>
+
+                <span
+                    class="admin-sidebar-section-arrow"
+
+                    aria-hidden="true"
+                >
+                    ▶
+                </span>
+
+            </button>
+
+
+            <!-- =============================================
+                 DAIRY ACTIVITIES SUBMENU
+            ============================================== -->
+
+            <ul
+                id="dairyActivitiesSubmenu"
+
+                class="admin-sidebar-submenu"
+            >
+
+
+                <!-- =========================================
+                     ADD AN ASSET
+                ========================================== -->
+
+                <li class="admin-sidebar-item">
+
+                    <a
+                        href="/add"
+
+                        class="admin-sidebar-link"
+
+                        title="Add an Asset"
+                    >
+
+                        <span
+                            class="admin-sidebar-icon"
+
+                            aria-hidden="true"
+                        >
+                            ＋
+                        </span>
+
+                        <span class="admin-sidebar-label">
+                            Add an Asset
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- =========================================
+                     RECORD MILK PRODUCTION
+                ========================================== -->
+
+                <li class="admin-sidebar-item">
+
+                    <a
+                        href="/milk"
+
+                        class="admin-sidebar-link"
+
+                        title="Record Milk Production"
+                    >
+
+                        <span
+                            class="admin-sidebar-icon"
+
+                            aria-hidden="true"
+                        >
+                            🥛
+                        </span>
+
+                        <span class="admin-sidebar-label">
+                            Record Milk Production
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- =========================================
+                     RECORD MILK SALES
+                ========================================== -->
+
+                <li class="admin-sidebar-item">
+
+                    <a
+                        href="/sales"
+
+                        class="admin-sidebar-link"
+
+                        title="Record Milk Sales"
+                    >
+
+                        <span
+                            class="admin-sidebar-icon"
+
+                            aria-hidden="true"
+                        >
+                            💰
+                        </span>
+
+                        <span class="admin-sidebar-label">
+                            Record Milk Sales
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+                <!-- =========================================
+                     MILK STATISTICS
+                ========================================== -->
+
+                <li class="admin-sidebar-item">
+
+                    <a
+                        href="/stats"
+
+                        class="admin-sidebar-link"
+
+                        title="Milk Statistics"
+                    >
+
+                        <span
+                            class="admin-sidebar-icon"
+
+                            aria-hidden="true"
+                        >
+                            📊
+                        </span>
+
+                        <span class="admin-sidebar-label">
+                            Milk Statistics
+                        </span>
+
+                    </a>
+
+                </li>
+
+
+            </ul>
+
+        </li>
+
+
+        <!-- =================================================
+           VIEW ASSETS
+        ================================================== -->
+
+        <li class="admin-sidebar-item">
+
+            <a
+                href="/networth"
+
+                class="admin-sidebar-link"
+
+                title="View Assets"
+            >
+
+                <span
+                    class="admin-sidebar-icon"
+
+                    aria-hidden="true"
+                >
+                    👁
+                </span>
+
+                <span class="admin-sidebar-label">
+                    View Assets
+                </span>
+
+            </a>
+
+        </li>
+
+
+        <!-- =================================================
+           FINANCIALS
+        ================================================== -->
+
+        <li class="admin-sidebar-item">
+
+            <a
+                href="/financials/summary"
+
+                class="admin-sidebar-link"
+
+                title="Financials"
+            >
+
+                <span
+                    class="admin-sidebar-icon"
+
+                    aria-hidden="true"
+                >
+                    💱
+                </span>
+
+                <span class="admin-sidebar-label">
+                    Financials
+                </span>
+
+            </a>
+
+        </li>
+
+
+    </ul>
+
+
+    <!-- =====================================================
+       SIDEBAR FOOTER
+    ====================================================== -->
+
+    <div class="admin-sidebar-footer">
+
+        Chesi Project Management System
+
+    </div>
+
+
+</aside>
+
+
+<!-- =========================================================
+   ADMIN SIDEBAR OVERLAY
+========================================================= -->
+
+<div
+    id="adminSidebarOverlay"
+
+    class="admin-sidebar-overlay"
+
+    aria-hidden="true"
+></div>
+
+
+<% } %>
+
+
+<!-- =========================================================
+   POULTRY WORKER SIDEBAR
 ========================================================= -->
 
 <% if(isPoultryWorker){ %>
@@ -1209,52 +2196,14 @@ const isPoultryWorker =
 <script>
 
 /* =========================================================
-   ELEMENTS
-========================================================= */
-
-const sidebar =
-    document.getElementById("sidebar");
-
-const overlay =
-    document.getElementById("overlay");
-
-const profileBox =
-    document.getElementById("profileBox");
-
-
-/* =========================================================
-   SIDEBAR
-========================================================= */
-
-function openSidebar(){
-
-    if(!sidebar || !overlay){
-        return;
-    }
-
-    sidebar.classList.add("active");
-
-    overlay.classList.add("active");
-
-}
-
-
-function closeSidebar(){
-
-    if(!sidebar || !overlay){
-        return;
-    }
-
-    sidebar.classList.remove("active");
-
-    overlay.classList.remove("active");
-
-}
-
-
-/* =========================================================
    PROFILE
 ========================================================= */
+
+const profileBox =
+    document.getElementById(
+        "profileBox"
+    );
+
 
 function toggleProfile(event){
 
@@ -1272,12 +2221,67 @@ function toggleProfile(event){
 
 
 /* =========================================================
-   OVERLAY
+   POULTRY SIDEBAR
 ========================================================= */
 
-if(overlay){
+const poultrySidebar =
+    document.getElementById(
+        "sidebar"
+    );
 
-    overlay.addEventListener(
+const poultryOverlay =
+    document.getElementById(
+        "overlay"
+    );
+
+
+function openSidebar(){
+
+    if(
+        !poultrySidebar ||
+        !poultryOverlay
+    ){
+
+        return;
+
+    }
+
+    poultrySidebar.classList.add(
+        "active"
+    );
+
+    poultryOverlay.classList.add(
+        "active"
+    );
+
+}
+
+
+function closeSidebar(){
+
+    if(
+        !poultrySidebar ||
+        !poultryOverlay
+    ){
+
+        return;
+
+    }
+
+    poultrySidebar.classList.remove(
+        "active"
+    );
+
+    poultryOverlay.classList.remove(
+        "active"
+    );
+
+}
+
+
+if(poultryOverlay){
+
+    poultryOverlay.addEventListener(
         "click",
         closeSidebar
     );
@@ -1285,26 +2289,360 @@ if(overlay){
 }
 
 
+if(poultrySidebar){
+
+    poultrySidebar
+        .querySelectorAll("a")
+        .forEach(
+            function(link){
+
+                link.addEventListener(
+                    "click",
+                    closeSidebar
+                );
+
+            }
+        );
+
+}
+
+
 /* =========================================================
-   SIDEBAR LINKS
+   ADMIN SIDEBAR
 ========================================================= */
 
-if(sidebar){
+const adminSidebar =
+    document.getElementById(
+        "adminDashboardSidebar"
+    );
 
-    sidebar
-        .querySelectorAll("a")
-        .forEach(link=>{
 
-            link.addEventListener(
-                "click",
-                function(){
+const adminTopMenuButton =
+    document.getElementById(
+        "adminTopMenuButton"
+    );
 
-                    closeSidebar();
 
-                }
+const adminSidebarMenuButton =
+    document.getElementById(
+        "adminSidebarMenuButton"
+    );
+
+
+const adminSidebarOverlay =
+    document.getElementById(
+        "adminSidebarOverlay"
+    );
+
+
+const dairyActivitiesButton =
+    document.getElementById(
+        "dairyActivitiesButton"
+    );
+
+
+const dairyActivitiesSubmenu =
+    document.getElementById(
+        "dairyActivitiesSubmenu"
+    );
+
+
+/* =========================================================
+   OPEN ADMIN SIDEBAR
+========================================================= */
+
+function openAdminSidebar(){
+
+    if(
+        !adminSidebar ||
+        !adminSidebarOverlay
+    ){
+
+        return;
+
+    }
+
+
+    adminSidebar.classList.add(
+        "open"
+    );
+
+
+    adminSidebarOverlay.classList.add(
+        "active"
+    );
+
+
+    adminSidebar.setAttribute(
+        "aria-expanded",
+        "true"
+    );
+
+
+    if(adminTopMenuButton){
+
+        adminTopMenuButton.setAttribute(
+            "aria-expanded",
+            "true"
+        );
+
+    }
+
+
+    adminSidebarOverlay.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+}
+
+
+/* =========================================================
+   CLOSE DAIRY ACTIVITIES
+========================================================= */
+
+function closeDairyActivities(){
+
+    if(
+        !dairyActivitiesButton ||
+        !dairyActivitiesSubmenu
+    ){
+
+        return;
+
+    }
+
+
+    dairyActivitiesButton.setAttribute(
+        "aria-expanded",
+        "false"
+    );
+
+
+    dairyActivitiesButton.classList.remove(
+        "expanded"
+    );
+
+
+    dairyActivitiesSubmenu.classList.remove(
+        "open"
+    );
+
+}
+
+
+/* =========================================================
+   CLOSE ADMIN SIDEBAR
+========================================================= */
+
+function closeAdminSidebar(){
+
+    if(
+        !adminSidebar ||
+        !adminSidebarOverlay
+    ){
+
+        return;
+
+    }
+
+
+    adminSidebar.classList.remove(
+        "open"
+    );
+
+
+    adminSidebarOverlay.classList.remove(
+        "active"
+    );
+
+
+    adminSidebar.setAttribute(
+        "aria-expanded",
+        "false"
+    );
+
+
+    if(adminTopMenuButton){
+
+        adminTopMenuButton.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+    }
+
+
+    if(adminSidebarOverlay){
+
+        adminSidebarOverlay.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+    }
+
+
+    closeDairyActivities();
+
+}
+
+
+/* =========================================================
+   ADMIN TOP MENU BUTTON
+   ---------------------------------------------------------
+   THIS is the only control that opens the admin sidebar.
+========================================================= */
+
+if(adminTopMenuButton){
+
+    adminTopMenuButton.addEventListener(
+        "click",
+        function(event){
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+            if(
+                adminSidebar &&
+                adminSidebar.classList.contains(
+                    "open"
+                )
+            ){
+
+                closeAdminSidebar();
+
+            }
+            else{
+
+                openAdminSidebar();
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   ADMIN SIDEBAR MENU BUTTON
+   ---------------------------------------------------------
+   Tapping Menu inside the sidebar closes it.
+========================================================= */
+
+if(adminSidebarMenuButton){
+
+    adminSidebarMenuButton.addEventListener(
+        "click",
+        function(event){
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+            closeAdminSidebar();
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   DAIRY ACTIVITIES
+========================================================= */
+
+if(
+    dairyActivitiesButton &&
+    dairyActivitiesSubmenu
+){
+
+    dairyActivitiesButton.addEventListener(
+        "click",
+        function(event){
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+
+            const isExpanded =
+                dairyActivitiesButton.getAttribute(
+                    "aria-expanded"
+                ) === "true";
+
+
+            dairyActivitiesButton.setAttribute(
+                "aria-expanded",
+                String(!isExpanded)
             );
 
-        });
+
+            dairyActivitiesButton.classList.toggle(
+                "expanded",
+                !isExpanded
+            );
+
+
+            dairyActivitiesSubmenu.classList.toggle(
+                "open",
+                !isExpanded
+            );
+
+        }
+    );
+
+}
+
+
+/* =========================================================
+   ADMIN SIDEBAR LINKS
+   ---------------------------------------------------------
+   When a link is tapped:
+       - navigation proceeds normally
+       - sidebar closes immediately
+========================================================= */
+
+if(adminSidebar){
+
+    adminSidebar
+        .querySelectorAll(
+            ".admin-sidebar-link"
+        )
+        .forEach(
+            function(link){
+
+                link.addEventListener(
+                    "click",
+                    function(){
+
+                        closeAdminSidebar();
+
+                    }
+                );
+
+            }
+        );
+
+}
+
+
+/* =========================================================
+   ADMIN OVERLAY
+========================================================= */
+
+if(adminSidebarOverlay){
+
+    adminSidebarOverlay.addEventListener(
+        "click",
+        function(){
+
+            closeAdminSidebar();
+
+        }
+    );
 
 }
 
@@ -1319,7 +2657,9 @@ document.addEventListener(
 
         if(
             profileBox &&
-            !profileBox.contains(event.target)
+            !profileBox.contains(
+                event.target
+            )
         ){
 
             profileBox.classList.remove(
@@ -1344,6 +2684,9 @@ document.addEventListener(
 
             closeSidebar();
 
+            closeAdminSidebar();
+
+
             if(profileBox){
 
                 profileBox.classList.remove(
@@ -1359,18 +2702,22 @@ document.addEventListener(
 
 
 /* =========================================================
-   RESIZE
+   WINDOW RESIZE
 ========================================================= */
 
 window.addEventListener(
     "resize",
     function(){
 
-        if(window.innerWidth > 768){
+        /*
+         * We intentionally close the admin sidebar
+         * on resize rather than keeping an inconsistent
+         * open state.
+         */
 
-            closeSidebar();
+        closeAdminSidebar();
 
-        }
+        closeSidebar();
 
     }
 );
