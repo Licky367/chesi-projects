@@ -141,10 +141,6 @@ exports.image = async (req, res) => {
         let files = [];
 
 
-        // --------------------------------------------------
-        // upload.array(...)
-        // --------------------------------------------------
-
         if (
             Array.isArray(req.files)
         ) {
@@ -154,10 +150,6 @@ exports.image = async (req, res) => {
 
         }
 
-
-        // --------------------------------------------------
-        // upload.single(...)
-        // --------------------------------------------------
 
         if (
             req.file
@@ -170,9 +162,9 @@ exports.image = async (req, res) => {
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // REMOVE DUPLICATES
-        // --------------------------------------------------
+        // ==================================================
 
         files =
             [...new Set(files)];
@@ -525,12 +517,12 @@ exports.image = async (req, res) => {
 
 
 // ==========================================================
-// 🐄 TOGGLE MILKING STATUS
+// 🥛 TOGGLE MILKING STATUS
 // ==========================================================
 //
 // URL:
 //
-//     /dairy/:id/toggle-milking
+//     POST /dairy/:id/toggle-milking
 //
 // Purpose:
 //
@@ -539,6 +531,11 @@ exports.image = async (req, res) => {
 //     false → true
 //     true  → false
 //
+// AUTHORIZED USERS:
+//
+//     • admin
+//     • dairyWorker
+//
 // IMPORTANT:
 //
 // There is NO dairy-farm assignment check.
@@ -546,8 +543,6 @@ exports.image = async (req, res) => {
 // The Dairy document is identified directly using:
 //
 //     req.params.id
-//
-// Only an administrator can change the milking status.
 //
 // ==========================================================
 
@@ -605,12 +600,20 @@ exports.toggleMilking = async (req, res) => {
 
 
         // ==================================================
-        // ADMIN CHECK
+        // ROLE CHECK
+        // ==================================================
+        //
+        // Both admin and dairyWorker can toggle
+        // milking status.
+        //
         // ==================================================
 
-        if (
-            user.role !== "admin"
-        ) {
+        const canToggleMilking =
+            user.role === "admin" ||
+            user.role === "dairyWorker";
+
+
+        if (!canToggleMilking) {
 
             return res
                 .status(403)
@@ -619,7 +622,7 @@ exports.toggleMilking = async (req, res) => {
                     success: false,
 
                     message:
-                        "Only admin can change milking status."
+                        "Only admin or dairyWorker can change milking status."
 
                 });
 
@@ -790,7 +793,7 @@ exports.toggleMilking = async (req, res) => {
 
                     message:
                         err.message ||
-                        "Only admin can change milking status."
+                        "Only admin or dairyWorker can change milking status."
 
                 });
 
