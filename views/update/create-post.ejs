@@ -35,8 +35,22 @@ SUBMITTED FIELD:
     targetDairyId
 
 IMPORTANT:
-    Phase 2 is an ACTIVE SELECT element.
-    It is NOT read-only.
+    Phase 2 is ALWAYS an active <select> once a category
+    has been selected.
+
+    The list is populated from the server-provided
+    target Dairy records.
+
+EXPECTED SERVER VARIABLES:
+    targetDairies
+    OR
+    dairies
+    OR
+    allDairies
+    OR
+    postTargetDairies
+
+The controller MUST provide one of these arrays.
 ==========================================================
 */ %>
 
@@ -62,8 +76,8 @@ IMPORTANT:
         <div class="create-post-avatar">
 
             <img
-                src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)) %>"
-                alt="<%= user.name %>"
+                src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name || 'User')) %>"
+                alt="<%= user.name || 'User' %>"
                 class="avatar-sm"
             >
 
@@ -77,7 +91,7 @@ IMPORTANT:
                 <div class="heading-line">
 
                     <strong>
-                        <%= user.name.split(" ")[0] %>
+                        <%= (user.name || "User").split(" ")[0] %>
                     </strong>
 
                     , update us about the overall conditions
@@ -90,7 +104,7 @@ IMPORTANT:
                 <div class="heading-line">
 
                     <strong>
-                        <%= user.name.split(" ")[0] %>
+                        <%= (user.name || "User").split(" ")[0] %>
                     </strong>
 
                     , update us about
@@ -168,7 +182,9 @@ IMPORTANT:
                 </strong>
 
                 <span id="postTargetHeader">
+
                     <%= dairy.name %>
+
                 </span>
 
             </div>
@@ -275,11 +291,6 @@ IMPORTANT:
 
                         <!-- =========================================
                              PHASE 2
-
-                             THIS IS AN ACTIVE SELECT.
-
-                             IMPORTANT:
-                             It is NOT disabled permanently.
                         ========================================== -->
 
                         <div
@@ -298,8 +309,18 @@ IMPORTANT:
                             </label>
 
 
+                            <!--
+                            IMPORTANT:
+
+                            This is a REAL ACTIVE SELECT.
+
+                            It is not readonly.
+                            It is not permanently disabled.
+                            -->
+
                             <select
                                 id="targetDairySelect"
+                                name="targetDairySelect"
                                 class="target-select"
                             >
 
@@ -346,8 +367,7 @@ IMPORTANT:
                                     Post concerns
                                 </span>
 
-                                <strong id="selectedTargetName">
-                                </strong>
+                                <strong id="selectedTargetName"></strong>
 
                             </div>
 
@@ -364,7 +384,6 @@ IMPORTANT:
                 ================================================== -->
 
                 <div class="post-fields-content">
-
 
                     <div class="post-title-wrapper">
 
@@ -391,7 +410,9 @@ IMPORTANT:
 
 
 
-                    <!-- IMAGE PREVIEW -->
+                    <!-- =================================================
+                         IMAGE PREVIEW
+                    ================================================== -->
 
                     <div
                         id="imagePreviewContainer"
@@ -431,7 +452,7 @@ IMPORTANT:
 
                 <!-- =================================================
                      TARGET DAIRY ID
-                ================================================= -->
+                ================================================== -->
 
                 <% if (Number(dairy.code) < 0) { %>
 
@@ -475,7 +496,9 @@ IMPORTANT:
                 <div class="post-composer">
 
 
-                    <!-- ATTACHMENT -->
+                    <!-- =================================================
+                         ATTACHMENT
+                    ================================================== -->
 
                     <label
                         for="postImages"
@@ -500,7 +523,9 @@ IMPORTANT:
 
 
 
-                    <!-- TEXT -->
+                    <!-- =================================================
+                         TEXT
+                    ================================================== -->
 
                     <div class="composer-input-area">
 
@@ -525,7 +550,9 @@ IMPORTANT:
 
 
 
-                    <!-- SEND -->
+                    <!-- =================================================
+                         SEND
+                    ================================================== -->
 
                     <button
                         type="submit"
@@ -569,15 +596,10 @@ IMPORTANT:
 .create-post-card {
 
     width: 100%;
-
     background: #ffffff;
-
     border: 1px solid #e7eee9;
-
     border-radius: 16px;
-
     padding: 16px;
-
     margin-bottom: 16px;
 
 }
@@ -586,9 +608,7 @@ IMPORTANT:
 .create-post-header {
 
     display: flex;
-
     align-items: center;
-
     gap: 12px;
 
 }
@@ -604,13 +624,9 @@ IMPORTANT:
 .avatar-sm {
 
     width: 44px;
-
     height: 44px;
-
     border-radius: 50%;
-
     object-fit: cover;
-
     display: block;
 
 }
@@ -619,11 +635,8 @@ IMPORTANT:
 .create-post-heading {
 
     min-width: 0;
-
     color: #555;
-
     font-size: 14px;
-
     line-height: 1.5;
 
 }
@@ -651,23 +664,14 @@ IMPORTANT:
 .composer-trigger {
 
     min-height: 48px;
-
     margin-top: 14px;
-
     padding: 0 16px;
-
     border: 1px solid #dfe8e2;
-
     border-radius: 24px;
-
     display: flex;
-
     align-items: center;
-
     background: #f8faf8;
-
     color: #888;
-
     cursor: pointer;
 
     transition:
@@ -681,7 +685,6 @@ IMPORTANT:
 .composer-trigger:hover {
 
     background: #f1f7f3;
-
     border-color: #198754;
 
 }
@@ -702,19 +705,12 @@ IMPORTANT:
 .post-modal {
 
     position: fixed;
-
     inset: 0;
-
     width: 100vw;
-
     height: 100dvh;
-
     background: #ffffff;
-
     z-index: 99999;
-
     display: none;
-
     overflow: hidden;
 
 }
@@ -730,13 +726,9 @@ IMPORTANT:
 .post-modal-content {
 
     width: 100%;
-
     height: 100%;
-
     display: flex;
-
     flex-direction: column;
-
     background: #ffffff;
 
 }
@@ -750,17 +742,11 @@ IMPORTANT:
 .post-modal-header {
 
     flex: 0 0 auto;
-
     height: 64px;
-
     display: flex;
-
     align-items: center;
-
     padding: 0 16px;
-
     border-bottom: 1px solid #e8eee9;
-
     background: #ffffff;
 
 }
@@ -769,27 +755,16 @@ IMPORTANT:
 .post-back-button {
 
     width: 44px;
-
     height: 44px;
-
     flex: 0 0 44px;
-
     border: none;
-
     background: transparent;
-
     color: #198754;
-
     display: flex;
-
     align-items: center;
-
     justify-content: center;
-
     cursor: pointer;
-
     font-size: 27px;
-
     padding: 0;
 
 }
@@ -798,13 +773,9 @@ IMPORTANT:
 .post-modal-title {
 
     margin-left: 8px;
-
     min-width: 0;
-
     display: flex;
-
     flex-direction: column;
-
     line-height: 1.25;
 
 }
@@ -813,7 +784,6 @@ IMPORTANT:
 .post-modal-title strong {
 
     color: #202520;
-
     font-size: 17px;
 
 }
@@ -822,10 +792,12 @@ IMPORTANT:
 .post-modal-title span {
 
     margin-top: 2px;
-
     color: #7a817d;
-
     font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70vw;
 
 }
 
@@ -845,11 +817,8 @@ IMPORTANT:
 .post-modal-body {
 
     flex: 1 1 auto;
-
     min-height: 0;
-
     overflow-y: auto;
-
     padding: 20px;
 
 }
@@ -858,9 +827,7 @@ IMPORTANT:
 .post-fields {
 
     width: 100%;
-
     max-width: 700px;
-
     margin: 0 auto;
 
 }
@@ -874,15 +841,10 @@ IMPORTANT:
 .post-target-section {
 
     width: 100%;
-
     margin-bottom: 24px;
-
     padding: 15px;
-
     border: 1px solid #e1ebe4;
-
     border-radius: 15px;
-
     background: #f7faf8;
 
 }
@@ -891,11 +853,8 @@ IMPORTANT:
 .post-section-label {
 
     display: flex;
-
     align-items: center;
-
     gap: 11px;
-
     margin-bottom: 15px;
 
 }
@@ -904,23 +863,14 @@ IMPORTANT:
 .post-section-label-icon {
 
     width: 38px;
-
     height: 38px;
-
     flex: 0 0 38px;
-
     border-radius: 50%;
-
     background: #e2f2e9;
-
     color: #198754;
-
     display: flex;
-
     align-items: center;
-
     justify-content: center;
-
     font-size: 17px;
 
 }
@@ -929,7 +879,6 @@ IMPORTANT:
 .post-section-label > div {
 
     display: flex;
-
     flex-direction: column;
 
 }
@@ -938,7 +887,6 @@ IMPORTANT:
 .post-section-label strong {
 
     color: #26312a;
-
     font-size: 14px;
 
 }
@@ -947,9 +895,7 @@ IMPORTANT:
 .post-section-label span {
 
     margin-top: 2px;
-
     color: #7a817d;
-
     font-size: 11px;
 
 }
@@ -977,13 +923,9 @@ IMPORTANT:
 .target-field-label {
 
     display: block;
-
     margin-bottom: 7px;
-
     color: #37413a;
-
     font-size: 12px;
-
     font-weight: 700;
 
 }
@@ -992,44 +934,24 @@ IMPORTANT:
 
 /* =========================================================
    SELECT
-
-   IMPORTANT:
-   NO appearance tricks.
-   NO pointer-events:none.
-   NO readonly.
-   NO permanent disabled state.
 ========================================================= */
 
 .target-select {
 
     display: block;
-
     width: 100%;
-
     min-height: 48px;
-
     height: 48px;
-
     padding: 0 12px;
-
     border: 1px solid #d6e0d9;
-
     border-radius: 11px;
-
     outline: none;
-
     background-color: #ffffff;
-
     color: #202520;
-
     font-family: inherit;
-
     font-size: 14px;
-
     cursor: pointer;
-
     opacity: 1;
-
     pointer-events: auto;
 
 }
@@ -1049,11 +971,8 @@ IMPORTANT:
 .target-select:disabled {
 
     background-color: #f0f4f1;
-
     color: #929a95;
-
     cursor: not-allowed;
-
     opacity: .75;
 
 }
@@ -1067,11 +986,8 @@ IMPORTANT:
 .target-selection-hint {
 
     margin-top: 7px;
-
     color: #7f8983;
-
     font-size: 11px;
-
     line-height: 1.4;
 
 }
@@ -1085,17 +1001,11 @@ IMPORTANT:
 .selected-target-display {
 
     display: flex;
-
     align-items: center;
-
     gap: 9px;
-
     margin-top: 12px;
-
     padding: 9px 11px;
-
     border-radius: 10px;
-
     background: #eaf6ef;
 
 }
@@ -1104,23 +1014,14 @@ IMPORTANT:
 .selected-target-icon {
 
     width: 25px;
-
     height: 25px;
-
     flex: 0 0 25px;
-
     border-radius: 50%;
-
     background: #198754;
-
     color: #ffffff;
-
     display: flex;
-
     align-items: center;
-
     justify-content: center;
-
     font-size: 13px;
 
 }
@@ -1129,9 +1030,7 @@ IMPORTANT:
 .selected-target-info {
 
     min-width: 0;
-
     display: flex;
-
     flex-direction: column;
 
 }
@@ -1140,7 +1039,6 @@ IMPORTANT:
 .selected-target-info span {
 
     color: #718078;
-
     font-size: 10px;
 
 }
@@ -1149,10 +1047,36 @@ IMPORTANT:
 .selected-target-info strong {
 
     margin-top: 1px;
-
     color: #205b3b;
-
     font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+}
+
+
+
+/* =========================================================
+   EMPTY TARGET STATE
+========================================================= */
+
+.target-empty-option {
+
+    color: #7f8983;
+
+}
+
+
+.target-empty-message {
+
+    margin-top: 8px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    background: #fff7e6;
+    color: #80652e;
+    font-size: 11px;
+    line-height: 1.45;
 
 }
 
@@ -1172,7 +1096,6 @@ IMPORTANT:
 .post-title-wrapper {
 
     width: 100%;
-
     margin-bottom: 18px;
 
 }
@@ -1181,17 +1104,11 @@ IMPORTANT:
 .post-title-label {
 
     display: block;
-
     margin-bottom: 7px;
-
     color: #6d7771;
-
     font-size: 11px;
-
     font-weight: 700;
-
     text-transform: uppercase;
-
     letter-spacing: .04em;
 
 }
@@ -1200,23 +1117,14 @@ IMPORTANT:
 #postTitle {
 
     width: 100%;
-
     padding: 13px 14px;
-
     border: 1px solid #e0e7e2;
-
     border-radius: 12px;
-
     outline: none;
-
     background: #f8faf8;
-
     color: #202520;
-
     font-family: inherit;
-
     font-size: 20px;
-
     font-weight: 700;
 
 }
@@ -1225,7 +1133,6 @@ IMPORTANT:
 #postTitle:focus {
 
     border-color: #198754;
-
     background: #ffffff;
 
     box-shadow:
@@ -1271,15 +1178,10 @@ IMPORTANT:
 .image-preview-item {
 
     position: relative;
-
     width: 100%;
-
     aspect-ratio: 1 / 1;
-
     overflow: hidden;
-
     border-radius: 12px;
-
     background: #f3f5f3;
 
 }
@@ -1288,11 +1190,8 @@ IMPORTANT:
 .image-preview-item img {
 
     width: 100%;
-
     height: 100%;
-
     display: block;
-
     object-fit: cover;
 
 }
@@ -1306,16 +1205,12 @@ IMPORTANT:
 .post-composer-wrapper {
 
     flex: 0 0 auto;
-
     width: 100%;
-
     padding:
         10px
         12px
         calc(10px + env(safe-area-inset-bottom));
-
     border-top: 1px solid #e8eee9;
-
     background: #ffffff;
 
 }
@@ -1324,7 +1219,6 @@ IMPORTANT:
 .post-form {
 
     width: 100%;
-
     margin: 0;
 
 }
@@ -1333,21 +1227,13 @@ IMPORTANT:
 .post-composer {
 
     width: 100%;
-
     min-height: 50px;
-
     display: flex;
-
     align-items: flex-end;
-
     gap: 8px;
-
     padding: 5px 7px;
-
     border: 1px solid #dce6df;
-
     border-radius: 28px;
-
     background: #f7faf8;
 
 }
@@ -1361,27 +1247,16 @@ IMPORTANT:
 .composer-icon-button {
 
     width: 42px;
-
     height: 42px;
-
     flex: 0 0 42px;
-
     border: none;
-
     background: transparent;
-
     color: #198754;
-
     display: flex;
-
     align-items: center;
-
     justify-content: center;
-
     cursor: pointer;
-
     font-size: 23px;
-
     padding: 0;
 
 }
@@ -1402,13 +1277,9 @@ IMPORTANT:
 .composer-input-area {
 
     position: relative;
-
     flex: 1;
-
     min-width: 0;
-
     display: flex;
-
     align-items: flex-end;
 
 }
@@ -1417,19 +1288,12 @@ IMPORTANT:
 #postText {
 
     width: 100%;
-
     min-height: 40px;
-
     max-height: 120px;
-
     resize: none;
-
     overflow-y: auto;
-
     border: none;
-
     outline: none;
-
     background: transparent;
 
     padding:
@@ -1438,13 +1302,9 @@ IMPORTANT:
         5px;
 
     margin: 0;
-
     font-family: inherit;
-
     font-size: 15px;
-
     line-height: 20px;
-
     color: #202520;
 
 }
@@ -1465,19 +1325,12 @@ IMPORTANT:
 .character-counter {
 
     position: absolute;
-
     right: 5px;
-
     bottom: 1px;
-
     padding-left: 3px;
-
     background: #f7faf8;
-
     color: #8a928d;
-
     font-size: 10px;
-
     pointer-events: none;
 
 }
@@ -1491,29 +1344,17 @@ IMPORTANT:
 .composer-send-button {
 
     width: 42px;
-
     height: 42px;
-
     flex: 0 0 42px;
-
     border: none;
-
     border-radius: 50%;
-
     background: transparent;
-
     color: #198754;
-
     display: flex;
-
     align-items: center;
-
     justify-content: center;
-
     cursor: pointer;
-
     font-size: 20px;
-
     padding: 0;
 
 }
@@ -1522,7 +1363,6 @@ IMPORTANT:
 .composer-send-button:disabled {
 
     color: #b8c2bc;
-
     cursor: default;
 
 }
@@ -1538,7 +1378,6 @@ IMPORTANT:
     .post-modal-header {
 
         height: 60px;
-
         padding: 0 10px;
 
     }
@@ -1592,9 +1431,7 @@ IMPORTANT:
     .post-composer {
 
         min-height: 48px;
-
         gap: 4px;
-
         padding: 4px 5px;
 
     }
@@ -1603,11 +1440,8 @@ IMPORTANT:
     .composer-icon-button {
 
         width: 40px;
-
         height: 40px;
-
         flex-basis: 40px;
-
         font-size: 22px;
 
     }
@@ -1616,11 +1450,8 @@ IMPORTANT:
     .composer-send-button {
 
         width: 40px;
-
         height: 40px;
-
         flex-basis: 40px;
-
         font-size: 19px;
 
     }
@@ -1696,29 +1527,19 @@ IMPORTANT:
             document.getElementById("postImages");
 
         const previewContainer =
-            document.getElementById(
-                "imagePreviewContainer"
-            );
+            document.getElementById("imagePreviewContainer");
 
         const previewGrid =
-            document.getElementById(
-                "imagePreviewGrid"
-            );
+            document.getElementById("imagePreviewGrid");
 
         const characterCounter =
-            document.getElementById(
-                "characterCounter"
-            );
+            document.getElementById("characterCounter");
 
         const sendButton =
-            document.getElementById(
-                "submitPostButton"
-            );
+            document.getElementById("submitPostButton");
 
         const form =
-            document.getElementById(
-                "postForm"
-            );
+            document.getElementById("postForm");
 
 
 
@@ -1727,49 +1548,33 @@ IMPORTANT:
         ====================================================== */
 
         const targetCategory =
-            document.getElementById(
-                "targetCategory"
-            );
+            document.getElementById("targetCategory");
 
         const targetPhaseTwo =
-            document.getElementById(
-                "targetPhaseTwo"
-            );
+            document.getElementById("targetPhaseTwo");
 
         const targetDairySelect =
-            document.getElementById(
-                "targetDairySelect"
-            );
+            document.getElementById("targetDairySelect");
 
         const targetSelectionHint =
-            document.getElementById(
-                "targetSelectionHint"
-            );
+            document.getElementById("targetSelectionHint");
 
         const targetDairyId =
-            document.getElementById(
-                "targetDairyId"
-            );
+            document.getElementById("targetDairyId");
 
         const selectedTargetDisplay =
-            document.getElementById(
-                "selectedTargetDisplay"
-            );
+            document.getElementById("selectedTargetDisplay");
 
         const selectedTargetName =
-            document.getElementById(
-                "selectedTargetName"
-            );
+            document.getElementById("selectedTargetName");
 
         const postTargetHeader =
-            document.getElementById(
-                "postTargetHeader"
-            );
+            document.getElementById("postTargetHeader");
 
 
 
         /* =====================================================
-           REQUIRED BASIC ELEMENTS
+           REQUIRED ELEMENT CHECK
         ====================================================== */
 
         if (
@@ -1798,95 +1603,135 @@ IMPORTANT:
 
 
         /* =====================================================
-           AVAILABLE DAIRIES
+           SERVER TARGET DATA
 
-           Accept any of these controller variable names:
+           IMPORTANT:
 
+           The controller must provide the records.
+
+           Priority:
+
+               targetDairies
                dairies
                allDairies
-               targetDairies
+               postTargetDairies
 
-           The first available one is used.
+           We deliberately do NOT silently manufacture an
+           empty list if the controller forgot to provide it.
+           A console error makes the actual backend problem
+           visible.
         ====================================================== */
 
-        const serverDairies =
+        const serverTargetDairies =
             <%- JSON.stringify(
-                typeof dairies !== "undefined"
-                    ? dairies
+                typeof targetDairies !== "undefined"
+                    ? targetDairies
                     : (
-                        typeof allDairies !== "undefined"
-                            ? allDairies
+                        typeof dairies !== "undefined"
+                            ? dairies
                             : (
-                                typeof targetDairies !== "undefined"
-                                    ? targetDairies
-                                    : []
+                                typeof allDairies !== "undefined"
+                                    ? allDairies
+                                    : (
+                                        typeof postTargetDairies !== "undefined"
+                                            ? postTargetDairies
+                                            : null
+                                    )
                             )
                     )
             ) %>;
 
 
-        /*
-         * Convert Mongoose documents into simple
-         * browser-safe objects.
-         */
+
+        /* =====================================================
+           NORMALIZE SERVER RECORDS
+        ====================================================== */
 
         const availableDairies =
-            Array.isArray(serverDairies)
-                ? serverDairies.map(
-                    function (item) {
+            Array.isArray(serverTargetDairies)
+                ? serverTargetDairies
+                    .map(function (item) {
 
                         if (!item) {
                             return null;
                         }
 
+
+                        const rawId =
+                            item._id;
+
+
+                        if (!rawId) {
+                            return null;
+                        }
+
+
                         return {
 
                             _id:
-                                item._id
-                                    ? String(item._id)
-                                    : "",
+                                String(rawId),
 
                             name:
                                 item.name
                                     ? String(item.name)
-                                    : "Unnamed",
+                                    : "Unnamed Dairy",
 
                             code:
                                 item.code
 
                         };
 
-                    }
-                ).filter(
-                    function (item) {
+                    })
+                    .filter(function (item) {
 
                         return (
                             item &&
                             item._id
                         );
 
-                    }
-                )
+                    })
                 : [];
 
 
 
+        /* =====================================================
+           DEBUG
+
+           This tells us immediately whether the controller
+           actually sent the target records.
+        ====================================================== */
+
         console.log(
-            "CREATE POST: available target records:",
+            "CREATE POST — server target records:",
+            serverTargetDairies
+        );
+
+
+        console.log(
+            "CREATE POST — normalized target records:",
             availableDairies
         );
 
 
+        if (
+            serverTargetDairies === null
+        ) {
+
+            console.error(
+                "CREATE POST: NO TARGET DAIRY ARRAY WAS PROVIDED BY THE CONTROLLER."
+            );
+
+        }
+
+
 
         /* =====================================================
-           OPEN
+           OPEN MODAL
         ====================================================== */
 
         function openModal() {
 
-            modal.classList.add(
-                "active"
-            );
+            modal.classList.add("active");
 
             modal.setAttribute(
                 "aria-hidden",
@@ -1897,38 +1742,31 @@ IMPORTANT:
                 "hidden";
 
 
-            setTimeout(
-                function () {
+            setTimeout(function () {
 
-                    if (
-                        targetCategory
-                    ) {
+                if (targetCategory) {
 
-                        targetCategory.focus();
+                    targetCategory.focus();
 
-                    } else {
+                } else {
 
-                        titleInput.focus();
+                    titleInput.focus();
 
-                    }
+                }
 
-                },
-                100
-            );
+            }, 100);
 
         }
 
 
 
         /* =====================================================
-           CLOSE
+           CLOSE MODAL
         ====================================================== */
 
         function closeModal() {
 
-            modal.classList.remove(
-                "active"
-            );
+            modal.classList.remove("active");
 
             modal.setAttribute(
                 "aria-hidden",
@@ -1949,8 +1787,7 @@ IMPORTANT:
         function updateCharacterCounter() {
 
             characterCounter.textContent =
-                textarea.value.length +
-                "/1000";
+                textarea.value.length + "/1000";
 
         }
 
@@ -1975,24 +1812,21 @@ IMPORTANT:
                 imageInput.files.length > 0;
 
 
-            let hasTarget =
-                true;
+            let hasTarget = true;
 
 
             /*
-             * Negative-code pages have a hidden
-             * targetDairyId which must contain
-             * the selected target.
+             * Negative-code page:
+             * target must be selected.
              */
 
             if (
-                targetDairyId &&
-                targetCategory
+                targetCategory &&
+                targetDairyId
             ) {
 
                 hasTarget =
-                    targetDairyId.value.trim()
-                        .length > 0;
+                    targetDairyId.value.trim().length > 0;
 
             }
 
@@ -2051,9 +1885,7 @@ IMPORTANT:
                 );
 
 
-            if (
-                files.length === 0
-            ) {
+            if (!files.length) {
 
                 previewContainer.hidden =
                     true;
@@ -2067,117 +1899,105 @@ IMPORTANT:
                 false;
 
 
-            files.forEach(
-                function (file) {
+            files.forEach(function (file) {
 
-                    if (
-                        !file.type.startsWith(
-                            "image/"
-                        )
-                    ) {
+                if (
+                    !file ||
+                    !file.type.startsWith("image/")
+                ) {
 
-                        return;
-
-                    }
-
-
-                    const reader =
-                        new FileReader();
-
-
-                    reader.onload =
-                        function (event) {
-
-                            const item =
-                                document.createElement(
-                                    "div"
-                                );
-
-                            item.className =
-                                "image-preview-item";
-
-
-                            const image =
-                                document.createElement(
-                                    "img"
-                                );
-
-                            image.src =
-                                event.target.result;
-
-                            image.alt =
-                                "Selected image";
-
-
-                            item.appendChild(
-                                image
-                            );
-
-
-                            previewGrid.appendChild(
-                                item
-                            );
-
-                        };
-
-
-                    reader.readAsDataURL(
-                        file
-                    );
+                    return;
 
                 }
-            );
+
+
+                const reader =
+                    new FileReader();
+
+
+                reader.onload =
+                    function (event) {
+
+                        const item =
+                            document.createElement("div");
+
+
+                        item.className =
+                            "image-preview-item";
+
+
+                        const image =
+                            document.createElement("img");
+
+
+                        image.src =
+                            event.target.result;
+
+
+                        image.alt =
+                            "Selected image";
+
+
+                        item.appendChild(image);
+
+                        previewGrid.appendChild(item);
+
+                    };
+
+
+                reader.readAsDataURL(file);
+
+            });
 
         }
 
 
 
         /* =====================================================
-           RESET PHASE 2
+           RESET TARGET SELECTOR
         ====================================================== */
 
         function resetTargetSelection() {
 
-            if (
-                !targetDairySelect
-            ) {
+            if (!targetDairySelect) {
 
                 return;
 
             }
 
 
-            targetDairySelect.innerHTML =
-                '<option value="">Select a subject</option>';
+            targetDairySelect.innerHTML = "";
+
+
+            const option =
+                document.createElement("option");
+
+
+            option.value = "";
+
+            option.textContent =
+                "Select a subject";
+
+
+            targetDairySelect.appendChild(option);
 
 
             /*
-             * IMPORTANT:
-             *
-             * Phase 2 is disabled ONLY because
-             * no category has been selected.
-             *
-             * Once a category is selected,
-             * disabled is explicitly set to false.
+             * It is disabled only while no category exists.
              */
 
             targetDairySelect.disabled =
                 true;
 
 
-            if (
-                targetDairyId
-            ) {
+            if (targetDairyId) {
 
-                targetDairyId.value =
-                    "";
+                targetDairyId.value = "";
 
             }
 
 
-            if (
-                selectedTargetDisplay
-            ) {
+            if (selectedTargetDisplay) {
 
                 selectedTargetDisplay.hidden =
                     true;
@@ -2185,9 +2005,7 @@ IMPORTANT:
             }
 
 
-            if (
-                selectedTargetName
-            ) {
+            if (selectedTargetName) {
 
                 selectedTargetName.textContent =
                     "";
@@ -2195,9 +2013,7 @@ IMPORTANT:
             }
 
 
-            if (
-                postTargetHeader
-            ) {
+            if (postTargetHeader) {
 
                 postTargetHeader.textContent =
                     "<%= dairy.name %>";
@@ -2205,9 +2021,7 @@ IMPORTANT:
             }
 
 
-            if (
-                targetSelectionHint
-            ) {
+            if (targetSelectionHint) {
 
                 targetSelectionHint.textContent =
                     "Choose a category above.";
@@ -2219,17 +2033,10 @@ IMPORTANT:
 
 
         /* =====================================================
-           POPULATE PHASE 2
-
-           THIS IS THE IMPORTANT FIX.
-
-           The select is ACTIVELY POPULATED and then
-           explicitly enabled.
+           POPULATE TARGET LIST
         ====================================================== */
 
-        function populateTargetList(
-            category
-        ) {
+        function populateTargetList(category) {
 
             if (
                 !targetDairySelect ||
@@ -2242,7 +2049,7 @@ IMPORTANT:
 
 
             /*
-             * Clear existing options.
+             * Clear old options.
              */
 
             targetDairySelect.innerHTML =
@@ -2250,44 +2057,42 @@ IMPORTANT:
 
 
             /*
-             * Always show Phase 2 after a category
-             * has been selected.
+             * Show phase 2.
              */
 
             targetPhaseTwo.hidden =
                 false;
 
 
-            /*
-             * No category:
-             * disable selector.
-             */
+
+            /* =================================================
+               NO CATEGORY
+            ================================================= */
 
             if (!category) {
 
-                targetDairySelect.disabled =
-                    true;
-
-
                 const option =
-                    document.createElement(
-                        "option"
-                    );
+                    document.createElement("option");
+
 
                 option.value =
                     "";
 
+
                 option.textContent =
                     "Select a subject";
+
 
                 targetDairySelect.appendChild(
                     option
                 );
 
 
-                if (
-                    targetSelectionHint
-                ) {
+                targetDairySelect.disabled =
+                    true;
+
+
+                if (targetSelectionHint) {
 
                     targetSelectionHint.textContent =
                         "Choose a category above.";
@@ -2306,67 +2111,62 @@ IMPORTANT:
 
 
             /* =================================================
-               FILTER TARGETS
-            ================================================== */
+               FILTER
+            ================================================= */
 
             const matchingDairies =
-                availableDairies.filter(
-                    function (item) {
+                availableDairies.filter(function (item) {
 
-                        if (
-                            !item
-                        ) {
-
-                            return false;
-
-                        }
-
-
-                        const code =
-                            item.code;
-
-
-
-                        /* =====================================
-                           ANIMAL
-                        ====================================== */
-
-                        if (
-                            category === "animal"
-                        ) {
-
-                            return (
-                                code !== null &&
-                                code !== undefined &&
-                                code !== "" &&
-                                Number(code) > 0
-                            );
-
-                        }
-
-
-
-                        /* =====================================
-                           STRUCTURE / FACILITY / TOOL
-                        ====================================== */
-
-                        if (
-                            category === "structure"
-                        ) {
-
-                            return (
-                                code === null ||
-                                code === undefined ||
-                                code === ""
-                            );
-
-                        }
-
+                    if (!item) {
 
                         return false;
 
                     }
-                );
+
+
+                    const code =
+                        item.code;
+
+
+                    /*
+                     * ANIMAL
+                     *
+                     * Must be positive numeric code.
+                     */
+
+                    if (category === "animal") {
+
+                        return (
+                            code !== null &&
+                            code !== undefined &&
+                            code !== "" &&
+                            Number.isFinite(Number(code)) &&
+                            Number(code) > 0
+                        );
+
+                    }
+
+
+                    /*
+                     * STRUCTURE / FACILITY / TOOL
+                     *
+                     * Must have NO code.
+                     */
+
+                    if (category === "structure") {
+
+                        return (
+                            code === null ||
+                            code === undefined ||
+                            code === ""
+                        );
+
+                    }
+
+
+                    return false;
+
+                });
 
 
 
@@ -2375,17 +2175,22 @@ IMPORTANT:
             ================================================== */
 
             const defaultOption =
-                document.createElement(
-                    "option"
-                );
+                document.createElement("option");
+
 
             defaultOption.value =
                 "";
+
 
             defaultOption.textContent =
                 category === "animal"
                     ? "Select an animal"
                     : "Select a structure / facility / tool";
+
+
+            defaultOption.selected =
+                true;
+
 
             targetDairySelect.appendChild(
                 defaultOption
@@ -2394,57 +2199,53 @@ IMPORTANT:
 
 
             /* =================================================
-               ADD REAL TARGET OPTIONS
-            ================================================== */
+               TARGET OPTIONS
+            ================================================= */
 
-            matchingDairies.forEach(
-                function (item) {
+            matchingDairies.forEach(function (item) {
 
-                    const option =
-                        document.createElement(
-                            "option"
-                        );
+                const option =
+                    document.createElement("option");
 
 
-                    option.value =
-                        item._id;
+                option.value =
+                    item._id;
 
 
-                    option.textContent =
-                        item.name;
+                option.textContent =
+                    item.name;
 
 
-                    /*
-                     * Store category and code as data
-                     * attributes too.
-                     */
-
-                    option.dataset.category =
-                        category;
-
-
-                    option.dataset.code =
+                option.dataset.code =
+                    (
                         item.code === null ||
                         item.code === undefined
-                            ? ""
-                            : String(item.code);
+                    )
+                        ? ""
+                        : String(item.code);
 
 
-                    targetDairySelect.appendChild(
-                        option
-                    );
+                option.dataset.category =
+                    category;
 
-                }
-            );
+
+                targetDairySelect.appendChild(
+                    option
+                );
+
+            });
 
 
 
             /* =================================================
-               IMPORTANT FIX:
-               ENABLE PHASE 2.
+               IMPORTANT:
 
-               DO NOT LEAVE THIS DISABLED.
-            ================================================== */
+               ENABLE THE SELECT.
+
+               No readonly.
+               No pointer-events:none.
+               No permanent disabled.
+            ================================================= */
 
             targetDairySelect.disabled =
                 false;
@@ -2453,50 +2254,51 @@ IMPORTANT:
 
             /* =================================================
                HINT
-            ================================================== */
+            ================================================= */
 
-            if (
-                targetSelectionHint
-            ) {
+            if (targetSelectionHint) {
 
-                if (
-                    matchingDairies.length > 0
-                ) {
+                if (matchingDairies.length) {
 
-                    targetSelectionHint.textContent =
-                        category === "animal"
-                            ? (
-                                matchingDairies.length +
-                                " animal" +
-                                (
-                                    matchingDairies.length === 1
-                                        ? ""
-                                        : "s"
-                                ) +
-                                " available."
-                            )
-                            : (
-                                matchingDairies.length +
-                                " structure / facility / tool" +
-                                (
-                                    matchingDairies.length === 1
-                                        ? ""
-                                        : "s"
-                                ) +
-                                " available."
+                    const count =
+                        matchingDairies.length;
+
+
+                    if (category === "animal") {
+
+                        targetSelectionHint.textContent =
+                            count +
+                            (
+                                count === 1
+                                    ? " animal available."
+                                    : " animals available."
                             );
+
+                    } else {
+
+                        targetSelectionHint.textContent =
+                            count +
+                            (
+                                count === 1
+                                    ? " structure / facility / tool available."
+                                    : " structures / facilities / tools available."
+                            );
+
+                    }
 
                 } else {
 
                     /*
-                     * The selector STILL remains enabled.
-                     * We do NOT turn it into a read-only field.
+                     * Keep the SELECT active.
+                     *
+                     * The absence of records is a data issue,
+                     * not a reason to make the control readonly.
                      */
 
                     targetSelectionHint.textContent =
                         category === "animal"
-                            ? "No animals are available in the supplied Dairy records."
-                            : "No structures, facilities, or tools are available in the supplied Dairy records.";
+                            ? "No animals were supplied by the server."
+                            : "No structures, facilities, or tools were supplied by the server.";
 
                 }
 
@@ -2512,7 +2314,7 @@ IMPORTANT:
 
 
         /* =====================================================
-           SELECT TARGET
+           TARGET SELECTED
         ====================================================== */
 
         function handleTargetSelection() {
@@ -2531,10 +2333,6 @@ IMPORTANT:
                 targetDairySelect.value.trim();
 
 
-            /*
-             * Nothing selected.
-             */
-
             if (!selectedId) {
 
                 clearSelectedTarget();
@@ -2547,28 +2345,23 @@ IMPORTANT:
 
 
             const selectedDairy =
-                availableDairies.find(
-                    function (item) {
+                availableDairies.find(function (item) {
 
-                        return (
-                            String(item._id) ===
-                            String(selectedId)
-                        );
+                    return (
+                        String(item._id) ===
+                        String(selectedId)
+                    );
 
-                    }
-                );
+                });
 
-
-            /*
-             * Safety check.
-             */
 
             if (!selectedDairy) {
 
                 console.error(
-                    "CREATE POST: selected target was not found:",
+                    "CREATE POST: selected target not found:",
                     selectedId
                 );
+
 
                 clearSelectedTarget();
 
@@ -2581,8 +2374,46 @@ IMPORTANT:
 
 
             /* =================================================
-               STORE TARGET ID
+               FINAL CLIENT-SIDE SAFETY CHECK
             ================================================== */
+
+            const code =
+                selectedDairy.code;
+
+
+            const selectedIsNegative =
+                code !== null &&
+                code !== undefined &&
+                code !== "" &&
+                Number.isFinite(Number(code)) &&
+                Number(code) < 0;
+
+
+            if (selectedIsNegative) {
+
+                console.error(
+                    "CREATE POST: negative-code target rejected:",
+                    selectedDairy
+                );
+
+
+                targetDairySelect.value =
+                    "";
+
+
+                clearSelectedTarget();
+
+                updateSendButton();
+
+                return;
+
+            }
+
+
+
+            /* =================================================
+               SET HIDDEN TARGET ID
+            ================================================= */
 
             targetDairyId.value =
                 selectedDairy._id;
@@ -2590,12 +2421,10 @@ IMPORTANT:
 
 
             /* =================================================
-               SHOW SELECTED TARGET
-            ================================================== */
+               DISPLAY TARGET
+            ================================================= */
 
-            if (
-                selectedTargetName
-            ) {
+            if (selectedTargetName) {
 
                 selectedTargetName.textContent =
                     selectedDairy.name;
@@ -2603,9 +2432,7 @@ IMPORTANT:
             }
 
 
-            if (
-                selectedTargetDisplay
-            ) {
+            if (selectedTargetDisplay) {
 
                 selectedTargetDisplay.hidden =
                     false;
@@ -2613,9 +2440,7 @@ IMPORTANT:
             }
 
 
-            if (
-                postTargetHeader
-            ) {
+            if (postTargetHeader) {
 
                 postTargetHeader.textContent =
                     selectedDairy.name;
@@ -2646,9 +2471,7 @@ IMPORTANT:
             }
 
 
-            if (
-                selectedTargetName
-            ) {
+            if (selectedTargetName) {
 
                 selectedTargetName.textContent =
                     "";
@@ -2656,9 +2479,7 @@ IMPORTANT:
             }
 
 
-            if (
-                selectedTargetDisplay
-            ) {
+            if (selectedTargetDisplay) {
 
                 selectedTargetDisplay.hidden =
                     true;
@@ -2718,12 +2539,10 @@ IMPORTANT:
 
 
         /* =====================================================
-           PHASE 1
+           CATEGORY
         ====================================================== */
 
-        if (
-            targetCategory
-        ) {
+        if (targetCategory) {
 
             targetCategory.addEventListener(
                 "change",
@@ -2741,12 +2560,10 @@ IMPORTANT:
 
 
         /* =====================================================
-           PHASE 2
+           TARGET
         ====================================================== */
 
-        if (
-            targetDairySelect
-        ) {
+        if (targetDairySelect) {
 
             targetDairySelect.addEventListener(
                 "change",
@@ -2808,9 +2625,7 @@ IMPORTANT:
 
                 if (
                     event.key === "Escape" &&
-                    modal.classList.contains(
-                        "active"
-                    )
+                    modal.classList.contains("active")
                 ) {
 
                     closeModal();
@@ -2823,7 +2638,7 @@ IMPORTANT:
 
 
         /* =====================================================
-           IMAGE INPUT
+           IMAGES
         ====================================================== */
 
         imageInput.addEventListener(
@@ -2865,10 +2680,9 @@ IMPORTANT:
 
 
 
-                /*
-                 * NEGATIVE-CODE PAGE:
-                 * target is mandatory.
-                 */
+                /* =============================================
+                   NEGATIVE-CODE PAGE TARGET REQUIRED
+                ============================================== */
 
                 if (
                     targetCategory &&
@@ -2888,9 +2702,9 @@ IMPORTANT:
 
 
 
-                /*
-                 * POST CONTENT VALIDATION.
-                 */
+                /* =============================================
+                   CONTENT REQUIRED
+                ============================================== */
 
                 if (
                     !title &&
@@ -2930,8 +2744,15 @@ IMPORTANT:
          * targetDairyId already contains dairy._id.
          *
          * Negative-code page:
-         * targetDairyId remains empty until Phase 2.
+         * targetDairyId remains empty until a target is selected.
          */
+
+        if (targetCategory) {
+
+            resetTargetSelection();
+
+        }
+
 
         updateSendButton();
 
