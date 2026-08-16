@@ -6,10 +6,20 @@ FILE:
 views/update/h1.ejs
 
 PURPOSE:
-Compact editorial introductory section for a Dairy Farm.
+Personalized editorial hero section for a Dairy Farm.
 
 DATA REQUIRED:
 dairy
+user
+
+ROLE BEHAVIOUR:
+
+dairyWorker:
+    Personalized welcome using the user's name.
+
+admin:
+    Introduces the page as the home page for dairy
+    workers assigned to this farm.
 
 ==========================================================
 */ %>
@@ -27,12 +37,24 @@ dairy
         class="dairy-h1-background"
         aria-hidden="true"
     >
+
         <img
             src="/images/h1.png"
             alt=""
             class="dairy-h1-logo"
         >
+
     </div>
+
+
+    <!-- =================================================
+         DECORATIVE SIDE ACCENT
+    ================================================== -->
+
+    <div
+        class="dairy-h1-accent"
+        aria-hidden="true"
+    ></div>
 
 
     <!-- =================================================
@@ -41,50 +63,186 @@ dairy
 
     <div class="dairy-h1-content">
 
+        <!-- =================================================
+             SMALL SECTION LABEL
+        ================================================== -->
+
         <div class="dairy-h1-label">
+
             <span class="dairy-h1-label-line"></span>
+
             <span>DAIRY FARM</span>
+
             <span class="dairy-h1-label-line"></span>
+
         </div>
 
 
-        <h1 class="dairy-h1-title">
-            Welcome to
-            <span>
-                <%= dairy.name || "Our Dairy Farm" %>
-            </span>
-        </h1>
+        <!-- =================================================
+             PERSONALIZED HEADING
+        ================================================== -->
 
+        <% if (user && user.role === "admin") { %>
+
+            <div class="dairy-h1-greeting">
+                DAIRY MANAGEMENT SPACE
+            </div>
+
+            <h1 class="dairy-h1-title">
+
+                Welcome to
+
+                <span>
+                    <%= dairy.name || "this Dairy Farm" %>
+                </span>
+
+            </h1>
+
+        <% } else { %>
+
+            <div class="dairy-h1-greeting">
+
+                <%= user && user.name
+                    ? user.name.split(" ")[0]
+                    : "Welcome" %>
+
+                <span class="greeting-dot">•</span>
+
+                WELCOME
+
+            </div>
+
+            <h1 class="dairy-h1-title">
+
+                Welcome to
+
+                <span>
+                    <%= dairy.name || "Our Dairy Farm" %>
+                </span>
+
+            </h1>
+
+        <% } %>
+
+
+        <!-- =================================================
+             FARM CODE
+        ================================================== -->
 
         <% if (dairy && dairy.code != null) { %>
 
             <div class="dairy-h1-code">
-                FARM #<%= dairy.code %>
+
+                FARM #
+
+                <%= dairy.code %>
+
             </div>
 
         <% } %>
 
 
-        <div class="dairy-h1-message">
+        <!-- =================================================
+             DAIRY WORKER MESSAGE
+        ================================================== -->
 
-            <p>
-                Welcome to
-                <strong>
-                    <%= dairy.name || "this dairy farm" %>
-                </strong>.
-                We're glad to have you here.
-            </p>
+        <% if (!user || user.role === "dairyWorker") { %>
 
-            <p>
-                Support the activities here by updating us
-                about the welfare of all assets within the
-                dairy farm.
-            </p>
+            <div class="dairy-h1-message">
 
-            <p>
-                In case of any inconveniences, keep us
-                updated on this site.
-            </p>
+                <p class="dairy-h1-lead">
+
+                    <strong>
+                        <%= user && user.name
+                            ? user.name.split(" ")[0]
+                            : "Welcome" %>,
+                    </strong>
+
+                    you're now on the home page for
+
+                    <strong>
+                        <%= dairy.name || "this dairy farm" %>
+                    </strong>.
+
+                </p>
+
+
+                <p>
+
+                    This is your space to keep an eye on the
+                    animals, assets and activities that keep the
+                    farm moving.
+
+                </p>
+
+
+                <p>
+
+                    Take a look around, share updates and keep
+                    the farm's story current. Every observation
+                    helps build a clearer picture of what is
+                    happening here.
+
+                </p>
+
+            </div>
+
+
+        <!-- =================================================
+             ADMIN MESSAGE
+        ================================================== -->
+
+        <% } else if (user.role === "admin") { %>
+
+            <div class="dairy-h1-message admin-message">
+
+                <p class="dairy-h1-lead">
+
+                    This is the home page for all dairy workers
+                    assigned to
+
+                    <strong>
+                        <%= dairy.name || "this dairy farm" %>
+                    </strong>.
+
+                </p>
+
+
+                <p>
+
+                    Go through their updates, observations and
+                    conversations to see what is happening
+                    across the farm.
+
+                </p>
+
+
+                <p>
+
+                    Their updates provide a window into the
+                    day-to-day life of this dairy farm and the
+                    work being carried out here.
+
+                </p>
+
+            </div>
+
+        <% } %>
+
+
+        <!-- =================================================
+             SMALL BOTTOM MARKER
+        ================================================== -->
+
+        <div class="dairy-h1-footer">
+
+            <span></span>
+
+            <small>
+                THE CHESI FAMILY PROJECTS
+            </small>
+
+            <span></span>
 
         </div>
 
@@ -96,7 +254,7 @@ dairy
 <style>
 
 /* =========================================================
-   MAIN CARD
+   MAIN HERO
 ========================================================= */
 
 .dairy-h1 {
@@ -115,32 +273,34 @@ dairy
     border-radius: 22px;
 
     /*
-       Main visual accent:
-       thick green left border.
-    */
-    border-left: 7px solid #4d8a5d;
+       Keep the background predominantly white.
 
-    /*
-       Almost white background.
-       Only a very subtle green tint.
+       The green logo now has enough contrast to actually
+       be visible.
     */
     background:
-        radial-gradient(
-            circle at 50% 45%,
+        linear-gradient(
+            135deg,
             #ffffff 0%,
-            #fcfefc 55%,
-            #f3faf4 100%
+            #ffffff 58%,
+            #f7fbf8 100%
         );
 
+    border:
+        1px solid rgba(57, 103, 70, .10);
+
+    border-left:
+        7px solid #4d8a5d;
+
     box-shadow:
-        0 8px 24px rgba(42, 78, 51, .09),
-        inset 0 0 18px rgba(76, 135, 88, .035);
+        0 10px 28px rgba(42, 78, 51, .10),
+        0 2px 5px rgba(42, 78, 51, .04);
 
 }
 
 
 /* =========================================================
-   SUBTLE INNER EDGE
+   INNER EDGE
 ========================================================= */
 
 .dairy-h1::after {
@@ -158,7 +318,7 @@ dairy
     border-radius: inherit;
 
     box-shadow:
-        inset 0 0 22px rgba(55, 105, 67, .045);
+        inset 0 0 25px rgba(55, 105, 67, .035);
 
 }
 
@@ -179,7 +339,7 @@ dairy
 
     align-items: center;
 
-    justify-content: center;
+    justify-content: flex-end;
 
     overflow: hidden;
 
@@ -188,22 +348,59 @@ dairy
 }
 
 
+/*
+   The old opacity of .035 made the logo almost disappear.
+
+   This is intentionally much stronger.
+*/
+
 .dairy-h1-logo {
 
     display: block;
 
-    width: min(680px, 105vw);
+    width: min(670px, 62vw);
 
     height: auto;
 
-    /*
-       Extremely subtle logo.
-    */
-    opacity: .035;
+    opacity: .115;
 
     filter:
-        saturate(.6)
-        contrast(.85);
+        saturate(1.15)
+        contrast(1.05);
+
+    transform:
+        translateX(8%)
+        rotate(-2deg);
+
+}
+
+
+/* =========================================================
+   DECORATIVE ACCENT
+========================================================= */
+
+.dairy-h1-accent {
+
+    position: absolute;
+
+    z-index: 1;
+
+    right: 0;
+
+    top: 0;
+
+    width: 34%;
+
+    height: 100%;
+
+    pointer-events: none;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(77, 138, 93, .025)
+        );
 
 }
 
@@ -225,7 +422,7 @@ dairy
     padding:
         34px
         clamp(22px, 5vw, 60px)
-        30px;
+        28px;
 
     box-sizing: border-box;
 
@@ -252,7 +449,7 @@ dairy
 
     gap: 9px;
 
-    margin-bottom: 11px;
+    margin-bottom: 9px;
 
     color: #386247;
 
@@ -278,6 +475,44 @@ dairy
 
     background:
         rgba(56, 98, 71, .62);
+
+}
+
+
+/* =========================================================
+   PERSONAL GREETING
+========================================================= */
+
+.dairy-h1-greeting {
+
+    margin-bottom: 7px;
+
+    color: #4d8a5d;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.8px;
+
+    text-transform: uppercase;
+
+}
+
+
+.greeting-dot {
+
+    display: inline-block;
+
+    margin:
+        0 5px;
+
+    color: #7ca887;
 
 }
 
@@ -354,7 +589,7 @@ dairy
 
 .dairy-h1-message {
 
-    max-width: 650px;
+    max-width: 680px;
 
     margin-top: 18px;
 
@@ -400,6 +635,69 @@ dairy
 
 
 /* =========================================================
+   LEAD MESSAGE
+========================================================= */
+
+.dairy-h1-message .dairy-h1-lead {
+
+    color: #2d4d36;
+
+    font-size:
+        clamp(13px, 1.45vw, 15px);
+
+    line-height: 1.5;
+
+}
+
+
+/* =========================================================
+   FOOTER MARKER
+========================================================= */
+
+.dairy-h1-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 18px;
+
+    color: rgba(55, 105, 74, .52);
+
+}
+
+
+.dairy-h1-footer span {
+
+    width: 20px;
+
+    height: 1px;
+
+    background:
+        rgba(55, 105, 74, .25);
+
+}
+
+
+.dairy-h1-footer small {
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    font-size: 7px;
+
+    font-weight: 800;
+
+    letter-spacing: 1.5px;
+
+}
+
+
+/* =========================================================
    TABLETS
 ========================================================= */
 
@@ -413,8 +711,6 @@ dairy
 
         border-radius: 20px;
 
-        border-left-width: 7px;
-
     }
 
 
@@ -425,14 +721,16 @@ dairy
         padding:
             32px
             28px
-            29px;
+            27px;
 
     }
 
 
     .dairy-h1-logo {
 
-        width: min(620px, 110vw);
+        width: min(610px, 72vw);
+
+        opacity: .10;
 
     }
 
@@ -449,7 +747,7 @@ dairy
 
         width: calc(100% - 18px);
 
-        min-height: 370px;
+        min-height: 390px;
 
         margin:
             9px
@@ -460,51 +758,68 @@ dairy
 
         border-left-width: 6px;
 
-        background:
-            radial-gradient(
-                circle at 50% 45%,
-                #ffffff 0%,
-                #fdfefd 60%,
-                #f5faf6 100%
-            );
-
-        box-shadow:
-            0 7px 20px rgba(42, 78, 51, .08),
-            inset 0 0 15px rgba(76, 135, 88, .03);
-
     }
 
 
     .dairy-h1-content {
 
-        min-height: 370px;
+        min-height: 390px;
 
         padding:
             29px
             20px
-            27px;
+            25px;
+
+    }
+
+
+    .dairy-h1-background {
+
+        align-items: center;
+
+        justify-content: center;
 
     }
 
 
     .dairy-h1-logo {
 
-        width: 520px;
+        width: 530px;
 
-        max-width: 130vw;
+        max-width: 135vw;
 
-        opacity: .03;
+        opacity: .085;
+
+        transform:
+            translateX(12%)
+            rotate(-2deg);
+
+    }
+
+
+    .dairy-h1-accent {
+
+        width: 60%;
 
     }
 
 
     .dairy-h1-label {
 
-        margin-bottom: 10px;
+        margin-bottom: 9px;
 
         font-size: 8px;
 
         letter-spacing: 2px;
+
+    }
+
+
+    .dairy-h1-greeting {
+
+        font-size: 8px;
+
+        letter-spacing: 1.5px;
 
     }
 
@@ -548,7 +863,21 @@ dairy
 
         line-height: 1.55;
 
-        margin-bottom: 6px;
+        margin-bottom: 7px;
+
+    }
+
+
+    .dairy-h1-message .dairy-h1-lead {
+
+        font-size: 13px;
+
+    }
+
+
+    .dairy-h1-footer {
+
+        margin-top: 16px;
 
     }
 
@@ -565,23 +894,21 @@ dairy
 
         width: calc(100% - 14px);
 
-        min-height: 355px;
+        min-height: 375px;
 
         border-radius: 16px;
-
-        border-left-width: 6px;
 
     }
 
 
     .dairy-h1-content {
 
-        min-height: 355px;
+        min-height: 375px;
 
         padding:
             26px
             16px
-            24px;
+            23px;
 
     }
 
@@ -609,9 +936,25 @@ dairy
     }
 
 
+    .dairy-h1-message .dairy-h1-lead {
+
+        font-size: 12.5px;
+
+    }
+
+
     .dairy-h1-logo {
 
         width: 470px;
+
+        opacity: .075;
+
+    }
+
+
+    .dairy-h1-footer {
+
+        margin-top: 13px;
 
     }
 
