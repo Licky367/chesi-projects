@@ -1,0 +1,856 @@
+<% /*
+==========================================================
+DAIRY ASSET HORIZONTAL CARDS
+
+FILE:
+    views/update/asset-cards.ejs
+
+PURPOSE:
+    Compact WhatsApp-style horizontal dairy asset navigator.
+
+    The section:
+        - Introduces the dairy's assets
+        - Shows assets in horizontally scrollable cards
+        - Shows the asset profile image
+        - Shows the asset name
+        - Shows whether it is an Animal or Structure / Tool
+        - Links directly to /dairy/:id
+
+EXPECTED DATA:
+    assetDairies
+
+TYPE RULES:
+----------------------------------------------------------
+    code > 0
+        Animal
+
+    code === null
+    code === undefined
+    code === ""
+        Structure / Facility / Tool
+
+    code < 0
+        Not displayed
+
+IMPORTANT:
+    Cards DO NOT open the post modal.
+
+    Clicking an asset takes the user directly to:
+
+        /dairy/:id
+==========================================================
+*/ %>
+
+
+<%
+    /* ======================================================
+       SAFE ASSET ARRAY
+    ====================================================== */
+
+    const assets =
+        Array.isArray(assetDairies)
+            ? assetDairies
+            : [];
+%>
+
+
+<% if (assets.length) { %>
+
+<section
+    class="dairy-asset-strip"
+    aria-label="Dairy Farm Assets"
+>
+
+
+    <!-- =====================================================
+         SECTION HEADER
+    ====================================================== -->
+
+    <div class="dairy-asset-strip-header">
+
+        <div class="dairy-asset-strip-title">
+
+            <strong>
+                View the dairy assets
+            </strong>
+
+        </div>
+
+
+        <div class="dairy-asset-strip-description">
+
+            Explore the animals, structures, facilities, and
+            tools that make up
+            <strong><%= dairy.name %></strong>.
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         HORIZONTAL SCROLL AREA
+    ====================================================== -->
+
+    <div
+        class="dairy-asset-scroll"
+        role="list"
+        aria-label="Dairy assets"
+    >
+
+
+        <% assets.forEach(function (asset) { %>
+
+            <%
+                /* =================================================
+                   SAFETY CHECK
+                ================================================= */
+
+                if (!asset || !asset._id) {
+                    return;
+                }
+
+
+                /* =================================================
+                   RAW CODE
+                ================================================= */
+
+                const assetCode =
+                    asset.code;
+
+
+                /* =================================================
+                   NORMALIZE CODE
+                ================================================= */
+
+                const numericCode =
+                    (
+                        assetCode !== null &&
+                        assetCode !== undefined &&
+                        assetCode !== ""
+                    )
+                        ? Number(assetCode)
+                        : null;
+
+
+
+                /* =================================================
+                   NEVER DISPLAY NEGATIVE-CODE RECORDS
+                ================================================= */
+
+                if (
+                    numericCode !== null &&
+                    Number.isFinite(numericCode) &&
+                    numericCode < 0
+                ) {
+                    return;
+                }
+
+
+
+                /* =================================================
+                   DETERMINE ASSET TYPE
+
+                   code > 0
+                       Animal
+
+                   no code
+                       Structure / Facility / Tool
+                ================================================= */
+
+                const isAnimal =
+                    numericCode !== null &&
+                    Number.isFinite(numericCode) &&
+                    numericCode > 0;
+
+
+                const assetType =
+                    isAnimal
+                        ? "Animal"
+                        : "Structure / Tool";
+
+
+
+                /* =================================================
+                   IMAGE
+
+                   Prefer:
+                       profileImage
+                       displayImage
+
+                   Otherwise generate a simple avatar.
+                ================================================= */
+
+                const assetImage =
+                    asset.profileImage ||
+                    asset.displayImage ||
+                    (
+                        "https://ui-avatars.com/api/?name=" +
+                        encodeURIComponent(
+                            asset.name || "Asset"
+                        ) +
+                        "&background=e8f5ee&color=198754"
+                    );
+            %>
+
+
+
+            <!-- =================================================
+                 ASSET CARD
+            ================================================== -->
+
+            <a
+                href="/dairy/<%= asset._id %>"
+                class="dairy-asset-card"
+                role="listitem"
+                aria-label="View <%= asset.name || 'Asset' %>"
+            >
+
+
+                <!-- =============================================
+                     IMAGE
+                ============================================== -->
+
+                <div class="dairy-asset-image-wrap">
+
+                    <img
+                        src="<%= assetImage %>"
+                        alt="<%= asset.name || 'Asset' %>"
+                        class="dairy-asset-image"
+                        loading="lazy"
+                    >
+
+                </div>
+
+
+
+                <!-- =============================================
+                     ASSET NAME
+                ============================================== -->
+
+                <div class="dairy-asset-name">
+
+                    <%= asset.name || "Unnamed Asset" %>
+
+                </div>
+
+
+
+                <!-- =============================================
+                     ASSET TYPE
+                ============================================== -->
+
+                <div class="dairy-asset-type">
+
+
+                    <% if (isAnimal) { %>
+
+                        <span
+                            class="dairy-asset-type-icon"
+                            aria-hidden="true"
+                        >
+                            🐄
+                        </span>
+
+                        <span>
+                            <%= assetType %>
+                        </span>
+
+
+                    <% } else { %>
+
+                        <span
+                            class="dairy-asset-type-icon"
+                            aria-hidden="true"
+                        >
+                            🏗️
+                        </span>
+
+                        <span>
+                            <%= assetType %>
+                        </span>
+
+                    <% } %>
+
+
+                </div>
+
+
+            </a>
+
+
+        <% }); %>
+
+
+    </div>
+
+
+</section>
+
+
+
+<style>
+
+/* ==========================================================
+   DAIRY ASSET STRIP
+
+   Namespaced specifically for this component.
+========================================================== */
+
+.dairy-asset-strip {
+
+    width: 100%;
+
+    margin:
+        0
+        0
+        16px;
+
+    padding: 0;
+
+    overflow: hidden;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+}
+
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.dairy-asset-strip-header {
+
+    width: 100%;
+
+    padding:
+        0
+        2px
+        10px;
+
+}
+
+
+
+/* ==========================================================
+   TITLE
+========================================================== */
+
+.dairy-asset-strip-title {
+
+    width: 100%;
+
+}
+
+
+.dairy-asset-strip-title strong {
+
+    display: block;
+
+    color:
+        #202520;
+
+    font-size:
+        18px;
+
+    font-weight:
+        700;
+
+    line-height:
+        1.3;
+
+}
+
+
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.dairy-asset-strip-description {
+
+    max-width:
+        620px;
+
+    margin-top:
+        3px;
+
+    color:
+        #7b847e;
+
+    font-size:
+        12px;
+
+    line-height:
+        1.45;
+
+}
+
+
+.dairy-asset-strip-description strong {
+
+    color:
+        #4e5952;
+
+    font-weight:
+        600;
+
+}
+
+
+
+/* ==========================================================
+   HORIZONTAL SCROLL
+========================================================== */
+
+.dairy-asset-scroll {
+
+    width: 100%;
+
+    display: flex;
+
+    gap:
+        10px;
+
+    overflow-x:
+        auto;
+
+    overflow-y:
+        hidden;
+
+    padding:
+        2px
+        2px
+        8px;
+
+    scroll-behavior:
+        smooth;
+
+    -webkit-overflow-scrolling:
+        touch;
+
+    scrollbar-width:
+        none;
+
+}
+
+
+.dairy-asset-scroll::-webkit-scrollbar {
+
+    display:
+        none;
+
+}
+
+
+
+/* ==========================================================
+   ASSET CARD
+========================================================== */
+
+.dairy-asset-card {
+
+    position:
+        relative;
+
+    flex:
+        0 0
+        116px;
+
+    width:
+        116px;
+
+    height:
+        178px;
+
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    overflow:
+        hidden;
+
+    text-decoration:
+        none;
+
+    border:
+        1px solid
+        #e4e9e6;
+
+    border-radius:
+        15px;
+
+    background:
+        #ffffff;
+
+    box-shadow:
+        0 2px 8px
+        rgba(20, 40, 28, .06);
+
+    transition:
+        transform .16s ease,
+        box-shadow .16s ease;
+
+}
+
+
+
+/* ==========================================================
+   CARD HOVER
+========================================================== */
+
+.dairy-asset-card:hover {
+
+    transform:
+        translateY(-2px);
+
+    box-shadow:
+        0 5px 14px
+        rgba(20, 40, 28, .10);
+
+}
+
+
+
+/* ==========================================================
+   CARD ACTIVE
+========================================================== */
+
+.dairy-asset-card:active {
+
+    transform:
+        scale(.97);
+
+}
+
+
+
+/* ==========================================================
+   IMAGE WRAPPER
+========================================================== */
+
+.dairy-asset-image-wrap {
+
+    position:
+        relative;
+
+    width:
+        100%;
+
+    height:
+        116px;
+
+    flex:
+        0 0
+        116px;
+
+    overflow:
+        hidden;
+
+    background:
+        #eef3ef;
+
+}
+
+
+
+/* ==========================================================
+   IMAGE
+========================================================== */
+
+.dairy-asset-image {
+
+    width:
+        100%;
+
+    height:
+        100%;
+
+    display:
+        block;
+
+    object-fit:
+        cover;
+
+}
+
+
+
+/* ==========================================================
+   ASSET NAME
+========================================================== */
+
+.dairy-asset-name {
+
+    width:
+        100%;
+
+    padding:
+        8px
+        8px
+        2px;
+
+    color:
+        #202520;
+
+    font-size:
+        13px;
+
+    font-weight:
+        700;
+
+    line-height:
+        16px;
+
+    overflow:
+        hidden;
+
+    display:
+        -webkit-box;
+
+    -webkit-box-orient:
+        vertical;
+
+    -webkit-line-clamp:
+        2;
+
+}
+
+
+
+/* ==========================================================
+   ASSET TYPE
+========================================================== */
+
+.dairy-asset-type {
+
+    width:
+        100%;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    gap:
+        4px;
+
+    padding:
+        1px
+        8px
+        8px;
+
+    color:
+        #7b847e;
+
+    font-size:
+        10px;
+
+    line-height:
+        13px;
+
+    overflow:
+        hidden;
+
+}
+
+
+
+/* ==========================================================
+   TYPE ICON
+========================================================== */
+
+.dairy-asset-type-icon {
+
+    flex:
+        0 0 auto;
+
+    font-size:
+        10px;
+
+}
+
+
+
+/* ==========================================================
+   TYPE TEXT
+========================================================== */
+
+.dairy-asset-type span:last-child {
+
+    min-width:
+        0;
+
+    overflow:
+        hidden;
+
+    text-overflow:
+        ellipsis;
+
+    white-space:
+        nowrap;
+
+}
+
+
+
+/* ==========================================================
+   FOCUS ACCESSIBILITY
+========================================================== */
+
+.dairy-asset-card:focus-visible {
+
+    outline:
+        2px solid
+        #198754;
+
+    outline-offset:
+        2px;
+
+}
+
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 600px) {
+
+
+    .dairy-asset-strip {
+
+        margin-bottom:
+            14px;
+
+    }
+
+
+
+    /* ==============================================
+       TITLE
+    ============================================== */
+
+    .dairy-asset-strip-title strong {
+
+        font-size:
+            17px;
+
+    }
+
+
+
+    /* ==============================================
+       DESCRIPTION
+    ============================================== */
+
+    .dairy-asset-strip-description {
+
+        font-size:
+            11px;
+
+        line-height:
+            1.4;
+
+    }
+
+
+
+    /* ==============================================
+       CARD
+    ============================================== */
+
+    .dairy-asset-card {
+
+        flex-basis:
+            112px;
+
+        width:
+            112px;
+
+        height:
+            174px;
+
+        border-radius:
+            14px;
+
+    }
+
+
+
+    /* ==============================================
+       IMAGE
+    ============================================== */
+
+    .dairy-asset-image-wrap {
+
+        height:
+            112px;
+
+        flex-basis:
+            112px;
+
+    }
+
+
+
+    /* ==============================================
+       NAME
+    ============================================== */
+
+    .dairy-asset-name {
+
+        padding:
+            7px
+            7px
+            2px;
+
+        font-size:
+            12px;
+
+        line-height:
+            15px;
+
+    }
+
+
+
+    /* ==============================================
+       TYPE
+    ============================================== */
+
+    .dairy-asset-type {
+
+        padding:
+            1px
+            7px
+            7px;
+
+        font-size:
+            9px;
+
+    }
+
+
+
+    .dairy-asset-type-icon {
+
+        font-size:
+            9px;
+
+    }
+
+}
+
+</style>
+
+
+<% } %>
