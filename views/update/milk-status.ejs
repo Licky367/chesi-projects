@@ -10,9 +10,12 @@ PURPOSE:
 • Display the dairy animal's milking status
 • Allow admin and dairyWorker to toggle milking
 • Display animal profile information
-• Uses:
+• Toggle through:
 
     POST /dairy/:id/toggle-milking
+
+• Uses AJAX/fetch so the browser does NOT navigate to
+  the JSON response.
 
 AUTHORIZED USERS:
 ----------------------------------------------------------
@@ -40,7 +43,10 @@ user:
 <% if (dairy) { %>
 
 
-<div class="milk-status-card">
+<div
+    class="milk-status-card"
+    data-dairy-id="<%= dairy._id %>"
+>
 
 
     <!-- =================================================
@@ -74,7 +80,8 @@ user:
             </h3>
 
             <span>
-                Code: <%= dairy.code || "No code assigned" %>
+                Code:
+                <%= dairy.code || "No code assigned" %>
             </span>
 
         </div>
@@ -91,13 +98,19 @@ user:
 
         <% if (dairy.isMilking === true) { %>
 
-            <span class="milk-status-badge active">
+            <span
+                class="milk-status-badge active"
+                data-milking-status
+            >
                 🥛 Currently Milking
             </span>
 
         <% } else { %>
 
-            <span class="milk-status-badge inactive">
+            <span
+                class="milk-status-badge inactive"
+                data-milking-status
+            >
                 Not Currently Milking
             </span>
 
@@ -124,8 +137,9 @@ user:
         <div class="milk-status-action">
 
             <form
-                method="POST"
+                class="milk-status-form"
                 action="/dairy/<%= dairy._id %>/toggle-milking"
+                method="POST"
                 autocomplete="off"
             >
 
@@ -134,7 +148,7 @@ user:
                     <button
                         type="submit"
                         class="milk-status-button stop"
-                        onclick="return confirm('Are you sure you want to turn off milking for <%= dairy.name %>?');"
+                        data-milking-button
                     >
                         ⛔ Turn Off Milking
                     </button>
@@ -144,6 +158,7 @@ user:
                     <button
                         type="submit"
                         class="milk-status-button start"
+                        data-milking-button
                     >
                         🥛 Turn On Milking
                     </button>
@@ -376,14 +391,16 @@ user:
 
     cursor: pointer;
 
-    transition: 0.2s ease;
+    transition:
+        0.2s ease;
 
 }
 
 
 .milk-status-button:hover {
 
-    transform: translateY(-1px);
+    transform:
+        translateY(-1px);
 
 }
 
@@ -412,6 +429,21 @@ user:
 .milk-status-button.stop:hover {
 
     background: #991b1b;
+
+}
+
+
+/* =====================================================
+   DISABLED / LOADING BUTTON
+===================================================== */
+
+.milk-status-button:disabled {
+
+    opacity: 0.65;
+
+    cursor: wait;
+
+    transform: none;
 
 }
 
@@ -522,3 +554,310 @@ user:
 }
 
 </style>
+
+
+
+<script>
+
+/* ==========================================================
+   MILKING STATUS TOGGLE
+   ==========================================================
+
+   The form normally performs a browser navigation.
+
+   We prevent that and send the POST request using fetch()
+   instead.
+
+   Therefore:
+
+       POST /dairy/:id/toggle-milking
+
+   happens in the background and the current page remains
+   open.
+
+========================================================== */
+
+(function () {
+
+    const card =
+        document.querySelector(
+            ".milk-status-card"
+        );
+
+
+    if (!card) {
+
+        return;
+
+    }
+
+
+    const form =
+        card.querySelector(
+            ".milk-status-form"
+        );
+
+
+    const button =
+        card.querySelector(
+            "[data-milking-button]"
+        );
+
+
+    const statusBadge =
+        card.querySelector(
+            "[data-milking-status]"
+        );
+
+
+    if (
+        !form ||
+        !button ||
+        !statusBadge
+    ) {
+
+        return;
+
+    }
+
+
+    form.addEventListener(
+        "submit",
+        async function (event) {
+
+            // ==================================================
+            // STOP NORMAL FORM SUBMISSION
+            // ==================================================
+
+            event.preventDefault();
+
+
+            // ==================================================
+            // PREVENT DOUBLE CLICK
+            // ==================================================
+
+            if (
+                button.disabled
+            ) {
+
+                return;
+
+            }
+
+
+            // ==================================================
+            // CONFIRM TURNING OFF
+            // ==================================================
+
+            const currentlyMilking =
+                statusBadge.classList.contains(
+                    "active"
+                );
+
+
+            if (
+                currentlyMilking
+            ) {
+
+                const confirmed =
+                    window.confirm(
+                        "Are you sure you want to turn off milking for <%= dairy.name %>?"
+                    );
+
+
+                if (!confirmed) {
+
+                    return;
+
+                }
+
+            }
+
+
+            // ==================================================
+            // DISABLE BUTTON
+            // ==================================================
+
+            button.disabled =
+                true;
+
+
+            const originalText =
+                button.textContent;
+
+
+            button.textContent =
+                "Updating...";
+
+
+            try {
+
+                // ==================================================
+                // SEND POST REQUEST
+                // ==================================================
+
+                const response =
+                    await fetch(
+                        form.action,
+                        {
+
+                            method:
+                                "POST",
+
+                            headers: {
+
+                                "Accept":
+                                    "application/json"
+
+                            }
+
+                        }
+                    );
+
+
+                // ==================================================
+                // READ RESPONSE
+                // ==================================================
+
+                const data =
+                    await response.json();
+
+
+                // ==================================================
+                // CHECK SERVER RESPONSE
+                // ==================================================
+
+                if (
+                    !response.ok ||
+                    !data.success
+                ) {
+
+                    throw new Error(
+                        data.message ||
+                        "Failed to update milking status."
+                    );
+
+                }
+
+
+                // ==================================================
+                // UPDATE STATUS BADGE
+                // ==================================================
+
+                if (
+                    data.isMilking === true
+                ) {
+
+                    statusBadge
+                        .classList
+                        .remove(
+                            "inactive"
+                        );
+
+                    statusBadge
+                        .classList
+                        .add(
+                            "active"
+                        );
+
+                    statusBadge.textContent =
+                        "🥛 Currently Milking";
+
+
+                    // ------------------------------------------
+                    // UPDATE BUTTON
+                    // ------------------------------------------
+
+                    button
+                        .classList
+                        .remove(
+                            "start"
+                        );
+
+                    button
+                        .classList
+                        .add(
+                            "stop"
+                        );
+
+                    button.textContent =
+                        "⛔ Turn Off Milking";
+
+                } else {
+
+                    statusBadge
+                        .classList
+                        .remove(
+                            "active"
+                        );
+
+                    statusBadge
+                        .classList
+                        .add(
+                            "inactive"
+                        );
+
+                    statusBadge.textContent =
+                        "Not Currently Milking";
+
+
+                    // ------------------------------------------
+                    // UPDATE BUTTON
+                    // ------------------------------------------
+
+                    button
+                        .classList
+                        .remove(
+                            "stop"
+                        );
+
+                    button
+                        .classList
+                        .add(
+                            "start"
+                        );
+
+                    button.textContent =
+                        "🥛 Turn On Milking";
+
+                }
+
+
+            } catch (error) {
+
+                console.error(
+                    "MILKING TOGGLE ERROR:",
+                    error
+                );
+
+
+                alert(
+                    error.message ||
+                    "Failed to update milking status."
+                );
+
+
+                // ------------------------------------------
+                // RESTORE BUTTON
+                // ------------------------------------------
+
+                button.textContent =
+                    originalText;
+
+            } finally {
+
+                // ==================================================
+                // RE-ENABLE BUTTON
+                // ==================================================
+
+                button.disabled =
+                    false;
+
+            }
+
+        }
+    );
+
+})();
+
+</script>
