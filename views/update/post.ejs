@@ -1,46 +1,38 @@
 <!-- =========================================================
-     POST FEED CARD
+     COREVESTER POST COMPONENT
 
      FILE:
      views/update/post.ejs
 
      PURPOSE:
      ---------------------------------------------------------
-     Facebook-style compact post card.
-
-     HEADER
-     ├── User avatar
-     ├── User name about Dairy
-     ├── Date and time
-     └── Title directly below date
-
-     MESSAGE
-     ├── Paragraph text
-     ├── See more
-     └── Images
-
-     FOOTER
-     ├── Like
-     └── Comment
+     Completely self-contained Facebook-style post card.
 
      IMPORTANT:
      ---------------------------------------------------------
-     - Dairy belongs in the HEADER.
-     - Title belongs in the HEADER.
-     - Title appears directly below the date.
-     - Message starts immediately below HEADER.
-     - Message is left aligned.
-     - No artificial vertical spacing.
-     - See more follows the truncated text immediately.
+     This component intentionally does NOT depend on:
+       - feed.css
+       - layout.css
+       - generic .feed-* classes
+       - generic .post-* classes
+       - generic .like-btn
+       - generic .toggle-comments
+       - generic comment CSS
+
+     All visual selectors use the unique:
+         cpost-
+     namespace.
+
+     This prevents CSS collisions with the rest of the page.
 ========================================================= -->
 
 
 <%
 /* =========================================================
-   SAFE VALUES
+   SAFE POST TYPE
 ========================================================= */
 
-const postType =
+const cpostType =
     typeof type !== "undefined" && type
         ? type
         : "post";
@@ -50,7 +42,7 @@ const postType =
    LIKES
 ========================================================= */
 
-const likes =
+const cpostLikes =
     Array.isArray(item.likes)
         ? item.likes.length
         : Number(item.likes || 0);
@@ -60,7 +52,7 @@ const likes =
    COMMENTS
 ========================================================= */
 
-const comments =
+const cpostComments =
     Array.isArray(item.comments)
         ? item.comments
         : [];
@@ -70,7 +62,7 @@ const comments =
    USER IDS
 ========================================================= */
 
-const postUserId =
+const cpostPostUserId =
     item.user
         ? String(
             item.user._id ||
@@ -79,7 +71,7 @@ const postUserId =
         : "";
 
 
-const currentUserId =
+const cpostCurrentUserId =
     user && user._id
         ? String(user._id)
         : "";
@@ -89,57 +81,57 @@ const currentUserId =
    DELETE PERMISSION
 ========================================================= */
 
-const canDeletePost =
+const cpostCanDelete =
     user &&
     (
-        postUserId === currentUserId ||
+        cpostPostUserId === cpostCurrentUserId ||
         user.role === "admin"
     );
 
 
 /* =========================================================
-   POST TITLE
+   TITLE
 ========================================================= */
 
-const postTitle =
+const cpostTitle =
     item.title
         ? String(item.title).trim()
         : "";
 
 
 /* =========================================================
-   POST TEXT
+   TEXT
 ========================================================= */
 
-const fullPostText =
+const cpostFullText =
     item.text
         ? String(item.text).trim()
         : "";
 
 
 /* =========================================================
-   LONG TEXT
+   LONG POST
 ========================================================= */
 
-const isLongPost =
-    fullPostText.length > 100;
+const cpostIsLong =
+    cpostFullText.length > 100;
 
 
 /* =========================================================
-   TEXT PREVIEW
+   PREVIEW
 ========================================================= */
 
-const postPreview =
-    isLongPost
-        ? fullPostText.substring(0, 100).trimEnd() + "…"
-        : fullPostText;
+const cpostPreview =
+    cpostIsLong
+        ? cpostFullText.substring(0, 100).trimEnd() + "…"
+        : cpostFullText;
 
 
 /* =========================================================
-   POST IMAGES
+   IMAGES
 ========================================================= */
 
-const postImages =
+const cpostImages =
     Array.isArray(item.images)
         ? item.images.filter(Boolean)
         : (
@@ -149,22 +141,22 @@ const postImages =
         );
 
 
-const visibleImages =
-    postImages.slice(0, 4);
+const cpostVisibleImages =
+    cpostImages.slice(0, 4);
 
 
-const additionalImages =
+const cpostAdditionalImages =
     Math.max(
         0,
-        postImages.length - 4
+        cpostImages.length - 4
     );
 
 
 /* =========================================================
-   DAIRY / FARM
+   DAIRY
 ========================================================= */
 
-const dairyId =
+const cpostDairyId =
     item.dairyId ||
     (
         item.dairy &&
@@ -176,7 +168,7 @@ const dairyId =
     "";
 
 
-const dairyName =
+const cpostDairyName =
     item.dairyName ||
     (
         item.dairy &&
@@ -186,19 +178,31 @@ const dairyName =
 
 
 /* =========================================================
-   USER NAME
+   USER
 ========================================================= */
 
-const userName =
+const cpostUserName =
     item.userName ||
     "User";
+
+
+/* =========================================================
+   USER IMAGE
+========================================================= */
+
+const cpostUserImage =
+    item.userImage ||
+    (
+        "https://ui-avatars.com/api/?name=" +
+        encodeURIComponent(cpostUserName)
+    );
 
 
 /* =========================================================
    DATE
 ========================================================= */
 
-const postDate =
+const cpostDate =
     item.createdAt
         ? new Date(item.createdAt).toLocaleString()
         : (
@@ -211,14 +215,13 @@ const postDate =
 
 
 <!-- =========================================================
-     POST CARD
+     POST
 ========================================================= -->
 
 <article
-    class="feed-card post-card"
-    data-feed-id="<%= item._id %>"
-    data-post-id="<%= item._id %>"
-    data-feed-type="<%= postType %>"
+    class="cpost-card"
+    data-cpost-id="<%= item._id %>"
+    data-cpost-type="<%= cpostType %>"
 >
 
 
@@ -226,53 +229,66 @@ const postDate =
          HEADER
     ====================================================== -->
 
-    <header class="post-card-header">
+    <header class="cpost-header">
+
 
         <!-- AVATAR -->
 
-        <div class="post-avatar">
+        <div class="cpost-avatar">
 
             <img
-                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(userName)) %>"
-                alt="<%= userName %>"
+                src="<%= cpostUserImage %>"
+                alt="<%= cpostUserName %>"
                 loading="lazy"
             >
 
         </div>
 
 
-        <!-- USER / DAIRY / DATE / TITLE -->
 
-        <div class="post-header-info">
+        <!-- HEADER INFORMATION -->
+
+        <div class="cpost-header-info">
+
 
             <!-- USER + DAIRY -->
 
-            <div class="post-header-main">
+            <div class="cpost-header-main">
 
-                <strong class="post-user-name">
-                    <%= userName %>
+                <strong class="cpost-user">
+
+                    <%= cpostUserName %>
+
                 </strong>
 
-                <% if (dairyName) { %>
 
-                    <span class="post-about">
+                <% if (cpostDairyName) { %>
+
+                    <span class="cpost-about">
+
                         about
+
                     </span>
 
-                    <% if (dairyId) { %>
+
+                    <% if (cpostDairyId) { %>
 
                         <a
-                            href="/dairy/<%= dairyId %>"
-                            class="post-header-dairy"
-                            title="View <%= dairyName %>"
+                            href="/dairy/<%= cpostDairyId %>"
+                            class="cpost-dairy"
+                            title="View <%= cpostDairyName %>"
                         >
-                            <%= dairyName %>
+
+                            <%= cpostDairyName %>
+
                         </a>
 
                     <% } else { %>
 
-                        <span class="post-header-dairy">
-                            <%= dairyName %>
+                        <span class="cpost-dairy">
+
+                            <%= cpostDairyName %>
+
                         </span>
 
                     <% } %>
@@ -282,35 +298,48 @@ const postDate =
             </div>
 
 
+
             <!-- DATE -->
 
-            <span class="post-date">
-                <%= postDate %>
-            </span>
+            <% if (cpostDate) { %>
+
+                <time class="cpost-date">
+
+                    <%= cpostDate %>
+
+                </time>
+
+            <% } %>
+
 
 
             <!-- TITLE -->
 
-            <% if (postTitle) { %>
+            <% if (cpostTitle) { %>
 
-                <div class="post-header-title">
-                    <%= postTitle %>
+                <div class="cpost-title">
+
+                    <%= cpostTitle %>
+
                 </div>
 
             <% } %>
 
+
         </div>
+
 
 
         <!-- DELETE -->
 
-        <% if (canDeletePost) { %>
+        <% if (cpostCanDelete) { %>
 
             <button
                 type="button"
-                class="post-menu-button delete-post"
+                class="cpost-delete"
+                data-cpost-delete="<%= item._id %>"
                 data-id="<%= item._id %>"
-                data-type="post"
+                data-type="<%= cpostType %>"
                 aria-label="Delete post"
                 title="Delete post"
             >
@@ -324,57 +353,47 @@ const postDate =
 
         <% } %>
 
+
     </header>
 
 
 
     <!-- =====================================================
-         MESSAGE AREA
+         CONTENT
     ====================================================== -->
 
-    <div class="post-content">
+    <div class="cpost-content">
 
 
         <!-- =================================================
-             MESSAGE
-
-             IMPORTANT:
-             -------------------------------------------------
-             Title has been moved to the HEADER.
-
-             This section contains only:
-             - text
-             - images
+             TEXT
         ================================================== -->
 
-        <% if (fullPostText) { %>
+        <% if (cpostFullText) { %>
 
-            <div class="post-text-area">
+            <div class="cpost-text-area">
 
-                <% if (isLongPost) { %>
+                <% if (cpostIsLong) { %>
 
-                    <p class="post-text post-text-preview">
+                    <p class="cpost-text cpost-text-preview">
 
-                        <%= postPreview %>
-
-                        <button
+                        <%= cpostPreview %><button
                             type="button"
-                            class="post-see-more"
-                            data-post-expand="<%= item._id %>"
-                        >
-                            See more
-                            <i
+                            class="cpost-see-more"
+                            data-cpost-expand="<%= item._id %>"
+                        >See more <i
                                 class="bi bi-arrow-right"
                                 aria-hidden="true"
-                            ></i>
-                        </button>
+                            ></i></button>
 
                     </p>
 
                 <% } else { %>
 
-                    <p class="post-text">
-                        <%= fullPostText %>
+                    <p class="cpost-text">
+
+                        <%= cpostFullText %>
+
                     </p>
 
                 <% } %>
@@ -389,36 +408,39 @@ const postDate =
              IMAGE GRID
         ================================================== -->
 
-        <% if (visibleImages.length > 0) { %>
+        <% if (cpostVisibleImages.length > 0) { %>
 
             <div
-                class="post-image-grid post-image-count-<%= visibleImages.length %>"
-                data-photo-count="<%= postImages.length %>"
+                class="
+                    cpost-images
+                    cpost-images-<%= cpostVisibleImages.length %>
+                "
+                data-cpost-photo-count="<%= cpostImages.length %>"
             >
 
-                <% visibleImages.forEach(function(image, index) { %>
+                <% cpostVisibleImages.forEach(function(image, index) { %>
 
                     <button
                         type="button"
-                        class="post-image-item"
-                        data-photo-index="<%= index %>"
+                        class="cpost-image-button"
+                        data-cpost-photo-index="<%= index %>"
                         aria-label="Open photo <%= index + 1 %>"
                     >
 
                         <img
                             src="/uploads/<%= image %>"
                             alt="Post photo <%= index + 1 %>"
-                            class="post-image"
+                            class="cpost-image"
                             loading="lazy"
                         >
 
 
                         <% if (
                             index === 3 &&
-                            additionalImages > 0
+                            cpostAdditionalImages > 0
                         ) { %>
 
-                            <span class="post-more-images">
+                            <span class="cpost-more-images">
 
                                 <i
                                     class="bi bi-images"
@@ -426,7 +448,7 @@ const postDate =
                                 ></i>
 
                                 <strong>
-                                    +<%= additionalImages %>
+                                    +<%= cpostAdditionalImages %>
                                 </strong>
 
                             </span>
@@ -441,25 +463,25 @@ const postDate =
 
         <% } %>
 
+
     </div>
 
 
 
     <!-- =====================================================
-         FOOTER / ACTIONS
+         ACTIONS
     ====================================================== -->
 
-    <footer
-        class="feed-actions post-actions"
-        data-feed-id="<%= item._id %>"
-        data-feed-type="<%= postType %>"
-    >
+    <footer class="cpost-actions">
+
+
+        <!-- LIKE -->
 
         <button
             type="button"
-            class="like-btn"
+            class="cpost-like"
             data-id="<%= item._id %>"
-            data-type="<%= postType %>"
+            data-type="<%= cpostType %>"
             aria-label="Like"
         >
 
@@ -468,16 +490,22 @@ const postDate =
                 aria-hidden="true"
             ></i>
 
-            <span class="like-count">
-                <%= likes %>
+            <span class="cpost-like-count">
+
+                <%= cpostLikes %>
+
             </span>
 
         </button>
 
 
+
+        <!-- COMMENTS -->
+
         <button
             type="button"
-            class="toggle-comments"
+            class="cpost-comments-button"
+            data-cpost-comments="<%= item._id %>"
             aria-label="Comments"
         >
 
@@ -486,11 +514,14 @@ const postDate =
                 aria-hidden="true"
             ></i>
 
-            <span class="comment-count">
-                <%= comments.length %>
+            <span class="cpost-comment-count">
+
+                <%= cpostComments.length %>
+
             </span>
 
         </button>
+
 
     </footer>
 
@@ -500,68 +531,85 @@ const postDate =
          EXPANDED POST
     ====================================================== -->
 
-    <% if (isLongPost) { %>
+    <% if (cpostIsLong) { %>
 
         <div
-            class="post-expand-modal"
-            data-post-expand-modal="<%= item._id %>"
+            class="cpost-expand"
+            data-cpost-expand-modal="<%= item._id %>"
             aria-hidden="true"
         >
 
             <div
-                class="post-expand-backdrop"
-                data-close-post-expand
+                class="cpost-expand-backdrop"
+                data-cpost-close-expand
             ></div>
 
 
             <div
-                class="post-expand-card"
+                class="cpost-expand-card"
                 role="dialog"
                 aria-modal="true"
                 aria-label="Expanded post"
             >
 
-                <!-- =========================================
-                     EXPANDED HEADER
-                ========================================== -->
 
-                <header class="post-expand-header">
+                <!-- EXPANDED HEADER -->
 
-                    <div class="post-expand-user">
+                <header class="cpost-expand-header">
+
+
+                    <div class="cpost-expand-user">
+
 
                         <img
-                            src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(userName)) %>"
-                            alt="<%= userName %>"
+                            src="<%= cpostUserImage %>"
+                            alt="<%= cpostUserName %>"
                             loading="lazy"
                         >
 
-                        <div>
+
+                        <div class="cpost-expand-user-info">
+
 
                             <strong>
-                                <%= userName %>
+
+                                <%= cpostUserName %>
+
                             </strong>
 
-                            <small>
-                                <%= postDate %>
-                            </small>
 
-                            <% if (postTitle) { %>
+                            <% if (cpostDate) { %>
 
-                                <span class="post-expand-header-title">
-                                    <%= postTitle %>
+                                <small>
+
+                                    <%= cpostDate %>
+
+                                </small>
+
+                            <% } %>
+
+
+                            <% if (cpostTitle) { %>
+
+                                <span>
+
+                                    <%= cpostTitle %>
+
                                 </span>
 
                             <% } %>
 
+
                         </div>
+
 
                     </div>
 
 
                     <button
                         type="button"
-                        class="post-expand-close"
-                        data-close-post-expand
+                        class="cpost-expand-close"
+                        data-cpost-close-expand
                         aria-label="Close post"
                     >
 
@@ -572,22 +620,23 @@ const postDate =
 
                     </button>
 
+
                 </header>
 
 
-                <!-- =========================================
-                     EXPANDED BODY
-                ========================================== -->
 
-                <div class="post-expand-body">
+                <!-- EXPANDED BODY -->
 
-                    <% if (dairyName) { %>
+                <div class="cpost-expand-body">
 
-                        <% if (dairyId) { %>
+
+                    <% if (cpostDairyName) { %>
+
+                        <% if (cpostDairyId) { %>
 
                             <a
-                                href="/dairy/<%= dairyId %>"
-                                class="post-dairy-link expanded-dairy-link"
+                                href="/dairy/<%= cpostDairyId %>"
+                                class="cpost-expanded-dairy"
                             >
 
                                 <i
@@ -596,14 +645,16 @@ const postDate =
                                 ></i>
 
                                 <span>
-                                    <%= dairyName %>
+
+                                    <%= cpostDairyName %>
+
                                 </span>
 
                             </a>
 
                         <% } else { %>
 
-                            <div class="post-dairy-link expanded-dairy-link">
+                            <div class="cpost-expanded-dairy">
 
                                 <i
                                     class="bi bi-building"
@@ -611,7 +662,9 @@ const postDate =
                                 ></i>
 
                                 <span>
-                                    <%= dairyName %>
+
+                                    <%= cpostDairyName %>
+
                                 </span>
 
                             </div>
@@ -621,21 +674,23 @@ const postDate =
                     <% } %>
 
 
-                    <div class="post-expand-text">
-                        <%= fullPostText %>
+                    <div class="cpost-expanded-text">
+
+                        <%= cpostFullText %>
+
                     </div>
 
 
-                    <% if (postImages.length > 0) { %>
+                    <% if (cpostImages.length > 0) { %>
 
-                        <div class="post-expand-images">
+                        <div class="cpost-expanded-images">
 
-                            <% postImages.forEach(function(image, index) { %>
+                            <% cpostImages.forEach(function(image, index) { %>
 
                                 <button
                                     type="button"
-                                    class="post-expand-image"
-                                    data-photo-index="<%= index %>"
+                                    class="cpost-expanded-image"
+                                    data-cpost-photo-index="<%= index %>"
                                 >
 
                                     <img
@@ -652,7 +707,9 @@ const postDate =
 
                     <% } %>
 
+
                 </div>
+
 
             </div>
 
@@ -663,35 +720,37 @@ const postDate =
 
 
     <!-- =====================================================
-         FULL SCREEN PHOTO VIEWER
+         PHOTO VIEWER
     ====================================================== -->
 
-    <% if (postImages.length > 0) { %>
+    <% if (cpostImages.length > 0) { %>
 
         <div
-            class="post-photo-viewer"
-            data-photo-viewer="<%= item._id %>"
+            class="cpost-viewer"
+            data-cpost-viewer="<%= item._id %>"
             aria-hidden="true"
         >
 
+
             <div
-                class="photo-viewer-backdrop"
-                data-close-photo-viewer
+                class="cpost-viewer-backdrop"
+                data-cpost-close-viewer
             ></div>
 
 
-            <div class="photo-viewer-topbar">
+            <div class="cpost-viewer-topbar">
 
-                <span class="photo-viewer-counter">
 
-                    <span class="photo-current">
+                <span class="cpost-viewer-counter">
+
+                    <span class="cpost-current-photo">
                         1
                     </span>
 
                     /
 
                     <span>
-                        <%= postImages.length %>
+                        <%= cpostImages.length %>
                     </span>
 
                 </span>
@@ -699,8 +758,8 @@ const postDate =
 
                 <button
                     type="button"
-                    class="photo-viewer-close"
-                    data-close-photo-viewer
+                    class="cpost-viewer-close"
+                    data-cpost-close-viewer
                     aria-label="Close photo viewer"
                 >
 
@@ -711,15 +770,17 @@ const postDate =
 
                 </button>
 
+
             </div>
 
 
-            <% if (postImages.length > 1) { %>
+
+            <% if (cpostImages.length > 1) { %>
 
                 <button
                     type="button"
-                    class="photo-viewer-nav photo-viewer-prev"
-                    data-photo-prev
+                    class="cpost-viewer-navigation cpost-viewer-prev"
+                    data-cpost-photo-prev
                     aria-label="Previous photo"
                 >
 
@@ -733,23 +794,25 @@ const postDate =
             <% } %>
 
 
-            <div class="photo-viewer-stage">
+
+            <div class="cpost-viewer-stage">
 
                 <img
-                    class="photo-viewer-image"
-                    src="/uploads/<%= postImages[0] %>"
+                    class="cpost-viewer-image"
+                    src="/uploads/<%= cpostImages[0] %>"
                     alt="Post photo"
                 >
 
             </div>
 
 
-            <% if (postImages.length > 1) { %>
+
+            <% if (cpostImages.length > 1) { %>
 
                 <button
                     type="button"
-                    class="photo-viewer-nav photo-viewer-next"
-                    data-photo-next
+                    class="cpost-viewer-navigation cpost-viewer-next"
+                    data-cpost-photo-next
                     aria-label="Next photo"
                 >
 
@@ -762,6 +825,7 @@ const postDate =
 
             <% } %>
 
+
         </div>
 
     <% } %>
@@ -773,22 +837,28 @@ const postDate =
     ====================================================== -->
 
     <div
-        class="comment-modal"
+        class="cpost-comment-modal"
+        data-cpost-comment-modal="<%= item._id %>"
         aria-hidden="true"
     >
 
-        <div class="comment-modal-content">
 
-            <header class="comment-modal-header">
+        <div class="cpost-comment-modal-content">
 
-                <div class="comment-modal-title">
+
+            <!-- COMMENT HEADER -->
+
+            <header class="cpost-comment-header">
+
+
+                <div class="cpost-comment-heading">
 
                     <strong>
                         Comments
                     </strong>
 
                     <span>
-                        <%= comments.length %>
+                        <%= cpostComments.length %>
                     </span>
 
                 </div>
@@ -796,7 +866,8 @@ const postDate =
 
                 <button
                     type="button"
-                    class="close-comment-modal"
+                    class="cpost-comment-close"
+                    data-cpost-close-comments
                     aria-label="Close comments"
                 >
 
@@ -807,16 +878,24 @@ const postDate =
 
                 </button>
 
+
             </header>
 
 
-            <div class="comment-section">
 
-                <% if (comments.length === 0) { %>
+            <!-- COMMENT LIST -->
 
-                    <div class="comment-empty-state">
+            <div class="cpost-comment-list">
 
-                        <i class="bi bi-chat-dots"></i>
+
+                <% if (cpostComments.length === 0) { %>
+
+                    <div class="cpost-comment-empty">
+
+                        <i
+                            class="bi bi-chat-dots"
+                            aria-hidden="true"
+                        ></i>
 
                         <span>
                             No comments yet.
@@ -831,14 +910,18 @@ const postDate =
                 <% } %>
 
 
-                <% comments.forEach(function(comment) { %>
+
+                <% cpostComments.forEach(function(comment) { %>
+
 
                     <div
-                        class="comment-item"
+                        class="cpost-comment-item"
                         data-comment-id="<%= comment._id %>"
                     >
 
-                        <div class="comment-user-avatar">
+
+                        <div class="cpost-comment-avatar">
+
 
                             <img
                                 src="<%= comment.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.userName || 'User')) %>"
@@ -846,20 +929,27 @@ const postDate =
                                 loading="lazy"
                             >
 
+
                         </div>
 
 
-                        <div class="comment-content">
 
-                            <div class="comment-top-row">
+                        <div class="cpost-comment-body">
 
-                                <strong class="comment-user-name">
+
+                            <div class="cpost-comment-top">
+
+
+                                <strong>
+
                                     <%= comment.userName || "User" %>
+
                                 </strong>
 
 
                                 <%
-                                    const commentUserId =
+
+                                    const cpostCommentUserId =
                                         comment.userId
                                             ? String(
                                                 comment.userId._id ||
@@ -868,20 +958,22 @@ const postDate =
                                             : "";
 
 
-                                    const canDeleteComment =
+                                    const cpostCanDeleteComment =
                                         user &&
                                         (
-                                            commentUserId === currentUserId ||
+                                            cpostCommentUserId ===
+                                                cpostCurrentUserId ||
                                             user.role === "admin"
                                         );
+
                                 %>
 
 
-                                <% if (canDeleteComment) { %>
+                                <% if (cpostCanDeleteComment) { %>
 
                                     <button
                                         type="button"
-                                        class="delete-comment"
+                                        class="cpost-delete-comment"
                                         data-id="<%= comment._id %>"
                                         aria-label="Delete comment"
                                         title="Delete comment"
@@ -896,43 +988,61 @@ const postDate =
 
                                 <% } %>
 
+
                             </div>
 
 
-                            <p class="comment-text">
+
+                            <p class="cpost-comment-text">
+
                                 <%= comment.text %>
+
                             </p>
 
 
-                            <small class="comment-date">
 
-                                <%= comment.createdAt
-                                    ? new Date(comment.createdAt).toLocaleString()
-                                    : ""
-                                %>
+                            <% if (comment.createdAt) { %>
 
-                            </small>
+                                <small class="cpost-comment-date">
+
+                                    <%= new Date(
+                                        comment.createdAt
+                                    ).toLocaleString() %>
+
+                                </small>
+
+                            <% } %>
+
 
                         </div>
 
+
                     </div>
 
+
                 <% }); %>
+
 
             </div>
 
 
-            <div class="comment-composer-wrapper">
+
+            <!-- COMMENT COMPOSER -->
+
+            <div class="cpost-comment-composer-wrapper">
+
 
                 <form
-                    class="comment-form"
+                    class="cpost-comment-form"
                     data-id="<%= item._id %>"
-                    data-type="<%= postType %>"
+                    data-type="<%= cpostType %>"
                 >
 
-                    <div class="comment-composer">
 
-                        <div class="comment-input-wrapper">
+                    <div class="cpost-comment-composer">
+
+
+                        <div class="cpost-comment-input-wrapper">
 
                             <textarea
                                 name="text"
@@ -947,73 +1057,113 @@ const postDate =
 
                         <button
                             type="submit"
-                            class="comment-submit-button"
+                            class="cpost-comment-submit"
                             aria-label="Send comment"
                         >
 
-                            <i class="bi bi-send-fill"></i>
+                            <i
+                                class="bi bi-send-fill"
+                                aria-hidden="true"
+                            ></i>
 
                         </button>
 
+
                     </div>
+
 
                 </form>
 
+
             </div>
+
 
         </div>
 
+
     </div>
+
 
 </article>
 
 
 
 <!-- =========================================================
-     POST CSS
+     SELF-CONTAINED POST CSS
+
+     UNIQUE NAMESPACE:
+     ---------------------------------------------------------
+     Every selector belongs to the cpost component.
+
+     No dependency on:
+       .feed-card
+       .feed-body
+       .feed-actions
+       .post-card
+       .like-btn
+       .toggle-comments
+       .comment-modal
+       .comment-section
+       etc.
 ========================================================= -->
 
 <style>
 
-/* =========================================================
-   CARD
-========================================================= */
+.cpost-card,
+.cpost-card *,
+.cpost-card *::before,
+.cpost-card *::after {
 
-.feed-card.post-card {
-
-    width: 100%;
     box-sizing: border-box;
 
+}
+
+
+.cpost-card {
+
+    --cpost-green: #198754;
+    --cpost-green-dark: #146c43;
+    --cpost-text: #303833;
+    --cpost-muted: #89928c;
+    --cpost-border: #dfe8e2;
+
+    position: relative;
+
+    width: 100%;
+
     margin: 0 0 14px;
+
     padding: 0;
 
     background: #ffffff;
 
-    border: 1px solid #dfe8e2;
-    border-radius: 18px;
+    border: 1px solid var(--cpost-border);
+
+    border-radius: 14px;
 
     overflow: hidden;
 
     box-shadow:
-        0 2px 8px rgba(24,42,30,0.045);
+        0 2px 8px rgba(24, 42, 30, .045);
+
+    isolation: isolate;
+
+    color: var(--cpost-text);
+
+    font-family: inherit;
 
 }
-
 
 
 /* =========================================================
    HEADER
 ========================================================= */
 
-.post-card-header {
+.cpost-header {
 
     width: 100%;
 
-    min-height: 62px;
-
-    box-sizing: border-box;
-
-    padding: 10px 14px;
+    min-width: 0;
 
     display: flex;
 
@@ -1021,53 +1171,51 @@ const postDate =
 
     gap: 10px;
 
-    border-bottom: 1px solid #e2e9e4;
+    padding: 10px 13px;
 
     background: #ffffff;
 
-}
-
-
-.post-avatar {
-
-    width: 44px;
-    height: 44px;
-
-    flex: 0 0 44px;
+    border-bottom: 1px solid #e4ebe6;
 
 }
 
 
-.post-avatar img {
+.cpost-avatar {
+
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+}
+
+
+.cpost-avatar img {
 
     display: block;
 
-    width: 44px;
-    height: 44px;
-
-    object-fit: cover;
+    width: 42px;
+    height: 42px;
 
     border-radius: 50%;
+
+    object-fit: cover;
 
     border: 2px solid #edf5ef;
 
 }
 
 
-.post-header-info {
+.cpost-header-info {
 
-    flex: 1;
+    flex: 1 1 auto;
 
     min-width: 0;
 
 }
 
 
-.post-header-main {
-
-    width: 100%;
-
-    min-width: 0;
+.cpost-header-main {
 
     display: flex;
 
@@ -1079,12 +1227,16 @@ const postDate =
 
     row-gap: 1px;
 
+    min-width: 0;
+
     line-height: 1.25;
 
 }
 
 
-.post-user-name {
+.cpost-user {
+
+    display: inline;
 
     color: #172019;
 
@@ -1097,7 +1249,7 @@ const postDate =
 }
 
 
-.post-about {
+.cpost-about {
 
     color: #7c867f;
 
@@ -1108,17 +1260,21 @@ const postDate =
 }
 
 
-.post-header-dairy {
+.cpost-dairy {
+
+    display: inline;
 
     min-width: 0;
 
     max-width: 100%;
 
-    color: #198754;
+    color: var(--cpost-green);
 
     font-size: 13px;
 
     font-weight: 700;
+
+    line-height: 1.3;
 
     text-decoration: none;
 
@@ -1127,45 +1283,33 @@ const postDate =
 }
 
 
-a.post-header-dairy:hover {
+.cpost-dairy:hover {
 
-    color: #146c43;
+    color: var(--cpost-green-dark);
 
     text-decoration: underline;
 
 }
 
 
-.post-date {
+.cpost-date {
 
     display: block;
 
     margin-top: 2px;
 
-    color: #89928c;
+    color: var(--cpost-muted);
 
-    font-size: 11px;
+    font-size: 10.5px;
+
+    font-weight: 400;
 
     line-height: 1.2;
 
 }
 
 
-
-/* =========================================================
-   HEADER TITLE
-
-   Title sits directly below the date.
-
-   It is intentionally:
-   - bold
-   - compact
-   - left aligned
-   - darker than date
-   - smaller than the old content title
-========================================================= */
-
-.post-header-title {
+.cpost-title {
 
     display: block;
 
@@ -1183,132 +1327,109 @@ a.post-header-dairy:hover {
 
     line-height: 1.3;
 
-    letter-spacing: -0.05px;
-
     text-align: left;
 
-    word-break: break-word;
-
     overflow-wrap: anywhere;
+
+    word-break: break-word;
 
 }
 
 
-.post-menu-button {
+.cpost-delete {
 
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
 
-    flex: 0 0 36px;
+    flex: 0 0 34px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
 
     margin: 0;
     padding: 0;
 
-    border: none;
+    border: 0;
+
     border-radius: 50%;
 
     background: transparent;
 
     color: #7c867f;
 
-    display: flex;
-
-    align-items: center;
-    justify-content: center;
-
     cursor: pointer;
 
-    font-size: 17px;
+    font-family: inherit;
+
+    font-size: 15px;
+
+    transition:
+        background .15s ease,
+        color .15s ease,
+        transform .12s ease;
 
 }
 
 
-.post-menu-button:hover {
-
-    color: #c62828;
+.cpost-delete:hover {
 
     background: #fff1f1;
 
-}
-
-
-
-/* =========================================================
-   MESSAGE / CONTENT
-========================================================= */
-
-.post-content {
-
-    width: 100%;
-
-    height: auto !important;
-
-    min-height: 0 !important;
-
-    box-sizing: border-box;
-
-    display: block !important;
-
-    padding: 12px 14px 12px !important;
-
-    margin: 0 !important;
-
-    overflow: visible !important;
+    color: #c62828;
 
 }
 
 
-.post-content > * {
+.cpost-delete:active {
 
-    box-sizing: border-box;
+    transform: scale(.94);
 
 }
 
 
 
 /* =========================================================
-   TEXT AREA
+   CONTENT
 ========================================================= */
 
-.post-text-area {
-
-    display: block !important;
+.cpost-content {
 
     width: 100%;
 
-    height: auto !important;
+    min-width: 0;
 
-    min-height: 0 !important;
+    margin: 0;
 
-    margin: 0 !important;
+    padding: 12px 14px;
 
-    padding: 0 !important;
-
-    overflow: visible !important;
+    background: #ffffff;
 
 }
 
 
-
-/* =========================================================
-   PARAGRAPH
-========================================================= */
-
-.post-text {
-
-    display: block !important;
+.cpost-text-area {
 
     width: 100%;
 
-    height: auto !important;
+    margin: 0;
 
-    min-height: 0 !important;
+    padding: 0;
 
-    margin: 0 !important;
+}
 
-    padding: 0 !important;
 
-    color: #303833;
+.cpost-text {
+
+    width: 100%;
+
+    margin: 0;
+
+    padding: 0;
+
+    color: var(--cpost-text);
 
     font-size: 15px;
 
@@ -1324,35 +1445,22 @@ a.post-header-dairy:hover {
 
     overflow-wrap: anywhere;
 
-    vertical-align: top;
-
 }
 
 
-
-/* =========================================================
-   SEE MORE
-========================================================= */
-
-.post-see-more {
+.cpost-see-more {
 
     display: inline;
 
-    width: auto;
+    margin: 0 0 0 4px;
 
-    height: auto;
+    padding: 0;
 
-    margin: 0 0 0 4px !important;
-
-    padding: 0 !important;
-
-    border: none;
-
-    outline: none;
+    border: 0;
 
     background: transparent;
 
-    color: #198754;
+    color: var(--cpost-green);
 
     font-family: inherit;
 
@@ -1371,22 +1479,20 @@ a.post-header-dairy:hover {
 }
 
 
-.post-see-more i {
+.cpost-see-more:hover {
+
+    color: var(--cpost-green-dark);
+
+}
+
+
+.cpost-see-more i {
 
     display: inline-block;
 
     margin-left: 2px;
 
-    font-size: 11px;
-
-    vertical-align: baseline;
-
-}
-
-
-.post-see-more:hover {
-
-    color: #146c43;
+    font-size: 10px;
 
 }
 
@@ -1396,13 +1502,11 @@ a.post-header-dairy:hover {
    IMAGE GRID
 ========================================================= */
 
-.post-image-grid {
+.cpost-images {
 
     width: 100%;
 
-    height: auto;
-
-    margin: 10px 0 0 !important;
+    margin: 10px 0 0;
 
     padding: 0;
 
@@ -1415,14 +1519,14 @@ a.post-header-dairy:hover {
 
     overflow: hidden;
 
-    border-radius: 13px;
+    border-radius: 11px;
 
-    background: #f0f3f1;
+    background: #eef2ef;
 
 }
 
 
-.post-image-item {
+.cpost-image-button {
 
     position: relative;
 
@@ -1435,9 +1539,10 @@ a.post-header-dairy:hover {
     aspect-ratio: 1 / 1;
 
     margin: 0;
+
     padding: 0;
 
-    border: none;
+    border: 0;
 
     background: #eef2ef;
 
@@ -1448,7 +1553,7 @@ a.post-header-dairy:hover {
 }
 
 
-.post-image-item::after {
+.cpost-image-button::after {
 
     content: "";
 
@@ -1456,45 +1561,43 @@ a.post-header-dairy:hover {
 
     inset: 0;
 
-    background: rgba(0,0,0,0);
+    background: transparent;
 
-    transition: background 0.15s ease;
-
-}
-
-
-.post-image-item:hover::after {
-
-    background: rgba(0,0,0,0.08);
+    transition: background .15s ease;
 
 }
 
 
-.post-image {
+.cpost-image-button:hover::after {
 
-    width: 100%;
-    height: 100%;
+    background: rgba(0,0,0,.07);
+
+}
+
+
+.cpost-image {
 
     display: block;
+
+    width: 100%;
+
+    height: 100%;
 
     object-fit: cover;
 
 }
 
 
+/* ONE IMAGE */
 
-/* =========================================================
-   ONE IMAGE
-========================================================= */
-
-.post-image-count-1 {
+.cpost-images-1 {
 
     grid-template-columns: 1fr;
 
 }
 
 
-.post-image-count-1 .post-image-item {
+.cpost-images-1 .cpost-image-button {
 
     aspect-ratio: auto;
 
@@ -1503,7 +1606,9 @@ a.post-header-dairy:hover {
 }
 
 
-.post-image-count-1 .post-image {
+.cpost-images-1 .cpost-image {
+
+    width: 100%;
 
     height: auto;
 
@@ -1514,12 +1619,9 @@ a.post-header-dairy:hover {
 }
 
 
+/* THREE IMAGES */
 
-/* =========================================================
-   THREE IMAGES
-========================================================= */
-
-.post-image-count-3 {
+.cpost-images-3 {
 
     grid-template-columns:
         1.35fr
@@ -1528,25 +1630,22 @@ a.post-header-dairy:hover {
 }
 
 
-.post-image-count-3 .post-image-item:first-child {
+.cpost-images-3 .cpost-image-button:first-child {
 
     grid-row: span 2;
 
 }
 
 
+/* MORE IMAGES */
 
-/* =========================================================
-   MORE IMAGES
-========================================================= */
-
-.post-more-images {
+.cpost-more-images {
 
     position: absolute;
 
     inset: 0;
 
-    z-index: 3;
+    z-index: 2;
 
     display: flex;
 
@@ -1556,7 +1655,7 @@ a.post-header-dairy:hover {
 
     gap: 7px;
 
-    background: rgba(0,0,0,0.43);
+    background: rgba(0,0,0,.43);
 
     color: #ffffff;
 
@@ -1569,14 +1668,14 @@ a.post-header-dairy:hover {
 }
 
 
-.post-more-images i {
+.cpost-more-images i {
 
     font-size: 20px;
 
 }
 
 
-.post-more-images strong {
+.cpost-more-images strong {
 
     font-size: 20px;
 
@@ -1585,16 +1684,14 @@ a.post-header-dairy:hover {
 
 
 /* =========================================================
-   FOOTER / ACTIONS
+   ACTIONS
 ========================================================= */
 
-.post-actions {
+.cpost-actions {
 
     width: 100%;
 
-    min-height: 47px;
-
-    box-sizing: border-box;
+    min-height: 46px;
 
     display: flex;
 
@@ -1604,33 +1701,21 @@ a.post-header-dairy:hover {
 
     margin: 0;
 
-    padding: 5px 10px;
-
-    border-top: 1px solid #dfe7e2;
+    padding: 5px 9px;
 
     background: #ffffff;
+
+    border-top: 1px solid #dfe7e2;
 
 }
 
 
-.post-actions .like-btn,
-.post-actions .toggle-comments {
+.cpost-like,
+.cpost-comments-button {
 
-    min-width: 70px;
+    min-width: 64px;
 
-    height: 36px;
-
-    margin: 0;
-
-    padding: 0 11px;
-
-    border: none;
-
-    border-radius: 20px;
-
-    background: transparent;
-
-    color: #66706a;
+    height: 35px;
 
     display: inline-flex;
 
@@ -1640,6 +1725,18 @@ a.post-header-dairy:hover {
 
     gap: 6px;
 
+    margin: 0;
+
+    padding: 0 10px;
+
+    border: 0;
+
+    border-radius: 20px;
+
+    background: transparent;
+
+    color: #66706a;
+
     font-family: inherit;
 
     font-size: 14px;
@@ -1647,64 +1744,65 @@ a.post-header-dairy:hover {
     cursor: pointer;
 
     transition:
-        background 0.15s ease,
-        color 0.15s ease,
-        transform 0.1s ease;
+        background .15s ease,
+        color .15s ease,
+        transform .1s ease;
 
 }
 
 
-.post-actions .like-btn:hover,
-.post-actions .toggle-comments:hover {
+.cpost-like:hover,
+.cpost-comments-button:hover {
 
     background: #f0f6f2;
 
-    color: #198754;
+    color: var(--cpost-green);
 
 }
 
 
-.post-actions .like-btn:active,
-.post-actions .toggle-comments:active {
+.cpost-like:active,
+.cpost-comments-button:active {
 
-    transform: scale(0.96);
+    transform: scale(.96);
 
 }
 
 
-.post-actions .like-btn.liked {
+.cpost-like.liked {
 
-    color: #198754;
+    color: var(--cpost-green);
 
     background: #edf7f1;
 
 }
 
 
-.post-actions .like-btn:disabled {
+.cpost-like:disabled {
 
-    opacity: 0.55;
+    opacity: .55;
 
     cursor: wait;
 
 }
 
 
-.post-actions i {
+.cpost-like i,
+.cpost-comments-button i {
 
     font-size: 17px;
 
 }
 
 
-.like-count,
-.comment-count {
+.cpost-like-count,
+.cpost-comment-count {
 
     min-width: 12px;
 
-    line-height: 1;
-
     font-size: 13px;
+
+    line-height: 1;
 
 }
 
@@ -1714,7 +1812,7 @@ a.post-header-dairy:hover {
    EXPANDED POST
 ========================================================= */
 
-.post-expand-modal {
+.cpost-expand {
 
     position: fixed;
 
@@ -1728,34 +1826,32 @@ a.post-header-dairy:hover {
 
     justify-content: center;
 
-    padding: 18px;
-
-    box-sizing: border-box;
+    padding: 16px;
 
 }
 
 
-.post-expand-modal.active {
+.cpost-expand.cpost-is-active {
 
     display: flex;
 
 }
 
 
-.post-expand-backdrop {
+.cpost-expand-backdrop {
 
     position: absolute;
 
     inset: 0;
 
-    background: rgba(8,20,12,0.62);
+    background: rgba(8,20,12,.62);
 
     backdrop-filter: blur(3px);
 
 }
 
 
-.post-expand-card {
+.cpost-expand-card {
 
     position: relative;
 
@@ -1775,24 +1871,24 @@ a.post-header-dairy:hover {
 
     background: #ffffff;
 
-    border-radius: 20px;
+    border-radius: 18px;
 
     box-shadow:
-        0 20px 70px rgba(0,0,0,0.30);
+        0 20px 70px rgba(0,0,0,.30);
 
-    animation: postPopIn 0.18s ease-out;
+    animation: cpostPopIn .18s ease-out;
 
 }
 
 
-@keyframes postPopIn {
+@keyframes cpostPopIn {
 
     from {
 
         opacity: 0;
 
         transform:
-            scale(0.96)
+            scale(.96)
             translateY(10px);
 
     }
@@ -1810,20 +1906,11 @@ a.post-header-dairy:hover {
 }
 
 
-
-/* =========================================================
-   EXPANDED HEADER
-========================================================= */
-
-.post-expand-header {
+.cpost-expand-header {
 
     flex: 0 0 auto;
 
     min-height: 64px;
-
-    padding: 10px 12px;
-
-    box-sizing: border-box;
 
     display: flex;
 
@@ -1831,12 +1918,14 @@ a.post-header-dairy:hover {
 
     justify-content: space-between;
 
+    padding: 10px 12px;
+
     border-bottom: 1px solid #e9efeb;
 
 }
 
 
-.post-expand-user {
+.cpost-expand-user {
 
     min-width: 0;
 
@@ -1849,10 +1938,12 @@ a.post-header-dairy:hover {
 }
 
 
-.post-expand-user img {
+.cpost-expand-user > img {
 
     width: 40px;
     height: 40px;
+
+    flex: 0 0 40px;
 
     border-radius: 50%;
 
@@ -1861,7 +1952,7 @@ a.post-header-dairy:hover {
 }
 
 
-.post-expand-user > div {
+.cpost-expand-user-info {
 
     min-width: 0;
 
@@ -1872,7 +1963,7 @@ a.post-header-dairy:hover {
 }
 
 
-.post-expand-user strong {
+.cpost-expand-user-info strong {
 
     color: #202720;
 
@@ -1881,7 +1972,7 @@ a.post-header-dairy:hover {
 }
 
 
-.post-expand-user small {
+.cpost-expand-user-info small {
 
     margin-top: 2px;
 
@@ -1892,13 +1983,7 @@ a.post-header-dairy:hover {
 }
 
 
-/* =========================================================
-   EXPANDED HEADER TITLE
-========================================================= */
-
-.post-expand-header-title {
-
-    display: block;
+.cpost-expand-user-info span {
 
     margin-top: 3px;
 
@@ -1910,21 +1995,27 @@ a.post-header-dairy:hover {
 
     line-height: 1.3;
 
-    word-break: break-word;
-
     overflow-wrap: anywhere;
 
 }
 
 
-.post-expand-close {
+.cpost-expand-close {
 
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
+
+    flex: 0 0 38px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
 
     padding: 0;
 
-    border: none;
+    border: 0;
 
     border-radius: 50%;
 
@@ -1932,25 +2023,14 @@ a.post-header-dairy:hover {
 
     color: #505a54;
 
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
     cursor: pointer;
 
-    font-size: 16px;
+    font-size: 15px;
 
 }
 
 
-
-/* =========================================================
-   EXPANDED BODY
-========================================================= */
-
-.post-expand-body {
+.cpost-expand-body {
 
     flex: 1 1 auto;
 
@@ -1960,25 +2040,31 @@ a.post-header-dairy:hover {
 
     padding: 14px 16px 20px;
 
-    box-sizing: border-box;
+}
+
+
+.cpost-expanded-dairy {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    margin-bottom: 9px;
+
+    color: var(--cpost-green);
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    text-decoration: none;
 
 }
 
 
-.expanded-dairy-link {
-
-    margin-bottom: 8px !important;
-
-}
-
-
-/*
-   The old expanded title has been removed because the
-   title now belongs in the expanded HEADER.
-*/
-
-
-.post-expand-text {
+.cpost-expanded-text {
 
     margin: 0;
 
@@ -1997,12 +2083,7 @@ a.post-header-dairy:hover {
 }
 
 
-
-/* =========================================================
-   EXPANDED IMAGES
-========================================================= */
-
-.post-expand-images {
+.cpost-expanded-images {
 
     display: grid;
 
@@ -2016,7 +2097,7 @@ a.post-header-dairy:hover {
 }
 
 
-.post-expand-image {
+.cpost-expanded-image {
 
     width: 100%;
 
@@ -2024,7 +2105,7 @@ a.post-header-dairy:hover {
 
     padding: 0;
 
-    border: none;
+    border: 0;
 
     border-radius: 10px;
 
@@ -2037,12 +2118,13 @@ a.post-header-dairy:hover {
 }
 
 
-.post-expand-image img {
-
-    width: 100%;
-    height: 100%;
+.cpost-expanded-image img {
 
     display: block;
+
+    width: 100%;
+
+    height: 100%;
 
     object-fit: cover;
 
@@ -2054,7 +2136,7 @@ a.post-header-dairy:hover {
    PHOTO VIEWER
 ========================================================= */
 
-.post-photo-viewer {
+.cpost-viewer {
 
     position: fixed;
 
@@ -2064,21 +2146,21 @@ a.post-header-dairy:hover {
 
     display: none;
 
-    background: rgba(0,0,0,0.96);
+    background: rgba(0,0,0,.96);
 
     touch-action: pan-y;
 
 }
 
 
-.post-photo-viewer.active {
+.cpost-viewer.cpost-is-active {
 
     display: block;
 
 }
 
 
-.photo-viewer-backdrop {
+.cpost-viewer-backdrop {
 
     position: absolute;
 
@@ -2087,7 +2169,7 @@ a.post-header-dairy:hover {
 }
 
 
-.photo-viewer-topbar {
+.cpost-viewer-topbar {
 
     position: absolute;
 
@@ -2099,27 +2181,25 @@ a.post-header-dairy:hover {
 
     height: 64px;
 
-    padding: 10px 14px;
-
-    box-sizing: border-box;
-
     display: flex;
 
     align-items: center;
 
     justify-content: space-between;
 
+    padding: 10px 14px;
+
     background:
         linear-gradient(
             to bottom,
-            rgba(0,0,0,0.55),
+            rgba(0,0,0,.55),
             transparent
         );
 
 }
 
 
-.photo-viewer-counter {
+.cpost-viewer-counter {
 
     color: #ffffff;
 
@@ -2131,44 +2211,42 @@ a.post-header-dairy:hover {
 
     border-radius: 20px;
 
-    background: rgba(0,0,0,0.35);
+    background: rgba(0,0,0,.35);
 
 }
 
 
-.photo-viewer-close {
+.cpost-viewer-close {
 
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
 
-    padding: 0;
-
-    border: 1px solid rgba(255,255,255,0.35);
-
-    border-radius: 50%;
-
-    background: rgba(0,0,0,0.35);
-
-    color: #ffffff;
-
-    display: flex;
+    display: inline-flex;
 
     align-items: center;
 
     justify-content: center;
 
-    cursor: pointer;
+    padding: 0;
 
-    font-size: 17px;
+    border: 1px solid rgba(255,255,255,.35);
+
+    border-radius: 50%;
+
+    background: rgba(0,0,0,.35);
+
+    color: #ffffff;
+
+    cursor: pointer;
 
 }
 
 
-.photo-viewer-stage {
+.cpost-viewer-stage {
 
     position: absolute;
 
-    inset: 64px 55px 20px 55px;
+    inset: 64px 55px 20px;
 
     display: flex;
 
@@ -2181,12 +2259,14 @@ a.post-header-dairy:hover {
 }
 
 
-.photo-viewer-image {
+.cpost-viewer-image {
 
     max-width: 100%;
+
     max-height: 100%;
 
     width: auto;
+
     height: auto;
 
     object-fit: contain;
@@ -2195,17 +2275,10 @@ a.post-header-dairy:hover {
 
     -webkit-user-drag: none;
 
-    touch-action: none;
-
 }
 
 
-
-/* =========================================================
-   PHOTO NAVIGATION
-========================================================= */
-
-.photo-viewer-nav {
+.cpost-viewer-navigation {
 
     position: absolute;
 
@@ -2213,42 +2286,42 @@ a.post-header-dairy:hover {
 
     top: 50%;
 
-    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
 
-    width: 46px;
-    height: 46px;
-
-    padding: 0;
-
-    border: 1px solid rgba(255,255,255,0.3);
-
-    border-radius: 50%;
-
-    background: rgba(0,0,0,0.38);
-
-    color: #ffffff;
-
-    display: flex;
+    display: inline-flex;
 
     align-items: center;
 
     justify-content: center;
 
+    padding: 0;
+
+    border: 1px solid rgba(255,255,255,.3);
+
+    border-radius: 50%;
+
+    background: rgba(0,0,0,.38);
+
+    color: #ffffff;
+
     cursor: pointer;
 
-    font-size: 20px;
+    font-size: 19px;
+
+    transform: translateY(-50%);
 
 }
 
 
-.photo-viewer-prev {
+.cpost-viewer-prev {
 
     left: 14px;
 
 }
 
 
-.photo-viewer-next {
+.cpost-viewer-next {
 
     right: 14px;
 
@@ -2257,10 +2330,10 @@ a.post-header-dairy:hover {
 
 
 /* =========================================================
-   COMMENT MODAL
+   COMMENTS
 ========================================================= */
 
-.comment-modal {
+.cpost-comment-modal {
 
     position: fixed;
 
@@ -2274,19 +2347,19 @@ a.post-header-dairy:hover {
 
     justify-content: center;
 
-    background: rgba(0,0,0,0.45);
+    background: rgba(0,0,0,.45);
 
 }
 
 
-.comment-modal.active {
+.cpost-comment-modal.cpost-is-active {
 
     display: flex;
 
 }
 
 
-.comment-modal-content {
+.cpost-comment-modal-content {
 
     width: 100%;
 
@@ -2298,25 +2371,23 @@ a.post-header-dairy:hover {
 
     flex-direction: column;
 
+    overflow: hidden;
+
     background: #ffffff;
 
     border-radius: 18px 18px 0 0;
 
-    overflow: hidden;
-
     box-shadow:
-        0 -8px 30px rgba(0,0,0,0.18);
+        0 -8px 30px rgba(0,0,0,.18);
 
 }
 
 
-.comment-modal-header {
+.cpost-comment-header {
 
     flex: 0 0 auto;
 
     height: 58px;
-
-    padding: 0 14px 0 18px;
 
     display: flex;
 
@@ -2324,14 +2395,14 @@ a.post-header-dairy:hover {
 
     justify-content: space-between;
 
-    box-sizing: border-box;
+    padding: 0 14px 0 18px;
 
     border-bottom: 1px solid #e8eee9;
 
 }
 
 
-.comment-modal-title {
+.cpost-comment-heading {
 
     display: flex;
 
@@ -2342,7 +2413,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-modal-title strong {
+.cpost-comment-heading strong {
 
     color: #202520;
 
@@ -2351,11 +2422,17 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-modal-title span {
+.cpost-comment-heading span {
 
     min-width: 22px;
 
     height: 22px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
 
     padding: 0 6px;
 
@@ -2363,13 +2440,7 @@ a.post-header-dairy:hover {
 
     background: #edf5ef;
 
-    color: #198754;
-
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
+    color: var(--cpost-green);
 
     font-size: 11px;
 
@@ -2378,14 +2449,20 @@ a.post-header-dairy:hover {
 }
 
 
-.close-comment-modal {
+.cpost-comment-close {
 
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
 
     padding: 0;
 
-    border: none;
+    border: 0;
 
     border-radius: 50%;
 
@@ -2393,23 +2470,12 @@ a.post-header-dairy:hover {
 
     color: #68716b;
 
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
     cursor: pointer;
 
 }
 
 
-
-/* =========================================================
-   COMMENTS
-========================================================= */
-
-.comment-section {
+.cpost-comment-list {
 
     flex: 1 1 auto;
 
@@ -2422,7 +2488,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-empty-state {
+.cpost-comment-empty {
 
     min-height: 180px;
 
@@ -2441,7 +2507,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-empty-state i {
+.cpost-comment-empty i {
 
     margin-bottom: 10px;
 
@@ -2452,7 +2518,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-empty-state span {
+.cpost-comment-empty span {
 
     color: #606963;
 
@@ -2463,7 +2529,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-empty-state small {
+.cpost-comment-empty small {
 
     margin-top: 4px;
 
@@ -2472,7 +2538,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-item {
+.cpost-comment-item {
 
     display: flex;
 
@@ -2483,7 +2549,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-user-avatar {
+.cpost-comment-avatar {
 
     width: 34px;
     height: 34px;
@@ -2493,12 +2559,12 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-user-avatar img {
+.cpost-comment-avatar img {
+
+    display: block;
 
     width: 34px;
     height: 34px;
-
-    display: block;
 
     border-radius: 50%;
 
@@ -2507,7 +2573,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-content {
+.cpost-comment-body {
 
     min-width: 0;
 
@@ -2522,7 +2588,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-top-row {
+.cpost-comment-top {
 
     display: flex;
 
@@ -2533,7 +2599,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-user-name {
+.cpost-comment-top strong {
 
     min-width: 0;
 
@@ -2546,7 +2612,35 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-text {
+.cpost-delete-comment {
+
+    width: 27px;
+    height: 27px;
+
+    flex: 0 0 27px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 0;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #969d98;
+
+    cursor: pointer;
+
+}
+
+
+.cpost-comment-text {
 
     margin: 3px 0 0;
 
@@ -2563,7 +2657,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-date {
+.cpost-comment-date {
 
     display: block;
 
@@ -2576,40 +2670,7 @@ a.post-header-dairy:hover {
 }
 
 
-.delete-comment {
-
-    width: 28px;
-    height: 28px;
-
-    flex: 0 0 28px;
-
-    padding: 0;
-
-    border: none;
-
-    border-radius: 50%;
-
-    background: transparent;
-
-    color: #969d98;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    cursor: pointer;
-
-}
-
-
-
-/* =========================================================
-   COMMENT COMPOSER
-========================================================= */
-
-.comment-composer-wrapper {
+.cpost-comment-composer-wrapper {
 
     flex: 0 0 auto;
 
@@ -2628,7 +2689,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-form {
+.cpost-comment-form {
 
     width: 100%;
 
@@ -2637,7 +2698,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-composer {
+.cpost-comment-composer {
 
     min-height: 46px;
 
@@ -2649,8 +2710,6 @@ a.post-header-dairy:hover {
 
     padding: 4px 5px 4px 12px;
 
-    box-sizing: border-box;
-
     border: 1px solid #dce5df;
 
     border-radius: 24px;
@@ -2660,7 +2719,7 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-input-wrapper {
+.cpost-comment-input-wrapper {
 
     flex: 1;
 
@@ -2669,7 +2728,9 @@ a.post-header-dairy:hover {
 }
 
 
-.comment-input-wrapper textarea {
+.cpost-comment-input-wrapper textarea {
+
+    display: block;
 
     width: 100%;
 
@@ -2677,21 +2738,21 @@ a.post-header-dairy:hover {
 
     max-height: 100px;
 
+    margin: 0;
+
+    padding: 8px 0 6px;
+
     resize: none;
 
     overflow-y: auto;
 
-    padding: 9px 0 6px;
+    border: 0;
 
-    margin: 0;
-
-    box-sizing: border-box;
-
-    border: none;
-
-    outline: none;
+    outline: 0;
 
     background: transparent;
+
+    color: #202520;
 
     font-family: inherit;
 
@@ -2699,37 +2760,35 @@ a.post-header-dairy:hover {
 
     line-height: 20px;
 
-    color: #202520;
-
 }
 
 
-.comment-submit-button {
+.cpost-comment-submit {
 
-    width: 38px;
-    height: 38px;
+    width: 37px;
+    height: 37px;
 
-    flex: 0 0 38px;
+    flex: 0 0 37px;
 
-    padding: 0;
-
-    border: none;
-
-    border-radius: 50%;
-
-    background: transparent;
-
-    color: #198754;
-
-    display: flex;
+    display: inline-flex;
 
     align-items: center;
 
     justify-content: center;
 
+    padding: 0;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: var(--cpost-green);
+
     cursor: pointer;
 
-    font-size: 17px;
+    font-size: 16px;
 
 }
 
@@ -2741,28 +2800,27 @@ a.post-header-dairy:hover {
 
 @media (max-width: 600px) {
 
-    .feed-card.post-card {
+
+    .cpost-card {
 
         margin-bottom: 11px;
 
-        border-radius: 14px;
+        border-radius: 13px;
 
     }
 
 
-    .post-card-header {
+    .cpost-header {
 
-        min-height: 57px;
+        padding: 8px 11px;
 
-        padding:
-            8px
-            12px;
+        gap: 9px;
 
     }
 
 
-    .post-avatar,
-    .post-avatar img {
+    .cpost-avatar,
+    .cpost-avatar img {
 
         width: 40px;
         height: 40px;
@@ -2770,70 +2828,56 @@ a.post-header-dairy:hover {
     }
 
 
-    .post-avatar {
+    .cpost-avatar {
 
         flex-basis: 40px;
 
     }
 
 
-    .post-header-main {
-
-        column-gap: 4px;
-
-    }
-
-
-    .post-user-name {
+    .cpost-user {
 
         font-size: 13.5px;
 
     }
 
 
-    .post-about {
+    .cpost-about {
 
         font-size: 11.5px;
 
     }
 
 
-    .post-header-dairy {
+    .cpost-dairy {
 
         font-size: 12.5px;
 
     }
 
 
-    .post-date {
+    .cpost-date {
 
-        font-size: 10.5px;
+        font-size: 10px;
 
     }
 
 
-    .post-header-title {
-
-        margin-top: 2px;
+    .cpost-title {
 
         font-size: 13.5px;
 
-        line-height: 1.3;
+    }
+
+
+    .cpost-content {
+
+        padding: 10px 12px;
 
     }
 
 
-    .post-content {
-
-        padding:
-            10px
-            12px
-            10px !important;
-
-    }
-
-
-    .post-text {
+    .cpost-text {
 
         font-size: 14px;
 
@@ -2842,131 +2886,97 @@ a.post-header-dairy:hover {
     }
 
 
-    .post-see-more {
-
-        margin-left: 3px !important;
+    .cpost-see-more {
 
         font-size: 13.5px;
 
     }
 
 
-    .post-image-grid {
+    .cpost-images {
 
-        margin-top: 9px !important;
+        margin-top: 9px;
 
-        border-radius: 11px;
+        border-radius: 10px;
 
     }
 
 
-    .post-actions {
+    .cpost-actions {
 
         min-height: 45px;
 
-        padding:
-            4px
-            8px;
+        padding: 4px 8px;
 
     }
 
 
-    .post-actions .like-btn,
-    .post-actions .toggle-comments {
+    .cpost-like,
+    .cpost-comments-button {
 
-        min-width: 64px;
+        min-width: 60px;
 
-        height: 35px;
+        height: 34px;
 
-        padding:
-            0
-            9px;
+        padding: 0 8px;
 
     }
 
 
-    /* EXPANDED POST */
-
-    .post-expand-modal {
+    .cpost-expand {
 
         padding: 8px;
 
     }
 
 
-    .post-expand-card {
+    .cpost-expand-card {
 
         max-height: 94dvh;
 
-        border-radius: 17px;
+        border-radius: 16px;
 
     }
 
 
-    .post-expand-header-title {
+    .cpost-expand-body {
 
-        font-size: 12.5px;
-
-    }
-
-
-    .post-expand-body {
-
-        padding:
-            13px
-            13px
-            18px;
+        padding: 13px 13px 18px;
 
     }
 
 
-    .post-expand-text {
+    .cpost-viewer-stage {
 
-        font-size: 14px;
-
-        line-height: 1.6;
+        inset: 65px 5px 10px;
 
     }
 
 
-    /* PHOTO VIEWER */
-
-    .photo-viewer-stage {
-
-        inset:
-            65px
-            5px
-            10px
-            5px;
-
-    }
-
-
-    .photo-viewer-nav {
+    .cpost-viewer-navigation {
 
         width: 40px;
+
         height: 40px;
 
     }
 
 
-    .photo-viewer-prev {
+    .cpost-viewer-prev {
 
         left: 7px;
 
     }
 
 
-    .photo-viewer-next {
+    .cpost-viewer-next {
 
         right: 7px;
 
     }
 
 
-    /* COMMENTS */
-
-    .comment-modal-content {
+    .cpost-comment-modal-content {
 
         max-height: 92dvh;
 
@@ -2979,7 +2989,7 @@ a.post-header-dairy:hover {
     }
 
 
-    .comment-section {
+    .cpost-comment-list {
 
         padding:
             8px
@@ -2991,56 +3001,78 @@ a.post-header-dairy:hover {
 }
 
 
-
-/* =========================================================
-   SMALL PHONES
-========================================================= */
-
 @media (max-width: 380px) {
 
-    .post-user-name {
+
+    .cpost-header {
+
+        padding-left: 10px;
+
+        padding-right: 10px;
+
+    }
+
+
+    .cpost-user {
 
         font-size: 13px;
 
     }
 
 
-    .post-header-dairy {
+    .cpost-dairy {
 
         font-size: 12px;
 
     }
 
 
-    .post-header-title {
+    .cpost-title {
 
         font-size: 13px;
 
     }
 
 
-    .post-text {
+    .cpost-text {
 
         font-size: 14px;
 
     }
 
 
-    .post-image-grid {
+    .cpost-images {
 
         gap: 2px;
 
     }
 
 
-    .post-actions .like-btn,
-    .post-actions .toggle-comments {
+    .cpost-like,
+    .cpost-comments-button {
 
-        min-width: 58px;
+        min-width: 57px;
 
-        padding:
-            0
-            7px;
+        padding-left: 6px;
+
+        padding-right: 6px;
+
+    }
+
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+
+    .cpost-card *,
+    .cpost-card *::before,
+    .cpost-card *::after {
+
+        scroll-behavior: auto !important;
+
+        transition: none !important;
+
+        animation: none !important;
 
     }
 
@@ -3051,132 +3083,73 @@ a.post-header-dairy:hover {
 
 
 <!-- =========================================================
-     POST INTERACTION JAVASCRIPT
+     POST JAVASCRIPT
 ========================================================= -->
 
 <script>
 
-(function(){
+(function () {
 
-    if(
-        window.__modernPostInteractionsInitialized
-    ){
+    /*
+     * -------------------------------------------------------
+     * INITIALIZATION GUARD
+     * -------------------------------------------------------
+     */
+
+    if (window.__corevesterCpostInitialized) {
 
         return;
 
     }
 
-
-    window.__modernPostInteractionsInitialized =
-        true;
-
-
-    let activePhotoViewer = null;
-
-    let activePhotoIndex = 0;
-
-    let activePhotoImages = [];
-
-    let touchStartX = 0;
-
-    let touchStartY = 0;
+    window.__corevesterCpostInitialized = true;
 
 
 
-    /* =====================================================
-       OPEN EXPANDED POST
-    ====================================================== */
+    /*
+     * -------------------------------------------------------
+     * ACTIVE PHOTO VIEWER
+     * -------------------------------------------------------
+     */
 
-    function openExpandedPost(button){
+    let cpostActiveViewer = null;
 
-        if(!button){
+    let cpostActiveImages = [];
 
-            return;
+    let cpostActiveIndex = 0;
 
-        }
+    let cpostTouchStartX = 0;
 
-
-        const postId =
-            button.dataset.postExpand;
-
-
-        if(!postId){
-
-            return;
-
-        }
+    let cpostTouchStartY = 0;
 
 
-        const modal =
-            document.querySelector(
-                `[data-post-expand-modal="${postId}"]`
-            );
 
+    /*
+     * -------------------------------------------------------
+     * BODY LOCK
+     * -------------------------------------------------------
+     */
 
-        if(!modal){
+    function cpostLockBody() {
 
-            return;
-
-        }
-
-
-        modal.classList.add("active");
-
-        modal.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-
-        document.body.style.overflow =
-            "hidden";
-
-
-        const body =
-            modal.querySelector(
-                ".post-expand-body"
-            );
-
-
-        if(body){
-
-            body.scrollTop = 0;
-
-        }
+        document.body.style.overflow = "hidden";
 
     }
 
 
+    function cpostUnlockBody() {
 
-    /* =====================================================
-       CLOSE EXPANDED POST
-    ====================================================== */
-
-    function closeExpandedPost(modal){
-
-        if(!modal){
-
-            return;
-
-        }
-
-
-        modal.classList.remove("active");
-
-        modal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-
-        if(
+        if (
             !document.querySelector(
-                ".post-photo-viewer.active"
+                ".cpost-expand.cpost-is-active"
             ) &&
             !document.querySelector(
-                ".comment-modal.active"
+                ".cpost-viewer.cpost-is-active"
+            ) &&
+            !document.querySelector(
+                ".cpost-comment-modal.cpost-is-active"
             )
-        ){
+        ) {
 
             document.body.style.overflow = "";
 
@@ -3186,13 +3159,113 @@ a.post-header-dairy:hover {
 
 
 
-    /* =====================================================
-       COLLECT IMAGES
-    ====================================================== */
+    /*
+     * -------------------------------------------------------
+     * EXPAND POST
+     * -------------------------------------------------------
+     */
 
-    function getPostImagesFromCard(card){
+    function cpostOpenExpanded(button) {
 
-        if(!card){
+        if (!button) {
+
+            return;
+
+        }
+
+
+        const postId =
+            button.dataset.cpostExpand;
+
+
+        if (!postId) {
+
+            return;
+
+        }
+
+
+        const modal =
+            document.querySelector(
+                `[data-cpost-expand-modal="${postId}"]`
+            );
+
+
+        if (!modal) {
+
+            return;
+
+        }
+
+
+        modal.classList.add(
+            "cpost-is-active"
+        );
+
+        modal.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+        cpostLockBody();
+
+
+        const body =
+            modal.querySelector(
+                ".cpost-expand-body"
+            );
+
+
+        if (body) {
+
+            body.scrollTop = 0;
+
+        }
+
+    }
+
+
+
+    /*
+     * -------------------------------------------------------
+     * CLOSE EXPANDED POST
+     * -------------------------------------------------------
+     */
+
+    function cpostCloseExpanded(modal) {
+
+        if (!modal) {
+
+            return;
+
+        }
+
+
+        modal.classList.remove(
+            "cpost-is-active"
+        );
+
+        modal.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+
+        cpostUnlockBody();
+
+    }
+
+
+
+    /*
+     * -------------------------------------------------------
+     * GET IMAGES
+     * -------------------------------------------------------
+     */
+
+    function cpostGetImages(card) {
+
+        if (!card) {
 
             return [];
 
@@ -3204,11 +3277,11 @@ a.post-header-dairy:hover {
 
         card
             .querySelectorAll(
-                ".post-expand-image img"
+                ".cpost-expanded-image img"
             )
-            .forEach(function(img){
+            .forEach(function (img) {
 
-                if(img.src){
+                if (img.src) {
 
                     images.push(img.src);
 
@@ -3217,15 +3290,15 @@ a.post-header-dairy:hover {
             });
 
 
-        if(!images.length){
+        if (!images.length) {
 
             card
                 .querySelectorAll(
-                    ".post-image-item img"
+                    ".cpost-image-button img"
                 )
-                .forEach(function(img){
+                .forEach(function (img) {
 
-                    if(img.src){
+                    if (img.src) {
 
                         images.push(img.src);
 
@@ -3242,13 +3315,15 @@ a.post-header-dairy:hover {
 
 
 
-    /* =====================================================
-       OPEN PHOTO VIEWER
-    ====================================================== */
+    /*
+     * -------------------------------------------------------
+     * OPEN PHOTO VIEWER
+     * -------------------------------------------------------
+     */
 
-    function openPhotoViewer(card,index){
+    function cpostOpenViewer(card, index) {
 
-        if(!card){
+        if (!card) {
 
             return;
 
@@ -3257,11 +3332,11 @@ a.post-header-dairy:hover {
 
         const viewer =
             card.querySelector(
-                ".post-photo-viewer"
+                ".cpost-viewer"
             );
 
 
-        if(!viewer){
+        if (!viewer) {
 
             return;
 
@@ -3269,25 +3344,21 @@ a.post-header-dairy:hover {
 
 
         const images =
-            getPostImagesFromCard(card);
+            cpostGetImages(card);
 
 
-        if(!images.length){
+        if (!images.length) {
 
             return;
 
         }
 
 
-        activePhotoViewer =
-            viewer;
+        cpostActiveViewer = viewer;
 
+        cpostActiveImages = images;
 
-        activePhotoImages =
-            images;
-
-
-        activePhotoIndex =
+        cpostActiveIndex =
             Math.max(
                 0,
                 Math.min(
@@ -3297,10 +3368,12 @@ a.post-header-dairy:hover {
             );
 
 
-        updatePhotoViewer();
+        cpostUpdateViewer();
 
 
-        viewer.classList.add("active");
+        viewer.classList.add(
+            "cpost-is-active"
+        );
 
         viewer.setAttribute(
             "aria-hidden",
@@ -3308,23 +3381,24 @@ a.post-header-dairy:hover {
         );
 
 
-        document.body.style.overflow =
-            "hidden";
+        cpostLockBody();
 
     }
 
 
 
-    /* =====================================================
-       UPDATE VIEWER
-    ====================================================== */
+    /*
+     * -------------------------------------------------------
+     * UPDATE PHOTO VIEWER
+     * -------------------------------------------------------
+     */
 
-    function updatePhotoViewer(){
+    function cpostUpdateViewer() {
 
-        if(
-            !activePhotoViewer ||
-            !activePhotoImages.length
-        ){
+        if (
+            !cpostActiveViewer ||
+            !cpostActiveImages.length
+        ) {
 
             return;
 
@@ -3332,31 +3406,31 @@ a.post-header-dairy:hover {
 
 
         const image =
-            activePhotoViewer.querySelector(
-                ".photo-viewer-image"
+            cpostActiveViewer.querySelector(
+                ".cpost-viewer-image"
             );
 
 
-        const current =
-            activePhotoViewer.querySelector(
-                ".photo-current"
+        const counter =
+            cpostActiveViewer.querySelector(
+                ".cpost-current-photo"
             );
 
 
-        if(image){
+        if (image) {
 
             image.src =
-                activePhotoImages[
-                    activePhotoIndex
+                cpostActiveImages[
+                    cpostActiveIndex
                 ];
 
         }
 
 
-        if(current){
+        if (counter) {
 
-            current.textContent =
-                activePhotoIndex + 1;
+            counter.textContent =
+                cpostActiveIndex + 1;
 
         }
 
@@ -3364,129 +3438,216 @@ a.post-header-dairy:hover {
 
 
 
-    /* =====================================================
-       CLOSE VIEWER
-    ====================================================== */
+    /*
+     * -------------------------------------------------------
+     * CLOSE PHOTO VIEWER
+     * -------------------------------------------------------
+     */
 
-    function closePhotoViewer(){
+    function cpostCloseViewer() {
 
-        if(!activePhotoViewer){
+        if (!cpostActiveViewer) {
 
             return;
 
         }
 
 
-        activePhotoViewer.classList.remove(
-            "active"
+        cpostActiveViewer.classList.remove(
+            "cpost-is-active"
         );
 
-
-        activePhotoViewer.setAttribute(
+        cpostActiveViewer.setAttribute(
             "aria-hidden",
             "true"
         );
 
 
-        activePhotoViewer = null;
+        cpostActiveViewer = null;
 
-        activePhotoImages = [];
+        cpostActiveImages = [];
 
-        activePhotoIndex = 0;
+        cpostActiveIndex = 0;
 
 
-        if(
-            !document.querySelector(
-                ".post-expand-modal.active"
-            ) &&
-            !document.querySelector(
-                ".comment-modal.active"
-            )
-        ){
-
-            document.body.style.overflow = "";
-
-        }
+        cpostUnlockBody();
 
     }
 
 
 
-    /* =====================================================
-       NEXT
-    ====================================================== */
+    /*
+     * -------------------------------------------------------
+     * NEXT PHOTO
+     * -------------------------------------------------------
+     */
 
-    function nextPhoto(){
+    function cpostNextPhoto() {
 
-        if(!activePhotoImages.length){
+        if (!cpostActiveImages.length) {
 
             return;
 
         }
 
 
-        activePhotoIndex =
+        cpostActiveIndex =
             (
-                activePhotoIndex + 1
+                cpostActiveIndex + 1
             ) %
-            activePhotoImages.length;
+            cpostActiveImages.length;
 
 
-        updatePhotoViewer();
+        cpostUpdateViewer();
 
     }
 
 
 
-    /* =====================================================
-       PREVIOUS
-    ====================================================== */
+    /*
+     * -------------------------------------------------------
+     * PREVIOUS PHOTO
+     * -------------------------------------------------------
+     */
 
-    function previousPhoto(){
+    function cpostPreviousPhoto() {
 
-        if(!activePhotoImages.length){
+        if (!cpostActiveImages.length) {
 
             return;
 
         }
 
 
-        activePhotoIndex =
+        cpostActiveIndex =
             (
-                activePhotoIndex -
+                cpostActiveIndex -
                 1 +
-                activePhotoImages.length
+                cpostActiveImages.length
             ) %
-            activePhotoImages.length;
+            cpostActiveImages.length;
 
 
-        updatePhotoViewer();
+        cpostUpdateViewer();
 
     }
 
 
 
-    /* =====================================================
-       CLICK HANDLER
-    ====================================================== */
+    /*
+     * -------------------------------------------------------
+     * OPEN COMMENTS
+     * -------------------------------------------------------
+     */
+
+    function cpostOpenComments(button) {
+
+        if (!button) {
+
+            return;
+
+        }
+
+
+        const postId =
+            button.dataset.cpostComments;
+
+
+        if (!postId) {
+
+            return;
+
+        }
+
+
+        const modal =
+            document.querySelector(
+                `[data-cpost-comment-modal="${postId}"]`
+            );
+
+
+        if (!modal) {
+
+            return;
+
+        }
+
+
+        modal.classList.add(
+            "cpost-is-active"
+        );
+
+        modal.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+
+        cpostLockBody();
+
+    }
+
+
+
+    /*
+     * -------------------------------------------------------
+     * CLOSE COMMENTS
+     * -------------------------------------------------------
+     */
+
+    function cpostCloseComments(modal) {
+
+        if (!modal) {
+
+            return;
+
+        }
+
+
+        modal.classList.remove(
+            "cpost-is-active"
+        );
+
+        modal.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+
+        cpostUnlockBody();
+
+    }
+
+
+
+    /*
+     * -------------------------------------------------------
+     * CLICK HANDLER
+     * -------------------------------------------------------
+     */
 
     document.addEventListener(
         "click",
-        function(event){
+        function (event) {
+
+
+            /*
+             * SEE MORE
+             */
 
             const seeMore =
                 event.target.closest(
-                    ".post-see-more"
+                    ".cpost-see-more"
                 );
 
 
-            if(seeMore){
+            if (seeMore) {
 
                 event.preventDefault();
 
                 event.stopPropagation();
 
-                openExpandedPost(
+                cpostOpenExpanded(
                     seeMore
                 );
 
@@ -3495,53 +3656,123 @@ a.post-header-dairy:hover {
             }
 
 
-            const closeExpanded =
+
+            /*
+             * CLOSE EXPANDED
+             */
+
+            const closeExpand =
                 event.target.closest(
-                    "[data-close-post-expand]"
+                    "[data-cpost-close-expand]"
                 );
 
 
-            if(closeExpanded){
+            if (closeExpand) {
 
                 event.preventDefault();
 
+
                 const modal =
-                    closeExpanded.closest(
-                        ".post-expand-modal"
+                    closeExpand.closest(
+                        ".cpost-expand"
                     );
 
 
-                closeExpandedPost(modal);
+                cpostCloseExpanded(
+                    modal
+                );
 
                 return;
 
             }
 
 
-            const photoButton =
+
+            /*
+             * COMMENTS
+             */
+
+            const commentsButton =
                 event.target.closest(
-                    ".post-image-item, .post-expand-image"
+                    ".cpost-comments-button"
                 );
 
 
-            if(photoButton){
+            if (commentsButton) {
 
                 event.preventDefault();
 
+                cpostOpenComments(
+                    commentsButton
+                );
+
+                return;
+
+            }
+
+
+
+            /*
+             * CLOSE COMMENTS
+             */
+
+            const closeComments =
+                event.target.closest(
+                    "[data-cpost-close-comments]"
+                );
+
+
+            if (closeComments) {
+
+                event.preventDefault();
+
+
+                const modal =
+                    closeComments.closest(
+                        ".cpost-comment-modal"
+                    );
+
+
+                cpostCloseComments(
+                    modal
+                );
+
+                return;
+
+            }
+
+
+
+            /*
+             * POST IMAGE
+             */
+
+            const photoButton =
+                event.target.closest(
+                    ".cpost-image-button, .cpost-expanded-image"
+                );
+
+
+            if (photoButton) {
+
+                event.preventDefault();
+
+
                 const card =
                     photoButton.closest(
-                        ".post-card"
+                        ".cpost-card"
                     );
 
 
                 const index =
                     Number(
-                        photoButton.dataset.photoIndex ||
+                        photoButton.dataset
+                            .cpostPhotoIndex ||
                         0
                     );
 
 
-                openPhotoViewer(
+                cpostOpenViewer(
                     card,
                     index
                 );
@@ -3551,51 +3782,66 @@ a.post-header-dairy:hover {
             }
 
 
+
+            /*
+             * CLOSE PHOTO VIEWER
+             */
+
             const closeViewer =
                 event.target.closest(
-                    "[data-close-photo-viewer]"
+                    "[data-cpost-close-viewer]"
                 );
 
 
-            if(closeViewer){
+            if (closeViewer) {
 
                 event.preventDefault();
 
-                closePhotoViewer();
+                cpostCloseViewer();
 
                 return;
 
             }
 
+
+
+            /*
+             * NEXT PHOTO
+             */
 
             const next =
                 event.target.closest(
-                    "[data-photo-next]"
+                    "[data-cpost-photo-next]"
                 );
 
 
-            if(next){
+            if (next) {
 
                 event.preventDefault();
 
-                nextPhoto();
+                cpostNextPhoto();
 
                 return;
 
             }
 
 
+
+            /*
+             * PREVIOUS PHOTO
+             */
+
             const previous =
                 event.target.closest(
-                    "[data-photo-prev]"
+                    "[data-cpost-photo-prev]"
                 );
 
 
-            if(previous){
+            if (previous) {
 
                 event.preventDefault();
 
-                previousPhoto();
+                cpostPreviousPhoto();
 
                 return;
 
@@ -3606,20 +3852,22 @@ a.post-header-dairy:hover {
 
 
 
-    /* =====================================================
-       SWIPE
-    ====================================================== */
+    /*
+     * -------------------------------------------------------
+     * TOUCH START
+     * -------------------------------------------------------
+     */
 
     document.addEventListener(
         "touchstart",
-        function(event){
+        function (event) {
 
-            if(
-                !activePhotoViewer ||
-                !activePhotoViewer.classList.contains(
-                    "active"
+            if (
+                !cpostActiveViewer ||
+                !cpostActiveViewer.classList.contains(
+                    "cpost-is-active"
                 )
-            ){
+            ) {
 
                 return;
 
@@ -3630,18 +3878,18 @@ a.post-header-dairy:hover {
                 event.touches[0];
 
 
-            if(!touch){
+            if (!touch) {
 
                 return;
 
             }
 
 
-            touchStartX =
+            cpostTouchStartX =
                 touch.clientX;
 
 
-            touchStartY =
+            cpostTouchStartY =
                 touch.clientY;
 
         },
@@ -3652,16 +3900,22 @@ a.post-header-dairy:hover {
 
 
 
+    /*
+     * -------------------------------------------------------
+     * TOUCH END
+     * -------------------------------------------------------
+     */
+
     document.addEventListener(
         "touchend",
-        function(event){
+        function (event) {
 
-            if(
-                !activePhotoViewer ||
-                !activePhotoViewer.classList.contains(
-                    "active"
+            if (
+                !cpostActiveViewer ||
+                !cpostActiveViewer.classList.contains(
+                    "cpost-is-active"
                 )
-            ){
+            ) {
 
                 return;
 
@@ -3672,7 +3926,7 @@ a.post-header-dairy:hover {
                 event.changedTouches[0];
 
 
-            if(!touch){
+            if (!touch) {
 
                 return;
 
@@ -3681,32 +3935,31 @@ a.post-header-dairy:hover {
 
             const deltaX =
                 touch.clientX -
-                touchStartX;
+                cpostTouchStartX;
 
 
             const deltaY =
                 touch.clientY -
-                touchStartY;
+                cpostTouchStartY;
 
 
-            if(
+            if (
                 Math.abs(deltaX) < 50 ||
                 Math.abs(deltaX) <= Math.abs(deltaY)
-            ){
+            ) {
 
                 return;
 
             }
 
 
-            if(deltaX < 0){
+            if (deltaX < 0) {
 
-                nextPhoto();
+                cpostNextPhoto();
 
-            }
-            else{
+            } else {
 
-                previousPhoto();
+                cpostPreviousPhoto();
 
             }
 
@@ -3718,21 +3971,23 @@ a.post-header-dairy:hover {
 
 
 
-    /* =====================================================
-       KEYBOARD
-    ====================================================== */
+    /*
+     * -------------------------------------------------------
+     * KEYBOARD
+     * -------------------------------------------------------
+     */
 
     document.addEventListener(
         "keydown",
-        function(event){
+        function (event) {
 
-            if(
-                event.key === "Escape"
-            ){
 
-                if(activePhotoViewer){
+            if (event.key === "Escape") {
 
-                    closePhotoViewer();
+
+                if (cpostActiveViewer) {
+
+                    cpostCloseViewer();
 
                     return;
 
@@ -3741,39 +3996,59 @@ a.post-header-dairy:hover {
 
                 const expanded =
                     document.querySelector(
-                        ".post-expand-modal.active"
+                        ".cpost-expand.cpost-is-active"
                     );
 
 
-                if(expanded){
+                if (expanded) {
 
-                    closeExpandedPost(
+                    cpostCloseExpanded(
                         expanded
                     );
 
+                    return;
+
                 }
+
+
+                const comments =
+                    document.querySelector(
+                        ".cpost-comment-modal.cpost-is-active"
+                    );
+
+
+                if (comments) {
+
+                    cpostCloseComments(
+                        comments
+                    );
+
+                }
+
 
                 return;
 
             }
 
 
-            if(activePhotoViewer){
 
-                if(
+            if (cpostActiveViewer) {
+
+
+                if (
                     event.key === "ArrowRight"
-                ){
+                ) {
 
-                    nextPhoto();
+                    cpostNextPhoto();
 
                 }
 
 
-                if(
+                if (
                     event.key === "ArrowLeft"
-                ){
+                ) {
 
-                    previousPhoto();
+                    cpostPreviousPhoto();
 
                 }
 
@@ -3781,6 +4056,7 @@ a.post-header-dairy:hover {
 
         }
     );
+
 
 })();
 
