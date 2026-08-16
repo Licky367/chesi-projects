@@ -2,37 +2,23 @@
      POST CARD
      ==========================================================
      Supports:
-
      - User profile
      - Dairy subject
      - Delete post
      - Title
      - Message
      - Multi-image grid
-     - Image fullscreen viewer
+     - Fullscreen image viewer
      - Image navigation
      - Long-message expansion
      - Likes
      - Comments
 ========================================================== -->
 
-
 <%
-    /*
-     * ========================================================
-     * NORMALIZE POST IMAGES
-     * ========================================================
-     *
-     * New posts:
-     *
-     *     item.images
-     *
-     * Older posts:
-     *
-     *     item.image
-     *
-     * Support both.
-     */
+    /* ========================================================
+       NORMALIZE POST IMAGES
+    ======================================================== */
 
     let postImages = [];
 
@@ -40,50 +26,31 @@
         Array.isArray(item.images) &&
         item.images.length
     ) {
-
         postImages = item.images.filter(Boolean);
-
     }
     else if (item.image) {
-
-        postImages = [
-            item.image
-        ];
-
+        postImages = [item.image];
     }
 
+    const visibleImages = postImages.slice(0, 4);
 
-    /*
-     * Maximum displayed in the grid.
-     *
-     * If there are more than 4 images,
-     * the fourth image receives the +N overlay.
-     */
-
-    const visibleImages =
-        postImages.slice(0, 4);
+    const remainingImages = Math.max(
+        0,
+        postImages.length - 4
+    );
 
 
-    const remainingImages =
-        Math.max(
-            0,
-            postImages.length - 4
-        );
-
-
-    /*
-     * Long message handling.
-     */
+    /* ========================================================
+       POST TEXT
+    ======================================================== */
 
     const postText =
         item.text ||
         item.comment ||
         "";
 
-
     const isLongPost =
         postText.length > 100;
-
 
     const shortPostText =
         isLongPost
@@ -100,8 +67,8 @@
     class="feed-card post-card"
     data-id="<%= item._id %>"
     data-type="post"
+    data-images="<%= JSON.stringify(postImages).replace(/"/g, '&quot;') %>"
 >
-
 
     <!-- ======================================================
          HEADER
@@ -109,13 +76,7 @@
 
     <div class="feed-header">
 
-
-        <!-- ==================================================
-             USER
-        ================================================== -->
-
         <div class="feed-user">
-
 
             <img
                 src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
@@ -123,74 +84,46 @@
                 alt="<%= item.userName || 'User' %>"
             >
 
-
             <div class="feed-user-info">
-
-
-                <!-- ==========================================
-                     USER + DAIRY
-                =========================================== -->
 
                 <div class="post-meta-line">
 
-
                     <strong class="post-user-name">
-
                         <%= item.userName || "User" %>
-
                     </strong>
-
 
                     <% if (
                         item.dairyName &&
                         item.dairyId
                     ) { %>
 
-
                         <span class="post-meta-action">
-
                             about
-
                         </span>
-
 
                         <a
                             href="/dairy/<%= item.dairyId %>"
                             class="post-subject"
-                            title="View <%= item.dairyName %>"
                         >
-
                             <%= item.dairyName %>
-
                         </a>
-
 
                     <% } %>
 
-
                 </div>
 
-
-                <!-- ==========================================
-                     DATE / TIME
-                =========================================== -->
-
                 <small class="post-time">
-
                     <%= item.dateText || "" %>
-
                 </small>
 
-
             </div>
-
 
         </div>
 
 
         <!-- ==================================================
-             DELETE POST
-        ================================================== -->
+             DELETE
+        =================================================== -->
 
         <% if (
             user &&
@@ -205,7 +138,6 @@
             )
         ) { %>
 
-
             <button
                 class="delete-post"
                 data-id="<%= item._id %>"
@@ -214,143 +146,111 @@
                 aria-label="Delete Post"
                 type="button"
             >
-
                 <i
                     class="bi bi-trash3-fill"
                     aria-hidden="true"
                 ></i>
-
             </button>
 
-
         <% } %>
-
 
     </div>
 
 
     <!-- ======================================================
-         POST BODY
+         BODY
     ======================================================= -->
 
     <div class="feed-body post-body">
 
-
         <!-- ==================================================
              TITLE
-        ================================================== -->
+        =================================================== -->
 
         <% if (item.title) { %>
 
-
             <h3 class="post-title">
-
                 <%= item.title %>
-
             </h3>
-
 
         <% } %>
 
 
         <!-- ==================================================
              MESSAGE
-        ================================================== -->
+        =================================================== -->
 
         <% if (postText) { %>
-
 
             <div
                 class="post-message"
                 data-long="<%= isLongPost ? 'true' : 'false' %>"
             >
 
-
                 <% if (isLongPost) { %>
 
-
                     <span class="post-message-short">
-
                         <%= shortPostText %>...
-
-
                     </span>
-
 
                     <span
                         class="post-message-full"
                         hidden
                     >
-
                         <%= postText %>
-
-
                     </span>
-
 
                     <button
                         type="button"
                         class="see-more-post"
                         aria-expanded="false"
                     >
-
                         See more
-
                     </button>
-
 
                 <% } else { %>
 
-
                     <span class="post-message-full">
-
                         <%= postText %>
-
                     </span>
-
 
                 <% } %>
 
-
             </div>
-
 
         <% } %>
 
 
         <!-- ==================================================
              IMAGE GRID
-        ================================================== -->
+        =================================================== -->
 
         <% if (visibleImages.length) { %>
-
 
             <div
                 class="
                     post-image-grid
-                    post-image-count-<%= Math.min(visibleImages.length, 4) %>
-                    <%= remainingImages > 0 ? 'has-more-images' : '' %>
+                    post-image-count-<%= visibleImages.length %>
+                    <%= remainingImages > 0
+                        ? 'has-more-images'
+                        : '' %>
                 "
             >
 
-
                 <% visibleImages.forEach((image, index) => { %>
-
 
                     <button
                         type="button"
                         class="
                             post-image-item
-                            post-image-index-<%= index %>
-                            <%= index === 3 && remainingImages > 0
+                            <%= index === 3 &&
+                                remainingImages > 0
                                 ? 'has-image-overlay'
                                 : '' %>
                         "
                         data-image-index="<%= index %>"
-                        data-image-src="<%= image %>"
                         aria-label="View image <%= index + 1 %>"
                     >
-
 
                         <img
                             src="<%= image %>"
@@ -358,46 +258,30 @@
                             loading="lazy"
                         >
 
-
                         <% if (
                             index === 3 &&
                             remainingImages > 0
                         ) { %>
 
-
                             <span class="post-more-images">
-
                                 +<%= remainingImages %>
-
                             </span>
-
 
                         <% } %>
 
-
                     </button>
-
 
                 <% }) %>
 
-
             </div>
 
-
         <% } %>
-
 
     </div>
 
 
     <!-- ======================================================
-         FEED ACTIONS
-
-         Existing system handles:
-
-         - Like
-         - Comments
-         - Delete
+         ACTIONS
     ======================================================= -->
 
     <%- include("partials/feed-actions", {
@@ -408,12 +292,6 @@
 
     <!-- ======================================================
          COMMENTS
-
-         Existing comment section handles:
-
-         - Displaying comments
-         - Writing comments
-         - Saving comments
     ======================================================= -->
 
     <%- include("comment-section", {
@@ -422,8 +300,8 @@
         type: "post"
     }) %>
 
-
 </article>
+
 
 
 <!-- ==========================================================
@@ -435,43 +313,25 @@
     aria-hidden="true"
 >
 
-
-    <!-- ======================================================
-         CLOSE
-    ======================================================= -->
-
     <button
         type="button"
         class="post-viewer-close"
         aria-label="Close image viewer"
     >
-
         <i class="bi bi-x-lg"></i>
-
     </button>
 
-
-    <!-- ======================================================
-         PREVIOUS
-    ======================================================= -->
 
     <button
         type="button"
         class="post-viewer-prev"
         aria-label="Previous image"
     >
-
         <i class="bi bi-chevron-left"></i>
-
     </button>
 
 
-    <!-- ======================================================
-         IMAGE
-    ======================================================= -->
-
     <div class="post-viewer-content">
-
 
         <img
             class="post-viewer-image"
@@ -479,45 +339,33 @@
             alt="Post image"
         >
 
-
         <div class="post-viewer-counter">
 
             <span class="post-viewer-current">
-
                 1
-
             </span>
 
             /
 
             <span class="post-viewer-total">
-
                 <%= postImages.length %>
-
             </span>
 
         </div>
 
-
     </div>
 
-
-    <!-- ======================================================
-         NEXT
-    ======================================================= -->
 
     <button
         type="button"
         class="post-viewer-next"
         aria-label="Next image"
     >
-
         <i class="bi bi-chevron-right"></i>
-
     </button>
 
-
 </div>
+
 
 
 <!-- ==========================================================
@@ -526,72 +374,63 @@
 
 <style>
 
-
 /* ==========================================================
    POST BODY
 ========================================================== */
 
 .post-card .post-body {
-
     width: 100%;
-
 }
 
+
+/* ==========================================================
+   TITLE
+========================================================== */
 
 .post-card .post-title {
-
-    margin: 0 0 10px;
-
-    font-size: 20px;
-
+    margin: 0 0 7px;
+    font-size: 18px;
     line-height: 1.35;
-
     font-weight: 700;
-
+    color: #111827;
 }
 
+
+/* ==========================================================
+   MESSAGE
+========================================================== */
 
 .post-message {
-
-    font-size: 15px;
-
-    line-height: 1.6;
-
+    font-size: 14px;
+    line-height: 1.55;
     color: #374151;
-
     white-space: pre-wrap;
-
     word-break: break-word;
-
 }
-
 
 .post-message-short,
 .post-message-full {
-
     white-space: pre-wrap;
-
 }
 
 
+/* ==========================================================
+   SEE MORE
+========================================================== */
+
 .see-more-post {
-
     border: 0;
-
     padding: 0;
-
-    margin-left: 5px;
+    margin-left: 4px;
 
     background: transparent;
 
     color: #166534;
 
     font-weight: 700;
-
-    cursor: pointer;
-
     font-size: inherit;
 
+    cursor: pointer;
 }
 
 
@@ -603,71 +442,56 @@
 
     display: grid;
 
-    gap: 4px;
+    gap: 3px;
 
     width: 100%;
 
-    margin-top: 16px;
+    margin-top: 12px;
 
     overflow: hidden;
 
-    border-radius: 12px;
-
+    border-radius: 9px;
 }
 
 
-/* ----------------------------------------------------------
+/* ==========================================================
    ONE IMAGE
----------------------------------------------------------- */
+========================================================== */
 
 .post-image-count-1 {
-
     grid-template-columns: 1fr;
-
 }
 
 
-/* ----------------------------------------------------------
+/* ==========================================================
    TWO IMAGES
----------------------------------------------------------- */
+========================================================== */
 
 .post-image-count-2 {
-
-    grid-template-columns:
-        repeat(2, 1fr);
-
+    grid-template-columns: repeat(2, 1fr);
 }
 
 
-/* ----------------------------------------------------------
+/* ==========================================================
    THREE IMAGES
----------------------------------------------------------- */
+========================================================== */
 
 .post-image-count-3 {
-
-    grid-template-columns:
-        repeat(2, 1fr);
-
+    grid-template-columns: repeat(2, 1fr);
 }
-
 
 .post-image-count-3
 .post-image-item:first-child {
-
     grid-row: span 2;
-
 }
 
 
-/* ----------------------------------------------------------
+/* ==========================================================
    FOUR IMAGES
----------------------------------------------------------- */
+========================================================== */
 
 .post-image-count-4 {
-
-    grid-template-columns:
-        repeat(2, 1fr);
-
+    grid-template-columns: repeat(2, 1fr);
 }
 
 
@@ -682,7 +506,6 @@
     display: block;
 
     width: 100%;
-
     min-width: 0;
 
     padding: 0;
@@ -694,44 +517,54 @@
     overflow: hidden;
 
     cursor: pointer;
-
 }
 
+
+/* ==========================================================
+   IMAGES
+
+   Reduced from 180px minimum.
+========================================================== */
 
 .post-image-item img {
 
     display: block;
 
     width: 100%;
-
     height: 100%;
 
-    min-height: 180px;
+    min-height: 135px;
 
     object-fit: cover;
 
     transition:
         transform .2s ease;
-
 }
 
 
 .post-image-item:hover img {
-
-    transform: scale(1.025);
-
+    transform: scale(1.02);
 }
 
 
 /* ==========================================================
    SINGLE IMAGE
+
+   Keeps single photos from becoming enormous.
 ========================================================== */
 
 .post-image-count-1
 .post-image-item img {
 
-    max-height: 520px;
+    height: auto;
 
+    max-height: 400px;
+
+    min-height: 0;
+
+    object-fit: contain;
+
+    background: #f3f4f6;
 }
 
 
@@ -742,13 +575,12 @@
 .post-image-count-3
 .post-image-item:first-child img {
 
-    min-height: 364px;
-
+    min-height: 273px;
 }
 
 
 /* ==========================================================
-   MORE IMAGES
+   MORE IMAGES OVERLAY
 ========================================================== */
 
 .has-image-overlay::after {
@@ -761,7 +593,6 @@
 
     background:
         rgba(0, 0, 0, .35);
-
 }
 
 
@@ -781,12 +612,11 @@
 
     color: #fff;
 
-    font-size: 28px;
+    font-size: 24px;
 
     font-weight: 800;
 
     pointer-events: none;
-
 }
 
 
@@ -812,16 +642,17 @@
         rgba(0, 0, 0, .94);
 
     touch-action: none;
-
 }
 
 
 .post-image-viewer.active {
-
     display: flex;
-
 }
 
+
+/* ==========================================================
+   VIEWER CONTENT
+========================================================== */
 
 .post-viewer-content {
 
@@ -834,24 +665,24 @@
     justify-content: center;
 
     width: 100%;
-
     height: 100%;
 
-    padding: 70px 80px;
-
+    padding: 55px 65px;
 }
 
+
+/* ==========================================================
+   VIEWER IMAGE
+========================================================== */
 
 .post-viewer-image {
 
     display: block;
 
     max-width: 100%;
-
     max-height: 100%;
 
     width: auto;
-
     height: auto;
 
     object-fit: contain;
@@ -859,7 +690,6 @@
     user-select: none;
 
     -webkit-user-drag: none;
-
 }
 
 
@@ -878,12 +708,10 @@
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
-    width: 46px;
-
-    height: 46px;
+    width: 42px;
+    height: 42px;
 
     border: 0;
 
@@ -897,38 +725,34 @@
     cursor: pointer;
 
     backdrop-filter: blur(5px);
-
 }
 
 
 .post-viewer-close {
-
-    top: 20px;
-
-    right: 20px;
-
+    top: 16px;
+    right: 16px;
 }
 
 
 .post-viewer-prev {
 
-    left: 20px;
+    left: 16px;
 
     top: 50%;
 
-    transform: translateY(-50%);
-
+    transform:
+        translateY(-50%);
 }
 
 
 .post-viewer-next {
 
-    right: 20px;
+    right: 16px;
 
     top: 50%;
 
-    transform: translateY(-50%);
-
+    transform:
+        translateY(-50%);
 }
 
 
@@ -938,7 +762,6 @@
 
     background:
         rgba(255, 255, 255, .25);
-
 }
 
 
@@ -951,24 +774,23 @@
     position: absolute;
 
     left: 50%;
+    bottom: 16px;
 
-    bottom: 20px;
-
-    transform: translateX(-50%);
+    transform:
+        translateX(-50%);
 
     color: #fff;
 
-    font-size: 14px;
+    font-size: 13px;
 
     font-weight: 600;
 
-    padding: 6px 12px;
+    padding: 5px 11px;
 
     border-radius: 20px;
 
     background:
         rgba(0, 0, 0, .45);
-
 }
 
 
@@ -978,69 +800,65 @@
 
 @media (max-width: 600px) {
 
-
     .post-card .post-title {
-
-        font-size: 18px;
-
+        font-size: 17px;
     }
 
 
     .post-message {
-
         font-size: 14px;
+    }
 
+
+    .post-image-grid {
+        margin-top: 10px;
     }
 
 
     .post-image-item img {
+        min-height: 105px;
+    }
 
-        min-height: 120px;
 
+    .post-image-count-1
+    .post-image-item img {
+
+        max-height: 320px;
+
+        min-height: 0;
     }
 
 
     .post-image-count-3
     .post-image-item:first-child img {
-
-        min-height: 244px;
-
+        min-height: 213px;
     }
 
 
     .post-viewer-content {
-
-        padding: 60px 45px;
-
+        padding: 50px 40px;
     }
 
 
     .post-viewer-prev {
-
-        left: 8px;
-
+        left: 7px;
     }
 
 
     .post-viewer-next {
-
-        right: 8px;
-
+        right: 7px;
     }
 
 
     .post-viewer-close {
-
-        top: 12px;
-
-        right: 12px;
-
+        top: 10px;
+        right: 10px;
     }
 
 }
 
-
 </style>
+
 
 
 <!-- ==========================================================
@@ -1049,83 +867,60 @@
 
 <script>
 
-(function(){
+(function () {
 
-    /*
-     * ========================================================
-     * PREVENT MULTIPLE INITIALIZATION
-     * ========================================================
-     */
+    /* ========================================================
+       PREVENT MULTIPLE INITIALIZATION
+    ======================================================== */
 
-    if(
-        window.__postCardInitialized
-    ){
-
+    if (window.__postCardInitialized) {
         return;
-
     }
 
-
-    window.__postCardInitialized =
-        true;
+    window.__postCardInitialized = true;
 
 
     /* ========================================================
-       LONG MESSAGE — SEE MORE
+       SEE MORE / SEE LESS
     ======================================================== */
 
     document.addEventListener(
         "click",
         event => {
 
-
             const button =
                 event.target.closest(
                     ".see-more-post"
                 );
 
-
-            if(!button){
-
+            if (!button) {
                 return;
-
             }
 
-
             event.preventDefault();
-
 
             const message =
                 button.closest(
                     ".post-message"
                 );
 
-
-            if(!message){
-
+            if (!message) {
                 return;
-
             }
-
 
             const shortText =
                 message.querySelector(
                     ".post-message-short"
                 );
 
-
             const fullText =
                 message.querySelector(
                     ".post-message-full"
                 );
 
-
-            if(!shortText || !fullText){
-
+            if (!shortText || !fullText) {
                 return;
-
             }
-
 
             const expanded =
                 button.getAttribute(
@@ -1133,13 +928,11 @@
                 ) === "true";
 
 
-            if(expanded){
+            if (expanded) {
 
-                fullText.hidden =
-                    true;
+                fullText.hidden = true;
 
-                shortText.hidden =
-                    false;
+                shortText.hidden = false;
 
                 button.textContent =
                     "See more";
@@ -1150,13 +943,11 @@
                 );
 
             }
-            else{
+            else {
 
-                shortText.hidden =
-                    true;
+                shortText.hidden = true;
 
-                fullText.hidden =
-                    false;
+                fullText.hidden = false;
 
                 button.textContent =
                     "See less";
@@ -1173,7 +964,7 @@
 
 
     /* ========================================================
-       IMAGE VIEWER STATE
+       VIEWER STATE
     ======================================================== */
 
     let viewerImages = [];
@@ -1184,98 +975,82 @@
 
 
     /* ========================================================
-       OPEN IMAGE VIEWER
+       OPEN VIEWER
     ======================================================== */
 
     function openPostImageViewer(
         card,
         index
-    ){
+    ) {
 
-        if(!card){
-
+        if (!card) {
             return;
-
         }
 
 
-        /*
-         * Get all images from this post.
-         *
-         * We read the actual image elements in the card,
-         * then use their source URLs.
-         */
+        /* ----------------------------------------------------
+           READ FULL IMAGE ARRAY FROM CARD
+        ---------------------------------------------------- */
 
-        const imageElements =
-            card.querySelectorAll(
-                ".post-image-item img"
-            );
-
-
-        if(!imageElements.length){
-
-            return;
-
-        }
-
-
-        /*
-         * For posts with more than four images,
-         * the grid only contains four images.
-         *
-         * The remaining images are therefore obtained
-         * from the server-rendered post data below.
-         */
-
-        viewerImages =
-            Array.from(
-                imageElements
-            ).map(
-                image =>
-                    image.currentSrc ||
-                    image.src
-            );
-
-
-        /*
-         * If the EJS-generated full image list exists,
-         * replace the limited grid list with it.
-         */
-
-        try{
+        try {
 
             const encodedImages =
                 card.dataset.images;
 
-
-            if(encodedImages){
+            if (encodedImages) {
 
                 const parsed =
                     JSON.parse(
                         encodedImages
                     );
 
-
-                if(
+                if (
                     Array.isArray(parsed) &&
                     parsed.length
-                ){
+                ) {
 
-                    viewerImages =
-                        parsed;
+                    viewerImages = parsed;
 
                 }
 
             }
 
         }
-        catch(error){
+        catch (error) {
 
             console.warn(
-                "POST IMAGE VIEWER: Unable to read full image list.",
+                "POST IMAGE VIEWER: Unable to read image list.",
                 error
             );
 
+        }
+
+
+        /* ----------------------------------------------------
+           FALLBACK TO VISIBLE GRID IMAGES
+        ---------------------------------------------------- */
+
+        if (!viewerImages.length) {
+
+            const imageElements =
+                card.querySelectorAll(
+                    ".post-image-item img"
+                );
+
+            viewerImages =
+                Array.from(
+                    imageElements
+                ).map(
+                    image =>
+                        image.currentSrc ||
+                        image.src
+                );
+
+        }
+
+
+        if (!viewerImages.length) {
+            return;
         }
 
 
@@ -1295,10 +1070,8 @@
             );
 
 
-        if(!activeViewer){
-
+        if (!activeViewer) {
             return;
-
         }
 
 
@@ -1319,7 +1092,6 @@
 
         updatePostViewer();
 
-
     }
 
 
@@ -1327,15 +1099,13 @@
        UPDATE VIEWER
     ======================================================== */
 
-    function updatePostViewer(){
+    function updatePostViewer() {
 
-        if(
+        if (
             !activeViewer ||
             !viewerImages.length
-        ){
-
+        ) {
             return;
-
         }
 
 
@@ -1344,12 +1114,10 @@
                 ".post-viewer-image"
             );
 
-
         const current =
             activeViewer.querySelector(
                 ".post-viewer-current"
             );
-
 
         const total =
             activeViewer.querySelector(
@@ -1357,7 +1125,7 @@
             );
 
 
-        if(image){
+        if (image) {
 
             image.src =
                 viewerImages[
@@ -1367,7 +1135,7 @@
         }
 
 
-        if(current){
+        if (current) {
 
             current.textContent =
                 viewerIndex + 1;
@@ -1375,7 +1143,7 @@
         }
 
 
-        if(total){
+        if (total) {
 
             total.textContent =
                 viewerImages.length;
@@ -1388,30 +1156,29 @@
                 ".post-viewer-prev"
             );
 
-
         const next =
             activeViewer.querySelector(
                 ".post-viewer-next"
             );
 
 
-        if(previous){
+        const multiple =
+            viewerImages.length > 1;
 
+
+        if (previous) {
             previous.style.display =
-                viewerImages.length > 1
+                multiple
                     ? "flex"
                     : "none";
-
         }
 
 
-        if(next){
-
+        if (next) {
             next.style.display =
-                viewerImages.length > 1
+                multiple
                     ? "flex"
                     : "none";
-
         }
 
     }
@@ -1421,12 +1188,10 @@
        CLOSE VIEWER
     ======================================================== */
 
-    function closePostImageViewer(){
+    function closePostImageViewer() {
 
-        if(!activeViewer){
-
+        if (!activeViewer) {
             return;
-
         }
 
 
@@ -1445,16 +1210,11 @@
             "";
 
 
-        activeViewer =
-            null;
+        activeViewer = null;
 
+        viewerImages = [];
 
-        viewerImages =
-            [];
-
-
-        viewerIndex =
-            0;
+        viewerIndex = 0;
 
     }
 
@@ -1463,14 +1223,10 @@
        PREVIOUS
     ======================================================== */
 
-    function previousPostImage(){
+    function previousPostImage() {
 
-        if(
-            !viewerImages.length
-        ){
-
+        if (!viewerImages.length) {
             return;
-
         }
 
 
@@ -1489,23 +1245,17 @@
        NEXT
     ======================================================== */
 
-    function nextPostImage(){
+    function nextPostImage() {
 
-        if(
-            !viewerImages.length
-        ){
-
+        if (!viewerImages.length) {
             return;
-
         }
 
 
         viewerIndex =
             viewerIndex >=
                 viewerImages.length - 1
-
                 ? 0
-
                 : viewerIndex + 1;
 
 
@@ -1522,17 +1272,13 @@
         "click",
         event => {
 
-
             const imageButton =
                 event.target.closest(
                     ".post-image-item"
                 );
 
-
-            if(!imageButton){
-
+            if (!imageButton) {
                 return;
-
             }
 
 
@@ -1545,10 +1291,8 @@
                 );
 
 
-            if(!card){
-
+            if (!card) {
                 return;
-
             }
 
 
@@ -1575,12 +1319,11 @@
         "click",
         event => {
 
-
-            if(
+            if (
                 event.target.closest(
                     ".post-viewer-close"
                 )
-            ){
+            ) {
 
                 closePostImageViewer();
 
@@ -1589,11 +1332,11 @@
             }
 
 
-            if(
+            if (
                 event.target.closest(
                     ".post-viewer-prev"
                 )
-            ){
+            ) {
 
                 previousPostImage();
 
@@ -1602,11 +1345,11 @@
             }
 
 
-            if(
+            if (
                 event.target.closest(
                     ".post-viewer-next"
                 )
-            ){
+            ) {
 
                 nextPostImage();
 
@@ -1615,20 +1358,16 @@
             }
 
 
-            /*
-             * Clicking the dark background closes viewer.
-             */
-
             const viewer =
                 event.target.closest(
                     ".post-image-viewer"
                 );
 
 
-            if(
+            if (
                 viewer &&
                 event.target === viewer
-            ){
+            ) {
 
                 closePostImageViewer();
 
@@ -1646,17 +1385,12 @@
         "keydown",
         event => {
 
-
-            if(!activeViewer){
-
+            if (!activeViewer) {
                 return;
-
             }
 
 
-            if(
-                event.key === "Escape"
-            ){
+            if (event.key === "Escape") {
 
                 closePostImageViewer();
 
@@ -1665,9 +1399,7 @@
             }
 
 
-            if(
-                event.key === "ArrowLeft"
-            ){
+            if (event.key === "ArrowLeft") {
 
                 previousPostImage();
 
@@ -1676,9 +1408,7 @@
             }
 
 
-            if(
-                event.key === "ArrowRight"
-            ){
+            if (event.key === "ArrowRight") {
 
                 nextPostImage();
 
@@ -1703,27 +1433,21 @@
         "touchstart",
         event => {
 
-
-            if(!activeViewer){
-
+            if (!activeViewer) {
                 return;
-
             }
 
 
-            if(
+            if (
                 !event.touches ||
                 !event.touches.length
-            ){
-
+            ) {
                 return;
-
             }
 
 
             touchStartX =
                 event.touches[0].clientX;
-
 
             touchStartY =
                 event.touches[0].clientY;
@@ -1739,27 +1463,21 @@
         "touchend",
         event => {
 
-
-            if(!activeViewer){
-
+            if (!activeViewer) {
                 return;
-
             }
 
 
-            if(
+            if (
                 !event.changedTouches ||
                 !event.changedTouches.length
-            ){
-
+            ) {
                 return;
-
             }
 
 
             const endX =
                 event.changedTouches[0].clientX;
-
 
             const endY =
                 event.changedTouches[0].clientY;
@@ -1768,33 +1486,25 @@
             const deltaX =
                 endX - touchStartX;
 
-
             const deltaY =
                 endY - touchStartY;
 
 
-            /*
-             * Only treat predominantly horizontal
-             * movement as an image swipe.
-             */
-
-            if(
+            if (
                 Math.abs(deltaX) < 50 ||
                 Math.abs(deltaX) <
-                    Math.abs(deltaY)
-            ){
-
+                Math.abs(deltaY)
+            ) {
                 return;
-
             }
 
 
-            if(deltaX > 0){
+            if (deltaX > 0) {
 
                 previousPostImage();
 
             }
-            else{
+            else {
 
                 nextPostImage();
 
@@ -1805,7 +1515,6 @@
             passive: true
         }
     );
-
 
 })();
 
