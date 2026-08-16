@@ -6,15 +6,15 @@ FILE:
     views/update/update-cards.ejs
 
 PURPOSE:
-    Compact horizontal WhatsApp-style operation cards
-    for the currently viewed dairy / dairy asset.
+    Compact rectangular operation cards for the
+    currently viewed dairy / dairy asset.
 
 AVAILABLE CARDS:
 ----------------------------------------------------------
 
 1. ADD AN UPDATE
    • Always visible.
-   • Opens create.ejs.
+   • Opens the existing create-post composer.
 
 2. MILKING STATUS
    • Only visible when:
@@ -23,7 +23,7 @@ AVAILABLE CARDS:
    • Only visible to:
          admin
          dairyWorker
-   • Opens milk-status.ejs.
+   • Opens the existing milking-status trigger.
 
 3. MAINTENANCE
    • Only visible when:
@@ -33,28 +33,30 @@ AVAILABLE CARDS:
    • Only visible to:
          admin
          dairyWorker
-   • Opens maintComposer.ejs.
+   • Opens:
+         #openMaintComposer
 
 4. CLEAR MAINTENANCE
    • Only visible when:
          dairy.code is null
          OR undefined
          OR ""
+         AND dairy.needsMaintenance === true
    • Only visible to:
          admin
-   • Opens maintenanceClearComposer.ejs.
+   • Opens:
+         #openMaintClearComposer
 
 IMPORTANT:
 ----------------------------------------------------------
-    No blank cards.
-    No placeholder cards.
-    No unrelated operations.
+    NO BLANK CARDS.
+    NO PLACEHOLDER CARDS.
+    NO DUPLICATED COMPOSERS.
 
     The cards themselves are clickable.
 
-    The actual composers remain in their respective
-    EJS partials and are opened through their existing
-    triggers.
+    The actual composer components remain responsible
+    for opening their own modals/forms.
 
 EXPECTED DATA:
 ----------------------------------------------------------
@@ -113,12 +115,6 @@ EXPECTED DATA:
 
     /* ======================================================
        NO-CODE RECORD
-       
-       Used for:
-           Structures
-           Facilities
-           Tools
-           Other non-animal assets
     ====================================================== */
 
     const hasNoCode =
@@ -142,7 +138,7 @@ EXPECTED DATA:
        MAINTENANCE CARD
        
        Admin + dairyWorker
-       AND no dairy code.
+       AND no code.
     ====================================================== */
 
     const showMaintenance =
@@ -155,12 +151,17 @@ EXPECTED DATA:
        CLEAR MAINTENANCE CARD
        
        Admin only
-       AND no dairy code.
+       AND no code
+       AND maintenance is actually active.
+       
+       This matches the condition used by
+       maintenanceClearComposer.ejs.
     ====================================================== */
 
     const showMaintenanceClear =
         hasNoCode &&
-        userRole === "admin";
+        userRole === "admin" &&
+        currentDairy.needsMaintenance === true;
 
 
 
@@ -352,7 +353,7 @@ EXPECTED DATA:
                 "
                 data-update-card="maintenance"
                 data-dairy-id="<%= currentDairy._id %>"
-                aria-label="Record maintenance for <%= currentDairy.name || 'this dairy asset' %>"
+                aria-label="Report maintenance for <%= currentDairy.name || 'this dairy asset' %>"
                 role="listitem"
             >
 
@@ -372,7 +373,7 @@ EXPECTED DATA:
                     </strong>
 
                     <span>
-                        Record a maintenance issue
+                        Report a maintenance issue
                         or service for this asset.
                     </span>
 
@@ -398,6 +399,7 @@ EXPECTED DATA:
              ONLY:
                  admin
                  no code
+                 needsMaintenance === true
         ================================================== -->
 
         <% if (showMaintenanceClear) { %>
@@ -430,8 +432,8 @@ EXPECTED DATA:
                     </strong>
 
                     <span>
-                        Mark the current maintenance
-                        issue as cleared.
+                        Record completed work and
+                        clear the maintenance status.
                     </span>
 
                 </div>
@@ -567,7 +569,7 @@ EXPECTED DATA:
     padding:
         2px
         3px
-        8px;
+        10px;
 
     scroll-behavior: smooth;
 
@@ -588,6 +590,9 @@ EXPECTED DATA:
 
 /* ==========================================================
    CARD
+       
+   PORTRAIT RECTANGLE
+   Height is greater than width.
 ========================================================== */
 
 .dairy-update-card {
@@ -596,19 +601,25 @@ EXPECTED DATA:
 
     flex:
         0 0
-        184px;
+        150px;
 
-    width: 184px;
+    width: 150px;
 
-    min-height: 112px;
+    min-height: 188px;
 
     display: flex;
 
-    align-items: center;
+    flex-direction: column;
+
+    align-items: flex-start;
+
+    justify-content: flex-start;
 
     gap: 10px;
 
-    padding: 12px;
+    padding: 14px;
+
+    box-sizing: border-box;
 
     border:
         1px solid
@@ -682,12 +693,13 @@ EXPECTED DATA:
 
 .dairy-update-card__icon {
 
-    width: 44px;
-    height: 44px;
+    width: 48px;
+
+    height: 48px;
 
     flex:
         0 0
-        44px;
+        48px;
 
     display: flex;
 
@@ -695,14 +707,19 @@ EXPECTED DATA:
 
     justify-content: center;
 
-    border-radius: 13px;
+    border-radius: 14px;
 
-    font-size: 21px;
+    font-size: 22px;
 
     font-weight: 500;
 
 }
 
+
+
+/* ==========================================================
+   CARD ICON COLOURS
+========================================================== */
 
 .dairy-update-card--create
 .dairy-update-card__icon {
@@ -780,6 +797,8 @@ EXPECTED DATA:
 
     min-width: 0;
 
+    width: 100%;
+
     flex: 1;
 
 }
@@ -789,7 +808,7 @@ EXPECTED DATA:
 
     display: block;
 
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 
     color:
         #202520;
@@ -801,7 +820,7 @@ EXPECTED DATA:
         700;
 
     line-height:
-        1.25;
+        1.3;
 
 }
 
@@ -821,13 +840,13 @@ EXPECTED DATA:
         10px;
 
     line-height:
-        1.4;
+        1.45;
 
     -webkit-box-orient:
         vertical;
 
     -webkit-line-clamp:
-        3;
+        4;
 
 }
 
@@ -835,13 +854,17 @@ EXPECTED DATA:
 
 /* ==========================================================
    ARROW
+       
+   Positioned at bottom-right of the vertical card.
 ========================================================== */
 
 .dairy-update-card__arrow {
 
-    flex:
-        0 0
-        auto;
+    position: absolute;
+
+    right: 13px;
+
+    bottom: 11px;
 
     color:
         #a2aba5;
@@ -889,16 +912,16 @@ EXPECTED DATA:
     .dairy-update-card {
 
         flex-basis:
-            170px;
+            145px;
 
         width:
-            170px;
+            145px;
 
         min-height:
-            106px;
+            180px;
 
         padding:
-            11px;
+            13px;
 
         border-radius:
             15px;
@@ -909,19 +932,19 @@ EXPECTED DATA:
     .dairy-update-card__icon {
 
         width:
-            40px;
+            44px;
 
         height:
-            40px;
+            44px;
 
         flex-basis:
-            40px;
+            44px;
 
         border-radius:
-            12px;
+            13px;
 
         font-size:
-            19px;
+            20px;
 
     }
 
@@ -963,10 +986,13 @@ EXPECTED DATA:
     .dairy-update-card {
 
         flex-basis:
-            162px;
+            138px;
 
         width:
-            162px;
+            138px;
+
+        min-height:
+            174px;
 
     }
 
@@ -981,16 +1007,26 @@ EXPECTED DATA:
 /* ==========================================================
    UPDATE CARD ACTION BRIDGE
 
-   The cards are only triggers.
+   IMPORTANT:
 
-   They do NOT duplicate:
-       • post composer
-       • maintenance composer
-       • maintenance-clear composer
-       • milking form
+   The cards DO NOT contain their own composers.
 
-   The existing EJS components remain responsible for
-   their own modal/form behaviour.
+   They activate the actual composer triggers already
+   rendered elsewhere on the page.
+
+   EXISTING TRIGGERS:
+
+       Create update:
+           #coreCreatePostOpen
+
+       Maintenance:
+           #openMaintComposer
+
+       Clear maintenance:
+           #openMaintClearComposer
+
+       Milking:
+           existing milk-status trigger
 ========================================================== */
 
 (function () {
@@ -1000,13 +1036,36 @@ EXPECTED DATA:
 
 
     /* ======================================================
+       HELPER
+       
+       Safely click an existing trigger.
+    ====================================================== */
+
+    function clickTrigger(selector) {
+
+        const trigger =
+            document.querySelector(selector);
+
+
+        if (!trigger) {
+
+            return false;
+
+        }
+
+
+        trigger.click();
+
+        return true;
+
+    }
+
+
+
+    /* ======================================================
        CREATE UPDATE
        
-       Opens:
-           create.ejs
-       
-       Primary trigger:
-           #coreCreatePostOpen
+       Opens the actual create-post composer.
     ====================================================== */
 
     const createCard =
@@ -1021,38 +1080,31 @@ EXPECTED DATA:
             "click",
             function () {
 
-                const trigger =
-                    document.getElementById(
-                        "coreCreatePostOpen"
-                    );
+                /* ------------------------------------------
+                   PRIMARY TRIGGER
+                ------------------------------------------ */
 
-
-                if (trigger) {
-
-                    trigger.click();
+                if (
+                    clickTrigger(
+                        "#coreCreatePostOpen"
+                    )
+                ) {
 
                     return;
 
                 }
 
 
-                /*
-                 * Compatibility fallbacks.
-                 */
 
-                const fallback =
-                    document.querySelector(
-                        "[data-post-modal-trigger], " +
-                        "[data-open-post-modal-trigger], " +
-                        ".create-post-card"
-                    );
+                /* ------------------------------------------
+                   COMPATIBILITY FALLBACKS
+                ------------------------------------------ */
 
-
-                if (fallback) {
-
-                    fallback.click();
-
-                }
+                clickTrigger(
+                    "[data-post-modal-trigger], " +
+                    "[data-open-post-modal-trigger], " +
+                    ".create-post-card"
+                );
 
             }
         );
@@ -1064,12 +1116,7 @@ EXPECTED DATA:
     /* ======================================================
        MILKING STATUS
        
-       Opens:
-           milk-status.ejs
-       
-       This card is only rendered for the correct
-       user role and dairy code, so no extra permission
-       logic is needed here.
+       Opens the actual milking-status composer/form.
     ====================================================== */
 
     const milkCard =
@@ -1084,41 +1131,31 @@ EXPECTED DATA:
             "click",
             function () {
 
-                const trigger =
-                    document.querySelector(
-                        "[data-milk-status-trigger], " +
-                        "[data-open-milk-status-trigger]"
-                    );
-
-
-                if (trigger) {
-
-                    trigger.click();
+                if (
+                    clickTrigger(
+                        "[data-milk-status-trigger]"
+                    )
+                ) {
 
                     return;
 
                 }
 
 
-                /*
-                 * Compatibility fallback.
-                 *
-                 * If milk-status.ejs exposes the actual
-                 * toggle button directly, allow the card
-                 * to activate it.
-                 */
+                if (
+                    clickTrigger(
+                        "[data-open-milk-status-trigger]"
+                    )
+                ) {
 
-                const fallback =
-                    document.querySelector(
-                        ".milk-status-button"
-                    );
-
-
-                if (fallback) {
-
-                    fallback.click();
+                    return;
 
                 }
+
+
+                clickTrigger(
+                    ".milk-status-button"
+                );
 
             }
         );
@@ -1130,8 +1167,23 @@ EXPECTED DATA:
     /* ======================================================
        MAINTENANCE
        
-       Opens:
-           maintComposer.ejs
+       ACTUAL TRIGGER IN maintComposer.ejs:
+
+           #openMaintComposer
+
+       This is the important correction.
+
+       The previous update-cards.ejs was looking for:
+
+           [data-maintenance-composer-trigger]
+           [data-open-maintenance-composer-trigger]
+           [data-open-maintenance-composer]
+
+       None of those exist in the supplied maintComposer.ejs.
+
+       The real element is:
+
+           #openMaintComposer
     ====================================================== */
 
     const maintenanceCard =
@@ -1146,19 +1198,9 @@ EXPECTED DATA:
             "click",
             function () {
 
-                const trigger =
-                    document.querySelector(
-                        "[data-maintenance-composer-trigger], " +
-                        "[data-open-maintenance-composer-trigger], " +
-                        "[data-open-maintenance-composer]"
-                    );
-
-
-                if (trigger) {
-
-                    trigger.click();
-
-                }
+                clickTrigger(
+                    "#openMaintComposer"
+                );
 
             }
         );
@@ -1170,8 +1212,14 @@ EXPECTED DATA:
     /* ======================================================
        CLEAR MAINTENANCE
        
-       Opens:
-           maintenanceClearComposer.ejs
+       ACTUAL TRIGGER IN maintenanceClearComposer.ejs:
+
+           #openMaintClearComposer
+
+       The previous card bridge was again searching for
+       data attributes which do not exist.
+
+       We now activate the real trigger directly.
     ====================================================== */
 
     const maintenanceClearCard =
@@ -1186,24 +1234,16 @@ EXPECTED DATA:
             "click",
             function () {
 
-                const trigger =
-                    document.querySelector(
-                        "[data-maintenance-clear-trigger], " +
-                        "[data-open-maintenance-clear-trigger], " +
-                        "[data-open-maintenance-clear]"
-                    );
-
-
-                if (trigger) {
-
-                    trigger.click();
-
-                }
+                clickTrigger(
+                    "#openMaintClearComposer"
+                );
 
             }
         );
 
     }
+
+
 
 })();
 
