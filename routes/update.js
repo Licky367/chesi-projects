@@ -139,27 +139,47 @@ router.post(
 
 
 // ==========================================================
-// PROFILE IMAGE
+// PROFILE IMAGES
 // ==========================================================
 //
-// Single profile image.
+// A Dairy profile can have a maximum of 5 profile images.
 //
 // Field name:
 //
-// profileImage
+// profileImages
+//
+// The middleware therefore uses:
+//
+// upload.array("profileImages", 5)
+//
+// Maximum:
+//
+// 5 profile images.
+//
+// The images are stored on the Dairy profile and can later
+// be viewed as a swipeable profile-image gallery.
 //
 // ==========================================================
 
 router.put(
     "/dairy/:id/image",
     isAuth,
-    upload.single("profileImage"),
+    upload.array("profileImages", 5),
     controller.image
 );
 
 
 // ==========================================================
 // UPDATE DAIRY PROFILE
+// ==========================================================
+//
+// Updates editable profile information such as:
+//
+// • name
+// • code
+// • mass
+// • dateOfBirth
+//
 // ==========================================================
 
 router.put(
