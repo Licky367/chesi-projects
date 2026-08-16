@@ -3,157 +3,189 @@
 MILKING STATUS CARD
 
 FILE:
-views/dairy/milk-status.ejs
+views/update/milk-status.ejs
 
 PURPOSE:
 ----------------------------------------------------------
-• Display the selected dairy animal
-• Display current milking status
-• Allow milking status to be toggled
+• Display the dairy animal's milking status
+• Allow admin and dairyWorker to toggle milking
+• Display animal profile information
 • Uses:
-      POST /dairy/:id/toggle-milking
+
+    POST /dairy/:id/toggle-milking
+
+AUTHORIZED USERS:
+----------------------------------------------------------
+• admin
+• dairyWorker
 
 EXPECTED DATA:
 ----------------------------------------------------------
 dairy
+user
 
-The dairy object should contain:
+dairy:
 • _id
 • name
 • code
 • profileImage
 • isMilking
+
+user:
+• role
 ==========================================================
 */ %>
 
+
 <% if (dairy) { %>
+
 
 <div class="milk-status-card">
 
-  <!-- ==================================================
-       ANIMAL PROFILE
-  =================================================== -->
 
-  <div class="milk-status-profile">
+    <!-- =================================================
+         ANIMAL PROFILE
+    ================================================== -->
 
-    <div class="milk-status-avatar">
+    <div class="milk-status-profile">
 
-      <% if (dairy.profileImage) { %>
+        <div class="milk-status-avatar">
 
-        <img
-          src="<%= dairy.profileImage %>"
-          alt="<%= dairy.name %>"
-        >
+            <% if (dairy.profileImage) { %>
 
-      <% } else { %>
+                <img
+                    src="<%= dairy.profileImage %>"
+                    alt="<%= dairy.name %>"
+                >
 
-        🐄
+            <% } else { %>
 
-      <% } %>
+                🐄
+
+            <% } %>
+
+        </div>
+
+
+        <div class="milk-status-details">
+
+            <h3>
+                <%= dairy.name %>
+            </h3>
+
+            <span>
+                Code: <%= dairy.code || "No code assigned" %>
+            </span>
+
+        </div>
 
     </div>
 
 
-    <div class="milk-status-details">
 
-      <h3>
-        <%= dairy.name %>
-      </h3>
+    <!-- =================================================
+         CURRENT MILKING STATUS
+    ================================================== -->
 
-      <span>
-        Code: <%= dairy.code %>
-      </span>
+    <div class="milk-status-current">
+
+        <% if (dairy.isMilking === true) { %>
+
+            <span class="milk-status-badge active">
+                🥛 Currently Milking
+            </span>
+
+        <% } else { %>
+
+            <span class="milk-status-badge inactive">
+                Not Currently Milking
+            </span>
+
+        <% } %>
 
     </div>
 
-  </div>
 
 
-  <!-- ==================================================
-       CURRENT STATUS
-  =================================================== -->
+    <!-- =================================================
+         TOGGLE ACTION
+         
+         Only admin and dairyWorker can toggle.
+    ================================================== -->
 
-  <div class="milk-status-current">
+    <% if (
+        user &&
+        (
+            user.role === "admin" ||
+            user.role === "dairyWorker"
+        )
+    ) { %>
 
-    <% if (dairy.isMilking === true) { %>
+        <div class="milk-status-action">
 
-      <span class="milk-status-badge active">
-        🥛 Currently Milking
-      </span>
+            <form
+                method="POST"
+                action="/dairy/<%= dairy._id %>/toggle-milking"
+                autocomplete="off"
+            >
 
-    <% } else { %>
+                <% if (dairy.isMilking === true) { %>
 
-      <span class="milk-status-badge inactive">
-        Not Currently Milking
-      </span>
+                    <button
+                        type="submit"
+                        class="milk-status-button stop"
+                        onclick="return confirm('Are you sure you want to turn off milking for <%= dairy.name %>?');"
+                    >
+                        ⛔ Turn Off Milking
+                    </button>
+
+                <% } else { %>
+
+                    <button
+                        type="submit"
+                        class="milk-status-button start"
+                    >
+                        🥛 Turn On Milking
+                    </button>
+
+                <% } %>
+
+            </form>
+
+        </div>
 
     <% } %>
 
-  </div>
-
-
-  <!-- ==================================================
-       TOGGLE ACTION
-  =================================================== -->
-
-  <div class="milk-status-action">
-
-    <form
-      method="POST"
-      action="/dairy/<%= dairy._id %>/toggle-milking"
-      autocomplete="off"
-    >
-
-      <% if (dairy.isMilking === true) { %>
-
-        <button
-          type="submit"
-          class="milk-status-button stop"
-          onclick="return confirm('Are you sure you want to turn off milking for <%= dairy.name %>?');"
-        >
-          ⛔ Turn Off Milking
-        </button>
-
-      <% } else { %>
-
-        <button
-          type="submit"
-          class="milk-status-button start"
-        >
-          🥛 Turn On Milking
-        </button>
-
-      <% } %>
-
-    </form>
-
-  </div>
 
 </div>
+
 
 <% } else { %>
 
-<!-- ==================================================
-     NO ANIMAL
-=================================================== -->
+
+<!-- =================================================
+     ANIMAL NOT FOUND
+================================================== -->
 
 <div class="milk-status-empty">
 
-  <div class="milk-status-empty-icon">
-    🐄
-  </div>
+    <div class="milk-status-empty-icon">
+        🐄
+    </div>
 
-  <h3>
-    Dairy Animal Not Found
-  </h3>
+    <h3>
+        Dairy Animal Not Found
+    </h3>
 
-  <p>
-    The requested dairy animal could not be found.
-  </p>
+    <p>
+        The requested dairy animal could not be found.
+    </p>
 
 </div>
 
+
 <% } %>
+
 
 
 <style>
@@ -164,27 +196,28 @@ The dairy object should contain:
 
 .milk-status-card {
 
-  display: flex;
+    display: flex;
 
-  align-items: center;
+    align-items: center;
 
-  justify-content: space-between;
+    justify-content: space-between;
 
-  gap: 20px;
+    gap: 20px;
 
-  width: 100%;
+    width: 100%;
 
-  box-sizing: border-box;
+    box-sizing: border-box;
 
-  margin-bottom: 20px;
+    margin-bottom: 20px;
 
-  padding: 18px;
+    padding: 18px;
 
-  border-radius: 15px;
+    border-radius: 15px;
 
-  background: #ffffff;
+    background: #ffffff;
 
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.06);
 
 }
 
@@ -195,71 +228,71 @@ The dairy object should contain:
 
 .milk-status-profile {
 
-  display: flex;
+    display: flex;
 
-  align-items: center;
+    align-items: center;
 
-  gap: 13px;
+    gap: 13px;
 
-  min-width: 200px;
+    min-width: 200px;
 
 }
 
 
 .milk-status-avatar {
 
-  display: flex;
+    display: flex;
 
-  align-items: center;
+    align-items: center;
 
-  justify-content: center;
+    justify-content: center;
 
-  width: 54px;
+    width: 54px;
 
-  height: 54px;
+    height: 54px;
 
-  flex: 0 0 54px;
+    flex: 0 0 54px;
 
-  overflow: hidden;
+    overflow: hidden;
 
-  border-radius: 50%;
+    border-radius: 50%;
 
-  background: #dcfce7;
+    background: #dcfce7;
 
-  font-size: 27px;
+    font-size: 27px;
 
 }
 
 
 .milk-status-avatar img {
 
-  width: 100%;
+    width: 100%;
 
-  height: 100%;
+    height: 100%;
 
-  object-fit: cover;
+    object-fit: cover;
 
 }
 
 
 .milk-status-details h3 {
 
-  margin: 0 0 4px;
+    margin: 0 0 4px;
 
-  color: #374151;
+    color: #374151;
 
-  font-size: 17px;
+    font-size: 17px;
 
-  font-weight: 700;
+    font-weight: 700;
 
 }
 
 
 .milk-status-details span {
 
-  color: #9ca3af;
+    color: #9ca3af;
 
-  font-size: 12px;
+    font-size: 12px;
 
 }
 
@@ -270,115 +303,115 @@ The dairy object should contain:
 
 .milk-status-current {
 
-  flex: 1;
+    flex: 1;
 
 }
 
 
 .milk-status-badge {
 
-  display: inline-flex;
+    display: inline-flex;
 
-  align-items: center;
+    align-items: center;
 
-  padding: 8px 12px;
+    padding: 8px 12px;
 
-  border-radius: 20px;
+    border-radius: 20px;
 
-  font-size: 12px;
+    font-size: 12px;
 
-  font-weight: 700;
+    font-weight: 700;
 
-  white-space: nowrap;
+    white-space: nowrap;
 
 }
 
 
 .milk-status-badge.active {
 
-  background: #dcfce7;
+    background: #dcfce7;
 
-  color: #166534;
+    color: #166534;
 
 }
 
 
 .milk-status-badge.inactive {
 
-  background: #f3f4f6;
+    background: #f3f4f6;
 
-  color: #6b7280;
+    color: #6b7280;
 
 }
 
 
 /* =====================================================
-   ACTION
+   TOGGLE ACTION
 ===================================================== */
 
 .milk-status-action form {
 
-  margin: 0;
+    margin: 0;
 
 }
 
 
 .milk-status-button {
 
-  min-width: 155px;
+    min-width: 155px;
 
-  padding: 10px 14px;
+    padding: 10px 14px;
 
-  border: none;
+    border: none;
 
-  border-radius: 9px;
+    border-radius: 9px;
 
-  color: #ffffff;
+    color: #ffffff;
 
-  font-family: inherit;
+    font-family: inherit;
 
-  font-size: 12px;
+    font-size: 12px;
 
-  font-weight: 700;
+    font-weight: 700;
 
-  cursor: pointer;
+    cursor: pointer;
 
-  transition: 0.2s ease;
+    transition: 0.2s ease;
 
 }
 
 
 .milk-status-button:hover {
 
-  transform: translateY(-1px);
+    transform: translateY(-1px);
 
 }
 
 
 .milk-status-button.start {
 
-  background: #166534;
+    background: #166534;
 
 }
 
 
 .milk-status-button.start:hover {
 
-  background: #14532d;
+    background: #14532d;
 
 }
 
 
 .milk-status-button.stop {
 
-  background: #b91c1c;
+    background: #b91c1c;
 
 }
 
 
 .milk-status-button.stop:hover {
 
-  background: #991b1b;
+    background: #991b1b;
 
 }
 
@@ -389,50 +422,51 @@ The dairy object should contain:
 
 .milk-status-empty {
 
-  width: 100%;
+    width: 100%;
 
-  box-sizing: border-box;
+    box-sizing: border-box;
 
-  padding: 40px 20px;
+    padding: 40px 20px;
 
-  border-radius: 15px;
+    border-radius: 15px;
 
-  background: #ffffff;
+    background: #ffffff;
 
-  text-align: center;
+    text-align: center;
 
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+    box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.06);
 
 }
 
 
 .milk-status-empty-icon {
 
-  margin-bottom: 8px;
+    margin-bottom: 8px;
 
-  font-size: 40px;
+    font-size: 40px;
 
 }
 
 
 .milk-status-empty h3 {
 
-  margin: 0 0 7px;
+    margin: 0 0 7px;
 
-  color: #374151;
+    color: #374151;
 
-  font-size: 17px;
+    font-size: 17px;
 
 }
 
 
 .milk-status-empty p {
 
-  margin: 0;
+    margin: 0;
 
-  color: #9ca3af;
+    color: #9ca3af;
 
-  font-size: 13px;
+    font-size: 13px;
 
 }
 
@@ -443,47 +477,47 @@ The dairy object should contain:
 
 @media (max-width: 650px) {
 
-  .milk-status-card {
+    .milk-status-card {
 
-    align-items: stretch;
+        align-items: stretch;
 
-    flex-direction: column;
+        flex-direction: column;
 
-    gap: 15px;
+        gap: 15px;
 
-    padding: 16px;
+        padding: 16px;
 
-  }
-
-
-  .milk-status-profile {
-
-    min-width: 0;
-
-  }
+    }
 
 
-  .milk-status-current {
+    .milk-status-profile {
 
-    width: 100%;
+        min-width: 0;
 
-  }
-
-
-  .milk-status-action,
-
-  .milk-status-action form {
-
-    width: 100%;
-
-  }
+    }
 
 
-  .milk-status-button {
+    .milk-status-current {
 
-    width: 100%;
+        width: 100%;
 
-  }
+    }
+
+
+    .milk-status-action,
+
+    .milk-status-action form {
+
+        width: 100%;
+
+    }
+
+
+    .milk-status-button {
+
+        width: 100%;
+
+    }
 
 }
 
