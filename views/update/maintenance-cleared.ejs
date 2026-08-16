@@ -8,11 +8,19 @@
     data-type="maintenance"
 >
 
+
     <!-- =================================================
          HEADER
+         Format:
+
+         User Name about Dairy Name
+         Date and time
     ================================================== -->
 
     <div class="feed-header">
+
+
+        <!-- USER -->
 
         <div class="feed-user">
 
@@ -22,51 +30,53 @@
                 alt="<%= item.userName || 'User' %>"
             >
 
+
             <div class="feed-user-info">
 
+
                 <!-- =========================================
-                     MAINTENANCE META
+                     USER + DAIRY
                 ========================================== -->
 
                 <div class="post-meta-line">
 
                     <strong class="post-user-name">
 
-                        ✅ <%= item.userName || "User" %>
+                        <%= item.userName || "User" %>
 
                     </strong>
 
-                    <% if (item.dairyName && item.dairyId) { %>
+
+                    <% if (item.dairyName) { %>
 
                         <span class="post-meta-action">
 
-                            evaluated
+                            about
 
                         </span>
 
-                        <a
-                            href="/dairy/<%= item.dairyId %>"
-                            class="post-subject"
-                            title="View <%= item.dairyName %>"
-                        >
 
-                            <%= item.dairyName %>
+                        <% if (item.dairyId) { %>
 
-                        </a>
+                            <a
+                                href="/dairy/<%= item.dairyId %>"
+                                class="post-subject"
+                                title="View <%= item.dairyName %>"
+                            >
 
-                        <span class="post-meta-action">
+                                <%= item.dairyName %>
 
-                            overal conditions
+                            </a>
 
-                        </span>
+                        <% } else { %>
 
-                    <% } else { %>
+                            <span class="post-subject">
 
-                        <span class="post-meta-action">
+                                <%= item.dairyName %>
 
-                            evaluated health condition
+                            </span>
 
-                        </span>
+                        <% } %>
 
                     <% } %>
 
@@ -79,13 +89,15 @@
 
                 <small class="post-time">
 
-                    <%= item.dateText %>
+                    <%= item.dateText || "" %>
 
                 </small>
+
 
             </div>
 
         </div>
+
 
 
         <!-- =================================================
@@ -105,6 +117,7 @@
             )
         ) { %>
 
+
             <button
                 class="delete-post"
                 data-id="<%= item._id %>"
@@ -121,9 +134,12 @@
 
             </button>
 
+
         <% } %>
 
+
     </div>
+
 
 
     <!-- =================================================
@@ -132,11 +148,17 @@
 
     <div class="feed-body">
 
+
+        <!-- =============================================
+             HEADING
+        ============================================== -->
+
         <h3>
 
             ✅ Maintenance Completed
 
         </h3>
+
 
 
         <!-- =============================================
@@ -156,6 +178,7 @@
         </div>
 
 
+
         <!-- =============================================
              MAINTENANCE TYPE
         ============================================== -->
@@ -171,6 +194,7 @@
             </p>
 
         <% } %>
+
 
 
         <!-- =============================================
@@ -190,6 +214,7 @@
         <% } %>
 
 
+
         <!-- =============================================
              DESCRIPTION
         ============================================== -->
@@ -203,6 +228,7 @@
             </p>
 
         <% } %>
+
 
 
         <!-- =============================================
@@ -221,7 +247,9 @@
 
         <% } %>
 
+
     </div>
+
 
 
     <!-- =================================================
@@ -234,6 +262,7 @@
     }) %>
 
 
+
     <!-- =================================================
          COMMENTS
     ================================================== -->
@@ -244,4 +273,205 @@
         type: "maintenance"
     }) %>
 
+
 </article>
+
+
+
+<!-- =========================================================
+     MAINTENANCE COMPLETED CARD CSS
+     
+     Header is intentionally structured as:
+
+         User about Dairy
+         Date / time
+
+     Body begins immediately after header.
+========================================================= -->
+
+<style>
+
+.maintenance-cleared-card .feed-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 11px 14px 9px;
+
+    border-bottom: 1px solid #e6ece8;
+
+}
+
+
+.maintenance-cleared-card .feed-user {
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+}
+
+
+.maintenance-cleared-card .feed-user-info {
+
+    min-width: 0;
+
+    display: block;
+
+}
+
+
+.maintenance-cleared-card .post-meta-line {
+
+    display: block;
+
+    margin: 0;
+
+    padding: 0;
+
+    color: #202520;
+
+    font-size: 14px;
+
+    line-height: 1.35;
+
+}
+
+
+.maintenance-cleared-card .post-user-name {
+
+    color: #202520;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+}
+
+
+.maintenance-cleared-card .post-meta-action {
+
+    margin: 0 4px;
+
+    color: #727b75;
+
+    font-size: 13px;
+
+    font-weight: 400;
+
+}
+
+
+.maintenance-cleared-card .post-subject {
+
+    color: #198754;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    text-decoration: none;
+
+}
+
+
+.maintenance-cleared-card a.post-subject:hover {
+
+    color: #146c43;
+
+    text-decoration: underline;
+
+}
+
+
+.maintenance-cleared-card .post-time {
+
+    display: block;
+
+    margin: 2px 0 0;
+
+    padding: 0;
+
+    color: #89928c;
+
+    font-size: 11px;
+
+    line-height: 1.2;
+
+}
+
+
+.maintenance-cleared-card .feed-body {
+
+    border-bottom: 1px solid #e6ece8;
+
+}
+
+
+.maintenance-cleared-card .feed-body p {
+
+    margin-top: 0;
+
+}
+
+
+@media (max-width: 600px) {
+
+    .maintenance-cleared-card .feed-header {
+
+        padding:
+            9px
+            12px
+            8px;
+
+    }
+
+
+    .maintenance-cleared-card .post-meta-line {
+
+        font-size: 13px;
+
+    }
+
+
+    .maintenance-cleared-card .post-user-name {
+
+        font-size: 13px;
+
+    }
+
+
+    .maintenance-cleared-card .post-subject {
+
+        font-size: 13px;
+
+    }
+
+
+    .maintenance-cleared-card .post-meta-action {
+
+        font-size: 12px;
+
+    }
+
+
+    .maintenance-cleared-card .post-time {
+
+        font-size: 10px;
+
+    }
+
+}
+
+</style>
