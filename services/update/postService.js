@@ -1,16 +1,43 @@
 // ==========================================================
 // services/update/postService.js
 // ==========================================================
+//
+// PURPOSE:
+//     Handles creation and management of normal feed posts.
+//
+// POST TARGET:
+//
+//     dairyId is the ACTUAL Dairy record that the post
+//     concerns.
+//
+//     The controller is responsible for determining the
+//     correct targetDairyId.
+//
+//     This service simply persists that Dairy ID.
+//
+// ==========================================================
+
+
+const mongoose =
+    require("mongoose");
+
 
 const Update =
     require("../../models/Update");
 
+
 const ProjectUser =
     require("../../models/projectUser");
+
+
+const Dairy =
+    require("../../models/dairy");
+
 
 const {
     formatComment
 } = require("./helpers");
+
 
 
 // ==========================================================
@@ -24,6 +51,9 @@ const {
 //     title
 //     text
 //     multiple images
+//
+// dairyId:
+//     The actual Dairy record the post concerns.
 //
 // ==========================================================
 
@@ -46,12 +76,60 @@ async ({
 
 }) => {
 
+
+    // ======================================================
+    // VALIDATE DAIRY ID
+    // ======================================================
+
+    if (
+        !dairyId ||
+        !mongoose.Types.ObjectId.isValid(
+            dairyId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid post Dairy."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // VERIFY DAIRY EXISTS
+    // ======================================================
+    //
+    // The controller already validates the target.
+    //
+    // We still verify it here because the service should
+    // never create a post pointing to a nonexistent record.
+    //
+    // ======================================================
+
+    const dairy =
+        await Dairy
+            .findById(dairyId)
+            .select("_id name code");
+
+
+    if (!dairy) {
+
+        throw new Error(
+            "Post Dairy not found."
+        );
+
+    }
+
+
+
     // ======================================================
     // RESOLVE USER NAME
     // ======================================================
 
     let resolvedUserName =
         userName || "";
+
 
 
     // ======================================================
@@ -62,19 +140,36 @@ async ({
         userImage || "";
 
 
+
     // ======================================================
     // GET REAL USER DATA
+    // ======================================================
+    //
+    // Do not rely entirely on the values sent by the
+    // controller.
+    //
+    // If the user still exists, use the current profile
+    // information.
+    //
     // ======================================================
 
     if (userId) {
 
+
         const user =
             await ProjectUser
                 .findById(userId)
-                .select("name profileImage");
+                .select(
+                    "name profileImage"
+                );
 
 
         if (user) {
+
+
+            // ----------------------------------------------
+            // REAL USER NAME
+            // ----------------------------------------------
 
             if (user.name) {
 
@@ -83,6 +178,10 @@ async ({
 
             }
 
+
+            // ----------------------------------------------
+            // REAL USER IMAGE
+            // ----------------------------------------------
 
             if (user.profileImage) {
 
@@ -96,65 +195,177 @@ async ({
     }
 
 
+
+    // ======================================================
+    // NORMALIZE TITLE
+    // ======================================================
+
+    const normalizedTitle =
+        typeof title === "string"
+            ? title.trim()
+            : "";
+
+
+
+    // ======================================================
+    // NORMALIZE TEXT
+    // ======================================================
+
+    const normalizedText =
+        typeof text === "string"
+            ? text.trim()
+            : "";
+
+
+
     // ======================================================
     // NORMALIZE IMAGES
     // ======================================================
 
     const normalizedImages =
         Array.isArray(images)
+
             ? images
                 .filter(Boolean)
                 .map(String)
+
             : [];
+
+
+
+    // ======================================================
+    // VALIDATE POST CONTENT
+    // ======================================================
+    //
+    // A post must contain at least one of:
+    //
+    //     title
+    //     text
+    //     image
+    //
+    // ======================================================
+
+    if (
+        !normalizedTitle &&
+        !normalizedText &&
+        normalizedImages.length === 0
+    ) {
+
+        throw new Error(
+            "Post title, text or image required."
+        );
+
+    }
+
 
 
     // ======================================================
     // CREATE UPDATE
     // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // `dairy` receives the target Dairy ID.
+    //
+    // This is what makes:
+    //
+    //     User Name about Dairy Name
+    //
+    // possible later in post.ejs.
+    //
+    // ======================================================
 
-    return await Update.create({
+    const post =
+        await Update.create({
 
-        dairy:
-            dairyId,
+            // ----------------------------------------------
+            // ACTUAL POST TARGET
+            // ----------------------------------------------
 
-        user:
-            userId,
+            dairy:
+                dairy._id,
 
-        userName:
-            resolvedUserName,
 
-        userImage:
-            resolvedUserImage,
+            // ----------------------------------------------
+            // AUTHOR
+            // ----------------------------------------------
 
-        type:
-            "post",
+            user:
+                userId,
 
-        title:
-            title || "",
 
-        text:
-            text || "",
+            userName:
+                resolvedUserName,
 
-        images:
-            normalizedImages,
 
-        // ----------------------------------------------
-        // New posts use `images`.
-        //
-        // Keep `image` empty for compatibility with
-        // older records.
-        // ----------------------------------------------
+            userImage:
+                resolvedUserImage,
 
-        image:
-            null,
 
-        likes:
-            [],
+            // ----------------------------------------------
+            // TYPE
+            // ----------------------------------------------
 
-        comments:
-            []
+            type:
+                "post",
 
-    });
+
+            // ----------------------------------------------
+            // CONTENT
+            // ----------------------------------------------
+
+            title:
+                normalizedTitle,
+
+
+            text:
+                normalizedText,
+
+
+            // ----------------------------------------------
+            // IMAGES
+            // ----------------------------------------------
+
+            images:
+                normalizedImages,
+
+
+            // ----------------------------------------------
+            // BACKWARDS COMPATIBILITY
+            // ----------------------------------------------
+            //
+            // New posts use `images`.
+            //
+            // Older records may still contain `image`.
+            //
+            // Keep this field empty for new posts.
+            //
+            // ----------------------------------------------
+
+            image:
+                null,
+
+
+            // ----------------------------------------------
+            // ENGAGEMENT
+            // ----------------------------------------------
+
+            likes:
+                [],
+
+
+            comments:
+                []
+
+        });
+
+
+
+    // ======================================================
+    // RETURN CREATED POST
+    // ======================================================
+
+    return post;
 
 };
 
@@ -173,6 +384,11 @@ async ({
 
 }) => {
 
+
+    // ======================================================
+    // FIND POST
+    // ======================================================
+
     const post =
         await Update.findById(
             postId
@@ -188,6 +404,11 @@ async ({
     }
 
 
+
+    // ======================================================
+    // ENSURE LIKES ARRAY
+    // ======================================================
+
     if (
         !Array.isArray(
             post.likes
@@ -198,6 +419,11 @@ async ({
 
     }
 
+
+
+    // ======================================================
+    // FIND EXISTING LIKE
+    // ======================================================
 
     const index =
         post.likes.findIndex(
@@ -210,25 +436,48 @@ async ({
         );
 
 
+
+    // ======================================================
+    // DEFAULT
+    // ======================================================
+
     let liked =
         false;
 
 
-    if (index >= 0) {
+
+    // ======================================================
+    // UNLIKE
+    // ======================================================
+
+    if (
+        index >= 0
+    ) {
+
 
         post.likes.splice(
             index,
             1
         );
 
+
         liked =
             false;
 
-    } else {
+    }
+
+
+    // ======================================================
+    // LIKE
+    // ======================================================
+
+    else {
+
 
         post.likes.push(
             userId
         );
+
 
         liked =
             true;
@@ -236,8 +485,18 @@ async ({
     }
 
 
+
+    // ======================================================
+    // SAVE
+    // ======================================================
+
     await post.save();
 
+
+
+    // ======================================================
+    // RESULT
+    // ======================================================
 
     return {
 
@@ -271,6 +530,11 @@ async ({
 
 }) => {
 
+
+    // ======================================================
+    // FIND POST
+    // ======================================================
+
     const post =
         await Update.findById(
             postId
@@ -286,6 +550,11 @@ async ({
     }
 
 
+
+    // ======================================================
+    // ENSURE COMMENTS ARRAY
+    // ======================================================
+
     if (
         !Array.isArray(
             post.comments
@@ -296,6 +565,32 @@ async ({
 
     }
 
+
+
+    // ======================================================
+    // NORMALIZE COMMENT TEXT
+    // ======================================================
+
+    const normalizedText =
+        typeof text === "string"
+            ? text.trim()
+            : "";
+
+
+
+    if (!normalizedText) {
+
+        throw new Error(
+            "Comment text required."
+        );
+
+    }
+
+
+
+    // ======================================================
+    // CREATE COMMENT
+    // ======================================================
 
     const comment = {
 
@@ -309,7 +604,7 @@ async ({
             userImage || "",
 
         text:
-            text,
+            normalizedText,
 
         createdAt:
             new Date()
@@ -317,13 +612,28 @@ async ({
     };
 
 
+
+    // ======================================================
+    // ADD COMMENT
+    // ======================================================
+
     post.comments.push(
         comment
     );
 
 
+
+    // ======================================================
+    // SAVE
+    // ======================================================
+
     await post.save();
 
+
+
+    // ======================================================
+    // RETURN FORMATTED COMMENT
+    // ======================================================
 
     return formatComment(
         comment
@@ -346,6 +656,11 @@ async ({
 
 }) => {
 
+
+    // ======================================================
+    // FIND POST
+    // ======================================================
+
     const post =
         await Update.findById(
             postId
@@ -359,6 +674,7 @@ async ({
         );
 
     }
+
 
 
     // ======================================================
@@ -375,12 +691,14 @@ async ({
         user._id.toString();
 
 
+
     // ======================================================
     // ADMIN
     // ======================================================
 
     const admin =
         user.role === "admin";
+
 
 
     // ======================================================
@@ -399,6 +717,7 @@ async ({
     }
 
 
+
     // ======================================================
     // DELETE
     // ======================================================
@@ -407,6 +726,11 @@ async ({
         postId
     );
 
+
+
+    // ======================================================
+    // SUCCESS
+    // ======================================================
 
     return true;
 
@@ -427,6 +751,11 @@ async ({
 
 }) => {
 
+
+    // ======================================================
+    // FIND POST CONTAINING COMMENT
+    // ======================================================
+
     const post =
         await Update.findOne({
 
@@ -443,6 +772,7 @@ async ({
         );
 
     }
+
 
 
     // ======================================================
@@ -469,6 +799,7 @@ async ({
     }
 
 
+
     // ======================================================
     // OWNER
     // ======================================================
@@ -483,12 +814,14 @@ async ({
         user._id.toString();
 
 
+
     // ======================================================
     // ADMIN
     // ======================================================
 
     const admin =
         user.role === "admin";
+
 
 
     // ======================================================
@@ -507,6 +840,7 @@ async ({
     }
 
 
+
     // ======================================================
     // REMOVE COMMENT
     // ======================================================
@@ -522,8 +856,18 @@ async ({
         );
 
 
+
+    // ======================================================
+    // SAVE
+    // ======================================================
+
     await post.save();
 
+
+
+    // ======================================================
+    // SUCCESS
+    // ======================================================
 
     return true;
 
