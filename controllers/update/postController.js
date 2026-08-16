@@ -3,418 +3,228 @@
 // ==========================================================
 //
 // PURPOSE:
-//     Handles creation and management of feed posts.
+//     Handles creation and management of normal feed posts.
 //
-// POST TARGET SYSTEM:
+// POST TARGET RULES
 // ----------------------------------------------------------
 //
-// CURRENT DAIRY HAS POSITIVE CODE:
-//     The current Dairy automatically becomes the target.
+// CURRENT DAIRY CODE > 0
+//     Automatically targets the current Dairy.
 //
-// CURRENT DAIRY HAS NEGATIVE CODE:
-//     User MUST select a target.
+// CURRENT DAIRY CODE < 0
+//     targetDairyId MUST be supplied.
 //
-// TARGET CATEGORIES:
+// VALID TARGETS WHEN CURRENT CODE < 0:
 //
-//     animal:
+//     ANIMAL
 //         code > 0
 //
-//     structure:
+//     STRUCTURE / FACILITY / TOOL
 //         code === null
 //         code === undefined
 //         code === ""
 //
-// NEGATIVE-CODE RECORDS:
-//     NEVER valid as post targets.
+// INVALID:
+//     code < 0
 //
 // IMPORTANT:
-// ----------------------------------------------------------
-// This controller also provides:
+//     Negative-code records can NEVER be post targets.
 //
-//     getPostTargets()
-//
-// which allows create-post.ejs to dynamically load the
-// available Phase 2 target list.
-//
-// This avoids depending on the parent Dairy page controller
-// to provide a `dairies` variable.
 // ==========================================================
-
 
 
 // ==========================================================
 // DEPENDENCIES
 // ==========================================================
 
-const mongoose =
-    require("mongoose");
+const mongoose = require("mongoose");
 
-
-const Dairy =
-    require("../../models/dairy");
-
+const Dairy = require("../../models/dairy");
 
 const updateService =
     require("../../services/update/postService");
 
 
+// ==========================================================
+// SMALL HELPERS
+// ==========================================================
+
+function isValidObjectId(value) {
+
+    return (
+        value &&
+        mongoose.Types.ObjectId.isValid(value)
+    );
+
+}
+
 
 // ==========================================================
-// HELPER:
-// DETERMINE WHETHER A VALUE IS A NEGATIVE CODE
+// DETERMINE WHETHER CODE IS POSITIVE
+// ==========================================================
+
+function hasPositiveCode(code) {
+
+    if (
+        code === null ||
+        code === undefined ||
+        code === ""
+    ) {
+
+        return false;
+
+    }
+
+    const number =
+        Number(code);
+
+    return (
+        Number.isFinite(number) &&
+        number > 0
+    );
+
+}
+
+
+// ==========================================================
+// DETERMINE WHETHER CODE IS NEGATIVE
 // ==========================================================
 
 function hasNegativeCode(code) {
 
+    if (
+        code === null ||
+        code === undefined ||
+        code === ""
+    ) {
+
+        return false;
+
+    }
+
+    const number =
+        Number(code);
+
     return (
-
-        code !== null &&
-
-        code !== undefined &&
-
-        code !== "" &&
-
-        Number.isFinite(
-            Number(code)
-        ) &&
-
-        Number(code) < 0
-
+        Number.isFinite(number) &&
+        number < 0
     );
 
 }
 
 
-
 // ==========================================================
-// HELPER:
-// DETERMINE WHETHER A VALUE IS AN ANIMAL CODE
-// ==========================================================
-
-function hasAnimalCode(code) {
-
-    return (
-
-        code !== null &&
-
-        code !== undefined &&
-
-        code !== "" &&
-
-        Number.isFinite(
-            Number(code)
-        ) &&
-
-        Number(code) > 0
-
-    );
-
-}
-
-
-
-// ==========================================================
-// HELPER:
-// DETERMINE WHETHER A VALUE REPRESENTS A
-// STRUCTURE / FACILITY / TOOL
+// DETERMINE WHETHER RECORD HAS NO CODE
 // ==========================================================
 
 function hasNoCode(code) {
 
     return (
-
         code === null ||
-
         code === undefined ||
-
         code === ""
-
     );
 
 }
 
 
-
 // ==========================================================
-// GET POST TARGETS
+// DETERMINE VALID TARGET
 // ==========================================================
 //
-// PURPOSE:
+// Returns:
 //
-//     Supplies the Phase 2 list used by create-post.ejs.
+//     true  = valid
+//     false = invalid
 //
-// URL:
+// Valid:
 //
-//     GET /dairy/:id/post-targets
+//     code > 0
 //
-// RESPONSE:
+// OR
 //
-//     {
-//         success: true,
-//         currentDairy: {...},
-//         animals: [...],
-//         structures: [...]
-//     }
+//     no code
 //
-// RULES:
+// Invalid:
 //
-//     animals:
-//         code > 0
-//
-//     structures:
-//         code null / undefined / ""
-//
-//     negative-code records:
-//         excluded
+//     code < 0
 //
 // ==========================================================
 
-exports.getPostTargets =
-async (req, res) => {
-
-    try {
-
-        // ==================================================
-        // USER
-        // ==================================================
-
-        const user =
-            req.session.user;
-
-
-        if (!user) {
-
-            return res
-                .status(401)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Unauthorized"
-
-                });
-
-        }
-
-
-
-        // ==================================================
-        // CURRENT DAIRY ID
-        // ==================================================
-
-        const {
-            id
-        } = req.params;
-
-
-
-        if (
-            !mongoose.Types.ObjectId.isValid(id)
-        ) {
-
-            return res
-                .status(400)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Invalid Dairy ID"
-
-                });
-
-        }
-
-
-
-        // ==================================================
-        // VERIFY CURRENT DAIRY
-        // ==================================================
-
-        const currentDairy =
-            await Dairy
-                .findById(id)
-                .select(
-                    "_id name code profileImage"
-                )
-                .lean();
-
-
-        if (!currentDairy) {
-
-            return res
-                .status(404)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Dairy not found"
-
-                });
-
-        }
-
-
-
-        // ==================================================
-        // TARGETS
-        // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // We deliberately do NOT use a generic
-        // `Dairy.find({})` response directly.
-        //
-        // We explicitly divide records according to
-        // the business rules.
-        //
-        // ==================================================
-
-        const allDairies =
-            await Dairy
-                .find({})
-                .select(
-                    "_id name code profileImage"
-                )
-                .sort({
-                    name: 1
-                })
-                .lean();
-
-
-
-        // ==================================================
-        // ANIMALS
-        // ==================================================
-
-        const animals =
-            allDairies.filter(
-                function (item) {
-
-                    if (!item) {
-
-                        return false;
-
-                    }
-
-
-                    // Negative codes are NEVER animals.
-
-                    if (
-                        hasNegativeCode(
-                            item.code
-                        )
-                    ) {
-
-                        return false;
-
-                    }
-
-
-                    return hasAnimalCode(
-                        item.code
-                    );
-
-                }
-            );
-
-
-
-        // ==================================================
-        // STRUCTURES / FACILITIES / TOOLS
-        // ==================================================
-
-        const structures =
-            allDairies.filter(
-                function (item) {
-
-                    if (!item) {
-
-                        return false;
-
-                    }
-
-
-                    // Explicitly exclude negative codes.
-
-                    if (
-                        hasNegativeCode(
-                            item.code
-                        )
-                    ) {
-
-                        return false;
-
-                    }
-
-
-                    return hasNoCode(
-                        item.code
-                    );
-
-                }
-            );
-
-
-
-        // ==================================================
-        // RESPONSE
-        // ==================================================
-
-        return res.json({
-
-            success:
-                true,
-
-            currentDairy: {
-
-                _id:
-                    currentDairy._id,
-
-                name:
-                    currentDairy.name,
-
-                code:
-                    currentDairy.code,
-
-                profileImage:
-                    currentDairy.profileImage || ""
-
-            },
-
-            animals,
-
-            structures
-
-        });
-
-
-    } catch (err) {
-
-        console.error(
-            "GET POST TARGETS ERROR:",
-            err
-        );
-
-
-        return res
-            .status(500)
-            .json({
-
-                success:
-                    false,
-
-                message:
-                    "Failed to load post targets"
-
-            });
+function isValidPostTargetCode(code) {
+
+    return (
+        hasPositiveCode(code) ||
+        hasNoCode(code)
+    );
+
+}
+
+
+// ==========================================================
+// EXTRACT UPLOADED IMAGES
+// ==========================================================
+//
+// Supports multer:
+//
+//     upload.array("images")
+//
+// req.files:
+//
+//     [
+//         {
+//             filename: "..."
+//         }
+//     ]
+//
+// ==========================================================
+
+function extractImages(req) {
+
+    if (!Array.isArray(req.files)) {
+
+        return [];
 
     }
 
-};
+    return req.files
+        .map(file => {
 
+            if (!file) {
+                return null;
+            }
+
+            // --------------------------------------------------
+            // Cloudinary / custom uploader
+            // --------------------------------------------------
+
+            if (file.path) {
+                return file.path;
+            }
+
+            if (file.secure_url) {
+                return file.secure_url;
+            }
+
+            if (file.url) {
+                return file.url;
+            }
+
+            // --------------------------------------------------
+            // Multer diskStorage
+            // --------------------------------------------------
+
+            if (file.filename) {
+                return file.filename;
+            }
+
+            return null;
+
+        })
+        .filter(Boolean)
+        .map(String);
+
+}
 
 
 // ==========================================================
@@ -427,7 +237,7 @@ async (req, res) => {
     try {
 
         // ==================================================
-        // PARAMETERS
+        // CURRENT DAIRY ID
         // ==================================================
 
         const {
@@ -435,12 +245,12 @@ async (req, res) => {
         } = req.params;
 
 
-
         // ==================================================
-        // USER
+        // AUTHENTICATED USER
         // ==================================================
 
         const user =
+            req.session &&
             req.session.user;
 
 
@@ -448,12 +258,9 @@ async (req, res) => {
 
             return res
                 .status(401)
-                .send(
-                    "Unauthorized"
-                );
+                .send("Unauthorized");
 
         }
-
 
 
         // ==================================================
@@ -461,17 +268,14 @@ async (req, res) => {
         // ==================================================
 
         if (
-            !mongoose.Types.ObjectId.isValid(id)
+            !isValidObjectId(id)
         ) {
 
             return res
                 .status(400)
-                .send(
-                    "Invalid Dairy ID"
-                );
+                .send("Invalid Dairy ID");
 
         }
-
 
 
         // ==================================================
@@ -481,100 +285,112 @@ async (req, res) => {
         const currentDairy =
             await Dairy
                 .findById(id)
-                .select(
-                    "_id name code"
-                );
+                .select("_id name code");
 
 
         if (!currentDairy) {
 
             return res
                 .status(404)
-                .send(
-                    "Dairy not found"
-                );
+                .send("Dairy not found");
 
         }
 
 
-
         // ==================================================
-        // CURRENT CODE
+        // CURRENT DAIRY CODE
         // ==================================================
 
         const currentCode =
             currentDairy.code;
 
 
-
         // ==================================================
-        // DETERMINE NEGATIVE PAGE
+        // DETERMINE CURRENT PAGE TYPE
         // ==================================================
 
-        const currentHasNegativeCode =
+        const currentIsPositive =
+            hasPositiveCode(
+                currentCode
+            );
+
+
+        const currentIsNegative =
             hasNegativeCode(
                 currentCode
             );
 
 
-
         // ==================================================
-        // DEFAULT TARGET
+        // TARGET
         // ==================================================
         //
-        // For a normal positive-code Dairy page,
-        // the current Dairy is automatically the target.
+        // POSITIVE PAGE:
+        //
+        //     current Dairy is automatically the target.
+        //
+        // NEGATIVE PAGE:
+        //
+        //     user MUST provide targetDairyId.
+        //
+        // NO-CODE PAGE:
+        //
+        //     We do not silently treat it as a negative page.
         //
         // ==================================================
 
-        let targetDairyId =
-            currentDairy._id;
-
+        let targetDairy = null;
 
 
         // ==================================================
-        // NEGATIVE-CODE PAGE
+        // POSITIVE-CODE CURRENT DAIRY
         // ==================================================
 
-        if (
-            currentHasNegativeCode
-        ) {
+        if (currentIsPositive) {
 
-            // ----------------------------------------------
-            // READ TARGET
-            // ----------------------------------------------
+            targetDairy =
+                currentDairy;
+
+        }
+
+
+        // ==================================================
+        // NEGATIVE-CODE CURRENT DAIRY
+        // ==================================================
+
+        else if (currentIsNegative) {
+
+            // ------------------------------------------------
+            // READ TARGET FROM FORM
+            // ------------------------------------------------
 
             const submittedTargetId =
                 typeof req.body.targetDairyId === "string"
-
                     ? req.body.targetDairyId.trim()
-
                     : "";
 
 
-
-            // ----------------------------------------------
+            // ------------------------------------------------
             // TARGET REQUIRED
-            // ----------------------------------------------
+            // ------------------------------------------------
 
             if (!submittedTargetId) {
 
                 return res
                     .status(400)
                     .send(
-                        "Please select what this update is about"
+                        "Please select what this update is about."
                     );
 
             }
 
 
-
-            // ----------------------------------------------
-            // VALIDATE TARGET ID
-            // ----------------------------------------------
+            // ------------------------------------------------
+            // VALIDATE TARGET OBJECT ID
+            // ------------------------------------------------
 
             if (
-                !mongoose.Types.ObjectId.isValid(
+                !isValidObjectId(
                     submittedTargetId
                 )
             ) {
@@ -582,104 +398,101 @@ async (req, res) => {
                 return res
                     .status(400)
                     .send(
-                        "Invalid post target"
+                        "Invalid post target."
                     );
 
             }
 
 
-
-            // ----------------------------------------------
+            // ------------------------------------------------
             // LOAD TARGET
-            // ----------------------------------------------
+            // ------------------------------------------------
 
-            const selectedDairy =
+            targetDairy =
                 await Dairy
                     .findById(
                         submittedTargetId
                     )
-                    .select(
-                        "_id name code"
-                    );
+                    .select("_id name code");
 
 
-            if (!selectedDairy) {
+            if (!targetDairy) {
 
                 return res
                     .status(404)
                     .send(
-                        "Selected post target not found"
+                        "Selected post target not found."
                     );
 
             }
 
 
-
-            // ==================================================
-            // NEVER TARGET A NEGATIVE-CODE RECORD
-            // ==================================================
+            // ------------------------------------------------
+            // NEVER ALLOW NEGATIVE TARGET
+            // ------------------------------------------------
 
             if (
                 hasNegativeCode(
-                    selectedDairy.code
+                    targetDairy.code
                 )
             ) {
 
                 return res
                     .status(400)
                     .send(
-                        "Invalid post target"
+                        "Invalid post target."
                     );
 
             }
 
 
-
-            // ==================================================
-            // VALID TARGET TYPES
-            // ==================================================
-
-            const isAnimal =
-                hasAnimalCode(
-                    selectedDairy.code
-                );
-
-
-            const isStructureFacilityTool =
-                hasNoCode(
-                    selectedDairy.code
-                );
-
-
-
-            // ==================================================
-            // FINAL VALIDATION
-            // ==================================================
+            // ------------------------------------------------
+            // FINAL TARGET VALIDATION
+            // ------------------------------------------------
 
             if (
-                !isAnimal &&
-                !isStructureFacilityTool
+                !isValidPostTargetCode(
+                    targetDairy.code
+                )
             ) {
 
                 return res
                     .status(400)
                     .send(
-                        "Invalid post target"
+                        "Invalid post target."
                     );
 
             }
 
+        }
 
 
-            // ==================================================
-            // ACCEPT TARGET
-            // ==================================================
+        // ==================================================
+        // NO TARGET WAS RESOLVED
+        // ==================================================
+        //
+        // This protects against unexpected current Dairy
+        // code values.
+        //
+        // ==================================================
 
-            targetDairyId =
-                selectedDairy._id;
+        if (!targetDairy) {
+
+            return res
+                .status(400)
+                .send(
+                    "Unable to determine post target."
+                );
 
         }
 
+
+        // ==================================================
+        // FINAL TARGET ID
+        // ==================================================
+
+        const targetDairyId =
+            targetDairy._id;
 
 
         // ==================================================
@@ -688,11 +501,8 @@ async (req, res) => {
 
         const title =
             typeof req.body.title === "string"
-
                 ? req.body.title.trim()
-
                 : "";
-
 
 
         // ==================================================
@@ -701,39 +511,16 @@ async (req, res) => {
 
         const text =
             typeof req.body.text === "string"
-
                 ? req.body.text.trim()
-
                 : "";
-
 
 
         // ==================================================
         // IMAGES
         // ==================================================
 
-        const files =
-            Array.isArray(req.files)
-
-                ? req.files
-
-                : [];
-
-
         const images =
-            files
-                .map(
-                    function (file) {
-
-                        return (
-                            file &&
-                            file.filename
-                        );
-
-                    }
-                )
-                .filter(Boolean);
-
+            extractImages(req);
 
 
         // ==================================================
@@ -749,15 +536,25 @@ async (req, res) => {
             return res
                 .status(400)
                 .send(
-                    "Post title, text or image required"
+                    "Post title, text or image required."
                 );
 
         }
 
 
-
         // ==================================================
         // CREATE POST
+        // ==================================================
+        //
+        // IMPORTANT:
+        //
+        // The service receives ONLY the actual target:
+        //
+        //     dairyId = targetDairyId
+        //
+        // It does not need to know whether the post came
+        // from an animal page or a general farm page.
+        //
         // ==================================================
 
         const post =
@@ -770,7 +567,7 @@ async (req, res) => {
                     user._id,
 
                 userName:
-                    user.name,
+                    user.name || "",
 
                 userImage:
                     user.profileImage || "",
@@ -784,18 +581,15 @@ async (req, res) => {
             });
 
 
-
         // ==================================================
-        // USER IMAGE
+        // USER IMAGE FOR SOCKET PAYLOAD
         // ==================================================
 
         const userImage =
             user.profileImage ||
-
             `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 user.name || "User"
             )}`;
-
 
 
         // ==================================================
@@ -807,19 +601,37 @@ async (req, res) => {
             _id:
                 post._id,
 
+            // ----------------------------------------------
+            // ACTUAL TARGET
+            // ----------------------------------------------
+
             dairyId:
                 post.dairy,
+
+            // ----------------------------------------------
+            // AUTHOR
+            // ----------------------------------------------
 
             userId:
                 user._id,
 
             userName:
-                user.name,
+                post.userName ||
+                user.name ||
+                "",
 
             userImage,
 
+            // ----------------------------------------------
+            // TYPE
+            // ----------------------------------------------
+
             type:
                 post.type,
+
+            // ----------------------------------------------
+            // CONTENT
+            // ----------------------------------------------
 
             title:
                 post.title || "",
@@ -827,50 +639,51 @@ async (req, res) => {
             text:
                 post.text || "",
 
+            // ----------------------------------------------
+            // IMAGES
+            // ----------------------------------------------
+
             images:
-                Array.isArray(
-                    post.images
-                )
-
+                Array.isArray(post.images)
                     ? post.images
-
                     : [],
+
+            // ----------------------------------------------
+            // BACKWARDS COMPATIBILITY
+            // ----------------------------------------------
 
             image:
                 post.image || null,
 
+            // ----------------------------------------------
+            // ENGAGEMENT
+            // ----------------------------------------------
+
             likes:
-                Array.isArray(
-                    post.likes
-                )
-
+                Array.isArray(post.likes)
                     ? post.likes.length
-
                     : 0,
 
             comments:
-                Array.isArray(
-                    post.comments
-                )
-
+                Array.isArray(post.comments)
                     ? post.comments
-
                     : [],
+
+            // ----------------------------------------------
+            // DATE
+            // ----------------------------------------------
 
             createdAt:
                 post.createdAt,
 
             dateText:
                 post.createdAt
-
                     ? new Date(
                         post.createdAt
                     ).toLocaleString()
-
                     : ""
 
         };
-
 
 
         // ==================================================
@@ -883,34 +696,35 @@ async (req, res) => {
 
         if (io) {
 
-            // ----------------------------------------------
-            // ACTUAL TARGET ROOM
-            // ----------------------------------------------
+            // ------------------------------------------------
+            // TARGET DAIRY ROOM
+            // ------------------------------------------------
 
             io.to(
-                String(
-                    targetDairyId
-                )
+                String(targetDairyId)
             ).emit(
                 "postCreated",
                 payload
             );
 
 
-
-            // ----------------------------------------------
+            // ------------------------------------------------
             // ORIGINATING PAGE ROOM
-            // ----------------------------------------------
+            // ------------------------------------------------
+            //
+            // If the current page is a negative-code page
+            // and the selected target is another Dairy,
+            // notify that originating page too.
+            //
+            // ------------------------------------------------
 
             if (
-                String(
-                    targetDairyId
-                ) !==
-                String(id)
+                String(targetDairyId) !==
+                String(currentDairy._id)
             ) {
 
                 io.to(
-                    String(id)
+                    String(currentDairy._id)
                 ).emit(
                     "postCreated",
                     payload
@@ -921,9 +735,8 @@ async (req, res) => {
         }
 
 
-
         // ==================================================
-        // REDIRECT
+        // REDIRECT BACK TO ORIGINATING PAGE
         // ==================================================
 
         return res.redirect(
@@ -950,7 +763,6 @@ async (req, res) => {
 };
 
 
-
 // ==========================================================
 // LIKE / UNLIKE POST
 // ==========================================================
@@ -966,6 +778,7 @@ async (req, res) => {
 
 
         const user =
+            req.session &&
             req.session.user;
 
 
@@ -975,8 +788,7 @@ async (req, res) => {
                 .status(401)
                 .json({
 
-                    success:
-                        false,
+                    success: false,
 
                     message:
                         "Unauthorized"
@@ -986,9 +798,30 @@ async (req, res) => {
         }
 
 
+        // ==================================================
+        // VALIDATE POST ID
+        // ==================================================
+
+        if (
+            !isValidObjectId(id)
+        ) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Invalid post ID"
+
+                });
+
+        }
+
 
         // ==================================================
-        // TOGGLE
+        // TOGGLE LIKE
         // ==================================================
 
         const result =
@@ -1003,21 +836,6 @@ async (req, res) => {
             });
 
 
-
-        // ==================================================
-        // ROOM
-        // ==================================================
-
-        const dairyId =
-            req.body &&
-            req.body.dairyId
-
-                ? req.body.dairyId
-
-                : "all";
-
-
-
         // ==================================================
         // SOCKET
         // ==================================================
@@ -1028,12 +846,17 @@ async (req, res) => {
 
         if (io) {
 
+            const dairyId =
+                req.body &&
+                req.body.dairyId
+                    ? req.body.dairyId
+                    : "all";
+
+
             io.to(
                 String(dairyId)
             ).emit(
-
                 "postLiked",
-
                 {
 
                     postId:
@@ -1046,11 +869,9 @@ async (req, res) => {
                         result.liked
 
                 }
-
             );
 
         }
-
 
 
         // ==================================================
@@ -1097,7 +918,6 @@ async (req, res) => {
 };
 
 
-
 // ==========================================================
 // ADD COMMENT
 // ==========================================================
@@ -1113,6 +933,7 @@ async (req, res) => {
 
 
         const user =
+            req.session &&
             req.session.user;
 
 
@@ -1122,8 +943,7 @@ async (req, res) => {
                 .status(401)
                 .json({
 
-                    success:
-                        false,
+                    success: false,
 
                     message:
                         "Unauthorized"
@@ -1133,6 +953,27 @@ async (req, res) => {
         }
 
 
+        // ==================================================
+        // VALIDATE POST ID
+        // ==================================================
+
+        if (
+            !isValidObjectId(id)
+        ) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Invalid post ID"
+
+                });
+
+        }
+
 
         // ==================================================
         // COMMENT TEXT
@@ -1140,9 +981,7 @@ async (req, res) => {
 
         const text =
             typeof req.body.text === "string"
-
                 ? req.body.text.trim()
-
                 : "";
 
 
@@ -1152,8 +991,7 @@ async (req, res) => {
                 .status(400)
                 .json({
 
-                    success:
-                        false,
+                    success: false,
 
                     message:
                         "Comment text required"
@@ -1161,7 +999,6 @@ async (req, res) => {
                 });
 
         }
-
 
 
         // ==================================================
@@ -1178,7 +1015,7 @@ async (req, res) => {
                     user._id,
 
                 userName:
-                    user.name,
+                    user.name || "",
 
                 userImage:
                     user.profileImage || "",
@@ -1186,7 +1023,6 @@ async (req, res) => {
                 text
 
             });
-
 
 
         // ==================================================
@@ -1223,31 +1059,14 @@ async (req, res) => {
 
                 dateText:
                     comment.createdAt
-
                         ? new Date(
                             comment.createdAt
                         ).toLocaleString()
-
                         : ""
 
             }
 
         };
-
-
-
-        // ==================================================
-        // ROOM
-        // ==================================================
-
-        const dairyId =
-            req.body &&
-            req.body.dairyId
-
-                ? req.body.dairyId
-
-                : "all";
-
 
 
         // ==================================================
@@ -1260,6 +1079,13 @@ async (req, res) => {
 
         if (io) {
 
+            const dairyId =
+                req.body &&
+                req.body.dairyId
+                    ? req.body.dairyId
+                    : "all";
+
+
             io.to(
                 String(dairyId)
             ).emit(
@@ -1268,7 +1094,6 @@ async (req, res) => {
             );
 
         }
-
 
 
         // ==================================================
@@ -1306,7 +1131,6 @@ async (req, res) => {
 };
 
 
-
 // ==========================================================
 // DELETE POST
 // ==========================================================
@@ -1322,6 +1146,7 @@ async (req, res) => {
 
 
         const user =
+            req.session &&
             req.session.user;
 
 
@@ -1342,6 +1167,28 @@ async (req, res) => {
         }
 
 
+        // ==================================================
+        // VALIDATE POST ID
+        // ==================================================
+
+        if (
+            !isValidObjectId(id)
+        ) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success:
+                        false,
+
+                    message:
+                        "Invalid post ID"
+
+                });
+
+        }
+
 
         // ==================================================
         // DELETE
@@ -1357,21 +1204,6 @@ async (req, res) => {
         });
 
 
-
-        // ==================================================
-        // ROOM
-        // ==================================================
-
-        const dairyId =
-            req.body &&
-            req.body.dairyId
-
-                ? req.body.dairyId
-
-                : "all";
-
-
-
         // ==================================================
         // SOCKET
         // ==================================================
@@ -1382,23 +1214,26 @@ async (req, res) => {
 
         if (io) {
 
+            const dairyId =
+                req.body &&
+                req.body.dairyId
+                    ? req.body.dairyId
+                    : "all";
+
+
             io.to(
                 String(dairyId)
             ).emit(
-
                 "postDeleted",
-
                 {
 
                     postId:
                         id
 
                 }
-
             );
 
         }
-
 
 
         // ==================================================
@@ -1439,7 +1274,6 @@ async (req, res) => {
 };
 
 
-
 // ==========================================================
 // DELETE COMMENT
 // ==========================================================
@@ -1455,6 +1289,7 @@ async (req, res) => {
 
 
         const user =
+            req.session &&
             req.session.user;
 
 
@@ -1475,9 +1310,31 @@ async (req, res) => {
         }
 
 
+        // ==================================================
+        // VALIDATE COMMENT ID
+        // ==================================================
+
+        if (
+            !isValidObjectId(id)
+        ) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success:
+                        false,
+
+                    message:
+                        "Invalid comment ID"
+
+                });
+
+        }
+
 
         // ==================================================
-        // DELETE
+        // DELETE COMMENT
         // ==================================================
 
         await updateService.deleteComment({
@@ -1490,21 +1347,6 @@ async (req, res) => {
         });
 
 
-
-        // ==================================================
-        // ROOM
-        // ==================================================
-
-        const dairyId =
-            req.body &&
-            req.body.dairyId
-
-                ? req.body.dairyId
-
-                : "all";
-
-
-
         // ==================================================
         // SOCKET
         // ==================================================
@@ -1515,28 +1357,32 @@ async (req, res) => {
 
         if (io) {
 
+            const dairyId =
+                req.body &&
+                req.body.dairyId
+                    ? req.body.dairyId
+                    : "all";
+
+
             io.to(
                 String(dairyId)
             ).emit(
-
                 "commentDeleted",
-
                 {
 
                     commentId:
                         id,
 
                     postId:
-                        req.body
+                        req.body &&
+                        req.body.postId
                             ? req.body.postId
                             : null
 
                 }
-
             );
 
         }
-
 
 
         // ==================================================
