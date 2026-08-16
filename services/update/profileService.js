@@ -2,6 +2,9 @@
 // services/update/profileService.js
 // ==========================================================
 
+const mongoose =
+    require("mongoose");
+
 const Dairy =
     require("../../models/dairy");
 
@@ -21,19 +24,19 @@ const Milk =
 //     • Admin updating ANY dairy profile
 //     • Multiple profile images
 //     • Maximum 5 profile images
-//     • First image becomes primary/display image
-//     • Existing `profileImage` remains supported
+//     • First image is the primary image
+//     • `profileImage` remains synchronized
+//     • Feed update is created
 //
 // IMPORTANT:
 //
-// This service DOES NOT require the dairy asset to be
-// assigned to a dairy farm.
+// There is NO dairy-farm assignment check.
 //
-// Assignment to a dairy farm is NOT relevant to updating
-// or viewing the profile.
+// The Dairy document is identified directly by:
 //
-// The controller is responsible for authentication and
-// authorization.
+//     dairyId
+//
+// Authorization is handled by the controller.
 //
 // Expected input:
 //
@@ -70,6 +73,28 @@ exports.updateImage = async ({
         const error =
             new Error(
                 "Dairy profile ID is required."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // VALIDATE MONGODB OBJECT ID
+    // ======================================================
+
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            dairyId
+        )
+    ) {
+
+        const error =
+            new Error(
+                "Invalid dairy profile ID."
             );
 
         error.status = 400;
@@ -161,16 +186,27 @@ exports.updateImage = async ({
 
 
     // ======================================================
+    // REMOVE DUPLICATE IMAGE PATHS
+    // ======================================================
+
+    const uniqueImages =
+        [
+            ...new Set(
+                normalizedImages
+            )
+        ];
+
+
+    // ======================================================
     // PRIMARY IMAGE
     // ======================================================
     //
-    // The first uploaded image is always the primary
-    // profile image.
+    // The first image is the primary/display image.
     //
     // ======================================================
 
     const primaryImage =
-        normalizedImages[0];
+        uniqueImages[0];
 
 
     // ======================================================
@@ -178,15 +214,16 @@ exports.updateImage = async ({
     // ======================================================
 
     dairy.profileImages =
-        normalizedImages;
+        uniqueImages;
 
 
     // ======================================================
-    // BACKWARDS COMPATIBILITY
+    // BACKWARD COMPATIBILITY
     // ======================================================
     //
-    // Existing parts of the application may still use
-    // `profileImage`.
+    // Existing application code may still read:
+    //
+    //     dairy.profileImage
     //
     // Keep it synchronized with the first image.
     //
@@ -197,23 +234,24 @@ exports.updateImage = async ({
 
 
     // ======================================================
-    // OPTIONAL displayImage SUPPORT
+    // OPTIONAL displayImage
     // ======================================================
     //
-    // Only update this field if the Dairy schema actually
-    // contains it.
+    // Only attempt to update this field when it exists
+    // in the Dairy schema.
     //
     // ======================================================
 
-    const dairyObject =
-        dairy.toObject
-            ? dairy.toObject()
-            : dairy;
+    const schemaPaths =
+        dairy.schema &&
+        dairy.schema.paths
+            ? dairy.schema.paths
+            : {};
 
 
     if (
         Object.prototype.hasOwnProperty.call(
-            dairyObject,
+            schemaPaths,
             "displayImage"
         )
     ) {
@@ -235,10 +273,9 @@ exports.updateImage = async ({
     // CREATE FEED UPDATE
     // ======================================================
     //
-    // The Update model currently uses a single `image`
-    // field.
+    // Update currently stores one image in `image`.
     //
-    // Therefore the primary image is stored there.
+    // Therefore the primary image is stored here.
     //
     // ======================================================
 
@@ -266,7 +303,7 @@ exports.updateImage = async ({
 
 
     // ======================================================
-    // RETURN UPDATED INFORMATION
+    // RETURN
     // ======================================================
 
     return {
@@ -276,7 +313,7 @@ exports.updateImage = async ({
         dairy,
 
         profileImages:
-            normalizedImages,
+            uniqueImages,
 
         profileImage:
             primaryImage,
@@ -299,11 +336,15 @@ exports.updateImage = async ({
 //
 // Deletes:
 //
-//     • Feed updates belonging to the dairy
-//     • Milk records belonging to the dairy
+//     • Feed updates belonging to the Dairy
+//     • Milk records belonging to the Dairy
 //     • Dairy profile itself
 //
 // Authorization is handled by the controller.
+//
+// IMPORTANT:
+//
+// No farm-assignment logic is used.
 //
 // ==========================================================
 
@@ -320,6 +361,28 @@ exports.deleteProfile = async (
         const error =
             new Error(
                 "Dairy profile ID is required."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // VALIDATE MONGODB OBJECT ID
+    // ======================================================
+
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            dairyId
+        )
+    ) {
+
+        const error =
+            new Error(
+                "Invalid dairy profile ID."
             );
 
         error.status = 400;
@@ -400,7 +463,7 @@ exports.deleteProfile = async (
 // 📝 UPDATE PROFILE INFORMATION
 // ==========================================================
 //
-// Updates:
+// Editable fields:
 //
 //     • name
 //     • code
@@ -408,6 +471,8 @@ exports.deleteProfile = async (
 //     • dateOfBirth
 //
 // Authorization is handled by the controller.
+//
+// There is NO dairy-farm assignment requirement.
 //
 // ==========================================================
 
@@ -435,15 +500,59 @@ exports.updateProfile = async (
 
 
     // ======================================================
+    // VALIDATE MONGODB OBJECT ID
+    // ======================================================
+
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            id
+        )
+    ) {
+
+        const error =
+            new Error(
+                "Invalid dairy profile ID."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // ENSURE REQUEST DATA IS AN OBJECT
+    // ======================================================
+
+    if (
+        !data ||
+        typeof data !== "object" ||
+        Array.isArray(data)
+    ) {
+
+        const error =
+            new Error(
+                "Invalid profile update data."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
     // BUILD UPDATE OBJECT
     // ======================================================
 
     const updateData = {};
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // NAME
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
         Object.prototype.hasOwnProperty.call(
@@ -453,14 +562,16 @@ exports.updateProfile = async (
     ) {
 
         updateData.name =
-            data.name;
+            typeof data.name === "string"
+                ? data.name.trim()
+                : data.name;
 
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // CODE
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
         Object.prototype.hasOwnProperty.call(
@@ -470,14 +581,16 @@ exports.updateProfile = async (
     ) {
 
         updateData.code =
-            data.code;
+            typeof data.code === "string"
+                ? data.code.trim()
+                : data.code;
 
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // MASS
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
         Object.prototype.hasOwnProperty.call(
@@ -492,9 +605,9 @@ exports.updateProfile = async (
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // DATE OF BIRTH
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
         Object.prototype.hasOwnProperty.call(
@@ -505,6 +618,28 @@ exports.updateProfile = async (
 
         updateData.dateOfBirth =
             data.dateOfBirth || null;
+
+    }
+
+
+    // ======================================================
+    // NOTHING TO UPDATE
+    // ======================================================
+
+    if (
+        Object.keys(
+            updateData
+        ).length === 0
+    ) {
+
+        const error =
+            new Error(
+                "No editable profile information was provided."
+            );
+
+        error.status = 400;
+
+        throw error;
 
     }
 
@@ -555,7 +690,7 @@ exports.updateProfile = async (
 
 
     // ======================================================
-    // RETURN
+    // RETURN UPDATED PROFILE
     // ======================================================
 
     return updated;
