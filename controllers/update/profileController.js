@@ -137,16 +137,6 @@ exports.image = async (req, res) => {
         // ==================================================
         // COLLECT UPLOADED FILES
         // ==================================================
-        //
-        // Supports:
-        //
-        //     upload.single("profileImage")
-        //
-        // and:
-        //
-        //     upload.array("profileImages", 5)
-        //
-        // ==================================================
 
         let files = [];
 
@@ -181,7 +171,7 @@ exports.image = async (req, res) => {
 
 
         // --------------------------------------------------
-        // Remove duplicate references
+        // REMOVE DUPLICATES
         // --------------------------------------------------
 
         files =
@@ -279,15 +269,6 @@ exports.image = async (req, res) => {
 
         // ==================================================
         // UPDATE PROFILE
-        // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // There is deliberately NO farm-assignment check.
-        //
-        // The admin is allowed to update any Dairy document
-        // that exists.
-        //
         // ==================================================
 
         const update =
@@ -419,7 +400,6 @@ exports.image = async (req, res) => {
             );
 
 
-            // Backwards compatibility
             io.to(id).emit(
                 "imageUpdated",
                 payload
@@ -430,10 +410,6 @@ exports.image = async (req, res) => {
 
         // ==================================================
         // RESPONSE
-        // ==================================================
-        //
-        // The EJS uses fetch(), therefore JSON is returned.
-        //
         // ==================================================
 
         return res.json({
@@ -470,10 +446,6 @@ exports.image = async (req, res) => {
         );
 
 
-        // ==================================================
-        // KNOWN AUTHORIZATION ERROR
-        // ==================================================
-
         if (
             err.status === 401 ||
             err.statusCode === 401
@@ -493,10 +465,6 @@ exports.image = async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // KNOWN FORBIDDEN ERROR
-        // ==================================================
 
         if (
             err.status === 403 ||
@@ -518,10 +486,6 @@ exports.image = async (req, res) => {
         }
 
 
-        // ==================================================
-        // KNOWN NOT FOUND ERROR
-        // ==================================================
-
         if (
             err.status === 404 ||
             err.statusCode === 404
@@ -542,10 +506,6 @@ exports.image = async (req, res) => {
         }
 
 
-        // ==================================================
-        // GENERAL ERROR
-        // ==================================================
-
         return res
             .status(500)
             .json({
@@ -565,10 +525,33 @@ exports.image = async (req, res) => {
 
 
 // ==========================================================
-// 🗑 DELETE DAIRY PROFILE
+// 🐄 TOGGLE MILKING STATUS
+// ==========================================================
+//
+// URL:
+//
+//     /dairy/:id/toggle-milking
+//
+// Purpose:
+//
+//     Toggle the `isMilking` field of the Dairy document.
+//
+//     false → true
+//     true  → false
+//
+// IMPORTANT:
+//
+// There is NO dairy-farm assignment check.
+//
+// The Dairy document is identified directly using:
+//
+//     req.params.id
+//
+// Only an administrator can change the milking status.
+//
 // ==========================================================
 
-exports.deleteProfile = async (req, res) => {
+exports.toggleMilking = async (req, res) => {
 
     try {
 
@@ -636,7 +619,7 @@ exports.deleteProfile = async (req, res) => {
                     success: false,
 
                     message:
-                        "Only admin can delete dairy profiles."
+                        "Only admin can change milking status."
 
                 });
 
@@ -644,7 +627,7 @@ exports.deleteProfile = async (req, res) => {
 
 
         // ==================================================
-        // VERIFY PROFILE
+        // FIND DAIRY
         // ==================================================
 
         const dairy =
@@ -668,17 +651,281 @@ exports.deleteProfile = async (req, res) => {
 
 
         // ==================================================
-        // DELETE
+        // TOGGLE STATUS
         // ==================================================
 
-        await updateService.deleteProfile(
-            id
-        );
+        dairy.isMilking =
+            !Boolean(
+                dairy.isMilking
+            );
+
+
+        // ==================================================
+        // SAVE
+        // ==================================================
+
+        await dairy.save();
 
 
         // ==================================================
         // SOCKET.IO
         // ==================================================
+
+        const io =
+            req.app.get("io");
+
+
+        if (io) {
+
+            io.to(id).emit(
+
+                "milkingStatusUpdated",
+
+                {
+
+                    dairyId:
+                        id,
+
+                    isMilking:
+                        dairy.isMilking
+
+                }
+
+            );
+
+        }
+
+
+        // ==================================================
+        // RESPONSE
+        // ==================================================
+        //
+        // If JavaScript/fetch requested JSON,
+        // return JSON.
+        //
+        // Otherwise redirect back to the dairy profile.
+        //
+        // ==================================================
+
+        const wantsJson =
+            req.xhr ||
+            (
+                req.headers.accept &&
+                req.headers.accept.includes(
+                    "application/json"
+                )
+            );
+
+
+        if (wantsJson) {
+
+            return res.json({
+
+                success:
+                    true,
+
+                message:
+                    dairy.isMilking
+                        ? "Animal marked as milking."
+                        : "Animal marked as not milking.",
+
+                dairyId:
+                    id,
+
+                isMilking:
+                    dairy.isMilking
+
+            });
+
+        }
+
+
+        // ==================================================
+        // NORMAL LINK REQUEST
+        // ==================================================
+
+        return res.redirect(
+            `/dairy/${id}`
+        );
+
+
+    } catch (err) {
+
+        console.error(
+            "TOGGLE MILKING ERROR:",
+            err
+        );
+
+
+        if (
+            err.status === 401 ||
+            err.statusCode === 401
+        ) {
+
+            return res
+                .status(401)
+                .json({
+
+                    success: false,
+
+                    message:
+                        err.message ||
+                        "Unauthorized."
+
+                });
+
+        }
+
+
+        if (
+            err.status === 403 ||
+            err.statusCode === 403
+        ) {
+
+            return res
+                .status(403)
+                .json({
+
+                    success: false,
+
+                    message:
+                        err.message ||
+                        "Only admin can change milking status."
+
+                });
+
+        }
+
+
+        if (
+            err.status === 404 ||
+            err.statusCode === 404
+        ) {
+
+            return res
+                .status(404)
+                .json({
+
+                    success: false,
+
+                    message:
+                        err.message ||
+                        "Dairy profile not found."
+
+                });
+
+        }
+
+
+        return res
+            .status(500)
+            .json({
+
+                success: false,
+
+                message:
+                    err.message ||
+                    "Failed to change milking status."
+
+            });
+
+    }
+
+};
+
+
+
+// ==========================================================
+// 🗑 DELETE DAIRY PROFILE
+// ==========================================================
+
+exports.deleteProfile = async (req, res) => {
+
+    try {
+
+        const {
+            id
+        } = req.params;
+
+
+        if (!id) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Dairy profile ID is required."
+
+                });
+
+        }
+
+
+        const user =
+            req.session.user;
+
+
+        if (!user) {
+
+            return res
+                .status(401)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Unauthorized."
+
+                });
+
+        }
+
+
+        if (
+            user.role !== "admin"
+        ) {
+
+            return res
+                .status(403)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Only admin can delete dairy profiles."
+
+                });
+
+        }
+
+
+        const dairy =
+            await Dairy.findById(id);
+
+
+        if (!dairy) {
+
+            return res
+                .status(404)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Dairy profile not found."
+
+                });
+
+        }
+
+
+        await updateService.deleteProfile(
+            id
+        );
+
 
         const io =
             req.app.get("io");
@@ -698,10 +945,6 @@ exports.deleteProfile = async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // RESPONSE
-        // ==================================================
 
         return res.json({
 
@@ -760,10 +1003,6 @@ exports.updateProfile = async (req, res) => {
 
     try {
 
-        // ==================================================
-        // PROFILE ID
-        // ==================================================
-
         const {
             id
         } = req.params;
@@ -785,10 +1024,6 @@ exports.updateProfile = async (req, res) => {
         }
 
 
-        // ==================================================
-        // USER
-        // ==================================================
-
         const user =
             req.session.user;
 
@@ -809,10 +1044,6 @@ exports.updateProfile = async (req, res) => {
         }
 
 
-        // ==================================================
-        // ADMIN CHECK
-        // ==================================================
-
         if (
             user.role !== "admin"
         ) {
@@ -830,10 +1061,6 @@ exports.updateProfile = async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // VERIFY PROFILE
-        // ==================================================
 
         const dairy =
             await Dairy.findById(id);
@@ -855,10 +1082,6 @@ exports.updateProfile = async (req, res) => {
         }
 
 
-        // ==================================================
-        // UPDATE
-        // ==================================================
-
         const updated =
             await updateService.updateProfile(
 
@@ -868,10 +1091,6 @@ exports.updateProfile = async (req, res) => {
 
             );
 
-
-        // ==================================================
-        // SOCKET.IO
-        // ==================================================
 
         const io =
             req.app.get("io");
@@ -898,10 +1117,6 @@ exports.updateProfile = async (req, res) => {
         }
 
 
-        // ==================================================
-        // RESPONSE
-        // ==================================================
-
         return res.json({
 
             success:
@@ -920,10 +1135,6 @@ exports.updateProfile = async (req, res) => {
             err
         );
 
-
-        // ==================================================
-        // KNOWN NOT FOUND ERROR
-        // ==================================================
 
         if (
             err.status === 404 ||
@@ -944,10 +1155,6 @@ exports.updateProfile = async (req, res) => {
 
         }
 
-
-        // ==================================================
-        // GENERAL ERROR
-        // ==================================================
 
         return res
             .status(500)
