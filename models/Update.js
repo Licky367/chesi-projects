@@ -6,6 +6,13 @@ const mongoose = require("mongoose");
 
 
 // ==========================================================
+// CONSTANTS
+// ==========================================================
+
+const MAX_POST_IMAGES = 10;
+
+
+// ==========================================================
 // POST COMMENT SUBDOCUMENT
 // ==========================================================
 
@@ -21,21 +28,28 @@ const postCommentSchema = new mongoose.Schema(
 
         },
 
+
         userName: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         userImage: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         text: {
 
@@ -46,6 +60,7 @@ const postCommentSchema = new mongoose.Schema(
             trim: true
 
         },
+
 
         createdAt: {
 
@@ -78,25 +93,34 @@ const medicalSchema = new mongoose.Schema(
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         type: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         details: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         markedAt: {
 
@@ -106,6 +130,7 @@ const medicalSchema = new mongoose.Schema(
 
         },
 
+
         markedBy: {
 
             type: mongoose.Schema.Types.ObjectId,
@@ -113,6 +138,7 @@ const medicalSchema = new mongoose.Schema(
             default: null
 
         },
+
 
         clearedAt: {
 
@@ -122,6 +148,7 @@ const medicalSchema = new mongoose.Schema(
 
         },
 
+
         clearedBy: {
 
             type: mongoose.Schema.Types.ObjectId,
@@ -130,19 +157,25 @@ const medicalSchema = new mongoose.Schema(
 
         },
 
+
         charges: {
 
             type: Number,
 
-            default: 0
+            default: 0,
+
+            min: 0
 
         },
+
 
         clearDescription: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         }
 
@@ -169,25 +202,34 @@ const maintenanceSchema = new mongoose.Schema(
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         type: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         description: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         markedAt: {
 
@@ -197,6 +239,7 @@ const maintenanceSchema = new mongoose.Schema(
 
         },
 
+
         markedBy: {
 
             type: mongoose.Schema.Types.ObjectId,
@@ -204,6 +247,7 @@ const maintenanceSchema = new mongoose.Schema(
             default: null
 
         },
+
 
         clearedAt: {
 
@@ -213,6 +257,7 @@ const maintenanceSchema = new mongoose.Schema(
 
         },
 
+
         clearedBy: {
 
             type: mongoose.Schema.Types.ObjectId,
@@ -221,19 +266,25 @@ const maintenanceSchema = new mongoose.Schema(
 
         },
 
+
         charges: {
 
             type: Number,
 
-            default: 0
+            default: 0,
+
+            min: 0
 
         },
+
 
         clearDescription: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         }
 
@@ -254,8 +305,7 @@ const maintenanceSchema = new mongoose.Schema(
 //
 // Created whenever a manual asset is added to a Dairy Farm.
 //
-// The Update belongs to the PARENT DAIRY FARM, not the newly
-// created asset.
+// The Update belongs to the PARENT DAIRY FARM.
 //
 // ==========================================================
 
@@ -265,7 +315,8 @@ const assetAddSchema = new mongoose.Schema(
 
         assetId: {
 
-            type: mongoose.Schema.Types.ObjectId,
+            type:
+                mongoose.Schema.Types.ObjectId,
 
             ref: "Dairy",
 
@@ -273,67 +324,91 @@ const assetAddSchema = new mongoose.Schema(
 
         },
 
+
         name: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         type: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         buyingPrice: {
 
             type: Number,
 
-            default: 0
+            default: 0,
+
+            min: 0
 
         },
+
 
         currentWorth: {
 
             type: Number,
 
-            default: 0
+            default: 0,
+
+            min: 0
 
         },
+
 
         description: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         condition: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         location: {
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
+
 
         status: {
 
             type: String,
 
-            default: "active"
+            default: "active",
+
+            trim: true
 
         }
 
@@ -362,7 +437,8 @@ const updateSchema = new mongoose.Schema(
 
         dairy: {
 
-            type: mongoose.Schema.Types.ObjectId,
+            type:
+                mongoose.Schema.Types.ObjectId,
 
             ref: "Dairy",
 
@@ -379,7 +455,10 @@ const updateSchema = new mongoose.Schema(
 
         user: {
 
-            type: mongoose.Schema.Types.ObjectId,
+            type:
+                mongoose.Schema.Types.ObjectId,
+
+            ref: "User",
 
             default: null
 
@@ -390,7 +469,9 @@ const updateSchema = new mongoose.Schema(
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
 
@@ -399,7 +480,9 @@ const updateSchema = new mongoose.Schema(
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
 
@@ -428,23 +511,15 @@ const updateSchema = new mongoose.Schema(
 
             ],
 
-            required: true
+            required: true,
+
+            index: true
 
         },
 
 
         // ==================================================
         // POST TITLE
-        // ==================================================
-        //
-        // Used for normal user-created posts.
-        //
-        // Example:
-        //
-        // "Morning activities at the farm"
-        //
-        // Other update types can simply leave this empty.
-        //
         // ==================================================
 
         title: {
@@ -462,10 +537,6 @@ const updateSchema = new mongoose.Schema(
 
         // ==================================================
         // POST TEXT
-        // ==================================================
-        //
-        // Main body/content of a normal post.
-        //
         // ==================================================
 
         text: {
@@ -485,23 +556,51 @@ const updateSchema = new mongoose.Schema(
         // POST IMAGES
         // ==================================================
         //
-        // A post can contain multiple uploaded images.
+        // New multi-image post system.
         //
-        // Example:
+        // Maximum:
         //
-        // images: [
-        //     "image-1.jpg",
-        //     "image-2.jpg",
-        //     "image-3.jpg"
-        // ]
+        //     10 images per post.
+        //
+        // The order is preserved.
         //
         // ==================================================
 
         images: {
 
-            type: [String],
+            type: [
 
-            default: []
+                {
+
+                    type: String,
+
+                    trim: true
+
+                }
+
+            ],
+
+            default: [],
+
+            validate: {
+
+                validator: function(images) {
+
+                    return (
+
+                        Array.isArray(images) &&
+
+                        images.length <=
+                            MAX_POST_IMAGES
+
+                    );
+
+                },
+
+                message:
+                    `A maximum of ${MAX_POST_IMAGES} images is allowed per post.`
+
+            }
 
         },
 
@@ -510,9 +609,7 @@ const updateSchema = new mongoose.Schema(
         // LEGACY SINGLE IMAGE
         // ==================================================
         //
-        // Kept temporarily so older posts that were created
-        // using the previous single-image system continue
-        // to work.
+        // Kept for older records and older code.
         //
         // New posts should use `images`.
         //
@@ -522,7 +619,9 @@ const updateSchema = new mongoose.Schema(
 
             type: String,
 
-            default: null
+            default: null,
+
+            trim: true
 
         },
 
@@ -535,7 +634,9 @@ const updateSchema = new mongoose.Schema(
 
             type: String,
 
-            default: ""
+            default: "",
+
+            trim: true
 
         },
 
@@ -544,15 +645,24 @@ const updateSchema = new mongoose.Schema(
         // POST LIKES
         // ==================================================
 
-        likes: [
+        likes: {
 
-            {
+            type: [
 
-                type: mongoose.Schema.Types.ObjectId
+                {
 
-            }
+                    type:
+                        mongoose.Schema.Types.ObjectId,
 
-        ],
+                    ref: "User"
+
+                }
+
+            ],
+
+            default: []
+
+        },
 
 
         // ==================================================
@@ -618,10 +728,128 @@ const updateSchema = new mongoose.Schema(
 
 
 // ==========================================================
+// PRE VALIDATE
+// ==========================================================
+//
+// Normalize post images while keeping the legacy `image`
+// field available.
+//
+// ==========================================================
+
+updateSchema.pre(
+
+    "validate",
+
+    function(next) {
+
+        // ==================================================
+        // NORMALIZE IMAGES
+        // ==================================================
+
+        if (
+            !Array.isArray(this.images)
+        ) {
+
+            this.images = [];
+
+        }
+
+
+        this.images =
+            this.images
+
+                .filter(Boolean)
+
+                .map(
+                    image =>
+                        String(image).trim()
+                )
+
+                .filter(Boolean)
+
+                .slice(
+                    0,
+                    MAX_POST_IMAGES
+                );
+
+
+        // ==================================================
+        // LEGACY IMAGE FALLBACK
+        // ==================================================
+        //
+        // If an old record has only `image`, expose it
+        // through the new `images` array as well.
+        //
+        // ==================================================
+
+        if (
+
+            this.images.length === 0 &&
+
+            this.image
+
+        ) {
+
+            this.images = [
+
+                String(
+                    this.image
+                ).trim()
+
+            ];
+
+        }
+
+
+        // ==================================================
+        // KEEP LEGACY IMAGE SYNCHRONIZED
+        // ==================================================
+        //
+        // The first image is the primary image.
+        //
+        // Older code using `update.image` therefore
+        // continues to work.
+        //
+        // ==================================================
+
+        if (
+            this.images.length > 0
+        ) {
+
+            this.image =
+                this.images[0];
+
+        } else {
+
+            this.image = null;
+
+        }
+
+
+        next();
+
+    }
+
+);
+
+
+// ==========================================================
+// STATIC: MAX POST IMAGES
+// ==========================================================
+
+updateSchema.statics.getMaxPostImages =
+function() {
+
+    return MAX_POST_IMAGES;
+
+};
+
+
+// ==========================================================
 // MODEL
 // ==========================================================
 
-module.exports =
+const Update =
 
     mongoose.models.Update ||
 
@@ -629,3 +857,19 @@ module.exports =
         "Update",
         updateSchema
     );
+
+
+// ==========================================================
+// CONSTANT EXPORT
+// ==========================================================
+
+Update.MAX_POST_IMAGES =
+    MAX_POST_IMAGES;
+
+
+// ==========================================================
+// EXPORT
+// ==========================================================
+
+module.exports =
+    Update;
