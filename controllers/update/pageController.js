@@ -1,12 +1,9 @@
- // ==========================================================
+// ==========================================================
 // controllers/update/pageController.js
 // ==========================================================
 
 const updateService =
     require("../../services/update");
-
-const Dairy =
-    require("../../models/dairy");
 
 
 // ==========================================================
@@ -199,20 +196,12 @@ async (req, res) => {
 //
 //     /dairy/:id/toggle-milking
 //
-// Toggles:
+// The controller delegates the actual database operation
+// to:
 //
-//     isMilking: false → true
-//     isMilking: true  → false
+//     updateService.toggleMilking()
 //
-// This controller ONLY changes the isMilking field.
-//
-// It does NOT:
-//
-//     • create milk records
-//     • delete milk records
-//     • modify milk history
-//     • modify milk totals
-//     • change any other Dairy fields
+// This controller does NOT access the Dairy model directly.
 //
 // ==========================================================
 
@@ -268,48 +257,13 @@ async (req, res) => {
 
 
         // ==================================================
-        // FIND DAIRY
+        // TOGGLE THROUGH SERVICE
         // ==================================================
 
         const dairy =
-            await Dairy.findById(
+            await updateService.toggleMilking(
                 dairyId
             );
-
-
-        // ==================================================
-        // DAIRY NOT FOUND
-        // ==================================================
-
-        if (!dairy) {
-
-            return res
-                .status(404)
-                .json({
-
-                    success: false,
-
-                    message:
-                        "Dairy asset not found."
-
-                });
-
-        }
-
-
-        // ==================================================
-        // TOGGLE isMilking
-        // ==================================================
-
-        dairy.isMilking =
-            !dairy.isMilking;
-
-
-        // ==================================================
-        // SAVE
-        // ==================================================
-
-        await dairy.save();
 
 
         // ==================================================
@@ -334,6 +288,56 @@ async (req, res) => {
             err
         );
 
+
+        // ==================================================
+        // NOT FOUND
+        // ==================================================
+
+        if (
+            err.message ===
+            "Dairy asset not found."
+        ) {
+
+            return res
+                .status(404)
+                .json({
+
+                    success: false,
+
+                    message:
+                        err.message
+
+                });
+
+        }
+
+
+        // ==================================================
+        // BAD REQUEST
+        // ==================================================
+
+        if (
+            err.message ===
+            "Dairy ID is required."
+        ) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success: false,
+
+                    message:
+                        err.message
+
+                });
+
+        }
+
+
+        // ==================================================
+        // SERVER ERROR
+        // ==================================================
 
         return res
             .status(500)
