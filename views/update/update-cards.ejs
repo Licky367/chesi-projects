@@ -1,59 +1,55 @@
 <% /*
 ==========================================================
-DAIRY OPERATION / COMPOSER CARDS
+DAIRY UPDATE / OPERATION CARDS
 
 FILE:
     views/update/update-cards.ejs
 
 PURPOSE:
-    Compact horizontal operation navigator for a dairy.
+    Horizontal WhatsApp-style operation cards for the
+    currently viewed dairy.
 
-    Cards may:
-        - Open the existing post modal
-        - Open a maintenance composer
-        - Clear maintenance (admin)
-        - Toggle milking status
+    Every visible card is itself clickable.
 
 OPERATIONS:
 ----------------------------------------------------------
-    1. Create Update
-       Opens the existing post modal.
 
-    2. Maintenance
-       Shown when:
-           dairy.code is null
-           dairy.code is undefined
-           dairy.code is empty
+1. CREATE UPDATE
+   Opens the existing post modal.
 
-       AND user.role is:
-           dairyWorker
-           admin
+2. MAINTENANCE
+   Visible ONLY when:
+       dairy.code is null
+       dairy.code is undefined
+       dairy.code is ""
 
-    3. Clear Maintenance
-       Shown only to:
-           admin
+   AND user is:
+       dairyWorker
+       OR admin
 
-    4. Milking Status
-       Shown when:
-           dairy.code > 0
-           dairy.code is even
+   Clicking the card opens the maintenance composer.
 
-       Example:
-           2   -> shown
-           4   -> shown
-           6   -> shown
+3. CLEAR MAINTENANCE
+   Visible ONLY to admin.
 
-           1   -> hidden
-           3   -> hidden
-           5   -> hidden
-           0   -> hidden
-           negative -> hidden
+   Clicking the card opens the maintenance-clear composer.
+
+4. MILKING STATUS
+   Visible ONLY when:
+       dairy.code > 0
+       AND dairy.code is even.
+
+   Clicking the card opens/toggles the milk-status control.
 
 IMPORTANT:
-    This component does NOT contain the actual
-    composer/modal markup.
+----------------------------------------------------------
+    There are NO separate blank composer cards.
 
-    It only includes the appropriate partials/triggers.
+    The cards below ARE the clickable controls.
+
+    The actual composer/modal partials are expected to
+    already exist elsewhere in the page or be controlled
+    by their existing JavaScript.
 
 EXPECTED DATA:
     user
@@ -88,77 +84,65 @@ EXPECTED DATA:
        DAIRY CODE
     ====================================================== */
 
-    const rawDairyCode =
+    const rawCode =
         currentDairy.code;
-
 
 
     const dairyCode =
         (
-            rawDairyCode !== null &&
-            rawDairyCode !== undefined &&
-            rawDairyCode !== ""
+            rawCode !== null &&
+            rawCode !== undefined &&
+            rawCode !== ""
         )
-            ? Number(rawDairyCode)
+            ? Number(rawCode)
             : null;
 
 
 
     /* ======================================================
-       DAIRY CODE STATES
+       CODE CONDITIONS
     ====================================================== */
 
-    const hasNoDairyCode =
-        rawDairyCode === null ||
-        rawDairyCode === undefined ||
-        rawDairyCode === "";
+    const noDairyCode =
+        rawCode === null ||
+        rawCode === undefined ||
+        rawCode === "";
 
-
-
-    const hasPositiveEvenCode =
-        dairyCode !== null &&
-        Number.isFinite(dairyCode) &&
-        dairyCode > 0 &&
-        dairyCode % 2 === 0;
-
-
-
-    /* ======================================================
-       MAINTENANCE PERMISSION
-    ====================================================== */
 
     const canMaintain =
-        hasNoDairyCode &&
+        noDairyCode &&
         (
             userRole === "dairyWorker" ||
             userRole === "admin"
         );
 
 
-
-    /* ======================================================
-       ADMIN MAINTENANCE CLEAR
-    ====================================================== */
-
     const canClearMaintenance =
         userRole === "admin";
+
+
+    const showMilkStatus =
+        dairyCode !== null &&
+        Number.isFinite(dairyCode) &&
+        dairyCode > 0 &&
+        dairyCode % 2 === 0;
 %>
 
 
 
 <section
-    class="dairy-operation-strip"
+    class="dairy-update-cards"
     aria-label="Dairy operations"
 >
 
 
     <!-- =====================================================
-         SECTION HEADER
+         HEADER
     ====================================================== -->
 
-    <div class="dairy-operation-strip-header">
+    <div class="dairy-update-header">
 
-        <div class="dairy-operation-strip-title">
+        <div class="dairy-update-title">
 
             <strong>
                 <%= currentUser.name
@@ -181,29 +165,27 @@ EXPECTED DATA:
 
 
     <!-- =====================================================
-         HORIZONTAL OPERATION CARDS
+         HORIZONTAL CARDS
     ====================================================== -->
 
     <div
-        class="dairy-operation-scroll"
+        class="dairy-update-scroll"
         role="list"
-        aria-label="Dairy operations"
     >
 
 
         <!-- =================================================
-             1. CREATE UPDATE
+             CREATE UPDATE
         ================================================== -->
 
-        <div
-            class="dairy-operation-card dairy-operation-create"
-            role="listitem"
-            tabindex="0"
-            aria-label="Create an update"
+        <button
+            type="button"
+            class="dairy-update-card dairy-update-card-create"
             data-open-post-modal
+            role="listitem"
         >
 
-            <div class="dairy-operation-icon">
+            <div class="dairy-update-card-icon">
 
                 <span aria-hidden="true">
                     ✍️
@@ -212,14 +194,14 @@ EXPECTED DATA:
             </div>
 
 
-            <div class="dairy-operation-content">
+            <div class="dairy-update-card-content">
 
                 <strong>
                     Create Update
                 </strong>
 
                 <span>
-                    Share something about
+                    Share an update about
                     <%= currentDairy.name || "the dairy" %>.
                 </span>
 
@@ -227,35 +209,37 @@ EXPECTED DATA:
 
 
             <div
-                class="dairy-operation-arrow"
+                class="dairy-update-card-arrow"
                 aria-hidden="true"
             >
                 →
             </div>
 
-        </div>
+        </button>
 
 
 
         <!-- =================================================
-             2. MAINTENANCE COMPOSER
-             
-             Render only when:
-                 dairy.code missing/null/undefined
+             MAINTENANCE
+
+             ONLY:
+                 no dairy.code
 
              AND:
-                 dairyWorker
-                 OR admin
+                 dairyWorker OR admin
         ================================================== -->
 
         <% if (canMaintain) { %>
 
-            <div
-                class="dairy-operation-card dairy-operation-maintenance"
+            <button
+                type="button"
+                class="dairy-update-card dairy-update-card-maintenance"
+                data-open-maintenance-composer
+                data-dairy-id="<%= currentDairy._id %>"
                 role="listitem"
             >
 
-                <div class="dairy-operation-icon">
+                <div class="dairy-update-card-icon">
 
                     <span aria-hidden="true">
                         🔧
@@ -264,7 +248,7 @@ EXPECTED DATA:
                 </div>
 
 
-                <div class="dairy-operation-content">
+                <div class="dairy-update-card-content">
 
                     <strong>
                         Maintenance
@@ -279,45 +263,35 @@ EXPECTED DATA:
 
 
                 <div
-                    class="dairy-operation-arrow"
+                    class="dairy-update-card-arrow"
                     aria-hidden="true"
                 >
                     →
                 </div>
 
-            </div>
-
-
-            <!-- =============================================
-                 MAINTENANCE COMPOSER PARTIAL
-
-                 Put your actual maintenance composer
-                 inside this partial.
-            ============================================== -->
-
-            <%- include("../update/maintComposer", {
-                user: currentUser,
-                dairy: currentDairy
-            }) %>
+            </button>
 
         <% } %>
 
 
 
         <!-- =================================================
-             3. CLEAR MAINTENANCE
-             
+             CLEAR MAINTENANCE
+
              ADMIN ONLY
         ================================================== -->
 
         <% if (canClearMaintenance) { %>
 
-            <div
-                class="dairy-operation-card dairy-operation-clear"
+            <button
+                type="button"
+                class="dairy-update-card dairy-update-card-clear"
+                data-open-maintenance-clear
+                data-dairy-id="<%= currentDairy._id %>"
                 role="listitem"
             >
 
-                <div class="dairy-operation-icon">
+                <div class="dairy-update-card-icon">
 
                     <span aria-hidden="true">
                         🧹
@@ -326,65 +300,51 @@ EXPECTED DATA:
                 </div>
 
 
-                <div class="dairy-operation-content">
+                <div class="dairy-update-card-content">
 
                     <strong>
                         Clear Maintenance
                     </strong>
 
                     <span>
-                        Mark the dairy maintenance
-                        as cleared.
+                        Clear the current maintenance
+                        issue.
                     </span>
 
                 </div>
 
 
                 <div
-                    class="dairy-operation-arrow"
+                    class="dairy-update-card-arrow"
                     aria-hidden="true"
                 >
                     →
                 </div>
 
-            </div>
-
-
-            <!-- =============================================
-                 MAINTENANCE CLEAR COMPOSER
-            ============================================== -->
-
-            <%- include("../update/maintenanceClearComposer", {
-                user: currentUser,
-                dairy: currentDairy
-            }) %>
+            </button>
 
         <% } %>
 
 
 
         <!-- =================================================
-             4. MILKING STATUS
-             
-             ONLY:
-                 positive
-                 even
-                 dairy.code
+             MILKING STATUS
 
-             Examples:
-                 2 -> shown
-                 4 -> shown
-                 6 -> shown
+             ONLY:
+                 positive even dairy.code
         ================================================== -->
 
-        <% if (hasPositiveEvenCode) { %>
+        <% if (showMilkStatus) { %>
 
-            <div
-                class="dairy-operation-card dairy-operation-milking"
+            <button
+                type="button"
+                class="dairy-update-card dairy-update-card-milk"
+                data-open-milk-status
+                data-dairy-id="<%= currentDairy._id %>"
                 role="listitem"
             >
 
-                <div class="dairy-operation-icon">
+                <div class="dairy-update-card-icon">
 
                     <span aria-hidden="true">
                         🥛
@@ -393,7 +353,7 @@ EXPECTED DATA:
                 </div>
 
 
-                <div class="dairy-operation-content">
+                <div class="dairy-update-card-content">
 
                     <strong>
                         Milking Status
@@ -407,31 +367,18 @@ EXPECTED DATA:
                 </div>
 
 
-                <div
-                    class="dairy-operation-toggle"
-                    aria-hidden="true"
-                >
+                <div class="dairy-update-card-arrow">
 
-                    <span class="dairy-toggle-track">
-
-                        <span class="dairy-toggle-thumb">
-                        </span>
-
+                    <span
+                        class="dairy-update-mini-toggle"
+                        aria-hidden="true"
+                    >
+                        <span></span>
                     </span>
 
                 </div>
 
-            </div>
-
-
-            <!-- =============================================
-                 MILK STATUS PARTIAL
-            ============================================== -->
-
-            <%- include("../update/milk-status", {
-                user: currentUser,
-                dairy: currentDairy
-            }) %>
+            </button>
 
         <% } %>
 
@@ -445,10 +392,10 @@ EXPECTED DATA:
 <style>
 
 /* ==========================================================
-   DAIRY OPERATION STRIP
+   UPDATE CARDS
 ========================================================== */
 
-.dairy-operation-strip {
+.dairy-update-cards {
 
     width: 100%;
 
@@ -474,7 +421,7 @@ EXPECTED DATA:
    HEADER
 ========================================================== */
 
-.dairy-operation-strip-header {
+.dairy-update-header {
 
     width: 100%;
 
@@ -486,14 +433,7 @@ EXPECTED DATA:
 }
 
 
-
-/* ==========================================================
-   TITLE
-========================================================== */
-
-.dairy-operation-strip-title {
-
-    display: block;
+.dairy-update-title {
 
     color:
         #202520;
@@ -507,7 +447,7 @@ EXPECTED DATA:
 }
 
 
-.dairy-operation-strip-title strong:first-child {
+.dairy-update-title strong:first-child {
 
     font-size:
         18px;
@@ -518,7 +458,7 @@ EXPECTED DATA:
 }
 
 
-.dairy-operation-strip-title span {
+.dairy-update-title span {
 
     color:
         #7b847e;
@@ -526,7 +466,7 @@ EXPECTED DATA:
 }
 
 
-.dairy-operation-strip-title span strong {
+.dairy-update-title span strong {
 
     color:
         #4e5952;
@@ -542,7 +482,7 @@ EXPECTED DATA:
    HORIZONTAL SCROLL
 ========================================================== */
 
-.dairy-operation-scroll {
+.dairy-update-scroll {
 
     width: 100%;
 
@@ -574,23 +514,21 @@ EXPECTED DATA:
 }
 
 
-.dairy-operation-scroll::-webkit-scrollbar {
+.dairy-update-scroll::-webkit-scrollbar {
 
-    display:
-        none;
+    display: none;
 
 }
 
 
 
 /* ==========================================================
-   OPERATION CARD
+   CARD
 ========================================================== */
 
-.dairy-operation-card {
+.dairy-update-card {
 
-    position:
-        relative;
+    position: relative;
 
     flex:
         0 0
@@ -631,7 +569,16 @@ EXPECTED DATA:
     cursor:
         pointer;
 
-    text-decoration:
+    text-align:
+        left;
+
+    font-family:
+        inherit;
+
+    appearance:
+        none;
+
+    -webkit-appearance:
         none;
 
     transition:
@@ -647,7 +594,7 @@ EXPECTED DATA:
    HOVER
 ========================================================== */
 
-.dairy-operation-card:hover {
+.dairy-update-card:hover {
 
     transform:
         translateY(-2px);
@@ -667,7 +614,7 @@ EXPECTED DATA:
    ACTIVE
 ========================================================== */
 
-.dairy-operation-card:active {
+.dairy-update-card:active {
 
     transform:
         scale(.97);
@@ -680,7 +627,7 @@ EXPECTED DATA:
    ICON
 ========================================================== */
 
-.dairy-operation-icon {
+.dairy-update-card-icon {
 
     flex:
         0 0
@@ -718,7 +665,7 @@ EXPECTED DATA:
    CONTENT
 ========================================================== */
 
-.dairy-operation-content {
+.dairy-update-card-content {
 
     min-width:
         0;
@@ -726,19 +673,10 @@ EXPECTED DATA:
     flex:
         1;
 
-    display:
-        flex;
-
-    flex-direction:
-        column;
-
-    justify-content:
-        center;
-
 }
 
 
-.dairy-operation-content strong {
+.dairy-update-card-content strong {
 
     display:
         block;
@@ -761,7 +699,7 @@ EXPECTED DATA:
 }
 
 
-.dairy-operation-content span {
+.dairy-update-card-content span {
 
     display:
         -webkit-box;
@@ -792,10 +730,11 @@ EXPECTED DATA:
    ARROW
 ========================================================== */
 
-.dairy-operation-arrow {
+.dairy-update-card-arrow {
 
     flex:
-        0 0 auto;
+        0 0
+        auto;
 
     color:
         #a0aaa4;
@@ -811,18 +750,51 @@ EXPECTED DATA:
 
 
 /* ==========================================================
-   MILKING TOGGLE VISUAL
+   CARD ICON BACKGROUNDS
 ========================================================== */
 
-.dairy-operation-toggle {
+.dairy-update-card-create
+.dairy-update-card-icon {
 
-    flex:
-        0 0 auto;
+    background:
+        #edf5ff;
 
 }
 
 
-.dairy-toggle-track {
+.dairy-update-card-maintenance
+.dairy-update-card-icon {
+
+    background:
+        #fff5e8;
+
+}
+
+
+.dairy-update-card-clear
+.dairy-update-card-icon {
+
+    background:
+        #f2f0f8;
+
+}
+
+
+.dairy-update-card-milk
+.dairy-update-card-icon {
+
+    background:
+        #edf7f7;
+
+}
+
+
+
+/* ==========================================================
+   MINI MILKING TOGGLE
+========================================================== */
+
+.dairy-update-mini-toggle {
 
     position:
         relative;
@@ -845,7 +817,7 @@ EXPECTED DATA:
 }
 
 
-.dairy-toggle-thumb {
+.dairy-update-mini-toggle span {
 
     position:
         absolute;
@@ -877,51 +849,10 @@ EXPECTED DATA:
 
 
 /* ==========================================================
-   CARD VARIATIONS
+   FOCUS
 ========================================================== */
 
-.dairy-operation-create
-.dairy-operation-icon {
-
-    background:
-        #edf5ff;
-
-}
-
-
-.dairy-operation-maintenance
-.dairy-operation-icon {
-
-    background:
-        #fff5e8;
-
-}
-
-
-.dairy-operation-clear
-.dairy-operation-icon {
-
-    background:
-        #f2f0f8;
-
-}
-
-
-.dairy-operation-milking
-.dairy-operation-icon {
-
-    background:
-        #edf7f7;
-
-}
-
-
-
-/* ==========================================================
-   ACCESSIBILITY
-========================================================== */
-
-.dairy-operation-card:focus-visible {
+.dairy-update-card:focus-visible {
 
     outline:
         2px solid
@@ -940,15 +871,7 @@ EXPECTED DATA:
 
 @media (max-width: 600px) {
 
-    .dairy-operation-strip {
-
-        margin-bottom:
-            14px;
-
-    }
-
-
-    .dairy-operation-strip-title strong:first-child {
+    .dairy-update-title strong:first-child {
 
         font-size:
             17px;
@@ -956,7 +879,7 @@ EXPECTED DATA:
     }
 
 
-    .dairy-operation-strip-title {
+    .dairy-update-title {
 
         font-size:
             12px;
@@ -964,7 +887,7 @@ EXPECTED DATA:
     }
 
 
-    .dairy-operation-card {
+    .dairy-update-card {
 
         flex-basis:
             168px;
@@ -984,7 +907,7 @@ EXPECTED DATA:
     }
 
 
-    .dairy-operation-icon {
+    .dairy-update-card-icon {
 
         flex-basis:
             39px;
@@ -1004,7 +927,7 @@ EXPECTED DATA:
     }
 
 
-    .dairy-operation-content strong {
+    .dairy-update-card-content strong {
 
         font-size:
             12px;
@@ -1012,7 +935,7 @@ EXPECTED DATA:
     }
 
 
-    .dairy-operation-content span {
+    .dairy-update-card-content span {
 
         font-size:
             9px;
@@ -1028,18 +951,22 @@ EXPECTED DATA:
 <script>
 
 /* ==========================================================
-   CREATE UPDATE CARD
+   UPDATE CARD ACTION BRIDGE
 ==========================================================
 
-   Opens the EXISTING post modal.
+   The cards themselves are clickable.
 
-   This deliberately does not create a new modal.
+   The selectors below allow the existing composer/modal
+   implementations to handle the actual operation.
 
-   It looks for common modal triggers first and then
-   falls back to clicking the existing composer trigger.
+   No extra cards are generated.
 ========================================================== */
 
 (function () {
+
+    /* ======================================================
+       CREATE UPDATE
+    ====================================================== */
 
     const createCard =
         document.querySelector(
@@ -1047,107 +974,143 @@ EXPECTED DATA:
         );
 
 
-    if (!createCard) {
-        return;
-    }
+    if (createCard) {
+
+        createCard.addEventListener(
+            "click",
+            function () {
+
+                /*
+                 * Find the existing post composer trigger.
+                 */
+
+                const trigger =
+                    document.querySelector(
+                        ".create-post-card, " +
+                        "[data-post-modal-trigger], " +
+                        "[data-open-post-modal-trigger]"
+                    );
 
 
-    function openPostModal() {
+                if (trigger) {
 
-        /*
-         * Existing modal trigger.
-         *
-         * Adjust these selectors only if your existing
-         * postModal.js uses a different trigger.
-         */
+                    trigger.click();
 
-        const trigger =
-            document.querySelector(
-                "[data-open-post-modal-trigger], " +
-                ".create-post-card, " +
-                ".post-composer-trigger, " +
-                "[data-post-modal-trigger]"
-            );
-
-
-        if (trigger && trigger !== createCard) {
-
-            trigger.click();
-
-            return;
-        }
-
-
-        /*
-         * If postModal.js exposes the modal through
-         * the .post-modal structure, attempt to activate
-         * it directly.
-         */
-
-        const modal =
-            document.querySelector(
-                ".post-modal, " +
-                "#postModal, " +
-                "[data-post-modal]"
-            );
-
-
-        if (modal) {
-
-            modal.classList.add("active");
-
-            document.body.classList.add(
-                "modal-open"
-            );
-
-        }
-
-    }
-
-
-    createCard.addEventListener(
-        "click",
-        openPostModal
-    );
-
-
-    createCard.addEventListener(
-        "keydown",
-        function (event) {
-
-            if (
-                event.key === "Enter" ||
-                event.key === " "
-            ) {
-
-                event.preventDefault();
-
-                openPostModal();
+                }
 
             }
+        );
 
-        }
-    );
+    }
+
+
+
+    /* ======================================================
+       MAINTENANCE
+    ====================================================== */
+
+    const maintenanceCard =
+        document.querySelector(
+            "[data-open-maintenance-composer]"
+        );
+
+
+    if (maintenanceCard) {
+
+        maintenanceCard.addEventListener(
+            "click",
+            function () {
+
+                const trigger =
+                    document.querySelector(
+                        "[data-maintenance-composer-trigger], " +
+                        "[data-open-maintenance-composer-trigger]"
+                    );
+
+
+                if (trigger) {
+
+                    trigger.click();
+
+                }
+
+            }
+        );
+
+    }
+
+
+
+    /* ======================================================
+       CLEAR MAINTENANCE
+    ====================================================== */
+
+    const clearMaintenanceCard =
+        document.querySelector(
+            "[data-open-maintenance-clear]"
+        );
+
+
+    if (clearMaintenanceCard) {
+
+        clearMaintenanceCard.addEventListener(
+            "click",
+            function () {
+
+                const trigger =
+                    document.querySelector(
+                        "[data-maintenance-clear-trigger], " +
+                        "[data-open-maintenance-clear-trigger]"
+                    );
+
+
+                if (trigger) {
+
+                    trigger.click();
+
+                }
+
+            }
+        );
+
+    }
+
+
+
+    /* ======================================================
+       MILKING STATUS
+    ====================================================== */
+
+    const milkStatusCard =
+        document.querySelector(
+            "[data-open-milk-status]"
+        );
+
+
+    if (milkStatusCard) {
+
+        milkStatusCard.addEventListener(
+            "click",
+            function () {
+
+                const trigger =
+                    document.querySelector(
+                        "[data-milk-status-trigger], " +
+                        "[data-open-milk-status-trigger]"
+                    );
+
+
+                if (trigger) {
+
+                    trigger.click();
+
+                }
+
+            }
+        );
+
+    }
 
 })();
 
 </script>
-
-
-<% /*
-==========================================================
-IMPORTANT PARTIAL STRUCTURE
-
-The following files should exist:
-
-    views/update/maintComposer.ejs
-
-    views/update/maintenanceClearComposer.ejs
-
-    views/update/milk-status.ejs
-
-Those files contain their own actual forms / toggles.
-
-This file controls WHEN they are rendered.
-==========================================================
-*/ %>
