@@ -188,6 +188,30 @@ router.put(
     controller.updateProfile
 );
 
+// ==========================================================
+// TOGGLE MILKING STATUS
+// ==========================================================
+//
+// POST:
+//
+// /dairy/:id/toggle-milking
+//
+// Example:
+//
+// /dairy/6a6c7fb83fa21932d62e72bd/toggle-milking
+//
+// The Dairy document is identified directly by its ID.
+//
+// No dairy-farm assignment is required.
+//
+// ==========================================================
+
+router.post(
+    "/dairy/:id/toggle-milking",
+    isAuth,
+    controller.toggleMilking
+);
+
 
 // ==========================================================
 // CREATE POST
