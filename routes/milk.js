@@ -10,19 +10,23 @@
 //
 //     app.use("/", milkRoutes);
 //
-// Therefore:
+// Therefore the final application URLs are:
 //
 //     /milk
 //     /stats
 //     /sales
 //     /milk/history/:dairyId
 //
-// are the final application URLs.
+// IMPORTANT
+// ----------------------------------------------------------
+// Changing an animal's `isMilking` status is a DAIRY
+// PROFILE operation, not a milk-history operation.
 //
-// Controllers:
+// Therefore:
 //
-//     controllers/milkCollectController.js
-//     controllers/milkController.js
+//     /dairy/:id/toggle-milking
+//
+// belongs in the dairy router.
 //
 // ==========================================================
 
@@ -44,11 +48,8 @@ const milkController =
 
 
 // ==========================================================
-// MILK COLLECTION
+// 🥛 MILK COLLECTION
 // ==========================================================
-//
-// Controller:
-//     milkCollectController
 //
 // GET  /milk
 // POST /milk
@@ -67,18 +68,18 @@ router.post(
 );
 
 
+
 // ==========================================================
-// MILK STATISTICS
+// 📊 MILK STATISTICS
 // ==========================================================
 //
 // GET  /stats
-// POST /stats/day
 //
 // Examples:
 //
-//     GET /stats
-//     GET /stats?type=day&date=2026-08-13
-//     GET /stats?type=month&month=2026-08
+//     /stats
+//     /stats?type=day&date=2026-08-13
+//     /stats?type=month&month=2026-08
 //
 // ==========================================================
 
@@ -88,17 +89,26 @@ router.get(
 );
 
 
+// ==========================================================
+// SAVE DAILY MILK STATISTICS
+// ==========================================================
+//
+// POST /stats/day
+//
+// ==========================================================
+
 router.post(
     "/stats/day",
     milkController.saveDailyStats
 );
 
 
+
 // ==========================================================
-// MILK SALES
+// 💰 MILK SALES
 // ==========================================================
 //
-// GET  /sales
+// GET /sales
 //
 // ==========================================================
 
@@ -106,6 +116,7 @@ router.get(
     "/sales",
     milkController.getSalesPage
 );
+
 
 
 // ==========================================================
@@ -122,6 +133,7 @@ router.post(
 );
 
 
+
 // ==========================================================
 // STANDING ORDER SALE
 // ==========================================================
@@ -136,13 +148,14 @@ router.post(
 );
 
 
+
 // ==========================================================
 // MILK PRICE
 // ==========================================================
 //
 // POST /sales/price
 //
-// Admin only check is handled by controller.
+// Authorization is handled by the controller.
 //
 // ==========================================================
 
@@ -150,6 +163,7 @@ router.post(
     "/sales/price",
     milkController.updateMilkPrice
 );
+
 
 
 // ==========================================================
@@ -166,6 +180,7 @@ router.post(
 );
 
 
+
 // ==========================================================
 // OMIT STANDING ORDER
 // ==========================================================
@@ -180,15 +195,29 @@ router.post(
 );
 
 
+
 // ==========================================================
-// MILKING HISTORY
+// 🐄 MILKING HISTORY
 // ==========================================================
 //
 // GET /milk/history/:dairyId
 //
+// Examples:
+//
+//     /milk/history/6a6c7fb83fa21932d62e72bd
+//
 // Optional query:
 //
 //     ?month=2026-08
+//
+// IMPORTANT
+// ----------------------------------------------------------
+// The history controller must NOT require the animal to be
+// assigned to a dairy farm.
+//
+// Any valid female dairy animal, or an animal whose code
+// satisfies your even-code rule, can have its history viewed
+// according to the controller's selection logic.
 //
 // ==========================================================
 
@@ -197,21 +226,6 @@ router.get(
     milkController.getMilkingHistory
 );
 
-
-// ==========================================================
-// TOGGLE MILKING STATUS
-// ==========================================================
-//
-// POST /milk/history/:id/status
-//
-// Admin only check is handled by controller.
-//
-// ==========================================================
-
-router.post(
-    "/milk/history/:id/status",
-    milkController.toggleMilkingStatus
-);
 
 
 // ==========================================================
@@ -222,17 +236,21 @@ module.exports =
     router;
 
 
+
 // ==========================================================
 // ROUTE SUMMARY
 // ==========================================================
 //
 // GET
+//
 //     /milk
 //     /stats
 //     /sales
 //     /milk/history/:dairyId
 //
+//
 // POST
+//
 //     /milk
 //     /stats/day
 //     /sales/manual
@@ -240,6 +258,21 @@ module.exports =
 //     /sales/price
 //     /sales/standing-order/add
 //     /sales/standing-order/omit
+//
+// ==========================================================
+//
+// NOTE:
+//
+// There is intentionally NO:
+//
 //     /milk/history/:id/status
+//
+// here.
+//
+// `isMilking` belongs to the dairy profile:
+//
+//     /dairy/:id/toggle-milking
+//
+// That route must be defined in routes/dairy.js.
 //
 // ==========================================================
