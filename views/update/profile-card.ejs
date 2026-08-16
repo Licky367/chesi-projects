@@ -23,8 +23,7 @@
 
 
     /*
-     * Backwards compatibility for records that
-     * still have only profileImage.
+     * Backwards compatibility.
      */
 
     if (
@@ -51,14 +50,54 @@
     }
 
 
+    /*
+     * Maximum of five images.
+     */
+
     profileImages =
         profileImages.slice(0, 5);
 
 
+    /*
+     * Determine which existing image is currently
+     * the main profile image.
+     *
+     * profileImage is the source of truth.
+     */
+
+    let initialProfileIndex = 0;
+
+
+    if (dairy.profileImage) {
+
+        const existingMain =
+            String(dairy.profileImage);
+
+
+        const foundIndex =
+            profileImages.indexOf(
+                existingMain
+            );
+
+
+        if (foundIndex >= 0) {
+
+            initialProfileIndex =
+                foundIndex;
+
+        }
+
+    }
+
+
     const initialProfileImage =
+        profileImages[
+            initialProfileIndex
+        ] ||
         profileImages[0] ||
         dairy.displayImage ||
         "";
+
 %>
 
 
@@ -194,6 +233,7 @@
                 class="profile-avatar"
             >
 
+
             <% if (profileImages.length > 1) { %>
 
                 <span class="profile-image-count">
@@ -210,6 +250,7 @@
             <% } %>
 
         </button>
+
 
 
         <% if (user?.role === "admin") { %>
@@ -250,7 +291,10 @@
                 <p class="profile-image-help">
 
                     Select up to
-                    <strong>5 photos</strong>
+                    <strong>5 photos</strong>.
+
+                    Tap a photo to make it
+                    <strong>Main</strong>.
 
                 </p>
 
@@ -611,6 +655,27 @@
 
     <% } %>
 
+
+    <% if (user?.role === "admin") { %>
+
+        <button
+            type="button"
+            id="setMainProfileImage"
+            class="set-main-profile-button"
+            hidden
+        >
+
+            <i
+                class="bi bi-star-fill"
+                aria-hidden="true"
+            ></i>
+
+            Set as Main
+
+        </button>
+
+    <% } %>
+
 </div>
 
 
@@ -692,11 +757,6 @@
 
     -webkit-tap-highlight-color: transparent;
 
-    transition:
-        background .16s ease,
-        color .16s ease,
-        transform .12s ease;
-
 }
 
 
@@ -760,36 +820,6 @@
 .profile-dropdown.open {
 
     display: block;
-
-    animation:
-        profileDropdownIn
-        .15s ease
-        both;
-
-}
-
-
-@keyframes profileDropdownIn {
-
-    from {
-
-        opacity: 0;
-
-        transform:
-            translateY(-5px)
-            scale(.98);
-
-    }
-
-    to {
-
-        opacity: 1;
-
-        transform:
-            translateY(0)
-            scale(1);
-
-    }
 
 }
 
@@ -998,13 +1028,6 @@
 }
 
 
-.profile-image-count i {
-
-    font-size: 11px;
-
-}
-
-
 /* =========================================================
    IMAGE EDITOR
 ========================================================= */
@@ -1053,13 +1076,6 @@
 }
 
 
-.profile-image-upload-button:hover {
-
-    background: #e9f4ec;
-
-}
-
-
 .profile-image-help {
 
     margin: 7px 0 10px;
@@ -1070,6 +1086,10 @@
 
 }
 
+
+/* =========================================================
+   IMAGE PREVIEW
+========================================================= */
 
 .profile-image-preview {
 
@@ -1097,7 +1117,11 @@
 
     background: #edf2ef;
 
-    border: 1px solid #dce5df;
+    border: 2px solid #dce5df;
+
+    cursor: pointer;
+
+    -webkit-tap-highlight-color: transparent;
 
 }
 
@@ -1115,15 +1139,22 @@
 }
 
 
-.profile-image-preview-item:first-child {
+.profile-image-preview-item.is-main {
 
-    border:
-        2px solid #198754;
+    border-color: #198754;
+
+    box-shadow:
+        0 0 0 2px rgba(
+            25,
+            135,
+            84,
+            .15
+        );
 
 }
 
 
-.profile-image-preview-item:first-child::after {
+.profile-image-preview-item.is-main::after {
 
     content: "Main";
 
@@ -1133,11 +1164,16 @@
 
     bottom: 3px;
 
-    padding: 2px 5px;
+    padding: 3px 6px;
 
     border-radius: 5px;
 
-    background: rgba(20, 92, 49, .9);
+    background: rgba(
+        20,
+        92,
+        49,
+        .92
+    );
 
     color: #ffffff;
 
@@ -1291,7 +1327,12 @@
     border-color: #198754;
 
     box-shadow:
-        0 0 0 3px rgba(25, 135, 84, .10);
+        0 0 0 3px rgba(
+            25,
+            135,
+            84,
+            .10
+        );
 
 }
 
@@ -1383,13 +1424,6 @@
 }
 
 
-.save-profile-button:hover {
-
-    background: #0e572c;
-
-}
-
-
 .save-profile-button:disabled {
 
     opacity: .65;
@@ -1404,13 +1438,6 @@
     background: #eef2ef;
 
     color: #4e5852;
-
-}
-
-
-.cancel-profile-button:hover {
-
-    background: #e3e9e5;
 
 }
 
@@ -1505,7 +1532,12 @@
     border-radius: 4px;
 
     box-shadow:
-        0 10px 40px rgba(0,0,0,.35);
+        0 10px 40px rgba(
+            0,
+            0,
+            0,
+            .35
+        );
 
 }
 
@@ -1549,14 +1581,6 @@
 }
 
 
-.profile-viewer-close:hover {
-
-    background:
-        rgba(255,255,255,.20);
-
-}
-
-
 .profile-viewer-counter {
 
     position: absolute;
@@ -1587,6 +1611,10 @@
 
 }
 
+
+/* =========================================================
+   VIEWER NAVIGATION
+========================================================= */
 
 .profile-viewer-nav {
 
@@ -1624,14 +1652,6 @@
 }
 
 
-.profile-viewer-nav:hover {
-
-    background:
-        rgba(255,255,255,.22);
-
-}
-
-
 .profile-viewer-prev {
 
     left: 16px;
@@ -1647,13 +1667,89 @@
 
 
 /* =========================================================
+   SET MAIN BUTTON
+========================================================= */
+
+.set-main-profile-button {
+
+    position: absolute;
+
+    left: 50%;
+
+    bottom: max(
+        24px,
+        env(safe-area-inset-bottom)
+    );
+
+    z-index: 6;
+
+    transform: translateX(-50%);
+
+    min-height: 42px;
+
+    padding: 0 17px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    border: none;
+
+    border-radius: 999px;
+
+    background: #ffffff;
+
+    color: #145c31;
+
+    font: inherit;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    box-shadow:
+        0 6px 24px rgba(
+            0,
+            0,
+            0,
+            .28
+        );
+
+    cursor: pointer;
+
+}
+
+
+.set-main-profile-button.is-main {
+
+    background: #145c31;
+
+    color: #ffffff;
+
+}
+
+
+.set-main-profile-button:hover {
+
+    transform:
+        translateX(-50%)
+        translateY(-1px);
+
+}
+
+
+/* =========================================================
    EDIT MODE
 ========================================================= */
 
 .profile-card.editing
 .profile-avatar-button {
 
-    cursor: default;
+    cursor: pointer;
 
 }
 
@@ -1779,6 +1875,13 @@
     .profile-viewer-next {
 
         right: 8px;
+
+    }
+
+
+    .set-main-profile-button {
+
+        bottom: 20px;
 
     }
 
@@ -1946,24 +2049,6 @@
         );
 
 
-    const nameText =
-        card.querySelector(
-            "#nameText"
-        );
-
-
-    const massText =
-        card.querySelector(
-            "#massText"
-        );
-
-
-    const dobText =
-        card.querySelector(
-            "#dobText"
-        );
-
-
     const viewer =
         document.querySelector(
             "#profileImageViewer"
@@ -2006,9 +2091,15 @@
         );
 
 
+    const setMainButton =
+        document.querySelector(
+            "#setMainProfileImage"
+        );
+
+
 
     /* =====================================================
-       PROFILE IMAGES
+       EXISTING PROFILE IMAGES
     ===================================================== */
 
     let profileImages =
@@ -2029,9 +2120,48 @@
             .slice(0, 5);
 
 
-    let viewerIndex = 0;
+    /*
+     * Existing main profile image.
+     */
+
+    let mainProfileIndex =
+        <%= initialProfileIndex %>;
+
+
+    if (
+        !Number.isInteger(
+            mainProfileIndex
+        ) ||
+        mainProfileIndex < 0 ||
+        mainProfileIndex >= profileImages.length
+    ) {
+
+        mainProfileIndex = 0;
+
+    }
+
+
+    /*
+     * New files selected during the
+     * current edit session.
+     */
 
     let selectedFiles = [];
+
+
+    /*
+     * Main index among selectedFiles.
+     */
+
+    let selectedMainIndex = 0;
+
+
+    /*
+     * Viewer index.
+     */
+
+    let viewerIndex =
+        mainProfileIndex;
 
 
 
@@ -2163,8 +2293,12 @@
             if (
                 dropdown &&
                 menuButton &&
-                !dropdown.contains(event.target) &&
-                !menuButton.contains(event.target)
+                !dropdown.contains(
+                    event.target
+                ) &&
+                !menuButton.contains(
+                    event.target
+                )
             ) {
 
                 closeMenu();
@@ -2291,6 +2425,8 @@
 
             selectedFiles = [];
 
+            selectedMainIndex = 0;
+
 
             if (imageInput) {
 
@@ -2409,8 +2545,28 @@
                 );
 
 
+            /*
+             * Keep the currently selected main
+             * inside the valid range.
+             */
+
+            if (
+                selectedMainIndex >=
+                selectedFiles.length
+            ) {
+
+                selectedMainIndex = 0;
+
+            }
+
+
             renderImagePreview();
 
+
+            /*
+             * Clear the input so the same
+             * file can be selected again later.
+             */
 
             imageInput.value = "";
 
@@ -2448,6 +2604,18 @@
                     "profile-image-preview-item";
 
 
+                if (
+                    index ===
+                    selectedMainIndex
+                ) {
+
+                    wrapper.classList.add(
+                        "is-main"
+                    );
+
+                }
+
+
                 const image =
                     document.createElement(
                         "img"
@@ -2455,7 +2623,8 @@
 
 
                 image.alt =
-                    index === 0
+                    index ===
+                    selectedMainIndex
                         ? "Main selected profile photo"
                         : "Selected profile photo";
 
@@ -2480,6 +2649,25 @@
 
                 wrapper.appendChild(
                     image
+                );
+
+
+                /*
+                 * Tapping a preview makes it
+                 * the main profile image.
+                 */
+
+                wrapper.addEventListener(
+                    "click",
+                    function () {
+
+                        selectedMainIndex =
+                            index;
+
+
+                        renderImagePreview();
+
+                    }
                 );
 
 
@@ -2600,7 +2788,9 @@
 
         const response =
             await fetch(
-                `/dairy/${encodeURIComponent(dairyId)}/update`,
+                `/dairy/${encodeURIComponent(
+                    dairyId
+                )}/update`,
                 {
 
                     method: "PUT",
@@ -2619,7 +2809,9 @@
                     },
 
                     body:
-                        JSON.stringify(data)
+                        JSON.stringify(
+                            data
+                        )
 
                 }
             );
@@ -2674,16 +2866,22 @@
 
 
     /* =====================================================
-       SAVE PROFILE IMAGE
+       SAVE PROFILE IMAGES
        
        PUT /dairy/:id/image
        
-       Current backend:
+       NEW CONTRACT:
        
-       upload.single("profileImage")
+       profileImages      -> up to 5 files
+       mainProfileIndex   -> selected main file index
     ===================================================== */
 
-    async function saveProfileImage() {
+    async function saveProfileImages() {
+
+        /*
+         * No new photos selected means there is
+         * nothing to upload.
+         */
 
         if (!selectedFiles.length) {
 
@@ -2692,19 +2890,68 @@
         }
 
 
+        if (
+            selectedFiles.length > 5
+        ) {
+
+            throw new Error(
+                "You can upload a maximum of 5 profile photos."
+            );
+
+        }
+
+
+        if (
+            selectedMainIndex < 0 ||
+            selectedMainIndex >=
+                selectedFiles.length
+        ) {
+
+            throw new Error(
+                "Please select a main profile photo."
+            );
+
+        }
+
+
         const formData =
             new FormData();
 
 
+        /*
+         * Send every selected photo.
+         */
+
+        selectedFiles.forEach(
+            function (file) {
+
+                formData.append(
+                    "profileImages",
+                    file
+                );
+
+            }
+        );
+
+
+        /*
+         * Tell the backend which uploaded
+         * photo is the main profile image.
+         */
+
         formData.append(
-            "profileImage",
-            selectedFiles[0]
+            "mainProfileIndex",
+            String(
+                selectedMainIndex
+            )
         );
 
 
         const response =
             await fetch(
-                `/dairy/${encodeURIComponent(dairyId)}/image`,
+                `/dairy/${encodeURIComponent(
+                    dairyId
+                )}/image`,
                 {
 
                     method: "PUT",
@@ -2719,33 +2966,43 @@
             );
 
 
+        let result = null;
+
+
+        try {
+
+            result =
+                await response.json();
+
+        } catch (error) {
+
+            result = null;
+
+        }
+
+
         if (!response.ok) {
 
-            let message =
-                "Failed to update profile image.";
+            throw new Error(
+
+                result?.message ||
+                "Failed to update profile images."
+
+            );
+
+        }
 
 
-            try {
-
-                const result =
-                    await response.json();
-
-                if (result?.message) {
-
-                    message =
-                        result.message;
-
-                }
-
-            } catch (error) {
-
-                /* Ignore non-JSON response. */
-
-            }
-
+        if (
+            result &&
+            result.success === false
+        ) {
 
             throw new Error(
-                message
+
+                result.message ||
+                "Failed to update profile images."
+
             );
 
         }
@@ -2759,9 +3016,6 @@
 
     /* =====================================================
        SAVE CHANGES
-       
-       IMPORTANT:
-       This is the handler that was missing.
     ===================================================== */
 
     saveButton?.addEventListener(
@@ -2803,21 +3057,21 @@
 
 
                 /*
-                 * Save text/profile information.
+                 * Save normal profile information.
                  */
 
                 await saveProfileInformation();
 
 
                 /*
-                 * Save image if selected.
+                 * Save all selected profile images.
                  */
 
-                await saveProfileImage();
+                await saveProfileImages();
 
 
                 /*
-                 * Display success state.
+                 * Success.
                  */
 
                 saveButton.innerHTML =
@@ -2833,8 +3087,7 @@
 
 
                 /*
-                 * Reload from MongoDB so all displayed
-                 * values come from the saved record.
+                 * Reload from MongoDB.
                  */
 
                 setTimeout(
@@ -2875,7 +3128,7 @@
 
 
     /* =====================================================
-       IMAGE VIEWER
+       UPDATE VIEWER
     ===================================================== */
 
     function updateViewer() {
@@ -2930,9 +3183,60 @@
 
         }
 
+
+        /*
+         * Update the Set as Main button.
+         */
+
+        if (setMainButton) {
+
+            const isMain =
+                viewerIndex ===
+                mainProfileIndex;
+
+
+            setMainButton.hidden =
+                !card.classList.contains(
+                    "editing"
+                );
+
+
+            setMainButton.classList.toggle(
+                "is-main",
+                isMain
+            );
+
+
+            setMainButton.innerHTML =
+                isMain
+
+                    ? `
+                        <i
+                            class="bi bi-star-fill"
+                            aria-hidden="true"
+                        ></i>
+
+                        Main Photo
+                      `
+
+                    : `
+                        <i
+                            class="bi bi-star"
+                            aria-hidden="true"
+                        ></i>
+
+                        Set as Main
+                      `;
+
+        }
+
     }
 
 
+
+    /* =====================================================
+       OPEN VIEWER
+    ===================================================== */
 
     function openViewer(index) {
 
@@ -2947,7 +3251,19 @@
 
 
         viewerIndex =
-            Number(index) || 0;
+            Number(index);
+
+
+        if (
+            !Number.isInteger(
+                viewerIndex
+            )
+        ) {
+
+            viewerIndex =
+                mainProfileIndex;
+
+        }
 
 
         updateViewer();
@@ -2970,6 +3286,10 @@
     }
 
 
+
+    /* =====================================================
+       CLOSE VIEWER
+    ===================================================== */
 
     function closeViewer() {
 
@@ -2998,6 +3318,10 @@
 
 
 
+    /* =====================================================
+       NEXT IMAGE
+    ===================================================== */
+
     function nextImage() {
 
         if (
@@ -3021,6 +3345,10 @@
     }
 
 
+
+    /* =====================================================
+       PREVIOUS IMAGE
+    ===================================================== */
 
     function previousImage() {
 
@@ -3048,17 +3376,112 @@
 
 
 
+    /* =====================================================
+       SET CURRENT IMAGE AS MAIN
+       
+       For existing images this changes the
+       local main selection. The actual database
+       update happens through the save process.
+    ===================================================== */
+
+    setMainButton?.addEventListener(
+        "click",
+        function (event) {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+
+            if (
+                !card.classList.contains(
+                    "editing"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                !profileImages.length
+            ) {
+
+                return;
+
+            }
+
+
+            mainProfileIndex =
+                viewerIndex;
+
+
+            /*
+             * Update the circular avatar immediately.
+             */
+
+            if (avatar) {
+
+                avatar.src =
+                    profileImages[
+                        mainProfileIndex
+                    ];
+
+            }
+
+
+            updateViewer();
+
+        }
+    );
+
+
+
+    /* =====================================================
+       PROFILE IMAGE TRIGGER
+    ===================================================== */
+
     imageTrigger?.addEventListener(
         "click",
         function (event) {
 
             event.preventDefault();
 
-            openViewer(0);
+
+            /*
+             * When editing and new files have
+             * been selected, the preview files
+             * are not part of profileImages yet.
+             *
+             * Their selection is handled through
+             * the preview area.
+             */
+
+            if (
+                card.classList.contains(
+                    "editing"
+                ) &&
+                selectedFiles.length
+            ) {
+
+                return;
+
+            }
+
+
+            openViewer(
+                mainProfileIndex
+            );
 
         }
     );
 
+
+
+    /* =====================================================
+       VIEWER CLOSE
+    ===================================================== */
 
     viewerClose?.addEventListener(
         "click",
@@ -3073,6 +3496,11 @@
         }
     );
 
+
+
+    /* =====================================================
+       VIEWER NAVIGATION
+    ===================================================== */
 
     viewerPrev?.addEventListener(
         "click",
@@ -3101,6 +3529,11 @@
         }
     );
 
+
+
+    /* =====================================================
+       BACKDROP CLOSE
+    ===================================================== */
 
     viewer?.addEventListener(
         "click",
@@ -3295,6 +3728,15 @@
     ===================================================== */
 
     setEditMode(false);
+
+
+    /*
+     * Existing images are not displayed in the
+     * edit preview until new photos are selected.
+     *
+     * The circular avatar always displays
+     * profileImage.
+     */
 
 })();
 
