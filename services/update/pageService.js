@@ -228,8 +228,6 @@ async (
     // ======================================================
     // DETERMINE WHICH DAIRY RECORDS SUPPLY THE FEED
     //
-    // THIS IS THE IMPORTANT PART.
-    //
     // For a Dairy Farm:
     //
     //     Farm itself
@@ -617,6 +615,91 @@ async (
         assignedFarms
 
     };
+
+};
+
+
+// ==========================================================
+// TOGGLE MILKING STATUS
+//
+// Toggles only the isMilking field.
+//
+//     false -> true
+//     true  -> false
+//
+// Does NOT:
+//
+//     • create milk records
+//     • delete milk records
+//     • modify milk history
+//     • modify milk totals
+//     • modify any other Dairy fields
+//
+// Returns the updated Dairy document.
+//
+// ==========================================================
+
+exports.toggleMilking =
+async (
+    dairyId
+) => {
+
+    // ======================================================
+    // VALIDATE ID
+    // ======================================================
+
+    if (!dairyId) {
+
+        throw new Error(
+            "Dairy ID is required."
+        );
+
+    }
+
+
+    // ======================================================
+    // GET DAIRY
+    // ======================================================
+
+    const dairy =
+        await Dairy.findById(
+            dairyId
+        );
+
+
+    // ======================================================
+    // DAIRY NOT FOUND
+    // ======================================================
+
+    if (!dairy) {
+
+        throw new Error(
+            "Dairy asset not found."
+        );
+
+    }
+
+
+    // ======================================================
+    // TOGGLE isMilking
+    // ======================================================
+
+    dairy.isMilking =
+        !dairy.isMilking;
+
+
+    // ======================================================
+    // SAVE ONLY THE TOGGLED DOCUMENT
+    // ======================================================
+
+    await dairy.save();
+
+
+    // ======================================================
+    // RETURN UPDATED DAIRY
+    // ======================================================
+
+    return dairy;
 
 };
 
