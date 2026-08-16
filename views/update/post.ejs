@@ -15,6 +15,7 @@
      - Comments
 ========================================================== -->
 
+
 <%
     /* ========================================================
        NORMALIZE POST IMAGES
@@ -26,18 +27,29 @@
         Array.isArray(item.images) &&
         item.images.length
     ) {
-        postImages = item.images.filter(Boolean);
+
+        postImages =
+            item.images.filter(Boolean);
+
     }
     else if (item.image) {
-        postImages = [item.image];
+
+        postImages = [
+            item.image
+        ];
+
     }
 
-    const visibleImages = postImages.slice(0, 4);
 
-    const remainingImages = Math.max(
-        0,
-        postImages.length - 4
-    );
+    const visibleImages =
+        postImages.slice(0, 4);
+
+
+    const remainingImages =
+        Math.max(
+            0,
+            postImages.length - 4
+        );
 
 
     /* ========================================================
@@ -49,13 +61,27 @@
         item.comment ||
         "";
 
+
     const isLongPost =
         postText.length > 100;
 
+
     const shortPostText =
         isLongPost
-            ? postText.substring(0, 100).trim()
+            ? postText
+                .substring(0, 100)
+                .trim()
             : postText;
+
+
+    /* ========================================================
+       POST TITLE
+    ======================================================== */
+
+    const postTitle =
+        item.title ||
+        "Update";
+
 %>
 
 
@@ -70,13 +96,20 @@
     data-images="<%= JSON.stringify(postImages).replace(/"/g, '&quot;') %>"
 >
 
+
     <!-- ======================================================
          HEADER
     ======================================================= -->
 
     <div class="feed-header">
 
+
         <div class="feed-user">
+
+
+            <!-- ==================================================
+                 USER AVATAR
+            =================================================== -->
 
             <img
                 src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
@@ -84,45 +117,76 @@
                 alt="<%= item.userName || 'User' %>"
             >
 
+
+            <!-- ==================================================
+                 USER INFORMATION
+            =================================================== -->
+
             <div class="feed-user-info">
+
+
+                <!-- ==================================================
+                     META LINE
+                =================================================== -->
 
                 <div class="post-meta-line">
 
+
                     <strong class="post-user-name">
+
                         <%= item.userName || "User" %>
+
                     </strong>
+
 
                     <% if (
                         item.dairyName &&
                         item.dairyId
                     ) { %>
 
+
                         <span class="post-meta-action">
+
                             about
+
                         </span>
+
 
                         <a
                             href="/dairy/<%= item.dairyId %>"
                             class="post-subject"
                         >
+
                             <%= item.dairyName %>
+
                         </a>
+
 
                     <% } %>
 
+
                 </div>
 
+
+                <!-- ==================================================
+                     POST TIME
+                =================================================== -->
+
                 <small class="post-time">
+
                     <%= item.dateText || "" %>
+
                 </small>
 
+
             </div>
+
 
         </div>
 
 
         <!-- ==================================================
-             DELETE
+             DELETE POST
         =================================================== -->
 
         <% if (
@@ -138,6 +202,7 @@
             )
         ) { %>
 
+
             <button
                 class="delete-post"
                 data-id="<%= item._id %>"
@@ -146,77 +211,98 @@
                 aria-label="Delete Post"
                 type="button"
             >
+
                 <i
                     class="bi bi-trash3-fill"
                     aria-hidden="true"
                 ></i>
+
             </button>
 
+
         <% } %>
+
 
     </div>
 
 
     <!-- ======================================================
-         BODY
+         POST BODY
     ======================================================= -->
 
     <div class="feed-body post-body">
 
+
         <!-- ==================================================
-             TITLE
+             POST TITLE
         =================================================== -->
 
-        <% if (item.title) { %>
+        <h3 class="post-title">
 
-            <h3 class="post-title">
-                <%= item.title %>
-            </h3>
+            <%= postTitle %>
 
-        <% } %>
+        </h3>
 
 
         <!-- ==================================================
-             MESSAGE
+             POST MESSAGE
         =================================================== -->
 
         <% if (postText) { %>
+
 
             <div
                 class="post-message"
                 data-long="<%= isLongPost ? 'true' : 'false' %>"
             >
 
+
                 <% if (isLongPost) { %>
 
+
                     <span class="post-message-short">
+
                         <%= shortPostText %>...
+
                     </span>
+
 
                     <span
                         class="post-message-full"
                         hidden
                     >
+
                         <%= postText %>
+
                     </span>
+
 
                     <button
                         type="button"
                         class="see-more-post"
                         aria-expanded="false"
                     >
+
                         See more
+
                     </button>
+
 
                 <% } else { %>
 
+
                     <span class="post-message-full">
+
                         <%= postText %>
+
                     </span>
+
 
                 <% } %>
 
+
             </div>
+
 
         <% } %>
 
@@ -226,6 +312,7 @@
         =================================================== -->
 
         <% if (visibleImages.length) { %>
+
 
             <div
                 class="
@@ -237,7 +324,9 @@
                 "
             >
 
+
                 <% visibleImages.forEach((image, index) => { %>
+
 
                     <button
                         type="button"
@@ -252,36 +341,47 @@
                         aria-label="View image <%= index + 1 %>"
                     >
 
+
                         <img
                             src="<%= image %>"
                             alt="Post image <%= index + 1 %>"
                             loading="lazy"
                         >
 
+
                         <% if (
                             index === 3 &&
                             remainingImages > 0
                         ) { %>
 
+
                             <span class="post-more-images">
+
                                 +<%= remainingImages %>
+
                             </span>
+
 
                         <% } %>
 
+
                     </button>
+
 
                 <% }) %>
 
+
             </div>
 
+
         <% } %>
+
 
     </div>
 
 
     <!-- ======================================================
-         ACTIONS
+         POST ACTIONS
     ======================================================= -->
 
     <%- include("partials/feed-actions", {
@@ -300,6 +400,7 @@
         type: "post"
     }) %>
 
+
 </article>
 
 
@@ -313,31 +414,50 @@
     aria-hidden="true"
 >
 
+
+    <!-- ======================================================
+         CLOSE
+    ======================================================= -->
+
     <button
         type="button"
         class="post-viewer-close"
         aria-label="Close image viewer"
     >
+
         <i class="bi bi-x-lg"></i>
+
     </button>
 
+
+    <!-- ======================================================
+         PREVIOUS
+    ======================================================= -->
 
     <button
         type="button"
         class="post-viewer-prev"
         aria-label="Previous image"
     >
+
         <i class="bi bi-chevron-left"></i>
+
     </button>
 
 
+    <!-- ======================================================
+         VIEWER CONTENT
+    ======================================================= -->
+
     <div class="post-viewer-content">
+
 
         <img
             class="post-viewer-image"
             src=""
             alt="Post image"
         >
+
 
         <div class="post-viewer-counter">
 
@@ -353,16 +473,24 @@
 
         </div>
 
+
     </div>
 
+
+    <!-- ======================================================
+         NEXT
+    ======================================================= -->
 
     <button
         type="button"
         class="post-viewer-next"
         aria-label="Next image"
     >
+
         <i class="bi bi-chevron-right"></i>
+
     </button>
+
 
 </div>
 
@@ -374,12 +502,48 @@
 
 <style>
 
+
+/* ==========================================================
+   POST CARD
+========================================================== */
+
+.post-card {
+
+    position: relative;
+
+    width: 100%;
+
+    text-align: left !important;
+
+}
+
+
 /* ==========================================================
    POST BODY
 ========================================================== */
 
 .post-card .post-body {
+
+    display: block;
+
+    position: relative;
+
     width: 100%;
+
+    height: auto;
+
+    min-height: 0;
+
+    margin: 0;
+
+    padding: 17px 20px 18px;
+
+    background: #ffffff;
+
+    text-align: left !important;
+
+    box-sizing: border-box;
+
 }
 
 
@@ -388,11 +552,27 @@
 ========================================================== */
 
 .post-card .post-title {
-    margin: 0 0 7px;
+
+    display: block;
+
+    width: 100%;
+
+    margin: 0 0 8px;
+
+    padding: 0;
+
+    color: #285d39;
+
     font-size: 18px;
-    line-height: 1.35;
+
     font-weight: 700;
-    color: #111827;
+
+    line-height: 1.4;
+
+    text-align: left !important;
+
+    box-sizing: border-box;
+
 }
 
 
@@ -400,17 +580,69 @@
    MESSAGE
 ========================================================== */
 
-.post-message {
-    font-size: 14px;
-    line-height: 1.55;
-    color: #374151;
+.post-card .post-message {
+
+    display: block;
+
+    width: 100%;
+
+    margin: 0;
+
+    padding: 0;
+
+    color: #3f4d44;
+
+    font-size: 15px;
+
+    font-weight: 400;
+
+    line-height: 1.7;
+
+    text-align: left !important;
+
     white-space: pre-wrap;
+
     word-break: break-word;
+
+    overflow-wrap: anywhere;
+
+    box-sizing: border-box;
+
 }
 
+
+/* ==========================================================
+   MESSAGE SPANS
+========================================================== */
+
+.post-card
 .post-message-short,
+
+.post-card
 .post-message-full {
+
+    display: inline;
+
+    margin: 0;
+
+    padding: 0;
+
+    color: inherit;
+
+    font-size: inherit;
+
+    font-weight: inherit;
+
+    line-height: inherit;
+
+    text-align: left !important;
+
     white-space: pre-wrap;
+
+    word-break: break-word;
+
+    overflow-wrap: anywhere;
+
 }
 
 
@@ -418,19 +650,39 @@
    SEE MORE
 ========================================================== */
 
-.see-more-post {
-    border: 0;
+.post-card .see-more-post {
+
+    display: inline;
+
+    margin: 0 0 0 5px;
+
     padding: 0;
-    margin-left: 4px;
+
+    border: 0;
 
     background: transparent;
 
     color: #166534;
 
-    font-weight: 700;
+    font-family: inherit;
+
     font-size: inherit;
 
+    font-weight: 700;
+
+    line-height: inherit;
+
+    text-align: left;
+
     cursor: pointer;
+
+}
+
+
+.post-card .see-more-post:hover {
+
+    color: #14532d;
+
 }
 
 
@@ -446,11 +698,16 @@
 
     width: 100%;
 
-    margin-top: 12px;
+    margin: 14px 0 0;
+
+    padding: 0;
 
     overflow: hidden;
 
     border-radius: 9px;
+
+    box-sizing: border-box;
+
 }
 
 
@@ -459,7 +716,9 @@
 ========================================================== */
 
 .post-image-count-1 {
+
     grid-template-columns: 1fr;
+
 }
 
 
@@ -468,7 +727,12 @@
 ========================================================== */
 
 .post-image-count-2 {
-    grid-template-columns: repeat(2, 1fr);
+
+    grid-template-columns: repeat(
+        2,
+        minmax(0, 1fr)
+    );
+
 }
 
 
@@ -477,12 +741,20 @@
 ========================================================== */
 
 .post-image-count-3 {
-    grid-template-columns: repeat(2, 1fr);
+
+    grid-template-columns: repeat(
+        2,
+        minmax(0, 1fr)
+    );
+
 }
+
 
 .post-image-count-3
 .post-image-item:first-child {
+
     grid-row: span 2;
+
 }
 
 
@@ -491,7 +763,12 @@
 ========================================================== */
 
 .post-image-count-4 {
-    grid-template-columns: repeat(2, 1fr);
+
+    grid-template-columns: repeat(
+        2,
+        minmax(0, 1fr)
+    );
+
 }
 
 
@@ -506,24 +783,34 @@
     display: block;
 
     width: 100%;
+
     min-width: 0;
+
+    min-height: 0;
+
+    margin: 0;
 
     padding: 0;
 
     border: 0;
+
+    border-radius: 0;
+
+    outline: none;
 
     background: #f3f4f6;
 
     overflow: hidden;
 
     cursor: pointer;
+
+    box-sizing: border-box;
+
 }
 
 
 /* ==========================================================
-   IMAGES
-
-   Reduced from 180px minimum.
+   IMAGE
 ========================================================== */
 
 .post-image-item img {
@@ -531,51 +818,67 @@
     display: block;
 
     width: 100%;
-    height: 100%;
 
-    min-height: 135px;
+    height: 180px;
+
+    min-height: 0;
+
+    margin: 0;
+
+    padding: 0;
+
+    border: 0;
 
     object-fit: cover;
 
     transition:
         transform .2s ease;
+
 }
 
 
+/* ==========================================================
+   IMAGE HOVER
+========================================================== */
+
 .post-image-item:hover img {
+
     transform: scale(1.02);
+
 }
 
 
 /* ==========================================================
    SINGLE IMAGE
-
-   Keeps single photos from becoming enormous.
 ========================================================== */
 
 .post-image-count-1
 .post-image-item img {
 
+    width: 100%;
+
     height: auto;
 
-    max-height: 400px;
+    max-height: 420px;
 
     min-height: 0;
 
     object-fit: contain;
 
     background: #f3f4f6;
+
 }
 
 
 /* ==========================================================
-   THREE IMAGE LAYOUT
+   THREE IMAGE LARGE IMAGE
 ========================================================== */
 
 .post-image-count-3
 .post-image-item:first-child img {
 
-    min-height: 273px;
+    height: 363px;
+
 }
 
 
@@ -591,8 +894,11 @@
 
     inset: 0;
 
+    z-index: 1;
+
     background:
         rgba(0, 0, 0, .35);
+
 }
 
 
@@ -610,13 +916,29 @@
 
     justify-content: center;
 
-    color: #fff;
+    color: #ffffff;
 
     font-size: 24px;
 
     font-weight: 800;
 
+    line-height: 1;
+
     pointer-events: none;
+
+}
+
+
+/* ==========================================================
+   IMAGE BUTTON FOCUS
+========================================================== */
+
+.post-image-item:focus-visible {
+
+    outline: 3px solid #2e7d32;
+
+    outline-offset: -3px;
+
 }
 
 
@@ -638,15 +960,22 @@
 
     justify-content: center;
 
+    width: 100%;
+
+    height: 100%;
+
     background:
         rgba(0, 0, 0, .94);
 
     touch-action: none;
+
 }
 
 
 .post-image-viewer.active {
+
     display: flex;
+
 }
 
 
@@ -665,9 +994,13 @@
     justify-content: center;
 
     width: 100%;
+
     height: 100%;
 
     padding: 55px 65px;
+
+    box-sizing: border-box;
+
 }
 
 
@@ -680,16 +1013,23 @@
     display: block;
 
     max-width: 100%;
+
     max-height: 100%;
 
     width: auto;
+
     height: auto;
+
+    margin: 0;
+
+    padding: 0;
 
     object-fit: contain;
 
     user-select: none;
 
     -webkit-user-drag: none;
+
 }
 
 
@@ -698,7 +1038,9 @@
 ========================================================== */
 
 .post-viewer-close,
+
 .post-viewer-prev,
+
 .post-viewer-next {
 
     position: absolute;
@@ -708,10 +1050,16 @@
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
     width: 42px;
+
     height: 42px;
+
+    margin: 0;
+
+    padding: 0;
 
     border: 0;
 
@@ -720,17 +1068,23 @@
     background:
         rgba(255, 255, 255, .14);
 
-    color: #fff;
+    color: #ffffff;
 
     cursor: pointer;
 
     backdrop-filter: blur(5px);
+
+    box-sizing: border-box;
+
 }
 
 
 .post-viewer-close {
+
     top: 16px;
+
     right: 16px;
+
 }
 
 
@@ -742,6 +1096,7 @@
 
     transform:
         translateY(-50%);
+
 }
 
 
@@ -753,15 +1108,19 @@
 
     transform:
         translateY(-50%);
+
 }
 
 
 .post-viewer-close:hover,
+
 .post-viewer-prev:hover,
+
 .post-viewer-next:hover {
 
     background:
         rgba(255, 255, 255, .25);
+
 }
 
 
@@ -774,23 +1133,27 @@
     position: absolute;
 
     left: 50%;
+
     bottom: 16px;
 
     transform:
         translateX(-50%);
 
-    color: #fff;
+    color: #ffffff;
 
     font-size: 13px;
 
     font-weight: 600;
 
-    padding: 5px 11px;
+    line-height: 1;
+
+    padding: 6px 11px;
 
     border-radius: 20px;
 
     background:
         rgba(0, 0, 0, .45);
+
 }
 
 
@@ -800,59 +1163,179 @@
 
 @media (max-width: 600px) {
 
+
+    /* ------------------------------------------------------
+       BODY
+    ------------------------------------------------------ */
+
+    .post-card .post-body {
+
+        padding:
+            15px
+            16px
+            16px;
+
+    }
+
+
+    /* ------------------------------------------------------
+       TITLE
+    ------------------------------------------------------ */
+
     .post-card .post-title {
+
+        margin-bottom: 7px;
+
         font-size: 17px;
+
+        line-height: 1.4;
+
     }
 
 
-    .post-message {
-        font-size: 14px;
+    /* ------------------------------------------------------
+       MESSAGE
+    ------------------------------------------------------ */
+
+    .post-card .post-message {
+
+        font-size: 15px;
+
+        line-height: 1.65;
+
     }
 
+
+    /* ------------------------------------------------------
+       IMAGE GRID
+    ------------------------------------------------------ */
 
     .post-image-grid {
-        margin-top: 10px;
+
+        margin-top: 11px;
+
     }
 
+
+    /* ------------------------------------------------------
+       GRID IMAGE
+    ------------------------------------------------------ */
 
     .post-image-item img {
-        min-height: 105px;
+
+        height: 135px;
+
     }
 
+
+    /* ------------------------------------------------------
+       THREE IMAGE LAYOUT
+    ------------------------------------------------------ */
+
+    .post-image-count-3
+    .post-image-item:first-child img {
+
+        height: 273px;
+
+    }
+
+
+    /* ------------------------------------------------------
+       SINGLE IMAGE
+    ------------------------------------------------------ */
 
     .post-image-count-1
     .post-image-item img {
 
+        height: auto;
+
         max-height: 320px;
 
         min-height: 0;
+
+    }
+
+
+    /* ------------------------------------------------------
+       VIEWER
+    ------------------------------------------------------ */
+
+    .post-viewer-content {
+
+        padding:
+            50px
+            40px;
+
+    }
+
+
+    .post-viewer-prev {
+
+        left: 7px;
+
+    }
+
+
+    .post-viewer-next {
+
+        right: 7px;
+
+    }
+
+
+    .post-viewer-close {
+
+        top: 10px;
+
+        right: 10px;
+
+    }
+
+
+}
+
+
+/* ==========================================================
+   SMALL MOBILE
+========================================================== */
+
+@media (max-width: 380px) {
+
+
+    .post-card .post-body {
+
+        padding:
+            14px;
+
+    }
+
+
+    .post-card .post-title {
+
+        font-size: 16px;
+
+    }
+
+
+    .post-card .post-message {
+
+        font-size: 14px;
+
+    }
+
+
+    .post-image-item img {
+
+        height: 115px;
+
     }
 
 
     .post-image-count-3
     .post-image-item:first-child img {
-        min-height: 213px;
-    }
 
+        height: 233px;
 
-    .post-viewer-content {
-        padding: 50px 40px;
-    }
-
-
-    .post-viewer-prev {
-        left: 7px;
-    }
-
-
-    .post-viewer-next {
-        right: 7px;
-    }
-
-
-    .post-viewer-close {
-        top: 10px;
-        right: 10px;
     }
 
 }
@@ -869,15 +1352,22 @@
 
 (function () {
 
+
     /* ========================================================
        PREVENT MULTIPLE INITIALIZATION
     ======================================================== */
 
-    if (window.__postCardInitialized) {
+    if (
+        window.__postCardInitialized
+    ) {
+
         return;
+
     }
 
-    window.__postCardInitialized = true;
+
+    window.__postCardInitialized =
+        true;
 
 
     /* ========================================================
@@ -888,39 +1378,57 @@
         "click",
         event => {
 
+
             const button =
                 event.target.closest(
                     ".see-more-post"
                 );
 
+
             if (!button) {
+
                 return;
+
             }
 
+
             event.preventDefault();
+
 
             const message =
                 button.closest(
                     ".post-message"
                 );
 
+
             if (!message) {
+
                 return;
+
             }
+
 
             const shortText =
                 message.querySelector(
                     ".post-message-short"
                 );
 
+
             const fullText =
                 message.querySelector(
                     ".post-message-full"
                 );
 
-            if (!shortText || !fullText) {
+
+            if (
+                !shortText ||
+                !fullText
+            ) {
+
                 return;
+
             }
+
 
             const expanded =
                 button.getAttribute(
@@ -930,27 +1438,40 @@
 
             if (expanded) {
 
-                fullText.hidden = true;
 
-                shortText.hidden = false;
+                fullText.hidden =
+                    true;
+
+
+                shortText.hidden =
+                    false;
+
 
                 button.textContent =
                     "See more";
+
 
                 button.setAttribute(
                     "aria-expanded",
                     "false"
                 );
 
+
             }
             else {
 
-                shortText.hidden = true;
 
-                fullText.hidden = false;
+                shortText.hidden =
+                    true;
+
+
+                fullText.hidden =
+                    false;
+
 
                 button.textContent =
                     "See less";
+
 
                 button.setAttribute(
                     "aria-expanded",
@@ -983,33 +1504,49 @@
         index
     ) {
 
+
         if (!card) {
+
             return;
+
         }
 
 
         /* ----------------------------------------------------
-           READ FULL IMAGE ARRAY FROM CARD
+           RESET PREVIOUS IMAGE STATE
+        ---------------------------------------------------- */
+
+        viewerImages = [];
+
+
+        /* ----------------------------------------------------
+           READ FULL IMAGE ARRAY
         ---------------------------------------------------- */
 
         try {
 
+
             const encodedImages =
                 card.dataset.images;
 
+
             if (encodedImages) {
+
 
                 const parsed =
                     JSON.parse(
                         encodedImages
                     );
 
+
                 if (
                     Array.isArray(parsed) &&
                     parsed.length
                 ) {
 
-                    viewerImages = parsed;
+
+                    viewerImages =
+                        parsed;
 
                 }
 
@@ -1017,6 +1554,7 @@
 
         }
         catch (error) {
+
 
             console.warn(
                 "POST IMAGE VIEWER: Unable to read image list.",
@@ -1027,15 +1565,19 @@
 
 
         /* ----------------------------------------------------
-           FALLBACK TO VISIBLE GRID IMAGES
+           FALLBACK TO VISIBLE IMAGES
         ---------------------------------------------------- */
 
-        if (!viewerImages.length) {
+        if (
+            !viewerImages.length
+        ) {
+
 
             const imageElements =
                 card.querySelectorAll(
                     ".post-image-item img"
                 );
+
 
             viewerImages =
                 Array.from(
@@ -1049,10 +1591,18 @@
         }
 
 
-        if (!viewerImages.length) {
+        if (
+            !viewerImages.length
+        ) {
+
             return;
+
         }
 
+
+        /* ----------------------------------------------------
+           SET INDEX
+        ---------------------------------------------------- */
 
         viewerIndex =
             Math.max(
@@ -1064,6 +1614,10 @@
             );
 
 
+        /* ----------------------------------------------------
+           FIND VIEWER
+        ---------------------------------------------------- */
+
         activeViewer =
             document.querySelector(
                 ".post-image-viewer"
@@ -1071,9 +1625,15 @@
 
 
         if (!activeViewer) {
+
             return;
+
         }
 
+
+        /* ----------------------------------------------------
+           OPEN
+        ---------------------------------------------------- */
 
         activeViewer.classList.add(
             "active"
@@ -1101,11 +1661,14 @@
 
     function updatePostViewer() {
 
+
         if (
             !activeViewer ||
             !viewerImages.length
         ) {
+
             return;
+
         }
 
 
@@ -1114,16 +1677,22 @@
                 ".post-viewer-image"
             );
 
+
         const current =
             activeViewer.querySelector(
                 ".post-viewer-current"
             );
+
 
         const total =
             activeViewer.querySelector(
                 ".post-viewer-total"
             );
 
+
+        /* ----------------------------------------------------
+           IMAGE
+        ---------------------------------------------------- */
 
         if (image) {
 
@@ -1134,6 +1703,10 @@
 
         }
 
+
+        /* ----------------------------------------------------
+           COUNTER
+        ---------------------------------------------------- */
 
         if (current) {
 
@@ -1151,10 +1724,15 @@
         }
 
 
+        /* ----------------------------------------------------
+           NAVIGATION
+        ---------------------------------------------------- */
+
         const previous =
             activeViewer.querySelector(
                 ".post-viewer-prev"
             );
+
 
         const next =
             activeViewer.querySelector(
@@ -1167,18 +1745,22 @@
 
 
         if (previous) {
+
             previous.style.display =
                 multiple
                     ? "flex"
                     : "none";
+
         }
 
 
         if (next) {
+
             next.style.display =
                 multiple
                     ? "flex"
                     : "none";
+
         }
 
     }
@@ -1190,8 +1772,11 @@
 
     function closePostImageViewer() {
 
+
         if (!activeViewer) {
+
             return;
+
         }
 
 
@@ -1220,13 +1805,18 @@
 
 
     /* ========================================================
-       PREVIOUS
+       PREVIOUS IMAGE
     ======================================================== */
 
     function previousPostImage() {
 
-        if (!viewerImages.length) {
+
+        if (
+            !viewerImages.length
+        ) {
+
             return;
+
         }
 
 
@@ -1242,13 +1832,18 @@
 
 
     /* ========================================================
-       NEXT
+       NEXT IMAGE
     ======================================================== */
 
     function nextPostImage() {
 
-        if (!viewerImages.length) {
+
+        if (
+            !viewerImages.length
+        ) {
+
             return;
+
         }
 
 
@@ -1272,13 +1867,17 @@
         "click",
         event => {
 
+
             const imageButton =
                 event.target.closest(
                     ".post-image-item"
                 );
 
+
             if (!imageButton) {
+
                 return;
+
             }
 
 
@@ -1292,7 +1891,9 @@
 
 
             if (!card) {
+
                 return;
+
             }
 
 
@@ -1319,11 +1920,17 @@
         "click",
         event => {
 
+
+            /* ------------------------------------------------
+               CLOSE
+            ------------------------------------------------ */
+
             if (
                 event.target.closest(
                     ".post-viewer-close"
                 )
             ) {
+
 
                 closePostImageViewer();
 
@@ -1332,11 +1939,16 @@
             }
 
 
+            /* ------------------------------------------------
+               PREVIOUS
+            ------------------------------------------------ */
+
             if (
                 event.target.closest(
                     ".post-viewer-prev"
                 )
             ) {
+
 
                 previousPostImage();
 
@@ -1345,11 +1957,16 @@
             }
 
 
+            /* ------------------------------------------------
+               NEXT
+            ------------------------------------------------ */
+
             if (
                 event.target.closest(
                     ".post-viewer-next"
                 )
             ) {
+
 
                 nextPostImage();
 
@@ -1357,6 +1974,10 @@
 
             }
 
+
+            /* ------------------------------------------------
+               CLICK BACKDROP
+            ------------------------------------------------ */
 
             const viewer =
                 event.target.closest(
@@ -1368,6 +1989,7 @@
                 viewer &&
                 event.target === viewer
             ) {
+
 
                 closePostImageViewer();
 
@@ -1385,12 +2007,22 @@
         "keydown",
         event => {
 
+
             if (!activeViewer) {
+
                 return;
+
             }
 
 
-            if (event.key === "Escape") {
+            /* ------------------------------------------------
+               ESCAPE
+            ------------------------------------------------ */
+
+            if (
+                event.key === "Escape"
+            ) {
+
 
                 closePostImageViewer();
 
@@ -1399,7 +2031,14 @@
             }
 
 
-            if (event.key === "ArrowLeft") {
+            /* ------------------------------------------------
+               LEFT
+            ------------------------------------------------ */
+
+            if (
+                event.key === "ArrowLeft"
+            ) {
+
 
                 previousPostImage();
 
@@ -1408,7 +2047,14 @@
             }
 
 
-            if (event.key === "ArrowRight") {
+            /* ------------------------------------------------
+               RIGHT
+            ------------------------------------------------ */
+
+            if (
+                event.key === "ArrowRight"
+            ) {
+
 
                 nextPostImage();
 
@@ -1433,8 +2079,11 @@
         "touchstart",
         event => {
 
+
             if (!activeViewer) {
+
                 return;
+
             }
 
 
@@ -1442,12 +2091,15 @@
                 !event.touches ||
                 !event.touches.length
             ) {
+
                 return;
+
             }
 
 
             touchStartX =
                 event.touches[0].clientX;
+
 
             touchStartY =
                 event.touches[0].clientY;
@@ -1463,8 +2115,11 @@
         "touchend",
         event => {
 
+
             if (!activeViewer) {
+
                 return;
+
             }
 
 
@@ -1472,12 +2127,15 @@
                 !event.changedTouches ||
                 !event.changedTouches.length
             ) {
+
                 return;
+
             }
 
 
             const endX =
                 event.changedTouches[0].clientX;
+
 
             const endY =
                 event.changedTouches[0].clientY;
@@ -1486,25 +2144,46 @@
             const deltaX =
                 endX - touchStartX;
 
+
             const deltaY =
                 endY - touchStartY;
 
+
+            /* ------------------------------------------------
+               IGNORE SMALL / VERTICAL SWIPES
+            ------------------------------------------------ */
 
             if (
                 Math.abs(deltaX) < 50 ||
                 Math.abs(deltaX) <
                 Math.abs(deltaY)
             ) {
+
                 return;
+
             }
 
 
-            if (deltaX > 0) {
+            /* ------------------------------------------------
+               SWIPE RIGHT
+            ------------------------------------------------ */
+
+            if (
+                deltaX > 0
+            ) {
+
 
                 previousPostImage();
 
             }
+
+
+            /* ------------------------------------------------
+               SWIPE LEFT
+            ------------------------------------------------ */
+
             else {
+
 
                 nextPostImage();
 
@@ -1515,6 +2194,7 @@
             passive: true
         }
     );
+
 
 })();
 
