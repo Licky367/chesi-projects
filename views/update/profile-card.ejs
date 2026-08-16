@@ -1,5 +1,89 @@
 <!-- ======================================================
      PROFILE CARD
+
+     FEATURES
+     ------------------------------------------------------
+     • Responsive three-dot menu
+     • Admin edit mode
+     • Up to 5 profile images during editing
+     • Current profile image remains visible
+     • Tap profile image to open fullscreen viewer
+     • Swipe between profile images
+     • Previous / next controls
+     • Close viewer by tapping outside
+     • Escape key closes viewer
+     • Menu closes when tapping outside
+====================================================== -->
+
+
+<%
+    /* ==================================================
+       SAFE PROFILE IMAGES
+    ================================================== */
+
+    let profileImages = [];
+
+    if (
+        Array.isArray(dairy.profileImages) &&
+        dairy.profileImages.length
+    ) {
+
+        profileImages =
+            dairy.profileImages
+                .filter(Boolean)
+                .map(String);
+
+    }
+
+
+    /*
+     * Backwards compatibility.
+
+     * Older Dairy records may only have
+     * dairy.profileImage or dairy.displayImage.
+     */
+
+    if (
+        profileImages.length === 0 &&
+        dairy.profileImage
+    ) {
+
+        profileImages.push(
+            String(dairy.profileImage)
+        );
+
+    }
+
+
+    if (
+        profileImages.length === 0 &&
+        dairy.displayImage
+    ) {
+
+        profileImages.push(
+            String(dairy.displayImage)
+        );
+
+    }
+
+
+    /*
+     * Maximum five images.
+     */
+
+    profileImages =
+        profileImages.slice(0, 5);
+
+
+    const initialProfileImage =
+        profileImages[0] ||
+        dairy.displayImage ||
+        "";
+%>
+
+
+<!-- ======================================================
+     PROFILE CARD
 ====================================================== -->
 
 <section
@@ -8,25 +92,35 @@
 >
 
 
-    <!-- ================= MENU ================= -->
+    <!-- ==================================================
+         MENU
+    ================================================== -->
 
     <div class="profile-menu">
+
 
         <button
             id="profileMenuBtn"
             class="profile-menu-btn"
             type="button"
             aria-label="Profile options"
+            aria-expanded="false"
+            aria-controls="profileDropdown"
         >
 
-            &#8942;
+            <i
+                class="bi bi-three-dots-vertical"
+                aria-hidden="true"
+            ></i>
 
         </button>
+
 
 
         <div
             id="profileDropdown"
             class="profile-dropdown"
+            aria-hidden="true"
         >
 
 
@@ -38,7 +132,14 @@
                     class="dropdown-item"
                 >
 
-                    ✏️ Edit
+                    <i
+                        class="bi bi-pencil-square"
+                        aria-hidden="true"
+                    ></i>
+
+                    <span>
+                        Edit
+                    </span>
 
                 </button>
 
@@ -53,7 +154,14 @@
                     class="dropdown-item"
                 >
 
-                    🍼 Milk History
+                    <i
+                        class="bi bi-droplet-fill"
+                        aria-hidden="true"
+                    ></i>
+
+                    <span>
+                        Milk History
+                    </span>
 
                 </a>
 
@@ -66,7 +174,7 @@
                 <form
                     action="/dairy/<%= dairy._id %>?_method=DELETE"
                     method="POST"
-                    onsubmit="return confirm('Delete this animal?');"
+                    class="profile-delete-form"
                 >
 
                     <button
@@ -74,7 +182,14 @@
                         class="dropdown-item danger"
                     >
 
-                        🗑 Delete Animal
+                        <i
+                            class="bi bi-trash3-fill"
+                            aria-hidden="true"
+                        ></i>
+
+                        <span>
+                            Delete Animal
+                        </span>
 
                     </button>
 
@@ -89,22 +204,117 @@
 
 
 
-    <!-- ================= IMAGE ================= -->
+    <!-- ==================================================
+         PROFILE IMAGE AREA
+    ================================================== -->
 
     <div class="profile-avatar-area">
 
-        <img
-            src="<%= dairy.displayImage %>"
-            alt="<%= dairy.name %>"
-            class="profile-avatar"
+
+        <!-- ==============================================
+             CURRENT PROFILE IMAGE
+        =============================================== -->
+
+        <button
+            type="button"
+            id="profileImageViewerTrigger"
+            class="profile-avatar-button"
+            aria-label="View profile images"
         >
+
+            <img
+                id="profileAvatar"
+                src="<%= initialProfileImage %>"
+                alt="<%= dairy.name %>"
+                class="profile-avatar"
+            >
+
+            <% if (profileImages.length > 1) { %>
+
+                <span class="profile-image-count">
+
+                    <i
+                        class="bi bi-images"
+                        aria-hidden="true"
+                    ></i>
+
+                    <%= profileImages.length %>
+
+                </span>
+
+            <% } %>
+
+        </button>
+
+
+
+        <!-- ==============================================
+             EDIT IMAGE AREA
+        =============================================== -->
+
+        <% if (user?.role === "admin") { %>
+
+            <div
+                id="profileImageEditArea"
+                class="profile-image-edit-area edit-mode"
+                hidden
+            >
+
+
+                <label
+                    for="profileImages"
+                    class="profile-image-upload-button"
+                >
+
+                    <i
+                        class="bi bi-camera-fill"
+                        aria-hidden="true"
+                    ></i>
+
+                    <span>
+                        Choose Photos
+                    </span>
+
+                </label>
+
+
+                <input
+                    id="profileImages"
+                    name="profileImages"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    hidden
+                >
+
+
+                <p class="profile-image-help">
+
+                    Select up to
+                    <strong>5 photos</strong>
+
+                </p>
+
+
+                <div
+                    id="profileImagePreview"
+                    class="profile-image-preview"
+                ></div>
+
+
+            </div>
+
+        <% } %>
+
 
     </div>
 
 
 
 
-    <!-- ================= NAME ================= -->
+    <!-- ==================================================
+         NAME
+    ================================================== -->
 
     <div class="profile-name-area">
 
@@ -151,27 +361,25 @@
 
 
 
-    <!-- ================= DETAILS ================= -->
+    <!-- ==================================================
+         DETAILS
+    ================================================== -->
 
     <div class="profile-details">
 
 
-
-        <!-- CODE -->
+        <!-- =================================================
+             CODE
+        ================================================== -->
 
         <div class="profile-row">
 
-
             <span class="profile-label">
-
                 Code
-
             </span>
 
 
-
             <div>
-
 
                 <span
                     id="codeText"
@@ -183,7 +391,6 @@
                 </span>
 
 
-
                 <input
                     id="code"
                     class="profile-input edit-mode"
@@ -192,67 +399,50 @@
                     hidden
                 >
 
-
             </div>
-
 
         </div>
 
 
 
 
-
-        <!-- AGE -->
+        <!-- =================================================
+             AGE
+        ================================================== -->
 
         <% if (dairy.hasIdentity) { %>
 
-
             <div class="profile-row">
 
-
                 <span class="profile-label">
-
                     Age
-
                 </span>
-
-
 
                 <span>
-
                     <%= dairy.ageText %>
-
                 </span>
 
-
             </div>
-
-
 
         <% } %>
 
 
 
 
-
-        <!-- DATE OF BIRTH -->
+        <!-- =================================================
+             DATE OF BIRTH
+        ================================================== -->
 
         <% if (dairy.hasIdentity) { %>
 
-
             <div class="profile-row">
 
-
                 <span class="profile-label">
-
                     DOB
-
                 </span>
 
 
-
                 <div>
-
 
                     <span
                         id="dobText"
@@ -260,13 +450,13 @@
                     >
 
                         <%= dairy.dateOfBirth
-                            ? new Date(dairy.dateOfBirth).toLocaleDateString()
+                            ? new Date(
+                                dairy.dateOfBirth
+                              ).toLocaleDateString()
                             : "-"
                         %>
 
-
                     </span>
-
 
 
                     <input
@@ -282,36 +472,27 @@
                         hidden
                     >
 
-
                 </div>
 
-
             </div>
-
 
         <% } %>
 
 
 
 
-
-
-
-        <!-- MASS -->
+        <!-- =================================================
+             MASS
+        ================================================== -->
 
         <div class="profile-row">
 
-
             <span class="profile-label">
-
                 Mass
-
             </span>
 
 
-
             <div>
-
 
                 <span
                     id="massText"
@@ -323,7 +504,6 @@
                 </span>
 
 
-
                 <input
                     id="mass"
                     class="profile-input edit-mode"
@@ -332,32 +512,24 @@
                     hidden
                 >
 
-
             </div>
-
 
         </div>
 
 
 
 
-
-
-
-        <!-- MILKING STATUS -->
+        <!-- =================================================
+             MILKING
+        ================================================== -->
 
         <% if (dairy.isFemale) { %>
 
-
             <div class="profile-row">
 
-
                 <span class="profile-label">
-
                     Milking
-
                 </span>
-
 
 
                 <span
@@ -369,14 +541,9 @@
 
                 </span>
 
-
             </div>
 
-
         <% } %>
-
-
-
 
 
     </div>
@@ -385,18 +552,27 @@
 
 
 
-
-
-    <!-- ================= SAVE ================= -->
-
+    <!-- ==================================================
+         SAVE
+    ================================================== -->
 
     <% if (user?.role === "admin") { %>
 
-
         <div
             id="saveArea"
+            class="profile-save-area"
             hidden
         >
+
+            <button
+                id="cancelProfileEdit"
+                type="button"
+                class="cancel-profile-button"
+            >
+
+                Cancel
+
+            </button>
 
 
             <button
@@ -405,17 +581,2273 @@
                 class="save-profile-button"
             >
 
-                💾 Save Changes
+                <i
+                    class="bi bi-check2"
+                    aria-hidden="true"
+                ></i>
+
+                Save Changes
 
             </button>
 
-
         </div>
 
+    <% } %>
+
+
+</section>
+
+
+
+
+
+<!-- ======================================================
+     FULLSCREEN PROFILE IMAGE VIEWER
+====================================================== -->
+
+<div
+    id="profileImageViewer"
+    class="profile-image-viewer"
+    aria-hidden="true"
+>
+
+
+    <div class="profile-viewer-backdrop"></div>
+
+
+    <button
+        type="button"
+        class="profile-viewer-close"
+        id="profileViewerClose"
+        aria-label="Close image viewer"
+    >
+
+        <i
+            class="bi bi-x-lg"
+            aria-hidden="true"
+        ></i>
+
+    </button>
+
+
+
+    <!-- ==================================================
+         IMAGE COUNTER
+    ================================================== -->
+
+    <div
+        id="profileViewerCounter"
+        class="profile-viewer-counter"
+    >
+
+        1 / <%= Math.max(profileImages.length, 1) %>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         PREVIOUS
+    ================================================== -->
+
+    <% if (profileImages.length > 1) { %>
+
+        <button
+            type="button"
+            id="profileViewerPrev"
+            class="profile-viewer-nav profile-viewer-prev"
+            aria-label="Previous photo"
+        >
+
+            <i
+                class="bi bi-chevron-left"
+                aria-hidden="true"
+            ></i>
+
+        </button>
 
     <% } %>
 
 
 
+    <!-- ==================================================
+         IMAGE
+    ================================================== -->
 
-</section>
+    <div
+        class="profile-viewer-stage"
+        id="profileViewerStage"
+    >
+
+        <img
+            id="profileViewerImage"
+            class="profile-viewer-image"
+            src="<%= initialProfileImage %>"
+            alt="<%= dairy.name %>"
+        >
+
+    </div>
+
+
+
+    <!-- ==================================================
+         NEXT
+    ================================================== -->
+
+    <% if (profileImages.length > 1) { %>
+
+        <button
+            type="button"
+            id="profileViewerNext"
+            class="profile-viewer-nav profile-viewer-next"
+            aria-label="Next photo"
+        >
+
+            <i
+                class="bi bi-chevron-right"
+                aria-hidden="true"
+            ></i>
+
+        </button>
+
+    <% } %>
+
+
+</div>
+
+
+
+
+
+<!-- ======================================================
+     PROFILE CARD CSS
+====================================================== -->
+
+<style>
+
+/* =========================================================
+   PROFILE CARD
+========================================================= */
+
+.profile-card {
+
+    position: relative;
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 22px 18px 20px;
+
+    background: #ffffff;
+
+    border: 1px solid #e4ebe6;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 5px 18px rgba(20, 50, 30, 0.06);
+
+}
+
+
+/* =========================================================
+   MENU
+========================================================= */
+
+.profile-menu {
+
+    position: absolute;
+
+    top: 10px;
+
+    right: 10px;
+
+    z-index: 20;
+
+}
+
+
+.profile-menu-btn {
+
+    width: 40px;
+
+    height: 40px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 0;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #66706b;
+
+    cursor: pointer;
+
+    font-size: 20px;
+
+    -webkit-tap-highlight-color: transparent;
+
+    transition:
+        background .16s ease,
+        color .16s ease,
+        transform .12s ease;
+
+}
+
+
+.profile-menu-btn:hover {
+
+    background: #eef5f0;
+
+    color: #145c31;
+
+}
+
+
+.profile-menu-btn:active {
+
+    transform: scale(.92);
+
+}
+
+
+.profile-menu-btn.is-open {
+
+    background: #eaf5ed;
+
+    color: #145c31;
+
+}
+
+
+/* =========================================================
+   DROPDOWN
+========================================================= */
+
+.profile-dropdown {
+
+    position: absolute;
+
+    top: 44px;
+
+    right: 0;
+
+    width: 190px;
+
+    padding: 6px;
+
+    display: none;
+
+    background: #ffffff;
+
+    border: 1px solid #e1e8e3;
+
+    border-radius: 13px;
+
+    box-shadow:
+        0 12px 32px rgba(20, 35, 25, .14);
+
+    z-index: 100;
+
+}
+
+
+.profile-dropdown.open {
+
+    display: block;
+
+    animation:
+        profileDropdownIn
+        .15s ease
+        both;
+
+}
+
+
+@keyframes profileDropdownIn {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateY(-5px)
+            scale(.98);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+
+    }
+
+}
+
+
+.dropdown-item {
+
+    width: 100%;
+
+    min-height: 42px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    box-sizing: border-box;
+
+    padding: 9px 11px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #26312a;
+
+    text-decoration: none;
+
+    font: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+
+}
+
+
+.dropdown-item:hover {
+
+    background: #f0f6f2;
+
+}
+
+
+.dropdown-item i {
+
+    width: 20px;
+
+    text-align: center;
+
+    color: #246b3d;
+
+}
+
+
+.dropdown-item.danger {
+
+    color: #b3261e;
+
+}
+
+
+.dropdown-item.danger i {
+
+    color: #b3261e;
+
+}
+
+
+.profile-delete-form {
+
+    margin: 0;
+
+}
+
+
+/* =========================================================
+   AVATAR
+========================================================= */
+
+.profile-avatar-area {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-top: 4px;
+
+}
+
+
+.profile-avatar-button {
+
+    position: relative;
+
+    width: 116px;
+
+    height: 116px;
+
+    padding: 0;
+
+    border: 0;
+
+    background: transparent;
+
+    border-radius: 50%;
+
+    cursor: pointer;
+
+    -webkit-tap-highlight-color: transparent;
+
+}
+
+
+.profile-avatar {
+
+    width: 116px;
+
+    height: 116px;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 50%;
+
+    border: 4px solid #ffffff;
+
+    box-shadow:
+        0 4px 16px rgba(20, 40, 25, .15);
+
+}
+
+
+.profile-avatar-button::after {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 4px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(0, 0, 0, 0);
+
+    transition:
+        background .16s ease;
+
+    pointer-events: none;
+
+}
+
+
+.profile-avatar-button:hover::after {
+
+    background:
+        rgba(0, 0, 0, .08);
+
+}
+
+
+.profile-image-count {
+
+    position: absolute;
+
+    right: -2px;
+
+    bottom: 4px;
+
+    min-width: 30px;
+
+    height: 26px;
+
+    padding: 0 7px;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 4px;
+
+    border-radius: 13px;
+
+    background: #145c31;
+
+    color: #ffffff;
+
+    border: 2px solid #ffffff;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+}
+
+
+.profile-image-count i {
+
+    font-size: 11px;
+
+}
+
+
+/* =========================================================
+   IMAGE EDITOR
+========================================================= */
+
+.profile-image-edit-area {
+
+    width: 100%;
+
+    max-width: 430px;
+
+    margin-top: 14px;
+
+    text-align: center;
+
+}
+
+
+.profile-image-upload-button {
+
+    min-height: 42px;
+
+    padding: 0 15px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    border: 1px solid #cfe0d4;
+
+    border-radius: 12px;
+
+    background: #f4f9f5;
+
+    color: #155c32;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+}
+
+
+.profile-image-upload-button:hover {
+
+    background: #e9f4ec;
+
+}
+
+
+.profile-image-help {
+
+    margin: 7px 0 10px;
+
+    color: #7a847e;
+
+    font-size: 11px;
+
+}
+
+
+.profile-image-preview {
+
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(5, minmax(0, 1fr));
+
+    gap: 6px;
+
+}
+
+
+.profile-image-preview-item {
+
+    position: relative;
+
+    aspect-ratio: 1;
+
+    overflow: hidden;
+
+    border-radius: 9px;
+
+    background: #edf2ef;
+
+    border: 1px solid #dce5df;
+
+}
+
+
+.profile-image-preview-item img {
+
+    width: 100%;
+
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+.profile-image-preview-item:first-child {
+
+    border:
+        2px solid #198754;
+
+}
+
+
+.profile-image-preview-item:first-child::after {
+
+    content: "Main";
+
+    position: absolute;
+
+    left: 3px;
+
+    bottom: 3px;
+
+    padding: 2px 5px;
+
+    border-radius: 5px;
+
+    background: rgba(20, 92, 49, .9);
+
+    color: #ffffff;
+
+    font-size: 8px;
+
+    font-weight: 700;
+
+}
+
+
+/* =========================================================
+   NAME
+========================================================= */
+
+.profile-name-area {
+
+    margin-top: 14px;
+
+    text-align: center;
+
+}
+
+
+.profile-name-area h2 {
+
+    margin: 0;
+
+    color: #18221c;
+
+    font-size: 22px;
+
+    line-height: 1.25;
+
+    font-weight: 750;
+
+    word-break: break-word;
+
+}
+
+
+.gender-badge {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-top: 7px;
+
+    padding: 4px 10px;
+
+    border-radius: 999px;
+
+    background: #edf5ef;
+
+    color: #246b3d;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+}
+
+
+/* =========================================================
+   DETAILS
+========================================================= */
+
+.profile-details {
+
+    margin-top: 16px;
+
+}
+
+
+.profile-row {
+
+    min-height: 42px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    border-bottom: 1px solid #edf1ee;
+
+}
+
+
+.profile-row:last-child {
+
+    border-bottom: none;
+
+}
+
+
+.profile-label {
+
+    color: #7a837d;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+}
+
+
+.profile-row > div,
+.profile-row > span:last-child {
+
+    color: #28322c;
+
+    font-size: 13px;
+
+    text-align: right;
+
+}
+
+
+.profile-input {
+
+    min-width: 120px;
+
+    max-width: 180px;
+
+    box-sizing: border-box;
+
+    padding: 7px 9px;
+
+    border: 1px solid #d7e2da;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    background: #f8fbf9;
+
+    color: #202a24;
+
+    font: inherit;
+
+}
+
+
+.profile-input:focus {
+
+    border-color: #198754;
+
+    box-shadow:
+        0 0 0 3px rgba(25, 135, 84, .10);
+
+}
+
+
+.status-badge {
+
+    padding: 4px 9px;
+
+    border-radius: 999px;
+
+    font-size: 11px !important;
+
+    font-weight: 700;
+
+}
+
+
+.status-active {
+
+    background: #e8f6ed;
+
+    color: #177245 !important;
+
+}
+
+
+.status-inactive {
+
+    background: #f0f2f1;
+
+    color: #6f7772 !important;
+
+}
+
+
+/* =========================================================
+   SAVE AREA
+========================================================= */
+
+.profile-save-area {
+
+    margin-top: 17px;
+
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 8px;
+
+}
+
+
+.save-profile-button,
+.cancel-profile-button {
+
+    min-height: 40px;
+
+    padding: 0 14px;
+
+    border-radius: 10px;
+
+    border: none;
+
+    font: inherit;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+}
+
+
+.save-profile-button {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    background: #146c37;
+
+    color: #ffffff;
+
+}
+
+
+.save-profile-button:hover {
+
+    background: #0e572c;
+
+}
+
+
+.cancel-profile-button {
+
+    background: #eef2ef;
+
+    color: #4e5852;
+
+}
+
+
+.cancel-profile-button:hover {
+
+    background: #e3e9e5;
+
+}
+
+
+/* =========================================================
+   FULLSCREEN VIEWER
+========================================================= */
+
+.profile-image-viewer {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 100000;
+
+    display: none;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background:
+        rgba(5, 10, 7, .94);
+
+    touch-action: none;
+
+}
+
+
+.profile-image-viewer.open {
+
+    display: flex;
+
+}
+
+
+.profile-viewer-backdrop {
+
+    position: absolute;
+
+    inset: 0;
+
+}
+
+
+.profile-viewer-stage {
+
+    position: relative;
+
+    z-index: 2;
+
+    width: min(
+        92vw,
+        1000px
+    );
+
+    height: min(
+        82vh,
+        850px
+    );
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    touch-action: pan-y;
+
+}
+
+
+.profile-viewer-image {
+
+    max-width: 100%;
+
+    max-height: 100%;
+
+    width: auto;
+
+    height: auto;
+
+    display: block;
+
+    object-fit: contain;
+
+    user-select: none;
+
+    -webkit-user-drag: none;
+
+    border-radius: 4px;
+
+    box-shadow:
+        0 10px 40px rgba(0,0,0,.35);
+
+}
+
+
+.profile-viewer-close {
+
+    position: absolute;
+
+    top: max(
+        14px,
+        env(safe-area-inset-top)
+    );
+
+    right: 14px;
+
+    z-index: 5;
+
+    width: 44px;
+
+    height: 44px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.12);
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 18px;
+
+}
+
+
+.profile-viewer-close:hover {
+
+    background:
+        rgba(255,255,255,.20);
+
+}
+
+
+.profile-viewer-counter {
+
+    position: absolute;
+
+    top: max(
+        18px,
+        env(safe-area-inset-top)
+    );
+
+    left: 50%;
+
+    z-index: 5;
+
+    transform: translateX(-50%);
+
+    padding: 6px 11px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(0,0,0,.42);
+
+    color: #ffffff;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+}
+
+
+.profile-viewer-nav {
+
+    position: absolute;
+
+    top: 50%;
+
+    z-index: 5;
+
+    width: 46px;
+
+    height: 46px;
+
+    margin-top: -23px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255,255,255,.12);
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 21px;
+
+}
+
+
+.profile-viewer-nav:hover {
+
+    background:
+        rgba(255,255,255,.22);
+
+}
+
+
+.profile-viewer-prev {
+
+    left: 16px;
+
+}
+
+
+.profile-viewer-next {
+
+    right: 16px;
+
+}
+
+
+/* =========================================================
+   EDIT MODE
+========================================================= */
+
+.profile-card.editing
+.profile-avatar-button {
+
+    cursor: default;
+
+}
+
+
+.profile-card.editing
+.profile-avatar-button::after {
+
+    display: none;
+
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .profile-card {
+
+        padding:
+            18px
+            12px
+            17px;
+
+        border-radius: 15px;
+
+    }
+
+
+    .profile-menu {
+
+        top: 7px;
+
+        right: 7px;
+
+    }
+
+
+    .profile-menu-btn {
+
+        width: 42px;
+
+        height: 42px;
+
+    }
+
+
+    .profile-dropdown {
+
+        right: 0;
+
+        width: 185px;
+
+    }
+
+
+    .profile-avatar-button,
+    .profile-avatar {
+
+        width: 104px;
+
+        height: 104px;
+
+    }
+
+
+    .profile-name-area h2 {
+
+        font-size: 20px;
+
+    }
+
+
+    .profile-row {
+
+        min-height: 40px;
+
+    }
+
+
+    .profile-input {
+
+        max-width: 155px;
+
+    }
+
+
+    .profile-image-preview {
+
+        gap: 5px;
+
+    }
+
+
+    .profile-viewer-stage {
+
+        width: 100vw;
+
+        height: 82vh;
+
+    }
+
+
+    .profile-viewer-nav {
+
+        width: 40px;
+
+        height: 40px;
+
+        margin-top: -20px;
+
+    }
+
+
+    .profile-viewer-prev {
+
+        left: 8px;
+
+    }
+
+
+    .profile-viewer-next {
+
+        right: 8px;
+
+    }
+
+}
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .profile-image-preview {
+
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+
+    }
+
+
+    .profile-save-area {
+
+        flex-direction: column;
+
+    }
+
+
+    .save-profile-button,
+    .cancel-profile-button {
+
+        width: 100%;
+
+    }
+
+}
+
+</style>
+
+
+
+
+
+<!-- ======================================================
+     PROFILE CARD JAVASCRIPT
+====================================================== -->
+
+<script>
+
+(function () {
+
+    "use strict";
+
+
+    /* =====================================================
+       ELEMENTS
+    ===================================================== */
+
+    const card =
+        document.querySelector(
+            ".profile-card[data-dairy-id]"
+        );
+
+
+    if (!card) {
+
+        return;
+
+    }
+
+
+    const menuButton =
+        card.querySelector(
+            "#profileMenuBtn"
+        );
+
+
+    const dropdown =
+        card.querySelector(
+            "#profileDropdown"
+        );
+
+
+    const editButton =
+        card.querySelector(
+            "#editProfileBtn"
+        );
+
+
+    const saveArea =
+        card.querySelector(
+            "#saveArea"
+        );
+
+
+    const cancelButton =
+        card.querySelector(
+            "#cancelProfileEdit"
+        );
+
+
+    const imageInput =
+        card.querySelector(
+            "#profileImages"
+        );
+
+
+    const imageEditArea =
+        card.querySelector(
+            "#profileImageEditArea"
+        );
+
+
+    const imagePreview =
+        card.querySelector(
+            "#profileImagePreview"
+        );
+
+
+    const imageTrigger =
+        card.querySelector(
+            "#profileImageViewerTrigger"
+        );
+
+
+    const avatar =
+        card.querySelector(
+            "#profileAvatar"
+        );
+
+
+    const viewer =
+        document.querySelector(
+            "#profileImageViewer"
+        );
+
+
+    const viewerImage =
+        document.querySelector(
+            "#profileViewerImage"
+        );
+
+
+    const viewerCounter =
+        document.querySelector(
+            "#profileViewerCounter"
+        );
+
+
+    const viewerClose =
+        document.querySelector(
+            "#profileViewerClose"
+        );
+
+
+    const viewerPrev =
+        document.querySelector(
+            "#profileViewerPrev"
+        );
+
+
+    const viewerNext =
+        document.querySelector(
+            "#profileViewerNext"
+        );
+
+
+    const viewerStage =
+        document.querySelector(
+            "#profileViewerStage"
+        );
+
+
+
+    /* =====================================================
+       PROFILE IMAGES
+    ===================================================== */
+
+    let profileImages = <%- JSON.stringify(profileImages) %>;
+
+
+    if (!Array.isArray(profileImages)) {
+
+        profileImages = [];
+
+    }
+
+
+    profileImages =
+        profileImages
+            .filter(Boolean)
+            .slice(0, 5);
+
+
+    let viewerIndex = 0;
+
+
+    let selectedFiles = [];
+
+
+
+    /* =====================================================
+       MENU
+    ===================================================== */
+
+    function closeMenu() {
+
+        if (!dropdown || !menuButton) {
+
+            return;
+
+        }
+
+
+        dropdown.classList.remove(
+            "open"
+        );
+
+
+        menuButton.classList.remove(
+            "is-open"
+        );
+
+
+        menuButton.setAttribute(
+            "aria-expanded",
+            "false"
+        );
+
+
+        dropdown.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+    }
+
+
+    function toggleMenu() {
+
+        if (!dropdown || !menuButton) {
+
+            return;
+
+        }
+
+
+        const open =
+            dropdown.classList.toggle(
+                "open"
+            );
+
+
+        menuButton.classList.toggle(
+            "is-open",
+            open
+        );
+
+
+        menuButton.setAttribute(
+            "aria-expanded",
+            String(open)
+        );
+
+
+        dropdown.setAttribute(
+            "aria-hidden",
+            String(!open)
+        );
+
+    }
+
+
+    menuButton?.addEventListener(
+        "click",
+        function (event) {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+            toggleMenu();
+
+        }
+    );
+
+
+    dropdown?.addEventListener(
+        "click",
+        function (event) {
+
+            event.stopPropagation();
+
+        }
+    );
+
+
+    document.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                dropdown &&
+                menuButton &&
+                !dropdown.contains(event.target) &&
+                !menuButton.contains(event.target)
+            ) {
+
+                closeMenu();
+
+            }
+
+        }
+    );
+
+
+
+    /* =====================================================
+       EDIT MODE
+    ===================================================== */
+
+    function setEditMode(enabled) {
+
+        card.classList.toggle(
+            "editing",
+            enabled
+        );
+
+
+        card
+            .querySelectorAll(
+                ".edit-mode"
+            )
+            .forEach(function (element) {
+
+                element.hidden =
+                    !enabled;
+
+            });
+
+
+        card
+            .querySelectorAll(
+                ".view-mode"
+            )
+            .forEach(function (element) {
+
+                element.hidden =
+                    enabled;
+
+            });
+
+
+        if (saveArea) {
+
+            saveArea.hidden =
+                !enabled;
+
+        }
+
+
+        if (imageEditArea) {
+
+            imageEditArea.hidden =
+                !enabled;
+
+        }
+
+
+        if (enabled) {
+
+            closeMenu();
+
+        }
+
+    }
+
+
+    editButton?.addEventListener(
+        "click",
+        function () {
+
+            setEditMode(true);
+
+        }
+    );
+
+
+    cancelButton?.addEventListener(
+        "click",
+        function () {
+
+            selectedFiles = [];
+
+            if (imageInput) {
+
+                imageInput.value = "";
+
+            }
+
+
+            renderImagePreview();
+
+            setEditMode(false);
+
+        }
+    );
+
+
+
+    /* =====================================================
+       IMAGE SELECTION
+    ===================================================== */
+
+    imageInput?.addEventListener(
+        "change",
+        function () {
+
+            const files =
+                Array.from(
+                    imageInput.files || []
+                );
+
+
+            if (!files.length) {
+
+                return;
+
+            }
+
+
+            const combined =
+                selectedFiles.concat(files);
+
+
+            const uniqueFiles = [];
+
+
+            combined.forEach(
+                function (file) {
+
+                    const duplicate =
+                        uniqueFiles.some(
+                            function (existing) {
+
+                                return (
+                                    existing.name === file.name &&
+                                    existing.size === file.size &&
+                                    existing.lastModified ===
+                                        file.lastModified
+                                );
+
+                            }
+                        );
+
+
+                    if (!duplicate) {
+
+                        uniqueFiles.push(
+                            file
+                        );
+
+                    }
+
+                }
+            );
+
+
+            selectedFiles =
+                uniqueFiles.slice(0, 5);
+
+
+            if (
+                combined.length > 5
+            ) {
+
+                alert(
+                    "You can upload a maximum of 5 profile photos."
+                );
+
+            }
+
+
+            renderImagePreview();
+
+        }
+    );
+
+
+
+    /* =====================================================
+       IMAGE PREVIEW
+    ===================================================== */
+
+    function renderImagePreview() {
+
+        if (!imagePreview) {
+
+            return;
+
+        }
+
+
+        imagePreview.innerHTML = "";
+
+
+        selectedFiles.forEach(
+            function (file) {
+
+                const wrapper =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                wrapper.className =
+                    "profile-image-preview-item";
+
+
+                const image =
+                    document.createElement(
+                        "img"
+                    );
+
+
+                image.alt =
+                    "Selected profile photo";
+
+
+                const reader =
+                    new FileReader();
+
+
+                reader.onload =
+                    function () {
+
+                        image.src =
+                            reader.result;
+
+                    };
+
+
+                reader.readAsDataURL(
+                    file
+                );
+
+
+                wrapper.appendChild(
+                    image
+                );
+
+
+                imagePreview.appendChild(
+                    wrapper
+                );
+
+            }
+        );
+
+    }
+
+
+
+    /* =====================================================
+       VIEWER
+    ===================================================== */
+
+    function updateViewer() {
+
+        if (
+            !viewer ||
+            !viewerImage
+        ) {
+
+            return;
+
+        }
+
+
+        if (!profileImages.length) {
+
+            return;
+
+        }
+
+
+        if (
+            viewerIndex < 0
+        ) {
+
+            viewerIndex =
+                profileImages.length - 1;
+
+        }
+
+
+        if (
+            viewerIndex >=
+            profileImages.length
+        ) {
+
+            viewerIndex = 0;
+
+        }
+
+
+        viewerImage.src =
+            profileImages[
+                viewerIndex
+            ];
+
+
+        if (viewerCounter) {
+
+            viewerCounter.textContent =
+                `${viewerIndex + 1} / ${profileImages.length}`;
+
+        }
+
+    }
+
+
+    function openViewer(index) {
+
+        if (
+            !viewer ||
+            !profileImages.length
+        ) {
+
+            return;
+
+        }
+
+
+        viewerIndex =
+            Number(index) || 0;
+
+
+        updateViewer();
+
+
+        viewer.classList.add(
+            "open"
+        );
+
+
+        viewer.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+
+        document.body.style.overflow =
+            "hidden";
+
+    }
+
+
+    function closeViewer() {
+
+        if (!viewer) {
+
+            return;
+
+        }
+
+
+        viewer.classList.remove(
+            "open"
+        );
+
+
+        viewer.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+
+        document.body.style.overflow =
+            "";
+
+    }
+
+
+    function nextImage() {
+
+        if (
+            profileImages.length < 2
+        ) {
+
+            return;
+
+        }
+
+
+        viewerIndex =
+            (
+                viewerIndex + 1
+            ) %
+            profileImages.length;
+
+
+        updateViewer();
+
+    }
+
+
+    function previousImage() {
+
+        if (
+            profileImages.length < 2
+        ) {
+
+            return;
+
+        }
+
+
+        viewerIndex =
+            (
+                viewerIndex - 1 +
+                profileImages.length
+            ) %
+            profileImages.length;
+
+
+        updateViewer();
+
+    }
+
+
+    imageTrigger?.addEventListener(
+        "click",
+        function () {
+
+            openViewer(0);
+
+        }
+    );
+
+
+    viewerClose?.addEventListener(
+        "click",
+        function (event) {
+
+            event.stopPropagation();
+
+            closeViewer();
+
+        }
+    );
+
+
+    viewerPrev?.addEventListener(
+        "click",
+        function (event) {
+
+            event.stopPropagation();
+
+            previousImage();
+
+        }
+    );
+
+
+    viewerNext?.addEventListener(
+        "click",
+        function (event) {
+
+            event.stopPropagation();
+
+            nextImage();
+
+        }
+    );
+
+
+    viewer?.addEventListener(
+        "click",
+        function (event) {
+
+            if (
+                event.target === viewer ||
+                event.target.classList.contains(
+                    "profile-viewer-backdrop"
+                )
+            ) {
+
+                closeViewer();
+
+            }
+
+        }
+    );
+
+
+
+    /* =====================================================
+       SWIPE SUPPORT
+    ===================================================== */
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+
+    viewerStage?.addEventListener(
+        "touchstart",
+        function (event) {
+
+            const touch =
+                event.changedTouches[0];
+
+
+            touchStartX =
+                touch.clientX;
+
+
+            touchStartY =
+                touch.clientY;
+
+        },
+        {
+            passive: true
+        }
+    );
+
+
+    viewerStage?.addEventListener(
+        "touchend",
+        function (event) {
+
+            const touch =
+                event.changedTouches[0];
+
+
+            const deltaX =
+                touch.clientX -
+                touchStartX;
+
+
+            const deltaY =
+                touch.clientY -
+                touchStartY;
+
+
+            if (
+                Math.abs(deltaX) < 45
+            ) {
+
+                return;
+
+            }
+
+
+            /*
+             * Ignore predominantly vertical
+             * gestures.
+             */
+
+            if (
+                Math.abs(deltaX) <=
+                Math.abs(deltaY)
+            ) {
+
+                return;
+
+            }
+
+
+            if (deltaX < 0) {
+
+                nextImage();
+
+            } else {
+
+                previousImage();
+
+            }
+
+        },
+        {
+            passive: true
+        }
+    );
+
+
+
+    /* =====================================================
+       KEYBOARD
+    ===================================================== */
+
+    document.addEventListener(
+        "keydown",
+        function (event) {
+
+            if (
+                !viewer ||
+                !viewer.classList.contains(
+                    "open"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                closeViewer();
+
+            }
+
+
+            if (
+                event.key === "ArrowRight"
+            ) {
+
+                nextImage();
+
+            }
+
+
+            if (
+                event.key === "ArrowLeft"
+            ) {
+
+                previousImage();
+
+            }
+
+        }
+    );
+
+
+
+    /* =====================================================
+       DELETE CONFIRMATION
+    ===================================================== */
+
+    const deleteForm =
+        card.querySelector(
+            ".profile-delete-form"
+        );
+
+
+    deleteForm?.addEventListener(
+        "submit",
+        function (event) {
+
+            const confirmed =
+                window.confirm(
+                    "Delete this animal?"
+                );
+
+
+            if (!confirmed) {
+
+                event.preventDefault();
+
+            }
+
+        }
+    );
+
+
+
+    /* =====================================================
+       INITIAL STATE
+    ===================================================== */
+
+    setEditMode(false);
+
+})();
+
+</script>
