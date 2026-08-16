@@ -1,56 +1,58 @@
 <% /*
 ==========================================================
-CREATE POST COMPOSER + FULL SCREEN POST MODAL
+DAIRY FARM CREATE POST COMPOSER
 
 FILE:
     views/update/create-post.ejs
 
 PURPOSE:
-    Create a normal feed post/update.
+    Farm-level post composer.
 
-TARGET RULES
+    This version is ONLY for Dairy Farm pages.
+
+CURRENT PAGE:
+    dairy.code < 0
+
+BEHAVIOUR:
 ----------------------------------------------------------
-CURRENT DAIRY CODE > 0:
-    Current Dairy is automatically the target.
+    The user sees the farm's assets in a horizontal row.
 
-CURRENT DAIRY CODE < 0:
-    User MUST select the target.
+    Each asset card contains:
 
-PHASE 1:
-    Animal
-    Structure / Facility / Tool
+        profileImage
+        asset name
+        asset type
 
-PHASE 2:
-    Animal:
+    Asset type:
+
         code > 0
+            Animal
 
-    Structure / Facility / Tool:
-        code === null
-        code === undefined
-        code === ""
+        code === null / undefined / ""
+            Tool
 
-    Negative-code records are NEVER valid targets.
+    Clicking an asset immediately opens the post modal.
 
-SUBMITTED FIELD:
-    targetDairyId
+    The clicked asset automatically becomes:
+
+        targetDairyId
 
 IMPORTANT:
-    Phase 2 is ALWAYS an active <select> once a category
-    has been selected.
-
-    The list is populated from the server-provided
-    target Dairy records.
+----------------------------------------------------------
+    No category selector.
+    No subject selector.
+    No dropdown.
+    No target list.
 
 EXPECTED SERVER VARIABLES:
-    targetDairies
-    OR
-    dairies
-    OR
-    allDairies
-    OR
-    postTargetDairies
+----------------------------------------------------------
+    dairy
+    user
+    assetDairies
 
-The controller MUST provide one of these arrays.
+assetDairies should contain the assets belonging to the
+currently viewed Dairy Farm.
+
 ==========================================================
 */ %>
 
@@ -66,77 +68,206 @@ The controller MUST provide one of these arrays.
 
 
 <!-- =========================================================
-     CREATE POST CARD
+     DAIRY FARM CREATE POST
 ========================================================= -->
 
-<section class="create-post-card">
+<section
+    class="farm-post-composer"
+    aria-label="Create Dairy Farm update"
+>
 
-    <div class="create-post-header">
 
-        <div class="create-post-avatar">
+    <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+    <div class="farm-post-composer__header">
+
+
+        <!-- USER AVATAR -->
+
+        <div class="farm-post-composer__user">
 
             <img
                 src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name || 'User')) %>"
                 alt="<%= user.name || 'User' %>"
-                class="avatar-sm"
+                class="farm-post-composer__user-avatar"
             >
 
         </div>
 
 
-        <div class="create-post-heading">
+        <!-- HEADER TEXT -->
 
-            <% if (Number(dairy.code) < 0) { %>
+        <div class="farm-post-composer__heading">
 
-                <div class="heading-line">
+            <strong>
+                <%= user.name || "User" %>
+            </strong>
 
-                    <strong>
-                        <%= (user.name || "User").split(" ")[0] %>
-                    </strong>
+            , update us about any of
 
-                    , update us about the overall conditions
-                    of this dairy Farm.
+            <strong>
+                <%= dairy.name %>
+            </strong>
 
-                </div>
-
-            <% } else { %>
-
-                <div class="heading-line">
-
-                    <strong>
-                        <%= (user.name || "User").split(" ")[0] %>
-                    </strong>
-
-                    , update us about
-
-                </div>
-
-                <div class="heading-line">
-
-                    <strong>
-                        <%= dairy.name %>
-                    </strong>
-
-                </div>
-
-            <% } %>
+            's assets.
 
         </div>
 
     </div>
 
 
+
+    <!-- =====================================================
+         ASSET SCROLLER
+    ====================================================== -->
+
     <div
-        id="openPostComposer"
-        class="composer-trigger"
-        role="button"
-        tabindex="0"
-        aria-label="Create post"
+        class="farm-post-composer__asset-scroll"
+        role="list"
+        aria-label="Dairy Farm assets"
     >
 
-        <span>
-            Share an update...
-        </span>
+        <% if (Array.isArray(assetDairies) && assetDairies.length) { %>
+
+
+            <% assetDairies.forEach(function (asset) { %>
+
+
+                <%
+                    /*
+                    ==================================================
+                    DETERMINE ASSET TYPE
+                    ==================================================
+                    */
+
+                    const assetCode =
+                        asset &&
+                        asset.code !== undefined
+                            ? asset.code
+                            : null;
+
+
+                    const numericAssetCode =
+                        (
+                            assetCode !== null &&
+                            assetCode !== ""
+                        )
+                            ? Number(assetCode)
+                            : NaN;
+
+
+                    const isAnimal =
+                        Number.isFinite(
+                            numericAssetCode
+                        ) &&
+                        numericAssetCode > 0;
+
+
+                    const assetType =
+                        isAnimal
+                            ? "Animal"
+                            : "Tool";
+
+
+                    /*
+                    ==================================================
+                    ASSET IMAGE
+                    ==================================================
+                    */
+
+                    const assetImage =
+                        asset.profileImage ||
+                        asset.displayImage ||
+                        (
+                            "https://ui-avatars.com/api/?name=" +
+                            encodeURIComponent(
+                                asset.name || "Asset"
+                            ) +
+                            "&background=e8f5ed&color=198754"
+                        );
+                %>
+
+
+                <!-- =================================================
+                     ASSET CARD
+                ================================================== -->
+
+                <button
+                    type="button"
+                    class="farm-post-composer__asset-card"
+                    data-asset-id="<%= asset._id %>"
+                    data-asset-name="<%= asset.name || 'Unnamed Asset' %>"
+                    data-asset-type="<%= assetType %>"
+                    data-asset-image="<%= assetImage %>"
+                    role="listitem"
+                    aria-label="Update about <%= asset.name || 'Unnamed Asset' %>"
+                >
+
+
+                    <!-- ASSET IMAGE -->
+
+                    <div class="farm-post-composer__asset-image-wrap">
+
+                        <img
+                            src="<%= assetImage %>"
+                            alt="<%= asset.name || 'Asset' %>"
+                            class="farm-post-composer__asset-image"
+                            loading="lazy"
+                        >
+
+                    </div>
+
+
+                    <!-- ASSET INFORMATION -->
+
+                    <div class="farm-post-composer__asset-info">
+
+                        <strong
+                            class="farm-post-composer__asset-name"
+                        >
+                            <%= asset.name || "Unnamed Asset" %>
+                        </strong>
+
+
+                        <span
+                            class="farm-post-composer__asset-type"
+                        >
+                            <%= assetType %>
+                        </span>
+
+                    </div>
+
+                </button>
+
+
+            <% }); %>
+
+
+        <% } else { %>
+
+
+            <!-- =================================================
+                 EMPTY STATE
+            ================================================== -->
+
+            <div class="farm-post-composer__empty">
+
+                <div class="farm-post-composer__empty-icon">
+
+                    <i class="bi bi-box-seam"></i>
+
+                </div>
+
+                <span>
+                    No farm assets available.
+                </span>
+
+            </div>
+
+
+        <% } %>
 
     </div>
 
@@ -145,29 +276,31 @@ The controller MUST provide one of these arrays.
 
 
 <!-- =========================================================
-     FULL SCREEN MODAL
+     FULL SCREEN POST MODAL
 ========================================================= -->
 
 <div
-    id="postModal"
-    class="post-modal"
+    id="farmPostModal"
+    class="farm-post-modal"
     aria-hidden="true"
 >
 
-    <div class="post-modal-content">
+
+    <div class="farm-post-modal__content">
 
 
         <!-- =================================================
-             HEADER
+             MODAL HEADER
         ================================================== -->
 
-        <header class="post-modal-header">
+        <header class="farm-post-modal__header">
+
 
             <button
                 type="button"
-                id="closePostModal"
-                class="post-back-button"
-                aria-label="Go back"
+                id="farmPostModalClose"
+                class="farm-post-modal__back"
+                aria-label="Close post composer"
             >
 
                 <i class="bi bi-arrow-left"></i>
@@ -175,257 +308,121 @@ The controller MUST provide one of these arrays.
             </button>
 
 
-            <div class="post-modal-title">
+            <div class="farm-post-modal__title">
 
                 <strong>
                     New Update
                 </strong>
 
-                <span id="postTargetHeader">
 
-                    <%= dairy.name %>
-
+                <span id="farmPostTargetHeader">
+                    Select an asset
                 </span>
 
             </div>
 
 
-            <div class="post-header-spacer"></div>
+            <div class="farm-post-modal__spacer"></div>
 
         </header>
 
 
 
         <!-- =================================================
-             BODY
+             MODAL BODY
         ================================================== -->
 
-        <main class="post-modal-body">
+        <main class="farm-post-modal__body">
 
-            <div class="post-fields">
+
+            <div class="farm-post-modal__fields">
 
 
                 <!-- =================================================
-                     TARGET SELECTOR
-                     ONLY ON NEGATIVE-CODE PAGES
+                     SELECTED ASSET
                 ================================================== -->
 
-                <% if (Number(dairy.code) < 0) { %>
+                <div
+                    id="farmSelectedAsset"
+                    class="farm-selected-asset"
+                >
 
-                    <section
-                        id="postTargetSection"
-                        class="post-target-section"
+                    <img
+                        id="farmSelectedAssetImage"
+                        src=""
+                        alt=""
+                        class="farm-selected-asset__image"
                     >
 
 
-                        <!-- =========================================
-                             TARGET HEADER
-                        ========================================== -->
-
-                        <div class="post-section-label">
-
-                            <span class="post-section-label-icon">
-
-                                <i class="bi bi-bullseye"></i>
-
-                            </span>
-
-
-                            <div>
-
-                                <strong>
-                                    What is this update about?
-                                </strong>
-
-                                <span>
-                                    First choose a category, then choose the subject.
-                                </span>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <!-- =========================================
-                             PHASE 1
-                        ========================================== -->
-
-                        <div
-                            id="targetPhaseOne"
-                            class="target-phase"
-                        >
-
-                            <label
-                                for="targetCategory"
-                                class="target-field-label"
-                            >
-
-                                Step 1 — Select category
-
-                            </label>
-
-
-                            <select
-                                id="targetCategory"
-                                class="target-select"
-                            >
-
-                                <option value="">
-                                    Select category
-                                </option>
-
-                                <option value="animal">
-                                    🐄 Animal
-                                </option>
-
-                                <option value="structure">
-                                    🏗️ Structure / Facility / Tool
-                                </option>
-
-                            </select>
-
-                        </div>
-
-
-
-                        <!-- =========================================
-                             PHASE 2
-                        ========================================== -->
-
-                        <div
-                            id="targetPhaseTwo"
-                            class="target-phase target-phase-two"
-                            hidden
-                        >
-
-                            <label
-                                for="targetDairySelect"
-                                class="target-field-label"
-                            >
-
-                                Step 2 — Select subject
-
-                            </label>
-
-
-                            <!--
-                            IMPORTANT:
-
-                            This is a REAL ACTIVE SELECT.
-
-                            It is not readonly.
-                            It is not permanently disabled.
-                            -->
-
-                            <select
-                                id="targetDairySelect"
-                                name="targetDairySelect"
-                                class="target-select"
-                            >
-
-                                <option value="">
-                                    Select a subject
-                                </option>
-
-                            </select>
-
-
-                            <div
-                                id="targetSelectionHint"
-                                class="target-selection-hint"
-                            >
-
-                                Choose a category above.
-
-                            </div>
-
-                        </div>
-
-
-
-                        <!-- =========================================
-                             SELECTED TARGET
-                        ========================================== -->
-
-                        <div
-                            id="selectedTargetDisplay"
-                            class="selected-target-display"
-                            hidden
-                        >
-
-                            <div class="selected-target-icon">
-
-                                <i class="bi bi-check-lg"></i>
-
-                            </div>
-
-
-                            <div class="selected-target-info">
-
-                                <span>
-                                    Post concerns
-                                </span>
-
-                                <strong id="selectedTargetName"></strong>
-
-                            </div>
-
-                        </div>
-
-                    </section>
-
-                <% } %>
-
-
-
-                <!-- =================================================
-                     POST CONTENT
-                ================================================== -->
-
-                <div class="post-fields-content">
-
-                    <div class="post-title-wrapper">
-
-                        <label
-                            for="postTitle"
-                            class="post-title-label"
-                        >
-
-                            Title
-
-                        </label>
-
-
-                        <input
-                            type="text"
-                            id="postTitle"
-                            maxlength="200"
-                            placeholder="Give your update a title..."
-                            aria-label="Post title"
-                            autocomplete="off"
-                        >
+                    <div class="farm-selected-asset__info">
+
+                        <span>
+                            Update concerns
+                        </span>
+
+                        <strong id="farmSelectedAssetName">
+                            Asset
+                        </strong>
+
+                        <small id="farmSelectedAssetType">
+                            Animal
+                        </small>
 
                     </div>
 
 
+                    <div class="farm-selected-asset__check">
 
-                    <!-- =================================================
-                         IMAGE PREVIEW
-                    ================================================== -->
+                        <i class="bi bi-check-lg"></i>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     TITLE
+                ================================================== -->
+
+                <div class="farm-post-title-wrapper">
+
+                    <label
+                        for="farmPostTitle"
+                        class="farm-post-title-label"
+                    >
+                        Title
+                    </label>
+
+
+                    <input
+                        type="text"
+                        id="farmPostTitle"
+                        maxlength="200"
+                        placeholder="Give your update a title..."
+                        autocomplete="off"
+                        aria-label="Post title"
+                    >
+
+                </div>
+
+
+
+                <!-- =================================================
+                     IMAGE PREVIEW
+                ================================================== -->
+
+                <div
+                    id="farmImagePreviewContainer"
+                    class="farm-image-preview-container"
+                    hidden
+                >
 
                     <div
-                        id="imagePreviewContainer"
-                        class="image-preview-container"
-                        hidden
-                    >
-
-                        <div
-                            id="imagePreviewGrid"
-                            class="image-preview-grid"
-                        ></div>
-
-                    </div>
+                        id="farmImagePreviewGrid"
+                        class="farm-image-preview-grid"
+                    ></div>
 
                 </div>
 
@@ -439,41 +436,28 @@ The controller MUST provide one of these arrays.
              BOTTOM COMPOSER
         ================================================== -->
 
-        <div class="post-composer-wrapper">
+        <div class="farm-post-composer-wrapper">
+
 
             <form
-                id="postForm"
+                id="farmPostForm"
                 action="/dairy/<%= dairy._id %>/post"
                 method="POST"
                 enctype="multipart/form-data"
-                class="post-form"
+                class="farm-post-form"
             >
 
 
                 <!-- =================================================
-                     TARGET DAIRY ID
+                     TARGET ASSET
                 ================================================== -->
 
-                <% if (Number(dairy.code) < 0) { %>
-
-                    <input
-                        type="hidden"
-                        name="targetDairyId"
-                        id="targetDairyId"
-                        value=""
-                    >
-
-                <% } else { %>
-
-                    <input
-                        type="hidden"
-                        name="targetDairyId"
-                        id="targetDairyId"
-                        value="<%= dairy._id %>"
-                    >
-
-                <% } %>
-
+                <input
+                    type="hidden"
+                    name="targetDairyId"
+                    id="farmTargetDairyId"
+                    value=""
+                >
 
 
                 <!-- =================================================
@@ -482,8 +466,8 @@ The controller MUST provide one of these arrays.
 
                 <input
                     type="hidden"
-                    id="postTitleHidden"
                     name="title"
+                    id="farmPostTitleHidden"
                     value=""
                 >
 
@@ -493,16 +477,14 @@ The controller MUST provide one of these arrays.
                      COMPOSER
                 ================================================== -->
 
-                <div class="post-composer">
+                <div class="farm-post-composer-bar">
 
 
-                    <!-- =================================================
-                         ATTACHMENT
-                    ================================================== -->
+                    <!-- ATTACHMENT -->
 
                     <label
-                        for="postImages"
-                        class="composer-icon-button attachment-button"
+                        for="farmPostImages"
+                        class="farm-post-icon-button"
                         aria-label="Attach images"
                         title="Attach images"
                     >
@@ -514,7 +496,7 @@ The controller MUST provide one of these arrays.
 
                     <input
                         type="file"
-                        id="postImages"
+                        id="farmPostImages"
                         name="images"
                         accept="image/jpeg,image/jpg,image/png,image/webp"
                         multiple
@@ -523,14 +505,12 @@ The controller MUST provide one of these arrays.
 
 
 
-                    <!-- =================================================
-                         TEXT
-                    ================================================== -->
+                    <!-- TEXT -->
 
-                    <div class="composer-input-area">
+                    <div class="farm-post-input-area">
 
                         <textarea
-                            id="postText"
+                            id="farmPostText"
                             name="text"
                             maxlength="1000"
                             rows="1"
@@ -540,8 +520,8 @@ The controller MUST provide one of these arrays.
 
 
                         <span
-                            id="characterCounter"
-                            class="character-counter"
+                            id="farmPostCharacterCounter"
+                            class="farm-post-character-counter"
                         >
                             0/1000
                         </span>
@@ -550,14 +530,12 @@ The controller MUST provide one of these arrays.
 
 
 
-                    <!-- =================================================
-                         SEND
-                    ================================================== -->
+                    <!-- SEND -->
 
                     <button
                         type="submit"
-                        id="submitPostButton"
-                        class="composer-send-button"
+                        id="farmPostSubmitButton"
+                        class="farm-post-send-button"
                         aria-label="Send update"
                         disabled
                     >
@@ -584,152 +562,32 @@ The controller MUST provide one of these arrays.
 
 <style>
 
-* {
+/* =========================================================
+   NAMESPACE
+========================================================= */
+
+.farm-post-composer,
+.farm-post-modal,
+.farm-post-modal * {
     box-sizing: border-box;
 }
 
 
+
 /* =========================================================
-   CREATE POST CARD
+   CREATE CARD
 ========================================================= */
 
-.create-post-card {
+.farm-post-composer {
 
     width: 100%;
-    background: #ffffff;
-    border: 1px solid #e7eee9;
-    border-radius: 16px;
-    padding: 16px;
+    padding: 15px;
     margin-bottom: 16px;
 
-}
-
-
-.create-post-header {
-
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-}
-
-
-.create-post-avatar {
-
-    flex: 0 0 auto;
-
-}
-
-
-.avatar-sm {
-
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    object-fit: cover;
-    display: block;
-
-}
-
-
-.create-post-heading {
-
-    min-width: 0;
-    color: #555;
-    font-size: 14px;
-    line-height: 1.5;
-
-}
-
-
-.heading-line {
-
-    display: block;
-
-}
-
-
-.create-post-heading strong {
-
-    color: #222;
-
-}
-
-
-
-/* =========================================================
-   TRIGGER
-========================================================= */
-
-.composer-trigger {
-
-    min-height: 48px;
-    margin-top: 14px;
-    padding: 0 16px;
-    border: 1px solid #dfe8e2;
-    border-radius: 24px;
-    display: flex;
-    align-items: center;
-    background: #f8faf8;
-    color: #888;
-    cursor: pointer;
-
-    transition:
-        background .2s ease,
-        border-color .2s ease,
-        transform .15s ease;
-
-}
-
-
-.composer-trigger:hover {
-
-    background: #f1f7f3;
-    border-color: #198754;
-
-}
-
-
-.composer-trigger:active {
-
-    transform: scale(.99);
-
-}
-
-
-
-/* =========================================================
-   MODAL
-========================================================= */
-
-.post-modal {
-
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100dvh;
     background: #ffffff;
-    z-index: 99999;
-    display: none;
-    overflow: hidden;
 
-}
-
-
-.post-modal.active {
-
-    display: block;
-
-}
-
-
-.post-modal-content {
-
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background: #ffffff;
+    border: 1px solid #e5ebe7;
+    border-radius: 16px;
 
 }
 
@@ -739,70 +597,448 @@ The controller MUST provide one of these arrays.
    HEADER
 ========================================================= */
 
-.post-modal-header {
+.farm-post-composer__header {
 
-    flex: 0 0 auto;
-    height: 64px;
     display: flex;
     align-items: center;
-    padding: 0 16px;
-    border-bottom: 1px solid #e8eee9;
+
+    gap: 11px;
+
+    min-width: 0;
+
+}
+
+
+.farm-post-composer__user {
+
+    flex: 0 0 auto;
+
+}
+
+
+.farm-post-composer__user-avatar {
+
+    width: 43px;
+    height: 43px;
+
+    display: block;
+
+    border-radius: 50%;
+
+    object-fit: cover;
+
+}
+
+
+.farm-post-composer__heading {
+
+    min-width: 0;
+
+    color: #656d68;
+
+    font-size: 14px;
+    line-height: 1.45;
+
+}
+
+
+.farm-post-composer__heading strong {
+
+    color: #202520;
+}
+
+
+
+/* =========================================================
+   HORIZONTAL ASSET SCROLLER
+========================================================= */
+
+.farm-post-composer__asset-scroll {
+
+    display: flex;
+
+    width: 100%;
+
+    gap: 9px;
+
+    margin-top: 14px;
+
+    padding: 2px 1px 5px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    scroll-behavior: smooth;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: none;
+
+}
+
+
+.farm-post-composer__asset-scroll::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+
+/* =========================================================
+   ASSET CARD
+========================================================= */
+
+.farm-post-composer__asset-card {
+
+    position: relative;
+
+    flex: 0 0 112px;
+
+    width: 112px;
+    height: 155px;
+
+    padding: 0;
+
+    overflow: hidden;
+
+    border: 1px solid #e2e9e4;
+    border-radius: 14px;
+
+    background: #111615;
+
+    cursor: pointer;
+
+    text-align: left;
+
+    transition:
+        transform .15s ease,
+        border-color .15s ease;
+
+}
+
+
+.farm-post-composer__asset-card:active {
+
+    transform: scale(.96);
+
+}
+
+
+.farm-post-composer__asset-card:focus-visible {
+
+    outline: 2px solid #198754;
+    outline-offset: 2px;
+
+}
+
+
+
+/* =========================================================
+   IMAGE
+========================================================= */
+
+.farm-post-composer__asset-image-wrap {
+
+    position: absolute;
+
+    inset: 0;
+
+    overflow: hidden;
+
+}
+
+
+.farm-post-composer__asset-image {
+
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+
+/* =========================================================
+   DARK GRADIENT
+========================================================= */
+
+.farm-post-composer__asset-image-wrap::after {
+
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    height: 62%;
+
+    background:
+        linear-gradient(
+            to bottom,
+            transparent,
+            rgba(0, 0, 0, .82)
+        );
+
+}
+
+
+
+/* =========================================================
+   ASSET INFORMATION
+========================================================= */
+
+.farm-post-composer__asset-info {
+
+    position: absolute;
+
+    left: 9px;
+    right: 7px;
+    bottom: 9px;
+
+    z-index: 2;
+
+    display: flex;
+    flex-direction: column;
+
+}
+
+
+.farm-post-composer__asset-name {
+
+    display: block;
+
+    color: #ffffff;
+
+    font-size: 13px;
+    line-height: 1.2;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+
+.farm-post-composer__asset-type {
+
+    display: inline-flex;
+
+    width: fit-content;
+
+    margin-top: 4px;
+
+    padding: 2px 7px;
+
+    border-radius: 20px;
+
+    background: rgba(25, 135, 84, .9);
+
+    color: #ffffff;
+
+    font-size: 9px;
+    font-weight: 700;
+
+}
+
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.farm-post-composer__empty {
+
+    flex: 0 0 auto;
+
+    min-width: 190px;
+
+    height: 80px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 12px;
+
+    border: 1px dashed #d8e2db;
+    border-radius: 12px;
+
+    color: #7b847e;
+
+    font-size: 12px;
+
+}
+
+
+.farm-post-composer__empty-icon {
+
+    width: 34px;
+    height: 34px;
+
+    flex: 0 0 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #eef5f0;
+
+    color: #198754;
+
+}
+
+
+
+/* =========================================================
+   FULL SCREEN MODAL
+========================================================= */
+
+.farm-post-modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    width: 100vw;
+    height: 100dvh;
+
+    display: none;
+
+    z-index: 99999;
+
+    overflow: hidden;
+
     background: #ffffff;
 
 }
 
 
-.post-back-button {
+.farm-post-modal.farm-post-modal--active {
 
-    width: 44px;
-    height: 44px;
-    flex: 0 0 44px;
-    border: none;
-    background: transparent;
-    color: #198754;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 27px;
-    padding: 0;
+    display: block;
 
 }
 
 
-.post-modal-title {
+.farm-post-modal__content {
 
-    margin-left: 8px;
-    min-width: 0;
+    width: 100%;
+    height: 100%;
+
     display: flex;
     flex-direction: column;
+
+    background: #ffffff;
+
+}
+
+
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
+
+.farm-post-modal__header {
+
+    flex: 0 0 auto;
+
+    height: 62px;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 12px;
+
+    border-bottom: 1px solid #e6ece8;
+
+    background: #ffffff;
+
+}
+
+
+.farm-post-modal__back {
+
+    width: 44px;
+    height: 44px;
+
+    flex: 0 0 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #198754;
+
+    font-size: 25px;
+
+    cursor: pointer;
+
+}
+
+
+.farm-post-modal__back:active {
+
+    background: #eef6f1;
+
+}
+
+
+.farm-post-modal__title {
+
+    min-width: 0;
+
+    margin-left: 7px;
+
+    display: flex;
+    flex-direction: column;
+
     line-height: 1.25;
 
 }
 
 
-.post-modal-title strong {
+.farm-post-modal__title strong {
 
     color: #202520;
+
     font-size: 17px;
 
 }
 
 
-.post-modal-title span {
+.farm-post-modal__title span {
+
+    max-width: 70vw;
 
     margin-top: 2px;
-    color: #7a817d;
-    font-size: 12px;
-    white-space: nowrap;
+
     overflow: hidden;
+
+    white-space: nowrap;
     text-overflow: ellipsis;
-    max-width: 70vw;
+
+    color: #7b847e;
+
+    font-size: 12px;
 
 }
 
 
-.post-header-spacer {
+.farm-post-modal__spacer {
 
     flex: 1;
 
@@ -811,23 +1047,28 @@ The controller MUST provide one of these arrays.
 
 
 /* =========================================================
-   BODY
+   MODAL BODY
 ========================================================= */
 
-.post-modal-body {
+.farm-post-modal__body {
 
     flex: 1 1 auto;
+
     min-height: 0;
+
     overflow-y: auto;
-    padding: 20px;
+
+    padding: 18px;
 
 }
 
 
-.post-fields {
+.farm-post-modal__fields {
 
     width: 100%;
+
     max-width: 700px;
+
     margin: 0 auto;
 
 }
@@ -835,248 +1076,112 @@ The controller MUST provide one of these arrays.
 
 
 /* =========================================================
-   TARGET SECTION
+   SELECTED ASSET
 ========================================================= */
 
-.post-target-section {
+.farm-selected-asset {
 
     width: 100%;
-    margin-bottom: 24px;
-    padding: 15px;
-    border: 1px solid #e1ebe4;
-    border-radius: 15px;
-    background: #f7faf8;
-
-}
-
-
-.post-section-label {
 
     display: flex;
     align-items: center;
+
     gap: 11px;
-    margin-bottom: 15px;
+
+    padding: 10px;
+
+    margin-bottom: 20px;
+
+    border: 1px solid #dce8e0;
+    border-radius: 13px;
+
+    background: #f5faf7;
 
 }
 
 
-.post-section-label-icon {
+.farm-selected-asset__image {
 
-    width: 38px;
-    height: 38px;
-    flex: 0 0 38px;
-    border-radius: 50%;
-    background: #e2f2e9;
-    color: #198754;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 17px;
-
-}
-
-
-.post-section-label > div {
-
-    display: flex;
-    flex-direction: column;
-
-}
-
-
-.post-section-label strong {
-
-    color: #26312a;
-    font-size: 14px;
-
-}
-
-
-.post-section-label span {
-
-    margin-top: 2px;
-    color: #7a817d;
-    font-size: 11px;
-
-}
-
-
-
-/* =========================================================
-   PHASES
-========================================================= */
-
-.target-phase {
-
-    width: 100%;
-
-}
-
-
-.target-phase-two {
-
-    margin-top: 15px;
-
-}
-
-
-.target-field-label {
-
-    display: block;
-    margin-bottom: 7px;
-    color: #37413a;
-    font-size: 12px;
-    font-weight: 700;
-
-}
-
-
-
-/* =========================================================
-   SELECT
-========================================================= */
-
-.target-select {
-
-    display: block;
-    width: 100%;
-    min-height: 48px;
+    width: 48px;
     height: 48px;
-    padding: 0 12px;
-    border: 1px solid #d6e0d9;
+
+    flex: 0 0 48px;
+
     border-radius: 11px;
-    outline: none;
-    background-color: #ffffff;
-    color: #202520;
-    font-family: inherit;
-    font-size: 14px;
-    cursor: pointer;
-    opacity: 1;
-    pointer-events: auto;
+
+    object-fit: cover;
 
 }
 
 
-.target-select:focus {
-
-    border-color: #198754;
-
-    box-shadow:
-        0 0 0 3px
-        rgba(25, 135, 84, .10);
-
-}
-
-
-.target-select:disabled {
-
-    background-color: #f0f4f1;
-    color: #929a95;
-    cursor: not-allowed;
-    opacity: .75;
-
-}
-
-
-
-/* =========================================================
-   HINT
-========================================================= */
-
-.target-selection-hint {
-
-    margin-top: 7px;
-    color: #7f8983;
-    font-size: 11px;
-    line-height: 1.4;
-
-}
-
-
-
-/* =========================================================
-   SELECTED TARGET
-========================================================= */
-
-.selected-target-display {
-
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin-top: 12px;
-    padding: 9px 11px;
-    border-radius: 10px;
-    background: #eaf6ef;
-
-}
-
-
-.selected-target-icon {
-
-    width: 25px;
-    height: 25px;
-    flex: 0 0 25px;
-    border-radius: 50%;
-    background: #198754;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-
-}
-
-
-.selected-target-info {
+.farm-selected-asset__info {
 
     min-width: 0;
+
+    flex: 1;
+
     display: flex;
     flex-direction: column;
 
 }
 
 
-.selected-target-info span {
+.farm-selected-asset__info span {
 
-    color: #718078;
+    color: #7a837d;
+
     font-size: 10px;
 
 }
 
 
-.selected-target-info strong {
+.farm-selected-asset__info strong {
 
     margin-top: 1px;
-    color: #205b3b;
-    font-size: 13px;
+
     overflow: hidden;
-    text-overflow: ellipsis;
+
+    color: #243029;
+
+    font-size: 14px;
+
     white-space: nowrap;
+    text-overflow: ellipsis;
 
 }
 
 
+.farm-selected-asset__info small {
 
-/* =========================================================
-   EMPTY TARGET STATE
-========================================================= */
+    margin-top: 2px;
 
-.target-empty-option {
+    color: #198754;
 
-    color: #7f8983;
+    font-size: 10px;
+
+    font-weight: 700;
 
 }
 
 
-.target-empty-message {
+.farm-selected-asset__check {
 
-    margin-top: 8px;
-    padding: 9px 10px;
-    border-radius: 9px;
-    background: #fff7e6;
-    color: #80652e;
-    font-size: 11px;
-    line-height: 1.45;
+    width: 28px;
+    height: 28px;
+
+    flex: 0 0 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    font-size: 14px;
 
 }
 
@@ -1086,53 +1191,61 @@ The controller MUST provide one of these arrays.
    TITLE
 ========================================================= */
 
-.post-fields-content {
+.farm-post-title-wrapper {
 
     width: 100%;
 
-}
-
-
-.post-title-wrapper {
-
-    width: 100%;
     margin-bottom: 18px;
 
 }
 
 
-.post-title-label {
+.farm-post-title-label {
 
     display: block;
+
     margin-bottom: 7px;
+
     color: #6d7771;
+
     font-size: 11px;
+
     font-weight: 700;
+
     text-transform: uppercase;
+
     letter-spacing: .04em;
 
 }
 
 
-#postTitle {
+#farmPostTitle {
 
     width: 100%;
+
     padding: 13px 14px;
+
     border: 1px solid #e0e7e2;
     border-radius: 12px;
+
     outline: none;
+
     background: #f8faf8;
+
     color: #202520;
+
     font-family: inherit;
+
     font-size: 20px;
     font-weight: 700;
 
 }
 
 
-#postTitle:focus {
+#farmPostTitle:focus {
 
     border-color: #198754;
+
     background: #ffffff;
 
     box-shadow:
@@ -1142,7 +1255,7 @@ The controller MUST provide one of these arrays.
 }
 
 
-#postTitle::placeholder {
+#farmPostTitle::placeholder {
 
     color: #a0a6a2;
 
@@ -1154,14 +1267,14 @@ The controller MUST provide one of these arrays.
    IMAGE PREVIEW
 ========================================================= */
 
-.image-preview-container {
+.farm-image-preview-container {
 
     width: 100%;
 
 }
 
 
-.image-preview-grid {
+.farm-image-preview-grid {
 
     width: 100%;
 
@@ -1170,28 +1283,35 @@ The controller MUST provide one of these arrays.
     grid-template-columns:
         repeat(2, minmax(0, 1fr));
 
-    gap: 10px;
+    gap: 9px;
 
 }
 
 
-.image-preview-item {
+.farm-image-preview-item {
 
     position: relative;
+
     width: 100%;
+
     aspect-ratio: 1 / 1;
+
     overflow: hidden;
+
     border-radius: 12px;
+
     background: #f3f5f3;
 
 }
 
 
-.image-preview-item img {
+.farm-image-preview-item img {
 
     width: 100%;
     height: 100%;
+
     display: block;
+
     object-fit: cover;
 
 }
@@ -1202,38 +1322,50 @@ The controller MUST provide one of these arrays.
    BOTTOM COMPOSER
 ========================================================= */
 
-.post-composer-wrapper {
+.farm-post-composer-wrapper {
 
     flex: 0 0 auto;
+
     width: 100%;
+
     padding:
+        9px
         10px
-        12px
-        calc(10px + env(safe-area-inset-bottom));
-    border-top: 1px solid #e8eee9;
+        calc(9px + env(safe-area-inset-bottom));
+
+    border-top: 1px solid #e7ece9;
+
     background: #ffffff;
 
 }
 
 
-.post-form {
+.farm-post-form {
 
     width: 100%;
+
     margin: 0;
 
 }
 
 
-.post-composer {
+.farm-post-composer-bar {
 
     width: 100%;
+
     min-height: 50px;
+
     display: flex;
     align-items: flex-end;
-    gap: 8px;
-    padding: 5px 7px;
+
+    gap: 6px;
+
+    padding: 4px 6px;
+
     border: 1px solid #dce6df;
+
     border-radius: 28px;
+
     background: #f7faf8;
 
 }
@@ -1244,25 +1376,31 @@ The controller MUST provide one of these arrays.
    ATTACHMENT
 ========================================================= */
 
-.composer-icon-button {
+.farm-post-icon-button {
 
     width: 42px;
     height: 42px;
+
     flex: 0 0 42px;
-    border: none;
-    background: transparent;
-    color: #198754;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
+    border: none;
+
+    background: transparent;
+
+    color: #198754;
+
     cursor: pointer;
+
     font-size: 23px;
-    padding: 0;
 
 }
 
 
-.attachment-button i {
+.farm-post-icon-button i {
 
     transform: rotate(-20deg);
 
@@ -1271,29 +1409,37 @@ The controller MUST provide one of these arrays.
 
 
 /* =========================================================
-   TEXTAREA
+   TEXT INPUT
 ========================================================= */
 
-.composer-input-area {
+.farm-post-input-area {
 
     position: relative;
+
     flex: 1;
+
     min-width: 0;
+
     display: flex;
     align-items: flex-end;
 
 }
 
 
-#postText {
+#farmPostText {
 
     width: 100%;
+
     min-height: 40px;
     max-height: 120px;
+
     resize: none;
+
     overflow-y: auto;
+
     border: none;
     outline: none;
+
     background: transparent;
 
     padding:
@@ -1302,15 +1448,18 @@ The controller MUST provide one of these arrays.
         5px;
 
     margin: 0;
+
     font-family: inherit;
+
     font-size: 15px;
     line-height: 20px;
+
     color: #202520;
 
 }
 
 
-#postText::placeholder {
+#farmPostText::placeholder {
 
     color: #8b928d;
 
@@ -1319,18 +1468,24 @@ The controller MUST provide one of these arrays.
 
 
 /* =========================================================
-   COUNTER
+   CHARACTER COUNTER
 ========================================================= */
 
-.character-counter {
+.farm-post-character-counter {
 
     position: absolute;
+
     right: 5px;
     bottom: 1px;
+
     padding-left: 3px;
+
     background: #f7faf8;
+
     color: #8a928d;
+
     font-size: 10px;
+
     pointer-events: none;
 
 }
@@ -1341,28 +1496,35 @@ The controller MUST provide one of these arrays.
    SEND
 ========================================================= */
 
-.composer-send-button {
+.farm-post-send-button {
 
     width: 42px;
     height: 42px;
+
     flex: 0 0 42px;
-    border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: #198754;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
+    border: none;
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #198754;
+
     cursor: pointer;
+
     font-size: 20px;
-    padding: 0;
 
 }
 
 
-.composer-send-button:disabled {
+.farm-post-send-button:disabled {
 
     color: #b8c2bc;
+
     cursor: default;
 
 }
@@ -1375,50 +1537,45 @@ The controller MUST provide one of these arrays.
 
 @media (max-width: 600px) {
 
-    .post-modal-header {
-
-        height: 60px;
-        padding: 0 10px;
-
-    }
-
-
-    .post-modal-title strong {
-
-        font-size: 16px;
-
-    }
-
-
-    .post-modal-body {
-
-        padding: 14px;
-
-    }
-
-
-    .post-target-section {
+    .farm-post-composer {
 
         padding: 13px;
 
     }
 
 
-    #postTitle {
+    .farm-post-composer__asset-card {
+
+        flex-basis: 108px;
+
+        width: 108px;
+        height: 150px;
+
+    }
+
+
+    .farm-post-modal__header {
+
+        height: 60px;
+
+    }
+
+
+    .farm-post-modal__body {
+
+        padding: 14px;
+
+    }
+
+
+    #farmPostTitle {
 
         font-size: 19px;
 
     }
 
 
-    .image-preview-grid {
-
-        gap: 7px;
-
-    }
-
-
-    .post-composer-wrapper {
+    .farm-post-composer-wrapper {
 
         padding:
             8px
@@ -1428,30 +1585,32 @@ The controller MUST provide one of these arrays.
     }
 
 
-    .post-composer {
+    .farm-post-composer-bar {
 
         min-height: 48px;
-        gap: 4px;
-        padding: 4px 5px;
 
     }
 
 
-    .composer-icon-button {
+    .farm-post-icon-button {
 
         width: 40px;
         height: 40px;
+
         flex-basis: 40px;
+
         font-size: 22px;
 
     }
 
 
-    .composer-send-button {
+    .farm-post-send-button {
 
         width: 40px;
         height: 40px;
+
         flex-basis: 40px;
+
         font-size: 19px;
 
     }
@@ -1461,23 +1620,9 @@ The controller MUST provide one of these arrays.
 
 @media (max-width: 380px) {
 
-    .post-modal-title span {
+    .farm-post-modal__title span {
 
-        display: none;
-
-    }
-
-
-    .post-modal-body {
-
-        padding: 10px;
-
-    }
-
-
-    .character-counter {
-
-        font-size: 9px;
+        max-width: 55vw;
 
     }
 
@@ -1498,102 +1643,135 @@ The controller MUST provide one of these arrays.
     "use strict";
 
 
-    function initializePostModal() {
+    function initializeFarmPostComposer() {
 
 
         /* =====================================================
-           BASIC ELEMENTS
+           ELEMENTS
         ====================================================== */
 
         const modal =
-            document.getElementById("postModal");
+            document.getElementById(
+                "farmPostModal"
+            );
 
-        const openComposer =
-            document.getElementById("openPostComposer");
 
         const closeButton =
-            document.getElementById("closePostModal");
+            document.getElementById(
+                "farmPostModalClose"
+            );
 
-        const titleInput =
-            document.getElementById("postTitle");
 
-        const hiddenTitle =
-            document.getElementById("postTitleHidden");
+        const assetCards =
+            document.querySelectorAll(
+                ".farm-post-composer__asset-card"
+            );
 
-        const textarea =
-            document.getElementById("postText");
-
-        const imageInput =
-            document.getElementById("postImages");
-
-        const previewContainer =
-            document.getElementById("imagePreviewContainer");
-
-        const previewGrid =
-            document.getElementById("imagePreviewGrid");
-
-        const characterCounter =
-            document.getElementById("characterCounter");
-
-        const sendButton =
-            document.getElementById("submitPostButton");
 
         const form =
-            document.getElementById("postForm");
+            document.getElementById(
+                "farmPostForm"
+            );
 
-
-
-        /* =====================================================
-           TARGET ELEMENTS
-        ====================================================== */
-
-        const targetCategory =
-            document.getElementById("targetCategory");
-
-        const targetPhaseTwo =
-            document.getElementById("targetPhaseTwo");
-
-        const targetDairySelect =
-            document.getElementById("targetDairySelect");
-
-        const targetSelectionHint =
-            document.getElementById("targetSelectionHint");
 
         const targetDairyId =
-            document.getElementById("targetDairyId");
+            document.getElementById(
+                "farmTargetDairyId"
+            );
 
-        const selectedTargetDisplay =
-            document.getElementById("selectedTargetDisplay");
 
-        const selectedTargetName =
-            document.getElementById("selectedTargetName");
+        const targetHeader =
+            document.getElementById(
+                "farmPostTargetHeader"
+            );
 
-        const postTargetHeader =
-            document.getElementById("postTargetHeader");
+
+        const selectedAssetImage =
+            document.getElementById(
+                "farmSelectedAssetImage"
+            );
+
+
+        const selectedAssetName =
+            document.getElementById(
+                "farmSelectedAssetName"
+            );
+
+
+        const selectedAssetType =
+            document.getElementById(
+                "farmSelectedAssetType"
+            );
+
+
+        const titleInput =
+            document.getElementById(
+                "farmPostTitle"
+            );
+
+
+        const hiddenTitle =
+            document.getElementById(
+                "farmPostTitleHidden"
+            );
+
+
+        const textInput =
+            document.getElementById(
+                "farmPostText"
+            );
+
+
+        const imageInput =
+            document.getElementById(
+                "farmPostImages"
+            );
+
+
+        const previewContainer =
+            document.getElementById(
+                "farmImagePreviewContainer"
+            );
+
+
+        const previewGrid =
+            document.getElementById(
+                "farmImagePreviewGrid"
+            );
+
+
+        const counter =
+            document.getElementById(
+                "farmPostCharacterCounter"
+            );
+
+
+        const submitButton =
+            document.getElementById(
+                "farmPostSubmitButton"
+            );
 
 
 
         /* =====================================================
-           REQUIRED ELEMENT CHECK
+           REQUIRED ELEMENTS
         ====================================================== */
 
         if (
             !modal ||
-            !openComposer ||
             !closeButton ||
+            !form ||
+            !targetDairyId ||
             !titleInput ||
             !hiddenTitle ||
-            !textarea ||
+            !textInput ||
             !imageInput ||
-            !previewContainer ||
-            !previewGrid ||
-            !characterCounter ||
-            !sendButton ||
-            !form
+            !counter ||
+            !submitButton
         ) {
 
             console.error(
-                "CREATE POST: required elements missing."
+                "FARM CREATE POST: required elements missing."
             );
 
             return;
@@ -1603,140 +1781,122 @@ The controller MUST provide one of these arrays.
 
 
         /* =====================================================
-           SERVER TARGET DATA
-
-           IMPORTANT:
-
-           The controller must provide the records.
-
-           Priority:
-
-               targetDairies
-               dairies
-               allDairies
-               postTargetDairies
-
-           We deliberately do NOT silently manufacture an
-           empty list if the controller forgot to provide it.
-           A console error makes the actual backend problem
-           visible.
-        ====================================================== */
-
-        const serverTargetDairies =
-            <%- JSON.stringify(
-                typeof targetDairies !== "undefined"
-                    ? targetDairies
-                    : (
-                        typeof dairies !== "undefined"
-                            ? dairies
-                            : (
-                                typeof allDairies !== "undefined"
-                                    ? allDairies
-                                    : (
-                                        typeof postTargetDairies !== "undefined"
-                                            ? postTargetDairies
-                                            : null
-                                    )
-                            )
-                    )
-            ) %>;
-
-
-
-        /* =====================================================
-           NORMALIZE SERVER RECORDS
-        ====================================================== */
-
-        const availableDairies =
-            Array.isArray(serverTargetDairies)
-                ? serverTargetDairies
-                    .map(function (item) {
-
-                        if (!item) {
-                            return null;
-                        }
-
-
-                        const rawId =
-                            item._id;
-
-
-                        if (!rawId) {
-                            return null;
-                        }
-
-
-                        return {
-
-                            _id:
-                                String(rawId),
-
-                            name:
-                                item.name
-                                    ? String(item.name)
-                                    : "Unnamed Dairy",
-
-                            code:
-                                item.code
-
-                        };
-
-                    })
-                    .filter(function (item) {
-
-                        return (
-                            item &&
-                            item._id
-                        );
-
-                    })
-                : [];
-
-
-
-        /* =====================================================
-           DEBUG
-
-           This tells us immediately whether the controller
-           actually sent the target records.
-        ====================================================== */
-
-        console.log(
-            "CREATE POST — server target records:",
-            serverTargetDairies
-        );
-
-
-        console.log(
-            "CREATE POST — normalized target records:",
-            availableDairies
-        );
-
-
-        if (
-            serverTargetDairies === null
-        ) {
-
-            console.error(
-                "CREATE POST: NO TARGET DAIRY ARRAY WAS PROVIDED BY THE CONTROLLER."
-            );
-
-        }
-
-
-
-        /* =====================================================
            OPEN MODAL
         ====================================================== */
 
-        function openModal() {
+        function openModal(card) {
 
-            modal.classList.add("active");
+
+            const assetId =
+                card.dataset.assetId || "";
+
+
+            const assetName =
+                card.dataset.assetName ||
+                "Unnamed Asset";
+
+
+            const assetType =
+                card.dataset.assetType ||
+                "Tool";
+
+
+            const assetImage =
+                card.dataset.assetImage ||
+                "";
+
+
+            /* ================================================
+               SET TARGET
+            ================================================= */
+
+            targetDairyId.value =
+                assetId;
+
+
+            /* ================================================
+               SET HEADER
+            ================================================= */
+
+            targetHeader.textContent =
+                assetName;
+
+
+            /* ================================================
+               SET SELECTED ASSET
+            ================================================= */
+
+            if (selectedAssetImage) {
+
+                selectedAssetImage.src =
+                    assetImage;
+
+                selectedAssetImage.alt =
+                    assetName;
+
+            }
+
+
+            if (selectedAssetName) {
+
+                selectedAssetName.textContent =
+                    assetName;
+
+            }
+
+
+            if (selectedAssetType) {
+
+                selectedAssetType.textContent =
+                    assetType;
+
+            }
+
+
+            /* ================================================
+               RESET CONTENT
+            ================================================= */
+
+            titleInput.value =
+                "";
+
+            hiddenTitle.value =
+                "";
+
+            textInput.value =
+                "";
+
+            imageInput.value =
+                "";
+
+            previewGrid.innerHTML =
+                "";
+
+            previewContainer.hidden =
+                true;
+
+
+            updateCounter();
+
+            resizeTextarea();
+
+            updateSubmitButton();
+
+
+            /* ================================================
+               OPEN
+            ================================================= */
+
+            modal.classList.add(
+                "farm-post-modal--active"
+            );
+
 
             modal.setAttribute(
                 "aria-hidden",
                 "false"
             );
+
 
             document.body.style.overflow =
                 "hidden";
@@ -1744,15 +1904,7 @@ The controller MUST provide one of these arrays.
 
             setTimeout(function () {
 
-                if (targetCategory) {
-
-                    targetCategory.focus();
-
-                } else {
-
-                    titleInput.focus();
-
-                }
+                titleInput.focus();
 
             }, 100);
 
@@ -1766,12 +1918,16 @@ The controller MUST provide one of these arrays.
 
         function closeModal() {
 
-            modal.classList.remove("active");
+            modal.classList.remove(
+                "farm-post-modal--active"
+            );
+
 
             modal.setAttribute(
                 "aria-hidden",
                 "true"
             );
+
 
             document.body.style.overflow =
                 "";
@@ -1781,30 +1937,59 @@ The controller MUST provide one of these arrays.
 
 
         /* =====================================================
-           CHARACTER COUNTER
+           COUNTER
         ====================================================== */
 
-        function updateCharacterCounter() {
+        function updateCounter() {
 
-            characterCounter.textContent =
-                textarea.value.length + "/1000";
+            counter.textContent =
+                textInput.value.length +
+                "/1000";
 
         }
 
 
 
         /* =====================================================
-           SEND BUTTON
+           TEXTAREA RESIZE
         ====================================================== */
 
-        function updateSendButton() {
+        function resizeTextarea() {
+
+            textInput.style.height =
+                "auto";
+
+
+            const height =
+                Math.min(
+                    textInput.scrollHeight,
+                    120
+                );
+
+
+            textInput.style.height =
+                height + "px";
+
+        }
+
+
+
+        /* =====================================================
+           SUBMIT BUTTON
+        ====================================================== */
+
+        function updateSubmitButton() {
+
+            const hasTarget =
+                targetDairyId.value.trim().length > 0;
+
 
             const hasTitle =
                 titleInput.value.trim().length > 0;
 
 
             const hasText =
-                textarea.value.trim().length > 0;
+                textInput.value.trim().length > 0;
 
 
             const hasImages =
@@ -1812,26 +1997,7 @@ The controller MUST provide one of these arrays.
                 imageInput.files.length > 0;
 
 
-            let hasTarget = true;
-
-
-            /*
-             * Negative-code page:
-             * target must be selected.
-             */
-
-            if (
-                targetCategory &&
-                targetDairyId
-            ) {
-
-                hasTarget =
-                    targetDairyId.value.trim().length > 0;
-
-            }
-
-
-            sendButton.disabled =
+            submitButton.disabled =
                 !(
                     hasTarget &&
                     (
@@ -1846,34 +2012,10 @@ The controller MUST provide one of these arrays.
 
 
         /* =====================================================
-           TEXTAREA RESIZE
+           IMAGE PREVIEW
         ====================================================== */
 
-        function resizeTextarea() {
-
-            textarea.style.height =
-                "auto";
-
-
-            const height =
-                Math.min(
-                    textarea.scrollHeight,
-                    120
-                );
-
-
-            textarea.style.height =
-                height + "px";
-
-        }
-
-
-
-        /* =====================================================
-           IMAGE PREVIEWS
-        ====================================================== */
-
-        function renderPreviews() {
+        function renderImagePreviews() {
 
             previewGrid.innerHTML =
                 "";
@@ -1919,15 +2061,19 @@ The controller MUST provide one of these arrays.
                     function (event) {
 
                         const item =
-                            document.createElement("div");
+                            document.createElement(
+                                "div"
+                            );
 
 
                         item.className =
-                            "image-preview-item";
+                            "farm-image-preview-item";
 
 
                         const image =
-                            document.createElement("img");
+                            document.createElement(
+                                "img"
+                            );
 
 
                         image.src =
@@ -1938,9 +2084,14 @@ The controller MUST provide one of these arrays.
                             "Selected image";
 
 
-                        item.appendChild(image);
+                        item.appendChild(
+                            image
+                        );
 
-                        previewGrid.appendChild(item);
+
+                        previewGrid.appendChild(
+                            item
+                        );
 
                     };
 
@@ -1954,653 +2105,21 @@ The controller MUST provide one of these arrays.
 
 
         /* =====================================================
-           RESET TARGET SELECTOR
+           ASSET CARD CLICK
         ====================================================== */
 
-        function resetTargetSelection() {
+        assetCards.forEach(function (card) {
 
-            if (!targetDairySelect) {
-
-                return;
-
-            }
-
-
-            targetDairySelect.innerHTML = "";
-
-
-            const option =
-                document.createElement("option");
-
-
-            option.value = "";
-
-            option.textContent =
-                "Select a subject";
-
-
-            targetDairySelect.appendChild(option);
-
-
-            /*
-             * It is disabled only while no category exists.
-             */
-
-            targetDairySelect.disabled =
-                true;
-
-
-            if (targetDairyId) {
-
-                targetDairyId.value = "";
-
-            }
-
-
-            if (selectedTargetDisplay) {
-
-                selectedTargetDisplay.hidden =
-                    true;
-
-            }
-
-
-            if (selectedTargetName) {
-
-                selectedTargetName.textContent =
-                    "";
-
-            }
-
-
-            if (postTargetHeader) {
-
-                postTargetHeader.textContent =
-                    "<%= dairy.name %>";
-
-            }
-
-
-            if (targetSelectionHint) {
-
-                targetSelectionHint.textContent =
-                    "Choose a category above.";
-
-            }
-
-        }
-
-
-
-        /* =====================================================
-           POPULATE TARGET LIST
-        ====================================================== */
-
-        function populateTargetList(category) {
-
-            if (
-                !targetDairySelect ||
-                !targetPhaseTwo
-            ) {
-
-                return;
-
-            }
-
-
-            /*
-             * Clear old options.
-             */
-
-            targetDairySelect.innerHTML =
-                "";
-
-
-            /*
-             * Show phase 2.
-             */
-
-            targetPhaseTwo.hidden =
-                false;
-
-
-
-            /* =================================================
-               NO CATEGORY
-            ================================================= */
-
-            if (!category) {
-
-                const option =
-                    document.createElement("option");
-
-
-                option.value =
-                    "";
-
-
-                option.textContent =
-                    "Select a subject";
-
-
-                targetDairySelect.appendChild(
-                    option
-                );
-
-
-                targetDairySelect.disabled =
-                    true;
-
-
-                if (targetSelectionHint) {
-
-                    targetSelectionHint.textContent =
-                        "Choose a category above.";
-
-                }
-
-
-                clearSelectedTarget();
-
-                updateSendButton();
-
-                return;
-
-            }
-
-
-
-            /* =================================================
-               FILTER
-            ================================================= */
-
-            const matchingDairies =
-                availableDairies.filter(function (item) {
-
-                    if (!item) {
-
-                        return false;
-
-                    }
-
-
-                    const code =
-                        item.code;
-
-
-                    /*
-                     * ANIMAL
-                     *
-                     * Must be positive numeric code.
-                     */
-
-                    if (category === "animal") {
-
-                        return (
-                            code !== null &&
-                            code !== undefined &&
-                            code !== "" &&
-                            Number.isFinite(Number(code)) &&
-                            Number(code) > 0
-                        );
-
-                    }
-
-
-                    /*
-                     * STRUCTURE / FACILITY / TOOL
-                     *
-                     * Must have NO code.
-                     */
-
-                    if (category === "structure") {
-
-                        return (
-                            code === null ||
-                            code === undefined ||
-                            code === ""
-                        );
-
-                    }
-
-
-                    return false;
-
-                });
-
-
-
-            /* =================================================
-               DEFAULT OPTION
-            ================================================== */
-
-            const defaultOption =
-                document.createElement("option");
-
-
-            defaultOption.value =
-                "";
-
-
-            defaultOption.textContent =
-                category === "animal"
-                    ? "Select an animal"
-                    : "Select a structure / facility / tool";
-
-
-            defaultOption.selected =
-                true;
-
-
-            targetDairySelect.appendChild(
-                defaultOption
-            );
-
-
-
-            /* =================================================
-               TARGET OPTIONS
-            ================================================= */
-
-            matchingDairies.forEach(function (item) {
-
-                const option =
-                    document.createElement("option");
-
-
-                option.value =
-                    item._id;
-
-
-                option.textContent =
-                    item.name;
-
-
-                option.dataset.code =
-                    (
-                        item.code === null ||
-                        item.code === undefined
-                    )
-                        ? ""
-                        : String(item.code);
-
-
-                option.dataset.category =
-                    category;
-
-
-                targetDairySelect.appendChild(
-                    option
-                );
-
-            });
-
-
-
-            /* =================================================
-               IMPORTANT:
-
-               ENABLE THE SELECT.
-
-               No readonly.
-               No pointer-events:none.
-               No permanent disabled.
-            ================================================= */
-
-            targetDairySelect.disabled =
-                false;
-
-
-
-            /* =================================================
-               HINT
-            ================================================= */
-
-            if (targetSelectionHint) {
-
-                if (matchingDairies.length) {
-
-                    const count =
-                        matchingDairies.length;
-
-
-                    if (category === "animal") {
-
-                        targetSelectionHint.textContent =
-                            count +
-                            (
-                                count === 1
-                                    ? " animal available."
-                                    : " animals available."
-                            );
-
-                    } else {
-
-                        targetSelectionHint.textContent =
-                            count +
-                            (
-                                count === 1
-                                    ? " structure / facility / tool available."
-                                    : " structures / facilities / tools available."
-                            );
-
-                    }
-
-                } else {
-
-                    /*
-                     * Keep the SELECT active.
-                     *
-                     * The absence of records is a data issue,
-                     * not a reason to make the control readonly.
-                     */
-
-                    targetSelectionHint.textContent =
-                        category === "animal"
-                            ? "No animals were supplied by the server."
-                            : "No structures, facilities, or tools were supplied by the server.";
-
-                }
-
-            }
-
-
-            clearSelectedTarget();
-
-            updateSendButton();
-
-        }
-
-
-
-        /* =====================================================
-           TARGET SELECTED
-        ====================================================== */
-
-        function handleTargetSelection() {
-
-            if (
-                !targetDairySelect ||
-                !targetDairyId
-            ) {
-
-                return;
-
-            }
-
-
-            const selectedId =
-                targetDairySelect.value.trim();
-
-
-            if (!selectedId) {
-
-                clearSelectedTarget();
-
-                updateSendButton();
-
-                return;
-
-            }
-
-
-            const selectedDairy =
-                availableDairies.find(function (item) {
-
-                    return (
-                        String(item._id) ===
-                        String(selectedId)
-                    );
-
-                });
-
-
-            if (!selectedDairy) {
-
-                console.error(
-                    "CREATE POST: selected target not found:",
-                    selectedId
-                );
-
-
-                clearSelectedTarget();
-
-                updateSendButton();
-
-                return;
-
-            }
-
-
-
-            /* =================================================
-               FINAL CLIENT-SIDE SAFETY CHECK
-            ================================================== */
-
-            const code =
-                selectedDairy.code;
-
-
-            const selectedIsNegative =
-                code !== null &&
-                code !== undefined &&
-                code !== "" &&
-                Number.isFinite(Number(code)) &&
-                Number(code) < 0;
-
-
-            if (selectedIsNegative) {
-
-                console.error(
-                    "CREATE POST: negative-code target rejected:",
-                    selectedDairy
-                );
-
-
-                targetDairySelect.value =
-                    "";
-
-
-                clearSelectedTarget();
-
-                updateSendButton();
-
-                return;
-
-            }
-
-
-
-            /* =================================================
-               SET HIDDEN TARGET ID
-            ================================================= */
-
-            targetDairyId.value =
-                selectedDairy._id;
-
-
-
-            /* =================================================
-               DISPLAY TARGET
-            ================================================= */
-
-            if (selectedTargetName) {
-
-                selectedTargetName.textContent =
-                    selectedDairy.name;
-
-            }
-
-
-            if (selectedTargetDisplay) {
-
-                selectedTargetDisplay.hidden =
-                    false;
-
-            }
-
-
-            if (postTargetHeader) {
-
-                postTargetHeader.textContent =
-                    selectedDairy.name;
-
-            }
-
-
-            updateSendButton();
-
-        }
-
-
-
-        /* =====================================================
-           CLEAR TARGET
-        ====================================================== */
-
-        function clearSelectedTarget() {
-
-            if (
-                targetDairyId &&
-                targetCategory
-            ) {
-
-                targetDairyId.value =
-                    "";
-
-            }
-
-
-            if (selectedTargetName) {
-
-                selectedTargetName.textContent =
-                    "";
-
-            }
-
-
-            if (selectedTargetDisplay) {
-
-                selectedTargetDisplay.hidden =
-                    true;
-
-            }
-
-
-            if (
-                postTargetHeader &&
-                targetCategory
-            ) {
-
-                postTargetHeader.textContent =
-                    "<%= dairy.name %>";
-
-            }
-
-        }
-
-
-
-        /* =====================================================
-           TITLE
-        ====================================================== */
-
-        titleInput.addEventListener(
-            "input",
-            function () {
-
-                hiddenTitle.value =
-                    titleInput.value;
-
-                updateSendButton();
-
-            }
-        );
-
-
-
-        /* =====================================================
-           TEXT
-        ====================================================== */
-
-        textarea.addEventListener(
-            "input",
-            function () {
-
-                updateCharacterCounter();
-
-                resizeTextarea();
-
-                updateSendButton();
-
-            }
-        );
-
-
-
-        /* =====================================================
-           CATEGORY
-        ====================================================== */
-
-        if (targetCategory) {
-
-            targetCategory.addEventListener(
-                "change",
+            card.addEventListener(
+                "click",
                 function () {
 
-                    populateTargetList(
-                        targetCategory.value
-                    );
+                    openModal(card);
 
                 }
             );
 
-        }
-
-
-
-        /* =====================================================
-           TARGET
-        ====================================================== */
-
-        if (targetDairySelect) {
-
-            targetDairySelect.addEventListener(
-                "change",
-                handleTargetSelection
-            );
-
-        }
-
-
-
-        /* =====================================================
-           OPEN
-        ====================================================== */
-
-        openComposer.addEventListener(
-            "click",
-            openModal
-        );
-
-
-        openComposer.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key === "Enter" ||
-                    event.key === " "
-                ) {
-
-                    event.preventDefault();
-
-                    openModal();
-
-                }
-
-            }
-        );
+        });
 
 
 
@@ -2625,12 +2144,51 @@ The controller MUST provide one of these arrays.
 
                 if (
                     event.key === "Escape" &&
-                    modal.classList.contains("active")
+                    modal.classList.contains(
+                        "farm-post-modal--active"
+                    )
                 ) {
 
                     closeModal();
 
                 }
+
+            }
+        );
+
+
+
+        /* =====================================================
+           TITLE
+        ====================================================== */
+
+        titleInput.addEventListener(
+            "input",
+            function () {
+
+                hiddenTitle.value =
+                    titleInput.value;
+
+                updateSubmitButton();
+
+            }
+        );
+
+
+
+        /* =====================================================
+           TEXT
+        ====================================================== */
+
+        textInput.addEventListener(
+            "input",
+            function () {
+
+                updateCounter();
+
+                resizeTextarea();
+
+                updateSubmitButton();
 
             }
         );
@@ -2645,9 +2203,9 @@ The controller MUST provide one of these arrays.
             "change",
             function () {
 
-                renderPreviews();
+                renderImagePreviews();
 
-                updateSendButton();
+                updateSubmitButton();
 
             }
         );
@@ -2662,8 +2220,9 @@ The controller MUST provide one of these arrays.
             "submit",
             function (event) {
 
-                hiddenTitle.value =
-                    titleInput.value.trim();
+
+                const target =
+                    targetDairyId.value.trim();
 
 
                 const title =
@@ -2671,7 +2230,7 @@ The controller MUST provide one of these arrays.
 
 
                 const text =
-                    textarea.value.trim();
+                    textInput.value.trim();
 
 
                 const hasImages =
@@ -2679,27 +2238,21 @@ The controller MUST provide one of these arrays.
                     imageInput.files.length > 0;
 
 
-
                 /* =============================================
-                   NEGATIVE-CODE PAGE TARGET REQUIRED
+                   TARGET REQUIRED
                 ============================================== */
 
-                if (
-                    targetCategory &&
-                    targetDairyId &&
-                    !targetDairyId.value.trim()
-                ) {
+                if (!target) {
 
                     event.preventDefault();
 
                     alert(
-                        "Please select what this update is about."
+                        "Please select an asset to update."
                     );
 
                     return;
 
                 }
-
 
 
                 /* =============================================
@@ -2719,11 +2272,23 @@ The controller MUST provide one of these arrays.
                 }
 
 
-                sendButton.disabled =
+                /* =============================================
+                   COPY TITLE
+                ============================================== */
+
+                hiddenTitle.value =
+                    title;
+
+
+                /* =============================================
+                   PREVENT DOUBLE SUBMISSION
+                ============================================== */
+
+                submitButton.disabled =
                     true;
 
 
-                sendButton.innerHTML =
+                submitButton.innerHTML =
                     '<i class="bi bi-hourglass-split"></i>';
 
             }
@@ -2735,26 +2300,11 @@ The controller MUST provide one of these arrays.
            INITIAL STATE
         ====================================================== */
 
-        updateCharacterCounter();
+        updateCounter();
 
         resizeTextarea();
 
-        /*
-         * Positive-code page:
-         * targetDairyId already contains dairy._id.
-         *
-         * Negative-code page:
-         * targetDairyId remains empty until a target is selected.
-         */
-
-        if (targetCategory) {
-
-            resetTargetSelection();
-
-        }
-
-
-        updateSendButton();
+        updateSubmitButton();
 
     }
 
@@ -2770,12 +2320,12 @@ The controller MUST provide one of these arrays.
 
         document.addEventListener(
             "DOMContentLoaded",
-            initializePostModal
+            initializeFarmPostComposer
         );
 
     } else {
 
-        initializePostModal();
+        initializeFarmPostComposer();
 
     }
 
