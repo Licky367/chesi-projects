@@ -1,41 +1,69 @@
-<!-- =========================================================
-     COREVESTER POST COMPONENT
+<% /*
+=========================================================
+ FILE:
+ views/update/post.ejs
 
-     FILE:
-     views/update/post.ejs
+ PURPOSE:
+ --------------------------------------------------------
+ Completely self-contained Facebook-style post card.
 
-     PURPOSE:
-     ---------------------------------------------------------
-     Completely self-contained Facebook-style post card.
+ ACTION ENDPOINTS:
+ --------------------------------------------------------
+ LIKE:
+     POST /post/:id/like
 
-     IMPORTANT:
-     ---------------------------------------------------------
-     This component intentionally does NOT depend on:
-       - feed.css
-       - layout.css
-       - generic .feed-* classes
-       - generic .post-* classes
-       - generic .like-btn
-       - generic .toggle-comments
-       - generic comment CSS
+ COMMENT:
+     POST /post/:id/comment
 
-     All visual selectors use the unique:
-         cpost-
-     namespace.
+ DELETE POST:
+     DELETE /post/:id
 
-     This prevents CSS collisions with the rest of the page.
-========================================================= -->
+ DELETE COMMENT:
+     DELETE /comment/:id
+
+ IMPORTANT:
+ --------------------------------------------------------
+ This component does NOT depend on:
+
+     feed.css
+     layout.css
+     .feed-card
+     .feed-actions
+     .like-btn
+     .toggle-comments
+     .comment-modal
+     .delete-post
+     .delete-comment
+
+ All component selectors use:
+
+     cpost-
+
+ The JavaScript is initialized once for the entire page,
+ even if this component is included many times.
+=========================================================
+*/ %>
 
 
 <%
 /* =========================================================
-   SAFE POST TYPE
+   SAFE TYPE
 ========================================================= */
 
 const cpostType =
     typeof type !== "undefined" && type
         ? type
         : "post";
+
+
+/* =========================================================
+   POST ID
+========================================================= */
+
+const cpostId =
+    item && item._id
+        ? String(item._id)
+        : "";
 
 
 /* =========================================================
@@ -59,7 +87,17 @@ const cpostComments =
 
 
 /* =========================================================
-   USER IDS
+   CURRENT USER
+========================================================= */
+
+const cpostCurrentUserId =
+    user && user._id
+        ? String(user._id)
+        : "";
+
+
+/* =========================================================
+   POST USER ID
 ========================================================= */
 
 const cpostPostUserId =
@@ -71,18 +109,12 @@ const cpostPostUserId =
         : "";
 
 
-const cpostCurrentUserId =
-    user && user._id
-        ? String(user._id)
-        : "";
-
-
 /* =========================================================
-   DELETE PERMISSION
+   DELETE POST PERMISSION
 ========================================================= */
 
 const cpostCanDelete =
-    user &&
+    !!user &&
     (
         cpostPostUserId === cpostCurrentUserId ||
         user.role === "admin"
@@ -110,7 +142,7 @@ const cpostFullText =
 
 
 /* =========================================================
-   LONG POST
+   LONG TEXT
 ========================================================= */
 
 const cpostIsLong =
@@ -123,7 +155,9 @@ const cpostIsLong =
 
 const cpostPreview =
     cpostIsLong
-        ? cpostFullText.substring(0, 100).trimEnd() + "…"
+        ? cpostFullText
+            .substring(0, 100)
+            .trimEnd() + "…"
         : cpostFullText;
 
 
@@ -178,11 +212,15 @@ const cpostDairyName =
 
 
 /* =========================================================
-   USER
+   USER NAME
 ========================================================= */
 
 const cpostUserName =
     item.userName ||
+    (
+        item.user &&
+        item.user.name
+    ) ||
     "User";
 
 
@@ -192,6 +230,13 @@ const cpostUserName =
 
 const cpostUserImage =
     item.userImage ||
+    (
+        item.user &&
+        (
+            item.user.profileImage ||
+            item.user.image
+        )
+    ) ||
     (
         "https://ui-avatars.com/api/?name=" +
         encodeURIComponent(cpostUserName)
@@ -204,7 +249,9 @@ const cpostUserImage =
 
 const cpostDate =
     item.createdAt
-        ? new Date(item.createdAt).toLocaleString()
+        ? new Date(
+            item.createdAt
+        ).toLocaleString()
         : (
             item.dateText ||
             ""
@@ -213,14 +260,13 @@ const cpostDate =
 %>
 
 
-
 <!-- =========================================================
-     POST
+     POST CARD
 ========================================================= -->
 
 <article
     class="cpost-card"
-    data-cpost-id="<%= item._id %>"
+    data-cpost-id="<%= cpostId %>"
     data-cpost-type="<%= cpostType %>"
 >
 
@@ -231,8 +277,6 @@ const cpostDate =
 
     <header class="cpost-header">
 
-
-        <!-- AVATAR -->
 
         <div class="cpost-avatar">
 
@@ -245,29 +289,21 @@ const cpostDate =
         </div>
 
 
-
-        <!-- HEADER INFORMATION -->
-
         <div class="cpost-header-info">
 
 
-            <!-- USER + DAIRY -->
-
             <div class="cpost-header-main">
 
+
                 <strong class="cpost-user">
-
                     <%= cpostUserName %>
-
                 </strong>
 
 
                 <% if (cpostDairyName) { %>
 
                     <span class="cpost-about">
-
                         about
-
                     </span>
 
 
@@ -276,51 +312,37 @@ const cpostDate =
                         <a
                             href="/dairy/<%= cpostDairyId %>"
                             class="cpost-dairy"
-                            title="View <%= cpostDairyName %>"
                         >
-
                             <%= cpostDairyName %>
-
                         </a>
 
                     <% } else { %>
 
                         <span class="cpost-dairy">
-
                             <%= cpostDairyName %>
-
                         </span>
 
                     <% } %>
 
                 <% } %>
 
+
             </div>
 
-
-
-            <!-- DATE -->
 
             <% if (cpostDate) { %>
 
                 <time class="cpost-date">
-
                     <%= cpostDate %>
-
                 </time>
 
             <% } %>
 
 
-
-            <!-- TITLE -->
-
             <% if (cpostTitle) { %>
 
                 <div class="cpost-title">
-
                     <%= cpostTitle %>
-
                 </div>
 
             <% } %>
@@ -329,17 +351,12 @@ const cpostDate =
         </div>
 
 
-
-        <!-- DELETE -->
-
         <% if (cpostCanDelete) { %>
 
             <button
                 type="button"
                 class="cpost-delete"
-                data-cpost-delete="<%= item._id %>"
-                data-id="<%= item._id %>"
-                data-type="<%= cpostType %>"
+                data-cpost-delete
                 aria-label="Delete post"
                 title="Delete post"
             >
@@ -365,38 +382,45 @@ const cpostDate =
     <div class="cpost-content">
 
 
-        <!-- =================================================
-             TEXT
-        ================================================== -->
-
         <% if (cpostFullText) { %>
 
             <div class="cpost-text-area">
 
+
                 <% if (cpostIsLong) { %>
 
-                    <p class="cpost-text cpost-text-preview">
+                    <p
+                        class="
+                            cpost-text
+                            cpost-text-preview
+                        "
+                    >
 
-                        <%= cpostPreview %><button
+                        <%= cpostPreview %>
+
+
+                        <button
                             type="button"
                             class="cpost-see-more"
-                            data-cpost-expand="<%= item._id %>"
-                        >See more <i
+                            data-cpost-expand
+                        >
+                            See more
+                            <i
                                 class="bi bi-arrow-right"
                                 aria-hidden="true"
-                            ></i></button>
+                            ></i>
+                        </button>
 
                     </p>
 
                 <% } else { %>
 
                     <p class="cpost-text">
-
                         <%= cpostFullText %>
-
                     </p>
 
                 <% } %>
+
 
             </div>
 
@@ -418,7 +442,11 @@ const cpostDate =
                 data-cpost-photo-count="<%= cpostImages.length %>"
             >
 
-                <% cpostVisibleImages.forEach(function(image, index) { %>
+
+                <% cpostVisibleImages.forEach(
+                    function(image, index)
+                { %>
+
 
                     <button
                         type="button"
@@ -440,7 +468,9 @@ const cpostDate =
                             cpostAdditionalImages > 0
                         ) { %>
 
-                            <span class="cpost-more-images">
+                            <span
+                                class="cpost-more-images"
+                            >
 
                                 <i
                                     class="bi bi-images"
@@ -455,9 +485,12 @@ const cpostDate =
 
                         <% } %>
 
+
                     </button>
 
+
                 <% }); %>
+
 
             </div>
 
@@ -480,9 +513,9 @@ const cpostDate =
         <button
             type="button"
             class="cpost-like"
-            data-id="<%= item._id %>"
-            data-type="<%= cpostType %>"
+            data-cpost-like
             aria-label="Like"
+            aria-pressed="false"
         >
 
             <i
@@ -491,13 +524,10 @@ const cpostDate =
             ></i>
 
             <span class="cpost-like-count">
-
                 <%= cpostLikes %>
-
             </span>
 
         </button>
-
 
 
         <!-- COMMENTS -->
@@ -505,7 +535,7 @@ const cpostDate =
         <button
             type="button"
             class="cpost-comments-button"
-            data-cpost-comments="<%= item._id %>"
+            data-cpost-open-comments
             aria-label="Comments"
         >
 
@@ -515,9 +545,7 @@ const cpostDate =
             ></i>
 
             <span class="cpost-comment-count">
-
                 <%= cpostComments.length %>
-
             </span>
 
         </button>
@@ -535,9 +563,9 @@ const cpostDate =
 
         <div
             class="cpost-expand"
-            data-cpost-expand-modal="<%= item._id %>"
             aria-hidden="true"
         >
+
 
             <div
                 class="cpost-expand-backdrop"
@@ -553,8 +581,6 @@ const cpostDate =
             >
 
 
-                <!-- EXPANDED HEADER -->
-
                 <header class="cpost-expand-header">
 
 
@@ -564,7 +590,6 @@ const cpostDate =
                         <img
                             src="<%= cpostUserImage %>"
                             alt="<%= cpostUserName %>"
-                            loading="lazy"
                         >
 
 
@@ -572,18 +597,14 @@ const cpostDate =
 
 
                             <strong>
-
                                 <%= cpostUserName %>
-
                             </strong>
 
 
                             <% if (cpostDate) { %>
 
                                 <small>
-
                                     <%= cpostDate %>
-
                                 </small>
 
                             <% } %>
@@ -592,9 +613,7 @@ const cpostDate =
                             <% if (cpostTitle) { %>
 
                                 <span>
-
                                     <%= cpostTitle %>
-
                                 </span>
 
                             <% } %>
@@ -624,9 +643,6 @@ const cpostDate =
                 </header>
 
 
-
-                <!-- EXPANDED BODY -->
-
                 <div class="cpost-expand-body">
 
 
@@ -645,9 +661,7 @@ const cpostDate =
                                 ></i>
 
                                 <span>
-
                                     <%= cpostDairyName %>
-
                                 </span>
 
                             </a>
@@ -662,9 +676,7 @@ const cpostDate =
                                 ></i>
 
                                 <span>
-
                                     <%= cpostDairyName %>
-
                                 </span>
 
                             </div>
@@ -675,9 +687,7 @@ const cpostDate =
 
 
                     <div class="cpost-expanded-text">
-
                         <%= cpostFullText %>
-
                     </div>
 
 
@@ -685,7 +695,11 @@ const cpostDate =
 
                         <div class="cpost-expanded-images">
 
-                            <% cpostImages.forEach(function(image, index) { %>
+
+                            <% cpostImages.forEach(
+                                function(image, index)
+                            { %>
+
 
                                 <button
                                     type="button"
@@ -701,7 +715,9 @@ const cpostDate =
 
                                 </button>
 
+
                             <% }); %>
+
 
                         </div>
 
@@ -727,7 +743,6 @@ const cpostDate =
 
         <div
             class="cpost-viewer"
-            data-cpost-viewer="<%= item._id %>"
             aria-hidden="true"
         >
 
@@ -774,12 +789,14 @@ const cpostDate =
             </div>
 
 
-
             <% if (cpostImages.length > 1) { %>
 
                 <button
                     type="button"
-                    class="cpost-viewer-navigation cpost-viewer-prev"
+                    class="
+                        cpost-viewer-navigation
+                        cpost-viewer-prev
+                    "
                     data-cpost-photo-prev
                     aria-label="Previous photo"
                 >
@@ -794,7 +811,6 @@ const cpostDate =
             <% } %>
 
 
-
             <div class="cpost-viewer-stage">
 
                 <img
@@ -806,12 +822,14 @@ const cpostDate =
             </div>
 
 
-
             <% if (cpostImages.length > 1) { %>
 
                 <button
                     type="button"
-                    class="cpost-viewer-navigation cpost-viewer-next"
+                    class="
+                        cpost-viewer-navigation
+                        cpost-viewer-next
+                    "
                     data-cpost-photo-next
                     aria-label="Next photo"
                 >
@@ -838,15 +856,12 @@ const cpostDate =
 
     <div
         class="cpost-comment-modal"
-        data-cpost-comment-modal="<%= item._id %>"
         aria-hidden="true"
     >
 
 
         <div class="cpost-comment-modal-content">
 
-
-            <!-- COMMENT HEADER -->
 
             <header class="cpost-comment-header">
 
@@ -857,7 +872,7 @@ const cpostDate =
                         Comments
                     </strong>
 
-                    <span>
+                    <span class="cpost-modal-comment-count">
                         <%= cpostComments.length %>
                     </span>
 
@@ -883,7 +898,9 @@ const cpostDate =
 
 
 
-            <!-- COMMENT LIST -->
+            <!-- =================================================
+                 COMMENT LIST
+            ================================================== -->
 
             <div class="cpost-comment-list">
 
@@ -910,18 +927,18 @@ const cpostDate =
                 <% } %>
 
 
-
-                <% cpostComments.forEach(function(comment) { %>
+                <% cpostComments.forEach(
+                    function(comment)
+                { %>
 
 
                     <div
                         class="cpost-comment-item"
-                        data-comment-id="<%= comment._id %>"
+                        data-cpost-comment-id="<%= comment._id %>"
                     >
 
 
                         <div class="cpost-comment-avatar">
-
 
                             <img
                                 src="<%= comment.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(comment.userName || 'User')) %>"
@@ -929,9 +946,7 @@ const cpostDate =
                                 loading="lazy"
                             >
 
-
                         </div>
-
 
 
                         <div class="cpost-comment-body">
@@ -941,9 +956,7 @@ const cpostDate =
 
 
                                 <strong>
-
                                     <%= comment.userName || "User" %>
-
                                 </strong>
 
 
@@ -974,7 +987,7 @@ const cpostDate =
                                     <button
                                         type="button"
                                         class="cpost-delete-comment"
-                                        data-id="<%= comment._id %>"
+                                        data-cpost-delete-comment
                                         aria-label="Delete comment"
                                         title="Delete comment"
                                     >
@@ -992,13 +1005,9 @@ const cpostDate =
                             </div>
 
 
-
                             <p class="cpost-comment-text">
-
                                 <%= comment.text %>
-
                             </p>
-
 
 
                             <% if (comment.createdAt) { %>
@@ -1027,15 +1036,16 @@ const cpostDate =
 
 
 
-            <!-- COMMENT COMPOSER -->
+            <!-- =================================================
+                 COMMENT FORM
+            ================================================== -->
 
             <div class="cpost-comment-composer-wrapper">
 
 
                 <form
                     class="cpost-comment-form"
-                    data-id="<%= item._id %>"
-                    data-type="<%= cpostType %>"
+                    data-cpost-comment-form
                 >
 
 
@@ -1080,7 +1090,6 @@ const cpostDate =
 
         </div>
 
-
     </div>
 
 
@@ -1089,22 +1098,7 @@ const cpostDate =
 
 
 <!-- =========================================================
-     SELF-CONTAINED POST CSS
-
-     UNIQUE NAMESPACE:
-     ---------------------------------------------------------
-     Every selector belongs to the cpost component.
-
-     No dependency on:
-       .feed-card
-       .feed-body
-       .feed-actions
-       .post-card
-       .like-btn
-       .toggle-comments
-       .comment-modal
-       .comment-section
-       etc.
+     SELF-CONTAINED CSS
 ========================================================= -->
 
 <style>
@@ -1113,9 +1107,7 @@ const cpostDate =
 .cpost-card *,
 .cpost-card *::before,
 .cpost-card *::after {
-
     box-sizing: border-box;
-
 }
 
 
@@ -1128,30 +1120,23 @@ const cpostDate =
     --cpost-border: #dfe8e2;
 
     position: relative;
-
     width: 100%;
-
     margin: 0 0 14px;
-
     padding: 0;
 
     background: #ffffff;
 
     border: 1px solid var(--cpost-border);
-
     border-radius: 14px;
 
     overflow: hidden;
-
-    box-shadow:
-        0 2px 8px rgba(24, 42, 30, .045);
-
     isolation: isolate;
 
     color: var(--cpost-text);
-
     font-family: inherit;
 
+    box-shadow:
+        0 2px 8px rgba(24,42,30,.045);
 }
 
 
@@ -1162,11 +1147,9 @@ const cpostDate =
 .cpost-header {
 
     width: 100%;
-
     min-width: 0;
 
     display: flex;
-
     align-items: center;
 
     gap: 10px;
@@ -1176,7 +1159,6 @@ const cpostDate =
     background: #ffffff;
 
     border-bottom: 1px solid #e4ebe6;
-
 }
 
 
@@ -1186,7 +1168,6 @@ const cpostDate =
     height: 42px;
 
     flex: 0 0 42px;
-
 }
 
 
@@ -1202,50 +1183,37 @@ const cpostDate =
     object-fit: cover;
 
     border: 2px solid #edf5ef;
-
 }
 
 
 .cpost-header-info {
 
     flex: 1 1 auto;
-
     min-width: 0;
-
 }
 
 
 .cpost-header-main {
 
     display: flex;
-
     align-items: baseline;
-
     flex-wrap: wrap;
 
     column-gap: 5px;
-
     row-gap: 1px;
 
     min-width: 0;
 
     line-height: 1.25;
-
 }
 
 
 .cpost-user {
 
-    display: inline;
-
     color: #172019;
 
     font-size: 14px;
-
     font-weight: 700;
-
-    line-height: 1.25;
-
 }
 
 
@@ -1254,9 +1222,6 @@ const cpostDate =
     color: #7c867f;
 
     font-size: 12px;
-
-    font-weight: 400;
-
 }
 
 
@@ -1265,30 +1230,23 @@ const cpostDate =
     display: inline;
 
     min-width: 0;
-
     max-width: 100%;
 
     color: var(--cpost-green);
 
     font-size: 13px;
-
     font-weight: 700;
-
-    line-height: 1.3;
 
     text-decoration: none;
 
     overflow-wrap: anywhere;
-
 }
 
 
 .cpost-dairy:hover {
 
     color: var(--cpost-green-dark);
-
     text-decoration: underline;
-
 }
 
 
@@ -1301,11 +1259,6 @@ const cpostDate =
     color: var(--cpost-muted);
 
     font-size: 10.5px;
-
-    font-weight: 400;
-
-    line-height: 1.2;
-
 }
 
 
@@ -1317,12 +1270,9 @@ const cpostDate =
 
     margin-top: 3px;
 
-    padding: 0;
-
     color: #18201b;
 
     font-size: 14px;
-
     font-weight: 800;
 
     line-height: 1.3;
@@ -1330,9 +1280,6 @@ const cpostDate =
     text-align: left;
 
     overflow-wrap: anywhere;
-
-    word-break: break-word;
-
 }
 
 
@@ -1346,14 +1293,11 @@ const cpostDate =
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
-    margin: 0;
     padding: 0;
 
     border: 0;
-
     border-radius: 50%;
 
     background: transparent;
@@ -1361,32 +1305,20 @@ const cpostDate =
     color: #7c867f;
 
     cursor: pointer;
-
-    font-family: inherit;
-
-    font-size: 15px;
-
-    transition:
-        background .15s ease,
-        color .15s ease,
-        transform .12s ease;
-
 }
 
 
 .cpost-delete:hover {
 
     background: #fff1f1;
-
     color: #c62828;
-
 }
 
 
-.cpost-delete:active {
+.cpost-delete:disabled {
 
-    transform: scale(.94);
-
+    opacity: .5;
+    cursor: wait;
 }
 
 
@@ -1398,26 +1330,18 @@ const cpostDate =
 .cpost-content {
 
     width: 100%;
-
     min-width: 0;
-
-    margin: 0;
 
     padding: 12px 14px;
 
     background: #ffffff;
-
 }
 
 
 .cpost-text-area {
 
     width: 100%;
-
     margin: 0;
-
-    padding: 0;
-
 }
 
 
@@ -1426,13 +1350,11 @@ const cpostDate =
     width: 100%;
 
     margin: 0;
-
     padding: 0;
 
     color: var(--cpost-text);
 
     font-size: 15px;
-
     font-weight: 400;
 
     line-height: 1.5;
@@ -1442,9 +1364,7 @@ const cpostDate =
     white-space: pre-wrap;
 
     word-break: break-word;
-
     overflow-wrap: anywhere;
-
 }
 
 
@@ -1452,8 +1372,7 @@ const cpostDate =
 
     display: inline;
 
-    margin: 0 0 0 4px;
-
+    margin-left: 4px;
     padding: 0;
 
     border: 0;
@@ -1465,64 +1384,48 @@ const cpostDate =
     font-family: inherit;
 
     font-size: 14px;
-
     font-weight: 700;
 
-    line-height: inherit;
-
-    white-space: nowrap;
-
-    vertical-align: baseline;
-
     cursor: pointer;
-
 }
 
 
 .cpost-see-more:hover {
 
     color: var(--cpost-green-dark);
-
 }
 
 
 .cpost-see-more i {
 
-    display: inline-block;
-
     margin-left: 2px;
-
     font-size: 10px;
-
 }
 
 
 
 /* =========================================================
-   IMAGE GRID
+   IMAGES
 ========================================================= */
 
 .cpost-images {
 
     width: 100%;
 
-    margin: 10px 0 0;
-
-    padding: 0;
-
     display: grid;
 
     grid-template-columns:
-        repeat(2, minmax(0, 1fr));
+        repeat(2,minmax(0,1fr));
 
     gap: 3px;
+
+    margin-top: 10px;
 
     overflow: hidden;
 
     border-radius: 11px;
 
     background: #eef2ef;
-
 }
 
 
@@ -1538,8 +1441,6 @@ const cpostDate =
 
     aspect-ratio: 1 / 1;
 
-    margin: 0;
-
     padding: 0;
 
     border: 0;
@@ -1549,7 +1450,6 @@ const cpostDate =
     overflow: hidden;
 
     cursor: pointer;
-
 }
 
 
@@ -1564,14 +1464,12 @@ const cpostDate =
     background: transparent;
 
     transition: background .15s ease;
-
 }
 
 
 .cpost-image-button:hover::after {
 
     background: rgba(0,0,0,.07);
-
 }
 
 
@@ -1580,20 +1478,15 @@ const cpostDate =
     display: block;
 
     width: 100%;
-
     height: 100%;
 
     object-fit: cover;
-
 }
 
-
-/* ONE IMAGE */
 
 .cpost-images-1 {
 
     grid-template-columns: 1fr;
-
 }
 
 
@@ -1602,42 +1495,33 @@ const cpostDate =
     aspect-ratio: auto;
 
     max-height: 650px;
-
 }
 
 
 .cpost-images-1 .cpost-image {
 
     width: 100%;
-
     height: auto;
 
     max-height: 650px;
 
     object-fit: contain;
-
 }
 
-
-/* THREE IMAGES */
 
 .cpost-images-3 {
 
     grid-template-columns:
-        1.35fr
-        1fr;
-
+        1.35fr 1fr;
 }
 
 
-.cpost-images-3 .cpost-image-button:first-child {
+.cpost-images-3
+.cpost-image-button:first-child {
 
     grid-row: span 2;
-
 }
 
-
-/* MORE IMAGES */
 
 .cpost-more-images {
 
@@ -1650,7 +1534,6 @@ const cpostDate =
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
     gap: 7px;
@@ -1660,25 +1543,9 @@ const cpostDate =
     color: #ffffff;
 
     font-size: 18px;
-
     font-weight: 700;
 
     pointer-events: none;
-
-}
-
-
-.cpost-more-images i {
-
-    font-size: 20px;
-
-}
-
-
-.cpost-more-images strong {
-
-    font-size: 20px;
-
 }
 
 
@@ -1699,14 +1566,11 @@ const cpostDate =
 
     gap: 4px;
 
-    margin: 0;
-
     padding: 5px 9px;
 
     background: #ffffff;
 
     border-top: 1px solid #dfe7e2;
-
 }
 
 
@@ -1720,17 +1584,13 @@ const cpostDate =
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
     gap: 6px;
 
-    margin: 0;
-
     padding: 0 10px;
 
     border: 0;
-
     border-radius: 20px;
 
     background: transparent;
@@ -1738,7 +1598,6 @@ const cpostDate =
     color: #66706a;
 
     font-family: inherit;
-
     font-size: 14px;
 
     cursor: pointer;
@@ -1747,7 +1606,6 @@ const cpostDate =
         background .15s ease,
         color .15s ease,
         transform .1s ease;
-
 }
 
 
@@ -1755,9 +1613,7 @@ const cpostDate =
 .cpost-comments-button:hover {
 
     background: #f0f6f2;
-
     color: var(--cpost-green);
-
 }
 
 
@@ -1765,7 +1621,6 @@ const cpostDate =
 .cpost-comments-button:active {
 
     transform: scale(.96);
-
 }
 
 
@@ -1774,16 +1629,13 @@ const cpostDate =
     color: var(--cpost-green);
 
     background: #edf7f1;
-
 }
 
 
 .cpost-like:disabled {
 
     opacity: .55;
-
     cursor: wait;
-
 }
 
 
@@ -1791,19 +1643,6 @@ const cpostDate =
 .cpost-comments-button i {
 
     font-size: 17px;
-
-}
-
-
-.cpost-like-count,
-.cpost-comment-count {
-
-    min-width: 12px;
-
-    font-size: 13px;
-
-    line-height: 1;
-
 }
 
 
@@ -1823,18 +1662,15 @@ const cpostDate =
     display: none;
 
     align-items: center;
-
     justify-content: center;
 
     padding: 16px;
-
 }
 
 
 .cpost-expand.cpost-is-active {
 
     display: flex;
-
 }
 
 
@@ -1847,7 +1683,6 @@ const cpostDate =
     background: rgba(8,20,12,.62);
 
     backdrop-filter: blur(3px);
-
 }
 
 
@@ -1858,13 +1693,11 @@ const cpostDate =
     z-index: 2;
 
     width: 100%;
-
     max-width: 680px;
 
     max-height: 90dvh;
 
     display: flex;
-
     flex-direction: column;
 
     overflow: hidden;
@@ -1875,34 +1708,6 @@ const cpostDate =
 
     box-shadow:
         0 20px 70px rgba(0,0,0,.30);
-
-    animation: cpostPopIn .18s ease-out;
-
-}
-
-
-@keyframes cpostPopIn {
-
-    from {
-
-        opacity: 0;
-
-        transform:
-            scale(.96)
-            translateY(10px);
-
-    }
-
-    to {
-
-        opacity: 1;
-
-        transform:
-            scale(1)
-            translateY(0);
-
-    }
-
 }
 
 
@@ -1915,13 +1720,11 @@ const cpostDate =
     display: flex;
 
     align-items: center;
-
     justify-content: space-between;
 
     padding: 10px 12px;
 
     border-bottom: 1px solid #e9efeb;
-
 }
 
 
@@ -1934,7 +1737,6 @@ const cpostDate =
     align-items: center;
 
     gap: 9px;
-
 }
 
 
@@ -1948,7 +1750,6 @@ const cpostDate =
     border-radius: 50%;
 
     object-fit: cover;
-
 }
 
 
@@ -1957,18 +1758,14 @@ const cpostDate =
     min-width: 0;
 
     display: flex;
-
     flex-direction: column;
-
 }
 
 
 .cpost-expand-user-info strong {
 
     color: #202720;
-
     font-size: 14px;
-
 }
 
 
@@ -1979,7 +1776,6 @@ const cpostDate =
     color: #8a938d;
 
     font-size: 10px;
-
 }
 
 
@@ -1990,13 +1786,7 @@ const cpostDate =
     color: #18201b;
 
     font-size: 13px;
-
     font-weight: 800;
-
-    line-height: 1.3;
-
-    overflow-wrap: anywhere;
-
 }
 
 
@@ -2005,18 +1795,14 @@ const cpostDate =
     width: 38px;
     height: 38px;
 
-    flex: 0 0 38px;
-
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
     padding: 0;
 
     border: 0;
-
     border-radius: 50%;
 
     background: #f1f4f2;
@@ -2024,9 +1810,6 @@ const cpostDate =
     color: #505a54;
 
     cursor: pointer;
-
-    font-size: 15px;
-
 }
 
 
@@ -2039,7 +1822,6 @@ const cpostDate =
     overflow-y: auto;
 
     padding: 14px 16px 20px;
-
 }
 
 
@@ -2056,19 +1838,13 @@ const cpostDate =
     color: var(--cpost-green);
 
     font-size: 13px;
-
     font-weight: 700;
 
     text-decoration: none;
-
 }
 
 
 .cpost-expanded-text {
-
-    margin: 0;
-
-    padding: 0;
 
     color: #303833;
 
@@ -2079,7 +1855,6 @@ const cpostDate =
     white-space: pre-wrap;
 
     word-break: break-word;
-
 }
 
 
@@ -2088,12 +1863,11 @@ const cpostDate =
     display: grid;
 
     grid-template-columns:
-        repeat(2, minmax(0, 1fr));
+        repeat(2,minmax(0,1fr));
 
     gap: 5px;
 
     margin-top: 15px;
-
 }
 
 
@@ -2114,7 +1888,6 @@ const cpostDate =
     background: #eef2ef;
 
     cursor: pointer;
-
 }
 
 
@@ -2123,11 +1896,9 @@ const cpostDate =
     display: block;
 
     width: 100%;
-
     height: 100%;
 
     object-fit: cover;
-
 }
 
 
@@ -2149,14 +1920,12 @@ const cpostDate =
     background: rgba(0,0,0,.96);
 
     touch-action: pan-y;
-
 }
 
 
 .cpost-viewer.cpost-is-active {
 
     display: block;
-
 }
 
 
@@ -2165,7 +1934,6 @@ const cpostDate =
     position: absolute;
 
     inset: 0;
-
 }
 
 
@@ -2184,18 +1952,9 @@ const cpostDate =
     display: flex;
 
     align-items: center;
-
     justify-content: space-between;
 
     padding: 10px 14px;
-
-    background:
-        linear-gradient(
-            to bottom,
-            rgba(0,0,0,.55),
-            transparent
-        );
-
 }
 
 
@@ -2205,14 +1964,11 @@ const cpostDate =
 
     font-size: 13px;
 
-    font-weight: 600;
-
     padding: 7px 10px;
 
     border-radius: 20px;
 
     background: rgba(0,0,0,.35);
-
 }
 
 
@@ -2224,7 +1980,6 @@ const cpostDate =
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
     padding: 0;
@@ -2238,7 +1993,6 @@ const cpostDate =
     color: #ffffff;
 
     cursor: pointer;
-
 }
 
 
@@ -2251,30 +2005,23 @@ const cpostDate =
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
     overflow: hidden;
-
 }
 
 
 .cpost-viewer-image {
 
     max-width: 100%;
-
     max-height: 100%;
 
     width: auto;
-
     height: auto;
 
     object-fit: contain;
 
     user-select: none;
-
-    -webkit-user-drag: none;
-
 }
 
 
@@ -2292,7 +2039,6 @@ const cpostDate =
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
     padding: 0;
@@ -2307,24 +2053,17 @@ const cpostDate =
 
     cursor: pointer;
 
-    font-size: 19px;
-
     transform: translateY(-50%);
-
 }
 
 
 .cpost-viewer-prev {
-
     left: 14px;
-
 }
 
 
 .cpost-viewer-next {
-
     right: 14px;
-
 }
 
 
@@ -2344,31 +2083,26 @@ const cpostDate =
     display: none;
 
     align-items: flex-end;
-
     justify-content: center;
 
     background: rgba(0,0,0,.45);
-
 }
 
 
 .cpost-comment-modal.cpost-is-active {
 
     display: flex;
-
 }
 
 
 .cpost-comment-modal-content {
 
     width: 100%;
-
     max-width: 650px;
 
     max-height: 88dvh;
 
     display: flex;
-
     flex-direction: column;
 
     overflow: hidden;
@@ -2379,7 +2113,6 @@ const cpostDate =
 
     box-shadow:
         0 -8px 30px rgba(0,0,0,.18);
-
 }
 
 
@@ -2392,13 +2125,11 @@ const cpostDate =
     display: flex;
 
     align-items: center;
-
     justify-content: space-between;
 
     padding: 0 14px 0 18px;
 
     border-bottom: 1px solid #e8eee9;
-
 }
 
 
@@ -2409,7 +2140,6 @@ const cpostDate =
     align-items: center;
 
     gap: 7px;
-
 }
 
 
@@ -2418,20 +2148,17 @@ const cpostDate =
     color: #202520;
 
     font-size: 16px;
-
 }
 
 
-.cpost-comment-heading span {
+.cpost-modal-comment-count {
 
     min-width: 22px;
-
     height: 22px;
 
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
     padding: 0 6px;
@@ -2443,9 +2170,7 @@ const cpostDate =
     color: var(--cpost-green);
 
     font-size: 11px;
-
     font-weight: 700;
-
 }
 
 
@@ -2457,7 +2182,6 @@ const cpostDate =
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
     padding: 0;
@@ -2471,7 +2195,6 @@ const cpostDate =
     color: #68716b;
 
     cursor: pointer;
-
 }
 
 
@@ -2484,7 +2207,6 @@ const cpostDate =
     overflow-y: auto;
 
     padding: 10px 15px 14px;
-
 }
 
 
@@ -2497,13 +2219,11 @@ const cpostDate =
     flex-direction: column;
 
     align-items: center;
-
     justify-content: center;
 
     text-align: center;
 
     color: #89918c;
-
 }
 
 
@@ -2514,7 +2234,6 @@ const cpostDate =
     color: #aeb8b2;
 
     font-size: 34px;
-
 }
 
 
@@ -2523,9 +2242,7 @@ const cpostDate =
     color: #606963;
 
     font-size: 14px;
-
     font-weight: 600;
-
 }
 
 
@@ -2534,7 +2251,6 @@ const cpostDate =
     margin-top: 4px;
 
     font-size: 12px;
-
 }
 
 
@@ -2545,7 +2261,6 @@ const cpostDate =
     gap: 9px;
 
     padding: 8px 0;
-
 }
 
 
@@ -2555,7 +2270,6 @@ const cpostDate =
     height: 34px;
 
     flex: 0 0 34px;
-
 }
 
 
@@ -2569,7 +2283,6 @@ const cpostDate =
     border-radius: 50%;
 
     object-fit: cover;
-
 }
 
 
@@ -2584,7 +2297,6 @@ const cpostDate =
     border-radius: 13px;
 
     background: #f5f8f6;
-
 }
 
 
@@ -2595,7 +2307,6 @@ const cpostDate =
     align-items: center;
 
     gap: 8px;
-
 }
 
 
@@ -2608,7 +2319,6 @@ const cpostDate =
     color: #202520;
 
     font-size: 12px;
-
 }
 
 
@@ -2622,7 +2332,6 @@ const cpostDate =
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
     padding: 0;
@@ -2636,7 +2345,14 @@ const cpostDate =
     color: #969d98;
 
     cursor: pointer;
+}
 
+
+.cpost-delete-comment:disabled {
+
+    opacity: .5;
+
+    cursor: wait;
 }
 
 
@@ -2653,7 +2369,6 @@ const cpostDate =
     white-space: pre-wrap;
 
     word-break: break-word;
-
 }
 
 
@@ -2666,7 +2381,6 @@ const cpostDate =
     color: #8b938e;
 
     font-size: 10px;
-
 }
 
 
@@ -2685,7 +2399,6 @@ const cpostDate =
     border-top: 1px solid #e8eee9;
 
     background: #ffffff;
-
 }
 
 
@@ -2694,7 +2407,6 @@ const cpostDate =
     width: 100%;
 
     margin: 0;
-
 }
 
 
@@ -2715,7 +2427,6 @@ const cpostDate =
     border-radius: 24px;
 
     background: #f7faf8;
-
 }
 
 
@@ -2724,7 +2435,6 @@ const cpostDate =
     flex: 1;
 
     min-width: 0;
-
 }
 
 
@@ -2735,7 +2445,6 @@ const cpostDate =
     width: 100%;
 
     min-height: 36px;
-
     max-height: 100px;
 
     margin: 0;
@@ -2747,7 +2456,6 @@ const cpostDate =
     overflow-y: auto;
 
     border: 0;
-
     outline: 0;
 
     background: transparent;
@@ -2759,7 +2467,6 @@ const cpostDate =
     font-size: 14px;
 
     line-height: 20px;
-
 }
 
 
@@ -2773,7 +2480,6 @@ const cpostDate =
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
     padding: 0;
@@ -2787,9 +2493,14 @@ const cpostDate =
     color: var(--cpost-green);
 
     cursor: pointer;
+}
 
-    font-size: 16px;
 
+.cpost-comment-submit:disabled {
+
+    opacity: .5;
+
+    cursor: wait;
 }
 
 
@@ -2798,15 +2509,13 @@ const cpostDate =
    MOBILE
 ========================================================= */
 
-@media (max-width: 600px) {
-
+@media (max-width:600px) {
 
     .cpost-card {
 
         margin-bottom: 11px;
 
         border-radius: 13px;
-
     }
 
 
@@ -2815,7 +2524,6 @@ const cpostDate =
         padding: 8px 11px;
 
         gap: 9px;
-
     }
 
 
@@ -2824,81 +2532,24 @@ const cpostDate =
 
         width: 40px;
         height: 40px;
-
     }
 
 
     .cpost-avatar {
 
         flex-basis: 40px;
-
-    }
-
-
-    .cpost-user {
-
-        font-size: 13.5px;
-
-    }
-
-
-    .cpost-about {
-
-        font-size: 11.5px;
-
-    }
-
-
-    .cpost-dairy {
-
-        font-size: 12.5px;
-
-    }
-
-
-    .cpost-date {
-
-        font-size: 10px;
-
-    }
-
-
-    .cpost-title {
-
-        font-size: 13.5px;
-
     }
 
 
     .cpost-content {
 
         padding: 10px 12px;
-
     }
 
 
     .cpost-text {
 
         font-size: 14px;
-
-        line-height: 1.5;
-
-    }
-
-
-    .cpost-see-more {
-
-        font-size: 13.5px;
-
-    }
-
-
-    .cpost-images {
-
-        margin-top: 9px;
-
-        border-radius: 10px;
-
     }
 
 
@@ -2907,7 +2558,6 @@ const cpostDate =
         min-height: 45px;
 
         padding: 4px 8px;
-
     }
 
 
@@ -2919,14 +2569,12 @@ const cpostDate =
         height: 34px;
 
         padding: 0 8px;
-
     }
 
 
     .cpost-expand {
 
         padding: 8px;
-
     }
 
 
@@ -2935,44 +2583,29 @@ const cpostDate =
         max-height: 94dvh;
 
         border-radius: 16px;
-
-    }
-
-
-    .cpost-expand-body {
-
-        padding: 13px 13px 18px;
-
     }
 
 
     .cpost-viewer-stage {
 
         inset: 65px 5px 10px;
-
     }
 
 
     .cpost-viewer-navigation {
 
         width: 40px;
-
         height: 40px;
-
     }
 
 
     .cpost-viewer-prev {
-
         left: 7px;
-
     }
 
 
     .cpost-viewer-next {
-
         right: 7px;
-
     }
 
 
@@ -2985,7 +2618,6 @@ const cpostDate =
             16px
             0
             0;
-
     }
 
 
@@ -2995,85 +2627,19 @@ const cpostDate =
             8px
             12px
             12px;
-
     }
 
 }
 
 
-@media (max-width: 380px) {
-
-
-    .cpost-header {
-
-        padding-left: 10px;
-
-        padding-right: 10px;
-
-    }
-
-
-    .cpost-user {
-
-        font-size: 13px;
-
-    }
-
-
-    .cpost-dairy {
-
-        font-size: 12px;
-
-    }
-
-
-    .cpost-title {
-
-        font-size: 13px;
-
-    }
-
-
-    .cpost-text {
-
-        font-size: 14px;
-
-    }
-
-
-    .cpost-images {
-
-        gap: 2px;
-
-    }
-
-
-    .cpost-like,
-    .cpost-comments-button {
-
-        min-width: 57px;
-
-        padding-left: 6px;
-
-        padding-right: 6px;
-
-    }
-
-}
-
-
-@media (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion:reduce) {
 
     .cpost-card *,
     .cpost-card *::before,
     .cpost-card *::after {
 
-        scroll-behavior: auto !important;
-
         transition: none !important;
-
         animation: none !important;
-
     }
 
 }
@@ -3083,52 +2649,44 @@ const cpostDate =
 
 
 <!-- =========================================================
-     POST JAVASCRIPT
+     SELF-CONTAINED JAVASCRIPT
+
+     IMPORTANT:
+     ---------------------------------------------------------
+     This script uses the same backend routes as
+     feed-actions.ejs.
+
+     It is initialized ONLY ONCE.
 ========================================================= -->
 
 <script>
 
 (function () {
 
-    /*
-     * -------------------------------------------------------
-     * INITIALIZATION GUARD
-     * -------------------------------------------------------
-     */
+    "use strict";
 
-    if (window.__corevesterCpostInitialized) {
+
+    /* =====================================================
+       INITIALIZATION GUARD
+    ===================================================== */
+
+    if (
+        window.__corevesterCpostActionsInitialized
+    ) {
 
         return;
 
     }
 
-    window.__corevesterCpostInitialized = true;
+
+    window.__corevesterCpostActionsInitialized =
+        true;
 
 
 
-    /*
-     * -------------------------------------------------------
-     * ACTIVE PHOTO VIEWER
-     * -------------------------------------------------------
-     */
-
-    let cpostActiveViewer = null;
-
-    let cpostActiveImages = [];
-
-    let cpostActiveIndex = 0;
-
-    let cpostTouchStartX = 0;
-
-    let cpostTouchStartY = 0;
-
-
-
-    /*
-     * -------------------------------------------------------
-     * BODY LOCK
-     * -------------------------------------------------------
-     */
+    /* =====================================================
+       BODY LOCK
+    ===================================================== */
 
     function cpostLockBody() {
 
@@ -3159,26 +2717,262 @@ const cpostDate =
 
 
 
-    /*
-     * -------------------------------------------------------
-     * EXPAND POST
-     * -------------------------------------------------------
-     */
+    /* =====================================================
+       MESSAGE
+    ===================================================== */
 
-    function cpostOpenExpanded(button) {
+    function cpostMessage(message) {
 
-        if (!button) {
+        if (
+            typeof window.showMessage ===
+            "function"
+        ) {
+
+            window.showMessage(message);
 
             return;
 
         }
 
 
-        const postId =
-            button.dataset.cpostExpand;
+        window.alert(message);
+
+    }
 
 
-        if (!postId) {
+
+    /* =====================================================
+       RESPONSE PARSER
+       -----------------------------------------------------
+       Protects against HTML responses when the server
+       redirects instead of returning JSON.
+    ===================================================== */
+
+    async function cpostReadResponse(response) {
+
+        const contentType =
+            response.headers.get(
+                "content-type"
+            ) || "";
+
+
+        if (
+            contentType.includes(
+                "application/json"
+            )
+        ) {
+
+            return await response.json();
+
+        }
+
+
+        const text =
+            await response.text();
+
+
+        return {
+
+            success:
+                response.ok,
+
+            message:
+                text ||
+                `Request failed (${response.status})`
+
+        };
+
+    }
+
+
+
+    /* =====================================================
+       GET CARD
+    ===================================================== */
+
+    function cpostGetCard(element) {
+
+        if (!element) {
+
+            return null;
+
+        }
+
+
+        return element.closest(
+            ".cpost-card"
+        );
+
+    }
+
+
+
+    /* =====================================================
+       LIKE
+    ===================================================== */
+
+    async function cpostLike(button) {
+
+        const card =
+            cpostGetCard(button);
+
+
+        if (!card) {
+
+            return;
+
+        }
+
+
+        const id =
+            card.dataset.cpostId;
+
+
+        const type =
+            card.dataset.cpostType ||
+            "post";
+
+
+        if (!id) {
+
+            cpostMessage(
+                "Unable to identify this post."
+            );
+
+            return;
+
+        }
+
+
+        if (button.disabled) {
+
+            return;
+
+        }
+
+
+        button.disabled = true;
+
+
+        /*
+         * IMPORTANT:
+         *
+         * Your feed-actions.ejs confirms that
+         * post likes use:
+         *
+         * POST /post/:id/like
+         */
+
+        const url =
+            type === "post"
+                ? `/post/${encodeURIComponent(id)}/like`
+                : `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/like`;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Accept":
+                                "application/json"
+                        },
+
+                        credentials: "same-origin"
+                    }
+                );
+
+
+            const result =
+                await cpostReadResponse(
+                    response
+                );
+
+
+            if (
+                !response.ok ||
+                result.success !== true
+            ) {
+
+                throw new Error(
+                    result.message ||
+                    `Unable to like (${response.status})`
+                );
+
+            }
+
+
+            const count =
+                button.querySelector(
+                    ".cpost-like-count"
+                );
+
+
+            if (count) {
+
+                count.textContent =
+                    result.likes ?? 0;
+
+            }
+
+
+            const liked =
+                result.liked === true;
+
+
+            button.classList.toggle(
+                "liked",
+                liked
+            );
+
+
+            button.setAttribute(
+                "aria-pressed",
+                liked
+                    ? "true"
+                    : "false"
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "CPOST LIKE ERROR:",
+                error
+            );
+
+
+            cpostMessage(
+                error.message ||
+                "Unable to like this post."
+            );
+
+        }
+        finally {
+
+            button.disabled = false;
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       OPEN COMMENTS
+    ===================================================== */
+
+    function cpostOpenComments(button) {
+
+        const card =
+            cpostGetCard(button);
+
+
+        if (!card) {
 
             return;
 
@@ -3186,8 +2980,990 @@ const cpostDate =
 
 
         const modal =
-            document.querySelector(
-                `[data-cpost-expand-modal="${postId}"]`
+            card.querySelector(
+                ".cpost-comment-modal"
+            );
+
+
+        if (!modal) {
+
+            console.error(
+                "CPOST: Comment modal not found."
+            );
+
+            return;
+
+        }
+
+
+        modal.classList.add(
+            "cpost-is-active"
+        );
+
+
+        modal.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+
+
+        cpostLockBody();
+
+
+        const textarea =
+            modal.querySelector(
+                ".cpost-comment-form textarea"
+            );
+
+
+        setTimeout(
+            function () {
+
+                if (textarea) {
+
+                    textarea.focus();
+
+                }
+
+            },
+            100
+        );
+
+    }
+
+
+
+    /* =====================================================
+       CLOSE COMMENTS
+    ===================================================== */
+
+    function cpostCloseComments(modal) {
+
+        if (!modal) {
+
+            return;
+
+        }
+
+
+        modal.classList.remove(
+            "cpost-is-active"
+        );
+
+
+        modal.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+
+
+        cpostUnlockBody();
+
+    }
+
+
+
+    /* =====================================================
+       UPDATE COMMENT COUNTS
+    ===================================================== */
+
+    function cpostUpdateCommentCounts(
+        card,
+        amount
+    ) {
+
+        if (!card) {
+
+            return;
+
+        }
+
+
+        const visibleCount =
+            card.querySelector(
+                ".cpost-comment-count"
+            );
+
+
+        const modalCount =
+            card.querySelector(
+                ".cpost-modal-comment-count"
+            );
+
+
+        const current =
+            Number(
+                visibleCount
+                    ? visibleCount.textContent
+                    : (
+                        modalCount
+                            ? modalCount.textContent
+                            : 0
+                    )
+            ) || 0;
+
+
+        const next =
+            Math.max(
+                0,
+                current + amount
+            );
+
+
+        if (visibleCount) {
+
+            visibleCount.textContent =
+                next;
+
+        }
+
+
+        if (modalCount) {
+
+            modalCount.textContent =
+                next;
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       ADD COMMENT TO UI
+    ===================================================== */
+
+    function cpostAddComment(
+        form,
+        comment
+    ) {
+
+        const card =
+            cpostGetCard(form);
+
+
+        if (!card) {
+
+            return;
+
+        }
+
+
+        const list =
+            card.querySelector(
+                ".cpost-comment-list"
+            );
+
+
+        if (!list) {
+
+            return;
+
+        }
+
+
+        const empty =
+            list.querySelector(
+                ".cpost-comment-empty"
+            );
+
+
+        if (empty) {
+
+            empty.remove();
+
+        }
+
+
+        const item =
+            document.createElement(
+                "div"
+            );
+
+
+        item.className =
+            "cpost-comment-item";
+
+
+        if (comment._id) {
+
+            item.dataset.cpostCommentId =
+                comment._id;
+
+        }
+
+
+        const avatar =
+            document.createElement(
+                "div"
+            );
+
+
+        avatar.className =
+            "cpost-comment-avatar";
+
+
+        const image =
+            document.createElement(
+                "img"
+            );
+
+
+        const nameValue =
+            comment.userName ||
+            "User";
+
+
+        image.src =
+            comment.userImage ||
+            (
+                "https://ui-avatars.com/api/?name=" +
+                encodeURIComponent(
+                    nameValue
+                )
+            );
+
+
+        image.alt =
+            nameValue;
+
+
+        avatar.appendChild(
+            image
+        );
+
+
+        const body =
+            document.createElement(
+                "div"
+            );
+
+
+        body.className =
+            "cpost-comment-body";
+
+
+        const top =
+            document.createElement(
+                "div"
+            );
+
+
+        top.className =
+            "cpost-comment-top";
+
+
+        const name =
+            document.createElement(
+                "strong"
+            );
+
+
+        name.textContent =
+            nameValue;
+
+
+        top.appendChild(
+            name
+        );
+
+
+        /*
+         * If the server identifies the newly-created
+         * comment as belonging to the current user,
+         * allow the delete button immediately.
+         *
+         * Admin-created comments are also removable.
+         */
+
+        const commentId =
+            comment._id ||
+            comment.id;
+
+
+        if (commentId) {
+
+            const deleteButton =
+                document.createElement(
+                    "button"
+                );
+
+
+            deleteButton.type =
+                "button";
+
+
+            deleteButton.className =
+                "cpost-delete-comment";
+
+
+            deleteButton.dataset.cpostDeleteComment =
+                "";
+
+
+            deleteButton.setAttribute(
+                "aria-label",
+                "Delete comment"
+            );
+
+
+            deleteButton.title =
+                "Delete comment";
+
+
+            deleteButton.innerHTML =
+                '<i class="bi bi-trash3" aria-hidden="true"></i>';
+
+
+            top.appendChild(
+                deleteButton
+            );
+
+        }
+
+
+        const text =
+            document.createElement(
+                "p"
+            );
+
+
+        text.className =
+            "cpost-comment-text";
+
+
+        text.textContent =
+            comment.text ||
+            "";
+
+
+        body.appendChild(
+            top
+        );
+
+
+        body.appendChild(
+            text
+        );
+
+
+        if (
+            comment.createdAt ||
+            comment.dateText
+        ) {
+
+            const date =
+                document.createElement(
+                    "small"
+                );
+
+
+            date.className =
+                "cpost-comment-date";
+
+
+            date.textContent =
+                comment.dateText ||
+                new Date(
+                    comment.createdAt
+                ).toLocaleString();
+
+
+            body.appendChild(
+                date
+            );
+
+        }
+
+
+        item.appendChild(
+            avatar
+        );
+
+
+        item.appendChild(
+            body
+        );
+
+
+        list.prepend(
+            item
+        );
+
+    }
+
+
+
+    /* =====================================================
+       SUBMIT COMMENT
+    ===================================================== */
+
+    async function cpostSubmitComment(form) {
+
+        if (!form) {
+
+            return;
+
+        }
+
+
+        const card =
+            cpostGetCard(form);
+
+
+        if (!card) {
+
+            return;
+
+        }
+
+
+        const textarea =
+            form.querySelector(
+                "textarea"
+            );
+
+
+        if (!textarea) {
+
+            return;
+
+        }
+
+
+        const text =
+            textarea.value.trim();
+
+
+        if (!text) {
+
+            textarea.focus();
+
+            return;
+
+        }
+
+
+        const id =
+            card.dataset.cpostId;
+
+
+        const type =
+            card.dataset.cpostType ||
+            "post";
+
+
+        if (!id) {
+
+            cpostMessage(
+                "Unable to identify this post."
+            );
+
+            return;
+
+        }
+
+
+        const submitButton =
+            form.querySelector(
+                ".cpost-comment-submit"
+            );
+
+
+        if (
+            submitButton &&
+            submitButton.disabled
+        ) {
+
+            return;
+
+        }
+
+
+        if (submitButton) {
+
+            submitButton.disabled =
+                true;
+
+        }
+
+
+        /*
+         * IMPORTANT:
+         *
+         * Your feed-actions.ejs confirms:
+         *
+         * POST /post/:id/comment
+         */
+
+        const url =
+            type === "post"
+                ? `/post/${encodeURIComponent(id)}/comment`
+                : `/${encodeURIComponent(type)}/${encodeURIComponent(id)}/comment`;
+
+
+        try {
+
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method: "POST",
+
+                        headers: {
+
+                            "Content-Type":
+                                "application/json",
+
+                            "Accept":
+                                "application/json"
+
+                        },
+
+                        credentials:
+                            "same-origin",
+
+                        body:
+                            JSON.stringify({
+                                text
+                            })
+                    }
+                );
+
+
+            const result =
+                await cpostReadResponse(
+                    response
+                );
+
+
+            if (
+                !response.ok ||
+                result.success !== true
+            ) {
+
+                throw new Error(
+                    result.message ||
+                    `Unable to save comment (${response.status})`
+                );
+
+            }
+
+
+            /*
+             * Preferred:
+             *
+             * Server returns:
+             *
+             * {
+             *     success: true,
+             *     comment: {...}
+             * }
+             */
+
+            if (result.comment) {
+
+                cpostAddComment(
+                    form,
+                    result.comment
+                );
+
+
+                cpostUpdateCommentCounts(
+                    card,
+                    1
+                );
+
+
+                textarea.value =
+                    "";
+
+
+                textarea.style.height =
+                    "auto";
+
+
+                return;
+
+            }
+
+
+            /*
+             * If no comment was returned,
+             * reload because the server has already
+             * saved the comment.
+             */
+
+            window.location.reload();
+
+        }
+        catch (error) {
+
+            console.error(
+                "CPOST COMMENT ERROR:",
+                error
+            );
+
+
+            cpostMessage(
+                error.message ||
+                "Unable to save comment."
+            );
+
+        }
+        finally {
+
+            if (submitButton) {
+
+                submitButton.disabled =
+                    false;
+
+            }
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       DELETE POST
+    ===================================================== */
+
+    async function cpostDeletePost(button) {
+
+        const card =
+            cpostGetCard(button);
+
+
+        if (!card) {
+
+            return;
+
+        }
+
+
+        const id =
+            card.dataset.cpostId;
+
+
+        if (!id) {
+
+            cpostMessage(
+                "Unable to identify this post."
+            );
+
+            return;
+
+        }
+
+
+        const confirmed =
+            window.confirm(
+                "Delete this post?"
+            );
+
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+
+        button.disabled =
+            true;
+
+
+        try {
+
+            /*
+             * Confirmed by feed-actions.ejs:
+             *
+             * DELETE /post/:id
+             */
+
+            const response =
+                await fetch(
+                    `/post/${encodeURIComponent(id)}`,
+                    {
+                        method: "DELETE",
+
+                        headers: {
+                            "Accept":
+                                "application/json"
+                        },
+
+                        credentials:
+                            "same-origin"
+                    }
+                );
+
+
+            const result =
+                await cpostReadResponse(
+                    response
+                );
+
+
+            if (
+                !response.ok ||
+                result.success !== true
+            ) {
+
+                throw new Error(
+                    result.message ||
+                    `Delete failed (${response.status})`
+                );
+
+            }
+
+
+            /*
+             * Close any open modal belonging to
+             * this card before removing it.
+             */
+
+            card
+                .querySelectorAll(
+                    ".cpost-expand.cpost-is-active, " +
+                    ".cpost-viewer.cpost-is-active, " +
+                    ".cpost-comment-modal.cpost-is-active"
+                )
+                .forEach(
+                    function(modal) {
+
+                        modal.classList.remove(
+                            "cpost-is-active"
+                        );
+
+                    }
+                );
+
+
+            card.remove();
+
+
+            cpostUnlockBody();
+
+        }
+        catch (error) {
+
+            console.error(
+                "CPOST DELETE ERROR:",
+                error
+            );
+
+
+            cpostMessage(
+                error.message ||
+                "Unable to delete this post."
+            );
+
+        }
+        finally {
+
+            button.disabled =
+                false;
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       DELETE COMMENT
+    ===================================================== */
+
+    async function cpostDeleteComment(button) {
+
+        const comment =
+            button.closest(
+                ".cpost-comment-item"
+            );
+
+
+        const card =
+            cpostGetCard(button);
+
+
+        if (!comment || !card) {
+
+            return;
+
+        }
+
+
+        const id =
+            comment.dataset.cpostCommentId;
+
+
+        if (!id) {
+
+            cpostMessage(
+                "Unable to identify this comment."
+            );
+
+            return;
+
+        }
+
+
+        const confirmed =
+            window.confirm(
+                "Delete this comment?"
+            );
+
+
+        if (!confirmed) {
+
+            return;
+
+        }
+
+
+        button.disabled =
+            true;
+
+
+        try {
+
+            /*
+             * Confirmed by feed-actions.ejs:
+             *
+             * DELETE /comment/:id
+             */
+
+            const response =
+                await fetch(
+                    `/comment/${encodeURIComponent(id)}`,
+                    {
+                        method: "DELETE",
+
+                        headers: {
+                            "Accept":
+                                "application/json"
+                        },
+
+                        credentials:
+                            "same-origin"
+                    }
+                );
+
+
+            const result =
+                await cpostReadResponse(
+                    response
+                );
+
+
+            if (
+                !response.ok ||
+                result.success !== true
+            ) {
+
+                throw new Error(
+                    result.message ||
+                    `Delete failed (${response.status})`
+                );
+
+            }
+
+
+            comment.remove();
+
+
+            cpostUpdateCommentCounts(
+                card,
+                -1
+            );
+
+
+            const list =
+                card.querySelector(
+                    ".cpost-comment-list"
+                );
+
+
+            if (
+                list &&
+                !list.querySelector(
+                    ".cpost-comment-item"
+                )
+            ) {
+
+                const empty =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                empty.className =
+                    "cpost-comment-empty";
+
+
+                empty.innerHTML =
+
+                    '<i class="bi bi-chat-dots" aria-hidden="true"></i>' +
+
+                    '<span>No comments yet.</span>' +
+
+                    '<small>Be the first to comment.</small>';
+
+
+                list.appendChild(
+                    empty
+                );
+
+            }
+
+        }
+        catch (error) {
+
+            console.error(
+                "CPOST DELETE COMMENT ERROR:",
+                error
+            );
+
+
+            cpostMessage(
+                error.message ||
+                "Unable to delete comment."
+            );
+
+        }
+        finally {
+
+            button.disabled =
+                false;
+
+        }
+
+    }
+
+
+
+    /* =====================================================
+       EXPAND POST
+    ===================================================== */
+
+    function cpostOpenExpand(button) {
+
+        const card =
+            cpostGetCard(button);
+
+
+        if (!card) {
+
+            return;
+
+        }
+
+
+        const modal =
+            card.querySelector(
+                ".cpost-expand"
             );
 
 
@@ -3202,37 +3978,20 @@ const cpostDate =
             "cpost-is-active"
         );
 
+
         modal.setAttribute(
             "aria-hidden",
             "false"
         );
 
+
         cpostLockBody();
-
-
-        const body =
-            modal.querySelector(
-                ".cpost-expand-body"
-            );
-
-
-        if (body) {
-
-            body.scrollTop = 0;
-
-        }
 
     }
 
 
 
-    /*
-     * -------------------------------------------------------
-     * CLOSE EXPANDED POST
-     * -------------------------------------------------------
-     */
-
-    function cpostCloseExpanded(modal) {
+    function cpostCloseExpand(modal) {
 
         if (!modal) {
 
@@ -3244,6 +4003,7 @@ const cpostDate =
         modal.classList.remove(
             "cpost-is-active"
         );
+
 
         modal.setAttribute(
             "aria-hidden",
@@ -3257,20 +4017,18 @@ const cpostDate =
 
 
 
-    /*
-     * -------------------------------------------------------
-     * GET IMAGES
-     * -------------------------------------------------------
-     */
+    /* =====================================================
+       PHOTO VIEWER
+    ===================================================== */
+
+    let cpostViewer = null;
+
+    let cpostViewerImages = [];
+
+    let cpostViewerIndex = 0;
+
 
     function cpostGetImages(card) {
-
-        if (!card) {
-
-            return [];
-
-        }
-
 
         const images = [];
 
@@ -3279,15 +4037,19 @@ const cpostDate =
             .querySelectorAll(
                 ".cpost-expanded-image img"
             )
-            .forEach(function (img) {
+            .forEach(
+                function(img) {
 
-                if (img.src) {
+                    if (img.src) {
 
-                    images.push(img.src);
+                        images.push(
+                            img.src
+                        );
+
+                    }
 
                 }
-
-            });
+            );
 
 
         if (!images.length) {
@@ -3296,15 +4058,19 @@ const cpostDate =
                 .querySelectorAll(
                     ".cpost-image-button img"
                 )
-                .forEach(function (img) {
+                .forEach(
+                    function(img) {
 
-                    if (img.src) {
+                        if (img.src) {
 
-                        images.push(img.src);
+                            images.push(
+                                img.src
+                            );
+
+                        }
 
                     }
-
-                });
+                );
 
         }
 
@@ -3315,13 +4081,13 @@ const cpostDate =
 
 
 
-    /*
-     * -------------------------------------------------------
-     * OPEN PHOTO VIEWER
-     * -------------------------------------------------------
-     */
+    function cpostOpenViewer(
+        button
+    ) {
 
-    function cpostOpenViewer(card, index) {
+        const card =
+            cpostGetCard(button);
+
 
         if (!card) {
 
@@ -3354,15 +4120,25 @@ const cpostDate =
         }
 
 
-        cpostActiveViewer = viewer;
+        cpostViewer =
+            viewer;
 
-        cpostActiveImages = images;
 
-        cpostActiveIndex =
+        cpostViewerImages =
+            images;
+
+
+        cpostViewerIndex =
+            Number(
+                button.dataset.cpostPhotoIndex
+            ) || 0;
+
+
+        cpostViewerIndex =
             Math.max(
                 0,
                 Math.min(
-                    Number(index) || 0,
+                    cpostViewerIndex,
                     images.length - 1
                 )
             );
@@ -3374,6 +4150,7 @@ const cpostDate =
         viewer.classList.add(
             "cpost-is-active"
         );
+
 
         viewer.setAttribute(
             "aria-hidden",
@@ -3387,17 +4164,11 @@ const cpostDate =
 
 
 
-    /*
-     * -------------------------------------------------------
-     * UPDATE PHOTO VIEWER
-     * -------------------------------------------------------
-     */
-
     function cpostUpdateViewer() {
 
         if (
-            !cpostActiveViewer ||
-            !cpostActiveImages.length
+            !cpostViewer ||
+            !cpostViewerImages.length
         ) {
 
             return;
@@ -3406,13 +4177,13 @@ const cpostDate =
 
 
         const image =
-            cpostActiveViewer.querySelector(
+            cpostViewer.querySelector(
                 ".cpost-viewer-image"
             );
 
 
         const counter =
-            cpostActiveViewer.querySelector(
+            cpostViewer.querySelector(
                 ".cpost-current-photo"
             );
 
@@ -3420,8 +4191,8 @@ const cpostDate =
         if (image) {
 
             image.src =
-                cpostActiveImages[
-                    cpostActiveIndex
+                cpostViewerImages[
+                    cpostViewerIndex
                 ];
 
         }
@@ -3430,44 +4201,39 @@ const cpostDate =
         if (counter) {
 
             counter.textContent =
-                cpostActiveIndex + 1;
+                cpostViewerIndex + 1;
 
         }
 
     }
 
 
-
-    /*
-     * -------------------------------------------------------
-     * CLOSE PHOTO VIEWER
-     * -------------------------------------------------------
-     */
 
     function cpostCloseViewer() {
 
-        if (!cpostActiveViewer) {
+        if (!cpostViewer) {
 
             return;
 
         }
 
 
-        cpostActiveViewer.classList.remove(
+        cpostViewer.classList.remove(
             "cpost-is-active"
         );
 
-        cpostActiveViewer.setAttribute(
+
+        cpostViewer.setAttribute(
             "aria-hidden",
             "true"
         );
 
 
-        cpostActiveViewer = null;
+        cpostViewer = null;
 
-        cpostActiveImages = [];
+        cpostViewerImages = [];
 
-        cpostActiveIndex = 0;
+        cpostViewerIndex = 0;
 
 
         cpostUnlockBody();
@@ -3475,27 +4241,23 @@ const cpostDate =
     }
 
 
-
-    /*
-     * -------------------------------------------------------
-     * NEXT PHOTO
-     * -------------------------------------------------------
-     */
 
     function cpostNextPhoto() {
 
-        if (!cpostActiveImages.length) {
+        if (
+            !cpostViewerImages.length
+        ) {
 
             return;
 
         }
 
 
-        cpostActiveIndex =
+        cpostViewerIndex =
             (
-                cpostActiveIndex + 1
+                cpostViewerIndex + 1
             ) %
-            cpostActiveImages.length;
+            cpostViewerImages.length;
 
 
         cpostUpdateViewer();
@@ -3503,29 +4265,25 @@ const cpostDate =
     }
 
 
-
-    /*
-     * -------------------------------------------------------
-     * PREVIOUS PHOTO
-     * -------------------------------------------------------
-     */
 
     function cpostPreviousPhoto() {
 
-        if (!cpostActiveImages.length) {
+        if (
+            !cpostViewerImages.length
+        ) {
 
             return;
 
         }
 
 
-        cpostActiveIndex =
+        cpostViewerIndex =
             (
-                cpostActiveIndex -
+                cpostViewerIndex -
                 1 +
-                cpostActiveImages.length
+                cpostViewerImages.length
             ) %
-            cpostActiveImages.length;
+            cpostViewerImages.length;
 
 
         cpostUpdateViewer();
@@ -3534,176 +4292,52 @@ const cpostDate =
 
 
 
-    /*
-     * -------------------------------------------------------
-     * OPEN COMMENTS
-     * -------------------------------------------------------
-     */
-
-    function cpostOpenComments(button) {
-
-        if (!button) {
-
-            return;
-
-        }
-
-
-        const postId =
-            button.dataset.cpostComments;
-
-
-        if (!postId) {
-
-            return;
-
-        }
-
-
-        const modal =
-            document.querySelector(
-                `[data-cpost-comment-modal="${postId}"]`
-            );
-
-
-        if (!modal) {
-
-            return;
-
-        }
-
-
-        modal.classList.add(
-            "cpost-is-active"
-        );
-
-        modal.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-
-
-        cpostLockBody();
-
-    }
-
-
-
-    /*
-     * -------------------------------------------------------
-     * CLOSE COMMENTS
-     * -------------------------------------------------------
-     */
-
-    function cpostCloseComments(modal) {
-
-        if (!modal) {
-
-            return;
-
-        }
-
-
-        modal.classList.remove(
-            "cpost-is-active"
-        );
-
-        modal.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-
-        cpostUnlockBody();
-
-    }
-
-
-
-    /*
-     * -------------------------------------------------------
-     * CLICK HANDLER
-     * -------------------------------------------------------
-     */
+    /* =====================================================
+       CLICK HANDLER
+    ===================================================== */
 
     document.addEventListener(
         "click",
-        function (event) {
+        function(event) {
 
 
-            /*
-             * SEE MORE
-             */
+            /* =============================================
+               LIKE
+            ============================================= */
 
-            const seeMore =
+            const like =
                 event.target.closest(
-                    ".cpost-see-more"
+                    "[data-cpost-like]"
                 );
 
 
-            if (seeMore) {
+            if (like) {
 
                 event.preventDefault();
 
-                event.stopPropagation();
-
-                cpostOpenExpanded(
-                    seeMore
-                );
+                cpostLike(like);
 
                 return;
 
             }
 
 
+            /* =============================================
+               OPEN COMMENTS
+            ============================================= */
 
-            /*
-             * CLOSE EXPANDED
-             */
-
-            const closeExpand =
+            const comments =
                 event.target.closest(
-                    "[data-cpost-close-expand]"
+                    "[data-cpost-open-comments]"
                 );
 
 
-            if (closeExpand) {
-
-                event.preventDefault();
-
-
-                const modal =
-                    closeExpand.closest(
-                        ".cpost-expand"
-                    );
-
-
-                cpostCloseExpanded(
-                    modal
-                );
-
-                return;
-
-            }
-
-
-
-            /*
-             * COMMENTS
-             */
-
-            const commentsButton =
-                event.target.closest(
-                    ".cpost-comments-button"
-                );
-
-
-            if (commentsButton) {
+            if (comments) {
 
                 event.preventDefault();
 
                 cpostOpenComments(
-                    commentsButton
+                    comments
                 );
 
                 return;
@@ -3711,10 +4345,9 @@ const cpostDate =
             }
 
 
-
-            /*
-             * CLOSE COMMENTS
-             */
+            /* =============================================
+               CLOSE COMMENTS
+            ============================================= */
 
             const closeComments =
                 event.target.closest(
@@ -3726,15 +4359,10 @@ const cpostDate =
 
                 event.preventDefault();
 
-
-                const modal =
+                cpostCloseComments(
                     closeComments.closest(
                         ".cpost-comment-modal"
-                    );
-
-
-                cpostCloseComments(
-                    modal
+                    )
                 );
 
                 return;
@@ -3742,39 +4370,116 @@ const cpostDate =
             }
 
 
+            /* =============================================
+               DELETE POST
+            ============================================= */
 
-            /*
-             * POST IMAGE
-             */
+            const deletePost =
+                event.target.closest(
+                    "[data-cpost-delete]"
+                );
 
-            const photoButton =
+
+            if (deletePost) {
+
+                event.preventDefault();
+
+                cpostDeletePost(
+                    deletePost
+                );
+
+                return;
+
+            }
+
+
+            /* =============================================
+               DELETE COMMENT
+            ============================================= */
+
+            const deleteComment =
+                event.target.closest(
+                    "[data-cpost-delete-comment]"
+                );
+
+
+            if (deleteComment) {
+
+                event.preventDefault();
+
+                cpostDeleteComment(
+                    deleteComment
+                );
+
+                return;
+
+            }
+
+
+            /* =============================================
+               SEE MORE
+            ============================================= */
+
+            const seeMore =
+                event.target.closest(
+                    "[data-cpost-expand]"
+                );
+
+
+            if (seeMore) {
+
+                event.preventDefault();
+
+                cpostOpenExpand(
+                    seeMore
+                );
+
+                return;
+
+            }
+
+
+            /* =============================================
+               CLOSE EXPANDED POST
+            ============================================= */
+
+            const closeExpand =
+                event.target.closest(
+                    "[data-cpost-close-expand]"
+                );
+
+
+            if (closeExpand) {
+
+                event.preventDefault();
+
+                cpostCloseExpand(
+                    closeExpand.closest(
+                        ".cpost-expand"
+                    )
+                );
+
+                return;
+
+            }
+
+
+            /* =============================================
+               PHOTO
+            ============================================= */
+
+            const photo =
                 event.target.closest(
                     ".cpost-image-button, .cpost-expanded-image"
                 );
 
 
-            if (photoButton) {
+            if (photo) {
 
                 event.preventDefault();
 
-
-                const card =
-                    photoButton.closest(
-                        ".cpost-card"
-                    );
-
-
-                const index =
-                    Number(
-                        photoButton.dataset
-                            .cpostPhotoIndex ||
-                        0
-                    );
-
-
                 cpostOpenViewer(
-                    card,
-                    index
+                    photo
                 );
 
                 return;
@@ -3782,10 +4487,9 @@ const cpostDate =
             }
 
 
-
-            /*
-             * CLOSE PHOTO VIEWER
-             */
+            /* =============================================
+               CLOSE VIEWER
+            ============================================= */
 
             const closeViewer =
                 event.target.closest(
@@ -3804,10 +4508,9 @@ const cpostDate =
             }
 
 
-
-            /*
-             * NEXT PHOTO
-             */
+            /* =============================================
+               NEXT PHOTO
+            ============================================= */
 
             const next =
                 event.target.closest(
@@ -3826,10 +4529,9 @@ const cpostDate =
             }
 
 
-
-            /*
-             * PREVIOUS PHOTO
-             */
+            /* =============================================
+               PREVIOUS PHOTO
+            ============================================= */
 
             const previous =
                 event.target.closest(
@@ -3847,27 +4549,223 @@ const cpostDate =
 
             }
 
+
+            /* =============================================
+               CLICK OUTSIDE COMMENTS
+            ============================================= */
+
+            const modal =
+                event.target.closest(
+                    ".cpost-comment-modal"
+                );
+
+
+            if (
+                modal &&
+                event.target === modal
+            ) {
+
+                cpostCloseComments(
+                    modal
+                );
+
+                return;
+
+            }
+
         }
     );
 
 
 
-    /*
-     * -------------------------------------------------------
-     * TOUCH START
-     * -------------------------------------------------------
-     */
+    /* =====================================================
+       FORM SUBMISSION
+    ===================================================== */
+
+    document.addEventListener(
+        "submit",
+        function(event) {
+
+            const form =
+                event.target.closest(
+                    "[data-cpost-comment-form]"
+                );
+
+
+            if (!form) {
+
+                return;
+
+            }
+
+
+            event.preventDefault();
+
+
+            cpostSubmitComment(
+                form
+            );
+
+        }
+    );
+
+
+
+    /* =====================================================
+       TEXTAREA AUTO GROW
+    ===================================================== */
+
+    document.addEventListener(
+        "input",
+        function(event) {
+
+            if (
+                !event.target.matches(
+                    ".cpost-comment-form textarea"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const textarea =
+                event.target;
+
+
+            textarea.style.height =
+                "auto";
+
+
+            textarea.style.height =
+                Math.min(
+                    textarea.scrollHeight,
+                    100
+                ) + "px";
+
+        }
+    );
+
+
+
+    /* =====================================================
+       ESCAPE KEY
+    ===================================================== */
+
+    document.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (
+                event.key !== "Escape"
+            ) {
+
+                return;
+
+            }
+
+
+            if (cpostViewer) {
+
+                cpostCloseViewer();
+
+                return;
+
+            }
+
+
+            const expanded =
+                document.querySelector(
+                    ".cpost-expand.cpost-is-active"
+                );
+
+
+            if (expanded) {
+
+                cpostCloseExpand(
+                    expanded
+                );
+
+                return;
+
+            }
+
+
+            const comments =
+                document.querySelector(
+                    ".cpost-comment-modal.cpost-is-active"
+                );
+
+
+            if (comments) {
+
+                cpostCloseComments(
+                    comments
+                );
+
+            }
+
+        }
+    );
+
+
+
+    /* =====================================================
+       ARROW KEYS FOR PHOTO VIEWER
+    ===================================================== */
+
+    document.addEventListener(
+        "keydown",
+        function(event) {
+
+            if (!cpostViewer) {
+
+                return;
+
+            }
+
+
+            if (
+                event.key === "ArrowRight"
+            ) {
+
+                event.preventDefault();
+
+                cpostNextPhoto();
+
+            }
+
+
+            if (
+                event.key === "ArrowLeft"
+            ) {
+
+                event.preventDefault();
+
+                cpostPreviousPhoto();
+
+            }
+
+        }
+    );
+
+
+
+    /* =====================================================
+       TOUCH SWIPE
+    ===================================================== */
+
+    let cpostTouchStartX = 0;
+
+    let cpostTouchStartY = 0;
+
 
     document.addEventListener(
         "touchstart",
-        function (event) {
+        function(event) {
 
-            if (
-                !cpostActiveViewer ||
-                !cpostActiveViewer.classList.contains(
-                    "cpost-is-active"
-                )
-            ) {
+            if (!cpostViewer) {
 
                 return;
 
@@ -3899,23 +4797,11 @@ const cpostDate =
     );
 
 
-
-    /*
-     * -------------------------------------------------------
-     * TOUCH END
-     * -------------------------------------------------------
-     */
-
     document.addEventListener(
         "touchend",
-        function (event) {
+        function(event) {
 
-            if (
-                !cpostActiveViewer ||
-                !cpostActiveViewer.classList.contains(
-                    "cpost-is-active"
-                )
-            ) {
+            if (!cpostViewer) {
 
                 return;
 
@@ -3945,7 +4831,8 @@ const cpostDate =
 
             if (
                 Math.abs(deltaX) < 50 ||
-                Math.abs(deltaX) <= Math.abs(deltaY)
+                Math.abs(deltaX) <=
+                    Math.abs(deltaY)
             ) {
 
                 return;
@@ -3966,94 +4853,6 @@ const cpostDate =
         },
         {
             passive: true
-        }
-    );
-
-
-
-    /*
-     * -------------------------------------------------------
-     * KEYBOARD
-     * -------------------------------------------------------
-     */
-
-    document.addEventListener(
-        "keydown",
-        function (event) {
-
-
-            if (event.key === "Escape") {
-
-
-                if (cpostActiveViewer) {
-
-                    cpostCloseViewer();
-
-                    return;
-
-                }
-
-
-                const expanded =
-                    document.querySelector(
-                        ".cpost-expand.cpost-is-active"
-                    );
-
-
-                if (expanded) {
-
-                    cpostCloseExpanded(
-                        expanded
-                    );
-
-                    return;
-
-                }
-
-
-                const comments =
-                    document.querySelector(
-                        ".cpost-comment-modal.cpost-is-active"
-                    );
-
-
-                if (comments) {
-
-                    cpostCloseComments(
-                        comments
-                    );
-
-                }
-
-
-                return;
-
-            }
-
-
-
-            if (cpostActiveViewer) {
-
-
-                if (
-                    event.key === "ArrowRight"
-                ) {
-
-                    cpostNextPhoto();
-
-                }
-
-
-                if (
-                    event.key === "ArrowLeft"
-                ) {
-
-                    cpostPreviousPhoto();
-
-                }
-
-            }
-
         }
     );
 
