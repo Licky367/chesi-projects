@@ -130,6 +130,33 @@ router.get(
 
 
 // ==========================================================
+// TOGGLE MILKING STATUS
+// ==========================================================
+//
+// POST:
+//
+//     /dairy/:id/toggle-milking
+//
+// Toggles:
+//
+//     dairy.isMilking
+//
+// true  -> false
+// false -> true
+//
+// This route ONLY changes the milking status.
+// It does NOT create, edit or delete milk records.
+//
+// ==========================================================
+
+router.post(
+    "/dairy/:id/toggle-milking",
+    isAuth,
+    controller.toggleMilking
+);
+
+
+// ==========================================================
 // SWITCH DAIRY FARM
 // ==========================================================
 //
