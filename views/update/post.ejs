@@ -6,26 +6,33 @@
 
      PURPOSE:
      ---------------------------------------------------------
-     Compact Facebook-style post card.
+     Facebook-style compact post card.
 
-     IMPORTANT LAYOUT PRINCIPLE:
+     STRUCTURE:
      ---------------------------------------------------------
-     The post body MUST flow naturally:
 
          HEADER
-            ↓
-         FARM / DAIRY
-            ↓
-         TEXT
-            ↓
-         SEE MORE
-            ↓
-         IMAGES
-            ↓
-         ACTIONS
+         ├── User avatar
+         ├── User name about Dairy
+         └── Date and time
 
-     There must be NO artificial vertical space around
-     the post text.
+         MESSAGE
+         ├── Title (if available)
+         ├── Paragraph text
+         ├── See more
+         └── Images
+
+         FOOTER
+         ├── Like
+         └── Comment
+
+     IMPORTANT:
+     ---------------------------------------------------------
+     - Dairy belongs in the HEADER.
+     - Message starts immediately below HEADER.
+     - Message is left aligned.
+     - No artificial vertical spacing.
+     - See more follows the truncated text immediately.
 ========================================================= -->
 
 
@@ -170,6 +177,15 @@ const dairyName =
 
 
 /* =========================================================
+   USER NAME
+========================================================= */
+
+const userName =
+    item.userName ||
+    "User";
+
+
+/* =========================================================
    DATE
 ========================================================= */
 
@@ -203,27 +219,57 @@ const postDate =
 
     <header class="post-card-header">
 
-
         <!-- AVATAR -->
 
         <div class="post-avatar">
 
             <img
-                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
-                alt="<%= item.userName || 'User' %>"
+                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(userName)) %>"
+                alt="<%= userName %>"
                 loading="lazy"
             >
 
         </div>
 
 
-        <!-- USER DETAILS -->
+        <!-- USER / DAIRY / DATE -->
 
-        <div class="post-user-info">
+        <div class="post-header-info">
 
-            <strong class="post-user-name">
-                <%= item.userName || "User" %>
-            </strong>
+            <div class="post-header-main">
+
+                <strong class="post-user-name">
+                    <%= userName %>
+                </strong>
+
+                <% if (dairyName) { %>
+
+                    <span class="post-about">
+                        about
+                    </span>
+
+                    <% if (dairyId) { %>
+
+                        <a
+                            href="/dairy/<%= dairyId %>"
+                            class="post-header-dairy"
+                            title="View <%= dairyName %>"
+                        >
+                            <%= dairyName %>
+                        </a>
+
+                    <% } else { %>
+
+                        <span class="post-header-dairy">
+                            <%= dairyName %>
+                        </span>
+
+                    <% } %>
+
+                <% } %>
+
+            </div>
+
 
             <span class="post-date">
                 <%= postDate %>
@@ -254,63 +300,15 @@ const postDate =
 
         <% } %>
 
-
     </header>
 
 
 
     <!-- =====================================================
-         POST BODY
-
-         IMPORTANT:
-         No fixed height.
-         No flex centering.
-         No artificial vertical spacing.
+         MESSAGE AREA
     ====================================================== -->
 
     <div class="post-content">
-
-
-        <!-- =================================================
-             DAIRY / FARM
-        ================================================== -->
-
-        <% if (dairyName && dairyId) { %>
-
-            <a
-                href="/dairy/<%= dairyId %>"
-                class="post-dairy-link"
-                title="View <%= dairyName %>"
-            >
-
-                <i
-                    class="bi bi-building"
-                    aria-hidden="true"
-                ></i>
-
-                <span>
-                    <%= dairyName %>
-                </span>
-
-            </a>
-
-        <% } else if (dairyName) { %>
-
-            <div class="post-dairy-link non-clickable">
-
-                <i
-                    class="bi bi-building"
-                    aria-hidden="true"
-                ></i>
-
-                <span>
-                    <%= dairyName %>
-                </span>
-
-            </div>
-
-        <% } %>
-
 
 
         <!-- =================================================
@@ -331,41 +329,46 @@ const postDate =
 
 
         <!-- =================================================
-             TEXT
+             MESSAGE
+
+             IMPORTANT:
+             -------------------------------------------------
+             The preview and See More remain in the SAME
+             natural text flow.
+
+             There is no separate block containing See More
+             that can create a vertical gap.
         ================================================== -->
 
         <% if (fullPostText) { %>
 
-            <div
-                class="post-text-area <%= isLongPost ? 'post-text-is-long' : '' %>"
-            >
+            <div class="post-text-area">
 
                 <% if (isLongPost) { %>
 
-                    <div class="post-text post-text-preview">
+                    <p class="post-text post-text-preview">
+
                         <%= postPreview %>
-                    </div>
 
-                    <button
-                        type="button"
-                        class="post-see-more"
-                        data-post-expand="<%= item._id %>"
-                    >
+                        <button
+                            type="button"
+                            class="post-see-more"
+                            data-post-expand="<%= item._id %>"
+                        >
+                            See more
+                            <i
+                                class="bi bi-arrow-right"
+                                aria-hidden="true"
+                            ></i>
+                        </button>
 
-                        <span>See more</span>
-
-                        <i
-                            class="bi bi-arrow-right"
-                            aria-hidden="true"
-                        ></i>
-
-                    </button>
+                    </p>
 
                 <% } else { %>
 
-                    <div class="post-text">
+                    <p class="post-text">
                         <%= fullPostText %>
-                    </div>
+                    </p>
 
                 <% } %>
 
@@ -402,6 +405,7 @@ const postDate =
                             loading="lazy"
                         >
 
+
                         <% if (
                             index === 3 &&
                             additionalImages > 0
@@ -430,16 +434,15 @@ const postDate =
 
         <% } %>
 
-
     </div>
 
 
 
     <!-- =====================================================
-         FEED ACTIONS
+         FOOTER / ACTIONS
     ====================================================== -->
 
-    <div
+    <footer
         class="feed-actions post-actions"
         data-feed-id="<%= item._id %>"
         data-feed-type="<%= postType %>"
@@ -482,7 +485,7 @@ const postDate =
 
         </button>
 
-    </div>
+    </footer>
 
 
 
@@ -516,15 +519,15 @@ const postDate =
                     <div class="post-expand-user">
 
                         <img
-                            src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
-                            alt="<%= item.userName || 'User' %>"
+                            src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(userName)) %>"
+                            alt="<%= userName %>"
                             loading="lazy"
                         >
 
                         <div>
 
                             <strong>
-                                <%= item.userName || "User" %>
+                                <%= userName %>
                             </strong>
 
                             <small>
@@ -555,23 +558,42 @@ const postDate =
 
                 <div class="post-expand-body">
 
-                    <% if (dairyName && dairyId) { %>
+                    <% if (dairyName) { %>
 
-                        <a
-                            href="/dairy/<%= dairyId %>"
-                            class="post-dairy-link expanded-dairy-link"
-                        >
+                        <% if (dairyId) { %>
 
-                            <i
-                                class="bi bi-building"
-                                aria-hidden="true"
-                            ></i>
+                            <a
+                                href="/dairy/<%= dairyId %>"
+                                class="post-dairy-link expanded-dairy-link"
+                            >
 
-                            <span>
-                                <%= dairyName %>
-                            </span>
+                                <i
+                                    class="bi bi-building"
+                                    aria-hidden="true"
+                                ></i>
 
-                        </a>
+                                <span>
+                                    <%= dairyName %>
+                                </span>
+
+                            </a>
+
+                        <% } else { %>
+
+                            <div class="post-dairy-link expanded-dairy-link">
+
+                                <i
+                                    class="bi bi-building"
+                                    aria-hidden="true"
+                                ></i>
+
+                                <span>
+                                    <%= dairyName %>
+                                </span>
+
+                            </div>
+
+                        <% } %>
 
                     <% } %>
 
@@ -630,7 +652,7 @@ const postDate =
 
 
     <!-- =====================================================
-         FULL-SCREEN PHOTO VIEWER
+         FULL SCREEN PHOTO VIEWER
     ====================================================== -->
 
     <% if (postImages.length > 0) { %>
@@ -932,7 +954,6 @@ const postDate =
 
     </div>
 
-
 </article>
 
 
@@ -953,13 +974,11 @@ const postDate =
     box-sizing: border-box;
 
     margin: 0 0 14px;
-
     padding: 0;
 
     background: #ffffff;
 
-    border: 1px solid #e4ebe6;
-
+    border: 1px solid #dfe8e2;
     border-radius: 18px;
 
     overflow: hidden;
@@ -970,28 +989,30 @@ const postDate =
 }
 
 
+
 /* =========================================================
    HEADER
-
-   Keep this compact, Facebook-like.
 ========================================================= */
 
 .post-card-header {
 
     width: 100%;
 
-    min-height: 0;
-    height: auto;
+    min-height: 62px;
 
     box-sizing: border-box;
 
-    padding: 11px 14px 9px;
+    padding: 10px 14px;
 
     display: flex;
 
     align-items: center;
 
     gap: 10px;
+
+    border-bottom: 1px solid #e2e9e4;
+
+    background: #ffffff;
 
 }
 
@@ -1022,28 +1043,37 @@ const postDate =
 }
 
 
-.post-user-info {
+.post-header-info {
 
     flex: 1;
 
     min-width: 0;
 
-    display: block;
+}
+
+
+.post-header-main {
+
+    width: 100%;
+
+    min-width: 0;
+
+    display: flex;
+
+    align-items: baseline;
+
+    flex-wrap: wrap;
+
+    column-gap: 5px;
+
+    row-gap: 1px;
+
+    line-height: 1.25;
 
 }
 
 
 .post-user-name {
-
-    display: block;
-
-    margin: 0;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
 
     color: #172019;
 
@@ -1056,11 +1086,50 @@ const postDate =
 }
 
 
+.post-about {
+
+    color: #7c867f;
+
+    font-size: 12px;
+
+    font-weight: 400;
+
+}
+
+
+.post-header-dairy {
+
+    min-width: 0;
+
+    max-width: 100%;
+
+    color: #198754;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    text-decoration: none;
+
+    overflow-wrap: anywhere;
+
+}
+
+
+a.post-header-dairy:hover {
+
+    color: #146c43;
+
+    text-decoration: underline;
+
+}
+
+
 .post-date {
 
     display: block;
 
-    margin: 2px 0 0;
+    margin-top: 2px;
 
     color: #89928c;
 
@@ -1079,11 +1148,9 @@ const postDate =
     flex: 0 0 36px;
 
     margin: 0;
-
     padding: 0;
 
     border: none;
-
     border-radius: 50%;
 
     background: transparent;
@@ -1093,7 +1160,6 @@ const postDate =
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
     cursor: pointer;
@@ -1114,12 +1180,18 @@ const postDate =
 
 
 /* =========================================================
-   CONTENT
+   MESSAGE / CONTENT
 
-   THIS IS THE IMPORTANT FIX.
+   IMPORTANT:
+   ---------------------------------------------------------
+   This area is a normal block flow.
 
-   The content is explicitly prevented from becoming a
-   vertically stretched/flex-centered area.
+   There is NO:
+   - flex centering
+   - fixed height
+   - min-height
+   - vertical justification
+   - artificial top gap
 ========================================================= */
 
 .post-content {
@@ -1130,111 +1202,22 @@ const postDate =
 
     min-height: 0 !important;
 
-    max-height: none;
-
     box-sizing: border-box;
-
-    padding: 0 14px 12px !important;
-
-    margin: 0 !important;
 
     display: block !important;
 
-    overflow: visible;
+    padding: 12px 14px 12px !important;
+
+    margin: 0 !important;
+
+    overflow: visible !important;
 
 }
 
-
-/* =========================================================
-   DIRECT CHILDREN
-
-   Prevent inherited margins/padding from creating
-   unexplained vertical gaps.
-========================================================= */
 
 .post-content > * {
 
     box-sizing: border-box;
-
-}
-
-
-.post-content > .post-dairy-link:first-child {
-
-    margin-top: 0 !important;
-
-}
-
-
-/* =========================================================
-   DAIRY / FARM
-
-   Compact line immediately below header.
-========================================================= */
-
-.post-dairy-link {
-
-    width: fit-content;
-
-    max-width: 100%;
-
-    margin: 0 0 5px !important;
-
-    padding: 0 !important;
-
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 5px;
-
-    color: #198754;
-
-    text-decoration: none;
-
-    font-size: 13px;
-
-    font-weight: 700;
-
-    line-height: 1.25;
-
-}
-
-
-.post-dairy-link i {
-
-    flex: 0 0 auto;
-
-    font-size: 13px;
-
-}
-
-
-.post-dairy-link span {
-
-    min-width: 0;
-
-    overflow: hidden;
-
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
-
-}
-
-
-a.post-dairy-link:hover {
-
-    color: #146c43;
-
-    text-decoration: underline;
-
-}
-
-
-.post-dairy-link.non-clickable {
-
-    cursor: default;
 
 }
 
@@ -1248,7 +1231,7 @@ a.post-dairy-link:hover {
 
     display: block;
 
-    margin: 0 0 5px !important;
+    margin: 0 0 6px !important;
 
     padding: 0 !important;
 
@@ -1262,6 +1245,8 @@ a.post-dairy-link:hover {
 
     letter-spacing: -0.25px;
 
+    text-align: left;
+
     word-break: break-word;
 
 }
@@ -1270,8 +1255,6 @@ a.post-dairy-link:hover {
 
 /* =========================================================
    TEXT AREA
-
-   The text area must NEVER stretch vertically.
 ========================================================= */
 
 .post-text-area {
@@ -1284,25 +1267,29 @@ a.post-dairy-link:hover {
 
     min-height: 0 !important;
 
-    max-height: none;
-
     margin: 0 !important;
 
     padding: 0 !important;
 
     overflow: visible !important;
 
-    vertical-align: top;
-
 }
 
 
-/* =========================================================
-   TEXT
 
-   No top/bottom padding.
-   No fixed height.
-   No flex.
+/* =========================================================
+   PARAGRAPH
+
+   THIS IS THE IMPORTANT FIX.
+
+   The post is treated as a real block paragraph.
+
+   There is:
+   - NO top margin
+   - NO bottom margin
+   - NO padding
+   - NO flex
+   - NO vertical centering
 ========================================================= */
 
 .post-text {
@@ -1314,8 +1301,6 @@ a.post-dairy-link:hover {
     height: auto !important;
 
     min-height: 0 !important;
-
-    max-height: none;
 
     margin: 0 !important;
 
@@ -1329,51 +1314,51 @@ a.post-dairy-link:hover {
 
     line-height: 1.5;
 
+    text-align: left;
+
     white-space: pre-wrap;
 
     word-break: break-word;
 
-    overflow: visible !important;
+    overflow-wrap: anywhere;
+
+    vertical-align: top;
 
 }
 
-
-/* =========================================================
-   PREVIEW
-========================================================= */
-
-.post-text-preview {
-
-    margin: 0 !important;
-
-    padding: 0 !important;
-
-}
 
 
 /* =========================================================
    SEE MORE
 
-   Sits immediately after the final preview line.
+   IMPORTANT:
+   ---------------------------------------------------------
+   This button is INLINE with the paragraph.
+
+   Therefore:
+
+       "...truncated word… See more →"
+
+   remains in the SAME natural text flow.
+
+   There is no separate block creating a huge gap.
 ========================================================= */
 
 .post-see-more {
 
-    display: inline-flex;
-
-    align-items: center;
-
-    gap: 5px;
+    display: inline;
 
     width: auto;
 
     height: auto;
 
-    margin: 3px 0 0 !important;
+    margin: 0 0 0 4px !important;
 
     padding: 0 !important;
 
     border: none;
+
+    outline: none;
 
     background: transparent;
 
@@ -1385,9 +1370,11 @@ a.post-dairy-link:hover {
 
     font-weight: 700;
 
-    line-height: 1.25;
+    line-height: inherit;
 
-    vertical-align: top;
+    white-space: nowrap;
+
+    vertical-align: baseline;
 
     cursor: pointer;
 
@@ -1396,9 +1383,13 @@ a.post-dairy-link:hover {
 
 .post-see-more i {
 
-    font-size: 12px;
+    display: inline-block;
 
-    transition: transform 0.15s ease;
+    margin-left: 2px;
+
+    font-size: 11px;
+
+    vertical-align: baseline;
 
 }
 
@@ -1410,18 +1401,9 @@ a.post-dairy-link:hover {
 }
 
 
-.post-see-more:hover i {
-
-    transform: translateX(2px);
-
-}
-
-
 
 /* =========================================================
    IMAGE GRID
-
-   Only a small intentional gap between text and images.
 ========================================================= */
 
 .post-image-grid {
@@ -1463,7 +1445,6 @@ a.post-dairy-link:hover {
     aspect-ratio: 1 / 1;
 
     margin: 0;
-
     padding: 0;
 
     border: none;
@@ -1566,19 +1547,6 @@ a.post-dairy-link:hover {
 
 
 /* =========================================================
-   FOUR IMAGES
-========================================================= */
-
-.post-image-count-4 {
-
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
-
-}
-
-
-
-/* =========================================================
    MORE IMAGES
 ========================================================= */
 
@@ -1627,10 +1595,18 @@ a.post-dairy-link:hover {
 
 
 /* =========================================================
-   ACTIONS
+   FOOTER / ACTIONS
+
+   Clear border separating message from actions.
 ========================================================= */
 
 .post-actions {
+
+    width: 100%;
+
+    min-height: 47px;
+
+    box-sizing: border-box;
 
     display: flex;
 
@@ -1642,7 +1618,9 @@ a.post-dairy-link:hover {
 
     padding: 5px 10px;
 
-    border-top: 1px solid #edf1ee;
+    border-top: 1px solid #dfe7e2;
+
+    background: #ffffff;
 
 }
 
@@ -1842,6 +1820,7 @@ a.post-dairy-link:hover {
     }
 
 }
+
 
 
 /* =========================================================
@@ -2423,6 +2402,7 @@ a.post-dairy-link:hover {
 }
 
 
+
 /* =========================================================
    COMMENTS
 ========================================================= */
@@ -2770,10 +2750,11 @@ a.post-dairy-link:hover {
 
     .post-card-header {
 
+        min-height: 57px;
+
         padding:
-            9px
-            12px
-            7px;
+            8px
+            12px;
 
     }
 
@@ -2794,21 +2775,47 @@ a.post-dairy-link:hover {
     }
 
 
-    .post-content {
+    .post-header-main {
 
-        padding:
-            0
-            12px
-            10px !important;
+        column-gap: 4px;
 
     }
 
 
-    .post-dairy-link {
+    .post-user-name {
 
-        margin-bottom: 4px !important;
+        font-size: 13.5px;
+
+    }
+
+
+    .post-about {
+
+        font-size: 11.5px;
+
+    }
+
+
+    .post-header-dairy {
 
         font-size: 12.5px;
+
+    }
+
+
+    .post-date {
+
+        font-size: 10.5px;
+
+    }
+
+
+    .post-content {
+
+        padding:
+            10px
+            12px
+            10px !important;
 
     }
 
@@ -2819,7 +2826,7 @@ a.post-dairy-link:hover {
 
         line-height: 1.25;
 
-        margin-bottom: 4px !important;
+        margin-bottom: 5px !important;
 
     }
 
@@ -2835,7 +2842,7 @@ a.post-dairy-link:hover {
 
     .post-see-more {
 
-        margin-top: 3px !important;
+        margin-left: 3px !important;
 
         font-size: 13.5px;
 
@@ -2853,8 +2860,10 @@ a.post-dairy-link:hover {
 
     .post-actions {
 
+        min-height: 45px;
+
         padding:
-            5px
+            4px
             8px;
 
     }
@@ -2986,6 +2995,20 @@ a.post-dairy-link:hover {
 ========================================================= */
 
 @media (max-width: 380px) {
+
+    .post-user-name {
+
+        font-size: 13px;
+
+    }
+
+
+    .post-header-dairy {
+
+        font-size: 12px;
+
+    }
+
 
     .post-title {
 
