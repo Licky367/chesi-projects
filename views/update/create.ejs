@@ -6,15 +6,8 @@ FILE:
     views/update/create.ejs
 
 PURPOSE:
-    Composer used when the CURRENT dairy/asset is itself
-    the subject of the update.
-
-USED FOR:
-    1. Positive-code records
-       → Animal
-
-    2. No-code records
-       → Structure / Facility / Tool
+    Compact WhatsApp-status-style card for creating an
+    update about the CURRENT dairy/asset.
 
 TARGET RULE:
     The current dairy/asset is ALWAYS the target.
@@ -23,11 +16,7 @@ TARGET RULE:
         - category selector
         - target selector
         - target dropdown
-        - empty target list
-
-EXPECTED SERVER VARIABLES:
-    dairy
-    user
+        - target list
 
 FORM:
     POST /dairy/:id/post
@@ -35,90 +24,55 @@ FORM:
 */ %>
 
 
+<!-- =========================================================
+     ADD UPDATE CARD
+========================================================= -->
+
 <section
     class="core-create-post"
-    aria-label="Create update"
+    aria-label="Add an update"
 >
 
-
-    <!-- =====================================================
-         COMPOSER HEADER
-    ====================================================== -->
-
-    <div class="core-create-post__header">
-
-
-        <!-- USER IMAGE -->
-
-        <div class="core-create-post__avatar">
-
-            <img
-                src="<%= user && user.profileImage
-                    ? user.profileImage
-                    : 'https://ui-avatars.com/api/?name=' +
-                      encodeURIComponent(
-                          user && user.name
-                              ? user.name
-                              : 'User'
-                      )
-                %>"
-                alt="<%= user && user.name ? user.name : 'User' %>"
-                class="core-create-post__avatar-image"
-            >
-
-        </div>
-
-
-
-        <!-- HEADING -->
-
-        <div class="core-create-post__heading">
-
-            <div class="core-create-post__heading-text">
-
-                <strong>
-                    <%= user && user.name
-                        ? user.name.split(" ")[0]
-                        : "User"
-                    %>
-                </strong>
-
-                , update us about
-
-            </div>
-
-
-            <div class="core-create-post__heading-target">
-
-                <strong>
-                    <%= dairy && dairy.name
-                        ? dairy.name
-                        : "this dairy asset"
-                    %>
-                </strong>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         OPEN COMPOSER
-    ====================================================== -->
 
     <button
         type="button"
         id="coreCreatePostOpen"
-        class="core-create-post__trigger"
-        aria-label="Create an update"
+        class="core-create-post__card"
+        aria-label="Add an update about <%= dairy && dairy.name ? dairy.name : 'this dairy asset' %>"
     >
 
-        <span>
-            Share an update...
+
+        <!-- =================================================
+             PLUS
+        ================================================== -->
+
+        <span
+            class="core-create-post__plus"
+            aria-hidden="true"
+        >
+            +
         </span>
+
+
+
+        <!-- =================================================
+             WORDING
+        ================================================== -->
+
+        <span class="core-create-post__label">
+            Add an update
+        </span>
+
+
+        <span class="core-create-post__target">
+
+            <%= dairy && dairy.name
+                ? dairy.name
+                : "This dairy asset"
+            %>
+
+        </span>
+
 
     </button>
 
@@ -151,7 +105,7 @@ FORM:
                 type="button"
                 id="coreCreatePostClose"
                 class="core-create-post-modal__back"
-                aria-label="Close"
+                aria-label="Close update composer"
             >
 
                 <span aria-hidden="true">
@@ -165,7 +119,7 @@ FORM:
             <div class="core-create-post-modal__title">
 
                 <strong>
-                    New Update
+                    Add Update
                 </strong>
 
 
@@ -199,28 +153,25 @@ FORM:
 
 
                 <!-- =================================================
-                     TARGET INFORMATION
-                     NO SELECTOR
+                     FIXED TARGET
                 ================================================== -->
 
                 <section
                     class="core-create-post-target"
-                    aria-label="Post target"
+                    aria-label="Update target"
                 >
 
                     <div class="core-create-post-target__icon">
-
                         <span aria-hidden="true">
                             &#10003;
                         </span>
-
                     </div>
 
 
                     <div class="core-create-post-target__info">
 
                         <span>
-                            This update is about
+                            Posting an update about
                         </span>
 
                         <strong>
@@ -245,7 +196,7 @@ FORM:
                     <label
                         for="coreCreatePostTitle"
                     >
-                        Title
+                        Update title
                     </label>
 
 
@@ -253,7 +204,7 @@ FORM:
                         type="text"
                         id="coreCreatePostTitle"
                         maxlength="200"
-                        placeholder="Give your update a title..."
+                        placeholder="What is this update about?"
                         autocomplete="off"
                     >
 
@@ -301,7 +252,7 @@ FORM:
 
 
                 <!-- =================================================
-                     CURRENT DAIRY / ASSET IS THE TARGET
+                     CURRENT DAIRY / ASSET IS ALWAYS THE TARGET
                 ================================================== -->
 
                 <input
@@ -368,8 +319,8 @@ FORM:
                             name="text"
                             maxlength="1000"
                             rows="1"
-                            placeholder="Type your update..."
-                            aria-label="Type your update"
+                            placeholder="Write your update..."
+                            aria-label="Write your update"
                         ></textarea>
 
 
@@ -390,7 +341,7 @@ FORM:
                         type="submit"
                         id="coreCreatePostSend"
                         class="core-create-post-composer__send"
-                        aria-label="Send update"
+                        aria-label="Post update"
                         disabled
                     >
 
@@ -434,188 +385,170 @@ FORM:
 
 
 /* =========================================================
-   CREATE CARD
+   COMPACT STATUS-STYLE CARD
 ========================================================= */
 
 .core-create-post {
 
-    width: 100%;
+    width: 112px;
+
+    flex: 0 0 112px;
+
     margin: 0 0 16px;
 
-    padding: 15px;
-
-    background: #ffffff;
-
-    border: 1px solid #e4ebe6;
-
-    border-radius: 16px;
-
 }
 
 
+.core-create-post__card {
 
-/* =========================================================
-   HEADER
-========================================================= */
+    position: relative;
 
-.core-create-post__header {
+    width: 112px;
+    height: 155px;
+
+    padding: 0;
 
     display: flex;
+
+    flex-direction: column;
+
     align-items: center;
+    justify-content: center;
 
-    gap: 12px;
+    gap: 7px;
 
-    min-width: 0;
+    overflow: hidden;
 
-}
+    border: 1px solid #dce7e0;
 
+    border-radius: 15px;
 
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f3f8f5
+        );
 
-/* =========================================================
-   AVATAR
-========================================================= */
+    color: #198754;
 
-.core-create-post__avatar {
-
-    width: 44px;
-    height: 44px;
-
-    flex: 0 0 44px;
-
-}
-
-
-.core-create-post__avatar-image {
-
-    width: 44px;
-    height: 44px;
-
-    display: block;
-
-    object-fit: cover;
-
-    border-radius: 50%;
-
-}
-
-
-
-/* =========================================================
-   HEADING
-========================================================= */
-
-.core-create-post__heading {
-
-    min-width: 0;
-
-    color: #606862;
-
-    font-size: 14px;
-
-    line-height: 1.45;
-
-}
-
-
-.core-create-post__heading-text {
-
-    display: block;
-
-}
-
-
-.core-create-post__heading-target {
-
-    display: block;
-
-    margin-top: 1px;
-
-}
-
-
-.core-create-post__heading strong {
-
-    color: #202520;
-
-    font-weight: 700;
-
-}
-
-
-
-/* =========================================================
-   TRIGGER
-========================================================= */
-
-.core-create-post__trigger {
-
-    width: 100%;
-
-    min-height: 48px;
-
-    margin-top: 14px;
-
-    padding: 0 16px;
-
-    display: flex;
-    align-items: center;
-
-    border: 1px solid #dce6df;
-
-    border-radius: 25px;
-
-    background: #f7faf8;
-
-    color: #8a928d;
-
-    font: inherit;
-
-    font-size: 14px;
-
-    text-align: left;
+    font-family: inherit;
 
     cursor: pointer;
 
+    text-align: center;
+
     transition:
-        background .18s ease,
-        border-color .18s ease,
-        transform .12s ease;
+        transform .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease;
 
 }
 
 
-.core-create-post__trigger:hover {
-
-    background: #f1f7f3;
-
-    border-color: #198754;
-
-}
-
-
-.core-create-post__trigger:active {
-
-    transform: scale(.99);
-
-}
-
-
-.core-create-post__trigger:focus-visible {
-
-    outline: none;
+.core-create-post__card:hover {
 
     border-color: #198754;
 
     box-shadow:
-        0 0 0 3px
-        rgba(25, 135, 84, .12);
+        0 5px 15px rgba(25, 135, 84, .10);
+
+}
+
+
+.core-create-post__card:active {
+
+    transform: scale(.95);
+
+}
+
+
+.core-create-post__card:focus-visible {
+
+    outline: 2px solid #198754;
+
+    outline-offset: 2px;
 
 }
 
 
 
 /* =========================================================
-   FULL SCREEN MODAL
+   PLUS
+========================================================= */
+
+.core-create-post__plus {
+
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    font-size: 31px;
+
+    font-weight: 300;
+
+    line-height: 1;
+
+    box-shadow:
+        0 4px 12px rgba(25, 135, 84, .20);
+
+}
+
+
+
+/* =========================================================
+   CARD WORDING
+========================================================= */
+
+.core-create-post__label {
+
+    display: block;
+
+    color: #26322b;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+}
+
+
+.core-create-post__target {
+
+    display: block;
+
+    max-width: 88px;
+
+    overflow: hidden;
+
+    color: #8a928d;
+
+    font-size: 10px;
+
+    line-height: 1.25;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+
+/* =========================================================
+   FULL-SCREEN MODAL
 ========================================================= */
 
 .core-create-post-modal {
@@ -705,6 +638,8 @@ FORM:
 
     border: none;
 
+    border-radius: 50%;
+
     background: transparent;
 
     color: #198754;
@@ -718,13 +653,18 @@ FORM:
 }
 
 
-.core-create-post-modal__back:focus-visible {
-
-    outline: none;
-
-    border-radius: 50%;
+.core-create-post-modal__back:active {
 
     background: #edf7f1;
+
+}
+
+
+.core-create-post-modal__back:focus-visible {
+
+    outline: 2px solid #198754;
+
+    outline-offset: 2px;
 
 }
 
@@ -1070,7 +1010,7 @@ FORM:
 
 
 /* =========================================================
-   COMPOSER
+   COMPOSER BAR
 ========================================================= */
 
 .core-create-post-composer {
@@ -1131,7 +1071,7 @@ FORM:
 
 
 /* =========================================================
-   TEXT AREA
+   TEXT INPUT
 ========================================================= */
 
 .core-create-post-composer__input {
@@ -1270,9 +1210,28 @@ FORM:
 
     .core-create-post {
 
-        padding: 14px;
+        width: 108px;
 
-        border-radius: 15px;
+        flex-basis: 108px;
+
+    }
+
+
+    .core-create-post__card {
+
+        width: 108px;
+
+        height: 150px;
+
+    }
+
+
+    .core-create-post__plus {
+
+        width: 46px;
+        height: 46px;
+
+        font-size: 29px;
 
     }
 
@@ -1514,7 +1473,7 @@ FORM:
 
 
         /* =====================================================
-           OPEN
+           OPEN MODAL
         ====================================================== */
 
         function openModal() {
@@ -1548,7 +1507,7 @@ FORM:
 
 
         /* =====================================================
-           CLOSE
+           CLOSE MODAL
         ====================================================== */
 
         function closeModal() {
@@ -1793,7 +1752,7 @@ FORM:
 
 
         /* =====================================================
-           OPEN BUTTON
+           OPEN CARD
         ====================================================== */
 
         openButton.addEventListener(
@@ -1802,28 +1761,9 @@ FORM:
         );
 
 
-        openButton.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key === "Enter" ||
-                    event.key === " "
-                ) {
-
-                    event.preventDefault();
-
-                    openModal();
-
-                }
-
-            }
-        );
-
-
 
         /* =====================================================
-           CLOSE BUTTON
+           CLOSE
         ====================================================== */
 
         closeButton.addEventListener(
@@ -1878,18 +1818,13 @@ FORM:
                     imageInput.files.length > 0;
 
 
-                /*
-                 * Keep the visible title synchronized
-                 * with the actual form field.
-                 */
-
                 hiddenTitle.value =
                     title;
 
 
-                /*
-                 * Content validation.
-                 */
+                /* =============================================
+                   CONTENT REQUIRED
+                ============================================== */
 
                 if (
                     !title &&
@@ -1904,9 +1839,9 @@ FORM:
                 }
 
 
-                /*
-                 * Prevent double submission.
-                 */
+                /* =============================================
+                   PREVENT DOUBLE SUBMISSION
+                ============================================== */
 
                 sendButton.disabled =
                     true;
