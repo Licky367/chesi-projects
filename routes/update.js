@@ -1,11 +1,42 @@
 // ==========================================================
 // routes/update.js
 // ==========================================================
+//
+// DAIRY PROFILE / UPDATE ROUTES
+//
+// PROFILE IMAGE DESIGN
+// ----------------------------------------------------------
+// A Dairy document may contain:
+//
+//     profileImages
+//         -> maximum 5 images
+//
+//     profileImage
+//         -> the currently selected MAIN profile image
+//
+// The browser uploads the selected photos using:
+//
+//     name="profileImages"
+//
+// Therefore the upload middleware MUST use:
+//
+//     upload.array("profileImages", 5)
+//
+// The controller receives:
+//
+//     req.files
+//
+// and is responsible for:
+//
+//     1. storing the uploaded images
+//     2. storing profileImages
+//     3. determining profileImage
+//
+// ==========================================================
 
 const express = require("express");
 
-const router =
-    express.Router();
+const router = express.Router();
 
 
 // ==========================================================
@@ -44,7 +75,7 @@ function isAuth(req, res, next) {
 
 
     // ------------------------------------------------------
-    // Make logged-in user available to controllers
+    // Make the logged-in user available to controllers.
     // ------------------------------------------------------
 
     req.user =
@@ -83,17 +114,14 @@ router.get(
 // ==========================================================
 // DAIRY PROFILE
 // ==========================================================
-
-// GET
 //
-// /dairy/:id
+// GET:
 //
-// This displays either:
+//     /dairy/:id
 //
-// • update.ejs
-// • dairySet.ejs
+// Displays the appropriate Dairy page.
 //
-// depending on the Dairy code.
+// ==========================================================
 
 router.get(
     "/dairy/:id",
@@ -105,12 +133,11 @@ router.get(
 // SWITCH DAIRY FARM
 // ==========================================================
 //
-// Used by dairy workers who have multiple assigned
-// Dairy Farms.
+// Used when a dairy worker has multiple assigned farms.
 //
 // Example:
 //
-// /dairy/665abc123/switch
+//     GET /dairy/665abc123/switch
 //
 // ==========================================================
 
@@ -122,12 +149,12 @@ router.get(
 
 
 // ==========================================================
-// GENERAL DAIRY COMMENTS
+// GENERAL DAIRY COMMENT
 // ==========================================================
 //
 // Example:
 //
-// POST /dairy/:id/comment
+//     POST /dairy/:id/comment
 //
 // ==========================================================
 
@@ -139,46 +166,77 @@ router.post(
 
 
 // ==========================================================
-// PROFILE IMAGES
+// DAIRY PROFILE IMAGES
 // ==========================================================
 //
-// A Dairy profile can have a maximum of 5 profile images.
+// IMPORTANT
+// ----------------------------------------------------------
 //
-// Field name:
+// The frontend sends:
 //
-// profileImages
+//     FormData
 //
-// The middleware therefore uses:
+// with:
 //
-// upload.array("profileImages", 5)
+//     profileImages = photo 1
+//     profileImages = photo 2
+//     profileImages = photo 3
+//     profileImages = photo 4
+//     profileImages = photo 5
 //
-// Maximum:
+// The browser may send fewer than five.
 //
-// 5 profile images.
+// The upload middleware therefore MUST use:
 //
-// The images are stored on the Dairy profile and can later
-// be viewed as a swipeable profile-image gallery.
+//     upload.array("profileImages", 5)
+//
+// NOT:
+//
+//     upload.single("profileImage")
+//
+// The controller receives:
+//
+//     req.files
+//
+// The controller is responsible for saving:
+//
+//     profileImages
+//
+// and determining:
+//
+//     profileImage
+//
+// where profileImage is the MAIN image.
 //
 // ==========================================================
 
 router.put(
     "/dairy/:id/image",
     isAuth,
-    upload.array("profileImages", 5),
+    upload.array(
+        "profileImages",
+        5
+    ),
     controller.image
 );
 
 
 // ==========================================================
-// UPDATE DAIRY PROFILE
+// UPDATE DAIRY PROFILE INFORMATION
 // ==========================================================
 //
-// Updates editable profile information such as:
+// Updates normal editable profile information:
 //
-// • name
-// • code
-// • mass
-// • dateOfBirth
+//     • name
+//     • mass
+//     • dateOfBirth
+//     • other permitted profile fields
+//
+// The frontend sends JSON.
+//
+// Example:
+//
+//     PUT /dairy/:id/update
 //
 // ==========================================================
 
@@ -188,61 +246,36 @@ router.put(
     controller.updateProfile
 );
 
-// ==========================================================
-// TOGGLE MILKING STATUS
-// ==========================================================
-//
-// POST:
-//
-// /dairy/:id/toggle-milking
-//
-// Example:
-//
-// /dairy/6a6c7fb83fa21932d62e72bd/toggle-milking
-//
-// The Dairy document is identified directly by its ID.
-//
-// No dairy-farm assignment is required.
-//
-// ==========================================================
-
-router.post(
-    "/dairy/:id/toggle-milking",
-    isAuth,
-    controller.toggleMilking
-);
-
 
 // ==========================================================
 // CREATE POST
 // ==========================================================
 //
-// A post can contain:
+// A post may contain:
 //
-// • title
-// • text
-// • zero images
-// • one image
-// • multiple images
+//     • title
+//     • text
+//     • zero images
+//     • one image
+//     • multiple images
 //
-// The EJS form must use:
+// Frontend field:
 //
-// name="images"
-//
-// The middleware therefore uses:
-//
-// upload.array("images", 10)
+//     images
 //
 // Maximum:
 //
-// 10 images per post.
+//     10 images
 //
 // ==========================================================
 
 router.post(
     "/dairy/:id/post",
     isAuth,
-    upload.array("images", 10),
+    upload.array(
+        "images",
+        10
+    ),
     controller.createPost
 );
 
@@ -253,7 +286,7 @@ router.post(
 //
 // Example:
 //
-// POST /post/:id/like
+//     POST /post/:id/like
 //
 // ==========================================================
 
@@ -270,7 +303,7 @@ router.post(
 //
 // Example:
 //
-// POST /post/:id/comment
+//     POST /post/:id/comment
 //
 // ==========================================================
 
@@ -285,17 +318,11 @@ router.post(
 // GENERIC UPDATE LIKE
 // ==========================================================
 //
-// Used by update types such as:
+// Examples:
 //
-// • medical
-// • maintenance
-// • milk
-// • other updates
-//
-// Example:
-//
-// POST /medical/:id/like
-// POST /maintenance/:id/like
+//     POST /medical/:id/like
+//     POST /maintenance/:id/like
+//     POST /milk/:id/like
 //
 // ==========================================================
 
@@ -310,10 +337,10 @@ router.post(
 // GENERIC UPDATE COMMENT
 // ==========================================================
 //
-// Example:
+// Examples:
 //
-// POST /medical/:id/comment
-// POST /maintenance/:id/comment
+//     POST /medical/:id/comment
+//     POST /maintenance/:id/comment
 //
 // ==========================================================
 
@@ -330,7 +357,7 @@ router.post(
 //
 // Example:
 //
-// DELETE /post/:id
+//     DELETE /post/:id
 //
 // ==========================================================
 
@@ -347,7 +374,7 @@ router.delete(
 //
 // Example:
 //
-// DELETE /comment/:id
+//     DELETE /comment/:id
 //
 // ==========================================================
 
@@ -374,7 +401,7 @@ router.post(
 
 
 // ----------------------------------------------------------
-// UNMARK / CLEAR MEDICAL
+// CLEAR MEDICAL
 // ----------------------------------------------------------
 
 router.post(
@@ -401,7 +428,7 @@ router.post(
 
 // ----------------------------------------------------------
 // CLEAR MAINTENANCE
-// ----------------------------------------------------------
+// ==========================================================
 
 router.post(
     "/dairy/:id/maintenance/clear",
@@ -416,7 +443,7 @@ router.post(
 //
 // Example:
 //
-// DELETE /dairy/:id
+//     DELETE /dairy/:id
 //
 // ==========================================================
 
@@ -428,8 +455,7 @@ router.delete(
 
 
 // ==========================================================
-// EXPORT ROUTER
+// EXPORT
 // ==========================================================
 
-module.exports =
-    router;
+module.exports = router;
