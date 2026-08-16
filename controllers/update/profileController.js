@@ -5,6 +5,9 @@
 const updateService =
     require("../../services/update");
 
+const Dairy =
+    require("../../models/dairy");
+
 
 // ==========================================================
 // 🟦 UPDATE PROFILE IMAGES
@@ -12,22 +15,30 @@ const updateService =
 //
 // Supports:
 //
+//     • Admin updating ANY dairy profile
 //     • Up to 5 profile images
-//     • Multiple uploads
-//     • First image can be used as the primary/display image
-//     • Images are returned to the frontend as an array
+//     • req.file
+//     • req.files
+//     • profileImage
+//     • profileImages
 //
-// Expected multer configuration:
+// IMPORTANT:
 //
-//     upload.array("profileImages", 5)
+// The profile image endpoint is called by:
 //
-// Therefore:
+//     PUT /dairy/:id/image
 //
-//     req.files
+// Your current EJS/JavaScript uploads:
 //
-// is used instead of:
+//     profileImage
+//
+// Therefore this controller supports both:
 //
 //     req.file
+//
+// and:
+//
+//     req.files
 //
 // ==========================================================
 
@@ -44,6 +55,22 @@ exports.image = async (req, res) => {
         } = req.params;
 
 
+        if (!id) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Dairy profile ID is required."
+
+                });
+
+        }
+
+
         // ==================================================
         // USER
         // ==================================================
@@ -56,7 +83,14 @@ exports.image = async (req, res) => {
 
             return res
                 .status(401)
-                .send("Unauthorized");
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Unauthorized."
+
+                });
 
         }
 
@@ -64,36 +98,91 @@ exports.image = async (req, res) => {
         // ==================================================
         // ADMIN CHECK
         // ==================================================
-        //
-        // Profile editing is currently an admin operation.
-        //
+
+        const isAdmin =
+            user.role === "admin";
+
+
+        // ==================================================
+        // VERIFY PROFILE EXISTS
         // ==================================================
 
-        if (
-            user.role !== "admin"
-        ) {
+        const dairy =
+            await Dairy.findById(id);
+
+
+        if (!dairy) {
 
             return res
-                .status(403)
-                .send(
-                    "Only admin can update dairy profile images"
-                );
+                .status(404)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Dairy profile not found."
+
+                });
 
         }
 
 
         // ==================================================
-        // FILES
+        // COLLECT UPLOADED FILES
+        // ==================================================
+        //
+        // Support both multer configurations:
+        //
+        //     upload.single("profileImage")
+        //
+        // and:
+        //
+        //     upload.array("profileImages", 5)
+        //
         // ==================================================
 
-        const files =
+        let files = [];
+
+
+        // --------------------------------------------------
+        // upload.array(...)
+        // --------------------------------------------------
+
+        if (
             Array.isArray(req.files)
-                ? req.files
-                : [];
+        ) {
+
+            files =
+                req.files.filter(Boolean);
+
+        }
+
+
+        // --------------------------------------------------
+        // upload.single(...)
+        // --------------------------------------------------
+
+        if (
+            req.file
+        ) {
+
+            files.push(
+                req.file
+            );
+
+        }
+
+
+        // --------------------------------------------------
+        // Remove duplicate file references
+        // --------------------------------------------------
+
+        files =
+            [...new Set(files)];
 
 
         // ==================================================
-        // VALIDATION
+        // VALIDATE FILES
         // ==================================================
 
         if (
@@ -102,19 +191,20 @@ exports.image = async (req, res) => {
 
             return res
                 .status(400)
-                .send(
-                    "No profile image uploaded"
-                );
+                .json({
+
+                    success: false,
+
+                    message:
+                        "No profile image uploaded."
+
+                });
 
         }
 
 
         // ==================================================
         // MAXIMUM IMAGE COUNT
-        // ==================================================
-        //
-        // The profile may contain at most 5 images.
-        //
         // ==================================================
 
         if (
@@ -123,9 +213,14 @@ exports.image = async (req, res) => {
 
             return res
                 .status(400)
-                .send(
-                    "A dairy profile can have at most 5 images."
-                );
+                .json({
+
+                    success: false,
+
+                    message:
+                        "A dairy profile can have at most 5 images."
+
+                });
 
         }
 
@@ -137,9 +232,24 @@ exports.image = async (req, res) => {
         const images =
             files
                 .map(
-                    file =>
-                        file &&
-                        file.filename
+                    file => {
+
+                        if (
+                            !file
+                        ) {
+
+                            return null;
+
+                        }
+
+
+                        return (
+                            file.filename ||
+                            file.path ||
+                            null
+                        );
+
+                    }
                 )
                 .filter(Boolean);
 
@@ -150,9 +260,14 @@ exports.image = async (req, res) => {
 
             return res
                 .status(400)
-                .send(
-                    "No valid profile images uploaded"
-                );
+                .json({
+
+                    success: false,
+
+                    message:
+                        "No valid profile images uploaded."
+
+                });
 
         }
 
@@ -161,12 +276,20 @@ exports.image = async (req, res) => {
         // UPDATE PROFILE
         // ==================================================
         //
-        // updateService.updateImage() should save:
+        // IMPORTANT:
         //
-        //     profileImages: images
+        // Admins must NOT be treated as ordinary
+        // dairy workers assigned to a farm.
         //
-        // The first image is also treated as the primary
-        // profile/display image.
+        // The service therefore receives:
+        //
+        //     userId: null
+        //
+        // for administrators.
+        //
+        // For ordinary users, their user ID is retained
+        // so the service can enforce its normal farm
+        // assignment rules.
         //
         // ==================================================
 
@@ -177,22 +300,19 @@ exports.image = async (req, res) => {
                     id,
 
                 userId:
-                    user._id,
+                    isAdmin
+                        ? null
+                        : user._id,
 
-                images
+                images,
+
+                isAdmin
 
             });
 
 
         // ==================================================
-        // RESPONSE IMAGES
-        // ==================================================
-        //
-        // Prefer the images returned by the service/model.
-        //
-        // If the service does not return them, use the
-        // uploaded images.
-        //
+        // PROFILE IMAGES
         // ==================================================
 
         const profileImages =
@@ -205,7 +325,7 @@ exports.image = async (req, res) => {
 
 
         // ==================================================
-        // CONVERT TO PUBLIC UPLOAD PATHS
+        // CONVERT TO PUBLIC URLS
         // ==================================================
 
         const imageUrls =
@@ -217,11 +337,19 @@ exports.image = async (req, res) => {
                         const value =
                             String(image);
 
-                        return value.startsWith(
-                            "/uploads/"
-                        )
-                            ? value
-                            : `/uploads/${value}`;
+
+                        if (
+                            value.startsWith(
+                                "/uploads/"
+                            )
+                        ) {
+
+                            return value;
+
+                        }
+
+
+                        return `/uploads/${value}`;
 
                     }
                 );
@@ -230,19 +358,15 @@ exports.image = async (req, res) => {
         // ==================================================
         // PRIMARY IMAGE
         // ==================================================
-        //
-        // The first image is the display image.
-        //
-        // ==================================================
 
         const primaryImage =
-            imageUrls.length > 0
+            imageUrls.length
                 ? imageUrls[0]
                 : null;
 
 
         // ==================================================
-        // SOCKET PAYLOAD
+        // SOCKET.IO PAYLOAD
         // ==================================================
 
         const payload = {
@@ -250,19 +374,11 @@ exports.image = async (req, res) => {
             dairyId:
                 id,
 
-            // ----------------------------------------------
-            // All profile images
-            // ----------------------------------------------
-
             images:
                 imageUrls,
 
             profileImages:
                 imageUrls,
-
-            // ----------------------------------------------
-            // Primary/display image
-            // ----------------------------------------------
 
             image:
                 primaryImage,
@@ -270,22 +386,14 @@ exports.image = async (req, res) => {
             displayImage:
                 primaryImage,
 
-            // ----------------------------------------------
-            // User information
-            // ----------------------------------------------
-
             userName:
                 user.name,
 
             userImage:
                 user.profileImage ||
                 `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                    user.name
+                    user.name || "User"
                 )}`,
-
-            // ----------------------------------------------
-            // Date
-            // ----------------------------------------------
 
             dateText:
                 update &&
@@ -308,20 +416,19 @@ exports.image = async (req, res) => {
 
         if (io) {
 
+            // ------------------------------------------------
+            // Profile-specific room
+            // ------------------------------------------------
+
             io.to(id).emit(
                 "profileImagesUpdated",
                 payload
             );
 
-            // ----------------------------------------------
+
+            // ------------------------------------------------
             // Backwards compatibility
-            // ----------------------------------------------
-            //
-            // Existing frontend code listening for
-            // imageUpdated can still receive the primary
-            // image.
-            //
-            // ----------------------------------------------
+            // ------------------------------------------------
 
             io.to(id).emit(
                 "imageUpdated",
@@ -335,14 +442,37 @@ exports.image = async (req, res) => {
         // RESPONSE
         // ==================================================
         //
-        // If this request came from normal form submission,
-        // redirect as before.
+        // Your current JavaScript expects JSON because it
+        // calls fetch().
+        //
+        // Therefore return JSON rather than redirecting.
         //
         // ==================================================
 
-        return res.redirect(
-            `/dairy/${id}`
-        );
+        return res.json({
+
+            success:
+                true,
+
+            message:
+                "Profile images updated successfully.",
+
+            dairyId:
+                id,
+
+            images:
+                imageUrls,
+
+            profileImages:
+                imageUrls,
+
+            image:
+                primaryImage,
+
+            displayImage:
+                primaryImage
+
+        });
 
 
     } catch (err) {
@@ -353,11 +483,89 @@ exports.image = async (req, res) => {
         );
 
 
+        // ==================================================
+        // KNOWN AUTHORIZATION ERROR
+        // ==================================================
+
+        if (
+            err.status === 401 ||
+            err.statusCode === 401
+        ) {
+
+            return res
+                .status(401)
+                .json({
+
+                    success: false,
+
+                    message:
+                        err.message ||
+                        "Unauthorized."
+
+                });
+
+        }
+
+
+        if (
+            err.status === 403 ||
+            err.statusCode === 403
+        ) {
+
+            return res
+                .status(403)
+                .json({
+
+                    success: false,
+
+                    message:
+                        err.message ||
+                        "You are not authorized to update this dairy profile."
+
+                });
+
+        }
+
+
+        // ==================================================
+        // KNOWN NOT FOUND ERROR
+        // ==================================================
+
+        if (
+            err.status === 404 ||
+            err.statusCode === 404
+        ) {
+
+            return res
+                .status(404)
+                .json({
+
+                    success: false,
+
+                    message:
+                        err.message ||
+                        "Dairy profile not found."
+
+                });
+
+        }
+
+
+        // ==================================================
+        // GENERAL ERROR
+        // ==================================================
+
         return res
             .status(500)
-            .send(
-                "Failed to update profile images"
-            );
+            .json({
+
+                success: false,
+
+                message:
+                    err.message ||
+                    "Failed to update profile images."
+
+            });
 
     }
 
@@ -382,6 +590,22 @@ exports.deleteProfile = async (req, res) => {
         } = req.params;
 
 
+        if (!id) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Dairy profile ID is required."
+
+                });
+
+        }
+
+
         // ==================================================
         // USER
         // ==================================================
@@ -394,7 +618,14 @@ exports.deleteProfile = async (req, res) => {
 
             return res
                 .status(401)
-                .send("Unauthorized");
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Unauthorized."
+
+                });
 
         }
 
@@ -409,9 +640,38 @@ exports.deleteProfile = async (req, res) => {
 
             return res
                 .status(403)
-                .send(
-                    "Only admin can delete dairy profiles"
-                );
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Only admin can delete dairy profiles."
+
+                });
+
+        }
+
+
+        // ==================================================
+        // VERIFY PROFILE
+        // ==================================================
+
+        const dairy =
+            await Dairy.findById(id);
+
+
+        if (!dairy) {
+
+            return res
+                .status(404)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Dairy profile not found."
+
+                });
 
         }
 
@@ -475,11 +735,11 @@ exports.deleteProfile = async (req, res) => {
             .status(500)
             .json({
 
-                success:
-                    false,
+                success: false,
 
                 message:
-                    "Failed to delete dairy profile"
+                    err.message ||
+                    "Failed to delete dairy profile."
 
             });
 
@@ -496,18 +756,42 @@ exports.deleteProfile = async (req, res) => {
 // Updates:
 //
 //     name
-//     code
-//     dateOfBirth
 //     mass
+//     dateOfBirth
 //
-// Other profile fields can continue to be handled by the
-// service.
+// The code remains unchanged because the EJS displays
+// the existing dairy code as read-only.
 //
 // ==========================================================
 
 exports.updateProfile = async (req, res) => {
 
     try {
+
+        // ==================================================
+        // PROFILE ID
+        // ==================================================
+
+        const {
+            id
+        } = req.params;
+
+
+        if (!id) {
+
+            return res
+                .status(400)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Dairy profile ID is required."
+
+                });
+
+        }
+
 
         // ==================================================
         // USER
@@ -523,11 +807,10 @@ exports.updateProfile = async (req, res) => {
                 .status(401)
                 .json({
 
-                    success:
-                        false,
+                    success: false,
 
                     message:
-                        "Unauthorized"
+                        "Unauthorized."
 
                 });
 
@@ -546,11 +829,34 @@ exports.updateProfile = async (req, res) => {
                 .status(403)
                 .json({
 
-                    success:
-                        false,
+                    success: false,
 
                     message:
                         "Only admin can edit dairy profiles."
+
+                });
+
+        }
+
+
+        // ==================================================
+        // VERIFY PROFILE
+        // ==================================================
+
+        const dairy =
+            await Dairy.findById(id);
+
+
+        if (!dairy) {
+
+            return res
+                .status(404)
+                .json({
+
+                    success: false,
+
+                    message:
+                        "Dairy profile not found."
 
                 });
 
@@ -564,7 +870,7 @@ exports.updateProfile = async (req, res) => {
         const updated =
             await updateService.updateProfile(
 
-                req.params.id,
+                id,
 
                 req.body
 
@@ -581,16 +887,14 @@ exports.updateProfile = async (req, res) => {
 
         if (io) {
 
-            io.to(
-                req.params.id
-            ).emit(
+            io.to(id).emit(
 
                 "profileUpdated",
 
                 {
 
                     dairyId:
-                        req.params.id,
+                        id,
 
                     profile:
                         updated
@@ -629,10 +933,10 @@ exports.updateProfile = async (req, res) => {
             .status(500)
             .json({
 
-                success:
-                    false,
+                success: false,
 
                 message:
+                    err.message ||
                     "Failed to update profile."
 
             });
