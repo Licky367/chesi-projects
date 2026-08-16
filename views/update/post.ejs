@@ -8,27 +8,26 @@
      ---------------------------------------------------------
      Facebook-style compact post card.
 
-     STRUCTURE:
-     ---------------------------------------------------------
+     HEADER
+     ├── User avatar
+     ├── User name about Dairy
+     ├── Date and time
+     └── Title directly below date
 
-         HEADER
-         ├── User avatar
-         ├── User name about Dairy
-         └── Date and time
+     MESSAGE
+     ├── Paragraph text
+     ├── See more
+     └── Images
 
-         MESSAGE
-         ├── Title (if available)
-         ├── Paragraph text
-         ├── See more
-         └── Images
-
-         FOOTER
-         ├── Like
-         └── Comment
+     FOOTER
+     ├── Like
+     └── Comment
 
      IMPORTANT:
      ---------------------------------------------------------
      - Dairy belongs in the HEADER.
+     - Title belongs in the HEADER.
+     - Title appears directly below the date.
      - Message starts immediately below HEADER.
      - Message is left aligned.
      - No artificial vertical spacing.
@@ -96,6 +95,16 @@ const canDeletePost =
         postUserId === currentUserId ||
         user.role === "admin"
     );
+
+
+/* =========================================================
+   POST TITLE
+========================================================= */
+
+const postTitle =
+    item.title
+        ? String(item.title).trim()
+        : "";
 
 
 /* =========================================================
@@ -232,9 +241,11 @@ const postDate =
         </div>
 
 
-        <!-- USER / DAIRY / DATE -->
+        <!-- USER / DAIRY / DATE / TITLE -->
 
         <div class="post-header-info">
+
+            <!-- USER + DAIRY -->
 
             <div class="post-header-main">
 
@@ -271,9 +282,22 @@ const postDate =
             </div>
 
 
+            <!-- DATE -->
+
             <span class="post-date">
                 <%= postDate %>
             </span>
+
+
+            <!-- TITLE -->
+
+            <% if (postTitle) { %>
+
+                <div class="post-header-title">
+                    <%= postTitle %>
+                </div>
+
+            <% } %>
 
         </div>
 
@@ -312,32 +336,15 @@ const postDate =
 
 
         <!-- =================================================
-             TITLE
-        ================================================== -->
-
-        <% if (
-            item.title &&
-            String(item.title).trim()
-        ) { %>
-
-            <h2 class="post-title">
-                <%= item.title %>
-            </h2>
-
-        <% } %>
-
-
-
-        <!-- =================================================
              MESSAGE
 
              IMPORTANT:
              -------------------------------------------------
-             The preview and See More remain in the SAME
-             natural text flow.
+             Title has been moved to the HEADER.
 
-             There is no separate block containing See More
-             that can create a vertical gap.
+             This section contains only:
+             - text
+             - images
         ================================================== -->
 
         <% if (fullPostText) { %>
@@ -514,6 +521,10 @@ const postDate =
                 aria-label="Expanded post"
             >
 
+                <!-- =========================================
+                     EXPANDED HEADER
+                ========================================== -->
+
                 <header class="post-expand-header">
 
                     <div class="post-expand-user">
@@ -533,6 +544,14 @@ const postDate =
                             <small>
                                 <%= postDate %>
                             </small>
+
+                            <% if (postTitle) { %>
+
+                                <span class="post-expand-header-title">
+                                    <%= postTitle %>
+                                </span>
+
+                            <% } %>
 
                         </div>
 
@@ -555,6 +574,10 @@ const postDate =
 
                 </header>
 
+
+                <!-- =========================================
+                     EXPANDED BODY
+                ========================================== -->
 
                 <div class="post-expand-body">
 
@@ -594,18 +617,6 @@ const postDate =
                             </div>
 
                         <% } %>
-
-                    <% } %>
-
-
-                    <% if (
-                        item.title &&
-                        String(item.title).trim()
-                    ) { %>
-
-                        <h2 class="post-expand-title">
-                            <%= item.title %>
-                        </h2>
 
                     <% } %>
 
@@ -1140,6 +1151,49 @@ a.post-header-dairy:hover {
 }
 
 
+
+/* =========================================================
+   HEADER TITLE
+
+   Title sits directly below the date.
+
+   It is intentionally:
+   - bold
+   - compact
+   - left aligned
+   - darker than date
+   - smaller than the old content title
+========================================================= */
+
+.post-header-title {
+
+    display: block;
+
+    width: 100%;
+
+    margin-top: 3px;
+
+    padding: 0;
+
+    color: #18201b;
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+    line-height: 1.3;
+
+    letter-spacing: -0.05px;
+
+    text-align: left;
+
+    word-break: break-word;
+
+    overflow-wrap: anywhere;
+
+}
+
+
 .post-menu-button {
 
     width: 36px;
@@ -1181,17 +1235,6 @@ a.post-header-dairy:hover {
 
 /* =========================================================
    MESSAGE / CONTENT
-
-   IMPORTANT:
-   ---------------------------------------------------------
-   This area is a normal block flow.
-
-   There is NO:
-   - flex centering
-   - fixed height
-   - min-height
-   - vertical justification
-   - artificial top gap
 ========================================================= */
 
 .post-content {
@@ -1224,36 +1267,6 @@ a.post-header-dairy:hover {
 
 
 /* =========================================================
-   TITLE
-========================================================= */
-
-.post-title {
-
-    display: block;
-
-    margin: 0 0 6px !important;
-
-    padding: 0 !important;
-
-    color: #18201b;
-
-    font-size: 20px;
-
-    font-weight: 800;
-
-    line-height: 1.25;
-
-    letter-spacing: -0.25px;
-
-    text-align: left;
-
-    word-break: break-word;
-
-}
-
-
-
-/* =========================================================
    TEXT AREA
 ========================================================= */
 
@@ -1279,17 +1292,6 @@ a.post-header-dairy:hover {
 
 /* =========================================================
    PARAGRAPH
-
-   THIS IS THE IMPORTANT FIX.
-
-   The post is treated as a real block paragraph.
-
-   There is:
-   - NO top margin
-   - NO bottom margin
-   - NO padding
-   - NO flex
-   - NO vertical centering
 ========================================================= */
 
 .post-text {
@@ -1330,18 +1332,6 @@ a.post-header-dairy:hover {
 
 /* =========================================================
    SEE MORE
-
-   IMPORTANT:
-   ---------------------------------------------------------
-   This button is INLINE with the paragraph.
-
-   Therefore:
-
-       "...truncated word… See more →"
-
-   remains in the SAME natural text flow.
-
-   There is no separate block creating a huge gap.
 ========================================================= */
 
 .post-see-more {
@@ -1596,8 +1586,6 @@ a.post-header-dairy:hover {
 
 /* =========================================================
    FOOTER / ACTIONS
-
-   Clear border separating message from actions.
 ========================================================= */
 
 .post-actions {
@@ -1904,6 +1892,31 @@ a.post-header-dairy:hover {
 }
 
 
+/* =========================================================
+   EXPANDED HEADER TITLE
+========================================================= */
+
+.post-expand-header-title {
+
+    display: block;
+
+    margin-top: 3px;
+
+    color: #18201b;
+
+    font-size: 13px;
+
+    font-weight: 800;
+
+    line-height: 1.3;
+
+    word-break: break-word;
+
+    overflow-wrap: anywhere;
+
+}
+
+
 .post-expand-close {
 
     width: 40px;
@@ -1959,21 +1972,10 @@ a.post-header-dairy:hover {
 }
 
 
-.post-expand-title {
-
-    margin: 0 0 10px;
-
-    padding: 0;
-
-    color: #172019;
-
-    font-size: 24px;
-
-    line-height: 1.28;
-
-    font-weight: 800;
-
-}
+/*
+   The old expanded title has been removed because the
+   title now belongs in the expanded HEADER.
+*/
 
 
 .post-expand-text {
@@ -2810,23 +2812,23 @@ a.post-header-dairy:hover {
     }
 
 
+    .post-header-title {
+
+        margin-top: 2px;
+
+        font-size: 13.5px;
+
+        line-height: 1.3;
+
+    }
+
+
     .post-content {
 
         padding:
             10px
             12px
             10px !important;
-
-    }
-
-
-    .post-title {
-
-        font-size: 18px;
-
-        line-height: 1.25;
-
-        margin-bottom: 5px !important;
 
     }
 
@@ -2901,19 +2903,19 @@ a.post-header-dairy:hover {
     }
 
 
+    .post-expand-header-title {
+
+        font-size: 12.5px;
+
+    }
+
+
     .post-expand-body {
 
         padding:
             13px
             13px
             18px;
-
-    }
-
-
-    .post-expand-title {
-
-        font-size: 21px;
 
     }
 
@@ -3010,9 +3012,9 @@ a.post-header-dairy:hover {
     }
 
 
-    .post-title {
+    .post-header-title {
 
-        font-size: 18px;
+        font-size: 13px;
 
     }
 
