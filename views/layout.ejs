@@ -41,6 +41,7 @@ body{
 
 .header{
     position:fixed;
+
     top:0;
     left:0;
     right:0;
@@ -69,11 +70,11 @@ body{
 
 .header-logo-link{
     display:flex;
+
     align-items:center;
     justify-content:flex-start;
 
     width:auto;
-
     height:70px;
 
     text-decoration:none;
@@ -100,6 +101,7 @@ body{
 
 .header-title{
     display:flex;
+
     align-items:center;
     justify-content:flex-start;
 
@@ -150,6 +152,7 @@ body{
     background:#084816;
 
     display:flex;
+
     align-items:center;
 
     padding:0 15px;
@@ -162,7 +165,10 @@ body{
 
 
 /* =========================================================
-   DAIRY WORKER TOP NAVIGATION
+   TOP NAVIGATION
+   Used by:
+   - Admin
+   - Dairy Worker
 ========================================================= */
 
 .dairy-worker-nav{
@@ -226,7 +232,9 @@ body{
 
     white-space:nowrap;
 
-    transition:.2s;
+    transition:
+        background .2s ease,
+        transform .15s ease;
 }
 
 .dairy-worker-nav a:hover{
@@ -235,6 +243,8 @@ body{
 
 .dairy-worker-nav a:active{
     background:rgba(255,255,255,.2);
+
+    transform:scale(.97);
 }
 
 
@@ -260,49 +270,8 @@ body{
 
 
 /* =========================================================
-   HOME BUTTON
-   Used for admin instead of the menu icon.
-========================================================= */
-
-.admin-home-btn{
-    width:44px;
-    height:44px;
-
-    border-radius:8px;
-
-    background:#fff;
-
-    color:#0b5d1e;
-
-    display:flex;
-
-    align-items:center;
-    justify-content:center;
-
-    cursor:pointer;
-
-    font-size:23px;
-
-    text-decoration:none;
-
-    user-select:none;
-
-    flex-shrink:0;
-
-    transition:.2s;
-}
-
-.admin-home-btn:hover{
-    background:#f2f2f2;
-}
-
-.admin-home-btn:active{
-    transform:scale(.96);
-}
-
-
-/* =========================================================
    MENU BUTTON
+   Used by poultry worker.
 ========================================================= */
 
 .menu-btn{
@@ -328,6 +297,10 @@ body{
     user-select:none;
 
     flex-shrink:0;
+}
+
+.menu-btn:active{
+    transform:scale(.96);
 }
 
 
@@ -725,8 +698,7 @@ let homeLink = "/";
 /*
    ADMIN
    ---------------------------------------------------------
-   Admin home page is always:
-
+   Admin home page:
    /dashboard/dairy
 */
 
@@ -762,17 +734,6 @@ else if(
 
 /* =========================================================
    HEADER TITLE
-=========================================================
-
-   ADMIN
-       CHESI PROJECTS
-
-   DAIRY WORKER
-       DAIRY ACTIVITIES
-
-   POULTRY WORKER
-       POULTRY ACTIVITIES
-
 ========================================================= */
 
 let headerTitle = "CHESI PROJECTS";
@@ -784,11 +745,13 @@ if(user){
         headerTitle = "DAIRY ACTIVITIES";
 
     }
+
     else if(user.role === "poultryWorker"){
 
         headerTitle = "POULTRY ACTIVITIES";
 
     }
+
     else if(user.role === "admin"){
 
         headerTitle = "CHESI PROJECTS";
@@ -877,7 +840,7 @@ const isPoultryWorker =
 
 
     <!-- =====================================================
-       DAIRY WORKER NAVIGATION
+       DAIRY WORKER TOP NAVIGATION
     ====================================================== -->
 
     <div class="dairy-worker-nav">
@@ -944,25 +907,112 @@ const isPoultryWorker =
 
 
     <!-- =====================================================
-       ADMIN HOME LINK
-       
-       Admin does NOT receive a sidebar.
-       The menu button is replaced by a home link.
+       ADMIN TOP NAVIGATION
+
+       Home:
+           /dashboard/dairy
+
+       Production:
+           /milk
+
+       Sales:
+           /sales
+
+       Stats:
+           /stats
+
+       IMPORTANT:
+       The Home icon is intentionally NOT placed
+       inside a white box.
     ====================================================== -->
 
-    <a
-        href="/dashboard/dairy"
+    <div class="dairy-worker-nav">
 
-        class="admin-home-btn"
 
-        aria-label="Dairy Dashboard Home"
+        <!-- =================================================
+           ADMIN HOME
+        ================================================== -->
 
-        title="Dairy Dashboard"
-    >
+        <a
+            href="<%= homeLink %>"
+            title="Dairy Dashboard"
+        >
 
-        🏠
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                🏠
+            </span>
 
-    </a>
+            <span class="nav-label">
+                Home
+            </span>
+
+        </a>
+
+
+        <!-- =================================================
+           PRODUCTION
+        ================================================== -->
+
+        <a href="/milk">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                🥛
+            </span>
+
+            <span class="nav-label">
+                Production
+            </span>
+
+        </a>
+
+
+        <!-- =================================================
+           SALES
+        ================================================== -->
+
+        <a href="/sales">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                💰
+            </span>
+
+            <span class="nav-label">
+                Sales
+            </span>
+
+        </a>
+
+
+        <!-- =================================================
+           STATS
+        ================================================== -->
+
+        <a href="/stats">
+
+            <span
+                class="nav-icon"
+                aria-hidden="true"
+            >
+                📊
+            </span>
+
+            <span class="nav-label">
+                Stats
+            </span>
+
+        </a>
+
+
+    </div>
 
 
 <% }else{ %>
