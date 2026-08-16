@@ -38,6 +38,10 @@ const milkService =
     require("../services/milkService");
 
 
+const Dairy =
+    require("../models/dairy");
+
+
 // ==========================================================
 // AUTHENTICATED USER
 // ==========================================================
@@ -599,10 +603,6 @@ async function(
             getUser(req);
 
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (!user) {
 
             return res.redirect(
@@ -611,10 +611,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // CUSTOMER
-        // ==================================================
 
         const customerName =
             typeof req.body?.customerName === "string"
@@ -632,10 +628,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // LITERS
-        // ==================================================
 
         const rawLiters =
             req.body?.liters;
@@ -672,10 +664,6 @@ async function(
         }
 
 
-        // ==================================================
-        // SAVE
-        // ==================================================
-
         await milkService.submitManualSale({
 
             customerName,
@@ -684,10 +672,6 @@ async function(
 
         });
 
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
 
         return res.redirect(
             "/sales?success=Sale%20recorded%20successfully."
@@ -728,10 +712,6 @@ async function(
             getUser(req);
 
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (!user) {
 
             return res.redirect(
@@ -740,10 +720,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // STANDING ORDER ID
-        // ==================================================
 
         const standingOrderId =
             req.body?.standingOrderId;
@@ -771,20 +747,12 @@ async function(
         }
 
 
-        // ==================================================
-        // SAVE SALE
-        // ==================================================
-
         await milkService.submitStandingOrderSale({
 
             standingOrderId
 
         });
 
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
 
         return res.redirect(
             "/sales?success=Standing%20order%20sale%20recorded."
@@ -827,10 +795,6 @@ async function(
             getUser(req);
 
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (!user) {
 
             return res.redirect(
@@ -839,10 +803,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // ADMIN ONLY
-        // ==================================================
 
         if (
             user.role !== "admin"
@@ -856,10 +816,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // PRICE
-        // ==================================================
 
         const rawPrice =
             req.body?.price;
@@ -883,18 +839,10 @@ async function(
         }
 
 
-        // ==================================================
-        // UPDATE
-        // ==================================================
-
         await milkService.updateMilkPrice(
             price
         );
 
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
 
         return res.redirect(
             "/sales?success=Milk%20price%20updated%20successfully."
@@ -935,10 +883,6 @@ async function(
             getUser(req);
 
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (!user) {
 
             return res.redirect(
@@ -947,10 +891,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // CUSTOMER
-        // ==================================================
 
         const customerName =
             typeof req.body?.customerName === "string"
@@ -968,10 +908,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // LITERS
-        // ==================================================
 
         const liters =
             Number(
@@ -991,10 +927,6 @@ async function(
         }
 
 
-        // ==================================================
-        // SAVE
-        // ==================================================
-
         await milkService.addStandingOrder({
 
             customerName,
@@ -1003,10 +935,6 @@ async function(
 
         });
 
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
 
         return res.redirect(
             "/sales?success=Standing%20order%20added%20successfully."
@@ -1047,10 +975,6 @@ async function(
             getUser(req);
 
 
-        // ==================================================
-        // AUTHENTICATION
-        // ==================================================
-
         if (!user) {
 
             return res.redirect(
@@ -1059,10 +983,6 @@ async function(
 
         }
 
-
-        // ==================================================
-        // ORDER ID
-        // ==================================================
 
         const id =
             req.body?.id;
@@ -1088,10 +1008,6 @@ async function(
         }
 
 
-        // ==================================================
-        // OMIT
-        // ==================================================
-
         await milkService.omitStandingOrder({
 
             orderId:
@@ -1101,10 +1017,6 @@ async function(
 
         });
 
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
 
         return res.redirect(
             "/sales?success=Standing%20order%20omitted."
@@ -1129,7 +1041,38 @@ async function(
 // GET MILKING HISTORY
 // ==========================================================
 //
-// GET /milk/history/:dairyId
+// GET:
+//
+//     /milk/history/:dairyId
+//
+// ==========================================================
+//
+// IMPORTANT BUSINESS RULE
+// ----------------------------------------------------------
+//
+// Milking history belongs to the FEMALE ANIMAL.
+//
+// It does NOT depend on:
+//
+//     • isMilking
+//     • current milking status
+//     • dairy-farm assignment
+//     • dairy-worker assignment
+//
+// Therefore:
+//
+//     female + not currently milking
+//
+// MUST still be allowed to view her historical milk records.
+//
+// Likewise:
+//
+//     female + currently milking
+//
+// is allowed.
+//
+// `isMilking` is only a CURRENT STATUS flag. It must never
+// determine whether historical records can be viewed.
 //
 // ==========================================================
 
@@ -1141,13 +1084,13 @@ async function(
 
     try {
 
-        const user =
-            getUser(req);
-
-
         // ==================================================
         // AUTHENTICATION
         // ==================================================
+
+        const user =
+            getUser(req);
+
 
         if (!user) {
 
@@ -1168,7 +1111,9 @@ async function(
 
         if (!dairyId) {
 
-            throw new Error(
+            return res.status(
+                400
+            ).send(
                 "Dairy animal was not specified."
             );
 
@@ -1176,11 +1121,115 @@ async function(
 
 
         if (
-            !isValidObjectId(dairyId)
+            !isValidObjectId(
+                dairyId
+            )
         ) {
 
-            throw new Error(
+            return res.status(
+                400
+            ).send(
                 "Invalid dairy animal."
+            );
+
+        }
+
+
+        // ==================================================
+        // FIND ANIMAL
+        // ==================================================
+        //
+        // This is deliberately done here instead of relying
+        // on isMilking.
+        //
+        // There is NO farm-assignment check.
+        //
+        // ==================================================
+
+        const dairy =
+            await Dairy.findById(
+                dairyId
+            );
+
+
+        if (!dairy) {
+
+            return res.status(
+                404
+            ).send(
+                "Dairy animal not found."
+            );
+
+        }
+
+
+        // ==================================================
+        // FEMALE CHECK
+        // ==================================================
+        //
+        // Milking history is available for female animals.
+        //
+        // It is NOT restricted by:
+        //
+        //     dairy.isMilking
+        //
+        // A female animal that has stopped milking can still
+        // have historical records.
+        //
+        // ==================================================
+
+        let isFemale =
+            false;
+
+
+        // --------------------------------------------------
+        // Use the Dairy model's isFemale virtual if present.
+        // --------------------------------------------------
+
+        if (
+            typeof dairy.isFemale === "boolean"
+        ) {
+
+            isFemale =
+                dairy.isFemale;
+
+        }
+
+        // --------------------------------------------------
+        // Fallback to gender if available.
+        // --------------------------------------------------
+
+        else if (
+            typeof dairy.gender === "string"
+        ) {
+
+            isFemale =
+                dairy.gender.toLowerCase() ===
+                "female";
+
+        }
+
+        // --------------------------------------------------
+        // Fallback to sex if the schema uses sex.
+        // --------------------------------------------------
+
+        else if (
+            typeof dairy.sex === "string"
+        ) {
+
+            isFemale =
+                dairy.sex.toLowerCase() ===
+                "female";
+
+        }
+
+
+        if (!isFemale) {
+
+            return res.status(
+                400
+            ).send(
+                "Milking history is available only for female dairy animals."
             );
 
         }
@@ -1191,12 +1240,27 @@ async function(
         // ==================================================
 
         const month =
-            req.query?.month ||
-            "";
+            typeof req.query?.month === "string"
+
+                ? req.query.month.trim()
+
+                : "";
 
 
         // ==================================================
         // HISTORY
+        // ==================================================
+        //
+        // IMPORTANT:
+        //
+        // We pass the actual Dairy document/user to the
+        // service.
+        //
+        // The service MUST NOT reject the animal because:
+        //
+        //     • isMilking === false
+        //     • it has no farm assignment
+        //
         // ==================================================
 
         const data =
@@ -1221,7 +1285,7 @@ async function(
 
                 dairy:
                     data?.dairy ||
-                    null,
+                    dairy,
 
                 records:
                     Array.isArray(
@@ -1256,6 +1320,12 @@ async function(
 
     catch (error) {
 
+        console.error(
+            "GET MILKING HISTORY ERROR:",
+            error
+        );
+
+
         return sendError(
             res,
             error,
@@ -1274,6 +1344,13 @@ async function(
 // POST /milk/history/:id/status
 //
 // ADMIN ONLY.
+//
+// IMPORTANT:
+//
+// This changes ONLY the current `isMilking` status.
+//
+// It does NOT determine whether the animal can view
+// historical records.
 //
 // ==========================================================
 
