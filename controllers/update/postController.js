@@ -1,9 +1,48 @@
+<% /* =========================================================
+     controllers/update/postController.js
+
+     PURPOSE:
+         Handles creation and management of feed posts.
+
+     CREATE POST TARGET RULES:
+     ---------------------------------------------------------
+     CURRENT DAIRY HAS POSITIVE CODE:
+         The post automatically belongs to the current Dairy.
+
+     CURRENT DAIRY HAS NEGATIVE CODE:
+         User must submit targetDairyId.
+
+         Valid target:
+             1. Animal
+                    code > 0
+
+             2. Structure / Facility / Tool
+                    code === null
+                    code === undefined
+                    code === ""
+
+         Negative-code records are NEVER valid targets.
+
+     The selected Dairy _id is passed to updateService.createPost()
+     as dairyId.
+========================================================= */
+
+
 // ==========================================================
-// controllers/update/postController.js
+// DEPENDENCIES
 // ==========================================================
+
+const mongoose =
+    require("mongoose");
+
+
+const Dairy =
+    require("../../models/dairy");
+
 
 const updateService =
     require("../../services/update/postService");
+
 
 
 // ==========================================================
@@ -21,6 +60,14 @@ const updateService =
 // Uploaded files are supplied by:
 //
 //     req.files
+//
+// TARGET:
+//
+//     Positive-code page:
+//         current Dairy is the target.
+//
+//     Negative-code page:
+//         targetDairyId determines the target.
 //
 // ==========================================================
 
@@ -56,6 +103,187 @@ async (req, res) => {
 
 
         // ==================================================
+        // VALIDATE CURRENT DAIRY ID
+        // ==================================================
+
+        if (
+            !mongoose.Types.ObjectId.isValid(id)
+        ) {
+
+            return res
+                .status(400)
+                .send("Invalid Dairy ID");
+
+        }
+
+
+        // ==================================================
+        // CURRENT DAIRY
+        // ==================================================
+        //
+        // We load the current Dairy from the database rather
+        // than trusting the browser's understanding of its code.
+        //
+        // This determines whether targetDairyId is required.
+        //
+        // ==================================================
+
+        const currentDairy =
+            await Dairy.findById(id)
+                .select("_id name code");
+
+
+        if (!currentDairy) {
+
+            return res
+                .status(404)
+                .send("Dairy not found");
+
+        }
+
+
+        // ==================================================
+        // DETERMINE POST TARGET
+        // ==================================================
+
+        let targetDairyId =
+            currentDairy._id;
+
+
+        /*
+         * A negative-code Dairy is a general farm /
+         * facility / structure / tool context.
+         *
+         * Therefore the user must explicitly choose
+         * what the post concerns.
+         */
+
+        if (
+            Number(currentDairy.code) < 0
+        ) {
+
+
+            const submittedTargetId =
+                typeof req.body.targetDairyId === "string"
+                    ? req.body.targetDairyId.trim()
+                    : "";
+
+
+            // ----------------------------------------------
+            // TARGET REQUIRED
+            // ----------------------------------------------
+
+            if (!submittedTargetId) {
+
+                return res
+                    .status(400)
+                    .send(
+                        "Please select what this update is about"
+                    );
+
+            }
+
+
+            // ----------------------------------------------
+            // TARGET ID VALIDATION
+            // ----------------------------------------------
+
+            if (
+                !mongoose.Types.ObjectId.isValid(
+                    submittedTargetId
+                )
+            ) {
+
+                return res
+                    .status(400)
+                    .send(
+                        "Invalid post target"
+                    );
+
+            }
+
+
+            // ----------------------------------------------
+            // FIND SELECTED TARGET
+            // ----------------------------------------------
+
+            const selectedDairy =
+                await Dairy.findById(
+                    submittedTargetId
+                )
+                .select("_id name code");
+
+
+            if (!selectedDairy) {
+
+                return res
+                    .status(404)
+                    .send(
+                        "Selected post target not found"
+                    );
+
+            }
+
+
+            // ==================================================
+            // VALIDATE TARGET CODE
+            // ==================================================
+            //
+            // Valid targets are ONLY:
+            //
+            //     Animal:
+            //         code > 0
+            //
+            //     Structure / Facility / Tool:
+            //         no code
+            //
+            // Negative-code Dairy records are NOT valid targets.
+            //
+            // ==================================================
+
+            const targetCode =
+                selectedDairy.code;
+
+
+            const isAnimal =
+                targetCode !== null &&
+                targetCode !== undefined &&
+                targetCode !== "" &&
+                Number(targetCode) > 0;
+
+
+            const isStructureFacilityTool =
+                targetCode === null ||
+                targetCode === undefined ||
+                targetCode === "";
+
+
+            if (
+                !isAnimal &&
+                !isStructureFacilityTool
+            ) {
+
+                return res
+                    .status(400)
+                    .send(
+                        "Invalid post target"
+                    );
+
+            }
+
+
+            // ----------------------------------------------
+            // ACCEPT SELECTED TARGET
+            // ----------------------------------------------
+
+            targetDairyId =
+                selectedDairy._id;
+
+        }
+
+
+
+        // ==================================================
         // POST DATA
         // ==================================================
 
@@ -71,6 +299,7 @@ async (req, res) => {
                 : "";
 
 
+
         // ==================================================
         // MULTIPLE IMAGES
         // ==================================================
@@ -83,8 +312,11 @@ async (req, res) => {
 
         const images =
             files
-                .map(file => file.filename)
+                .map(
+                    file => file.filename
+                )
                 .filter(Boolean);
+
 
 
         // ==================================================
@@ -114,15 +346,23 @@ async (req, res) => {
         }
 
 
+
         // ==================================================
         // CREATE POST
+        // ==================================================
+        //
+        // IMPORTANT:
+        //
+        // dairyId is now targetDairyId, not necessarily
+        // the :id from the URL.
+        //
         // ==================================================
 
         const post =
             await updateService.createPost({
 
                 dairyId:
-                    id,
+                    targetDairyId,
 
                 userId:
                     user._id,
@@ -142,6 +382,7 @@ async (req, res) => {
             });
 
 
+
         // ==================================================
         // REAL USER IMAGE
         // ==================================================
@@ -151,6 +392,7 @@ async (req, res) => {
             `https://ui-avatars.com/api/?name=${encodeURIComponent(
                 user.name
             )}`;
+
 
 
         // ==================================================
@@ -215,6 +457,7 @@ async (req, res) => {
         };
 
 
+
         // ==================================================
         // SOCKET.IO
         // ==================================================
@@ -225,16 +468,60 @@ async (req, res) => {
 
         if (io) {
 
-            io.to(id).emit(
+            /*
+             * Emit to the TARGET Dairy room.
+             *
+             * This means users viewing the Dairy that the
+             * post actually concerns can receive it in real
+             * time.
+             */
+
+            io.to(
+                String(targetDairyId)
+            ).emit(
                 "postCreated",
                 payload
             );
 
+
+
+            /*
+             * If the page from which the post was created is
+             * different from the selected target, also notify
+             * the originating page.
+             *
+             * This is useful when creating a post from a
+             * general farm page about a specific animal or
+             * structure.
+             */
+
+            if (
+                String(targetDairyId) !==
+                String(id)
+            ) {
+
+                io.to(
+                    String(id)
+                ).emit(
+                    "postCreated",
+                    payload
+                );
+
+            }
+
         }
+
 
 
         // ==================================================
         // REDIRECT
+        // ==================================================
+        //
+        // Keep the user on the page from which they created
+        // the post.
+        //
+        // The post itself belongs to targetDairyId.
+        //
         // ==================================================
 
         return res.redirect(
