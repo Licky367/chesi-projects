@@ -28,6 +28,23 @@
             - admin
             - dairyWorker
 
+        AND only when the dairy code is:
+            - positive
+            - even
+
+        Examples:
+            2  -> SHOW
+            4  -> SHOW
+            6  -> SHOW
+            8  -> SHOW
+
+            1  -> HIDE
+            3  -> HIDE
+            5  -> HIDE
+            0  -> HIDE
+           -2  -> HIDE
+           null -> HIDE
+
      6. The milking status card appears directly below
         the create-post card.
 ===================================================== -->
@@ -83,6 +100,10 @@
          Available only to:
          - admin
          - dairyWorker
+
+         AND ONLY when:
+         - code is positive
+         - code is even
     ================================================== -->
 
     <% if (
@@ -90,7 +111,10 @@
         (
             user.role === "admin" ||
             user.role === "dairyWorker"
-        )
+        ) &&
+        typeof dairy.code === "number" &&
+        dairy.code > 0 &&
+        dairy.code % 2 === 0
     ) { %>
 
         <%- include("update/milk-status", {
