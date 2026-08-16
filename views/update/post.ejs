@@ -4,32 +4,28 @@
      FILE:
      views/update/post.ejs
 
-     FEATURES:
+     PURPOSE:
      ---------------------------------------------------------
-     • Modern post-card design
-     • User header
-     • Clickable dairy/farm name
-     • Post title
-     • 100-character text preview
-     • "See more" expansion
-     • Full readable expanded post
-     • Up to 4 images in feed
-     • +N indicator for additional images
-     • Full-screen image viewer
-     • Swipeable image viewer on mobile
-     • Previous / next image controls
-     • Existing feed-actions compatibility
-     • Comment modal
-     • Delete post
-     • Delete comment
+     Compact Facebook-style post card.
 
-     EXPECTED VARIABLES:
+     IMPORTANT LAYOUT PRINCIPLE:
      ---------------------------------------------------------
-     item
-     user
+     The post body MUST flow naturally:
 
-     OPTIONAL:
-     type
+         HEADER
+            ↓
+         FARM / DAIRY
+            ↓
+         TEXT
+            ↓
+         SEE MORE
+            ↓
+         IMAGES
+            ↓
+         ACTIONS
+
+     There must be NO artificial vertical space around
+     the post text.
 ========================================================= -->
 
 
@@ -65,7 +61,7 @@ const comments =
 
 
 /* =========================================================
-   USER ID
+   USER IDS
 ========================================================= */
 
 const postUserId =
@@ -115,8 +111,6 @@ const isLongPost =
 
 /* =========================================================
    TEXT PREVIEW
-
-   Only used when text exceeds 100 characters.
 ========================================================= */
 
 const postPreview =
@@ -127,9 +121,6 @@ const postPreview =
 
 /* =========================================================
    POST IMAGES
-
-   Keep ALL images available to the full-screen viewer,
-   but display only the first four in the feed.
 ========================================================= */
 
 const postImages =
@@ -154,13 +145,7 @@ const additionalImages =
 
 
 /* =========================================================
-   DAIRY INFORMATION
-
-   Supports both:
-       dairyId / dairyName
-
-   and, where available:
-       dairy._id / dairy.name
+   DAIRY / FARM
 ========================================================= */
 
 const dairyId =
@@ -219,9 +204,7 @@ const postDate =
     <header class="post-card-header">
 
 
-        <!-- =================================================
-             USER AVATAR
-        ================================================== -->
+        <!-- AVATAR -->
 
         <div class="post-avatar">
 
@@ -234,33 +217,22 @@ const postDate =
         </div>
 
 
-
-        <!-- =================================================
-             USER INFORMATION
-        ================================================== -->
+        <!-- USER DETAILS -->
 
         <div class="post-user-info">
 
             <strong class="post-user-name">
-
                 <%= item.userName || "User" %>
-
             </strong>
 
-
             <span class="post-date">
-
                 <%= postDate %>
-
             </span>
 
         </div>
 
 
-
-        <!-- =================================================
-             DELETE
-        ================================================== -->
+        <!-- DELETE -->
 
         <% if (canDeletePost) { %>
 
@@ -289,13 +261,18 @@ const postDate =
 
     <!-- =====================================================
          POST BODY
+
+         IMPORTANT:
+         No fixed height.
+         No flex centering.
+         No artificial vertical spacing.
     ====================================================== -->
 
     <div class="post-content">
 
 
         <!-- =================================================
-             DAIRY / FARM NAME
+             DAIRY / FARM
         ================================================== -->
 
         <% if (dairyName && dairyId) { %>
@@ -346,9 +323,7 @@ const postDate =
         ) { %>
 
             <h2 class="post-title">
-
                 <%= item.title %>
-
             </h2>
 
         <% } %>
@@ -362,23 +337,14 @@ const postDate =
         <% if (fullPostText) { %>
 
             <div
-                class="
-                    post-text-area
-                    <%= isLongPost ? 'post-text-is-long' : '' %>
-                "
+                class="post-text-area <%= isLongPost ? 'post-text-is-long' : '' %>"
             >
-
 
                 <% if (isLongPost) { %>
 
-                    <div
-                        class="post-text post-text-preview"
-                    >
-
+                    <div class="post-text post-text-preview">
                         <%= postPreview %>
-
                     </div>
-
 
                     <button
                         type="button"
@@ -386,7 +352,7 @@ const postDate =
                         data-post-expand="<%= item._id %>"
                     >
 
-                        See more
+                        <span>See more</span>
 
                         <i
                             class="bi bi-arrow-right"
@@ -395,19 +361,13 @@ const postDate =
 
                     </button>
 
-
                 <% } else { %>
 
-
                     <div class="post-text">
-
                         <%= fullPostText %>
-
                     </div>
 
-
                 <% } %>
-
 
             </div>
 
@@ -421,18 +381,12 @@ const postDate =
 
         <% if (visibleImages.length > 0) { %>
 
-
             <div
-                class="
-                    post-image-grid
-                    post-image-count-<%= visibleImages.length %>
-                "
+                class="post-image-grid post-image-count-<%= visibleImages.length %>"
                 data-photo-count="<%= postImages.length %>"
             >
 
-
                 <% visibleImages.forEach(function(image, index) { %>
-
 
                     <button
                         type="button"
@@ -441,18 +395,12 @@ const postDate =
                         aria-label="Open photo <%= index + 1 %>"
                     >
 
-
                         <img
                             src="/uploads/<%= image %>"
                             alt="Post photo <%= index + 1 %>"
                             class="post-image"
                             loading="lazy"
                         >
-
-
-                        <!-- =================================
-                             +N OVERLAY
-                        ================================== -->
 
                         <% if (
                             index === 3 &&
@@ -474,15 +422,11 @@ const postDate =
 
                         <% } %>
 
-
                     </button>
-
 
                 <% }); %>
 
-
             </div>
-
 
         <% } %>
 
@@ -493,9 +437,6 @@ const postDate =
 
     <!-- =====================================================
          FEED ACTIONS
-
-         IMPORTANT:
-         Existing class names are preserved.
     ====================================================== -->
 
     <div
@@ -503,11 +444,6 @@ const postDate =
         data-feed-id="<%= item._id %>"
         data-feed-type="<%= postType %>"
     >
-
-
-        <!-- =================================================
-             LIKE
-        ================================================== -->
 
         <button
             type="button"
@@ -523,18 +459,11 @@ const postDate =
             ></i>
 
             <span class="like-count">
-
                 <%= likes %>
-
             </span>
 
         </button>
 
-
-
-        <!-- =================================================
-             COMMENTS
-        ================================================== -->
 
         <button
             type="button"
@@ -548,26 +477,17 @@ const postDate =
             ></i>
 
             <span class="comment-count">
-
                 <%= comments.length %>
-
             </span>
 
         </button>
-
 
     </div>
 
 
 
     <!-- =====================================================
-         EXPANDED POST MODAL
-
-         IMPORTANT:
-         This is NOT the grey overlay shown previously.
-
-         The actual post remains clearly visible inside
-         a white, readable card.
+         EXPANDED POST
     ====================================================== -->
 
     <% if (isLongPost) { %>
@@ -577,7 +497,6 @@ const postDate =
             data-post-expand-modal="<%= item._id %>"
             aria-hidden="true"
         >
-
 
             <div
                 class="post-expand-backdrop"
@@ -592,23 +511,15 @@ const postDate =
                 aria-label="Expanded post"
             >
 
-
-                <!-- =========================================
-                     EXPANDED HEADER
-                ========================================== -->
-
                 <header class="post-expand-header">
 
-
                     <div class="post-expand-user">
-
 
                         <img
                             src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
                             alt="<%= item.userName || 'User' %>"
                             loading="lazy"
                         >
-
 
                         <div>
 
@@ -621,7 +532,6 @@ const postDate =
                             </small>
 
                         </div>
-
 
                     </div>
 
@@ -640,17 +550,10 @@ const postDate =
 
                     </button>
 
-
                 </header>
 
 
-
-                <!-- =========================================
-                     EXPANDED BODY
-                ========================================== -->
-
                 <div class="post-expand-body">
-
 
                     <% if (dairyName && dairyId) { %>
 
@@ -673,38 +576,26 @@ const postDate =
                     <% } %>
 
 
-
                     <% if (
                         item.title &&
                         String(item.title).trim()
                     ) { %>
 
                         <h2 class="post-expand-title">
-
                             <%= item.title %>
-
                         </h2>
 
                     <% } %>
 
 
-
                     <div class="post-expand-text">
-
                         <%= fullPostText %>
-
                     </div>
 
-
-
-                    <!-- =====================================
-                         EXPANDED IMAGES
-                    ====================================== -->
 
                     <% if (postImages.length > 0) { %>
 
                         <div class="post-expand-images">
-
 
                             <% postImages.forEach(function(image, index) { %>
 
@@ -724,17 +615,13 @@ const postDate =
 
                             <% }); %>
 
-
                         </div>
 
                     <% } %>
 
-
                 </div>
 
-
             </div>
-
 
         </div>
 
@@ -748,17 +635,11 @@ const postDate =
 
     <% if (postImages.length > 0) { %>
 
-
         <div
             class="post-photo-viewer"
             data-photo-viewer="<%= item._id %>"
             aria-hidden="true"
         >
-
-
-            <!-- =============================================
-                 BACKDROP
-            ============================================== -->
 
             <div
                 class="photo-viewer-backdrop"
@@ -766,13 +647,7 @@ const postDate =
             ></div>
 
 
-
-            <!-- =============================================
-                 TOP BAR
-            ============================================== -->
-
             <div class="photo-viewer-topbar">
-
 
                 <span class="photo-viewer-counter">
 
@@ -803,14 +678,8 @@ const postDate =
 
                 </button>
 
-
             </div>
 
-
-
-            <!-- =============================================
-                 PREVIOUS
-            ============================================== -->
 
             <% if (postImages.length > 1) { %>
 
@@ -831,13 +700,7 @@ const postDate =
             <% } %>
 
 
-
-            <!-- =============================================
-                 PHOTO
-            ============================================== -->
-
             <div class="photo-viewer-stage">
-
 
                 <img
                     class="photo-viewer-image"
@@ -845,14 +708,8 @@ const postDate =
                     alt="Post photo"
                 >
 
-
             </div>
 
-
-
-            <!-- =============================================
-                 NEXT
-            ============================================== -->
 
             <% if (postImages.length > 1) { %>
 
@@ -872,9 +729,7 @@ const postDate =
 
             <% } %>
 
-
         </div>
-
 
     <% } %>
 
@@ -889,16 +744,9 @@ const postDate =
         aria-hidden="true"
     >
 
-
         <div class="comment-modal-content">
 
-
-            <!-- =============================================
-                 COMMENT HEADER
-            ============================================== -->
-
             <header class="comment-modal-header">
-
 
                 <div class="comment-modal-title">
 
@@ -926,17 +774,10 @@ const postDate =
 
                 </button>
 
-
             </header>
 
 
-
-            <!-- =============================================
-                 COMMENT LIST
-            ============================================== -->
-
             <div class="comment-section">
-
 
                 <% if (comments.length === 0) { %>
 
@@ -957,15 +798,12 @@ const postDate =
                 <% } %>
 
 
-
                 <% comments.forEach(function(comment) { %>
-
 
                     <div
                         class="comment-item"
                         data-comment-id="<%= comment._id %>"
                     >
-
 
                         <div class="comment-user-avatar">
 
@@ -978,17 +816,12 @@ const postDate =
                         </div>
 
 
-
                         <div class="comment-content">
-
 
                             <div class="comment-top-row">
 
-
                                 <strong class="comment-user-name">
-
                                     <%= comment.userName || "User" %>
-
                                 </strong>
 
 
@@ -1030,14 +863,11 @@ const postDate =
 
                                 <% } %>
 
-
                             </div>
 
 
                             <p class="comment-text">
-
                                 <%= comment.text %>
-
                             </p>
 
 
@@ -1050,26 +880,16 @@ const postDate =
 
                             </small>
 
-
                         </div>
-
 
                     </div>
 
-
                 <% }); %>
-
 
             </div>
 
 
-
-            <!-- =============================================
-                 COMMENT COMPOSER
-            ============================================== -->
-
             <div class="comment-composer-wrapper">
-
 
                 <form
                     class="comment-form"
@@ -1077,9 +897,7 @@ const postDate =
                     data-type="<%= postType %>"
                 >
 
-
                     <div class="comment-composer">
-
 
                         <div class="comment-input-wrapper">
 
@@ -1104,18 +922,13 @@ const postDate =
 
                         </button>
 
-
                     </div>
-
 
                 </form>
 
-
             </div>
 
-
         </div>
-
 
     </div>
 
@@ -1137,57 +950,42 @@ const postDate =
 .feed-card.post-card {
 
     width: 100%;
-
     box-sizing: border-box;
 
-    margin: 0 0 16px;
+    margin: 0 0 14px;
+
+    padding: 0;
 
     background: #ffffff;
 
-    border:
-        1px solid
-        #e4ebe6;
+    border: 1px solid #e4ebe6;
 
     border-radius: 18px;
 
     overflow: hidden;
 
     box-shadow:
-        0 2px 8px
-        rgba(24, 42, 30, 0.045);
-
-    transition:
-        box-shadow 0.2s ease,
-        transform 0.2s ease;
+        0 2px 8px rgba(24,42,30,0.045);
 
 }
-
-
-.feed-card.post-card:hover {
-
-    box-shadow:
-        0 8px 24px
-        rgba(24, 42, 30, 0.08);
-
-}
-
 
 
 /* =========================================================
    HEADER
+
+   Keep this compact, Facebook-like.
 ========================================================= */
 
 .post-card-header {
 
     width: 100%;
 
-    min-height: 66px;
+    min-height: 0;
+    height: auto;
 
     box-sizing: border-box;
 
-    padding:
-        12px
-        14px;
+    padding: 11px 14px 9px;
 
     display: flex;
 
@@ -1203,26 +1001,23 @@ const postDate =
     width: 44px;
     height: 44px;
 
-    flex:
-        0 0 44px;
+    flex: 0 0 44px;
 
 }
 
 
 .post-avatar img {
 
+    display: block;
+
     width: 44px;
     height: 44px;
-
-    display: block;
 
     object-fit: cover;
 
     border-radius: 50%;
 
-    border:
-        2px solid
-        #edf5ef;
+    border: 2px solid #edf5ef;
 
 }
 
@@ -1233,11 +1028,7 @@ const postDate =
 
     min-width: 0;
 
-    display: flex;
-
-    flex-direction: column;
-
-    justify-content: center;
+    display: block;
 
 }
 
@@ -1245,6 +1036,8 @@ const postDate =
 .post-user-name {
 
     display: block;
+
+    margin: 0;
 
     overflow: hidden;
 
@@ -1267,7 +1060,7 @@ const postDate =
 
     display: block;
 
-    margin-top: 3px;
+    margin: 2px 0 0;
 
     color: #89928c;
 
@@ -1280,11 +1073,12 @@ const postDate =
 
 .post-menu-button {
 
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
 
-    flex:
-        0 0 38px;
+    flex: 0 0 36px;
+
+    margin: 0;
 
     padding: 0;
 
@@ -1306,10 +1100,6 @@ const postDate =
 
     font-size: 17px;
 
-    transition:
-        background 0.15s ease,
-        color 0.15s ease;
-
 }
 
 
@@ -1325,24 +1115,61 @@ const postDate =
 
 /* =========================================================
    CONTENT
+
+   THIS IS THE IMPORTANT FIX.
+
+   The content is explicitly prevented from becoming a
+   vertically stretched/flex-centered area.
 ========================================================= */
 
 .post-content {
 
     width: 100%;
 
+    height: auto !important;
+
+    min-height: 0 !important;
+
+    max-height: none;
+
     box-sizing: border-box;
 
-    padding:
-        0
-        14px
-        14px;
+    padding: 0 14px 12px !important;
+
+    margin: 0 !important;
+
+    display: block !important;
+
+    overflow: visible;
 
 }
 
 
 /* =========================================================
-   DAIRY LINK
+   DIRECT CHILDREN
+
+   Prevent inherited margins/padding from creating
+   unexplained vertical gaps.
+========================================================= */
+
+.post-content > * {
+
+    box-sizing: border-box;
+
+}
+
+
+.post-content > .post-dairy-link:first-child {
+
+    margin-top: 0 !important;
+
+}
+
+
+/* =========================================================
+   DAIRY / FARM
+
+   Compact line immediately below header.
 ========================================================= */
 
 .post-dairy-link {
@@ -1351,11 +1178,9 @@ const postDate =
 
     max-width: 100%;
 
-    margin:
-        0 0 7px;
+    margin: 0 0 5px !important;
 
-    padding:
-        0;
+    padding: 0 !important;
 
     display: inline-flex;
 
@@ -1371,12 +1196,14 @@ const postDate =
 
     font-weight: 700;
 
-    line-height: 1.3;
+    line-height: 1.25;
 
 }
 
 
 .post-dairy-link i {
+
+    flex: 0 0 auto;
 
     font-size: 13px;
 
@@ -1384,6 +1211,8 @@ const postDate =
 
 
 .post-dairy-link span {
+
+    min-width: 0;
 
     overflow: hidden;
 
@@ -1417,23 +1246,21 @@ a.post-dairy-link:hover {
 
 .post-title {
 
-    margin:
-        0
-        0
-        7px;
+    display: block;
 
-    padding: 0;
+    margin: 0 0 5px !important;
+
+    padding: 0 !important;
 
     color: #18201b;
 
-    font-size: 21px;
+    font-size: 20px;
 
     font-weight: 800;
 
-    line-height: 1.28;
+    line-height: 1.25;
 
-    letter-spacing:
-        -0.3px;
+    letter-spacing: -0.25px;
 
     word-break: break-word;
 
@@ -1442,23 +1269,57 @@ a.post-dairy-link:hover {
 
 
 /* =========================================================
-   TEXT
+   TEXT AREA
+
+   The text area must NEVER stretch vertically.
 ========================================================= */
 
 .post-text-area {
 
-    margin: 0;
+    display: block !important;
 
-    padding: 0;
+    width: 100%;
+
+    height: auto !important;
+
+    min-height: 0 !important;
+
+    max-height: none;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
+
+    overflow: visible !important;
+
+    vertical-align: top;
 
 }
 
 
+/* =========================================================
+   TEXT
+
+   No top/bottom padding.
+   No fixed height.
+   No flex.
+========================================================= */
+
 .post-text {
 
-    margin: 0;
+    display: block !important;
 
-    padding: 0;
+    width: 100%;
+
+    height: auto !important;
+
+    min-height: 0 !important;
+
+    max-height: none;
+
+    margin: 0 !important;
+
+    padding: 0 !important;
 
     color: #303833;
 
@@ -1466,20 +1327,26 @@ a.post-dairy-link:hover {
 
     font-weight: 400;
 
-    line-height: 1.55;
+    line-height: 1.5;
 
     white-space: pre-wrap;
 
     word-break: break-word;
 
+    overflow: visible !important;
+
 }
 
 
+/* =========================================================
+   PREVIEW
+========================================================= */
+
 .post-text-preview {
 
-    margin: 0;
+    margin: 0 !important;
 
-    padding: 0;
+    padding: 0 !important;
 
 }
 
@@ -1487,7 +1354,7 @@ a.post-dairy-link:hover {
 /* =========================================================
    SEE MORE
 
-   No giant gap above or below.
+   Sits immediately after the final preview line.
 ========================================================= */
 
 .post-see-more {
@@ -1498,12 +1365,13 @@ a.post-dairy-link:hover {
 
     gap: 5px;
 
-    margin:
-        5px
-        0
-        0;
+    width: auto;
 
-    padding: 0;
+    height: auto;
+
+    margin: 3px 0 0 !important;
+
+    padding: 0 !important;
 
     border: none;
 
@@ -1515,9 +1383,11 @@ a.post-dairy-link:hover {
 
     font-size: 14px;
 
-    font-weight: 750;
+    font-weight: 700;
 
-    line-height: 1.3;
+    line-height: 1.25;
+
+    vertical-align: top;
 
     cursor: pointer;
 
@@ -1528,8 +1398,7 @@ a.post-dairy-link:hover {
 
     font-size: 12px;
 
-    transition:
-        transform 0.15s ease;
+    transition: transform 0.15s ease;
 
 }
 
@@ -1543,8 +1412,7 @@ a.post-dairy-link:hover {
 
 .post-see-more:hover i {
 
-    transform:
-        translateX(2px);
+    transform: translateX(2px);
 
 }
 
@@ -1552,30 +1420,30 @@ a.post-dairy-link:hover {
 
 /* =========================================================
    IMAGE GRID
+
+   Only a small intentional gap between text and images.
 ========================================================= */
 
 .post-image-grid {
 
     width: 100%;
 
-    margin:
-        13px
-        0
-        0;
+    height: auto;
+
+    margin: 10px 0 0 !important;
+
+    padding: 0;
 
     display: grid;
 
     grid-template-columns:
-        repeat(
-            2,
-            minmax(0, 1fr)
-        );
+        repeat(2, minmax(0, 1fr));
 
     gap: 3px;
 
     overflow: hidden;
 
-    border-radius: 14px;
+    border-radius: 13px;
 
     background: #f0f3f1;
 
@@ -1593,6 +1461,8 @@ a.post-dairy-link:hover {
     min-width: 0;
 
     aspect-ratio: 1 / 1;
+
+    margin: 0;
 
     padding: 0;
 
@@ -1615,19 +1485,16 @@ a.post-dairy-link:hover {
 
     inset: 0;
 
-    background:
-        rgba(0, 0, 0, 0);
+    background: rgba(0,0,0,0);
 
-    transition:
-        background 0.15s ease;
+    transition: background 0.15s ease;
 
 }
 
 
 .post-image-item:hover::after {
 
-    background:
-        rgba(0, 0, 0, 0.08);
+    background: rgba(0,0,0,0.08);
 
 }
 
@@ -1635,23 +1502,11 @@ a.post-dairy-link:hover {
 .post-image {
 
     width: 100%;
-
     height: 100%;
 
     display: block;
 
     object-fit: cover;
-
-    transition:
-        transform 0.25s ease;
-
-}
-
-
-.post-image-item:hover .post-image {
-
-    transform:
-        scale(1.025);
 
 }
 
@@ -1668,8 +1523,7 @@ a.post-dairy-link:hover {
 }
 
 
-.post-image-count-1
-.post-image-item {
+.post-image-count-1 .post-image-item {
 
     aspect-ratio: auto;
 
@@ -1678,8 +1532,7 @@ a.post-dairy-link:hover {
 }
 
 
-.post-image-count-1
-.post-image {
+.post-image-count-1 .post-image {
 
     height: auto;
 
@@ -1692,7 +1545,7 @@ a.post-dairy-link:hover {
 
 
 /* =========================================================
-   THREE IMAGE LAYOUT
+   THREE IMAGES
 ========================================================= */
 
 .post-image-count-3 {
@@ -1704,31 +1557,29 @@ a.post-dairy-link:hover {
 }
 
 
-.post-image-count-3
-.post-image-item:first-child {
+.post-image-count-3 .post-image-item:first-child {
 
-    grid-row:
-        span 2;
+    grid-row: span 2;
 
 }
 
 
 
 /* =========================================================
-   FOUR IMAGE LAYOUT
+   FOUR IMAGES
 ========================================================= */
 
 .post-image-count-4 {
 
     grid-template-columns:
-        repeat(2, 1fr);
+        repeat(2, minmax(0, 1fr));
 
 }
 
 
 
 /* =========================================================
-   +N IMAGE OVERLAY
+   MORE IMAGES
 ========================================================= */
 
 .post-more-images {
@@ -1747,8 +1598,7 @@ a.post-dairy-link:hover {
 
     gap: 7px;
 
-    background:
-        rgba(0, 0, 0, 0.43);
+    background: rgba(0,0,0,0.43);
 
     color: #ffffff;
 
@@ -1788,13 +1638,11 @@ a.post-dairy-link:hover {
 
     gap: 4px;
 
-    padding:
-        6px
-        10px;
+    margin: 0;
 
-    border-top:
-        1px solid
-        #edf1ee;
+    padding: 5px 10px;
+
+    border-top: 1px solid #edf1ee;
 
 }
 
@@ -1804,11 +1652,11 @@ a.post-dairy-link:hover {
 
     min-width: 70px;
 
-    height: 38px;
+    height: 36px;
 
-    padding:
-        0
-        11px;
+    margin: 0;
+
+    padding: 0 11px;
 
     border: none;
 
@@ -1853,8 +1701,7 @@ a.post-dairy-link:hover {
 .post-actions .like-btn:active,
 .post-actions .toggle-comments:active {
 
-    transform:
-        scale(0.96);
+    transform: scale(0.96);
 
 }
 
@@ -1898,7 +1745,7 @@ a.post-dairy-link:hover {
 
 
 /* =========================================================
-   EXPANDED POST MODAL
+   EXPANDED POST
 ========================================================= */
 
 .post-expand-modal {
@@ -1915,8 +1762,7 @@ a.post-dairy-link:hover {
 
     justify-content: center;
 
-    padding:
-        18px;
+    padding: 18px;
 
     box-sizing: border-box;
 
@@ -1936,11 +1782,9 @@ a.post-dairy-link:hover {
 
     inset: 0;
 
-    background:
-        rgba(8, 20, 12, 0.62);
+    background: rgba(8,20,12,0.62);
 
-    backdrop-filter:
-        blur(3px);
+    backdrop-filter: blur(3px);
 
 }
 
@@ -1968,15 +1812,9 @@ a.post-dairy-link:hover {
     border-radius: 20px;
 
     box-shadow:
-        0
-        20px
-        70px
-        rgba(0, 0, 0, 0.30);
+        0 20px 70px rgba(0,0,0,0.30);
 
-    animation:
-        postPopIn
-        0.18s
-        ease-out;
+    animation: postPopIn 0.18s ease-out;
 
 }
 
@@ -2006,21 +1844,17 @@ a.post-dairy-link:hover {
 }
 
 
-
 /* =========================================================
    EXPANDED HEADER
 ========================================================= */
 
 .post-expand-header {
 
-    flex:
-        0 0 auto;
+    flex: 0 0 auto;
 
     min-height: 64px;
 
-    padding:
-        10px
-        12px;
+    padding: 10px 12px;
 
     box-sizing: border-box;
 
@@ -2030,9 +1864,7 @@ a.post-dairy-link:hover {
 
     justify-content: space-between;
 
-    border-bottom:
-        1px solid
-        #e9efeb;
+    border-bottom: 1px solid #e9efeb;
 
 }
 
@@ -2121,15 +1953,6 @@ a.post-dairy-link:hover {
 }
 
 
-.post-expand-close:hover {
-
-    background: #e7ece9;
-
-    color: #202520;
-
-}
-
-
 
 /* =========================================================
    EXPANDED BODY
@@ -2143,8 +1966,7 @@ a.post-dairy-link:hover {
 
     overflow-y: auto;
 
-    padding:
-        14px 16px 20px;
+    padding: 14px 16px 20px;
 
     box-sizing: border-box;
 
@@ -2153,17 +1975,14 @@ a.post-dairy-link:hover {
 
 .expanded-dairy-link {
 
-    margin-bottom: 8px;
+    margin-bottom: 8px !important;
 
 }
 
 
 .post-expand-title {
 
-    margin:
-        0
-        0
-        10px;
+    margin: 0 0 10px;
 
     padding: 0;
 
@@ -2174,9 +1993,6 @@ a.post-dairy-link:hover {
     line-height: 1.28;
 
     font-weight: 800;
-
-    letter-spacing:
-        -0.4px;
 
 }
 
@@ -2243,7 +2059,6 @@ a.post-dairy-link:hover {
 .post-expand-image img {
 
     width: 100%;
-
     height: 100%;
 
     display: block;
@@ -2255,7 +2070,7 @@ a.post-dairy-link:hover {
 
 
 /* =========================================================
-   FULL-SCREEN PHOTO VIEWER
+   PHOTO VIEWER
 ========================================================= */
 
 .post-photo-viewer {
@@ -2268,8 +2083,7 @@ a.post-dairy-link:hover {
 
     display: none;
 
-    background:
-        rgba(0, 0, 0, 0.96);
+    background: rgba(0,0,0,0.96);
 
     touch-action: pan-y;
 
@@ -2304,9 +2118,7 @@ a.post-dairy-link:hover {
 
     height: 64px;
 
-    padding:
-        10px
-        14px;
+    padding: 10px 14px;
 
     box-sizing: border-box;
 
@@ -2334,14 +2146,11 @@ a.post-dairy-link:hover {
 
     font-weight: 600;
 
-    padding:
-        7px
-        10px;
+    padding: 7px 10px;
 
     border-radius: 20px;
 
-    background:
-        rgba(0,0,0,0.35);
+    background: rgba(0,0,0,0.35);
 
 }
 
@@ -2353,14 +2162,11 @@ a.post-dairy-link:hover {
 
     padding: 0;
 
-    border:
-        1px solid
-        rgba(255,255,255,0.35);
+    border: 1px solid rgba(255,255,255,0.35);
 
     border-radius: 50%;
 
-    background:
-        rgba(0,0,0,0.35);
+    background: rgba(0,0,0,0.35);
 
     color: #ffffff;
 
@@ -2381,11 +2187,7 @@ a.post-dairy-link:hover {
 
     position: absolute;
 
-    inset:
-        64px
-        55px
-        20px
-        55px;
+    inset: 64px 55px 20px 55px;
 
     display: flex;
 
@@ -2401,11 +2203,9 @@ a.post-dairy-link:hover {
 .photo-viewer-image {
 
     max-width: 100%;
-
     max-height: 100%;
 
     width: auto;
-
     height: auto;
 
     object-fit: contain;
@@ -2415,9 +2215,6 @@ a.post-dairy-link:hover {
     -webkit-user-drag: none;
 
     touch-action: none;
-
-    transition:
-        transform 0.2s ease;
 
 }
 
@@ -2435,22 +2232,18 @@ a.post-dairy-link:hover {
 
     top: 50%;
 
-    transform:
-        translateY(-50%);
+    transform: translateY(-50%);
 
     width: 46px;
     height: 46px;
 
     padding: 0;
 
-    border:
-        1px solid
-        rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.3);
 
     border-radius: 50%;
 
-    background:
-        rgba(0,0,0,0.38);
+    background: rgba(0,0,0,0.38);
 
     color: #ffffff;
 
@@ -2463,14 +2256,6 @@ a.post-dairy-link:hover {
     cursor: pointer;
 
     font-size: 20px;
-
-}
-
-
-.photo-viewer-nav:hover {
-
-    background:
-        rgba(255,255,255,0.16);
 
 }
 
@@ -2508,8 +2293,7 @@ a.post-dairy-link:hover {
 
     justify-content: center;
 
-    background:
-        rgba(0, 0, 0, 0.45);
+    background: rgba(0,0,0,0.45);
 
 }
 
@@ -2535,38 +2319,23 @@ a.post-dairy-link:hover {
 
     background: #ffffff;
 
-    border-radius:
-        18px
-        18px
-        0
-        0;
+    border-radius: 18px 18px 0 0;
 
     overflow: hidden;
 
     box-shadow:
-        0 -8px 30px
-        rgba(0,0,0,0.18);
+        0 -8px 30px rgba(0,0,0,0.18);
 
 }
 
 
-
-/* =========================================================
-   COMMENT HEADER
-========================================================= */
-
 .comment-modal-header {
 
-    flex:
-        0 0 auto;
+    flex: 0 0 auto;
 
     height: 58px;
 
-    padding:
-        0
-        14px
-        0
-        18px;
+    padding: 0 14px 0 18px;
 
     display: flex;
 
@@ -2576,9 +2345,7 @@ a.post-dairy-link:hover {
 
     box-sizing: border-box;
 
-    border-bottom:
-        1px solid
-        #e8eee9;
+    border-bottom: 1px solid #e8eee9;
 
 }
 
@@ -2609,9 +2376,7 @@ a.post-dairy-link:hover {
 
     height: 22px;
 
-    padding:
-        0
-        6px;
+    padding: 0 6px;
 
     border-radius: 11px;
 
@@ -2658,31 +2423,19 @@ a.post-dairy-link:hover {
 }
 
 
-.close-comment-modal:hover {
-
-    background: #f1f4f2;
-
-}
-
-
-
 /* =========================================================
-   COMMENT SECTION
+   COMMENTS
 ========================================================= */
 
 .comment-section {
 
-    flex:
-        1 1 auto;
+    flex: 1 1 auto;
 
     min-height: 0;
 
     overflow-y: auto;
 
-    padding:
-        10px
-        15px
-        14px;
+    padding: 10px 15px 14px;
 
 }
 
@@ -2737,20 +2490,13 @@ a.post-dairy-link:hover {
 }
 
 
-
-/* =========================================================
-   COMMENT ITEM
-========================================================= */
-
 .comment-item {
 
     display: flex;
 
     gap: 9px;
 
-    padding:
-        8px
-        0;
+    padding: 8px 0;
 
 }
 
@@ -2760,8 +2506,7 @@ a.post-dairy-link:hover {
     width: 34px;
     height: 34px;
 
-    flex:
-        0 0 34px;
+    flex: 0 0 34px;
 
 }
 
@@ -2786,9 +2531,7 @@ a.post-dairy-link:hover {
 
     flex: 1;
 
-    padding:
-        8px
-        10px;
+    padding: 8px 10px;
 
     border-radius: 13px;
 
@@ -2823,10 +2566,7 @@ a.post-dairy-link:hover {
 
 .comment-text {
 
-    margin:
-        3px
-        0
-        0;
+    margin: 3px 0 0;
 
     color: #343a36;
 
@@ -2859,8 +2599,7 @@ a.post-dairy-link:hover {
     width: 28px;
     height: 28px;
 
-    flex:
-        0 0 28px;
+    flex: 0 0 28px;
 
     padding: 0;
 
@@ -2883,24 +2622,6 @@ a.post-dairy-link:hover {
 }
 
 
-.delete-comment:hover {
-
-    color: #c62828;
-
-    background: #fff0f0;
-
-}
-
-
-.delete-comment:disabled {
-
-    opacity: 0.5;
-
-    cursor: wait;
-
-}
-
-
 
 /* =========================================================
    COMMENT COMPOSER
@@ -2908,8 +2629,7 @@ a.post-dairy-link:hover {
 
 .comment-composer-wrapper {
 
-    flex:
-        0 0 auto;
+    flex: 0 0 auto;
 
     padding:
         9px
@@ -2919,9 +2639,7 @@ a.post-dairy-link:hover {
             env(safe-area-inset-bottom)
         );
 
-    border-top:
-        1px solid
-        #e8eee9;
+    border-top: 1px solid #e8eee9;
 
     background: #ffffff;
 
@@ -2947,17 +2665,11 @@ a.post-dairy-link:hover {
 
     gap: 6px;
 
-    padding:
-        4px
-        5px
-        4px
-        12px;
+    padding: 4px 5px 4px 12px;
 
     box-sizing: border-box;
 
-    border:
-        1px solid
-        #dce5df;
+    border: 1px solid #dce5df;
 
     border-radius: 24px;
 
@@ -2987,10 +2699,7 @@ a.post-dairy-link:hover {
 
     overflow-y: auto;
 
-    padding:
-        9px
-        0
-        6px;
+    padding: 9px 0 6px;
 
     margin: 0;
 
@@ -3013,20 +2722,12 @@ a.post-dairy-link:hover {
 }
 
 
-.comment-input-wrapper textarea::placeholder {
-
-    color: #8b928d;
-
-}
-
-
 .comment-submit-button {
 
     width: 38px;
     height: 38px;
 
-    flex:
-        0 0 38px;
+    flex: 0 0 38px;
 
     padding: 0;
 
@@ -3051,22 +2752,6 @@ a.post-dairy-link:hover {
 }
 
 
-.comment-submit-button:hover {
-
-    background: #e9f5ed;
-
-}
-
-
-.comment-submit-button:disabled {
-
-    opacity: 0.5;
-
-    cursor: wait;
-
-}
-
-
 
 /* =========================================================
    MOBILE
@@ -3074,10 +2759,9 @@ a.post-dairy-link:hover {
 
 @media (max-width: 600px) {
 
-
     .feed-card.post-card {
 
-        margin-bottom: 12px;
+        margin-bottom: 11px;
 
         border-radius: 14px;
 
@@ -3086,11 +2770,10 @@ a.post-dairy-link:hover {
 
     .post-card-header {
 
-        min-height: 60px;
-
         padding:
-            10px
-            12px;
+            9px
+            12px
+            7px;
 
     }
 
@@ -3116,16 +2799,27 @@ a.post-dairy-link:hover {
         padding:
             0
             12px
-            12px;
+            10px !important;
+
+    }
+
+
+    .post-dairy-link {
+
+        margin-bottom: 4px !important;
+
+        font-size: 12.5px;
 
     }
 
 
     .post-title {
 
-        font-size: 19px;
+        font-size: 18px;
 
-        margin-bottom: 6px;
+        line-height: 1.25;
+
+        margin-bottom: 4px !important;
 
     }
 
@@ -3134,14 +2828,23 @@ a.post-dairy-link:hover {
 
         font-size: 14px;
 
-        line-height: 1.55;
+        line-height: 1.5;
+
+    }
+
+
+    .post-see-more {
+
+        margin-top: 3px !important;
+
+        font-size: 13.5px;
 
     }
 
 
     .post-image-grid {
 
-        margin-top: 11px;
+        margin-top: 9px !important;
 
         border-radius: 11px;
 
@@ -3151,7 +2854,7 @@ a.post-dairy-link:hover {
     .post-actions {
 
         padding:
-            6px
+            5px
             8px;
 
     }
@@ -3162,7 +2865,7 @@ a.post-dairy-link:hover {
 
         min-width: 64px;
 
-        height: 36px;
+        height: 35px;
 
         padding:
             0
@@ -3171,9 +2874,7 @@ a.post-dairy-link:hover {
     }
 
 
-    /* =============================================
-       EXPANDED POST
-    ============================================== */
+    /* EXPANDED POST */
 
     .post-expand-modal {
 
@@ -3217,9 +2918,7 @@ a.post-dairy-link:hover {
     }
 
 
-    /* =============================================
-       PHOTO VIEWER
-    ============================================== */
+    /* PHOTO VIEWER */
 
     .photo-viewer-stage {
 
@@ -3236,9 +2935,6 @@ a.post-dairy-link:hover {
 
         width: 40px;
         height: 40px;
-
-        background:
-            rgba(0,0,0,0.30);
 
     }
 
@@ -3257,18 +2953,7 @@ a.post-dairy-link:hover {
     }
 
 
-    .photo-viewer-image {
-
-        max-width: 100%;
-
-        max-height: 100%;
-
-    }
-
-
-    /* =============================================
-       COMMENTS
-    ============================================== */
+    /* COMMENTS */
 
     .comment-modal-content {
 
@@ -3301,7 +2986,6 @@ a.post-dairy-link:hover {
 ========================================================= */
 
 @media (max-width: 380px) {
-
 
     .post-title {
 
@@ -3349,11 +3033,6 @@ a.post-dairy-link:hover {
 
 (function(){
 
-    /*
-     * Prevent this script from registering its global
-     * handlers repeatedly if EJS renders multiple posts.
-     */
-
     if(
         window.__modernPostInteractionsInitialized
     ){
@@ -3366,11 +3045,6 @@ a.post-dairy-link:hover {
     window.__modernPostInteractionsInitialized =
         true;
 
-
-
-    /* =====================================================
-       STATE
-    ====================================================== */
 
     let activePhotoViewer = null;
 
@@ -3416,19 +3090,12 @@ a.post-dairy-link:hover {
 
         if(!modal){
 
-            console.error(
-                "POST: Expanded post modal not found."
-            );
-
             return;
 
         }
 
 
-        modal.classList.add(
-            "active"
-        );
-
+        modal.classList.add("active");
 
         modal.setAttribute(
             "aria-hidden",
@@ -3439,10 +3106,6 @@ a.post-dairy-link:hover {
         document.body.style.overflow =
             "hidden";
 
-
-        /*
-         * Scroll the expanded post to the top.
-         */
 
         const body =
             modal.querySelector(
@@ -3473,21 +3136,13 @@ a.post-dairy-link:hover {
         }
 
 
-        modal.classList.remove(
-            "active"
-        );
-
+        modal.classList.remove("active");
 
         modal.setAttribute(
             "aria-hidden",
             "true"
         );
 
-
-        /*
-         * Only restore body scrolling if no other
-         * full-screen/modal interface is open.
-         */
 
         if(
             !document.querySelector(
@@ -3498,8 +3153,7 @@ a.post-dairy-link:hover {
             )
         ){
 
-            document.body.style.overflow =
-                "";
+            document.body.style.overflow = "";
 
         }
 
@@ -3508,7 +3162,7 @@ a.post-dairy-link:hover {
 
 
     /* =====================================================
-       COLLECT POST IMAGES
+       COLLECT IMAGES
     ====================================================== */
 
     function getPostImagesFromCard(card){
@@ -3523,34 +3177,20 @@ a.post-dairy-link:hover {
         const images = [];
 
 
-        /*
-         * The expanded image list contains ALL images.
-         */
-
         card
             .querySelectorAll(
                 ".post-expand-image img"
             )
-            .forEach(
-                img => {
+            .forEach(function(img){
 
-                    if(img.src){
+                if(img.src){
 
-                        images.push(
-                            img.src
-                        );
-
-                    }
+                    images.push(img.src);
 
                 }
-            );
 
+            });
 
-        /*
-         * For a post that isn't long and therefore
-         * doesn't have an expanded-post section,
-         * collect the feed images.
-         */
 
         if(!images.length){
 
@@ -3558,19 +3198,15 @@ a.post-dairy-link:hover {
                 .querySelectorAll(
                     ".post-image-item img"
                 )
-                .forEach(
-                    img => {
+                .forEach(function(img){
 
-                        if(img.src){
+                    if(img.src){
 
-                            images.push(
-                                img.src
-                            );
-
-                        }
+                        images.push(img.src);
 
                     }
-                );
+
+                });
 
         }
 
@@ -3585,10 +3221,7 @@ a.post-dairy-link:hover {
        OPEN PHOTO VIEWER
     ====================================================== */
 
-    function openPhotoViewer(
-        card,
-        index
-    ){
+    function openPhotoViewer(card,index){
 
         if(!card){
 
@@ -3611,9 +3244,7 @@ a.post-dairy-link:hover {
 
 
         const images =
-            getPostImagesFromCard(
-                card
-            );
+            getPostImagesFromCard(card);
 
 
         if(!images.length){
@@ -3644,10 +3275,7 @@ a.post-dairy-link:hover {
         updatePhotoViewer();
 
 
-        viewer.classList.add(
-            "active"
-        );
-
+        viewer.classList.add("active");
 
         viewer.setAttribute(
             "aria-hidden",
@@ -3663,7 +3291,7 @@ a.post-dairy-link:hover {
 
 
     /* =====================================================
-       UPDATE PHOTO VIEWER
+       UPDATE VIEWER
     ====================================================== */
 
     function updatePhotoViewer(){
@@ -3712,7 +3340,7 @@ a.post-dairy-link:hover {
 
 
     /* =====================================================
-       CLOSE PHOTO VIEWER
+       CLOSE VIEWER
     ====================================================== */
 
     function closePhotoViewer(){
@@ -3735,16 +3363,11 @@ a.post-dairy-link:hover {
         );
 
 
-        activePhotoViewer =
-            null;
+        activePhotoViewer = null;
 
+        activePhotoImages = [];
 
-        activePhotoImages =
-            [];
-
-
-        activePhotoIndex =
-            0;
+        activePhotoIndex = 0;
 
 
         if(
@@ -3756,8 +3379,7 @@ a.post-dairy-link:hover {
             )
         ){
 
-            document.body.style.overflow =
-                "";
+            document.body.style.overflow = "";
 
         }
 
@@ -3766,14 +3388,12 @@ a.post-dairy-link:hover {
 
 
     /* =====================================================
-       NEXT PHOTO
+       NEXT
     ====================================================== */
 
     function nextPhoto(){
 
-        if(
-            !activePhotoImages.length
-        ){
+        if(!activePhotoImages.length){
 
             return;
 
@@ -3794,14 +3414,12 @@ a.post-dairy-link:hover {
 
 
     /* =====================================================
-       PREVIOUS PHOTO
+       PREVIOUS
     ====================================================== */
 
     function previousPhoto(){
 
-        if(
-            !activePhotoImages.length
-        ){
+        if(!activePhotoImages.length){
 
             return;
 
@@ -3831,11 +3449,6 @@ a.post-dairy-link:hover {
         "click",
         function(event){
 
-
-            /* =============================================
-               SEE MORE
-            ============================================== */
-
             const seeMore =
                 event.target.closest(
                     ".post-see-more"
@@ -3857,11 +3470,6 @@ a.post-dairy-link:hover {
             }
 
 
-
-            /* =============================================
-               CLOSE EXPANDED POST
-            ============================================== */
-
             const closeExpanded =
                 event.target.closest(
                     "[data-close-post-expand]"
@@ -3878,19 +3486,12 @@ a.post-dairy-link:hover {
                     );
 
 
-                closeExpandedPost(
-                    modal
-                );
+                closeExpandedPost(modal);
 
                 return;
 
             }
 
-
-
-            /* =============================================
-               PHOTO CLICK
-            ============================================== */
 
             const photoButton =
                 event.target.closest(
@@ -3925,11 +3526,6 @@ a.post-dairy-link:hover {
             }
 
 
-
-            /* =============================================
-               CLOSE PHOTO VIEWER
-            ============================================== */
-
             const closeViewer =
                 event.target.closest(
                     "[data-close-photo-viewer]"
@@ -3947,11 +3543,6 @@ a.post-dairy-link:hover {
             }
 
 
-
-            /* =============================================
-               NEXT PHOTO
-            ============================================== */
-
             const next =
                 event.target.closest(
                     "[data-photo-next]"
@@ -3968,11 +3559,6 @@ a.post-dairy-link:hover {
 
             }
 
-
-
-            /* =============================================
-               PREVIOUS PHOTO
-            ============================================== */
 
             const previous =
                 event.target.closest(
@@ -3996,7 +3582,7 @@ a.post-dairy-link:hover {
 
 
     /* =====================================================
-       TOUCH / SWIPE
+       SWIPE
     ====================================================== */
 
     document.addEventListener(
@@ -4078,12 +3664,6 @@ a.post-dairy-link:hover {
                 touchStartY;
 
 
-            /*
-             * Only treat the gesture as horizontal
-             * when horizontal movement is clearly
-             * greater than vertical movement.
-             */
-
             if(
                 Math.abs(deltaX) < 50 ||
                 Math.abs(deltaX) <= Math.abs(deltaY)
@@ -4121,10 +3701,6 @@ a.post-dairy-link:hover {
         "keydown",
         function(event){
 
-            /* =============================================
-               ESCAPE
-            ============================================== */
-
             if(
                 event.key === "Escape"
             ){
@@ -4157,14 +3733,7 @@ a.post-dairy-link:hover {
             }
 
 
-
-            /* =============================================
-               PHOTO LEFT / RIGHT
-            ============================================== */
-
-            if(
-                activePhotoViewer
-            ){
+            if(activePhotoViewer){
 
                 if(
                     event.key === "ArrowRight"
