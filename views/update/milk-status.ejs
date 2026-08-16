@@ -7,15 +7,19 @@ views/update/milk-status.ejs
 
 PURPOSE:
 ----------------------------------------------------------
-• Display the dairy animal's milking status
-• Allow admin and dairyWorker to toggle milking
-• Display animal profile information
-• Toggle through:
+Compact vertical milking-status card for update-cards.
+
+DESIGN:
+----------------------------------------------------------
+• Narrow vertical layout
+• WhatsApp-status-style presentation
+• Animal image at the top
+• Animal name
+• Short milking status
+• Compact toggle button
+• Uses:
 
     POST /dairy/:id/toggle-milking
-
-• Uses AJAX/fetch so the browser does NOT navigate to
-  the JSON response.
 
 AUTHORIZED USERS:
 ----------------------------------------------------------
@@ -26,16 +30,6 @@ EXPECTED DATA:
 ----------------------------------------------------------
 dairy
 user
-
-dairy:
-• _id
-• name
-• code
-• profileImage
-• isMilking
-
-user:
-• role
 ==========================================================
 */ %>
 
@@ -50,68 +44,22 @@ user:
 
 
     <!-- =================================================
-         ANIMAL PROFILE
+         ANIMAL IMAGE
     ================================================== -->
 
-    <div class="milk-status-profile">
+    <div class="milk-status-image">
 
-        <div class="milk-status-avatar">
+        <% if (dairy.profileImage) { %>
 
-            <% if (dairy.profileImage) { %>
-
-                <img
-                    src="<%= dairy.profileImage %>"
-                    alt="<%= dairy.name %>"
-                >
-
-            <% } else { %>
-
-                🐄
-
-            <% } %>
-
-        </div>
-
-
-        <div class="milk-status-details">
-
-            <h3>
-                <%= dairy.name %>
-            </h3>
-
-            <span>
-                Code:
-                <%= dairy.code || "No code assigned" %>
-            </span>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- =================================================
-         CURRENT MILKING STATUS
-    ================================================== -->
-
-    <div class="milk-status-current">
-
-        <% if (dairy.isMilking === true) { %>
-
-            <span
-                class="milk-status-badge active"
-                data-milking-status
+            <img
+                src="<%= dairy.profileImage %>"
+                alt="<%= dairy.name %>"
             >
-                🥛 Currently Milking
-            </span>
 
         <% } else { %>
 
-            <span
-                class="milk-status-badge inactive"
-                data-milking-status
-            >
-                Not Currently Milking
+            <span class="milk-status-placeholder">
+                🐄
             </span>
 
         <% } %>
@@ -119,22 +67,75 @@ user:
     </div>
 
 
-
     <!-- =================================================
-         TOGGLE ACTION
-         
-         Only admin and dairyWorker can toggle.
+         CARD CONTENT
     ================================================== -->
 
-    <% if (
-        user &&
-        (
-            user.role === "admin" ||
-            user.role === "dairyWorker"
-        )
-    ) { %>
+    <div class="milk-status-content">
 
-        <div class="milk-status-action">
+
+        <!-- =================================================
+             SMALL LABEL
+        ================================================== -->
+
+        <span class="milk-status-label">
+            Milking Status
+        </span>
+
+
+        <!-- =================================================
+             ANIMAL NAME
+        ================================================== -->
+
+        <h3 class="milk-status-name">
+            <%= dairy.name %>
+        </h3>
+
+
+        <!-- =================================================
+             CURRENT STATUS
+        ================================================== -->
+
+        <% if (dairy.isMilking === true) { %>
+
+            <div
+                class="milk-status-state active"
+                data-milking-status
+            >
+                <span class="milk-status-dot"></span>
+
+                <span>
+                    Currently milking
+                </span>
+            </div>
+
+        <% } else { %>
+
+            <div
+                class="milk-status-state inactive"
+                data-milking-status
+            >
+                <span class="milk-status-dot"></span>
+
+                <span>
+                    Not milking
+                </span>
+            </div>
+
+        <% } %>
+
+
+        <!-- =================================================
+             TOGGLE
+        ================================================== -->
+
+        <% if (
+            user &&
+            (
+                user.role === "admin" ||
+                user.role === "dairyWorker"
+            )
+        ) { %>
 
             <form
                 class="milk-status-form"
@@ -150,7 +151,7 @@ user:
                         class="milk-status-button stop"
                         data-milking-button
                     >
-                        ⛔ Turn Off Milking
+                        Stop milking
                     </button>
 
                 <% } else { %>
@@ -160,41 +161,17 @@ user:
                         class="milk-status-button start"
                         data-milking-button
                     >
-                        🥛 Turn On Milking
+                        Start milking
                     </button>
 
                 <% } %>
 
             </form>
 
-        </div>
-
-    <% } %>
+        <% } %>
 
 
-</div>
-
-
-<% } else { %>
-
-
-<!-- =================================================
-     ANIMAL NOT FOUND
-================================================== -->
-
-<div class="milk-status-empty">
-
-    <div class="milk-status-empty-icon">
-        🐄
     </div>
-
-    <h3>
-        Dairy Animal Not Found
-    </h3>
-
-    <p>
-        The requested dairy animal could not be found.
-    </p>
 
 </div>
 
@@ -211,50 +188,41 @@ user:
 
 .milk-status-card {
 
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 20px;
-
-    width: 100%;
+    width: 170px;
 
     box-sizing: border-box;
 
-    margin-bottom: 20px;
+    padding: 10px;
 
-    padding: 18px;
-
-    border-radius: 15px;
+    border-radius: 14px;
 
     background: #ffffff;
 
+    border: 1px solid #eeeeee;
+
     box-shadow:
-        0 6px 20px rgba(0, 0, 0, 0.06);
+        0 4px 14px rgba(0, 0, 0, 0.06);
+
+    overflow: hidden;
 
 }
 
 
 /* =====================================================
-   ANIMAL PROFILE
+   IMAGE
 ===================================================== */
 
-.milk-status-profile {
+.milk-status-image {
 
-    display: flex;
+    width: 100%;
 
-    align-items: center;
+    height: 145px;
 
-    gap: 13px;
+    overflow: hidden;
 
-    min-width: 200px;
+    border-radius: 10px;
 
-}
-
-
-.milk-status-avatar {
+    background: #f0fdf4;
 
     display: flex;
 
@@ -262,24 +230,10 @@ user:
 
     justify-content: center;
 
-    width: 54px;
-
-    height: 54px;
-
-    flex: 0 0 54px;
-
-    overflow: hidden;
-
-    border-radius: 50%;
-
-    background: #dcfce7;
-
-    font-size: 27px;
-
 }
 
 
-.milk-status-avatar img {
+.milk-status-image img {
 
     width: 100%;
 
@@ -287,27 +241,73 @@ user:
 
     object-fit: cover;
 
-}
-
-
-.milk-status-details h3 {
-
-    margin: 0 0 4px;
-
-    color: #374151;
-
-    font-size: 17px;
-
-    font-weight: 700;
+    display: block;
 
 }
 
 
-.milk-status-details span {
+.milk-status-placeholder {
+
+    font-size: 42px;
+
+}
+
+
+/* =====================================================
+   CONTENT
+===================================================== */
+
+.milk-status-content {
+
+    padding-top: 10px;
+
+}
+
+
+/* =====================================================
+   LABEL
+===================================================== */
+
+.milk-status-label {
+
+    display: block;
+
+    margin-bottom: 3px;
 
     color: #9ca3af;
 
-    font-size: 12px;
+    font-size: 9px;
+
+    font-weight: 700;
+
+    letter-spacing: 0.4px;
+
+    text-transform: uppercase;
+
+}
+
+
+/* =====================================================
+   ANIMAL NAME
+===================================================== */
+
+.milk-status-name {
+
+    margin: 0 0 7px;
+
+    color: #1f2937;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
 
 }
 
@@ -316,55 +316,75 @@ user:
    CURRENT STATUS
 ===================================================== */
 
-.milk-status-current {
+.milk-status-state {
 
-    flex: 1;
-
-}
-
-
-.milk-status-badge {
-
-    display: inline-flex;
+    display: flex;
 
     align-items: center;
 
-    padding: 8px 12px;
+    gap: 6px;
 
-    border-radius: 20px;
+    margin-bottom: 9px;
 
-    font-size: 12px;
+    font-size: 10px;
 
-    font-weight: 700;
+    font-weight: 600;
 
-    white-space: nowrap;
+    line-height: 1.2;
 
 }
 
 
-.milk-status-badge.active {
+.milk-status-dot {
 
-    background: #dcfce7;
+    width: 7px;
+
+    height: 7px;
+
+    flex: 0 0 7px;
+
+    border-radius: 50%;
+
+}
+
+
+.milk-status-state.active {
 
     color: #166534;
 
 }
 
 
-.milk-status-badge.inactive {
+.milk-status-state.active
+.milk-status-dot {
 
-    background: #f3f4f6;
+    background: #22c55e;
+
+}
+
+
+.milk-status-state.inactive {
 
     color: #6b7280;
 
 }
 
 
+.milk-status-state.inactive
+.milk-status-dot {
+
+    background: #9ca3af;
+
+}
+
+
 /* =====================================================
-   TOGGLE ACTION
+   TOGGLE BUTTON
 ===================================================== */
 
-.milk-status-action form {
+.milk-status-form {
+
+    width: 100%;
 
     margin: 0;
 
@@ -373,26 +393,29 @@ user:
 
 .milk-status-button {
 
-    min-width: 155px;
+    width: 100%;
 
-    padding: 10px 14px;
+    box-sizing: border-box;
+
+    padding: 7px 8px;
 
     border: none;
 
-    border-radius: 9px;
+    border-radius: 7px;
 
     color: #ffffff;
 
     font-family: inherit;
 
-    font-size: 12px;
+    font-size: 10px;
 
     font-weight: 700;
 
     cursor: pointer;
 
     transition:
-        0.2s ease;
+        transform 0.15s ease,
+        opacity 0.15s ease;
 
 }
 
@@ -412,13 +435,6 @@ user:
 }
 
 
-.milk-status-button.start:hover {
-
-    background: #14532d;
-
-}
-
-
 .milk-status-button.stop {
 
     background: #b91c1c;
@@ -426,79 +442,13 @@ user:
 }
 
 
-.milk-status-button.stop:hover {
-
-    background: #991b1b;
-
-}
-
-
-/* =====================================================
-   DISABLED / LOADING BUTTON
-===================================================== */
-
 .milk-status-button:disabled {
 
-    opacity: 0.65;
+    opacity: 0.55;
 
     cursor: wait;
 
     transform: none;
-
-}
-
-
-/* =====================================================
-   EMPTY STATE
-===================================================== */
-
-.milk-status-empty {
-
-    width: 100%;
-
-    box-sizing: border-box;
-
-    padding: 40px 20px;
-
-    border-radius: 15px;
-
-    background: #ffffff;
-
-    text-align: center;
-
-    box-shadow:
-        0 6px 20px rgba(0, 0, 0, 0.06);
-
-}
-
-
-.milk-status-empty-icon {
-
-    margin-bottom: 8px;
-
-    font-size: 40px;
-
-}
-
-
-.milk-status-empty h3 {
-
-    margin: 0 0 7px;
-
-    color: #374151;
-
-    font-size: 17px;
-
-}
-
-
-.milk-status-empty p {
-
-    margin: 0;
-
-    color: #9ca3af;
-
-    font-size: 13px;
 
 }
 
@@ -511,43 +461,16 @@ user:
 
     .milk-status-card {
 
-        align-items: stretch;
+        width: 155px;
 
-        flex-direction: column;
-
-        gap: 15px;
-
-        padding: 16px;
+        padding: 9px;
 
     }
 
 
-    .milk-status-profile {
+    .milk-status-image {
 
-        min-width: 0;
-
-    }
-
-
-    .milk-status-current {
-
-        width: 100%;
-
-    }
-
-
-    .milk-status-action,
-
-    .milk-status-action form {
-
-        width: 100%;
-
-    }
-
-
-    .milk-status-button {
-
-        width: 100%;
+        height: 130px;
 
     }
 
@@ -561,83 +484,44 @@ user:
 
 /* ==========================================================
    MILKING STATUS TOGGLE
-   ==========================================================
 
-   The form normally performs a browser navigation.
-
-   We prevent that and send the POST request using fetch()
-   instead.
-
-   Therefore:
-
-       POST /dairy/:id/toggle-milking
-
-   happens in the background and the current page remains
-   open.
+   Uses fetch() so the page remains where it is.
 
 ========================================================== */
 
 (function () {
 
-    const card =
-        document.querySelector(
+    const cards =
+        document.querySelectorAll(
             ".milk-status-card"
         );
 
 
-    if (!card) {
+    cards.forEach(
+        function (card) {
 
-        return;
-
-    }
-
-
-    const form =
-        card.querySelector(
-            ".milk-status-form"
-        );
+            const form =
+                card.querySelector(
+                    ".milk-status-form"
+                );
 
 
-    const button =
-        card.querySelector(
-            "[data-milking-button]"
-        );
+            const button =
+                card.querySelector(
+                    "[data-milking-button]"
+                );
 
 
-    const statusBadge =
-        card.querySelector(
-            "[data-milking-status]"
-        );
+            const status =
+                card.querySelector(
+                    "[data-milking-status]"
+                );
 
-
-    if (
-        !form ||
-        !button ||
-        !statusBadge
-    ) {
-
-        return;
-
-    }
-
-
-    form.addEventListener(
-        "submit",
-        async function (event) {
-
-            // ==================================================
-            // STOP NORMAL FORM SUBMISSION
-            // ==================================================
-
-            event.preventDefault();
-
-
-            // ==================================================
-            // PREVENT DOUBLE CLICK
-            // ==================================================
 
             if (
-                button.disabled
+                !form ||
+                !button ||
+                !status
             ) {
 
                 return;
@@ -645,215 +529,210 @@ user:
             }
 
 
-            // ==================================================
-            // CONFIRM TURNING OFF
-            // ==================================================
+            form.addEventListener(
+                "submit",
+                async function (event) {
 
-            const currentlyMilking =
-                statusBadge.classList.contains(
-                    "active"
-                );
+                    event.preventDefault();
 
 
-            if (
-                currentlyMilking
-            ) {
+                    if (
+                        button.disabled
+                    ) {
 
-                const confirmed =
-                    window.confirm(
-                        "Are you sure you want to turn off milking for <%= dairy.name %>?"
-                    );
+                        return;
 
-
-                if (!confirmed) {
-
-                    return;
-
-                }
-
-            }
+                    }
 
 
-            // ==================================================
-            // DISABLE BUTTON
-            // ==================================================
-
-            button.disabled =
-                true;
+                    const currentlyMilking =
+                        status.classList.contains(
+                            "active"
+                        );
 
 
-            const originalText =
-                button.textContent;
+                    if (
+                        currentlyMilking
+                    ) {
+
+                        const confirmed =
+                            window.confirm(
+                                "Stop milking for <%= dairy.name %>?"
+                            );
 
 
-            button.textContent =
-                "Updating...";
+                        if (!confirmed) {
 
-
-            try {
-
-                // ==================================================
-                // SEND POST REQUEST
-                // ==================================================
-
-                const response =
-                    await fetch(
-                        form.action,
-                        {
-
-                            method:
-                                "POST",
-
-                            headers: {
-
-                                "Accept":
-                                    "application/json"
-
-                            }
+                            return;
 
                         }
-                    );
+
+                    }
 
 
-                // ==================================================
-                // READ RESPONSE
-                // ==================================================
-
-                const data =
-                    await response.json();
+                    button.disabled =
+                        true;
 
 
-                // ==================================================
-                // CHECK SERVER RESPONSE
-                // ==================================================
+                    const originalText =
+                        button.textContent;
 
-                if (
-                    !response.ok ||
-                    !data.success
-                ) {
-
-                    throw new Error(
-                        data.message ||
-                        "Failed to update milking status."
-                    );
-
-                }
-
-
-                // ==================================================
-                // UPDATE STATUS BADGE
-                // ==================================================
-
-                if (
-                    data.isMilking === true
-                ) {
-
-                    statusBadge
-                        .classList
-                        .remove(
-                            "inactive"
-                        );
-
-                    statusBadge
-                        .classList
-                        .add(
-                            "active"
-                        );
-
-                    statusBadge.textContent =
-                        "🥛 Currently Milking";
-
-
-                    // ------------------------------------------
-                    // UPDATE BUTTON
-                    // ------------------------------------------
-
-                    button
-                        .classList
-                        .remove(
-                            "start"
-                        );
-
-                    button
-                        .classList
-                        .add(
-                            "stop"
-                        );
 
                     button.textContent =
-                        "⛔ Turn Off Milking";
+                        "Updating...";
 
-                } else {
 
-                    statusBadge
-                        .classList
-                        .remove(
-                            "active"
+                    try {
+
+                        const response =
+                            await fetch(
+                                form.action,
+                                {
+
+                                    method:
+                                        "POST",
+
+                                    headers: {
+
+                                        "Accept":
+                                            "application/json"
+
+                                    }
+
+                                }
+                            );
+
+
+                        const data =
+                            await response.json();
+
+
+                        if (
+                            !response.ok ||
+                            !data.success
+                        ) {
+
+                            throw new Error(
+                                data.message ||
+                                "Unable to update milking status."
+                            );
+
+                        }
+
+
+                        /* ==================================
+                           CURRENTLY MILKING
+                        ================================== */
+
+                        if (
+                            data.isMilking === true
+                        ) {
+
+                            status
+                                .classList
+                                .remove(
+                                    "inactive"
+                                );
+
+                            status
+                                .classList
+                                .add(
+                                    "active"
+                                );
+
+
+                            status.innerHTML =
+                                '<span class="milk-status-dot"></span>' +
+                                '<span>Currently milking</span>';
+
+
+                            button
+                                .classList
+                                .remove(
+                                    "start"
+                                );
+
+                            button
+                                .classList
+                                .add(
+                                    "stop"
+                                );
+
+
+                            button.textContent =
+                                "Stop milking";
+
+                        }
+
+
+                        /* ==================================
+                           NOT MILKING
+                        ================================== */
+
+                        else {
+
+                            status
+                                .classList
+                                .remove(
+                                    "active"
+                                );
+
+                            status
+                                .classList
+                                .add(
+                                    "inactive"
+                                );
+
+
+                            status.innerHTML =
+                                '<span class="milk-status-dot"></span>' +
+                                '<span>Not milking</span>';
+
+
+                            button
+                                .classList
+                                .remove(
+                                    "stop"
+                                );
+
+                            button
+                                .classList
+                                .add(
+                                    "start"
+                                );
+
+
+                            button.textContent =
+                                "Start milking";
+
+                        }
+
+                    } catch (error) {
+
+                        console.error(
+                            "MILKING STATUS ERROR:",
+                            error
                         );
 
-                    statusBadge
-                        .classList
-                        .add(
-                            "inactive"
+
+                        alert(
+                            error.message ||
+                            "Unable to update milking status."
                         );
 
-                    statusBadge.textContent =
-                        "Not Currently Milking";
 
+                        button.textContent =
+                            originalText;
 
-                    // ------------------------------------------
-                    // UPDATE BUTTON
-                    // ------------------------------------------
+                    } finally {
 
-                    button
-                        .classList
-                        .remove(
-                            "stop"
-                        );
+                        button.disabled =
+                            false;
 
-                    button
-                        .classList
-                        .add(
-                            "start"
-                        );
-
-                    button.textContent =
-                        "🥛 Turn On Milking";
+                    }
 
                 }
-
-
-            } catch (error) {
-
-                console.error(
-                    "MILKING TOGGLE ERROR:",
-                    error
-                );
-
-
-                alert(
-                    error.message ||
-                    "Failed to update milking status."
-                );
-
-
-                // ------------------------------------------
-                // RESTORE BUTTON
-                // ------------------------------------------
-
-                button.textContent =
-                    originalText;
-
-            } finally {
-
-                // ==================================================
-                // RE-ENABLE BUTTON
-                // ==================================================
-
-                button.disabled =
-                    false;
-
-            }
+            );
 
         }
     );
