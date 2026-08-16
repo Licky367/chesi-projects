@@ -1,13 +1,397 @@
 <!-- =====================================================
      FEED
+     
+     FILE:
+         views/update/feed.ejs
+
+     PURPOSE:
+         Render the chronological dairy feed.
+
+     RECURRING INSERTIONS:
+     ------------------------------------------------------
+         create-post.ejs
+             Recurs after a random number of feed items.
+
+         asset-cards.ejs
+             Recurs after a random number of feed items.
+
+     IMPORTANT:
+     ------------------------------------------------------
+         h1.ejs is NOT rendered here.
+
+         It remains fixed directly after the first
+         create-post.ejs in the parent page.
+
+         The actual feed order is never changed.
 ====================================================== -->
+
+
+<%
+/* =========================================================
+   RECURRING CARD CONFIGURATION
+========================================================= */
+
+
+/*
+ * ---------------------------------------------------------
+ * CREATE POST
+ * ---------------------------------------------------------
+ *
+ * After this many feed items, another create-post card
+ * becomes eligible to appear.
+ *
+ * The actual interval is randomized between these values.
+ */
+
+const CREATE_POST_MIN_GAP = 8;
+const CREATE_POST_MAX_GAP = 20;
+
+
+/*
+ * ---------------------------------------------------------
+ * ASSET CARDS
+ * ---------------------------------------------------------
+ *
+ * Asset cards can appear more frequently than create-post.
+ */
+
+const ASSET_CARD_MIN_GAP = 5;
+const ASSET_CARD_MAX_GAP = 18;
+
+
+
+/* =========================================================
+   RANDOM NUMBER HELPER
+========================================================= */
+
+function randomFeedInterval(min, max) {
+
+    return Math.floor(
+        Math.random() * (max - min + 1)
+    ) + min;
+
+}
+
+
+
+/* =========================================================
+   INITIAL INTERVALS
+========================================================= */
+
+let nextCreatePostAt =
+    randomFeedInterval(
+        CREATE_POST_MIN_GAP,
+        CREATE_POST_MAX_GAP
+    );
+
+
+let nextAssetCardsAt =
+    randomFeedInterval(
+        ASSET_CARD_MIN_GAP,
+        ASSET_CARD_MAX_GAP
+    );
+
+
+
+/* =========================================================
+   LAST INSERTION TRACKING
+========================================================= */
+
+let lastInsertion =
+    null;
+
+
+
+/* =========================================================
+   FEED ITEM COUNTER
+========================================================= */
+
+let feedItemNumber =
+    0;
+
+
+
+/* =========================================================
+   ASSET AVAILABILITY
+========================================================= */
+
+const hasAssetCards =
+    Array.isArray(assetDairies) &&
+    assetDairies.length > 0;
+
+%>
+
+
 
 <section
     id="feed"
     class="feed-container"
 >
 
-    <% feed.forEach(item => { %>
+
+    <% feed.forEach(function (item) { %>
+
+
+        <%
+        /*
+         * =====================================================
+         * COUNT THIS FEED ITEM
+         * =====================================================
+         *
+         * Every actual feed record counts.
+         *
+         * This includes:
+         *
+         * post
+         * milk
+         * medical
+         * maintenance
+         * assetAdd
+         */
+
+        feedItemNumber++;
+        %>
+
+
+
+        <!-- =================================================
+             RECURRING INSERTIONS
+        ================================================== -->
+
+
+        <%
+        /*
+         * =====================================================
+         * DETERMINE WHAT IS READY
+         * =====================================================
+         */
+
+        const createPostReady =
+            feedItemNumber >= nextCreatePostAt;
+
+
+        const assetCardsReady =
+            hasAssetCards &&
+            feedItemNumber >= nextAssetCardsAt;
+
+
+
+        /*
+         * =====================================================
+         * BOTH ARE READY
+         * =====================================================
+         *
+         * If both happen to become due at the same time,
+         * choose one.
+         *
+         * This prevents:
+         *
+         *     ASSET CARDS
+         *     CREATE POST
+         *
+         * from appearing directly beside each other.
+         */
+
+        let insertionType =
+            null;
+
+
+        if (
+            createPostReady &&
+            assetCardsReady
+        ) {
+
+            /*
+             * If one was inserted recently, prefer the
+             * other one.
+             */
+
+            if (lastInsertion === "create-post") {
+
+                insertionType =
+                    "asset-cards";
+
+            } else if (
+                lastInsertion === "asset-cards"
+            ) {
+
+                insertionType =
+                    "create-post";
+
+            } else {
+
+                /*
+                 * First collision:
+                 * randomly choose one.
+                 */
+
+                insertionType =
+                    Math.random() < 0.5
+                        ? "create-post"
+                        : "asset-cards";
+
+            }
+
+        } else if (createPostReady) {
+
+            insertionType =
+                "create-post";
+
+        } else if (assetCardsReady) {
+
+            insertionType =
+                "asset-cards";
+
+        }
+
+
+
+        /*
+         * =====================================================
+         * CREATE POST INSERTION
+         * =====================================================
+         */
+
+        if (
+            insertionType === "create-post"
+        ) {
+
+            /*
+             * Do not allow it immediately after another
+             * insertion.
+             *
+             * This is an additional safety check.
+             */
+
+            if (
+                lastInsertion !== "asset-cards"
+            ) {
+        %>
+
+
+                <!-- =========================================
+                     RECURRING CREATE POST
+                ========================================== -->
+
+                <div
+                    class="feed-recurring-card feed-recurring-create-post"
+                    data-feed-insertion="create-post"
+                >
+
+                    <%- include("create-post", {
+                        dairy: dairy,
+                        user: user,
+                        assetDairies: assetDairies || []
+                    }) %>
+
+                </div>
+
+
+        <%
+                lastInsertion =
+                    "create-post";
+
+
+                /*
+                 * Schedule the next create-post.
+                 */
+
+                nextCreatePostAt =
+                    feedItemNumber +
+                    randomFeedInterval(
+                        CREATE_POST_MIN_GAP,
+                        CREATE_POST_MAX_GAP
+                    );
+
+            } else {
+
+                /*
+                 * It was too close to the asset card.
+                 *
+                 * Delay create-post.
+                 */
+
+                nextCreatePostAt =
+                    feedItemNumber + 3;
+
+            }
+
+        }
+
+
+
+        /*
+         * =====================================================
+         * ASSET CARD INSERTION
+         * =====================================================
+         */
+
+        if (
+            insertionType === "asset-cards"
+        ) {
+
+            /*
+             * Never place asset cards immediately after
+             * another create-post insertion.
+             */
+
+            if (
+                lastInsertion !== "create-post"
+            ) {
+        %>
+
+
+                <!-- =========================================
+                     RECURRING ASSET CARDS
+                ========================================== -->
+
+                <div
+                    class="feed-recurring-card feed-recurring-assets"
+                    data-feed-insertion="asset-cards"
+                >
+
+                    <%- include("asset-cards", {
+                        dairy: dairy,
+                        user: user,
+                        assetDairies: assetDairies || []
+                    }) %>
+
+                </div>
+
+
+        <%
+                lastInsertion =
+                    "asset-cards";
+
+
+                /*
+                 * Schedule the next asset-card insertion.
+                 */
+
+                nextAssetCardsAt =
+                    feedItemNumber +
+                    randomFeedInterval(
+                        ASSET_CARD_MIN_GAP,
+                        ASSET_CARD_MAX_GAP
+                    );
+
+            } else {
+
+                /*
+                 * It was too close to create-post.
+                 *
+                 * Delay asset cards.
+                 */
+
+                nextAssetCardsAt =
+                    feedItemNumber + 3;
+
+            }
+
+        }
+
+        %>
+
 
 
         <!-- =================================================
@@ -24,6 +408,7 @@
         <% } %>
 
 
+
         <!-- =================================================
              WEEKLY MILK REPORTS
         ================================================== -->
@@ -36,6 +421,7 @@
             }) %>
 
         <% } %>
+
 
 
         <!-- =================================================
@@ -68,6 +454,7 @@
         <% } %>
 
 
+
         <!-- =================================================
              MAINTENANCE RECORDS
         ================================================== -->
@@ -98,6 +485,7 @@
         <% } %>
 
 
+
         <!-- =================================================
              ASSET ADDED
         ================================================== -->
@@ -114,4 +502,55 @@
 
     <% }) %>
 
+
+
+    <!-- =====================================================
+         OPTIONAL END-OF-FEED INSERTION
+         
+         If the feed ends immediately before one of the
+         scheduled insertion points, don't force an extra
+         card here.
+         
+         The cards are intentionally inserted only between
+         actual feed items.
+    ====================================================== -->
+
 </section>
+
+
+
+<!-- =====================================================
+     RECURRING FEED CARD STYLING
+     
+     Kept intentionally minimal so the actual partials
+     remain responsible for their own UI.
+====================================================== -->
+
+<style>
+
+.feed-recurring-card {
+
+    width: 100%;
+
+    margin:
+        14px
+        0;
+
+}
+
+
+.feed-recurring-create-post {
+
+    width: 100%;
+
+}
+
+
+.feed-recurring-assets {
+
+    width: 100%;
+
+}
+
+
+</style>
