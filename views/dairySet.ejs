@@ -19,8 +19,17 @@
      3. maintComposer.ejs appears when maintenance is NOT
         currently required.
 
-     4. maintClearComposer.ejs appears when maintenance
-        IS currently required.
+     4. maintenanceClearComposer.ejs appears when
+        maintenance IS currently required.
+
+     MILKING STATUS:
+     -----------------------------------------------------
+     5. Milking status card is only available to:
+            - admin
+            - dairyWorker
+
+     6. The milking status card appears directly below
+        the create-post card.
 ===================================================== -->
 
 
@@ -69,6 +78,31 @@
 
 
     <!-- =================================================
+         MILKING STATUS
+         
+         Available only to:
+         - admin
+         - dairyWorker
+    ================================================== -->
+
+    <% if (
+        user &&
+        (
+            user.role === "admin" ||
+            user.role === "dairyWorker"
+        )
+    ) { %>
+
+        <%- include("update/milk-status", {
+            dairy: dairy,
+            user: user
+        }) %>
+
+    <% } %>
+
+
+
+    <!-- =================================================
          MAINTENANCE COMPOSERS
          
          Conditions:
@@ -96,7 +130,7 @@
 
         <!-- =============================================
              MARK MAINTENANCE
-             
+
              Only when maintenance is NOT required.
         ============================================== -->
 
@@ -113,7 +147,7 @@
 
         <!-- =============================================
              CLEAR MAINTENANCE
-             
+
              Only when maintenance IS required.
         ============================================== -->
 
