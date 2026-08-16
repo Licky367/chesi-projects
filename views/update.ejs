@@ -1,4 +1,31 @@
 <!-- =====================================================
+     UPDATE PAGE
+     
+     FILE:
+         views/update.ejs
+
+     PURPOSE:
+         Dairy update/feed page.
+
+     FIXED TOP ORDER:
+         1. Create Post
+         2. H1
+
+     RECURRING FEED INSERTIONS:
+         • Asset Cards
+         • Create Post
+
+     H1:
+         • Appears ONLY once
+         • Always immediately after Create Post
+
+     IMPORTANT:
+         Feed items themselves remain in their existing
+         chronological order.
+===================================================== -->
+
+
+<!-- =====================================================
      UPDATE PAGE ASSETS
 ===================================================== -->
 
@@ -7,7 +34,10 @@
     href="/css/update/update.css"
 >
 
-<script src="/socket.io/socket.io.js"></script>
+<script
+    src="/socket.io/socket.io.js"
+></script>
+
 
 
 <!-- =====================================================
@@ -63,6 +93,7 @@
                     +
                 </span>
 
+
                 <span class="asset-bar-trigger-text">
                     Add Assets
                 </span>
@@ -72,11 +103,6 @@
 
         <% } else { %>
 
-
-            <!--
-                Empty spacer keeps the View Assets
-                button positioned on the right.
-            -->
 
             <span
                 aria-hidden="true"
@@ -106,6 +132,7 @@
                 ◉
             </span>
 
+
             <span class="asset-bar-trigger-text">
                 View Assets
             </span>
@@ -116,8 +143,27 @@
     </div>
 
 
+
     <!-- =================================================
-         HERO SECTION
+         FIXED CREATE POST
+         
+         ALWAYS FIRST
+    ================================================== -->
+
+    <%- include("update/create-post", {
+        dairy: dairy,
+        user: user,
+        assetDairies: assetDairies || []
+    }) %>
+
+
+
+    <!-- =================================================
+         FIXED H1
+         
+         ALWAYS SECOND
+         
+         NEVER REPEATED
     ================================================== -->
 
     <%- include("update/h1", {
@@ -126,26 +172,12 @@
     }) %>
 
 
-    <!-- =================================================
-         CREATE POST
-    ================================================== -->
-
-    <%- include("update/create-post", {
-        dairy: dairy,
-        user: user
-    }) %>
-
 
     <!-- =================================================
          ASSET SIDEBAR
-
-         The partial contains:
-
-         • Overlay
-         • Sidebar
-         • Animals
-         • Structures
-         • Sidebar JavaScript
+         
+         The sidebar remains independent from the
+         recurring asset cards.
     ================================================== -->
 
     <%- include("dairy/assetBar", {
@@ -154,17 +186,459 @@
     }) %>
 
 
+
     <!-- =================================================
          FEED
+         
+         The feed is rendered manually here rather than
+         simply including feed.ejs.
+
+         This allows the parent page to insert:
+         
+             • asset-card
+             • create-post
+         
+         at intervals between feed records.
     ================================================== -->
 
-    <%- include("update/feed", {
-        feed: feed,
-        user: user
-    }) %>
+    <section
+        id="feed"
+        class="feed-container"
+    >
+
+
+        <%
+            /*
+             * =================================================
+             * RECURRING INSERTION SETTINGS
+             * =================================================
+             *
+             * These numbers control when the special cards
+             * appear.
+             *
+             * They can be changed easily later.
+             *
+             * Example:
+             *
+             *     after 5 posts
+             *     after 12 posts
+             *     after 20 posts
+             *
+             * The sequence then repeats.
+             *
+             * -------------------------------------------------
+             *
+             * IMPORTANT:
+             * The number refers to FEED ITEMS, not only posts.
+             *
+             * So milk, medical, maintenance, assetAdd, etc.
+             * all count as one feed item.
+             *
+             * =================================================
+             */
+
+
+            const insertionPattern = [
+                5,
+                12,
+                20,
+                28,
+                37
+            ];
+
+
+            /*
+             * -------------------------------------------------
+             * Counter
+             * -------------------------------------------------
+             */
+
+            let feedPosition = 0;
+
+
+            /*
+             * -------------------------------------------------
+             * Pattern position
+             * -------------------------------------------------
+             */
+
+            let insertionIndex = 0;
+
+
+            /*
+             * -------------------------------------------------
+             * Determine whether asset cards exist.
+             * -------------------------------------------------
+             */
+
+            const hasAssetCards =
+                Array.isArray(assetDairies) &&
+                assetDairies.length > 0;
+
+
+            /*
+             * -------------------------------------------------
+             * Alternate recurring component.
+             *
+             * true  = asset card
+             * false = create post
+             *
+             * This means the recurring sequence becomes:
+             *
+             *     Asset Cards
+             *     Create Post
+             *     Asset Cards
+             *     Create Post
+             *
+             * regardless of the spacing.
+             * -------------------------------------------------
+             */
+
+            let nextRecurringComponent = "asset";
+
+
+        %>
+
+
+
+        <!-- =================================================
+             FEED ITEMS
+        ================================================== -->
+
+        <% if (
+            Array.isArray(feed) &&
+            feed.length
+        ) { %>
+
+
+            <% feed.forEach(function (item) { %>
+
+
+                <%
+                    /*
+                     * =========================================
+                     * ADVANCE FEED POSITION
+                     * =========================================
+                     */
+
+                    feedPosition++;
+                %>
+
+
+
+                <!-- =========================================
+                     NORMAL POST
+                ========================================== -->
+
+                <% if (item.type === "post") { %>
+
+                    <%- include("update/post", {
+                        item: item,
+                        user: user
+                    }) %>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     WEEKLY MILK REPORT
+                ========================================== -->
+
+                <% if (item.type === "milk") { %>
+
+                    <%- include("update/milk", {
+                        item: item,
+                        user: user
+                    }) %>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     MEDICAL — MARKED
+                ========================================== -->
+
+                <% if (
+                    item.type === "medical" &&
+                    item.status === "marked"
+                ) { %>
+
+                    <%- include("update/medical-marked", {
+                        item: item,
+                        user: user
+                    }) %>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     MEDICAL — CLEARED
+                ========================================== -->
+
+                <% if (
+                    item.type === "medical" &&
+                    item.status === "cleared"
+                ) { %>
+
+                    <%- include("update/medical-cleared", {
+                        item: item,
+                        user: user
+                    }) %>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     MAINTENANCE — MARKED
+                ========================================== -->
+
+                <% if (
+                    item.type === "maintenance" &&
+                    item.status === "marked"
+                ) { %>
+
+                    <%- include("update/maintenance-marked", {
+                        item: item,
+                        user: user
+                    }) %>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     MAINTENANCE — CLEARED
+                ========================================== -->
+
+                <% if (
+                    item.type === "maintenance" &&
+                    item.status === "cleared"
+                ) { %>
+
+                    <%- include("update/maintenance-cleared", {
+                        item: item,
+                        user: user
+                    }) %>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     ASSET ADDED
+                ========================================== -->
+
+                <% if (item.type === "assetAdd") { %>
+
+                    <%- include("update/addAsset", {
+                        item: item,
+                        user: user
+                    }) %>
+
+                <% } %>
+
+
+
+                <!-- =========================================
+                     RECURRING INSERTION
+                     
+                     Happens AFTER the feed item.
+                ========================================== -->
+
+                <%
+                    /*
+                     * =========================================
+                     * CHECK INSERTION POINT
+                     * =========================================
+                     */
+
+                    const nextInsertion =
+                        insertionPattern[insertionIndex];
+
+
+                    if (
+                        nextInsertion &&
+                        feedPosition === nextInsertion
+                    ) {
+
+
+                        /*
+                         * =====================================
+                         * ASSET CARD
+                         * =====================================
+                         */
+
+                        if (
+                            nextRecurringComponent === "asset" &&
+                            hasAssetCards
+                        ) {
+
+                            insertionIndex++;
+
+                            nextRecurringComponent =
+                                "create";
+                        }
+
+
+                        /*
+                         * =====================================
+                         * CREATE POST
+                         * =====================================
+                         */
+
+                        else if (
+                            nextRecurringComponent === "create"
+                        ) {
+
+                            insertionIndex++;
+
+                            nextRecurringComponent =
+                                "asset";
+                        }
+
+                    }
+
+                %>
+
+
+
+                <!-- =========================================
+                     RECURRING ASSET CARD
+                ========================================== -->
+
+                <%
+                    /*
+                     * We need a separate check here because
+                     * EJS variables above cannot directly
+                     * render content during the same logical
+                     * block without making the flow harder
+                     * to read.
+                     *
+                     * Determine whether this position is
+                     * an insertion point.
+                     */
+
+                    const shouldInsertHere =
+                        insertionPattern
+                            .includes(feedPosition);
+
+
+                    /*
+                     * Find which insertion point this is.
+                     */
+
+                    const insertionNumber =
+                        insertionPattern.indexOf(
+                            feedPosition
+                        );
+                %>
+
+
+                <% if (shouldInsertHere) { %>
+
+
+                    <%
+                        /*
+                         * Because the insertion component was
+                         * selected above, derive the component
+                         * from the insertion number.
+                         *
+                         * Odd/even alternation:
+                         *
+                         * 0 = asset
+                         * 1 = create
+                         * 2 = asset
+                         * 3 = create
+                         *
+                         * If no assets exist, create-post is
+                         * used instead.
+                         */
+
+                        let insertAsset =
+                            insertionNumber % 2 === 0;
+
+                        if (!hasAssetCards) {
+                            insertAsset = false;
+                        }
+                    %>
+
+
+
+                    <% if (insertAsset) { %>
+
+                        <!-- ===============================
+                             RECURRING ASSET CARDS
+                        ================================ -->
+
+                        <%- include("update/asset-cards", {
+                            dairy: dairy,
+                            assetDairies: assetDairies || []
+                        }) %>
+
+
+                    <% } else { %>
+
+                        <!-- ===============================
+                             RECURRING CREATE POST
+                        ================================ -->
+
+                        <%- include("update/create-post", {
+                            dairy: dairy,
+                            user: user,
+                            assetDairies: assetDairies || []
+                        }) %>
+
+                    <% } %>
+
+
+                <% } %>
+
+
+            <% }); %>
+
+
+        <% } else { %>
+
+
+            <!-- =================================================
+                 EMPTY FEED
+            ================================================== -->
+
+            <div
+                class="feed-empty-state"
+                style="
+                    width:100%;
+                    padding:30px 20px;
+                    text-align:center;
+                    color:#7b847e;
+                "
+            >
+
+                <i
+                    class="bi bi-journal-text"
+                    aria-hidden="true"
+                ></i>
+
+
+                <p>
+                    No updates have been recorded yet.
+                </p>
+
+            </div>
+
+
+        <% } %>
+
+
+    </section>
 
 
 </div>
+
 
 
 <!-- =====================================================
