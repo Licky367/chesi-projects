@@ -96,107 +96,124 @@ const MAX_PROFILE_IMAGES = 5;
 
 
 // ==========================================================
-// FEED STOCK SUBDOCUMENT
+// FEED STORE STOCK SUBDOCUMENT
+// ==========================================================
 //
-// A feed store can contain multiple feed categories:
+// IMPORTANT
+// ----------------------------------------------------------
 //
-//     • fodder
-//     • silage
-//     • hay
-//     • maize
-//     • concentrates
-//     • etc.
+// This represents CURRENT feed inventory.
 //
-// Each category maintains its own:
+// Historical feed-store activity does NOT belong here.
 //
-//     • name
-//     • percentage remaining
-//     • financial feed amount
+// Historical activity belongs to:
 //
-// The parent Dairy document maintains:
+//     models/Update.js
 //
-//     feedsAmount
+// through:
 //
-// which is always the sum of all individual
-// feedStocks[].feedsAmount values.
+//     update.feedStore
+//
+// Each Dairy feed store can therefore contain:
+//
+//     feedStocks: [
+//
+//         {
+//             name,
+//             percentageRemaining,
+//             feedsAmount
+//         }
+//
+//     ]
+//
+// The parent Dairy.feedsAmount is always recalculated from
+// feedStocks[].feedsAmount.
+//
 // ==========================================================
 
-const feedStockSchema =
-    new mongoose.Schema(
+const feedStockSchema = new mongoose.Schema(
 
-        {
+    {
 
-            // ==================================================
-            // FEED NAME
-            // ==================================================
+        // ==================================================
+        // FEED NAME
+        // ==================================================
+        //
+        // Examples:
+        //
+        //     Maize silage
+        //     Rhodes grass hay
+        //     Dairy meal
+        //     Mineral supplement
+        //
+        // ==================================================
 
-            name: {
+        name: {
 
-                type: String,
+            type: String,
 
-                required: true,
+            required: true,
 
-                trim: true
-
-            },
-
-
-            // ==================================================
-            // PERCENTAGE REMAINING
-            //
-            // Represents the estimated amount of this feed
-            // category remaining in stock.
-            //
-            // Range:
-            //
-            //     0   = depleted
-            //     100 = fully stocked
-            // ==================================================
-
-            percentageRemaining: {
-
-                type: Number,
-
-                min: 0,
-
-                max: 100,
-
-                default: 0
-
-            },
-
-
-            // ==================================================
-            // FEEDS AMOUNT
-            //
-            // Financial amount associated with this particular
-            // feed category.
-            //
-            // IMPORTANT:
-            //
-            // The parent dairy.feedsAmount is calculated from
-            // the sum of these values.
-            // ==================================================
-
-            feedsAmount: {
-
-                type: Number,
-
-                min: 0,
-
-                default: 0
-
-            }
+            trim: true
 
         },
 
-        {
 
-            _id: true
+        // ==================================================
+        // PERCENTAGE REMAINING
+        // ==================================================
+        //
+        // Current estimated stock level.
+        //
+        //     0   = empty
+        //     100 = fully stocked
+        //
+        // ==================================================
+
+        percentageRemaining: {
+
+            type: Number,
+
+            min: 0,
+
+            max: 100,
+
+            default: 0
+
+        },
+
+
+        // ==================================================
+        // FEEDS AMOUNT
+        // ==================================================
+        //
+        // Current financial value associated with this
+        // particular feed stock.
+        //
+        // The parent Dairy.feedsAmount is the sum of all
+        // feedStocks[].feedsAmount values.
+        //
+        // ==================================================
+
+        feedsAmount: {
+
+            type: Number,
+
+            min: 0,
+
+            default: 0
 
         }
 
-    );
+    },
+
+    {
+
+        _id: true
+
+    }
+
+);
 
 
 // ==========================================================
@@ -267,12 +284,14 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // CODE
+        // ==================================================
         //
         // NEGATIVE = DAIRY FARM
         // POSITIVE = ANIMAL
         // NULL     = STRUCTURE / FACILITY
         //
-        // Code is assigned by the backend.
+        // Assigned by the backend.
+        //
         // ==================================================
 
         code: {
@@ -604,6 +623,21 @@ const dairySchema = new mongoose.Schema(
         // ==================================================
         // TYPE
         // ==================================================
+        //
+        // For structures:
+        //
+        //     feedStore
+        //     hayShed
+        //     cowshed
+        //     etc.
+        //
+        // For animals:
+        //
+        //     Friesian
+        //     Jersey
+        //     etc.
+        //
+        // ==================================================
 
         type: {
 
@@ -617,43 +651,25 @@ const dairySchema = new mongoose.Schema(
 
 
         // ==================================================
-        // FEED STORE STOCK
+        // CURRENT FEED STORE STOCK
+        // ==================================================
         //
-        // ONLY meaningful when:
+        // IMPORTANT:
         //
-        //     type === "feedStore"
+        // This is CURRENT STATE.
         //
-        // Multiple feed categories are supported.
+        // It is not the feed activity/history.
         //
-        // Example:
+        // Activity/history is stored in Update.feedStore.
         //
-        // feedStocks: [
-        //
-        //     {
-        //         name: "Fodder",
-        //         percentageRemaining: 70,
-        //         feedsAmount: 15000
-        //     },
-        //
-        //     {
-        //         name: "Silage",
-        //         percentageRemaining: 40,
-        //         feedsAmount: 8500
-        //     },
-        //
-        //     {
-        //         name: "Hay",
-        //         percentageRemaining: 80,
-        //         feedsAmount: 6000
-        //     }
-        //
-        // ]
         // ==================================================
 
         feedStocks: {
 
             type: [
+
                 feedStockSchema
+
             ],
 
             default: []
@@ -663,17 +679,18 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // TOTAL FEEDS AMOUNT
+        // ==================================================
         //
-        // IMPORTANT:
+        // This MUST always equal:
         //
-        // This is the aggregate financial feed amount.
+        //     SUM(
+        //         feedStocks[].feedsAmount
+        //     )
         //
-        // It MUST equal:
+        // Controllers should update individual stock entries.
         //
-        //     SUM(feedStocks[].feedsAmount)
+        // The model then synchronizes this aggregate.
         //
-        // This gives the rest of the application one
-        // consistent field to use for financial calculations.
         // ==================================================
 
         feedsAmount: {
@@ -945,6 +962,7 @@ dairySchema.virtual("isStandaloneAsset").get(function() {
     return (
 
         this.isStructure &&
+
         (
             this.assetCode === null ||
             this.assetCode === undefined
@@ -957,11 +975,6 @@ dairySchema.virtual("isStandaloneAsset").get(function() {
 
 // ==========================================================
 // VIRTUAL: IS FEED STORE
-//
-// Correct structure type is:
-//
-//     feedStore
-//
 // ==========================================================
 
 dairySchema.virtual("isFeedStore").get(function() {
@@ -1069,6 +1082,7 @@ dairySchema.virtual("ageText").get(function() {
         now.getDate() -
         dob.getDate();
 
+
     if (days < 0) {
 
         months--;
@@ -1085,6 +1099,7 @@ dairySchema.virtual("ageText").get(function() {
 
     }
 
+
     if (months < 0) {
 
         years--;
@@ -1092,6 +1107,7 @@ dairySchema.virtual("ageText").get(function() {
         months += 12;
 
     }
+
 
     return (
         `${years} years, ` +
@@ -1138,6 +1154,7 @@ dairySchema.virtual("ageYears").get(function() {
         now.getMonth() -
         dob.getMonth();
 
+
     if (
         monthDifference < 0 ||
         (
@@ -1149,6 +1166,7 @@ dairySchema.virtual("ageYears").get(function() {
         age--;
 
     }
+
 
     return Math.max(
         0,
@@ -1191,6 +1209,7 @@ function normalizeProfileImage(
 
     }
 
+
     if (
         /^https?:\/\//i.test(
             String(image)
@@ -1201,6 +1220,7 @@ function normalizeProfileImage(
 
     }
 
+
     if (
         String(image).startsWith("/")
     ) {
@@ -1208,6 +1228,7 @@ function normalizeProfileImage(
         return String(image);
 
     }
+
 
     return `/uploads/${String(image)}`;
 
@@ -1224,7 +1245,7 @@ dairySchema.virtual("displayImages").get(function() {
 
 
     // ======================================================
-    // NEW PROFILE IMAGE ARRAY
+    // PROFILE IMAGE ARRAY
     // ======================================================
 
     if (
@@ -1235,7 +1256,9 @@ dairySchema.virtual("displayImages").get(function() {
 
         images =
             this.profileImages
+
                 .filter(Boolean)
+
                 .map(
                     image =>
                         normalizeProfileImage(
@@ -1257,10 +1280,12 @@ dairySchema.virtual("displayImages").get(function() {
     ) {
 
         images.push(
+
             normalizeProfileImage(
                 this.profileImage,
                 this.name
             )
+
         );
 
     }
@@ -1273,10 +1298,12 @@ dairySchema.virtual("displayImages").get(function() {
     if (images.length === 0) {
 
         images.push(
+
             normalizeProfileImage(
                 "",
                 this.name
             )
+
         );
 
     }
@@ -1300,7 +1327,9 @@ dairySchema.virtual("displayImage").get(function() {
         this.displayImages;
 
     return images.length
+
         ? images[0]
+
         : normalizeProfileImage(
             "",
             this.name
@@ -1327,8 +1356,10 @@ dairySchema.virtual("requiresMaintenance").get(function() {
 dairySchema.virtual("needsMedicalAttention").get(function() {
 
     return !!(
+
         this.medicalAttention &&
         this.medicalAttention.isMarked
+
     );
 
 });
@@ -1391,14 +1422,20 @@ dairySchema.pre(
 
         }
 
+
         this.profileImages =
+
             this.profileImages
+
                 .filter(Boolean)
+
                 .map(
                     image =>
                         String(image).trim()
                 )
+
                 .filter(Boolean)
+
                 .slice(
                     0,
                     MAX_PROFILE_IMAGES
@@ -1444,7 +1481,7 @@ dairySchema.pre(
 
 
         // ==================================================
-        // NORMALIZE NULLABLE VALUES
+        // NORMALIZE CODE
         // ==================================================
 
         if (
@@ -1454,6 +1491,11 @@ dairySchema.pre(
             this.code = null;
 
         }
+
+
+        // ==================================================
+        // NORMALIZE ASSET CODE
+        // ==================================================
 
         if (
             this.assetCode === undefined
@@ -1480,45 +1522,71 @@ dairySchema.pre(
 
 
         this.feedStocks =
+
             this.feedStocks
-                .filter(stock => stock)
-                .map(stock => {
 
-                    stock.name =
-                        String(
-                            stock.name || ""
-                        ).trim();
+                .filter(
+                    stock =>
+                        stock
+                )
 
-                    stock.percentageRemaining =
-                        Number(
-                            stock.percentageRemaining
-                        ) || 0;
+                .map(
+                    stock => {
 
-                    stock.percentageRemaining =
-                        Math.max(
-                            0,
-                            Math.min(
-                                100,
+                        // ==================================
+                        // NAME
+                        // ==================================
+
+                        stock.name =
+                            String(
+                                stock.name || ""
+                            ).trim();
+
+
+                        // ==================================
+                        // PERCENTAGE
+                        // ==================================
+
+                        stock.percentageRemaining =
+                            Number(
                                 stock.percentageRemaining
-                            )
-                        );
+                            ) || 0;
 
-                    stock.feedsAmount =
-                        Number(
-                            stock.feedsAmount
-                        ) || 0;
 
-                    if (
-                        stock.feedsAmount < 0
-                    ) {
+                        stock.percentageRemaining =
+                            Math.max(
+                                0,
+                                Math.min(
+                                    100,
+                                    stock.percentageRemaining
+                                )
+                            );
 
-                        stock.feedsAmount = 0;
+
+                        // ==================================
+                        // FEEDS AMOUNT
+                        // ==================================
+
+                        stock.feedsAmount =
+                            Number(
+                                stock.feedsAmount
+                            ) || 0;
+
+
+                        if (
+                            stock.feedsAmount < 0
+                        ) {
+
+                            stock.feedsAmount = 0;
+
+                        }
+
+
+                        return stock;
 
                     }
+                )
 
-                    return stock;
-
-                })
                 .filter(
                     stock =>
                         stock.name.length > 0
@@ -1527,12 +1595,16 @@ dairySchema.pre(
 
         // ==================================================
         // CALCULATE TOTAL FEEDS AMOUNT
+        // ==================================================
         //
-        // feedsAmount is NEVER allowed to drift away from
-        // the individual feed stock amounts.
+        // NEVER trust a manually supplied Dairy.feedsAmount.
+        //
+        // It is derived from feedStocks.
+        //
         // ==================================================
 
         this.feedsAmount =
+
             this.feedStocks.reduce(
 
                 (
@@ -1541,12 +1613,15 @@ dairySchema.pre(
                 ) => {
 
                     return (
+
                         total +
+
                         (
                             Number(
                                 stock.feedsAmount
                             ) || 0
                         )
+
                     );
 
                 },
@@ -1721,34 +1796,44 @@ dairySchema.pre(
 
         }
 
+
         this.medicalAttention.isMarked =
             !!this.medicalAttention.isMarked;
+
 
         this.medicalAttention.type =
             this.medicalAttention.type || "";
 
+
         this.medicalAttention.details =
             this.medicalAttention.details || "";
+
 
         this.medicalAttention.charges =
             Number(
                 this.medicalAttention.charges
             ) || 0;
 
+
         this.medicalAttention.description =
             this.medicalAttention.description || "";
+
 
         this.medicalAttention.markedBy =
             this.medicalAttention.markedBy || null;
 
+
         this.medicalAttention.markedAt =
             this.medicalAttention.markedAt || null;
+
 
         this.medicalAttention.updatedAt =
             this.medicalAttention.updatedAt || null;
 
+
         this.medicalAttention.clearedBy =
             this.medicalAttention.clearedBy || null;
+
 
         this.medicalAttention.clearedAt =
             this.medicalAttention.clearedAt || null;
@@ -1857,10 +1942,11 @@ dairySchema.pre(
 
 
         // ==================================================
-        // FINAL FEEDS AMOUNT SYNCHRONIZATION
+        // FINAL FEED AMOUNT SYNCHRONIZATION
         // ==================================================
 
         this.feedsAmount =
+
             Array.isArray(
                 this.feedStocks
             )
@@ -1873,12 +1959,15 @@ dairySchema.pre(
                     ) => {
 
                         return (
+
                             total +
+
                             (
                                 Number(
                                     stock.feedsAmount
                                 ) || 0
                             )
+
                         );
 
                     },
@@ -1906,7 +1995,9 @@ dairySchema.pre(
 // ==========================================================
 
 dairySchema.index({
+
     isMilking: 1
+
 });
 
 
@@ -1915,7 +2006,9 @@ dairySchema.index({
 // ==========================================================
 
 dairySchema.index({
+
     needsMaintenance: 1
+
 });
 
 
@@ -1924,7 +2017,9 @@ dairySchema.index({
 // ==========================================================
 
 dairySchema.index({
+
     "medicalAttention.isMarked": 1
+
 });
 
 
@@ -1933,8 +2028,11 @@ dairySchema.index({
 // ==========================================================
 
 dairySchema.index({
+
     assetCode: 1,
+
     status: 1
+
 });
 
 
@@ -1943,8 +2041,11 @@ dairySchema.index({
 // ==========================================================
 
 dairySchema.index({
+
     type: 1,
+
     status: 1
+
 });
 
 
@@ -1955,7 +2056,9 @@ dairySchema.index({
 dairySchema.index(
 
     {
+
         code: 1
+
     },
 
     {
@@ -1965,7 +2068,9 @@ dairySchema.index(
         partialFilterExpression: {
 
             code: {
+
                 $type: "number"
+
             }
 
         }
@@ -1983,7 +2088,9 @@ dairySchema.statics.getDairyBreeds =
 function() {
 
     return [
+
         ...DAIRY_BREEDS
+
     ];
 
 };
@@ -1997,7 +2104,9 @@ dairySchema.statics.getDairyFarmTypes =
 function() {
 
     return [
+
         ...DAIRY_FARM_TYPES
+
     ];
 
 };
@@ -2011,7 +2120,9 @@ dairySchema.statics.getStructureTypes =
 function() {
 
     return [
+
         ...STRUCTURE_TYPES
+
     ];
 
 };
@@ -2025,7 +2136,9 @@ dairySchema.statics.getDairyStatuses =
 function() {
 
     return [
+
         ...DAIRY_STATUSES
+
     ];
 
 };
@@ -2051,34 +2164,45 @@ dairySchema.statics.calculateNetWorth =
 async function() {
 
     const result =
+
         await this.aggregate([
 
             {
+
                 $match: {
+
                     status: "active"
+
                 }
+
             },
 
             {
+
                 $group: {
 
                     _id: null,
 
                     totalNetWorth: {
+
                         $sum:
                             "$currentWorth"
+
                     }
 
                 }
+
             }
 
         ]);
 
 
     return result.length
+
         ? Number(
             result[0].totalNetWorth || 0
         )
+
         : 0;
 
 };
@@ -2101,7 +2225,9 @@ async function() {
 // ==========================================================
 
 const Dairy =
+
     mongoose.models.Dairy ||
+
     mongoose.model(
         "Dairy",
         dairySchema
@@ -2115,14 +2241,18 @@ const Dairy =
 Dairy.DAIRY_BREEDS =
     DAIRY_BREEDS;
 
+
 Dairy.DAIRY_FARM_TYPES =
     DAIRY_FARM_TYPES;
+
 
 Dairy.STRUCTURE_TYPES =
     STRUCTURE_TYPES;
 
+
 Dairy.DAIRY_STATUSES =
     DAIRY_STATUSES;
+
 
 Dairy.MAX_PROFILE_IMAGES =
     MAX_PROFILE_IMAGES;
