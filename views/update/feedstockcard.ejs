@@ -1,0 +1,365 @@
+<% /*
+============================================================
+FEED STORE CARD
+
+FILE:
+    views/update/feedstorecard.ejs
+
+PURPOSE:
+    Compact navigation card for the CURRENT dairy asset
+    when that asset is a Feed Store structure.
+
+STRUCTURE TYPE:
+    dairy.type === "feedStore"
+
+STRUCTURE IDENTIFICATION:
+    dairy.code === null
+    OR
+    dairy.code === undefined
+
+LABEL:
+    Food Stock
+
+TARGET:
+    Current dairy asset.
+
+ROUTE:
+    /dairy/feedstore/:id
+
+SIZE:
+    Same standard as the other update cards:
+
+        Desktop:
+            112px × 155px
+
+        Mobile:
+            108px × 150px
+
+BEHAVIOUR:
+    The entire card is clickable.
+
+    Clicking the card navigates to:
+
+        /dairy/feedstore/<dairy._id>
+============================================================
+*/ %>
+
+
+<% if (
+    dairy &&
+    (
+        dairy.code === null ||
+        dairy.code === undefined
+    ) &&
+    dairy.type === "feedStore"
+) { %>
+
+
+<!-- =========================================================
+     FEED STORE CARD
+========================================================= -->
+
+<section
+    class="feedstore-card"
+    aria-label="Food Stock for <%= dairy.name %>"
+>
+
+
+    <a
+        href="/dairy/feedstore/<%= dairy._id %>"
+        class="feedstore-card__link"
+        aria-label="Open Food Stock for <%= dairy.name %>"
+    >
+
+
+        <!-- =================================================
+             ICON
+        ================================================== -->
+
+        <span
+            class="feedstore-card__icon"
+            aria-hidden="true"
+        >
+
+            <i class="bi bi-box-seam"></i>
+
+        </span>
+
+
+
+        <!-- =================================================
+             LABEL
+        ================================================== -->
+
+        <span class="feedstore-card__label">
+
+            Food Stock
+
+        </span>
+
+
+
+        <!-- =================================================
+             TARGET
+        ================================================== -->
+
+        <span class="feedstore-card__target">
+
+            <%= dairy.name %>
+
+        </span>
+
+
+    </a>
+
+
+</section>
+
+
+
+<style>
+
+/* ==========================================================
+   FEED STORE CARD
+========================================================== */
+
+.feedstore-card,
+.feedstore-card * {
+
+    box-sizing: border-box;
+
+}
+
+
+.feedstore-card {
+
+    width: 112px;
+
+    flex: 0 0 112px;
+
+    margin: 0 0 16px;
+
+}
+
+
+
+/* ==========================================================
+   CARD LINK
+========================================================== */
+
+.feedstore-card__link {
+
+    position: relative;
+
+    width: 112px;
+    height: 155px;
+
+    padding: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    overflow: hidden;
+
+    border: 1px solid #dce7e0;
+
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f3f8f5
+        );
+
+    color: #198754;
+
+    font-family: inherit;
+
+    text-decoration: none;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition:
+        transform .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease;
+
+}
+
+
+
+/* ==========================================================
+   HOVER
+========================================================== */
+
+.feedstore-card__link:hover {
+
+    border-color: #198754;
+
+    box-shadow:
+        0 5px 15px
+        rgba(25, 135, 84, .10);
+
+}
+
+
+
+/* ==========================================================
+   ACTIVE
+========================================================== */
+
+.feedstore-card__link:active {
+
+    transform: scale(.95);
+
+}
+
+
+
+/* ==========================================================
+   KEYBOARD FOCUS
+========================================================== */
+
+.feedstore-card__link:focus-visible {
+
+    outline: 2px solid #198754;
+
+    outline-offset: 2px;
+
+}
+
+
+
+/* ==========================================================
+   ICON
+========================================================== */
+
+.feedstore-card__icon {
+
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    font-size: 21px;
+
+    line-height: 1;
+
+    box-shadow:
+        0 4px 12px
+        rgba(25, 135, 84, .20);
+
+}
+
+
+.feedstore-card__icon i {
+
+    line-height: 1;
+
+}
+
+
+
+/* ==========================================================
+   LABEL
+========================================================== */
+
+.feedstore-card__label {
+
+    display: block;
+
+    color: #26322b;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+}
+
+
+
+/* ==========================================================
+   TARGET
+========================================================== */
+
+.feedstore-card__target {
+
+    display: block;
+
+    max-width: 88px;
+
+    overflow: hidden;
+
+    color: #8a928d;
+
+    font-size: 10px;
+
+    line-height: 1.25;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 600px) {
+
+    .feedstore-card {
+
+        width: 108px;
+
+        flex-basis: 108px;
+
+    }
+
+
+    .feedstore-card__link {
+
+        width: 108px;
+
+        height: 150px;
+
+    }
+
+
+    .feedstore-card__icon {
+
+        width: 46px;
+        height: 46px;
+
+        font-size: 20px;
+
+    }
+
+}
+
+</style>
+
+
+<% } %>
