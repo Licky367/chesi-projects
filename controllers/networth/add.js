@@ -165,12 +165,31 @@ async function addAsset(
         // ==================================================
         // CREATE ASSET
         // ==================================================
+        //
+        // The service creates BOTH:
+        //
+        //     1. Dairy asset
+        //     2. Update/feed record
+        //
+        // The authenticated user is passed through so the
+        // feed update can record who added the asset.
+        //
+        // ==================================================
 
-        const asset =
+        const result =
             await addAssetService.createAsset(
                 id,
-                assetData
+                assetData,
+                req.user
             );
+
+
+        // ==================================================
+        // EXTRACT CREATED ASSET
+        // ==================================================
+
+        const asset =
+            result.asset;
 
 
         // ==================================================
