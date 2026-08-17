@@ -115,24 +115,64 @@ router.get(
 // FEED STORE
 // ==========================================================
 //
-// IMPORTANT
-// ----------------------------------------------------------
-//
-// All feed-store routes use the same structure:
+// The feed store is attached directly to the Dairy asset:
 //
 //     /dairy/:id/feedstore
 //
-// This keeps the feed-store page and its actions attached
-// directly to the current Dairy asset.
+// There are two completely different update operations:
 //
-// IMPORTANT ROUTE ORDER:
 //
-// These routes appear BEFORE:
+//     ADMIN
+//     -----
 //
-//     /dairy/:id
+//     POST /dairy/:id/feedstore/restock
 //
-// so that the more specific feed-store routes are handled
-// first.
+//     Used to add newly available:
+//
+//         • Animal feed
+//         • Veterinary medicine
+//
+//     The admin supplies:
+//
+//         • stock type
+//         • stock name
+//         • quantity
+//         • unit
+//         • price
+//         • instructions
+//         • expected duration
+//         • optional images
+//
+//     The service then:
+//
+//         • creates the stock record
+//         • recalculates feedsAmount
+//         • creates the automatic System feed item
+//
+//
+//     DAIRY WORKER
+//     ------------
+//
+//     POST /dairy/:id/feedstore/update
+//
+//     Used to report remaining stock.
+//
+//     The worker supplies:
+//
+//         • selected stock item
+//         • remaining quantity
+//         • unit
+//         • additional information
+//         • optional images
+//
+//     The worker does NOT supply:
+//
+//         • price
+//         • cost
+//         • feedsAmount
+//
+//     The controller/service handles the role restriction.
+//
 // ==========================================================
 
 
@@ -162,25 +202,37 @@ router.get(
 
 
 // ----------------------------------------------------------
-// FEED STORE CONDITION UPDATE
+// UPDATE REMAINING STOCK
 // ----------------------------------------------------------
 //
 // POST:
 //
 //     /dairy/:id/feedstore/update
 //
-// Available to:
+// Intended primarily for:
 //
-//     admin
 //     dairyWorker
 //
-// Can contain:
+// Admin may also use the endpoint because the controller
+// permits both:
 //
-//     • overall facility condition
-//     • feed quality
-//     • percentage remaining
-//     • message
-//     • multiple images
+//     dairyWorker
+//     admin
+//
+// Worker can:
+//
+//     • select existing feed/medicine
+//     • update remaining quantity
+//     • update unit
+//     • add additional information
+//     • upload images
+//
+// Worker cannot:
+//
+//     • create stock
+//     • change price
+//     • change cost
+//     • directly set feedsAmount
 //
 // Upload field:
 //
@@ -189,6 +241,10 @@ router.get(
 // Maximum:
 //
 //     10 images
+//
+// Controller:
+//
+//     controller.updateFeedStore
 //
 // Business logic:
 //
@@ -208,7 +264,7 @@ router.post(
 
 
 // ----------------------------------------------------------
-// FEED STORE RESTOCK
+// ADMIN: ADD AVAILABLE STOCK
 // ----------------------------------------------------------
 //
 // POST:
@@ -217,22 +273,71 @@ router.post(
 //
 // ADMIN ONLY
 //
-// Used to:
+// This is no longer a generic "restock report".
 //
-//     • restock existing feed categories
-//     • create new feed categories
-//     • record feed expenditure
-//     • update individual feed amounts
-//     • recalculate feedsAmount
+// It is the administrative stock-creation endpoint.
 //
-// IMPORTANT:
+// The admin can add:
 //
-// feedsAmount is the aggregate financial feed amount:
+//     • Animal feed
+//     • Veterinary medicine
 //
-//     feedsAmount =
-//         sum of all individual feed amounts
+// The submitted information may include:
 //
-// Business logic belongs to:
+//     • category
+//     • feedName
+//     • medicineName
+//     • quantity
+//     • unit
+//     • price
+//     • instructions
+//     • expectedDuration
+//     • images
+//
+// The service automatically:
+//
+//     1. Adds the stock to the dairy inventory.
+//
+//     2. Calculates:
+//
+//            feedsAmount =
+//                sum of stored stock prices
+//
+//     3. Saves the new feedsAmount.
+//
+//     4. Creates a System update.
+//
+// The System update uses:
+//
+//     Name:
+//
+//         System
+//
+//     Image:
+//
+//         /images/h1.png
+//
+//     Feed title:
+//
+//         More Animal Feed Available
+//
+//     OR:
+//
+//         More Veterinary Meds Available
+//
+// Upload field:
+//
+//     images
+//
+// Maximum:
+//
+//     10 images
+//
+// Controller:
+//
+//     controller.restockFeedStore
+//
+// Business logic:
 //
 //     services/update/feedsService.js
 //
@@ -241,6 +346,10 @@ router.post(
 router.post(
     "/dairy/:id/feedstore/restock",
     isAuth,
+    upload.array(
+        "images",
+        10
+    ),
     controller.restockFeedStore
 );
 
@@ -255,7 +364,17 @@ router.post(
 //
 // IMPORTANT:
 //
-// This comes AFTER the specific feed-store routes.
+// This remains AFTER:
+//
+//     /dairy/:id/feedstore
+//
+// so Express does not treat:
+//
+//     /dairy/:id/feedstore
+//
+// as:
+//
+//     /dairy/:id
 //
 // ----------------------------------------------------------
 
@@ -547,7 +666,7 @@ router.post(
 
 // ----------------------------------------------------------
 // MARK MAINTENANCE
-// ----------------------------------------------------------
+// ==========================================================
 //
 // POST:
 //
@@ -564,7 +683,7 @@ router.post(
 
 // ----------------------------------------------------------
 // CLEAR MAINTENANCE
-// ----------------------------------------------------------
+// ==========================================================
 //
 // POST:
 //
