@@ -12,88 +12,357 @@ PURPOSE:
 TARGET:
     The current dairy/asset is ALWAYS the target.
 
+AUTHORIZED USERS:
+    admin
+    dairyWorker
+
 FORM:
     POST /dairy/:id/medical-mark
 
-SIZE:
-    Same as create.ejs:
-        Desktop: 112px × 155px
-        Mobile:  108px × 150px
+CARD SIZE:
+    Desktop: 112px × 155px
+    Mobile:  108px × 150px
 ============================================================
 */ %>
 
-<% if (dairy && user && (
-    user.role === "admin" ||
-    user.role === "dairyWorker"
-)) { %>
 
-<section class="medical-mark-composer">
+<% if (
+    dairy &&
+    user &&
+    (
+        user.role === "admin" ||
+        user.role === "dairyWorker"
+    )
+) { %>
+
+
+<!-- =========================================================
+     MEDICAL MARK CARD
+========================================================= -->
+
+<section
+    class="medical-mark-composer"
+    aria-label="Mark medical attention"
+>
+
 
     <button
         type="button"
+        id="openMedicalMarkComposer"
         class="medical-mark-composer__card"
-        onclick="toggleMedicalMarkComposer('<%= dairy._id %>')"
         aria-label="Mark <%= dairy.name %> for medical attention"
     >
 
-        <span class="medical-mark-composer__icon">
+
+        <!-- =================================================
+             ICON
+        ================================================== -->
+
+        <span
+            class="medical-mark-composer__icon"
+            aria-hidden="true"
+        >
             +
         </span>
+
+
+        <!-- =================================================
+             LABEL
+        ================================================== -->
 
         <span class="medical-mark-composer__label">
             Mark Medical
         </span>
 
+
+        <!-- =================================================
+             TARGET
+        ================================================== -->
+
         <span class="medical-mark-composer__target">
+
             <%= dairy.name %>
+
         </span>
 
+
     </button>
-
-
-    <form
-        id="medicalMarkComposerForm-<%= dairy._id %>"
-        class="medical-mark-composer__form"
-        action="/dairy/<%= dairy._id %>/medical-mark"
-        method="POST"
-    >
-
-        <div class="medical-mark-composer__form-title">
-            Medical Attention
-        </div>
-
-        <input
-            type="text"
-            name="type"
-            maxlength="200"
-            placeholder="Medical type"
-            required
-        >
-
-        <textarea
-            name="details"
-            rows="3"
-            maxlength="1000"
-            placeholder="Describe the condition..."
-            required
-        ></textarea>
-
-        <button type="submit">
-            Mark Medical
-        </button>
-
-    </form>
 
 </section>
 
 
+
+<!-- =========================================================
+     FULL-SCREEN MEDICAL MARK MODAL
+========================================================= -->
+
+<div
+    id="medicalMarkModal"
+    class="medical-mark-modal"
+    aria-hidden="true"
+>
+
+
+    <div class="medical-mark-modal__content">
+
+
+        <!-- =================================================
+             MODAL HEADER
+        ================================================== -->
+
+        <header class="medical-mark-modal__header">
+
+
+            <button
+                type="button"
+                id="closeMedicalMarkModal"
+                class="medical-mark-modal__back"
+                aria-label="Close medical attention form"
+            >
+
+                <span aria-hidden="true">
+                    &#8592;
+                </span>
+
+            </button>
+
+
+            <div class="medical-mark-modal__title">
+
+                <strong>
+                    Medical Attention
+                </strong>
+
+                <span>
+                    <%= dairy.name %>
+                </span>
+
+            </div>
+
+
+            <div
+                class="medical-mark-modal__spacer"
+                aria-hidden="true"
+            ></div>
+
+
+        </header>
+
+
+
+        <!-- =================================================
+             MODAL BODY
+        ================================================== -->
+
+        <main class="medical-mark-modal__body">
+
+
+            <div class="medical-mark-modal__fields">
+
+
+                <!-- =================================================
+                     QUESTION
+                ================================================== -->
+
+                <div class="medical-mark-question">
+
+                    <strong>
+                        <%= user.name.split(" ")[0] %>
+                    </strong>,
+
+                    does this facility/asset require
+                    medical attention?
+
+                </div>
+
+
+
+                <!-- =================================================
+                     TARGET
+                ================================================== -->
+
+                <section
+                    class="medical-mark-target"
+                    aria-label="Medical attention target"
+                >
+
+
+                    <% if (
+                        dairy.profileImage &&
+                        dairy.profileImage.trim() !== ""
+                    ) { %>
+
+                        <img
+                            src="<%= dairy.profileImage %>"
+                            class="medical-mark-target__image"
+                            alt="<%= dairy.name %>"
+                        >
+
+                    <% } else { %>
+
+                        <div
+                            class="medical-mark-target__placeholder"
+                            aria-hidden="true"
+                        >
+
+                            <i class="bi bi-heart-pulse"></i>
+
+                        </div>
+
+                    <% } %>
+
+
+                    <div class="medical-mark-target__info">
+
+                        <span>
+                            Medical attention required
+                        </span>
+
+                        <strong>
+                            <%= dairy.name %>
+                        </strong>
+
+                    </div>
+
+
+                </section>
+
+
+
+                <!-- =================================================
+                     MEDICAL FORM
+                ================================================== -->
+
+                <form
+                    id="medicalMarkForm"
+                    class="medical-mark-form"
+                    action="/dairy/<%= dairy._id %>/medical-mark"
+                    method="POST"
+                    autocomplete="off"
+                >
+
+
+                    <!-- =============================================
+                         MEDICAL TYPE
+                    ============================================== -->
+
+                    <div class="medical-mark-field">
+
+                        <label
+                            for="medicalMarkType"
+                        >
+                            Medical type
+                        </label>
+
+
+                        <input
+                            type="text"
+                            id="medicalMarkType"
+                            name="type"
+                            maxlength="200"
+                            placeholder="e.g. Mastitis"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <!-- =============================================
+                         DETAILS
+                    ============================================== -->
+
+                    <div class="medical-mark-field">
+
+                        <label
+                            for="medicalMarkDetails"
+                        >
+                            Details
+                        </label>
+
+
+                        <textarea
+                            id="medicalMarkDetails"
+                            name="details"
+                            maxlength="1000"
+                            rows="5"
+                            placeholder="Describe the medical condition or concern..."
+                            required
+                        ></textarea>
+
+
+                        <span
+                            id="medicalMarkCharacterCounter"
+                            class="medical-mark-character-counter"
+                        >
+                            0/1000
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- =============================================
+                         SUBMIT
+                    ============================================== -->
+
+                    <button
+                        type="submit"
+                        id="submitMedicalMarkButton"
+                        class="medical-mark-submit-button"
+                        disabled
+                    >
+
+                        <i
+                            class="bi bi-heart-pulse"
+                            aria-hidden="true"
+                        ></i>
+
+                        <span>
+                            Mark for Medical Attention
+                        </span>
+
+                    </button>
+
+
+                </form>
+
+
+            </div>
+
+        </main>
+
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     CSS
+========================================================= -->
+
 <style>
 
+/* =========================================================
+   ROOT
+========================================================= */
+
 .medical-mark-composer,
-.medical-mark-composer * {
+.medical-mark-composer *,
+.medical-mark-modal,
+.medical-mark-modal * {
+
     box-sizing: border-box;
+
 }
 
+
+
+/* =========================================================
+   REAL UPDATE CARD
+========================================================= */
 
 .medical-mark-composer {
 
@@ -149,6 +418,7 @@ SIZE:
         transform .15s ease,
         border-color .15s ease,
         box-shadow .15s ease;
+
 }
 
 
@@ -157,13 +427,16 @@ SIZE:
     border-color: #198754;
 
     box-shadow:
-        0 5px 15px rgba(25, 135, 84, .10);
+        0 5px 15px
+        rgba(25, 135, 84, .10);
+
 }
 
 
 .medical-mark-composer__card:active {
 
     transform: scale(.95);
+
 }
 
 
@@ -172,8 +445,14 @@ SIZE:
     outline: 2px solid #198754;
 
     outline-offset: 2px;
+
 }
 
+
+
+/* =========================================================
+   ICON
+========================================================= */
 
 .medical-mark-composer__icon {
 
@@ -198,9 +477,16 @@ SIZE:
     line-height: 1;
 
     box-shadow:
-        0 4px 12px rgba(25, 135, 84, .20);
+        0 4px 12px
+        rgba(25, 135, 84, .20);
+
 }
 
+
+
+/* =========================================================
+   CARD LABEL
+========================================================= */
 
 .medical-mark-composer__label {
 
@@ -213,6 +499,7 @@ SIZE:
     font-weight: 700;
 
     line-height: 1.2;
+
 }
 
 
@@ -233,115 +520,563 @@ SIZE:
     white-space: nowrap;
 
     text-overflow: ellipsis;
+
 }
+
+
+
+/* =========================================================
+   FULL-SCREEN MODAL
+========================================================= */
+
+.medical-mark-modal {
+
+    position: fixed;
+
+    inset: 0;
+
+    width: 100vw;
+    height: 100dvh;
+
+    z-index: 99999;
+
+    display: none;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+}
+
+
+.medical-mark-modal.active {
+
+    display: block;
+
+}
+
+
+
+/* =========================================================
+   MODAL CONTENT
+========================================================= */
+
+.medical-mark-modal__content {
+
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    background: #ffffff;
+
+}
+
+
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
+
+.medical-mark-modal__header {
+
+    flex: 0 0 64px;
+
+    width: 100%;
+    height: 64px;
+
+    display: flex;
+
+    align-items: center;
+
+    padding: 0 15px;
+
+    border-bottom: 1px solid #e7ede9;
+
+    background: #ffffff;
+
+}
+
+
+.medical-mark-modal__back {
+
+    width: 44px;
+    height: 44px;
+
+    flex: 0 0 44px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #198754;
+
+    font-size: 27px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+}
+
+
+.medical-mark-modal__back:active {
+
+    background: #edf7f1;
+
+}
+
+
+.medical-mark-modal__back:focus-visible {
+
+    outline: 2px solid #198754;
+
+    outline-offset: 2px;
+
+}
+
+
+
+/* =========================================================
+   MODAL TITLE
+========================================================= */
+
+.medical-mark-modal__title {
+
+    min-width: 0;
+
+    margin-left: 8px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    line-height: 1.25;
+
+}
+
+
+.medical-mark-modal__title strong {
+
+    color: #202520;
+
+    font-size: 17px;
+
+}
+
+
+.medical-mark-modal__title span {
+
+    max-width: 72vw;
+
+    margin-top: 2px;
+
+    overflow: hidden;
+
+    color: #7b847e;
+
+    font-size: 12px;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+.medical-mark-modal__spacer {
+
+    flex: 1;
+
+}
+
+
+
+/* =========================================================
+   MODAL BODY
+========================================================= */
+
+.medical-mark-modal__body {
+
+    flex: 1 1 auto;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    padding: 20px;
+
+}
+
+
+.medical-mark-modal__fields {
+
+    width: 100%;
+
+    max-width: 700px;
+
+    margin: 0 auto;
+
+}
+
+
+
+/* =========================================================
+   QUESTION
+========================================================= */
+
+.medical-mark-question {
+
+    margin-bottom: 20px;
+
+    color: #202520;
+
+    font-size: 20px;
+
+    line-height: 1.45;
+
+}
+
+
+.medical-mark-question strong {
+
+    color: #198754;
+
+}
+
+
+
+/* =========================================================
+   TARGET
+========================================================= */
+
+.medical-mark-target {
+
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 24px;
+
+    padding: 12px 13px;
+
+    border: 1px solid #dcebe2;
+
+    border-radius: 13px;
+
+    background: #f6faf7;
+
+}
+
+
+.medical-mark-target__image,
+.medical-mark-target__placeholder {
+
+    width: 52px;
+    height: 52px;
+
+    flex: 0 0 52px;
+
+    overflow: hidden;
+
+    border-radius: 50%;
+
+}
+
+
+.medical-mark-target__image {
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+.medical-mark-target__placeholder {
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    font-size: 20px;
+
+}
+
+
+.medical-mark-target__info {
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+
+.medical-mark-target__info span {
+
+    color: #78827c;
+
+    font-size: 10px;
+
+}
+
+
+.medical-mark-target__info strong {
+
+    margin-top: 3px;
+
+    overflow: hidden;
+
+    color: #235d3e;
+
+    font-size: 14px;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
 
 
 /* =========================================================
    FORM
 ========================================================= */
 
-.medical-mark-composer__form {
-
-    display: none;
+.medical-mark-form {
 
     width: 100%;
 
-    margin-top: 8px;
+    margin: 0;
 
-    padding: 10px;
+}
 
-    flex-direction: column;
 
-    gap: 8px;
+.medical-mark-field {
 
-    border: 1px solid #dce7e0;
+    position: relative;
+
+    width: 100%;
+
+    margin-bottom: 20px;
+
+}
+
+
+.medical-mark-field label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #6d7771;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    letter-spacing: .04em;
+
+    text-transform: uppercase;
+
+}
+
+
+.medical-mark-field input,
+.medical-mark-field textarea {
+
+    width: 100%;
+
+    border: 1px solid #e0e7e2;
 
     border-radius: 12px;
 
-    background: #f7faf8;
-}
-
-
-.medical-mark-composer__form--visible {
-
-    display: flex;
-}
-
-
-.medical-mark-composer__form-title {
-
-    color: #14532d;
-
-    font-size: 12px;
-
-    font-weight: 800;
-}
-
-
-.medical-mark-composer__form input,
-.medical-mark-composer__form textarea {
-
-    width: 100%;
-
-    padding: 9px;
-
-    border: 1px solid #d7e2da;
-
-    border-radius: 8px;
-
     outline: none;
 
-    background: #ffffff;
+    background: #f8faf8;
 
-    color: #26322b;
+    color: #202520;
 
     font: inherit;
 
-    font-size: 12px;
+    font-size: 15px;
+
 }
 
 
-.medical-mark-composer__form textarea {
+.medical-mark-field input {
 
-    min-height: 70px;
+    height: 48px;
+
+    padding: 0 13px;
+
+}
+
+
+.medical-mark-field textarea {
+
+    min-height: 130px;
+
+    max-height: 300px;
 
     resize: vertical;
+
+    padding: 13px 14px 30px;
+
+    line-height: 1.5;
+
 }
 
 
-.medical-mark-composer__form input:focus,
-.medical-mark-composer__form textarea:focus {
+.medical-mark-field input:focus,
+.medical-mark-field textarea:focus {
 
     border-color: #198754;
 
+    background: #ffffff;
+
     box-shadow:
-        0 0 0 2px rgba(25, 135, 84, .08);
+        0 0 0 3px
+        rgba(25, 135, 84, .10);
+
 }
 
 
-.medical-mark-composer__form button {
+
+/* =========================================================
+   CHARACTER COUNTER
+========================================================= */
+
+.medical-mark-character-counter {
+
+    position: absolute;
+
+    right: 11px;
+
+    bottom: 9px;
+
+    padding-left: 3px;
+
+    background: #f8faf8;
+
+    color: #8a928d;
+
+    font-size: 10px;
+
+    pointer-events: none;
+
+}
+
+
+.medical-mark-field textarea:focus
+~ .medical-mark-character-counter {
+
+    background: #ffffff;
+
+}
+
+
+
+/* =========================================================
+   SUBMIT
+========================================================= */
+
+.medical-mark-submit-button {
 
     width: 100%;
 
-    padding: 9px;
+    min-height: 50px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 10px 14px;
 
     border: none;
 
-    border-radius: 8px;
+    border-radius: 13px;
 
     background: #198754;
 
     color: #ffffff;
 
-    font: inherit;
+    font-family: inherit;
 
-    font-size: 12px;
+    font-size: 14px;
 
     font-weight: 700;
 
     cursor: pointer;
+
+    transition:
+        background .2s ease,
+        transform .15s ease,
+        opacity .15s ease;
+
 }
 
+
+.medical-mark-submit-button:not(:disabled):hover {
+
+    background: #146c43;
+
+}
+
+
+.medical-mark-submit-button:not(:disabled):active {
+
+    transform: scale(.99);
+
+}
+
+
+.medical-mark-submit-button:disabled {
+
+    background: #b8c2bc;
+
+    cursor: default;
+
+}
+
+
+.medical-mark-submit-button i {
+
+    font-size: 16px;
+
+}
+
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
 
 @media (max-width: 600px) {
 
@@ -350,6 +1085,7 @@ SIZE:
         width: 108px;
 
         flex-basis: 108px;
+
     }
 
 
@@ -358,6 +1094,7 @@ SIZE:
         width: 108px;
 
         height: 150px;
+
     }
 
 
@@ -367,6 +1104,62 @@ SIZE:
         height: 46px;
 
         font-size: 29px;
+
+    }
+
+
+    .medical-mark-modal__header {
+
+        flex-basis: 60px;
+
+        height: 60px;
+
+        padding: 0 10px;
+
+    }
+
+
+    .medical-mark-modal__body {
+
+        padding: 14px;
+
+    }
+
+
+    .medical-mark-question {
+
+        font-size: 19px;
+
+    }
+
+
+    .medical-mark-target {
+
+        margin-bottom: 20px;
+
+    }
+
+}
+
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .medical-mark-modal__title span {
+
+        display: none;
+
+    }
+
+
+    .medical-mark-modal__body {
+
+        padding: 10px;
+
     }
 
 }
@@ -374,29 +1167,352 @@ SIZE:
 </style>
 
 
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
 <script>
 
 (function () {
 
     "use strict";
 
-    window.toggleMedicalMarkComposer = function (id) {
+
+    function initializeMedicalMarkComposer() {
+
+
+        /* =====================================================
+           ELEMENTS
+        ====================================================== */
+
+        const modal =
+            document.getElementById(
+                "medicalMarkModal"
+            );
+
+
+        const openButton =
+            document.getElementById(
+                "openMedicalMarkComposer"
+            );
+
+
+        const closeButton =
+            document.getElementById(
+                "closeMedicalMarkModal"
+            );
+
+
+        const typeInput =
+            document.getElementById(
+                "medicalMarkType"
+            );
+
+
+        const detailsInput =
+            document.getElementById(
+                "medicalMarkDetails"
+            );
+
+
+        const characterCounter =
+            document.getElementById(
+                "medicalMarkCharacterCounter"
+            );
+
+
+        const submitButton =
+            document.getElementById(
+                "submitMedicalMarkButton"
+            );
+
 
         const form =
             document.getElementById(
-                "medicalMarkComposerForm-" + id
+                "medicalMarkForm"
             );
 
-        if (!form) return;
 
-        form.classList.toggle(
-            "medical-mark-composer__form--visible"
+
+        /* =====================================================
+           SAFETY CHECK
+        ====================================================== */
+
+        if (
+            !modal ||
+            !openButton ||
+            !closeButton ||
+            !typeInput ||
+            !detailsInput ||
+            !characterCounter ||
+            !submitButton ||
+            !form
+        ) {
+
+            console.error(
+                "MEDICAL-MARK-COMPOSER.EJS: Required elements are missing."
+            );
+
+            return;
+
+        }
+
+
+
+        /* =====================================================
+           OPEN MODAL
+        ====================================================== */
+
+        function openModal() {
+
+            modal.classList.add(
+                "active"
+            );
+
+
+            modal.setAttribute(
+                "aria-hidden",
+                "false"
+            );
+
+
+            document.body.style.overflow =
+                "hidden";
+
+
+            window.setTimeout(
+                function () {
+
+                    typeInput.focus();
+
+                },
+                100
+            );
+
+        }
+
+
+
+        /* =====================================================
+           CLOSE MODAL
+        ====================================================== */
+
+        function closeModal() {
+
+            modal.classList.remove(
+                "active"
+            );
+
+
+            modal.setAttribute(
+                "aria-hidden",
+                "true"
+            );
+
+
+            document.body.style.overflow =
+                "";
+
+        }
+
+
+
+        /* =====================================================
+           VALIDATION
+        ====================================================== */
+
+        function updateSubmitButton() {
+
+            const hasType =
+                typeInput.value.trim().length > 0;
+
+
+            const hasDetails =
+                detailsInput.value.trim().length > 0;
+
+
+            submitButton.disabled =
+                !(
+                    hasType &&
+                    hasDetails
+                );
+
+        }
+
+
+
+        /* =====================================================
+           CHARACTER COUNTER
+        ====================================================== */
+
+        function updateCharacterCounter() {
+
+            characterCounter.textContent =
+                detailsInput.value.length +
+                "/1000";
+
+        }
+
+
+
+        /* =====================================================
+           TEXTAREA RESIZE
+        ====================================================== */
+
+        function resizeTextarea() {
+
+            detailsInput.style.height =
+                "auto";
+
+
+            const height =
+                Math.min(
+                    detailsInput.scrollHeight,
+                    300
+                );
+
+
+            detailsInput.style.height =
+                height + "px";
+
+        }
+
+
+
+        /* =====================================================
+           OPEN
+        ====================================================== */
+
+        openButton.addEventListener(
+            "click",
+            openModal
         );
 
-    };
+
+
+        /* =====================================================
+           CLOSE
+        ====================================================== */
+
+        closeButton.addEventListener(
+            "click",
+            closeModal
+        );
+
+
+
+        /* =====================================================
+           ESCAPE
+        ====================================================== */
+
+        document.addEventListener(
+            "keydown",
+            function (event) {
+
+                if (
+                    event.key === "Escape" &&
+                    modal.classList.contains(
+                        "active"
+                    )
+                ) {
+
+                    closeModal();
+
+                }
+
+            }
+        );
+
+
+
+        /* =====================================================
+           TYPE
+        ====================================================== */
+
+        typeInput.addEventListener(
+            "input",
+            updateSubmitButton
+        );
+
+
+
+        /* =====================================================
+           DETAILS
+        ====================================================== */
+
+        detailsInput.addEventListener(
+            "input",
+            function () {
+
+                updateCharacterCounter();
+
+                resizeTextarea();
+
+                updateSubmitButton();
+
+            }
+        );
+
+
+
+        /* =====================================================
+           FORM SUBMIT
+        ====================================================== */
+
+        form.addEventListener(
+            "submit",
+            function () {
+
+                submitButton.disabled =
+                    true;
+
+
+                submitButton.innerHTML =
+                    '<i class="bi bi-hourglass-split"></i>' +
+                    '<span>Submitting...</span>';
+
+            }
+        );
+
+
+
+        /* =====================================================
+           INITIAL STATE
+        ====================================================== */
+
+        updateCharacterCounter();
+
+        resizeTextarea();
+
+        updateSubmitButton();
+
+    }
+
+
+
+    /* =========================================================
+       DOM READY
+    ========================================================= */
+
+    if (
+        document.readyState === "loading"
+    ) {
+
+        document.addEventListener(
+            "DOMContentLoaded",
+            initializeMedicalMarkComposer
+        );
+
+    } else {
+
+        initializeMedicalMarkComposer();
+
+    }
 
 })();
 
 </script>
+
 
 <% } %>
