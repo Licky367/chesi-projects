@@ -16,7 +16,9 @@ const Update =
 // GET PARENT DAIRY FARM
 // ==========================================================
 
-async function getParentDairyFarm(id) {
+async function getParentDairyFarm(
+    id
+) {
 
     if (
         !id ||
@@ -49,12 +51,19 @@ async function getParentDairyFarm(id) {
 // ==========================================================
 // CREATE ASSET
 //
-// Creates the asset AND creates the corresponding
-// feed/update record.
+// Creates:
 //
-// This is important because the feed is built from
-// models/Update.js. Creating the Dairy asset alone will
-// NOT make anything appear in the update feed.
+//     1. The Dairy asset
+//     2. The corresponding Update/feed record
+//
+// IMPORTANT:
+//
+// The Update record uses:
+//
+//     type: "assetAdd"
+//
+// because update/feed.ejs and update.ejs identify
+// newly-added assets using that feed type.
 //
 // ==========================================================
 
@@ -252,10 +261,8 @@ async function createAsset(
     //
     // code is deliberately NOT assigned.
     //
-    // The asset is identified as a manual asset through:
-    //
-    //     assetCode = parentFarm.code
-    //
+    // The manual asset is associated with the parent
+    // dairy through assetCode.
     // ======================================================
 
     const asset =
@@ -289,13 +296,17 @@ async function createAsset(
     // ======================================================
     // CREATE FEED UPDATE
     //
-    // The feed is loaded from Update documents.
+    // IMPORTANT:
     //
-    // Therefore this document is what makes the new asset
-    // appear immediately in:
+    // This MUST be "assetAdd".
     //
-    //     update/feed.ejs
+    // The feed renderer uses:
     //
+    //     item.type === "assetAdd"
+    //
+    // to render:
+    //
+    //     update/addAsset.ejs
     // ======================================================
 
     const updateData = {
@@ -304,7 +315,7 @@ async function createAsset(
             parentFarm._id,
 
         type:
-            "asset",
+            "assetAdd",
 
         text:
             `${name} was added as a new asset.`
@@ -318,9 +329,7 @@ async function createAsset(
 
     if (user) {
 
-        if (
-            user._id
-        ) {
+        if (user._id) {
 
             updateData.user =
                 user._id;
@@ -338,10 +347,9 @@ async function createAsset(
     // ======================================================
     // ASSET INFORMATION
     //
-    // These fields are deliberately stored on the Update
-    // document so the feed card does not need to query the
-    // Dairy collection again just to display the new asset.
-    //
+    // Store the relevant asset snapshot directly on the
+    // Update document so the feed card can render without
+    // performing another Dairy query.
     // ======================================================
 
     updateData.asset = {
