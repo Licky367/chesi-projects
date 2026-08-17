@@ -4,6 +4,21 @@
 //
 // DAIRY PROFILE / UPDATE ROUTES
 //
+// ROUTER MOUNT
+// ----------------------------------------------------------
+//
+// This router is mounted at:
+//
+//     /
+//
+// Therefore:
+//
+//     /dairy/:id
+//
+// means exactly:
+//
+//     /dairy/:id
+//
 // ==========================================================
 
 const express = require("express");
@@ -47,7 +62,7 @@ function isAuth(req, res, next) {
 
 
     // ------------------------------------------------------
-    // Make the logged-in user available to controllers.
+    // Make logged-in user available to controllers.
     // ------------------------------------------------------
 
     req.user =
@@ -63,8 +78,15 @@ function isAuth(req, res, next) {
 // LIST PAGES
 // ==========================================================
 
+
 // ----------------------------------------------------------
 // DAIRY PROJECTS
+// ----------------------------------------------------------
+//
+// GET:
+//
+//     /dairyProjects
+//
 // ----------------------------------------------------------
 
 router.get(
@@ -75,6 +97,12 @@ router.get(
 
 // ----------------------------------------------------------
 // STRUCTURES
+// ----------------------------------------------------------
+//
+// GET:
+//
+//     /structures
+//
 // ----------------------------------------------------------
 
 router.get(
@@ -87,64 +115,86 @@ router.get(
 // FEED STORE
 // ==========================================================
 //
-// IMPORTANT:
+// IMPORTANT
+// ----------------------------------------------------------
 //
-// This route MUST appear BEFORE:
+// All feed-store routes use the same structure:
+//
+//     /dairy/:id/feedstore
+//
+// This keeps the feed-store page and its actions attached
+// directly to the current Dairy asset.
+//
+// IMPORTANT ROUTE ORDER:
+//
+// These routes appear BEFORE:
 //
 //     /dairy/:id
 //
-// because "feedstore" would otherwise be interpreted as
-// the :id parameter.
+// so that the more specific feed-store routes are handled
+// first.
+// ==========================================================
+
+
+// ----------------------------------------------------------
+// VIEW FEED STORE
+// ----------------------------------------------------------
 //
 // GET:
 //
-//     /dairy/feedstore/:id
+//     /dairy/:id/feedstore
 //
-// Renders:
+// Example:
 //
-//     views/updates/feeds-store.ejs
+//     /dairy/665abc123/feedstore
 //
-// ==========================================================
+// Controller:
+//
+//     controller.viewFeedStore
+//
+// ----------------------------------------------------------
 
 router.get(
-    "/dairy/feedstore/:id",
+    "/dairy/:id/feedstore",
     isAuth,
     controller.viewFeedStore
 );
 
 
-// ==========================================================
-// FEED STORE CONDITION / STOCK UPDATE
-// ==========================================================
-//
-// Used by:
-//
-//     admin
-//     dairyWorker
-//
-// Allows submission of:
-//
-//     • overall facility condition
-//     • animal feed quality
-//     • percentage of food remaining
-//     • message
-//     • multiple images
-//
-// Images:
-//
-//     field name = images
-//
-// Maximum:
-//
-//     10 images
-//
-// Financial feedsAmount is handled by the controller/service.
+// ----------------------------------------------------------
+// FEED STORE CONDITION UPDATE
+// ----------------------------------------------------------
 //
 // POST:
 //
 //     /dairy/:id/feedstore/update
 //
-// ==========================================================
+// Available to:
+//
+//     admin
+//     dairyWorker
+//
+// Can contain:
+//
+//     • overall facility condition
+//     • feed quality
+//     • percentage remaining
+//     • message
+//     • multiple images
+//
+// Upload field:
+//
+//     images
+//
+// Maximum:
+//
+//     10 images
+//
+// Business logic:
+//
+//     services/update/feedsService.js
+//
+// ----------------------------------------------------------
 
 router.post(
     "/dairy/:id/feedstore/update",
@@ -157,25 +207,36 @@ router.post(
 );
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // FEED STORE RESTOCK
-// ==========================================================
-//
-// ADMIN ONLY
-//
-// Used to:
-//
-//     • restock an existing feed category
-//     • create a new feed category
-//     • record the financial amount used
-//     • update the individual feed amount
-//     • recalculate the aggregate feedsAmount
+// ----------------------------------------------------------
 //
 // POST:
 //
 //     /dairy/:id/feedstore/restock
 //
-// ==========================================================
+// ADMIN ONLY
+//
+// Used to:
+//
+//     • restock existing feed categories
+//     • create new feed categories
+//     • record feed expenditure
+//     • update individual feed amounts
+//     • recalculate feedsAmount
+//
+// IMPORTANT:
+//
+// feedsAmount is the aggregate financial feed amount:
+//
+//     feedsAmount =
+//         sum of all individual feed amounts
+//
+// Business logic belongs to:
+//
+//     services/update/feedsService.js
+//
+// ----------------------------------------------------------
 
 router.post(
     "/dairy/:id/feedstore/restock",
@@ -192,9 +253,11 @@ router.post(
 //
 //     /dairy/:id
 //
-// Displays the appropriate Dairy page.
+// IMPORTANT:
 //
-// ==========================================================
+// This comes AFTER the specific feed-store routes.
+//
+// ----------------------------------------------------------
 
 router.get(
     "/dairy/:id",
@@ -210,7 +273,11 @@ router.get(
 //
 //     /dairy/:id/toggle-milking
 //
-// ==========================================================
+// Changes only:
+//
+//     dairy.isMilking
+//
+// ----------------------------------------------------------
 
 router.post(
     "/dairy/:id/toggle-milking",
@@ -223,11 +290,11 @@ router.post(
 // SWITCH DAIRY FARM
 // ==========================================================
 //
-// Example:
+// GET:
 //
-//     GET /dairy/665abc123/switch
+//     /dairy/:id/switch
 //
-// ==========================================================
+// ----------------------------------------------------------
 
 router.get(
     "/dairy/:id/switch",
@@ -244,7 +311,7 @@ router.get(
 //
 //     /dairy/:id/comment
 //
-// ==========================================================
+// ----------------------------------------------------------
 
 router.post(
     "/dairy/:id/comment",
@@ -257,17 +324,19 @@ router.post(
 // DAIRY PROFILE IMAGES
 // ==========================================================
 //
-// Frontend:
+// PUT:
 //
-//     profileImages = photo 1
-//     profileImages = photo 2
-//     ...
+//     /dairy/:id/image
+//
+// Upload field:
+//
+//     profileImages
 //
 // Maximum:
 //
 //     5 images
 //
-// ==========================================================
+// ----------------------------------------------------------
 
 router.put(
     "/dairy/:id/image",
@@ -288,7 +357,7 @@ router.put(
 //
 //     /dairy/:id/update
 //
-// ==========================================================
+// ----------------------------------------------------------
 
 router.put(
     "/dairy/:id/update",
@@ -298,22 +367,22 @@ router.put(
 
 
 // ==========================================================
-// CREATE POST
+// CREATE GENERAL DAIRY POST
 // ==========================================================
 //
 // POST:
 //
 //     /dairy/:id/post
 //
-// Images:
+// Upload field:
 //
-//     field = images
+//     images
 //
 // Maximum:
 //
 //     10 images
 //
-// ==========================================================
+// ----------------------------------------------------------
 
 router.post(
     "/dairy/:id/post",
@@ -329,6 +398,12 @@ router.post(
 // ==========================================================
 // POST LIKE
 // ==========================================================
+//
+// POST:
+//
+//     /post/:id/like
+//
+// ----------------------------------------------------------
 
 router.post(
     "/post/:id/like",
@@ -340,6 +415,12 @@ router.post(
 // ==========================================================
 // POST COMMENT
 // ==========================================================
+//
+// POST:
+//
+//     /post/:id/comment
+//
+// ----------------------------------------------------------
 
 router.post(
     "/post/:id/comment",
@@ -358,7 +439,7 @@ router.post(
 //     POST /maintenance/:id/like
 //     POST /milk/:id/like
 //
-// ==========================================================
+// ----------------------------------------------------------
 
 router.post(
     "/:type/:id/like",
@@ -375,8 +456,9 @@ router.post(
 //
 //     POST /medical/:id/comment
 //     POST /maintenance/:id/comment
+//     POST /milk/:id/comment
 //
-// ==========================================================
+// ----------------------------------------------------------
 
 router.post(
     "/:type/:id/comment",
@@ -393,7 +475,7 @@ router.post(
 //
 //     /post/:id
 //
-// ==========================================================
+// ----------------------------------------------------------
 
 router.delete(
     "/post/:id",
@@ -410,7 +492,7 @@ router.delete(
 //
 //     /comment/:id
 //
-// ==========================================================
+// ----------------------------------------------------------
 
 router.delete(
     "/comment/:id",
@@ -423,8 +505,15 @@ router.delete(
 // MEDICAL
 // ==========================================================
 
+
 // ----------------------------------------------------------
 // MARK MEDICAL
+// ----------------------------------------------------------
+//
+// POST:
+//
+//     /dairy/:id/medical-mark
+//
 // ----------------------------------------------------------
 
 router.post(
@@ -436,6 +525,12 @@ router.post(
 
 // ----------------------------------------------------------
 // CLEAR MEDICAL
+// ----------------------------------------------------------
+//
+// POST:
+//
+//     /dairy/:id/medical-unmark
+//
 // ----------------------------------------------------------
 
 router.post(
@@ -449,8 +544,15 @@ router.post(
 // MAINTENANCE
 // ==========================================================
 
+
 // ----------------------------------------------------------
 // MARK MAINTENANCE
+// ----------------------------------------------------------
+//
+// POST:
+//
+//     /dairy/:id/maintenance/mark
+//
 // ----------------------------------------------------------
 
 router.post(
@@ -462,6 +564,12 @@ router.post(
 
 // ----------------------------------------------------------
 // CLEAR MAINTENANCE
+// ----------------------------------------------------------
+//
+// POST:
+//
+//     /dairy/:id/maintenance/clear
+//
 // ----------------------------------------------------------
 
 router.post(
@@ -479,7 +587,7 @@ router.post(
 //
 //     /dairy/:id
 //
-// ==========================================================
+// ----------------------------------------------------------
 
 router.delete(
     "/dairy/:id",
