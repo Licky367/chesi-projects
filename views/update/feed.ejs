@@ -1,5 +1,5 @@
 <!-- =====================================================
-     FEED
+     DAIRY FEED
 
      FILE:
          views/update/feed.ejs
@@ -16,30 +16,40 @@
          assetAdd
          stock
 
-     RECURRING INSERTIONS:
+     STOCK:
      ------------------------------------------------------
-         create-post.ejs
-             Recurs after a random number of feed items.
+         stock.ejs handles BOTH:
 
-         asset-cards.ejs
-             Recurs after a random number of feed items.
+             1. SYSTEM STOCK ANNOUNCEMENTS
+                Created automatically when an admin adds
+                animal feed or veterinary medicine.
 
-     STOCK RULE:
-     ------------------------------------------------------
-         stock.ejs is rendered only when the report was
-         submitted by a dairyWorker.
+             2. DAIRY WORKER STOCK UPDATES
+                Created when a dairyWorker reports remaining
+                stock.
 
-         Admin stock/restocking activity is NOT rendered
-         as a stock feed item.
+         feed.ejs does NOT filter stock items by author.
+
+         The stock.ejs partial is responsible for deciding
+         whether the item is a System item or a user item.
 
      IMPORTANT:
      ------------------------------------------------------
          h1.ejs is NOT rendered here.
 
-         It remains fixed directly after the first
-         create-post.ejs in the parent page.
+         System stock items use:
 
-         The actual feed order is never changed.
+             /images/h1.png
+
+         internally through stock.ejs.
+
+     FEED ORDER:
+     ------------------------------------------------------
+         The original chronological order of `feed` is
+         preserved.
+
+         Recurring cards are inserted between actual feed
+         items without changing the order of the feed itself.
 ====================================================== -->
 
 
@@ -56,6 +66,7 @@
  */
 
 const CREATE_POST_MIN_GAP = 8;
+
 const CREATE_POST_MAX_GAP = 20;
 
 
@@ -66,6 +77,7 @@ const CREATE_POST_MAX_GAP = 20;
  */
 
 const ASSET_CARD_MIN_GAP = 5;
+
 const ASSET_CARD_MAX_GAP = 18;
 
 
@@ -139,398 +151,398 @@ const hasAssetCards =
 >
 
 
-    <% feed.forEach(function (item) { %>
+    <% if (Array.isArray(feed)) { %>
 
 
-        <%
-        /* =====================================================
-           COUNT THIS FEED ITEM
-        ===================================================== */
+        <% feed.forEach(function (item) { %>
 
-        feedItemNumber++;
-        %>
 
+            <%
+            /* =================================================
+               COUNT ACTUAL FEED ITEM
+            ================================================= */
 
+            feedItemNumber++;
+            %>
 
-        <!-- =================================================
-             RECURRING INSERTIONS
-        ================================================== -->
 
-        <%
-        /*
-         * =====================================================
-         * DETERMINE WHAT IS READY
-         * =====================================================
-         */
 
-        const createPostReady =
-            feedItemNumber >= nextCreatePostAt;
+            <!-- =================================================
+                 RECURRING INSERTIONS
+            ================================================== -->
 
-
-        const assetCardsReady =
-            hasAssetCards &&
-            feedItemNumber >= nextAssetCardsAt;
-
-
-
-        /*
-         * =====================================================
-         * DETERMINE INSERTION TYPE
-         * =====================================================
-         */
-
-        let insertionType =
-            null;
-
-
-        if (
-            createPostReady &&
-            assetCardsReady
-        ) {
-
-            if (
-                lastInsertion === "create-post"
-            ) {
-
-                insertionType =
-                    "asset-cards";
-
-            } else if (
-                lastInsertion === "asset-cards"
-            ) {
-
-                insertionType =
-                    "create-post";
-
-            } else {
-
-                insertionType =
-                    Math.random() < 0.5
-                        ? "create-post"
-                        : "asset-cards";
-
-            }
-
-        } else if (
-            createPostReady
-        ) {
-
-            insertionType =
-                "create-post";
-
-        } else if (
-            assetCardsReady
-        ) {
-
-            insertionType =
-                "asset-cards";
-
-        }
-
-
-
-        /*
-         * =====================================================
-         * CREATE POST INSERTION
-         * =====================================================
-         */
-
-        if (
-            insertionType === "create-post"
-        ) {
-
-            if (
-                lastInsertion !== "asset-cards"
-            ) {
-        %>
-
-
-                <!-- =========================================
-                     RECURRING CREATE POST
-                ========================================== -->
-
-                <div
-                    class="feed-recurring-card feed-recurring-create-post"
-                    data-feed-insertion="create-post"
-                >
-
-                    <%- include("create-post", {
-                        dairy: dairy,
-                        user: user,
-                        assetDairies: assetDairies || []
-                    }) %>
-
-                </div>
-
-
-        <%
-                lastInsertion =
-                    "create-post";
-
-
-                nextCreatePostAt =
-                    feedItemNumber +
-                    randomFeedInterval(
-                        CREATE_POST_MIN_GAP,
-                        CREATE_POST_MAX_GAP
-                    );
-
-            } else {
-
-                nextCreatePostAt =
-                    feedItemNumber + 3;
-
-            }
-
-        }
-
-
-
-        /*
-         * =====================================================
-         * ASSET CARD INSERTION
-         * =====================================================
-         */
-
-        if (
-            insertionType === "asset-cards"
-        ) {
-
-            if (
-                lastInsertion !== "create-post"
-            ) {
-        %>
-
-
-                <!-- =========================================
-                     RECURRING ASSET CARDS
-                ========================================== -->
-
-                <div
-                    class="feed-recurring-card feed-recurring-assets"
-                    data-feed-insertion="asset-cards"
-                >
-
-                    <%- include("asset-cards", {
-                        dairy: dairy,
-                        user: user,
-                        assetDairies: assetDairies || []
-                    }) %>
-
-                </div>
-
-
-        <%
-                lastInsertion =
-                    "asset-cards";
-
-
-                nextAssetCardsAt =
-                    feedItemNumber +
-                    randomFeedInterval(
-                        ASSET_CARD_MIN_GAP,
-                        ASSET_CARD_MAX_GAP
-                    );
-
-            } else {
-
-                nextAssetCardsAt =
-                    feedItemNumber + 3;
-
-            }
-
-        }
-
-        %>
-
-
-
-        <!-- =================================================
-             NORMAL POSTS
-        ================================================== -->
-
-        <% if (item.type === "post") { %>
-
-            <%- include("post", {
-                item,
-                user,
-                type: "post"
-            }) %>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             WEEKLY MILK REPORTS
-        ================================================== -->
-
-        <% if (item.type === "milk") { %>
-
-            <%- include("milk", {
-                item,
-                user,
-                type: "milk"
-            }) %>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             MEDICAL RECORDS
-        ================================================== -->
-
-        <% if (
-            item.type === "medical" &&
-            item.status === "marked"
-        ) { %>
-
-            <%- include("medical-marked", {
-                item,
-                user,
-                type: "medical"
-            }) %>
-
-        <% } %>
-
-
-        <% if (
-            item.type === "medical" &&
-            item.status === "cleared"
-        ) { %>
-
-            <%- include("medical-cleared", {
-                item,
-                user,
-                type: "medical"
-            }) %>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             MAINTENANCE RECORDS
-        ================================================== -->
-
-        <% if (
-            item.type === "maintenance" &&
-            item.status === "marked"
-        ) { %>
-
-            <%- include("maintenance-marked", {
-                item,
-                user,
-                type: "maintenance"
-            }) %>
-
-        <% } %>
-
-
-        <% if (
-            item.type === "maintenance" &&
-            item.status === "cleared"
-        ) { %>
-
-            <%- include("maintenance-cleared", {
-                item,
-                user,
-                type: "maintenance"
-            }) %>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             ASSET ADDED
-        ================================================== -->
-
-        <% if (item.type === "assetAdd") { %>
-
-            <%- include("addAsset", {
-                item,
-                user,
-                type: "assetAdd"
-            }) %>
-
-        <% } %>
-
-
-
-        <!-- =================================================
-             FEED STORE / STOCK REPORT
-             
-             IMPORTANT:
-             --------------------------------------------------
-             Only a dairyWorker's report becomes a feed card.
-
-             Admin activity is intentionally excluded.
-        ================================================== -->
-
-        <%
-        if (item.type === "stock") {
-
+            <%
             /*
-             * Determine the author role.
-             *
-             * Depending on how the controller populates
-             * the feed item, the role may be available as:
-             *
-             *     item.userRole
-             *     item.role
-             *     item.user.role
+             * =================================================
+             * DETERMINE WHAT IS READY
+             * =================================================
              */
 
-            const stockAuthorRole =
-                item.userRole ||
-                item.role ||
-                (
-                    item.user &&
-                    item.user.role
-                ) ||
+            const createPostReady =
+                feedItemNumber >=
+                nextCreatePostAt;
+
+
+            const assetCardsReady =
+                hasAssetCards &&
+                feedItemNumber >=
+                nextAssetCardsAt;
+
+
+
+            /*
+             * =================================================
+             * DETERMINE INSERTION TYPE
+             * =================================================
+             */
+
+            let insertionType =
                 null;
 
 
-            const isDairyWorkerReport =
-                stockAuthorRole === "dairyWorker";
+            if (
+                createPostReady &&
+                assetCardsReady
+            ) {
+
+                if (
+                    lastInsertion ===
+                    "create-post"
+                ) {
+
+                    insertionType =
+                        "asset-cards";
+
+                } else if (
+                    lastInsertion ===
+                    "asset-cards"
+                ) {
+
+                    insertionType =
+                        "create-post";
+
+                } else {
+
+                    insertionType =
+                        Math.random() < 0.5
+                            ? "create-post"
+                            : "asset-cards";
+
+                }
+
+            } else if (
+                createPostReady
+            ) {
+
+                insertionType =
+                    "create-post";
+
+            } else if (
+                assetCardsReady
+            ) {
+
+                insertionType =
+                    "asset-cards";
+
+            }
 
 
-            if (isDairyWorkerReport) {
-        %>
+
+            /*
+             * =================================================
+             * CREATE POST INSERTION
+             * =================================================
+             */
+
+            if (
+                insertionType ===
+                "create-post"
+            ) {
+
+                if (
+                    lastInsertion !==
+                    "asset-cards"
+                ) {
+            %>
 
 
-                <!-- =========================================
-                     DAIRY WORKER STOCK REPORT
-                ========================================== -->
+                    <!-- =====================================
+                         RECURRING CREATE POST
+                    ====================================== -->
+
+                    <div
+                        class="feed-recurring-card feed-recurring-create-post"
+                        data-feed-insertion="create-post"
+                    >
+
+                        <%- include("create-post", {
+                            dairy: dairy,
+                            user: user,
+                            assetDairies:
+                                assetDairies || []
+                        }) %>
+
+                    </div>
+
+
+            <%
+                    lastInsertion =
+                        "create-post";
+
+
+                    nextCreatePostAt =
+                        feedItemNumber +
+                        randomFeedInterval(
+                            CREATE_POST_MIN_GAP,
+                            CREATE_POST_MAX_GAP
+                        );
+
+                } else {
+
+                    nextCreatePostAt =
+                        feedItemNumber + 3;
+
+                }
+
+            }
+
+
+
+            /*
+             * =================================================
+             * ASSET CARD INSERTION
+             * =================================================
+             */
+
+            if (
+                insertionType ===
+                "asset-cards"
+            ) {
+
+                if (
+                    lastInsertion !==
+                    "create-post"
+                ) {
+            %>
+
+
+                    <!-- =====================================
+                         RECURRING ASSET CARDS
+                    ====================================== -->
+
+                    <div
+                        class="feed-recurring-card feed-recurring-assets"
+                        data-feed-insertion="asset-cards"
+                    >
+
+                        <%- include("asset-cards", {
+                            dairy: dairy,
+                            user: user,
+                            assetDairies:
+                                assetDairies || []
+                        }) %>
+
+                    </div>
+
+
+            <%
+                    lastInsertion =
+                        "asset-cards";
+
+
+                    nextAssetCardsAt =
+                        feedItemNumber +
+                        randomFeedInterval(
+                            ASSET_CARD_MIN_GAP,
+                            ASSET_CARD_MAX_GAP
+                        );
+
+                } else {
+
+                    nextAssetCardsAt =
+                        feedItemNumber + 3;
+
+                }
+
+            }
+
+            %>
+
+
+
+            <!-- =================================================
+                 NORMAL POSTS
+            ================================================== -->
+
+            <% if (item.type === "post") { %>
+
+                <%- include("post", {
+                    item: item,
+                    user: user,
+                    type: "post"
+                }) %>
+
+            <% } %>
+
+
+
+            <!-- =================================================
+                 MILK
+            ================================================== -->
+
+            <% if (item.type === "milk") { %>
+
+                <%- include("milk", {
+                    item: item,
+                    user: user,
+                    type: "milk"
+                }) %>
+
+            <% } %>
+
+
+
+            <!-- =================================================
+                 MEDICAL
+            ================================================== -->
+
+            <% if (
+                item.type === "medical" &&
+                item.status === "marked"
+            ) { %>
+
+                <%- include("medical-marked", {
+                    item: item,
+                    user: user,
+                    type: "medical"
+                }) %>
+
+            <% } %>
+
+
+            <% if (
+                item.type === "medical" &&
+                item.status === "cleared"
+            ) { %>
+
+                <%- include("medical-cleared", {
+                    item: item,
+                    user: user,
+                    type: "medical"
+                }) %>
+
+            <% } %>
+
+
+
+            <!-- =================================================
+                 MAINTENANCE
+            ================================================== -->
+
+            <% if (
+                item.type === "maintenance" &&
+                item.status === "marked"
+            ) { %>
+
+                <%- include("maintenance-marked", {
+                    item: item,
+                    user: user,
+                    type: "maintenance"
+                }) %>
+
+            <% } %>
+
+
+            <% if (
+                item.type === "maintenance" &&
+                item.status === "cleared"
+            ) { %>
+
+                <%- include("maintenance-cleared", {
+                    item: item,
+                    user: user,
+                    type: "maintenance"
+                }) %>
+
+            <% } %>
+
+
+
+            <!-- =================================================
+                 ASSET ADDED
+            ================================================== -->
+
+            <% if (
+                item.type === "assetAdd"
+            ) { %>
+
+                <%- include("addAsset", {
+                    item: item,
+                    user: user,
+                    type: "assetAdd"
+                }) %>
+
+            <% } %>
+
+
+
+            <!-- =================================================
+                 FEED STORE STOCK
+                 
+                 IMPORTANT:
+                 ------------------------------------------------
+                 ALL stock items are rendered.
+
+                 This includes:
+
+                     • System stock announcements
+                     • Dairy worker stock updates
+
+                 There is deliberately NO role filter here.
+
+                 stock.ejs determines whether the item is:
+
+                     System
+                         OR
+                     actual user
+            ================================================== -->
+
+            <% if (
+                item.type === "stock"
+            ) { %>
+
 
                 <%- include("stock", {
-                    item,
-                    user,
-                    type: "stock"
+                    item: item,
+                    user: user,
+                    type: "stock",
+                    dairy: dairy
                 }) %>
 
 
-        <%
-            }
-
-        }
-        %>
+            <% } %>
 
 
-    <% }) %>
+        <% }); %>
+
+
+    <% } %>
 
 
 
     <!-- =====================================================
          END OF FEED
-         
-         No forced insertion is made here.
-         
-         Recurring cards are intentionally inserted only
-         between actual feed items.
-    ====================================================== -->
+
+         No feed item is manufactured here.
+
+         No System stock item is manufactured here.
+
+         No worker stock item is manufactured here.
+
+         Everything comes from `feed`.
+
+         This preserves the chronological order.
+    ===================================================== -->
 
 </section>
 
@@ -538,8 +550,6 @@ const hasAssetCards =
 
 <!-- =====================================================
      RECURRING FEED CARD STYLING
-
-     Intentionally minimal.
 
      Individual feed partials remain responsible for
      their own visual design.
