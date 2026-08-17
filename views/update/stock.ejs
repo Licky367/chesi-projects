@@ -1,98 +1,84 @@
 <!-- ==========================================================
-     FEED STOCK RECORD
+     DAIRY FEED STOCK REPORT
 
      FILE:
          views/update/stock.ejs
 
      PURPOSE:
-         Display a feed-stock / restocking event inside the
-         chronological dairy feed.
+         Display a feed-stock report inside the chronological
+         dairy feed.
 
      DESIGN:
-         Purpose-built stock record.
-         NOT based on post.ejs.
-========================================================== -->
+         ------------------------------------------------------
+         This is intentionally NOT a post card.
+
+         It is a compact report-style component containing:
+
+             • Report title
+             • Dairy name
+             • Report date
+             • Feed name
+             • Quantity
+             • Unit
+             • Cost
+             • Description
+             • Feed actions
+             • Comments
+     ========================================================== -->
 
 
 <article
-    class="feed-card stock-card"
+    class="feed-card stock-report-card"
     data-id="<%= item._id %>"
     data-type="stock"
 >
 
 
-    <!-- =================================================
-         HEADER
-    ================================================== -->
+    <!-- ======================================================
+         REPORT HEADER
+    ======================================================= -->
 
-    <div class="feed-header">
+    <header class="stock-report-header">
 
-        <div class="feed-user">
+        <div class="stock-report-heading">
 
-            <img
-                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
-                class="avatar-sm"
-                alt="<%= item.userName || 'User' %>"
-            >
+            <div class="stock-report-icon">
 
+                <i
+                    class="bi bi-box-seam-fill"
+                    aria-hidden="true"
+                ></i>
 
-            <div class="feed-user-info">
-
-                <!-- =========================================
-                     STOCK META
-                ========================================== -->
-
-                <div class="post-meta-line">
-
-                    <strong class="post-user-name">
-
-                        📦 <%= item.userName || "User" %>
-
-                    </strong>
+            </div>
 
 
-                    <% if (item.dairyName && item.dairyId) { %>
+            <div>
 
-                        <span class="post-meta-action">
+                <h2 class="stock-report-title">
 
-                            restocked
+                    Dairy Feed Stock Report
 
-                        </span>
-
-
-                        <a
-                            href="/dairy/<%= item.dairyId %>"
-                            class="post-subject"
-                            title="View <%= item.dairyName %>"
-                        >
-
-                            <%= item.dairyName %>
-
-                        </a>
-
-                    <% } %>
-
-                </div>
+                </h2>
 
 
-                <!-- =========================================
-                     DATE / TIME
-                ========================================== -->
+                <% if (item.dairyName) { %>
 
-                <small class="post-time">
+                    <div class="stock-report-dairy">
 
-                    <%= item.dateText || "" %>
+                        <%= item.dairyName %>
 
-                </small>
+                    </div>
+
+                <% } %>
 
             </div>
 
         </div>
 
 
-        <!-- =================================================
-             DELETE STOCK RECORD
-        ================================================== -->
+        <!-- ==================================================
+             DELETE
+        =================================================== -->
 
         <% if (
             user &&
@@ -108,11 +94,11 @@
         ) { %>
 
             <button
-                class="delete-post"
+                class="delete-post stock-report-delete"
                 data-id="<%= item._id %>"
                 data-type="stock"
-                title="Delete Stock Record"
-                aria-label="Delete Stock Record"
+                title="Delete Stock Report"
+                aria-label="Delete Stock Report"
                 type="button"
             >
 
@@ -125,45 +111,88 @@
 
         <% } %>
 
+    </header>
+
+
+
+    <!-- ======================================================
+         REPORT META
+    ======================================================= -->
+
+    <div class="stock-report-meta">
+
+        <% if (item.dateText) { %>
+
+            <span>
+
+                <i
+                    class="bi bi-calendar3"
+                    aria-hidden="true"
+                ></i>
+
+                <%= item.dateText %>
+
+            </span>
+
+        <% } %>
+
+
+        <% if (item.userName) { %>
+
+            <span>
+
+                <i
+                    class="bi bi-person-fill"
+                    aria-hidden="true"
+                ></i>
+
+                <%= item.userName %>
+
+            </span>
+
+        <% } %>
+
     </div>
 
 
 
-    <!-- =================================================
-         STOCK BODY
-    ================================================== -->
+    <!-- ======================================================
+         STOCK INFORMATION
+    ======================================================= -->
 
-    <div class="feed-body">
-
-
-        <h3>
-
-            📦 Feed Stock
-
-        </h3>
+    <section class="stock-report-content">
 
 
-        <!-- =============================================
-             FEED NAME
-        ============================================== -->
+        <!-- ==================================================
+             FEED
+        =================================================== -->
 
         <% if (item.feedName || item.name) { %>
 
-            <p>
+            <div class="stock-report-row stock-report-feed">
 
-                <strong>Feed:</strong>
+                <div class="stock-report-label">
 
-                <%= item.feedName || item.name %>
+                    Feed
 
-            </p>
+                </div>
+
+
+                <div class="stock-report-value stock-report-feed-name">
+
+                    <%= item.feedName || item.name %>
+
+                </div>
+
+            </div>
 
         <% } %>
 
 
 
-        <!-- =============================================
+        <!-- ==================================================
              QUANTITY
-        ============================================== -->
+        =================================================== -->
 
         <% if (
             item.amount !== undefined &&
@@ -171,27 +200,44 @@
             item.amount !== ""
         ) { %>
 
-            <p>
+            <div class="stock-report-row">
 
-                <strong>Quantity:</strong>
+                <div class="stock-report-label">
 
-                <%= item.amount %>
+                    Quantity
 
-                <% if (item.unit) { %>
+                </div>
 
-                    <%= item.unit %>
 
-                <% } %>
+                <div class="stock-report-value stock-report-quantity">
 
-            </p>
+                    <strong>
+
+                        <%= item.amount %>
+
+                    </strong>
+
+                    <% if (item.unit) { %>
+
+                        <span>
+
+                            <%= item.unit %>
+
+                        </span>
+
+                    <% } %>
+
+                </div>
+
+            </div>
 
         <% } %>
 
 
 
-        <!-- =============================================
+        <!-- ==================================================
              COST
-        ============================================== -->
+        =================================================== -->
 
         <% if (
             item.cost !== undefined &&
@@ -199,40 +245,60 @@
             item.cost !== ""
         ) { %>
 
-            <p>
+            <div class="stock-report-row">
 
-                <strong>Cost:</strong>
+                <div class="stock-report-label">
 
-                <%= item.cost %>
+                    Cost
 
-            </p>
+                </div>
+
+
+                <div class="stock-report-value">
+
+                    <%= item.cost %>
+
+                </div>
+
+            </div>
 
         <% } %>
 
 
 
-        <!-- =============================================
+        <!-- ==================================================
              DESCRIPTION
-        ============================================== -->
+        =================================================== -->
 
         <% if (item.description) { %>
 
-            <p>
+            <div class="stock-report-description">
 
-                <%= item.description %>
+                <div class="stock-report-label">
 
-            </p>
+                    Notes
+
+                </div>
+
+
+                <p>
+
+                    <%= item.description %>
+
+                </p>
+
+            </div>
 
         <% } %>
 
 
-    </div>
+    </section>
 
 
 
-    <!-- =================================================
-         ACTIONS
-    ================================================== -->
+    <!-- ======================================================
+         FEED ACTIONS
+    ======================================================= -->
 
     <%- include("partials/feed-actions", {
         item,
@@ -241,9 +307,9 @@
 
 
 
-    <!-- =================================================
+    <!-- ======================================================
          COMMENTS
-    ================================================== -->
+    ======================================================= -->
 
     <%- include("comment-section", {
         item,
@@ -253,3 +319,447 @@
 
 
 </article>
+
+
+
+<!-- ==========================================================
+     STOCK REPORT STYLING
+
+     Unique namespace:
+         stock-report-
+
+     This component deliberately does NOT depend on the
+     visual structure of post.ejs.
+=========================================================== -->
+
+<style>
+
+.stock-report-card {
+
+    width: 100%;
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    overflow: hidden;
+
+    margin: 16px 0;
+
+    border: 1px solid #dfe8e2;
+
+    box-shadow:
+        0 5px 18px rgba(0, 0, 0, 0.07);
+
+}
+
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.stock-report-header {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 14px;
+
+    padding: 22px 22px 18px;
+
+    border-bottom: 1px solid #edf1ee;
+
+}
+
+
+.stock-report-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+    min-width: 0;
+
+}
+
+
+.stock-report-icon {
+
+    width: 46px;
+
+    height: 46px;
+
+    flex: 0 0 46px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #edf6ef;
+
+    color: #176b2d;
+
+    font-size: 21px;
+
+}
+
+
+.stock-report-title {
+
+    margin: 0;
+
+    color: #17221b;
+
+    font-size: 21px;
+
+    line-height: 1.25;
+
+    font-weight: 700;
+
+}
+
+
+.stock-report-dairy {
+
+    margin-top: 4px;
+
+    color: #397148;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+}
+
+
+
+/* ==========================================================
+   DELETE
+========================================================== */
+
+.stock-report-delete {
+
+    width: 34px;
+
+    height: 34px;
+
+    flex: 0 0 34px;
+
+    border: 0;
+
+    background: transparent;
+
+    color: #89948d;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    cursor: pointer;
+
+    font-size: 17px;
+
+    border-radius: 8px;
+
+}
+
+
+.stock-report-delete:hover {
+
+    background: #f5f7f5;
+
+    color: #b52b2b;
+
+}
+
+
+
+/* ==========================================================
+   META
+========================================================== */
+
+.stock-report-meta {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px 18px;
+
+    padding: 12px 22px;
+
+    color: #78847c;
+
+    font-size: 13px;
+
+    border-bottom: 1px solid #edf1ee;
+
+}
+
+
+.stock-report-meta span {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+}
+
+
+.stock-report-meta i {
+
+    font-size: 12px;
+
+    color: #62836b;
+
+}
+
+
+
+/* ==========================================================
+   REPORT CONTENT
+========================================================== */
+
+.stock-report-content {
+
+    padding: 4px 22px 8px;
+
+}
+
+
+.stock-report-row {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    min-height: 58px;
+
+    padding: 12px 0;
+
+    border-bottom: 1px solid #edf1ee;
+
+}
+
+
+.stock-report-row:last-child {
+
+    border-bottom: 0;
+
+}
+
+
+.stock-report-label {
+
+    color: #68746c;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+}
+
+
+.stock-report-value {
+
+    color: #27342c;
+
+    font-size: 16px;
+
+    font-weight: 500;
+
+    text-align: right;
+
+}
+
+
+.stock-report-feed-name {
+
+    color: #245d35;
+
+    font-weight: 700;
+
+}
+
+
+.stock-report-quantity {
+
+    display: flex;
+
+    align-items: baseline;
+
+    justify-content: flex-end;
+
+    gap: 5px;
+
+}
+
+
+.stock-report-quantity strong {
+
+    font-size: 20px;
+
+    color: #18231c;
+
+}
+
+
+.stock-report-quantity span {
+
+    color: #66736a;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+}
+
+
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.stock-report-description {
+
+    padding: 15px 0 10px;
+
+}
+
+
+.stock-report-description .stock-report-label {
+
+    margin-bottom: 7px;
+
+}
+
+
+.stock-report-description p {
+
+    margin: 0;
+
+    color: #48534c;
+
+    font-size: 15px;
+
+    line-height: 1.65;
+
+}
+
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 480px) {
+
+    .stock-report-card {
+
+        border-radius: 16px;
+
+        margin: 14px 0;
+
+    }
+
+
+    .stock-report-header {
+
+        padding: 19px 17px 16px;
+
+    }
+
+
+    .stock-report-heading {
+
+        gap: 11px;
+
+    }
+
+
+    .stock-report-icon {
+
+        width: 40px;
+
+        height: 40px;
+
+        flex-basis: 40px;
+
+        font-size: 18px;
+
+        border-radius: 10px;
+
+    }
+
+
+    .stock-report-title {
+
+        font-size: 18px;
+
+    }
+
+
+    .stock-report-dairy {
+
+        font-size: 14px;
+
+    }
+
+
+    .stock-report-meta {
+
+        padding: 10px 17px;
+
+    }
+
+
+    .stock-report-content {
+
+        padding-left: 17px;
+
+        padding-right: 17px;
+
+    }
+
+
+    .stock-report-row {
+
+        gap: 12px;
+
+    }
+
+
+    .stock-report-value {
+
+        font-size: 15px;
+
+    }
+
+
+    .stock-report-quantity strong {
+
+        font-size: 18px;
+
+    }
+
+}
+
+</style>
