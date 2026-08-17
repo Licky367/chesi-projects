@@ -1,22 +1,31 @@
-<!-- =========================================================
-     MAINTENANCE CLEAR COMPOSER + FULL SCREEN MODAL
+<% /*
+==========================================================
+MAINTENANCE CLEAR COMPOSER
 
-     FILE:
-         views/update/maintClearComposer.ejs
+FILE:
+    views/update/maintClearComposer.ejs
 
-     PURPOSE:
-         Allows an admin to record completion of maintenance
-         work and clear the maintenance status of a facility.
+PURPOSE:
+----------------------------------------------------------
+Allows an admin to record completed maintenance work
+and clear the maintenance status of the current asset.
 
-     EXPECTED VARIABLES:
-         user
-         dairy
+CONDITIONS:
+----------------------------------------------------------
+• User must be an admin.
+• Dairy must have no asset code.
+• Dairy must currently require maintenance.
 
-     CONDITIONS:
-         - user.role === "admin"
-         - dairy has NO code
-         - dairy.needsMaintenance === true
-========================================================= -->
+EXPECTED DATA:
+----------------------------------------------------------
+dairy
+user
+
+ROUTE:
+----------------------------------------------------------
+POST /dairy/:id/maintenance/clear
+==========================================================
+*/ %>
 
 
 <% if (
@@ -24,22 +33,26 @@
     user.role === "admin" &&
     dairy &&
     (
-        dairy.code === undefined ||
-        dairy.code === null
+        dairy.code === null ||
+        dairy.code === undefined
     ) &&
     dairy.needsMaintenance === true
 ) { %>
 
 
 <!-- =========================================================
-     CLEAR MAINTENANCE COMPOSER CARD
+     MAINTENANCE CLEAR COMPOSER
 ========================================================= -->
 
-<section class="maint-clear-composer-card">
+<section
+    class="maint-clear-composer-card"
+    data-maint-clear-card
+    data-dairy-id="<%= dairy._id %>"
+>
 
 
     <!-- =====================================================
-         HEADER
+         COMPOSER HEADER
     ====================================================== -->
 
     <div class="maint-clear-composer-header">
@@ -68,8 +81,8 @@
                     <%= user.name.split(" ")[0] %>
                 </strong>
 
-                , has the maintenance work on this facility
-                been completed?
+                , has the maintenance work on this
+                facility been completed?
 
             </div>
 
@@ -84,17 +97,15 @@
     ====================================================== -->
 
     <div
-        id="openMaintClearComposer"
         class="maint-clear-composer-trigger"
+        data-open-maint-clear
         role="button"
         tabindex="0"
-        aria-label="Clear completed maintenance"
+        aria-label="Record completed maintenance"
     >
 
         <span>
-
             ✓ Record completed maintenance...
-
         </span>
 
     </div>
@@ -105,12 +116,12 @@
 
 
 <!-- =========================================================
-     FULL SCREEN CLEAR MAINTENANCE MODAL
+     FULL SCREEN MAINTENANCE CLEAR MODAL
 ========================================================= -->
 
 <div
-    id="maintClearModal"
     class="maint-clear-modal"
+    data-maint-clear-modal
     aria-hidden="true"
 >
 
@@ -127,8 +138,8 @@
 
             <button
                 type="button"
-                id="closeMaintClearModal"
                 class="maint-clear-back-button"
+                data-close-maint-clear
                 aria-label="Go back"
             >
 
@@ -182,7 +193,7 @@
 
 
             <!-- =================================================
-                 TARGET FACILITY
+                 TARGET ASSET
             ================================================== -->
 
             <div class="maint-clear-target">
@@ -193,23 +204,19 @@
                     dairy.profileImage.trim() !== ""
                 ) { %>
 
-
                     <img
-                        src="/uploads/<%= dairy.profileImage %>"
+                        src="<%= dairy.profileImage %>"
                         class="maint-clear-target-image"
                         alt="<%= dairy.name %>"
                     >
 
-
                 <% } else { %>
-
 
                     <img
                         src="https://ui-avatars.com/api/?name=<%= encodeURIComponent(dairy.name) %>&background=0b5d1e&color=fff"
                         class="maint-clear-target-image"
                         alt="<%= dairy.name %>"
                     >
-
 
                 <% } %>
 
@@ -241,6 +248,7 @@
                     ⚠️
                 </span>
 
+
                 <div>
 
                     <strong>
@@ -248,8 +256,8 @@
                     </strong>
 
                     <span>
-                        Record the completed work below to clear
-                        the maintenance status.
+                        Record the completed work below to
+                        clear the maintenance status.
                     </span>
 
                 </div>
@@ -263,9 +271,10 @@
             ================================================== -->
 
             <form
-                id="maintClearForm"
+                class="maint-clear-form"
                 action="/dairy/<%= dairy._id %>/maintenance/clear"
                 method="POST"
+                autocomplete="off"
             >
 
 
@@ -275,9 +284,7 @@
 
                 <div class="maint-clear-field">
 
-                    <label
-                        for="maintClearCharges"
-                    >
+                    <label for="maintClearCharges">
 
                         Charges incurred
 
@@ -289,6 +296,7 @@
                         <span>
                             KES
                         </span>
+
 
                         <input
                             type="number"
@@ -313,9 +321,7 @@
 
                 <div class="maint-clear-field">
 
-                    <label
-                        for="maintClearDescription"
-                    >
+                    <label for="maintClearDescription">
 
                         Work completed
 
@@ -332,12 +338,10 @@
 
 
                     <div
-                        id="maintClearCharacterCounter"
                         class="maint-clear-character-counter"
+                        data-maint-clear-counter
                     >
-
                         0/1000
-
                     </div>
 
                 </div>
@@ -352,8 +356,8 @@
 
                     <button
                         type="submit"
-                        id="submitMaintClearButton"
                         class="maint-clear-submit-button"
+                        data-maint-clear-submit
                         disabled
                     >
 
@@ -385,27 +389,31 @@
 <style>
 
 /* =========================================================
-   CLEAR MAINTENANCE COMPOSER CARD
+   COMPOSER CARD
 ========================================================= */
 
 .maint-clear-composer-card {
 
     width: 100%;
 
-    background: #ffffff;
-
-    border-radius: 16px;
+    box-sizing: border-box;
 
     padding: 16px;
 
     margin-bottom: 16px;
 
-    box-sizing: border-box;
+    background: #ffffff;
 
     border: 1px solid #e7eee9;
 
+    border-radius: 16px;
+
 }
 
+
+/* =========================================================
+   COMPOSER HEADER
+========================================================= */
 
 .maint-clear-composer-header {
 
@@ -420,7 +428,7 @@
 
 .maint-clear-composer-avatar {
 
-    flex-shrink: 0;
+    flex: 0 0 auto;
 
 }
 
@@ -431,11 +439,11 @@
 
     height: 44px;
 
-    border-radius: 50%;
+    display: block;
 
     object-fit: cover;
 
-    display: block;
+    border-radius: 50%;
 
 }
 
@@ -444,11 +452,11 @@
 
     min-width: 0;
 
+    color: #555555;
+
     font-size: 14px;
 
     line-height: 1.5;
-
-    color: #555;
 
 }
 
@@ -462,21 +470,27 @@
 
 .maint-clear-composer-heading strong {
 
-    color: #222;
+    color: #222222;
 
 }
 
 
 
 /* =========================================================
-   CLICKABLE TRIGGER
+   CLICKABLE COMPOSER TRIGGER
 ========================================================= */
 
 .maint-clear-composer-trigger {
 
-    margin-top: 14px;
-
     min-height: 48px;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    margin-top: 14px;
 
     padding: 0 16px;
 
@@ -484,13 +498,9 @@
 
     border-radius: 24px;
 
-    display: flex;
-
-    align-items: center;
-
-    color: #777;
-
     background: #f8faf8;
+
+    color: #777777;
 
     cursor: pointer;
 
@@ -533,13 +543,15 @@
 
     height: 100dvh;
 
-    background: #ffffff;
-
-    z-index: 99999;
-
     display: none;
 
     overflow: hidden;
+
+    box-sizing: border-box;
+
+    background: #ffffff;
+
+    z-index: 99999;
 
 }
 
@@ -552,8 +564,6 @@
 
 
 .maint-clear-modal-content {
-
-    position: relative;
 
     width: 100%;
 
@@ -577,17 +587,17 @@
 
     flex: 0 0 auto;
 
+    width: 100%;
+
     height: 64px;
 
-    width: 100%;
+    box-sizing: border-box;
 
     display: flex;
 
     align-items: center;
 
     padding: 0 16px;
-
-    box-sizing: border-box;
 
     border-bottom: 1px solid #e8eee9;
 
@@ -602,11 +612,7 @@
 
     height: 44px;
 
-    border: none;
-
-    background: transparent;
-
-    color: #198754;
+    flex: 0 0 44px;
 
     display: flex;
 
@@ -614,13 +620,17 @@
 
     justify-content: center;
 
-    cursor: pointer;
+    padding: 0;
+
+    border: none;
+
+    background: transparent;
+
+    color: #198754;
 
     font-size: 27px;
 
-    padding: 0;
-
-    flex-shrink: 0;
+    cursor: pointer;
 
 }
 
@@ -634,11 +644,13 @@
 
 .maint-clear-modal-title {
 
-    margin-left: 8px;
+    min-width: 0;
 
     display: flex;
 
     flex-direction: column;
+
+    margin-left: 8px;
 
     line-height: 1.25;
 
@@ -647,9 +659,9 @@
 
 .maint-clear-modal-title strong {
 
-    font-size: 17px;
-
     color: #202520;
+
+    font-size: 17px;
 
 }
 
@@ -658,9 +670,9 @@
 
     margin-top: 2px;
 
-    font-size: 12px;
-
     color: #7a817d;
+
+    font-size: 12px;
 
 }
 
@@ -683,11 +695,11 @@
 
     min-height: 0;
 
+    box-sizing: border-box;
+
     overflow-y: auto;
 
     padding: 20px;
-
-    box-sizing: border-box;
 
 }
 
@@ -730,6 +742,8 @@
 
     gap: 12px;
 
+    box-sizing: border-box;
+
     margin-bottom: 16px;
 
     padding: 12px;
@@ -749,7 +763,7 @@
 
     height: 52px;
 
-    flex-shrink: 0;
+    flex: 0 0 52px;
 
     object-fit: cover;
 
@@ -760,20 +774,26 @@
 
 .maint-clear-target-info {
 
+    min-width: 0;
+
     display: flex;
 
     flex-direction: column;
-
-    min-width: 0;
 
 }
 
 
 .maint-clear-target-info strong {
 
+    overflow: hidden;
+
     color: #202520;
 
     font-size: 15px;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
 
 }
 
@@ -802,9 +822,11 @@
 
     gap: 11px;
 
-    padding: 13px;
+    box-sizing: border-box;
 
     margin-bottom: 24px;
+
+    padding: 13px;
 
     border: 1px solid #fde2e2;
 
@@ -817,17 +839,17 @@
 
 .maint-clear-status-icon {
 
+    width: 30px;
+
+    height: 30px;
+
+    flex: 0 0 30px;
+
     display: flex;
 
     align-items: center;
 
     justify-content: center;
-
-    flex-shrink: 0;
-
-    width: 30px;
-
-    height: 30px;
 
     border-radius: 50%;
 
@@ -838,13 +860,13 @@
 }
 
 
-.maint-clear-status div {
+.maint-clear-status > div {
+
+    min-width: 0;
 
     display: flex;
 
     flex-direction: column;
-
-    min-width: 0;
 
 }
 
@@ -858,7 +880,7 @@
 }
 
 
-.maint-clear-status span:not(.maint-clear-status-icon) {
+.maint-clear-status span {
 
     margin-top: 3px;
 
@@ -876,7 +898,7 @@
    FORM
 ========================================================= */
 
-#maintClearForm {
+.maint-clear-form {
 
     width: 100%;
 
@@ -911,14 +933,10 @@
 
 
 /* =========================================================
-   MONEY INPUT
+   CHARGES INPUT
 ========================================================= */
 
 .maint-clear-money-input {
-
-    display: flex;
-
-    align-items: center;
 
     width: 100%;
 
@@ -926,11 +944,15 @@
 
     box-sizing: border-box;
 
+    display: flex;
+
+    align-items: center;
+
+    overflow: hidden;
+
     border: 1px solid #d6e0d9;
 
     border-radius: 12px;
-
-    overflow: hidden;
 
     background: #f8faf8;
 
@@ -959,6 +981,8 @@
 
     height: 100%;
 
+    box-sizing: border-box;
+
     display: flex;
 
     align-items: center;
@@ -984,9 +1008,11 @@
 
     width: 100%;
 
+    min-width: 0;
+
     height: 100%;
 
-    min-width: 0;
+    box-sizing: border-box;
 
     padding: 0 12px;
 
@@ -1103,6 +1129,16 @@
 
     min-height: 50px;
 
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
     border: none;
 
     border-radius: 13px;
@@ -1118,14 +1154,6 @@
     font-weight: 700;
 
     cursor: pointer;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 8px;
 
     transition:
         background 0.2s ease,
@@ -1236,51 +1264,73 @@
     function initializeMaintenanceClearComposer() {
 
 
-        const modal =
-            document.getElementById(
-                "maintClearModal"
+        const card =
+            document.querySelector(
+                "[data-maint-clear-card]"
             );
+
+
+        const modal =
+            document.querySelector(
+                "[data-maint-clear-modal]"
+            );
+
 
         const openButton =
-            document.getElementById(
-                "openMaintClearComposer"
+            document.querySelector(
+                "[data-open-maint-clear]"
             );
+
 
         const closeButton =
-            document.getElementById(
-                "closeMaintClearModal"
-            );
-
-        const chargesInput =
-            document.getElementById(
-                "maintClearCharges"
-            );
-
-        const descriptionInput =
-            document.getElementById(
-                "maintClearDescription"
-            );
-
-        const characterCounter =
-            document.getElementById(
-                "maintClearCharacterCounter"
-            );
-
-        const submitButton =
-            document.getElementById(
-                "submitMaintClearButton"
-            );
-
-        const form =
-            document.getElementById(
-                "maintClearForm"
+            document.querySelector(
+                "[data-close-maint-clear]"
             );
 
 
         if (
+            !card ||
             !modal ||
             !openButton ||
-            !closeButton ||
+            !closeButton
+        ) {
+
+            return;
+
+        }
+
+
+        const chargesInput =
+            card.parentElement.querySelector(
+                "#maintClearCharges"
+            );
+
+
+        const descriptionInput =
+            card.parentElement.querySelector(
+                "#maintClearDescription"
+            );
+
+
+        const characterCounter =
+            card.parentElement.querySelector(
+                "[data-maint-clear-counter]"
+            );
+
+
+        const submitButton =
+            card.parentElement.querySelector(
+                "[data-maint-clear-submit]"
+            );
+
+
+        const form =
+            card.parentElement.querySelector(
+                ".maint-clear-form"
+            );
+
+
+        if (
             !chargesInput ||
             !descriptionInput ||
             !characterCounter ||
@@ -1295,7 +1345,7 @@
 
 
         /* =================================================
-           OPEN
+           OPEN MODAL
         ================================================== */
 
         function openModal() {
@@ -1322,7 +1372,7 @@
 
 
         /* =================================================
-           CLOSE
+           CLOSE MODAL
         ================================================== */
 
         function closeModal() {
@@ -1342,7 +1392,7 @@
 
 
         /* =================================================
-           VALIDATION
+           VALIDATE FORM
         ================================================== */
 
         function updateSubmitButton() {
@@ -1350,18 +1400,26 @@
             const charges =
                 chargesInput.value.trim();
 
+
             const description =
                 descriptionInput.value.trim();
+
+
+            const numericCharges =
+                Number(charges);
+
 
             const validCharges =
                 charges !== "" &&
                 Number.isFinite(
-                    Number(charges)
+                    numericCharges
                 ) &&
-                Number(charges) >= 0;
+                numericCharges >= 0;
+
 
             const validDescription =
                 description.length > 0;
+
 
             submitButton.disabled =
                 !(
@@ -1382,6 +1440,7 @@
             const length =
                 descriptionInput.value.length;
 
+
             characterCounter.textContent =
                 length + "/1000";
 
@@ -1390,14 +1449,23 @@
 
 
         /* =================================================
-           OPEN EVENTS
-        ================================================= */
+           OPEN CLICK
+        ================================================== */
 
         openButton.addEventListener(
             "click",
-            openModal
+            function () {
+
+                openModal();
+
+            }
         );
 
+
+
+        /* =================================================
+           OPEN KEYBOARD
+        ================================================== */
 
         openButton.addEventListener(
             "keydown",
@@ -1420,14 +1488,23 @@
 
 
         /* =================================================
-           CLOSE EVENTS
-        ================================================= */
+           CLOSE BUTTON
+        ================================================== */
 
         closeButton.addEventListener(
             "click",
-            closeModal
+            function () {
+
+                closeModal();
+
+            }
         );
 
+
+
+        /* =================================================
+           ESCAPE KEY
+        ================================================== */
 
         document.addEventListener(
             "keydown",
@@ -1448,14 +1525,23 @@
 
 
         /* =================================================
-           INPUT EVENTS
-        ================================================= */
+           CHARGES INPUT
+        ================================================== */
 
         chargesInput.addEventListener(
             "input",
-            updateSubmitButton
+            function () {
+
+                updateSubmitButton();
+
+            }
         );
 
+
+
+        /* =================================================
+           DESCRIPTION INPUT
+        ================================================== */
 
         descriptionInput.addEventListener(
             "input",
@@ -1478,7 +1564,9 @@
             "submit",
             function () {
 
-                submitButton.disabled = true;
+                submitButton.disabled =
+                    true;
+
 
                 submitButton.innerHTML =
                     '<i class="bi bi-hourglass-split"></i> ' +
