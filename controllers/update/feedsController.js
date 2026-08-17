@@ -7,12 +7,10 @@
 // Responsibilities:
 //
 //     • Display the Feed Store page
-//     • Receive feed-store condition reports
-//     • Receive food-remaining reports
+//     • Receive feed-store reports
 //     • Receive feed-store restocking requests
-//     • Handle authentication / authorization
+//     • Perform authentication / authorization checks
 //     • Pass business logic to feedsService
-//     • Redirect successful browser form submissions
 //
 // Business logic belongs in:
 //
@@ -31,6 +29,11 @@ const feedsService =
 
 const FEED_STORE_TYPE =
     "feedStore";
+
+const ALLOWED_ROLES = [
+    "admin",
+    "dairyWorker"
+];
 
 
 // ==========================================================
@@ -69,23 +72,43 @@ function getUserId(user) {
 
 
 // ----------------------------------------------------------
-// CHECK FEED STORE MANAGEMENT ACCESS
+// GET DAIRY ID
 // ----------------------------------------------------------
 //
-// Allowed:
+// Supports:
 //
-//     admin
-//     dairyWorker
+//     req.params.id
 //
+// and:
+//
+//     req.params.dairyId
+//
+// This keeps the controller compatible with either route
+// parameter naming.
+//
+// ----------------------------------------------------------
+
+function getDairyId(req) {
+
+    return (
+        req.params?.id ||
+        req.params?.dairyId ||
+        null
+    );
+
+}
+
+
+// ----------------------------------------------------------
+// CHECK FEED STORE ACCESS
 // ----------------------------------------------------------
 
 function canManageFeedStore(user) {
 
     return !!(
         user &&
-        (
-            user.role === "admin" ||
-            user.role === "dairyWorker"
+        ALLOWED_ROLES.includes(
+            user.role
         )
     );
 
@@ -93,7 +116,7 @@ function canManageFeedStore(user) {
 
 
 // ----------------------------------------------------------
-// ADMIN CHECK
+// CHECK ADMIN
 // ----------------------------------------------------------
 
 function isAdmin(user) {
@@ -107,20 +130,15 @@ function isAdmin(user) {
 
 
 // ----------------------------------------------------------
-// GET UPLOADED IMAGE PATHS
+// GET UPLOADED IMAGES
 // ----------------------------------------------------------
 //
-// upload.array("images", 10)
+// Expected multer configuration:
 //
-// Depending on the upload middleware/storage provider,
-// the usable path may be:
+//     upload.array("images", 10)
 //
-//     file.path
-//     file.location
-//     file.url
-//     file.filename
+// The service receives only the resulting paths.
 //
-// The service receives only clean strings.
 // ----------------------------------------------------------
 
 function getUploadedImages(req) {
@@ -149,8 +167,6 @@ function getUploadedImages(req) {
                 return (
                     file.path ||
                     file.location ||
-                    file.url ||
-                    file.secure_url ||
                     file.filename ||
                     null
                 );
@@ -164,38 +180,15 @@ function getUploadedImages(req) {
 
 
 // ----------------------------------------------------------
-// SEND ERROR
-// ----------------------------------------------------------
-//
-// This keeps normal browser form submissions from receiving
-// confusing JSON responses.
-//
+// GET REQUEST BODY
 // ----------------------------------------------------------
 
-function handleError(
-    res,
-    error,
-    fallbackMessage
-) {
+function getBody(req) {
 
-    console.error(
-        fallbackMessage,
-        error
+    return (
+        req.body ||
+        {}
     );
-
-
-    const status =
-        Number.isInteger(error?.status)
-            ? error.status
-            : 500;
-
-
-    return res
-        .status(status)
-        .send(
-            error?.message ||
-            fallbackMessage
-        );
 
 }
 
@@ -214,8 +207,7 @@ function handleError(
 //
 // ==========================================================
 
-exports.viewFeedStore =
-async function (
+async function viewFeedStore(
     req,
     res,
     next
@@ -233,11 +225,9 @@ async function (
 
         if (!user) {
 
-            return res
-                .status(401)
-                .send(
-                    "Unauthorized"
-                );
+            return res.status(401).send(
+                "Unauthorized"
+            );
 
         }
 
@@ -247,14 +237,14 @@ async function (
         // --------------------------------------------------
 
         if (
-            !canManageFeedStore(user)
+            !canManageFeedStore(
+                user
+            )
         ) {
 
-            return res
-                .status(403)
-                .send(
-                    "You are not authorized to access this feed store."
-                );
+            return res.status(403).send(
+                "Forbidden"
+            );
 
         }
 
@@ -264,60 +254,14 @@ async function (
         // --------------------------------------------------
 
         const dairyId =
-            req.params.id;
+            getDairyId(req);
 
 
         if (!dairyId) {
 
-            return res
-                .status(400)
-                .send(
-                    "Dairy ID is required."
-                );
-
-        }
-
-
-        // --------------------------------------------------
-        // FIND DAIRY
-        //
-        // The service is responsible for feed-store
-        // validation and its page data.
-        //
-        // findFeedStore is intentionally kept inside the
-        // service, so the controller does not duplicate
-        // business logic.
-        // --------------------------------------------------
-
-        const dairy =
-            await require(
-                "../../models/dairy"
-            ).findById(
-                dairyId
+            return res.status(400).send(
+                "Dairy ID is required."
             );
-
-
-        if (!dairy) {
-
-            return res
-                .status(404)
-                .send(
-                    "Dairy asset not found."
-                );
-
-        }
-
-
-        if (
-            dairy.type !==
-            FEED_STORE_TYPE
-        ) {
-
-            return res
-                .status(404)
-                .send(
-                    "This dairy asset is not a feed store."
-                );
 
         }
 
@@ -325,30 +269,25 @@ async function (
         // --------------------------------------------------
         // GET PAGE DATA
         // --------------------------------------------------
-
-        const pageData =
-            await feedsService.getFeedStorePageData(
-                dairy
-            );
-
-
-        // --------------------------------------------------
-        // SUCCESS STATE
-        // --------------------------------------------------
         //
-        // Examples:
+        // The service:
         //
-        //     ?success=restocked
-        //     ?success=updated
-        //     ?success=remaining
-        //
-        // The EJS can use this to display a popup/message.
+        //     • validates the dairy
+        //     • validates feedStore type
+        //     • gets feeds
+        //     • calculates feedsAmount
+        //     • gets recent updates
         //
         // --------------------------------------------------
 
-        const success =
-            req.query.success ||
-            null;
+        const feedStoreData =
+            await feedsService.getFeedStorePageDataById
+                ? await feedsService.getFeedStorePageDataById(
+                    dairyId
+                )
+                : await getFeedStoreDataFromExistingService(
+                    dairyId
+                );
 
 
         // --------------------------------------------------
@@ -359,20 +298,19 @@ async function (
             "update/feeds-store",
             {
 
-                dairy,
+                dairy:
+                    feedStoreData.dairy,
 
                 user,
 
                 feeds:
-                    pageData.feeds,
+                    feedStoreData.feeds,
 
                 feedsAmount:
-                    pageData.feedsAmount,
+                    feedStoreData.feedsAmount,
 
                 updates:
-                    pageData.updates,
-
-                success
+                    feedStoreData.updates
 
             }
         );
@@ -385,42 +323,101 @@ async function (
 
     }
 
-};
+}
 
 
 // ==========================================================
-// UPDATE FEED STORE
+// INTERNAL PAGE-DATA COMPATIBILITY HELPER
+// ==========================================================
+//
+// Your current service accepts a Dairy document:
+//
+//     getFeedStorePageData(dairy)
+//
+// rather than a dairy ID.
+//
+// This helper keeps the controller compatible with that
+// service without moving service logic into the controller.
+//
+// ==========================================================
+
+async function getFeedStoreDataFromExistingService(
+    dairyId
+) {
+
+    const Dairy =
+        require("../../models/dairy");
+
+
+    const dairy =
+        await Dairy.findById(
+            dairyId
+        );
+
+
+    if (!dairy) {
+
+        const error =
+            new Error(
+                "Dairy asset not found."
+            );
+
+        error.status = 404;
+
+        throw error;
+
+    }
+
+
+    if (
+        dairy.type !== FEED_STORE_TYPE
+    ) {
+
+        const error =
+            new Error(
+                "The selected dairy asset is not a feed store."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    const data =
+        await feedsService.getFeedStorePageData(
+            dairy
+        );
+
+
+    return {
+
+        dairy,
+
+        ...data
+
+    };
+
+}
+
+
+// ==========================================================
+// CREATE FEED STORE UPDATE
 // ==========================================================
 //
 // POST:
 //
 //     /dairy/:id/feedstore/update
 //
-// Used for:
+// Allowed:
 //
-//     • Facility condition
-//     • Feed quality
-//     • General report
-//     • Percentage remaining
-//     • Images
-//
-// The EJS currently submits:
-//
-//     feedstoreReportType
-//     message
-//     images
-//
-// Additional fields are also accepted:
-//
-//     condition
-//     feedQuality
-//     percentageRemaining
-//     remainingPercentage
+//     admin
+//     dairyWorker
 //
 // ==========================================================
 
-exports.updateFeedStore =
-async function (
+async function updateFeedStore(
     req,
     res,
     next
@@ -438,11 +435,14 @@ async function (
 
         if (!user) {
 
-            return res
-                .status(401)
-                .send(
+            return res.status(401).json({
+
+                success: false,
+
+                message:
                     "Unauthorized"
-                );
+
+            });
 
         }
 
@@ -452,155 +452,68 @@ async function (
         // --------------------------------------------------
 
         if (
-            !canManageFeedStore(user)
+            !canManageFeedStore(
+                user
+            )
         ) {
 
-            return res
-                .status(403)
-                .send(
+            return res.status(403).json({
+
+                success: false,
+
+                message:
                     "You are not authorized to update this feed store."
-                );
+
+            });
 
         }
 
 
         // --------------------------------------------------
-        // USER ID
+        // IDs
         // --------------------------------------------------
+
+        const dairyId =
+            getDairyId(req);
 
         const userId =
             getUserId(user);
 
 
-        if (!userId) {
-
-            return res
-                .status(400)
-                .send(
-                    "Logged-in user ID is missing."
-                );
-
-        }
-
-
-        // --------------------------------------------------
-        // DAIRY ID
-        // --------------------------------------------------
-
-        const dairyId =
-            req.params.id;
-
-
         if (!dairyId) {
 
-            return res
-                .status(400)
-                .send(
+            return res.status(400).json({
+
+                success: false,
+
+                message:
                     "Dairy ID is required."
-                );
+
+            });
+
+        }
+
+
+        if (!userId) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "User ID is required."
+
+            });
 
         }
 
 
         // --------------------------------------------------
-        // REPORT TYPE
-        // --------------------------------------------------
-        //
-        // Current EJS uses:
-        //
-        //     facilityCondition
-        //     feedQuality
-        //     facilityAndFeed
-        //
-        // The service stores the actual report as text.
-        //
+        // BODY
         // --------------------------------------------------
 
-        const reportType =
-            String(
-                req.body.feedstoreReportType ||
-                ""
-            ).trim();
-
-
-        let condition =
-            req.body.condition ||
-            "";
-
-
-        let feedQuality =
-            req.body.feedQuality ||
-            "";
-
-
-        if (
-            reportType ===
-            "facilityCondition"
-        ) {
-
-            condition =
-                condition ||
-                "Facility condition reported.";
-
-        }
-
-
-        if (
-            reportType ===
-            "feedQuality"
-        ) {
-
-            feedQuality =
-                feedQuality ||
-                "Feed quality reported.";
-
-        }
-
-
-        if (
-            reportType ===
-            "facilityAndFeed"
-        ) {
-
-            condition =
-                condition ||
-                "Facility condition reported.";
-
-            feedQuality =
-                feedQuality ||
-                "Feed quality reported.";
-
-        }
-
-
-        // --------------------------------------------------
-        // MESSAGE
-        // --------------------------------------------------
-
-        const message =
-            req.body.message ||
-            "";
-
-
-        // --------------------------------------------------
-        // PERCENTAGE
-        // --------------------------------------------------
-        //
-        // Accept both names because the two current EJS
-        // forms use different names:
-        //
-        //     percentageRemaining
-        //
-        // and:
-        //
-        //     remainingPercentage
-        //
-        // --------------------------------------------------
-
-        const percentageRemaining =
-            req.body.percentageRemaining !== undefined
-                ? req.body.percentageRemaining
-                : req.body.remainingPercentage;
+        const body =
+            getBody(req);
 
 
         // --------------------------------------------------
@@ -612,240 +525,60 @@ async function (
 
 
         // --------------------------------------------------
-        // CREATE UPDATE
+        // SERVICE
         // --------------------------------------------------
 
-        await feedsService.createFeedStoreUpdate({
+        const update =
+            await feedsService.createFeedStoreUpdate({
 
-            dairyId,
+                dairyId,
 
-            userId,
+                userId,
 
-            role:
-                user.role,
+                role:
+                    user.role,
 
-            message,
+                message:
+                    body.message,
 
-            condition,
+                condition:
+                    body.condition,
 
-            feedQuality,
+                feedQuality:
+                    body.feedQuality,
 
-            percentageRemaining,
+                percentageRemaining:
+                    body.percentageRemaining,
 
-            images
+                images
+
+            });
+
+
+        // --------------------------------------------------
+        // RESPONSE
+        // --------------------------------------------------
+
+        return res.status(201).json({
+
+            success: true,
+
+            message:
+                "Feed store update submitted successfully.",
+
+            update
 
         });
-
-
-        // --------------------------------------------------
-        // REDIRECT
-        // --------------------------------------------------
-        //
-        // IMPORTANT:
-        //
-        // Do NOT return res.json() here.
-        //
-        // This is a normal HTML form submission.
-        //
-        // --------------------------------------------------
-
-        return res.redirect(
-            `/dairy/feedstore/${dairyId}?success=updated`
-        );
 
     }
 
     catch (error) {
 
-        return handleError(
-            res,
-            error,
-            "Failed to submit feed store update."
-        );
+        next(error);
 
     }
 
-};
-
-
-// ==========================================================
-// REMAINING FOOD REPORT
-// ==========================================================
-//
-// POST:
-//
-//     /dairy/:id/feedstore/remaining
-//
-// Used by the separate "Food Remaining" form.
-//
-// Fields:
-//
-//     remainingPercentage
-//     message
-//     images
-//
-// The same service is used because this is still a
-// feed-store update.
-//
-// ==========================================================
-
-exports.updateFeedStoreRemaining =
-async function (
-    req,
-    res,
-    next
-) {
-
-    try {
-
-        // --------------------------------------------------
-        // USER
-        // --------------------------------------------------
-
-        const user =
-            getUser(req);
-
-
-        if (!user) {
-
-            return res
-                .status(401)
-                .send(
-                    "Unauthorized"
-                );
-
-        }
-
-
-        // --------------------------------------------------
-        // AUTHORIZATION
-        // --------------------------------------------------
-
-        if (
-            !canManageFeedStore(user)
-        ) {
-
-            return res
-                .status(403)
-                .send(
-                    "You are not authorized to update this feed store."
-                );
-
-        }
-
-
-        // --------------------------------------------------
-        // USER ID
-        // --------------------------------------------------
-
-        const userId =
-            getUserId(user);
-
-
-        if (!userId) {
-
-            return res
-                .status(400)
-                .send(
-                    "Logged-in user ID is missing."
-                );
-
-        }
-
-
-        // --------------------------------------------------
-        // DAIRY ID
-        // --------------------------------------------------
-
-        const dairyId =
-            req.params.id;
-
-
-        if (!dairyId) {
-
-            return res
-                .status(400)
-                .send(
-                    "Dairy ID is required."
-                );
-
-        }
-
-
-        // --------------------------------------------------
-        // REMAINING PERCENTAGE
-        // --------------------------------------------------
-
-        const percentageRemaining =
-            req.body.remainingPercentage;
-
-
-        // --------------------------------------------------
-        // MESSAGE
-        // --------------------------------------------------
-
-        const message =
-            req.body.message ||
-            "";
-
-
-        // --------------------------------------------------
-        // IMAGES
-        // --------------------------------------------------
-
-        const images =
-            getUploadedImages(req);
-
-
-        // --------------------------------------------------
-        // CREATE UPDATE
-        // --------------------------------------------------
-
-        await feedsService.createFeedStoreUpdate({
-
-            dairyId,
-
-            userId,
-
-            role:
-                user.role,
-
-            message,
-
-            condition:
-                "",
-
-            feedQuality:
-                "",
-
-            percentageRemaining,
-
-            images
-
-        });
-
-
-        // --------------------------------------------------
-        // REDIRECT
-        // --------------------------------------------------
-
-        return res.redirect(
-            `/dairy/feedstore/${dairyId}?success=remaining`
-        );
-
-    }
-
-    catch (error) {
-
-        return handleError(
-            res,
-            error,
-            "Failed to submit food remaining report."
-        );
-
-    }
-
-};
+}
 
 
 // ==========================================================
@@ -858,24 +591,9 @@ async function (
 //
 // ADMIN ONLY
 //
-// Current EJS fields:
-//
-//     restockMode
-//     existingStock
-//     newStock
-//     amount
-//     description
-//
-// Optional fields:
-//
-//     feedName
-//     cost
-//     unit
-//
 // ==========================================================
 
-exports.restockFeedStore =
-async function (
+async function restockFeedStore(
     req,
     res,
     next
@@ -893,11 +611,14 @@ async function (
 
         if (!user) {
 
-            return res
-                .status(401)
-                .send(
+            return res.status(401).json({
+
+                success: false,
+
+                message:
                     "Unauthorized"
-                );
+
+            });
 
         }
 
@@ -907,188 +628,155 @@ async function (
         // --------------------------------------------------
 
         if (
-            !isAdmin(user)
+            !isAdmin(
+                user
+            )
         ) {
 
-            return res
-                .status(403)
-                .send(
+            return res.status(403).json({
+
+                success: false,
+
+                message:
                     "Only an administrator can restock the feed store."
-                );
+
+            });
 
         }
 
 
         // --------------------------------------------------
-        // USER ID
+        // IDs
         // --------------------------------------------------
+
+        const dairyId =
+            getDairyId(req);
 
         const userId =
             getUserId(user);
 
 
-        if (!userId) {
-
-            return res
-                .status(400)
-                .send(
-                    "Logged-in user ID is missing."
-                );
-
-        }
-
-
-        // --------------------------------------------------
-        // DAIRY ID
-        // --------------------------------------------------
-
-        const dairyId =
-            req.params.id;
-
-
         if (!dairyId) {
 
-            return res
-                .status(400)
-                .send(
+            return res.status(400).json({
+
+                success: false,
+
+                message:
                     "Dairy ID is required."
-                );
+
+            });
+
+        }
+
+
+        if (!userId) {
+
+            return res.status(400).json({
+
+                success: false,
+
+                message:
+                    "User ID is required."
+
+            });
 
         }
 
 
         // --------------------------------------------------
-        // RESTOCK MODE
+        // BODY
         // --------------------------------------------------
 
-        const restockMode =
-            String(
-                req.body.restockMode ||
-                "existing"
-            ).trim();
+        const body =
+            getBody(req);
 
 
         // --------------------------------------------------
-        // EXISTING STOCK
+        // SERVICE
         // --------------------------------------------------
 
-        const existingStock =
-            req.body.existingStock ||
-            "";
+        const result =
+            await feedsService.restockFeedStore({
 
+                dairyId,
 
-        // --------------------------------------------------
-        // NEW STOCK
-        // --------------------------------------------------
+                userId,
 
-        const newStock =
-            req.body.newStock ||
-            "";
+                feedName:
+                    body.feedName,
 
+                amount:
+                    body.amount,
 
-        // --------------------------------------------------
-        // AMOUNT
-        // --------------------------------------------------
+                cost:
+                    body.cost,
 
-        const amount =
-            req.body.amount;
+                unit:
+                    body.unit,
 
+                description:
+                    body.description,
 
-        // --------------------------------------------------
-        // OPTIONAL FIELDS
-        // --------------------------------------------------
+                restockMode:
+                    body.restockMode,
 
-        const feedName =
-            req.body.feedName ||
-            "";
+                existingStock:
+                    body.existingStock,
 
+                newStock:
+                    body.newStock
 
-        const cost =
-            req.body.cost;
-
-
-        const unit =
-            req.body.unit ||
-            "";
-
-
-        const description =
-            req.body.description ||
-            "";
+            });
 
 
         // --------------------------------------------------
-        // RESTOCK
+        // RESPONSE
         // --------------------------------------------------
 
-        await feedsService.restockFeedStore({
+        return res.status(200).json({
 
-            dairyId,
+            success: true,
 
-            userId,
+            message:
+                "Feed stock restocked successfully.",
 
-            feedName,
+            feed:
+                result.feed,
 
-            amount,
-
-            cost,
-
-            unit,
-
-            description,
-
-            restockMode,
-
-            existingStock,
-
-            newStock
+            feedsAmount:
+                result.feedsAmount
 
         });
-
-
-        // --------------------------------------------------
-        // REDIRECT
-        // --------------------------------------------------
-        //
-        // IMPORTANT:
-        //
-        // The previous controller returned JSON here.
-        //
-        // That is why Chrome showed:
-        //
-        //     {"success":true,...}
-        //
-        // as a completely new page.
-        //
-        // --------------------------------------------------
-
-        return res.redirect(
-            `/dairy/feedstore/${dairyId}?success=restocked`
-        );
 
     }
 
     catch (error) {
 
-        return handleError(
-            res,
-            error,
-            "Failed to restock feed store."
-        );
+        next(error);
 
     }
 
-};
+}
 
 
 // ==========================================================
-// EXPORT
+// EXPORTS
 // ==========================================================
 //
-// Named exports are used because the update controller
-// index can spread this module:
+// IMPORTANT:
 //
-//     ...require("./feedsController")
+// Use explicit module.exports.
+//
+// This guarantees that:
+//
+//     const {
+//         viewFeedStore,
+//         updateFeedStore,
+//         restockFeedStore
+//     } = require("./feedsController");
+//
+// works correctly.
 //
 // ==========================================================
 
@@ -1097,8 +785,6 @@ module.exports = {
     viewFeedStore,
 
     updateFeedStore,
-
-    updateFeedStoreRemaining,
 
     restockFeedStore
 
