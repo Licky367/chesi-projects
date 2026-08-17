@@ -1,6 +1,52 @@
 // ==========================================================
 // models/Update.js
 // ==========================================================
+//
+// DAIRY UPDATE / FEED MODEL
+//
+// Responsibilities:
+//
+//     • General dairy posts
+//     • Medical updates
+//     • Maintenance updates
+//     • Asset-added updates
+//     • Stock/feed-store updates
+//
+// STOCK SYSTEM
+// ----------------------------------------------------------
+//
+// Admin:
+//
+//     Adds available animal feed
+//     Adds available veterinary medicine
+//     Records quantity
+//     Records unit
+//     Records price
+//     Adds instructions
+//     Adds expected duration
+//     May add images
+//
+//     The system automatically creates a STOCK update.
+//
+// Dairy Worker:
+//
+//     Reports remaining stock
+//     May add quantity remaining
+//     May add additional information
+//     May add images
+//
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// Admin stock availability posts are SYSTEM posts.
+//
+//     user      = null
+//     userName  = "System"
+//     userImage = "/images/h1.png"
+//
+// Dairy-worker stock reports retain the worker's identity.
+//
+// ==========================================================
 
 const mongoose =
     require("mongoose");
@@ -12,7 +58,80 @@ const mongoose =
 
 const MAX_POST_IMAGES = 10;
 
-const MAX_FEED_IMAGES = 10;
+const MAX_STOCK_IMAGES = 10;
+
+
+// ==========================================================
+// STOCK TYPES
+// ==========================================================
+//
+// These distinguish:
+//
+//     feed
+//     veterinary medicine
+//
+// ==========================================================
+
+const STOCK_TYPES = [
+
+    "feed",
+
+    "medicine"
+
+];
+
+
+// ==========================================================
+// STOCK ACTIONS
+// ==========================================================
+//
+// available
+//     Admin makes new stock available.
+//
+// remainder
+//     Dairy worker reports stock remaining.
+//
+// ==========================================================
+
+const STOCK_ACTIONS = [
+
+    "available",
+
+    "remainder"
+
+];
+
+
+// ==========================================================
+// STOCK UNITS
+// ==========================================================
+//
+// The service/controller should normally validate these
+// against the same list used by the Dairy model/service.
+//
+// ==========================================================
+
+const STOCK_UNITS = [
+
+    "kg",
+
+    "bags",
+
+    "tonnes",
+
+    "bales",
+
+    "litres",
+
+    "units",
+
+    "containers",
+
+    "packets",
+
+    "boxes"
+
+];
 
 
 // ==========================================================
@@ -311,19 +430,13 @@ const maintenanceSchema = new mongoose.Schema(
 // ASSET ADDED UPDATE SUBDOCUMENT
 // ==========================================================
 //
-// Created whenever a manual asset is added to a Dairy Farm.
-//
-// The Update belongs to the PARENT DAIRY FARM.
+// Created whenever an asset is added to a dairy.
 //
 // ==========================================================
 
 const assetAddSchema = new mongoose.Schema(
 
     {
-
-        // ==================================================
-        // ASSET ID
-        // ==================================================
 
         assetId: {
 
@@ -336,10 +449,6 @@ const assetAddSchema = new mongoose.Schema(
 
         },
 
-
-        // ==================================================
-        // ASSET DETAILS
-        // ==================================================
 
         name: {
 
@@ -429,10 +538,6 @@ const assetAddSchema = new mongoose.Schema(
         },
 
 
-        // ==================================================
-        // ASSET CODE
-        // ==================================================
-
         assetCode: {
 
             type: Number,
@@ -441,10 +546,6 @@ const assetAddSchema = new mongoose.Schema(
 
         },
 
-
-        // ==================================================
-        // PARENT DAIRY
-        // ==================================================
 
         parentDairyId: {
 
@@ -489,56 +590,41 @@ const assetAddSchema = new mongoose.Schema(
 
 
 // ==========================================================
-// FEED STORE UPDATE SUBDOCUMENT
+// STOCK UPDATE SUBDOCUMENT
 // ==========================================================
 //
-// Used by:
+// This replaces the old feedStoreSchema.
 //
-//     • dairyWorker
-//     • admin
+// It represents a visible STOCK FEED ITEM.
 //
-// This represents an ACTIVITY / REPORT concerning the
-// feed store.
+// There are two possible actions:
 //
-// The current feed-store state itself belongs to Dairy.
+//     available
+//         Created automatically when admin adds stock.
 //
-// This subdocument provides the historical record explaining
-// what happened.
+//     remainder
+//         Created when dairyWorker reports remaining stock.
 //
 // ==========================================================
 
-const feedStoreSchema = new mongoose.Schema(
+const stockSchema = new mongoose.Schema(
 
     {
 
         // ==================================================
-        // ACTION
+        // STOCK TYPE
         // ==================================================
         //
-        // condition
-        //     General facility / feed-condition report.
-        //
-        // consumption
-        //     Feed consumed/used.
-        //
-        // restock
-        //     Existing or new stock added.
+        // feed
+        // medicine
         //
         // ==================================================
 
-        action: {
+        stockType: {
 
             type: String,
 
-            enum: [
-
-                "condition",
-
-                "consumption",
-
-                "restock"
-
-            ],
+            enum: STOCK_TYPES,
 
             required: true,
 
@@ -548,22 +634,21 @@ const feedStoreSchema = new mongoose.Schema(
 
 
         // ==================================================
-        // FEED NAME
+        // ACTION
         // ==================================================
         //
-        // Examples:
-        //
-        //     Maize silage
-        //     Rhodes grass hay
-        //     Dairy meal
+        // available
+        // remainder
         //
         // ==================================================
 
-        feedName: {
+        action: {
 
             type: String,
 
-            default: "",
+            enum: STOCK_ACTIONS,
+
+            required: true,
 
             trim: true
 
@@ -571,48 +656,64 @@ const feedStoreSchema = new mongoose.Schema(
 
 
         // ==================================================
-        // FEED CATEGORY
+        // ITEM NAME
         // ==================================================
+        //
+        // Examples:
+        //
+        // Feed:
+        //
+        //     Fodder
+        //     Silage
+        //     Hay
+        //     Dairy Meal
+        //
+        // Medicine:
+        //
+        //     Multivitamin
+        //     Dewormer
+        //     Antibiotic
+        //
+        // ==================================================
+
+        itemName: {
+
+            type: String,
+
+            required: true,
+
+            trim: true,
+
+            maxlength: 150
+
+        },
+
+
+        // ==================================================
+        // CATEGORY
+        // ==================================================
+        //
+        // Backend-provided category.
         //
         // Examples:
         //
         //     fodder
         //     silage
         //     hay
-        //     concentrates
-        //     minerals
-        //     other
+        //
+        // or medicine categories.
         //
         // ==================================================
 
-        feedCategory: {
+        category: {
 
             type: String,
 
             default: "",
 
-            trim: true
+            trim: true,
 
-        },
-
-
-        // ==================================================
-        // NEW STOCK INDICATOR
-        // ==================================================
-        //
-        // true:
-        //     A new feed type/name was introduced.
-        //
-        // false:
-        //     Existing feed stock was updated.
-        //
-        // ==================================================
-
-        isNewStock: {
-
-            type: Boolean,
-
-            default: false
+            maxlength: 100
 
         },
 
@@ -621,7 +722,13 @@ const feedStoreSchema = new mongoose.Schema(
         // QUANTITY
         // ==================================================
         //
-        // Quantity involved in the operation.
+        // For ADMIN:
+        //
+        //     quantity made available.
+        //
+        // For WORKER:
+        //
+        //     quantity remaining.
         //
         // ==================================================
 
@@ -629,7 +736,7 @@ const feedStoreSchema = new mongoose.Schema(
 
             type: Number,
 
-            default: 0,
+            required: true,
 
             min: 0
 
@@ -639,22 +746,14 @@ const feedStoreSchema = new mongoose.Schema(
         // ==================================================
         // UNIT
         // ==================================================
-        //
-        // Examples:
-        //
-        //     kg
-        //     bags
-        //     tonnes
-        //     bales
-        //     litres
-        //
-        // ==================================================
 
         unit: {
 
             type: String,
 
-            default: "",
+            enum: STOCK_UNITS,
+
+            required: true,
 
             trim: true
 
@@ -662,51 +761,19 @@ const feedStoreSchema = new mongoose.Schema(
 
 
         // ==================================================
-        // PERCENTAGE REMAINING
+        // PRICE
         // ==================================================
         //
-        // Worker's estimate of remaining feed stock.
+        // ADMIN ONLY / SYSTEM STOCK AVAILABILITY.
         //
-        // 0 - 100
+        // This represents the financial value of the stock
+        // being added.
         //
-        // ==================================================
-
-        percentageRemaining: {
-
-            type: Number,
-
-            default: null,
-
-            min: 0,
-
-            max: 100
-
-        },
-
-
-        // ==================================================
-        // FEEDS AMOUNT
-        // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // This field records the financial amount associated
-        // with this feed activity.
-        //
-        // For consumption:
-        //
-        //     amount of feed value consumed.
-        //
-        // For restocking:
-        //
-        //     amount financially committed/spent.
-        //
-        // This value is also used when calculating the
-        // aggregate Dairy.feedsAmount.
+        // Worker reports do not create financial values.
         //
         // ==================================================
 
-        feedsAmount: {
+        price: {
 
             type: Number,
 
@@ -718,95 +785,63 @@ const feedStoreSchema = new mongoose.Schema(
 
 
         // ==================================================
-        // UNIT COST
+        // INSTRUCTIONS
         // ==================================================
         //
-        // Primarily useful for administrative restocking.
+        // Primarily entered by admin.
         //
-        // ==================================================
-
-        unitCost: {
-
-            type: Number,
-
-            default: 0,
-
-            min: 0
-
-        },
-
-
-        // ==================================================
-        // TOTAL COST
-        // ==================================================
+        // Example:
         //
-        // Explicit financial value for the transaction.
-        //
-        // Kept separately from feedsAmount so that financial
-        // calculations can distinguish transaction cost from
-        // the aggregate feed-value amount.
+        //     Give 2kg per animal twice daily.
         //
         // ==================================================
 
-        totalCost: {
-
-            type: Number,
-
-            default: 0,
-
-            min: 0
-
-        },
-
-
-        // ==================================================
-        // STOCK BALANCE AFTER OPERATION
-        // ==================================================
-        //
-        // Snapshot of the affected feed's quantity after
-        // this operation.
-        //
-        // ==================================================
-
-        stockBalance: {
-
-            type: Number,
-
-            default: null,
-
-            min: 0
-
-        },
-
-
-        // ==================================================
-        // STOCK UNIT
-        // ==================================================
-
-        stockUnit: {
+        instructions: {
 
             type: String,
 
             default: "",
 
-            trim: true
+            trim: true,
+
+            maxlength: 2000
 
         },
 
 
         // ==================================================
-        // MESSAGE
+        // EXPECTED DURATION
         // ==================================================
         //
-        // General observations from the worker/admin.
+        // Example:
         //
-        // Can describe:
+        //     14 days
+        //     3 weeks
+        //     2 months
         //
-        //     • facility condition
-        //     • feed quality
-        //     • storage conditions
-        //     • consumption
-        //     • restocking
+        // Kept as text because consumption duration does
+        // not necessarily need to be represented numerically.
+        //
+        // ==================================================
+
+        expectedDuration: {
+
+            type: String,
+
+            default: "",
+
+            trim: true,
+
+            maxlength: 100
+
+        },
+
+
+        // ==================================================
+        // ADDITIONAL INFORMATION
+        // ==================================================
+        //
+        // Particularly useful for dairyWorker reports.
         //
         // ==================================================
 
@@ -825,10 +860,6 @@ const feedStoreSchema = new mongoose.Schema(
 
         // ==================================================
         // IMAGES
-        // ==================================================
-        //
-        // Feed-store condition / quality images.
-        //
         // ==================================================
 
         images: {
@@ -857,33 +888,16 @@ const feedStoreSchema = new mongoose.Schema(
                             Array.isArray(images) &&
 
                             images.length <=
-                                MAX_FEED_IMAGES
+                                MAX_STOCK_IMAGES
 
                         );
 
                     },
 
                 message:
-                    `A maximum of ${MAX_FEED_IMAGES} feed-store images is allowed.`
+                    `A maximum of ${MAX_STOCK_IMAGES} stock images is allowed.`
 
             }
-
-        },
-
-
-        // ==================================================
-        // ADMIN FINANCIAL NOTE
-        // ==================================================
-
-        financialNote: {
-
-            type: String,
-
-            default: "",
-
-            trim: true,
-
-            maxlength: 1000
 
         }
 
@@ -927,6 +941,10 @@ const updateSchema = new mongoose.Schema(
         // ==================================================
         // USER
         // ==================================================
+        //
+        // null is VALID for System-generated stock posts.
+        //
+        // ==================================================
 
         user: {
 
@@ -940,7 +958,48 @@ const updateSchema = new mongoose.Schema(
         },
 
 
+        // ==================================================
+        // USER NAME
+        // ==================================================
+        //
+        // Normal update:
+        //
+        //     actual user name
+        //
+        // System stock:
+        //
+        //     System
+        //
+        // ==================================================
+
         userName: {
+
+            type: String,
+
+            default: "",
+
+            trim: true,
+
+            maxlength: 150
+
+        },
+
+
+        // ==================================================
+        // USER IMAGE
+        // ==================================================
+        //
+        // Normal update:
+        //
+        //     actual profile image
+        //
+        // System stock:
+        //
+        //     /images/h1.png
+        //
+        // ==================================================
+
+        userImage: {
 
             type: String,
 
@@ -951,9 +1010,36 @@ const updateSchema = new mongoose.Schema(
         },
 
 
-        userImage: {
+        // ==================================================
+        // AUTHOR ROLE
+        // ==================================================
+        //
+        // Stored explicitly because a System-generated
+        // update does not have a User document.
+        //
+        // Possible values:
+        //
+        //     admin
+        //     dairyWorker
+        //     system
+        //
+        // ==================================================
+
+        authorRole: {
 
             type: String,
+
+            enum: [
+
+                "admin",
+
+                "dairyWorker",
+
+                "system",
+
+                ""
+
+            ],
 
             default: "",
 
@@ -984,7 +1070,7 @@ const updateSchema = new mongoose.Schema(
 
                 "assetAdd",
 
-                "feedStore"
+                "stock"
 
             ],
 
@@ -996,7 +1082,17 @@ const updateSchema = new mongoose.Schema(
 
 
         // ==================================================
-        // POST TITLE
+        // TITLE
+        // ==================================================
+        //
+        // Used by stock cards.
+        //
+        // Examples:
+        //
+        //     More Animal Feed Available
+        //
+        //     More Veterinary Meds Available
+        //
         // ==================================================
 
         title: {
@@ -1184,22 +1280,20 @@ const updateSchema = new mongoose.Schema(
 
 
         // ==================================================
-        // FEED STORE
+        // STOCK
         // ==================================================
         //
-        // Feed-store activity/report.
+        // Used for both:
         //
-        // The current stock itself is NOT stored here.
-        //
-        // This is a historical snapshot of what the user
-        // reported or what the admin changed.
+        //     admin availability
+        //     dairy-worker remainder reports
         //
         // ==================================================
 
-        feedStore: {
+        stock: {
 
             type:
-                feedStoreSchema,
+                stockSchema,
 
             default: undefined
 
@@ -1218,11 +1312,6 @@ const updateSchema = new mongoose.Schema(
 
 // ==========================================================
 // PRE VALIDATE
-// ==========================================================
-//
-// Normalize post images and feed-store images while keeping
-// the legacy `image` field available.
-//
 // ==========================================================
 
 updateSchema.pre(
@@ -1304,27 +1393,26 @@ updateSchema.pre(
 
 
         // ==================================================
-        // NORMALIZE FEED STORE IMAGES
+        // NORMALIZE STOCK IMAGES
         // ==================================================
 
         if (
-            this.feedStore &&
-            !Array.isArray(
-                this.feedStore.images
-            )
+            this.stock
         ) {
 
-            this.feedStore.images = [];
+            if (
+                !Array.isArray(
+                    this.stock.images
+                )
+            ) {
 
-        }
+                this.stock.images = [];
+
+            }
 
 
-        if (
-            this.feedStore
-        ) {
-
-            this.feedStore.images =
-                this.feedStore.images
+            this.stock.images =
+                this.stock.images
 
                     .filter(Boolean)
 
@@ -1337,42 +1425,102 @@ updateSchema.pre(
 
                     .slice(
                         0,
-                        MAX_FEED_IMAGES
+                        MAX_STOCK_IMAGES
                     );
 
         }
 
 
         // ==================================================
-        // NORMALIZE FEED FINANCIAL VALUES
+        // NORMALIZE STOCK FINANCIAL VALUES
         // ==================================================
 
         if (
-            this.feedStore
+            this.stock
         ) {
 
-            this.feedStore.feedsAmount =
+            this.stock.quantity =
                 Number(
-                    this.feedStore.feedsAmount
+                    this.stock.quantity
                 ) || 0;
 
 
-            this.feedStore.unitCost =
+            this.stock.price =
                 Number(
-                    this.feedStore.unitCost
+                    this.stock.price
                 ) || 0;
 
-
-            this.feedStore.totalCost =
-                Number(
-                    this.feedStore.totalCost
-                ) || 0;
+        }
 
 
-            this.feedStore.quantity =
-                Number(
-                    this.feedStore.quantity
-                ) || 0;
+        // ==================================================
+        // SYSTEM STOCK NORMALIZATION
+        // ==================================================
+        //
+        // Admin availability updates are system-generated.
+        //
+        // This protects the feed from accidentally displaying
+        // the admin as the author of the automatic stock post.
+        //
+        // ==================================================
+
+        if (
+
+            this.type === "stock" &&
+
+            this.stock &&
+
+            this.stock.action === "available"
+
+        ) {
+
+            this.authorRole =
+                "system";
+
+
+            this.userName =
+                "System";
+
+
+            this.userImage =
+                "/images/h1.png";
+
+
+            this.user =
+                null;
+
+        }
+
+
+        // ==================================================
+        // STOCK TITLE NORMALIZATION
+        // ==================================================
+        //
+        // Only generate the title automatically when the
+        // service has not already supplied one.
+        //
+        // ==================================================
+
+        if (
+
+            this.type === "stock" &&
+
+            this.stock
+
+        ) {
+
+            if (
+                !this.title
+            ) {
+
+                this.title =
+                    this.stock.stockType === "medicine"
+
+                        ? "More Veterinary Meds Available"
+
+                        : "More Animal Feed Available";
+
+            }
 
         }
 
@@ -1397,13 +1545,49 @@ function() {
 
 
 // ==========================================================
-// STATIC: MAX FEED IMAGES
+// STATIC: MAX STOCK IMAGES
 // ==========================================================
 
-updateSchema.statics.getMaxFeedImages =
+updateSchema.statics.getMaxStockImages =
 function() {
 
-    return MAX_FEED_IMAGES;
+    return MAX_STOCK_IMAGES;
+
+};
+
+
+// ==========================================================
+// STATIC: STOCK TYPES
+// ==========================================================
+
+updateSchema.statics.getStockTypes =
+function() {
+
+    return STOCK_TYPES;
+
+};
+
+
+// ==========================================================
+// STATIC: STOCK ACTIONS
+// ==========================================================
+
+updateSchema.statics.getStockActions =
+function() {
+
+    return STOCK_ACTIONS;
+
+};
+
+
+// ==========================================================
+// STATIC: STOCK UNITS
+// ==========================================================
+
+updateSchema.statics.getStockUnits =
+function() {
+
+    return STOCK_UNITS;
 
 };
 
@@ -1429,8 +1613,17 @@ const Update =
 Update.MAX_POST_IMAGES =
     MAX_POST_IMAGES;
 
-Update.MAX_FEED_IMAGES =
-    MAX_FEED_IMAGES;
+Update.MAX_STOCK_IMAGES =
+    MAX_STOCK_IMAGES;
+
+Update.STOCK_TYPES =
+    STOCK_TYPES;
+
+Update.STOCK_ACTIONS =
+    STOCK_ACTIONS;
+
+Update.STOCK_UNITS =
+    STOCK_UNITS;
 
 
 // ==========================================================
