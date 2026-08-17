@@ -6,29 +6,31 @@ FILE:
     views/update/medical-unmark-composer.ejs
 
 PURPOSE:
-    Compact status-style card for clearing medical attention
-    from the CURRENT dairy asset.
+    Compact card for clearing medical attention from the
+    CURRENT dairy asset.
 
-CARD STANDARD:
-    Matches create.ejs / maintComposer.ejs:
+    Clicking the card opens a FULL-SCREEN modal.
+
+TARGET:
+    The current dairy/asset is ALWAYS the target.
+
+AUTHORIZED USER:
+    admin only.
+
+CONDITION:
+    dairy.medicalAttention.isMarked === true
+
+FORM:
+    POST /dairy/:id/medical-unmark
+
+SIZE:
+    Same as create.ejs:
 
         Desktop:
             112px × 155px
 
         Mobile:
             108px × 150px
-
-TARGET:
-    The current dairy/asset is ALWAYS the target.
-
-AUTHORIZED USER:
-    admin only
-
-CONDITION:
-    Medical attention must currently be marked.
-
-FORM:
-    POST /dairy/:id/medical-unmark
 ============================================================
 */ %>
 
@@ -43,19 +45,20 @@ FORM:
 
 
 <!-- =========================================================
-     MEDICAL UNMARK CARD
+     MEDICAL CLEAR CARD
 ========================================================= -->
 
 <section
     class="medical-unmark-composer"
-    aria-label="Clear medical attention"
+    data-medical-unmark-card
+    data-dairy-id="<%= dairy._id %>"
 >
 
 
     <button
         type="button"
-        id="openMedicalUnmarkComposer"
         class="medical-unmark-composer__card"
+        data-open-medical-unmark
         aria-label="Clear medical attention for <%= dairy.name %>"
     >
 
@@ -68,7 +71,7 @@ FORM:
             class="medical-unmark-composer__icon"
             aria-hidden="true"
         >
-            ✓
+            <i class="bi bi-check-lg"></i>
         </span>
 
 
@@ -103,8 +106,8 @@ FORM:
 ========================================================= -->
 
 <div
-    id="medicalUnmarkModal"
     class="medical-unmark-modal"
+    data-medical-unmark-modal
     aria-hidden="true"
 >
 
@@ -121,14 +124,15 @@ FORM:
 
             <button
                 type="button"
-                id="closeMedicalUnmarkModal"
                 class="medical-unmark-modal__back"
-                aria-label="Close medical clearance"
+                data-close-medical-unmark
+                aria-label="Go back"
             >
 
-                <span aria-hidden="true">
-                    &#8592;
-                </span>
+                <i
+                    class="bi bi-arrow-left"
+                    aria-hidden="true"
+                ></i>
 
             </button>
 
@@ -176,15 +180,15 @@ FORM:
                         <%= user.name.split(" ")[0] %>
                     </strong>,
 
-                    has the medical treatment for this asset
-                    been completed?
+                    has the medical treatment for this
+                    facility/asset been completed?
 
                 </div>
 
 
 
                 <!-- =================================================
-                     TARGET
+                     TARGET ASSET
                 ================================================== -->
 
                 <section
@@ -236,19 +240,17 @@ FORM:
 
 
                 <!-- =================================================
-                     CURRENT MEDICAL STATUS
+                     MEDICAL STATUS
                 ================================================== -->
 
-                <section
-                    class="medical-unmark-status"
-                    aria-label="Current medical status"
-                >
+                <div class="medical-unmark-status">
+
 
                     <span
                         class="medical-unmark-status__icon"
                         aria-hidden="true"
                     >
-                        ⚕
+                        <i class="bi bi-heart-pulse"></i>
                     </span>
 
 
@@ -259,24 +261,14 @@ FORM:
                         </strong>
 
                         <span>
-
-                            <% if (
-                                dairy.medicalAttention.type
-                            ) { %>
-
-                                <%= dairy.medicalAttention.type %>
-
-                            <% } else { %>
-
-                                Medical treatment recorded
-
-                            <% } %>
-
+                            Record the treatment completed below
+                            to clear the medical status.
                         </span>
 
                     </div>
 
-                </section>
+
+                </div>
 
 
 
@@ -285,7 +277,6 @@ FORM:
                 ================================================== -->
 
                 <form
-                    id="medicalUnmarkForm"
                     class="medical-unmark-form"
                     action="/dairy/<%= dairy._id %>/medical-unmark"
                     method="POST"
@@ -299,16 +290,14 @@ FORM:
 
                     <div class="medical-unmark-field">
 
+                        <label for="medicalUnmarkCharges">
 
-                        <label
-                            for="medicalUnmarkCharges"
-                        >
-                            Treatment charges
+                            Charges incurred
+
                         </label>
 
 
                         <div class="medical-unmark-money-input">
-
 
                             <span>
                                 KES
@@ -326,25 +315,22 @@ FORM:
                                 required
                             >
 
-
                         </div>
-
 
                     </div>
 
 
 
                     <!-- =============================================
-                         DESCRIPTION
+                         TREATMENT SUMMARY
                     ============================================== -->
 
                     <div class="medical-unmark-field">
 
+                        <label for="medicalUnmarkDescription">
 
-                        <label
-                            for="medicalUnmarkDescription"
-                        >
-                            Treatment summary
+                            Treatment completed
+
                         </label>
 
 
@@ -353,18 +339,17 @@ FORM:
                             name="description"
                             maxlength="1000"
                             rows="5"
-                            placeholder="Describe the treatment completed..."
+                            placeholder="Describe the treatment or medical work completed..."
                             required
                         ></textarea>
 
 
                         <span
-                            id="medicalUnmarkCharacterCounter"
                             class="medical-unmark-character-counter"
+                            data-medical-unmark-counter
                         >
                             0/1000
                         </span>
-
 
                     </div>
 
@@ -376,8 +361,8 @@ FORM:
 
                     <button
                         type="submit"
-                        id="medicalUnmarkSubmitButton"
                         class="medical-unmark-submit-button"
+                        data-medical-unmark-submit
                         disabled
                     >
 
@@ -397,7 +382,6 @@ FORM:
 
 
             </div>
-
 
         </main>
 
@@ -539,9 +523,7 @@ FORM:
 
     color: #ffffff;
 
-    font-size: 25px;
-
-    font-weight: 700;
+    font-size: 22px;
 
     line-height: 1;
 
@@ -552,9 +534,16 @@ FORM:
 }
 
 
+.medical-unmark-composer__icon i {
+
+    line-height: 1;
+
+}
+
+
 
 /* =========================================================
-   CARD LABEL
+   LABEL
 ========================================================= */
 
 .medical-unmark-composer__label {
@@ -691,7 +680,7 @@ FORM:
 
     color: #198754;
 
-    font-size: 27px;
+    font-size: 25px;
 
     line-height: 1;
 
@@ -840,7 +829,7 @@ FORM:
 
     gap: 12px;
 
-    margin-bottom: 16px;
+    margin-bottom: 20px;
 
     padding: 12px 13px;
 
@@ -888,7 +877,7 @@ FORM:
 
     color: #ffffff;
 
-    font-size: 21px;
+    font-size: 20px;
 
 }
 
@@ -932,7 +921,7 @@ FORM:
 
 
 /* =========================================================
-   CURRENT MEDICAL STATUS
+   MEDICAL STATUS NOTICE
 ========================================================= */
 
 .medical-unmark-status {
@@ -974,9 +963,7 @@ FORM:
 
     color: #991b1b;
 
-    font-size: 17px;
-
-    font-weight: 700;
+    font-size: 15px;
 
 }
 
@@ -1060,13 +1047,12 @@ FORM:
 
 
 /* =========================================================
-   CHARGES
+   MONEY INPUT
 ========================================================= */
 
 .medical-unmark-money-input {
 
     width: 100%;
-
     height: 48px;
 
     display: flex;
@@ -1075,7 +1061,7 @@ FORM:
 
     overflow: hidden;
 
-    border: 1px solid #e0e7e2;
+    border: 1px solid #d6e0d9;
 
     border-radius: 12px;
 
@@ -1130,7 +1116,6 @@ FORM:
     flex: 1;
 
     width: 100%;
-
     min-width: 0;
 
     height: 100%;
@@ -1169,7 +1154,7 @@ FORM:
 
     resize: vertical;
 
-    border: 1px solid #e0e7e2;
+    border: 1px solid #d6e0d9;
 
     border-radius: 12px;
 
@@ -1307,6 +1292,13 @@ FORM:
 }
 
 
+.medical-unmark-submit-button i {
+
+    font-size: 16px;
+
+}
+
+
 
 /* =========================================================
    MOBILE
@@ -1337,7 +1329,7 @@ FORM:
         width: 46px;
         height: 46px;
 
-        font-size: 24px;
+        font-size: 21px;
 
     }
 
@@ -1375,6 +1367,11 @@ FORM:
 
 }
 
+
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
 
 @media (max-width: 380px) {
 
@@ -1415,51 +1412,57 @@ FORM:
            ELEMENTS
         ====================================================== */
 
+        const card =
+            document.querySelector(
+                "[data-medical-unmark-card]"
+            );
+
+
         const modal =
-            document.getElementById(
-                "medicalUnmarkModal"
+            document.querySelector(
+                "[data-medical-unmark-modal]"
             );
 
 
         const openButton =
-            document.getElementById(
-                "openMedicalUnmarkComposer"
+            document.querySelector(
+                "[data-open-medical-unmark]"
             );
 
 
         const closeButton =
-            document.getElementById(
-                "closeMedicalUnmarkModal"
+            document.querySelector(
+                "[data-close-medical-unmark]"
             );
 
 
         const chargesInput =
-            document.getElementById(
-                "medicalUnmarkCharges"
+            document.querySelector(
+                "#medicalUnmarkCharges"
             );
 
 
         const descriptionInput =
-            document.getElementById(
-                "medicalUnmarkDescription"
+            document.querySelector(
+                "#medicalUnmarkDescription"
             );
 
 
         const characterCounter =
-            document.getElementById(
-                "medicalUnmarkCharacterCounter"
+            document.querySelector(
+                "[data-medical-unmark-counter]"
             );
 
 
         const submitButton =
-            document.getElementById(
-                "medicalUnmarkSubmitButton"
+            document.querySelector(
+                "[data-medical-unmark-submit]"
             );
 
 
         const form =
-            document.getElementById(
-                "medicalUnmarkForm"
+            document.querySelector(
+                ".medical-unmark-form"
             );
 
 
@@ -1469,6 +1472,7 @@ FORM:
         ====================================================== */
 
         if (
+            !card ||
             !modal ||
             !openButton ||
             !closeButton ||
@@ -1495,16 +1499,12 @@ FORM:
 
         function openModal() {
 
-            modal.classList.add(
-                "active"
-            );
-
+            modal.classList.add("active");
 
             modal.setAttribute(
                 "aria-hidden",
                 "false"
             );
-
 
             document.body.style.overflow =
                 "hidden";
@@ -1529,16 +1529,12 @@ FORM:
 
         function closeModal() {
 
-            modal.classList.remove(
-                "active"
-            );
-
+            modal.classList.remove("active");
 
             modal.setAttribute(
                 "aria-hidden",
                 "true"
             );
-
 
             document.body.style.overflow =
                 "";
@@ -1548,7 +1544,7 @@ FORM:
 
 
         /* =====================================================
-           VALIDATION
+           VALIDATE FORM
         ====================================================== */
 
         function updateSubmitButton() {
@@ -1602,31 +1598,7 @@ FORM:
 
 
         /* =====================================================
-           TEXTAREA RESIZE
-        ====================================================== */
-
-        function resizeTextarea() {
-
-            descriptionInput.style.height =
-                "auto";
-
-
-            const height =
-                Math.min(
-                    descriptionInput.scrollHeight,
-                    300
-                );
-
-
-            descriptionInput.style.height =
-                height + "px";
-
-        }
-
-
-
-        /* =====================================================
-           OPEN
+           OPEN CARD
         ====================================================== */
 
         openButton.addEventListener(
@@ -1637,7 +1609,7 @@ FORM:
 
 
         /* =====================================================
-           CLOSE
+           CLOSE BUTTON
         ====================================================== */
 
         closeButton.addEventListener(
@@ -1657,9 +1629,7 @@ FORM:
 
                 if (
                     event.key === "Escape" &&
-                    modal.classList.contains(
-                        "active"
-                    )
+                    modal.classList.contains("active")
                 ) {
 
                     closeModal();
@@ -1691,8 +1661,6 @@ FORM:
             function () {
 
                 updateCharacterCounter();
-
-                resizeTextarea();
 
                 updateSubmitButton();
 
@@ -1727,8 +1695,6 @@ FORM:
         ====================================================== */
 
         updateCharacterCounter();
-
-        resizeTextarea();
 
         updateSubmitButton();
 
