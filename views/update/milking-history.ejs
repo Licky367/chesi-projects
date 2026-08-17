@@ -1,38 +1,30 @@
 <% /*
-==========================================================
+============================================================
 MILKING HISTORY CARD
 
 FILE:
     views/update/milking-history.ejs
 
 PURPOSE:
-----------------------------------------------------------
-Compact clickable card that opens the milking history
-page for the currently viewed dairy animal.
+    Compact clickable card for opening the milking history
+    of the CURRENT dairy animal.
 
 NAVIGATION:
-----------------------------------------------------------
-/milk/history/:id
-
-Example:
-    /milk/history/64f123...
-
-EXPECTED DATA:
-----------------------------------------------------------
-dairy
+    /milk/history/:id
 
 DESIGN:
-----------------------------------------------------------
-• Same compact size as other update cards
-• Greenish theme
-• Entire card is clickable
-• No form
-• No JavaScript required
-==========================================================
+    - Same size as create.ejs
+    - 112px × 155px
+    - 108px × 150px on mobile
+    - Greenish theme
+    - Entire card is clickable
+    - No JavaScript required
+============================================================
 */ %>
 
 
 <% if (dairy) { %>
+
 
 <a
     href="/milk/history/<%= dairy._id %>"
@@ -41,65 +33,91 @@ DESIGN:
 >
 
 
-    <!-- ==================================================
+    <!-- =====================================================
          ICON
-    =================================================== -->
+    ====================================================== -->
 
-    <div class="milking-history-icon">
+    <span
+        class="milking-history-card__icon"
+        aria-hidden="true"
+    >
 
         <i class="bi bi-clock-history"></i>
 
-    </div>
+    </span>
 
 
-    <!-- ==================================================
-         CONTENT
-    =================================================== -->
 
-    <div class="milking-history-content">
+    <!-- =====================================================
+         LABEL
+    ====================================================== -->
 
-        <span class="milking-history-label">
-            MILKING
-        </span>
+    <span class="milking-history-card__label">
 
-        <h3 class="milking-history-title">
-            Milking History
-        </h3>
+        MILKING
 
-        <p class="milking-history-description">
-            View recorded milk production.
-        </p>
-
-    </div>
+    </span>
 
 
-    <!-- ==================================================
+
+    <!-- =====================================================
+         TITLE
+    ====================================================== -->
+
+    <span class="milking-history-card__title">
+
+        Milking History
+
+    </span>
+
+
+
+    <!-- =====================================================
+         TARGET
+    ====================================================== -->
+
+    <span class="milking-history-card__target">
+
+        <%= dairy.name %>
+
+    </span>
+
+
+
+    <!-- =====================================================
          ARROW
-    =================================================== -->
+    ====================================================== -->
 
-    <div class="milking-history-arrow">
+    <span
+        class="milking-history-card__arrow"
+        aria-hidden="true"
+    >
 
         <i class="bi bi-chevron-right"></i>
 
-    </div>
+    </span>
 
 
 </a>
+
 
 
 <style>
 
 /* ==========================================================
    MILKING HISTORY CARD
+   SAME DIMENSIONS AS create.ejs
 ========================================================== */
 
 .milking-history-card {
 
     position: relative;
 
-    width: 170px;
+    width: 112px;
 
-    min-height: 205px;
+    height: 155px;
+
+    flex: 0 0 112px;
 
     box-sizing: border-box;
 
@@ -109,46 +127,81 @@ DESIGN:
 
     flex-direction: column;
 
-    text-decoration: none;
+    align-items: center;
 
-    color: inherit;
+    justify-content: center;
 
-    background: #ffffff;
-
-    border: 1px solid #dcebe2;
-
-    border-radius: 14px;
-
-    box-shadow:
-        0 4px 14px rgba(20, 83, 45, 0.07);
+    gap: 7px;
 
     overflow: hidden;
 
+    border: 1px solid #dce7e0;
+
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f3f8f5
+        );
+
+    color: #198754;
+
+    text-decoration: none;
+
+    font-family: inherit;
+
     cursor: pointer;
 
+    text-align: center;
+
     transition:
-        transform 0.16s ease,
-        box-shadow 0.16s ease,
-        border-color 0.16s ease;
+        transform .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease;
 
 }
 
+
+
+/* ==========================================================
+   HOVER
+========================================================== */
 
 .milking-history-card:hover {
 
-    transform: translateY(-2px);
-
-    border-color: #a9d5b9;
+    border-color: #198754;
 
     box-shadow:
-        0 7px 18px rgba(20, 83, 45, 0.11);
+        0 5px 15px
+        rgba(25, 135, 84, .10);
 
 }
 
 
+
+/* ==========================================================
+   ACTIVE
+========================================================== */
+
 .milking-history-card:active {
 
-    transform: scale(0.98);
+    transform: scale(.95);
+
+}
+
+
+
+/* ==========================================================
+   KEYBOARD FOCUS
+========================================================== */
+
+.milking-history-card:focus-visible {
+
+    outline: 2px solid #198754;
+
+    outline-offset: 2px;
 
 }
 
@@ -158,108 +211,13 @@ DESIGN:
    ICON
 ========================================================== */
 
-.milking-history-icon {
+.milking-history-card__icon {
 
-    width: 42px;
+    width: 48px;
 
-    height: 42px;
+    height: 48px;
 
-    flex: 0 0 42px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    margin-bottom: 14px;
-
-    border-radius: 11px;
-
-    background: #eaf6ee;
-
-    color: #198754;
-
-    font-size: 21px;
-
-}
-
-
-
-/* ==========================================================
-   CONTENT
-========================================================== */
-
-.milking-history-content {
-
-    min-width: 0;
-
-    flex: 1;
-
-}
-
-
-.milking-history-label {
-
-    display: block;
-
-    margin-bottom: 4px;
-
-    color: #7a9181;
-
-    font-size: 9px;
-
-    font-weight: 800;
-
-    letter-spacing: 0.7px;
-
-}
-
-
-.milking-history-title {
-
-    margin: 0;
-
-    color: #183d28;
-
-    font-size: 15px;
-
-    font-weight: 800;
-
-    line-height: 1.25;
-
-}
-
-
-.milking-history-description {
-
-    margin: 7px 0 0;
-
-    color: #718078;
-
-    font-size: 10px;
-
-    line-height: 1.4;
-
-}
-
-
-
-/* ==========================================================
-   ARROW
-========================================================== */
-
-.milking-history-arrow {
-
-    position: absolute;
-
-    right: 10px;
-
-    bottom: 10px;
-
-    width: 25px;
-
-    height: 25px;
+    flex: 0 0 48px;
 
     display: flex;
 
@@ -269,11 +227,119 @@ DESIGN:
 
     border-radius: 50%;
 
-    background: #edf7f0;
+    background: #198754;
+
+    color: #ffffff;
+
+    font-size: 22px;
+
+    box-shadow:
+        0 4px 12px
+        rgba(25, 135, 84, .20);
+
+}
+
+
+
+/* ==========================================================
+   LABEL
+========================================================== */
+
+.milking-history-card__label {
+
+    display: block;
+
+    color: #789080;
+
+    font-size: 8px;
+
+    font-weight: 800;
+
+    letter-spacing: .7px;
+
+    line-height: 1.1;
+
+}
+
+
+
+/* ==========================================================
+   TITLE
+========================================================== */
+
+.milking-history-card__title {
+
+    display: block;
+
+    max-width: 90px;
+
+    color: #26322b;
+
+    font-size: 13px;
+
+    font-weight: 800;
+
+    line-height: 1.2;
+
+}
+
+
+
+/* ==========================================================
+   TARGET
+========================================================== */
+
+.milking-history-card__target {
+
+    display: block;
+
+    max-width: 88px;
+
+    overflow: hidden;
+
+    color: #8a928d;
+
+    font-size: 9px;
+
+    line-height: 1.2;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+
+/* ==========================================================
+   ARROW
+========================================================== */
+
+.milking-history-card__arrow {
+
+    position: absolute;
+
+    right: 7px;
+
+    bottom: 7px;
+
+    width: 22px;
+
+    height: 22px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #eaf6ee;
 
     color: #198754;
 
-    font-size: 12px;
+    font-size: 10px;
 
 }
 
@@ -283,31 +349,54 @@ DESIGN:
    MOBILE
 ========================================================== */
 
-@media (max-width: 650px) {
+@media (max-width: 600px) {
 
     .milking-history-card {
 
-        width: 155px;
+        width: 108px;
 
-        min-height: 190px;
+        height: 150px;
 
-        padding: 10px;
+        flex-basis: 108px;
 
     }
 
 
-    .milking-history-icon {
+    .milking-history-card__icon {
 
-        width: 40px;
+        width: 46px;
 
-        height: 40px;
+        height: 46px;
 
-        flex-basis: 40px;
+        flex-basis: 46px;
+
+        font-size: 21px;
+
+    }
+
+}
+
+
+
+/* ==========================================================
+   SMALL PHONES
+========================================================== */
+
+@media (max-width: 380px) {
+
+    .milking-history-card {
+
+        width: 108px;
+
+        height: 150px;
+
+        flex-basis: 108px;
 
     }
 
 }
 
 </style>
+
 
 <% } %>
