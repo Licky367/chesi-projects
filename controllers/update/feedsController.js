@@ -6,17 +6,23 @@
 //
 // Responsibilities:
 //
-//     • Display the Feed Store page
+//     • Display Feed Store page
 //     • Receive feed-store reports
 //     • Receive feed-store restocking requests
-//     • Perform authentication / authorization checks
-//     • Pass business logic to feedsService
+//     • Authentication
+//     • Authorization
+//     • Extract uploaded files
+//     • Pass data to feedsService
 //
 // Business logic belongs in:
 //
 //     services/update/feedsService.js
 //
 // ==========================================================
+
+
+const Dairy =
+    require("../../models/dairy");
 
 
 const feedsService =
@@ -30,9 +36,13 @@ const feedsService =
 const FEED_STORE_TYPE =
     "feedStore";
 
+
 const ALLOWED_ROLES = [
+
     "admin",
+
     "dairyWorker"
+
 ];
 
 
@@ -45,7 +55,9 @@ const ALLOWED_ROLES = [
 // GET LOGGED-IN USER
 // ----------------------------------------------------------
 
-function getUser(req) {
+function getUser(
+    req
+) {
 
     return (
         req.user ||
@@ -60,7 +72,9 @@ function getUser(req) {
 // GET USER ID
 // ----------------------------------------------------------
 
-function getUserId(user) {
+function getUserId(
+    user
+) {
 
     return (
         user?._id ||
@@ -74,21 +88,10 @@ function getUserId(user) {
 // ----------------------------------------------------------
 // GET DAIRY ID
 // ----------------------------------------------------------
-//
-// Supports:
-//
-//     req.params.id
-//
-// and:
-//
-//     req.params.dairyId
-//
-// This keeps the controller compatible with either route
-// parameter naming.
-//
-// ----------------------------------------------------------
 
-function getDairyId(req) {
+function getDairyId(
+    req
+) {
 
     return (
         req.params?.id ||
@@ -100,10 +103,12 @@ function getDairyId(req) {
 
 
 // ----------------------------------------------------------
-// CHECK FEED STORE ACCESS
+// CAN MANAGE FEED STORE
 // ----------------------------------------------------------
 
-function canManageFeedStore(user) {
+function canManageFeedStore(
+    user
+) {
 
     return !!(
         user &&
@@ -116,10 +121,12 @@ function canManageFeedStore(user) {
 
 
 // ----------------------------------------------------------
-// CHECK ADMIN
+// ADMIN
 // ----------------------------------------------------------
 
-function isAdmin(user) {
+function isAdmin(
+    user
+) {
 
     return !!(
         user &&
@@ -129,22 +136,33 @@ function isAdmin(user) {
 }
 
 
+// ==========================================================
+// UPLOADED IMAGE EXTRACTION
+// ==========================================================
+//
+// IMPORTANT
 // ----------------------------------------------------------
-// GET UPLOADED IMAGES
-// ----------------------------------------------------------
 //
-// Expected multer configuration:
+// We DO NOT save:
 //
-//     upload.array("images", 10)
+//     file.path
 //
-// The service receives only the resulting paths.
+// directly.
 //
-// ----------------------------------------------------------
+// The service will convert the path to:
+//
+//     /uploads/images/filename.jpg
+//
+// ==========================================================
 
-function getUploadedImages(req) {
+function getUploadedImages(
+    req
+) {
 
     if (
-        !Array.isArray(req.files)
+        !Array.isArray(
+            req.files
+        )
     ) {
 
         return [];
@@ -164,31 +182,55 @@ function getUploadedImages(req) {
                 }
 
 
-                return (
-                    file.path ||
-                    file.location ||
-                    file.filename ||
-                    null
-                );
+                // ------------------------------------------------
+                // Cloud storage URL
+                // ------------------------------------------------
+
+                if (
+                    file.location
+                ) {
+
+                    return file.location;
+
+                }
+
+
+                // ------------------------------------------------
+                // Multer filename
+                // ------------------------------------------------
+
+                if (
+                    file.filename
+                ) {
+
+                    return (
+                        `/uploads/images/${file.filename}`
+                    );
+
+                }
+
+
+                // ------------------------------------------------
+                // Local filesystem path
+                //
+                // Service will normalize it.
+                // ------------------------------------------------
+
+                if (
+                    file.path
+                ) {
+
+                    return file.path;
+
+                }
+
+
+                return null;
 
             }
         )
 
         .filter(Boolean);
-
-}
-
-
-// ----------------------------------------------------------
-// GET REQUEST BODY
-// ----------------------------------------------------------
-
-function getBody(req) {
-
-    return (
-        req.body ||
-        {}
-    );
 
 }
 
@@ -200,10 +242,6 @@ function getBody(req) {
 // GET:
 //
 //     /dairy/feedstore/:id
-//
-// Renders:
-//
-//     views/update/feeds-store.ejs
 //
 // ==========================================================
 
@@ -220,12 +258,16 @@ async function viewFeedStore(
         // --------------------------------------------------
 
         const user =
-            getUser(req);
+            getUser(
+                req
+            );
 
 
         if (!user) {
 
-            return res.status(401).send(
+            return res.status(
+                401
+            ).send(
                 "Unauthorized"
             );
 
@@ -242,7 +284,9 @@ async function viewFeedStore(
             )
         ) {
 
-            return res.status(403).send(
+            return res.status(
+                403
+            ).send(
                 "Forbidden"
             );
 
@@ -254,12 +298,16 @@ async function viewFeedStore(
         // --------------------------------------------------
 
         const dairyId =
-            getDairyId(req);
+            getDairyId(
+                req
+            );
 
 
         if (!dairyId) {
 
-            return res.status(400).send(
+            return res.status(
+                400
+            ).send(
                 "Dairy ID is required."
             );
 
@@ -267,39 +315,75 @@ async function viewFeedStore(
 
 
         // --------------------------------------------------
-        // GET PAGE DATA
+        // FIND DAIRY
         // --------------------------------------------------
-        //
-        // The service:
-        //
-        //     • validates the dairy
-        //     • validates feedStore type
-        //     • gets feeds
-        //     • calculates feedsAmount
-        //     • gets recent updates
-        //
+
+        const dairy =
+            await Dairy.findById(
+                dairyId
+            );
+
+
+        if (!dairy) {
+
+            return res.status(
+                404
+            ).send(
+                "Dairy asset not found."
+            );
+
+        }
+
+
+        // --------------------------------------------------
+        // VERIFY FEED STORE
+        // --------------------------------------------------
+
+        if (
+            dairy.type !==
+            FEED_STORE_TYPE
+        ) {
+
+            return res.status(
+                404
+            ).send(
+                "This dairy asset is not a feed store."
+            );
+
+        }
+
+
+        // --------------------------------------------------
+        // PAGE DATA
         // --------------------------------------------------
 
         const feedStoreData =
-            await feedsService.getFeedStorePageDataById
-                ? await feedsService.getFeedStorePageDataById(
-                    dairyId
-                )
-                : await getFeedStoreDataFromExistingService(
-                    dairyId
-                );
+            await feedsService.getFeedStorePageData(
+                dairy
+            );
 
 
         // --------------------------------------------------
         // RENDER
+        // --------------------------------------------------
+        //
+        // IMPORTANT:
+        //
+        // Correct directory:
+        //
+        //     views/update/
+        //
+        // NOT:
+        //
+        //     views/updates/
+        //
         // --------------------------------------------------
 
         return res.render(
             "update/feeds-store",
             {
 
-                dairy:
-                    feedStoreData.dairy,
+                dairy,
 
                 user,
 
@@ -319,85 +403,11 @@ async function viewFeedStore(
 
     catch (error) {
 
-        next(error);
-
-    }
-
-}
-
-
-// ==========================================================
-// INTERNAL PAGE-DATA COMPATIBILITY HELPER
-// ==========================================================
-//
-// Your current service accepts a Dairy document:
-//
-//     getFeedStorePageData(dairy)
-//
-// rather than a dairy ID.
-//
-// This helper keeps the controller compatible with that
-// service without moving service logic into the controller.
-//
-// ==========================================================
-
-async function getFeedStoreDataFromExistingService(
-    dairyId
-) {
-
-    const Dairy =
-        require("../../models/dairy");
-
-
-    const dairy =
-        await Dairy.findById(
-            dairyId
+        next(
+            error
         );
 
-
-    if (!dairy) {
-
-        const error =
-            new Error(
-                "Dairy asset not found."
-            );
-
-        error.status = 404;
-
-        throw error;
-
     }
-
-
-    if (
-        dairy.type !== FEED_STORE_TYPE
-    ) {
-
-        const error =
-            new Error(
-                "The selected dairy asset is not a feed store."
-            );
-
-        error.status = 400;
-
-        throw error;
-
-    }
-
-
-    const data =
-        await feedsService.getFeedStorePageData(
-            dairy
-        );
-
-
-    return {
-
-        dairy,
-
-        ...data
-
-    };
 
 }
 
@@ -409,11 +419,6 @@ async function getFeedStoreDataFromExistingService(
 // POST:
 //
 //     /dairy/:id/feedstore/update
-//
-// Allowed:
-//
-//     admin
-//     dairyWorker
 //
 // ==========================================================
 
@@ -430,12 +435,16 @@ async function updateFeedStore(
         // --------------------------------------------------
 
         const user =
-            getUser(req);
+            getUser(
+                req
+            );
 
 
         if (!user) {
 
-            return res.status(401).json({
+            return res.status(
+                401
+            ).json({
 
                 success: false,
 
@@ -457,7 +466,9 @@ async function updateFeedStore(
             )
         ) {
 
-            return res.status(403).json({
+            return res.status(
+                403
+            ).json({
 
                 success: false,
 
@@ -474,15 +485,22 @@ async function updateFeedStore(
         // --------------------------------------------------
 
         const dairyId =
-            getDairyId(req);
+            getDairyId(
+                req
+            );
+
 
         const userId =
-            getUserId(user);
+            getUserId(
+                user
+            );
 
 
         if (!dairyId) {
 
-            return res.status(400).json({
+            return res.status(
+                400
+            ).json({
 
                 success: false,
 
@@ -496,7 +514,9 @@ async function updateFeedStore(
 
         if (!userId) {
 
-            return res.status(400).json({
+            return res.status(
+                400
+            ).json({
 
                 success: false,
 
@@ -513,7 +533,7 @@ async function updateFeedStore(
         // --------------------------------------------------
 
         const body =
-            getBody(req);
+            req.body || {};
 
 
         // --------------------------------------------------
@@ -521,7 +541,9 @@ async function updateFeedStore(
         // --------------------------------------------------
 
         const images =
-            getUploadedImages(req);
+            getUploadedImages(
+                req
+            );
 
 
         // --------------------------------------------------
@@ -559,7 +581,9 @@ async function updateFeedStore(
         // RESPONSE
         // --------------------------------------------------
 
-        return res.status(201).json({
+        return res.status(
+            201
+        ).json({
 
             success: true,
 
@@ -574,7 +598,9 @@ async function updateFeedStore(
 
     catch (error) {
 
-        next(error);
+        next(
+            error
+        );
 
     }
 
@@ -606,12 +632,16 @@ async function restockFeedStore(
         // --------------------------------------------------
 
         const user =
-            getUser(req);
+            getUser(
+                req
+            );
 
 
         if (!user) {
 
-            return res.status(401).json({
+            return res.status(
+                401
+            ).json({
 
                 success: false,
 
@@ -624,7 +654,7 @@ async function restockFeedStore(
 
 
         // --------------------------------------------------
-        // ADMIN ONLY
+        // ADMIN
         // --------------------------------------------------
 
         if (
@@ -633,7 +663,9 @@ async function restockFeedStore(
             )
         ) {
 
-            return res.status(403).json({
+            return res.status(
+                403
+            ).json({
 
                 success: false,
 
@@ -646,19 +678,26 @@ async function restockFeedStore(
 
 
         // --------------------------------------------------
-        // IDs
+        // IDS
         // --------------------------------------------------
 
         const dairyId =
-            getDairyId(req);
+            getDairyId(
+                req
+            );
+
 
         const userId =
-            getUserId(user);
+            getUserId(
+                user
+            );
 
 
         if (!dairyId) {
 
-            return res.status(400).json({
+            return res.status(
+                400
+            ).json({
 
                 success: false,
 
@@ -672,7 +711,9 @@ async function restockFeedStore(
 
         if (!userId) {
 
-            return res.status(400).json({
+            return res.status(
+                400
+            ).json({
 
                 success: false,
 
@@ -689,7 +730,7 @@ async function restockFeedStore(
         // --------------------------------------------------
 
         const body =
-            getBody(req);
+            req.body || {};
 
 
         // --------------------------------------------------
@@ -734,7 +775,9 @@ async function restockFeedStore(
         // RESPONSE
         // --------------------------------------------------
 
-        return res.status(200).json({
+        return res.status(
+            200
+        ).json({
 
             success: true,
 
@@ -753,7 +796,9 @@ async function restockFeedStore(
 
     catch (error) {
 
-        next(error);
+        next(
+            error
+        );
 
     }
 
@@ -762,22 +807,6 @@ async function restockFeedStore(
 
 // ==========================================================
 // EXPORTS
-// ==========================================================
-//
-// IMPORTANT:
-//
-// Use explicit module.exports.
-//
-// This guarantees that:
-//
-//     const {
-//         viewFeedStore,
-//         updateFeedStore,
-//         restockFeedStore
-//     } = require("./feedsController");
-//
-// works correctly.
-//
 // ==========================================================
 
 module.exports = {
