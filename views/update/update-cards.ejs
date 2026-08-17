@@ -7,14 +7,14 @@ FILE:
 
 PURPOSE:
 ----------------------------------------------------------
-Central container for the update-related cards/composers
-shown on a dairy asset page.
+Main container for update-related cards and composers
+belonging to the currently viewed dairy asset.
 
 INCLUDES:
 ----------------------------------------------------------
-• Maintenance composer
-• Maintenance clear composer
-• Milking status card
+• milk-status.ejs
+• maintComposer.ejs
+• maintenanceClearComposer.ejs
 
 EXPECTED DATA:
 ----------------------------------------------------------
@@ -31,18 +31,24 @@ user
 
 
     <!-- =================================================
-         PAGE TITLE
+         TITLE
     ================================================== -->
 
-    <div class="update-cards-title-section">
+    <div class="update-cards-heading">
 
         <h1 class="update-cards-title">
             Updates
         </h1>
 
-        <p class="update-cards-subtitle">
+        <p class="update-cards-description">
+
             Manage activities, maintenance and status
-            for <strong><%= dairy.name %></strong>.
+            for
+
+            <strong>
+                <%= dairy.name %>
+            </strong>
+
         </p>
 
     </div>
@@ -50,7 +56,15 @@ user
 
 
     <!-- =================================================
-         UPDATE CARDS CONTENT
+         GREEN TITLE ACCENT
+    ================================================== -->
+
+    <div class="update-cards-accent"></div>
+
+
+
+    <!-- =================================================
+         UPDATE CONTENT
     ================================================== -->
 
     <div class="update-cards-list">
@@ -60,7 +74,7 @@ user
              MILKING STATUS
         ================================================== -->
 
-        <%- include("milk-status", {
+        <%- include("update/milk-status.ejs", {
             dairy: dairy,
             user: user
         }) %>
@@ -68,10 +82,10 @@ user
 
 
         <!-- =================================================
-             MAINTENANCE COMPOSER
+             MAINTENANCE REPORT
         ================================================== -->
 
-        <%- include("maintComposer", {
+        <%- include("update/maintComposer.ejs", {
             dairy: dairy,
             user: user
         }) %>
@@ -79,10 +93,13 @@ user
 
 
         <!-- =================================================
-             CLEAR MAINTENANCE COMPOSER
+             CLEAR COMPLETED MAINTENANCE
+
+             EXACT FILE:
+                 maintenanceClearComposer.ejs
         ================================================== -->
 
-        <%- include("maintClearComposer", {
+        <%- include("update/maintenanceClearComposer.ejs", {
             dairy: dairy,
             user: user
         }) %>
@@ -98,7 +115,7 @@ user
 <style>
 
 /* ==========================================================
-   UPDATE CARDS
+   UPDATE CARDS CONTAINER
 ========================================================== */
 
 .update-cards {
@@ -107,27 +124,33 @@ user
 
     box-sizing: border-box;
 
-    padding: 4px 0 24px;
+    margin: 0;
+
+    padding: 8px 0 28px;
 
 }
 
 
 /* ==========================================================
-   TITLE SECTION
+   TITLE AREA
 ========================================================== */
 
-.update-cards-title-section {
+.update-cards-heading {
 
     width: 100%;
 
-    margin-bottom: 22px;
-
-    padding: 4px 4px 0;
-
     box-sizing: border-box;
+
+    margin: 0 0 5px;
+
+    padding: 0 4px;
 
 }
 
+
+/* ==========================================================
+   MAIN TITLE
+========================================================== */
 
 .update-cards-title {
 
@@ -135,22 +158,26 @@ user
 
     color: #14532d;
 
-    font-size: 32px;
+    font-size: 34px;
 
     font-weight: 800;
 
     line-height: 1.1;
 
-    letter-spacing: -0.7px;
+    letter-spacing: -0.8px;
 
 }
 
 
-.update-cards-subtitle {
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.update-cards-description {
+
+    max-width: 700px;
 
     margin: 8px 0 0;
-
-    max-width: 650px;
 
     color: #66736b;
 
@@ -163,31 +190,26 @@ user
 }
 
 
-.update-cards-subtitle strong {
+.update-cards-description strong {
 
     color: #198754;
 
-    font-weight: 700;
+    font-weight: 800;
 
 }
 
 
-
 /* ==========================================================
-   GREEN TITLE ACCENT
+   TITLE ACCENT
 ========================================================== */
 
-.update-cards-title-section::after {
+.update-cards-accent {
 
-    content: "";
-
-    display: block;
-
-    width: 48px;
+    width: 52px;
 
     height: 4px;
 
-    margin-top: 13px;
+    margin: 13px 0 22px 4px;
 
     border-radius: 999px;
 
@@ -196,14 +218,15 @@ user
 }
 
 
-
 /* ==========================================================
-   CARDS LIST
+   UPDATE CARDS LIST
 ========================================================== */
 
 .update-cards-list {
 
     width: 100%;
+
+    box-sizing: border-box;
 
     display: flex;
 
@@ -212,6 +235,27 @@ user
     align-items: flex-start;
 
     gap: 16px;
+
+}
+
+
+/* ==========================================================
+   GREENISH THEME SUPPORT
+
+   Keeps the surrounding update area visually consistent
+   with the green dairy theme.
+========================================================== */
+
+.update-cards-list {
+
+    color: #24352b;
+
+}
+
+
+.update-cards-list * {
+
+    box-sizing: border-box;
 
 }
 
@@ -225,23 +269,34 @@ user
 
     .update-cards {
 
-        padding-bottom: 20px;
+        padding-top: 5px;
+
+        padding-bottom: 22px;
 
     }
 
 
     .update-cards-title {
 
-        font-size: 28px;
+        font-size: 29px;
 
-        letter-spacing: -0.5px;
+        letter-spacing: -0.6px;
 
     }
 
 
-    .update-cards-subtitle {
+    .update-cards-description {
 
         font-size: 13px;
+
+        line-height: 1.45;
+
+    }
+
+
+    .update-cards-accent {
+
+        margin-bottom: 18px;
 
     }
 
@@ -264,7 +319,14 @@ user
 
     .update-cards-title {
 
-        font-size: 25px;
+        font-size: 26px;
+
+    }
+
+
+    .update-cards-description {
+
+        font-size: 12px;
 
     }
 
