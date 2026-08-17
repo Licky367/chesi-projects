@@ -96,6 +96,110 @@ const MAX_PROFILE_IMAGES = 5;
 
 
 // ==========================================================
+// FEED STOCK SUBDOCUMENT
+//
+// A feed store can contain multiple feed categories:
+//
+//     • fodder
+//     • silage
+//     • hay
+//     • maize
+//     • concentrates
+//     • etc.
+//
+// Each category maintains its own:
+//
+//     • name
+//     • percentage remaining
+//     • financial feed amount
+//
+// The parent Dairy document maintains:
+//
+//     feedsAmount
+//
+// which is always the sum of all individual
+// feedStocks[].feedsAmount values.
+// ==========================================================
+
+const feedStockSchema =
+    new mongoose.Schema(
+
+        {
+
+            // ==================================================
+            // FEED NAME
+            // ==================================================
+
+            name: {
+
+                type: String,
+
+                required: true,
+
+                trim: true
+
+            },
+
+
+            // ==================================================
+            // PERCENTAGE REMAINING
+            //
+            // Represents the estimated amount of this feed
+            // category remaining in stock.
+            //
+            // Range:
+            //
+            //     0   = depleted
+            //     100 = fully stocked
+            // ==================================================
+
+            percentageRemaining: {
+
+                type: Number,
+
+                min: 0,
+
+                max: 100,
+
+                default: 0
+
+            },
+
+
+            // ==================================================
+            // FEEDS AMOUNT
+            //
+            // Financial amount associated with this particular
+            // feed category.
+            //
+            // IMPORTANT:
+            //
+            // The parent dairy.feedsAmount is calculated from
+            // the sum of these values.
+            // ==================================================
+
+            feedsAmount: {
+
+                type: Number,
+
+                min: 0,
+
+                default: 0
+
+            }
+
+        },
+
+        {
+
+            _id: true
+
+        }
+
+    );
+
+
+// ==========================================================
 // SCHEMA
 // ==========================================================
 
@@ -247,15 +351,6 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // MILKING STATUS
-        //
-        // Applies to animals.
-        //
-        // This field is intentionally independent of:
-        //
-        //     • dairy-farm assignment
-        //     • dairy-worker assignment
-        //
-        // The controller handles authorization.
         // ==================================================
 
         isMilking: {
@@ -269,18 +364,6 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // ASSET CODE
-        //
-        // Animal:
-        //     Required.
-        //
-        // Structure:
-        //     Optional.
-        //
-        // Dairy Farm:
-        //     Always null.
-        //
-        // The value represents the negative code of the
-        // parent Dairy Farm.
         // ==================================================
 
         assetCode: {
@@ -529,6 +612,77 @@ const dairySchema = new mongoose.Schema(
             trim: true,
 
             default: ""
+
+        },
+
+
+        // ==================================================
+        // FEED STORE STOCK
+        //
+        // ONLY meaningful when:
+        //
+        //     type === "feedStore"
+        //
+        // Multiple feed categories are supported.
+        //
+        // Example:
+        //
+        // feedStocks: [
+        //
+        //     {
+        //         name: "Fodder",
+        //         percentageRemaining: 70,
+        //         feedsAmount: 15000
+        //     },
+        //
+        //     {
+        //         name: "Silage",
+        //         percentageRemaining: 40,
+        //         feedsAmount: 8500
+        //     },
+        //
+        //     {
+        //         name: "Hay",
+        //         percentageRemaining: 80,
+        //         feedsAmount: 6000
+        //     }
+        //
+        // ]
+        // ==================================================
+
+        feedStocks: {
+
+            type: [
+                feedStockSchema
+            ],
+
+            default: []
+
+        },
+
+
+        // ==================================================
+        // TOTAL FEEDS AMOUNT
+        //
+        // IMPORTANT:
+        //
+        // This is the aggregate financial feed amount.
+        //
+        // It MUST equal:
+        //
+        //     SUM(feedStocks[].feedsAmount)
+        //
+        // This gives the rest of the application one
+        // consistent field to use for financial calculations.
+        // ==================================================
+
+        feedsAmount: {
+
+            type: Number,
+
+            min: 0,
+
+            default: 0
 
         },
 
@@ -802,10 +956,28 @@ dairySchema.virtual("isStandaloneAsset").get(function() {
 
 
 // ==========================================================
-// VIRTUAL: GENDER
+// VIRTUAL: IS FEED STORE
 //
-// Even positive animal code = Female
-// Odd positive animal code  = Male
+// Correct structure type is:
+//
+//     feedStore
+//
+// ==========================================================
+
+dairySchema.virtual("isFeedStore").get(function() {
+
+    return (
+
+        this.isStructure &&
+        this.type === "feedStore"
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: GENDER
 // ==========================================================
 
 dairySchema.virtual("gender").get(function() {
@@ -1293,6 +1465,98 @@ dairySchema.pre(
 
 
         // ==================================================
+        // NORMALIZE FEED STOCKS
+        // ==================================================
+
+        if (
+            !Array.isArray(
+                this.feedStocks
+            )
+        ) {
+
+            this.feedStocks = [];
+
+        }
+
+
+        this.feedStocks =
+            this.feedStocks
+                .filter(stock => stock)
+                .map(stock => {
+
+                    stock.name =
+                        String(
+                            stock.name || ""
+                        ).trim();
+
+                    stock.percentageRemaining =
+                        Number(
+                            stock.percentageRemaining
+                        ) || 0;
+
+                    stock.percentageRemaining =
+                        Math.max(
+                            0,
+                            Math.min(
+                                100,
+                                stock.percentageRemaining
+                            )
+                        );
+
+                    stock.feedsAmount =
+                        Number(
+                            stock.feedsAmount
+                        ) || 0;
+
+                    if (
+                        stock.feedsAmount < 0
+                    ) {
+
+                        stock.feedsAmount = 0;
+
+                    }
+
+                    return stock;
+
+                })
+                .filter(
+                    stock =>
+                        stock.name.length > 0
+                );
+
+
+        // ==================================================
+        // CALCULATE TOTAL FEEDS AMOUNT
+        //
+        // feedsAmount is NEVER allowed to drift away from
+        // the individual feed stock amounts.
+        // ==================================================
+
+        this.feedsAmount =
+            this.feedStocks.reduce(
+
+                (
+                    total,
+                    stock
+                ) => {
+
+                    return (
+                        total +
+                        (
+                            Number(
+                                stock.feedsAmount
+                            ) || 0
+                        )
+                    );
+
+                },
+
+                0
+
+            );
+
+
+        // ==================================================
         // DAIRY FARM
         // ==================================================
 
@@ -1334,20 +1598,12 @@ dairySchema.pre(
 
         if (this.isAnimal) {
 
-            // ----------------------------------------------
-            // Only female animals may be milking.
-            // ----------------------------------------------
-
             if (!this.isFemale) {
 
                 this.isMilking = false;
 
             }
 
-
-            // ----------------------------------------------
-            // Animal must have a parent Dairy Farm.
-            // ----------------------------------------------
 
             if (
                 this.assetCode === null ||
@@ -1600,6 +1856,40 @@ dairySchema.pre(
         }
 
 
+        // ==================================================
+        // FINAL FEEDS AMOUNT SYNCHRONIZATION
+        // ==================================================
+
+        this.feedsAmount =
+            Array.isArray(
+                this.feedStocks
+            )
+
+                ? this.feedStocks.reduce(
+
+                    (
+                        total,
+                        stock
+                    ) => {
+
+                        return (
+                            total +
+                            (
+                                Number(
+                                    stock.feedsAmount
+                                ) || 0
+                            )
+                        );
+
+                    },
+
+                    0
+
+                )
+
+                : 0;
+
+
         next();
 
     }
@@ -1649,11 +1939,17 @@ dairySchema.index({
 
 
 // ==========================================================
+// FEED STORE
+// ==========================================================
+
+dairySchema.index({
+    type: 1,
+    status: 1
+});
+
+
+// ==========================================================
 // CODE
-//
-// Numeric codes must be unique.
-// Multiple null values are allowed.
-//
 // ==========================================================
 
 dairySchema.index(
