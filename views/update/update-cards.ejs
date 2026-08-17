@@ -18,25 +18,37 @@ RULES:
    Appears ONLY when:
        dairy.code is a positive EVEN number.
 
-3. maintComposer.ejs
+3. milking-history.ejs
+   Appears ONLY when:
+       dairy.code is a positive EVEN number.
+
+4. medical-mark-composer.ejs
+   Appears when:
+       dairy is NOT currently marked for medical attention
+       AND
+       user is admin OR dairyWorker.
+
+5. medical-unmark-composer.ejs
+   Appears when:
+       dairy IS currently marked for medical attention
+       AND
+       user is admin.
+
+6. maintComposer.ejs
    Appears ONLY when:
        dairy.needsMaintenance === false
        AND
        dairy.code is undefined OR null.
 
-4. maintenanceClearComposer.ejs
+7. maintenanceClearComposer.ejs
    Appears ONLY when:
        dairy.needsMaintenance === true.
-
-5. milking-history.ejs
-   Appears ONLY when:
-       dairy.code is a positive EVEN number.
 
 CARD LAYOUT:
 ------------------------------------------------------------
 Cards remain in ONE horizontal row.
 
-They do NOT wrap.
+They DO NOT wrap.
 
 If the cards are wider than the available screen,
 the user can SWIPE LEFT/RIGHT horizontally.
@@ -44,10 +56,11 @@ the user can SWIPE LEFT/RIGHT horizontally.
 ORDER:
 ------------------------------------------------------------
 1. Add an update
-2. Milking status       [eligible assets only]
-3. Milking history      [eligible assets only]
-4. Maintenance          [eligible assets only]
-5. Clear maintenance    [when required]
+2. Milking status
+3. Milking history
+4. Medical
+5. Maintenance
+6. Clear maintenance
 
 EXPECTED DATA:
 ------------------------------------------------------------
@@ -80,8 +93,9 @@ user
             <strong>
                 <%= dairy.name %>
             </strong>
-            updated with activities, maintenance and
-            important status changes.
+
+            updated with activities, medical attention,
+            maintenance and important status changes.
 
         </p>
 
@@ -99,6 +113,8 @@ user
 
     <!-- =====================================================
          DETERMINE MILKING ELIGIBILITY
+
+         Positive EVEN code only.
     ====================================================== -->
 
     <%
@@ -115,6 +131,9 @@ user
 
     <!-- =====================================================
          DETERMINE WHETHER DAIRY HAS NO CODE
+
+         Maintenance composer is ONLY for assets
+         without a code.
     ====================================================== -->
 
     <%
@@ -130,13 +149,43 @@ user
 
 
     <!-- =====================================================
+         DETERMINE MEDICAL STATUS
+    ====================================================== -->
+
+    <%
+        const medicalIsMarked =
+            dairy.medicalAttention &&
+            dairy.medicalAttention.isMarked === true;
+
+        const canManageMedical =
+            user &&
+            (
+                user.role === "admin" ||
+                user.role === "dairyWorker"
+            );
+
+        const showMedicalMarkComposer =
+            canManageMedical &&
+            !medicalIsMarked;
+
+        const showMedicalUnmarkComposer =
+            user &&
+            user.role === "admin" &&
+            medicalIsMarked;
+    %>
+
+
+
+    <!-- =====================================================
          HORIZONTAL CARD STRIP
 
          IMPORTANT:
-         - NO flex-wrap
-         - NO wrapping
-         - Cards stay left-to-right
-         - Horizontal swipe on smaller screens
+
+         • ONE ROW
+         • NO WRAPPING
+         • LEFT TO RIGHT
+         • HORIZONTAL SWIPE
+         • CARDS NEVER SHRINK
     ====================================================== -->
 
     <div
@@ -180,7 +229,7 @@ user
 
              Positive EVEN dairy code only.
 
-             The card itself links to:
+             Navigation handled by the card:
 
                  /milk/history/<dairy._id>
         ================================================== -->
@@ -197,12 +246,54 @@ user
 
 
         <!-- =================================================
-             4. MAINTENANCE COMPOSER
+             4. MARK MEDICAL
 
-             Only when:
+             Appears when:
+
+                 • medical attention is NOT marked
+                 • user is admin OR dairyWorker
+        ================================================== -->
+
+        <% if (showMedicalMarkComposer) { %>
+
+            <%- include("medical-mark-composer", {
+                dairy: dairy,
+                user: user
+            }) %>
+
+        <% } %>
+
+
+
+        <!-- =================================================
+             5. CLEAR MEDICAL
+
+             Appears when:
+
+                 • medical attention IS marked
+                 • user is admin
+        ================================================== -->
+
+        <% if (showMedicalUnmarkComposer) { %>
+
+            <%- include("medical-unmark-composer", {
+                dairy: dairy,
+                user: user
+            }) %>
+
+        <% } %>
+
+
+
+        <!-- =================================================
+             6. MAINTENANCE COMPOSER
+
+             ONLY when:
+
                  needsMaintenance === false
 
              AND:
+
                  code === undefined
                  OR
                  code === null
@@ -220,9 +311,10 @@ user
 
 
         <!-- =================================================
-             5. CLEAR MAINTENANCE
+             7. CLEAR MAINTENANCE
 
-             Only when:
+             ONLY when:
+
                  needsMaintenance === true
         ================================================== -->
 
@@ -350,7 +442,7 @@ user
 
 
 /* ==========================================================
-   CARD STRIP
+   HORIZONTAL CARD STRIP
 ========================================================== */
 
 .update-cards-list {
@@ -391,7 +483,10 @@ user
 
 
 /* ==========================================================
-   PREVENT INCLUDED CARDS FROM SHRINKING
+   NEVER SHRINK INCLUDED CARDS
+
+   This is important because create.ejs and the other
+   composers have their own fixed card dimensions.
 ========================================================== */
 
 .update-cards-list > * {
