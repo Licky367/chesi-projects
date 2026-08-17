@@ -1,3 +1,39 @@
+<% /*
+============================================================
+MAINTENANCE COMPOSER
+
+FILE:
+    views/update/maintComposer.ejs
+
+PURPOSE:
+    Compact status-style card for reporting maintenance
+    required for the CURRENT dairy asset.
+
+CARD STANDARD:
+    Matches create.ejs:
+
+        Desktop:
+            112px × 155px
+
+        Mobile:
+            108px × 150px
+
+TARGET:
+    The current dairy/asset is ALWAYS the target.
+
+AUTHORIZED USERS:
+    admin
+    dairyWorker
+
+CONDITION:
+    Dairy must have NO code.
+
+FORM:
+    POST /dairy/:id/maintenance/mark
+============================================================
+*/ %>
+
+
 <% if (
     dairy &&
     (
@@ -13,96 +49,63 @@
 
 
 <!-- =========================================================
-     MAINTENANCE COMPOSER + FULL SCREEN MAINTENANCE MODAL
-
-     FILE:
-         views/update/maintComposer.ejs
-
-     PURPOSE:
-         Allows admin/dairyWorker to report maintenance
-         required for a facility, equipment, or tool.
-
-     CONDITIONS:
-         - Dairy must have NO code.
-         - User must be admin or dairyWorker.
+     MAINTENANCE CARD
 ========================================================= -->
 
-
-<!-- =========================================================
-     MAINTENANCE COMPOSER CARD
-========================================================= -->
-
-<section class="maint-composer-card">
+<section
+    class="maint-composer"
+    aria-label="Report maintenance"
+>
 
 
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
-
-    <div class="maint-composer-header">
-
-
-        <!-- USER AVATAR -->
-
-        <div class="maint-composer-avatar">
-
-            <img
-                src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)) %>"
-                alt="<%= user.name %>"
-                class="maint-avatar-sm"
-            >
-
-        </div>
-
-
-        <!-- HEADING -->
-
-        <div class="maint-composer-heading">
-
-            <div class="maint-heading-line">
-
-                <strong>
-                    <%= user.name.split(" ")[0] %>
-                </strong>
-
-                , does this facility/equipment/tool require
-                any maintenance?
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         CLICKABLE MAINTENANCE TRIGGER
-    ====================================================== -->
-
-    <div
+    <button
+        type="button"
         id="openMaintComposer"
-        class="maint-composer-trigger"
-        role="button"
-        tabindex="0"
-        aria-label="Report maintenance"
+        class="maint-composer__card"
+        aria-label="Report maintenance for <%= dairy.name %>"
     >
 
-        <span>
 
-            🔧 Report maintenance...
+        <!-- =================================================
+             ICON
+        ================================================== -->
+
+        <span
+            class="maint-composer__icon"
+            aria-hidden="true"
+        >
+            <i class="bi bi-tools"></i>
+        </span>
+
+
+        <!-- =================================================
+             LABEL
+        ================================================== -->
+
+        <span class="maint-composer__label">
+            Maintenance
+        </span>
+
+
+        <!-- =================================================
+             TARGET
+        ================================================== -->
+
+        <span class="maint-composer__target">
+
+            <%= dairy.name %>
 
         </span>
 
-    </div>
 
+    </button>
 
 </section>
 
 
 
 <!-- =========================================================
-     FULL SCREEN MAINTENANCE MODAL
+     FULL-SCREEN MAINTENANCE MODAL
 ========================================================= -->
 
 <div
@@ -112,29 +115,31 @@
 >
 
 
-    <div class="maint-modal-content">
+    <div class="maint-modal__content">
 
 
         <!-- =================================================
-             MODAL HEADER
+             HEADER
         ================================================== -->
 
-        <header class="maint-modal-header">
+        <header class="maint-modal__header">
 
 
             <button
                 type="button"
                 id="closeMaintModal"
-                class="maint-back-button"
-                aria-label="Go back"
+                class="maint-modal__back"
+                aria-label="Close maintenance report"
             >
 
-                <i class="bi bi-arrow-left"></i>
+                <span aria-hidden="true">
+                    &#8592;
+                </span>
 
             </button>
 
 
-            <div class="maint-modal-title">
+            <div class="maint-modal__title">
 
                 <strong>
                     Maintenance Report
@@ -147,7 +152,10 @@
             </div>
 
 
-            <div class="maint-header-spacer"></div>
+            <div
+                class="maint-modal__spacer"
+                aria-hidden="true"
+            ></div>
 
 
         </header>
@@ -155,175 +163,173 @@
 
 
         <!-- =================================================
-             MODAL BODY
+             BODY
         ================================================== -->
 
-        <main class="maint-modal-body">
+        <main class="maint-modal__body">
 
 
-            <!-- =================================================
-                 QUESTION
-            ================================================== -->
-
-            <div class="maint-question">
-
-                <strong>
-                    <%= user.name.split(" ")[0] %>
-                </strong>,
-
-                does this facility/equipment/tool require
-                any maintenance?
-
-            </div>
+            <div class="maint-modal__fields">
 
 
+                <!-- =================================================
+                     QUESTION
+                ================================================== -->
 
-            <!-- =================================================
-                 FACILITY / EQUIPMENT / TOOL
-            ================================================== -->
-
-            <div class="maint-target">
-
-
-                <% if (
-                    dairy.profileImage &&
-                    dairy.profileImage.trim() !== ""
-                ) { %>
-
-
-                    <img
-                        src="/uploads/<%= dairy.profileImage %>"
-                        class="maint-target-image"
-                        alt="<%= dairy.name %>"
-                    >
-
-
-                <% } else { %>
-
-
-                    <img
-                        src="https://ui-avatars.com/api/?name=<%= encodeURIComponent(dairy.name) %>&background=0b5d1e&color=fff"
-                        class="maint-target-image"
-                        alt="<%= dairy.name %>"
-                    >
-
-
-                <% } %>
-
-
-                <div class="maint-target-info">
+                <div class="maint-question">
 
                     <strong>
-                        <%= dairy.name %>
-                    </strong>
+                        <%= user.name.split(" ")[0] %>
+                    </strong>,
 
-                    <span>
-                        Maintenance required
-                    </span>
-
-                </div>
-
-
-            </div>
-
-
-
-            <!-- =================================================
-                 MAINTENANCE FORM
-            ================================================== -->
-
-            <form
-                id="maintForm"
-                action="/dairy/<%= dairy._id %>/maintenance/mark"
-                method="POST"
-            >
-
-
-                <!-- =============================================
-                     MAINTENANCE TYPE
-                ============================================== -->
-
-                <div class="maint-field">
-
-                    <label
-                        for="maintType"
-                    >
-
-                        Maintenance type
-
-                    </label>
-
-
-                    <select
-                        id="maintType"
-                        name="type"
-                        required
-                    >
-
-                        <option value="">
-                            Select maintenance type
-                        </option>
-
-                        <option value="repair">
-                            🔧 Repair
-                        </option>
-
-                        <option value="maintenance">
-                            🛠️ Maintenance
-                        </option>
-
-                        <option value="construction">
-                            🏗️ Construction
-                        </option>
-
-                    </select>
+                    does this facility/equipment/tool require
+                    any maintenance?
 
                 </div>
 
 
 
-                <!-- =============================================
-                     DESCRIPTION
-                ============================================== -->
+                <!-- =================================================
+                     TARGET
+                ================================================== -->
 
-                <div class="maint-field">
-
-                    <label
-                        for="maintDescription"
-                    >
-
-                        What needs attention?
-
-                    </label>
+                <section
+                    class="maint-target"
+                    aria-label="Maintenance target"
+                >
 
 
-                    <textarea
-                        id="maintDescription"
-                        name="description"
-                        maxlength="1000"
-                        placeholder="Describe the problem or maintenance required..."
-                        required
-                    ></textarea>
+                    <% if (
+                        dairy.profileImage &&
+                        dairy.profileImage.trim() !== ""
+                    ) { %>
+
+                        <img
+                            src="<%= dairy.profileImage %>"
+                            class="maint-target__image"
+                            alt="<%= dairy.name %>"
+                        >
+
+                    <% } else { %>
+
+                        <div
+                            class="maint-target__placeholder"
+                            aria-hidden="true"
+                        >
+                            <i class="bi bi-tools"></i>
+                        </div>
+
+                    <% } %>
 
 
-                    <div
-                        id="maintCharacterCounter"
-                        class="maint-character-counter"
-                    >
+                    <div class="maint-target__info">
 
-                        0/1000
+                        <span>
+                            Maintenance required
+                        </span>
+
+                        <strong>
+                            <%= dairy.name %>
+                        </strong>
 
                     </div>
 
-                </div>
+
+                </section>
 
 
 
-                <!-- =============================================
-                     SUBMIT
-                ============================================== -->
+                <!-- =================================================
+                     MAINTENANCE FORM
+                ================================================== -->
 
-                <div class="maint-submit-wrapper">
+                <form
+                    id="maintForm"
+                    class="maint-form"
+                    action="/dairy/<%= dairy._id %>/maintenance/mark"
+                    method="POST"
+                    autocomplete="off"
+                >
+
+
+                    <!-- =============================================
+                         MAINTENANCE TYPE
+                    ============================================== -->
+
+                    <div class="maint-field">
+
+                        <label
+                            for="maintType"
+                        >
+                            Maintenance type
+                        </label>
+
+
+                        <select
+                            id="maintType"
+                            name="type"
+                            required
+                        >
+
+                            <option value="">
+                                Select maintenance type
+                            </option>
+
+                            <option value="repair">
+                                🔧 Repair
+                            </option>
+
+                            <option value="maintenance">
+                                🛠️ Maintenance
+                            </option>
+
+                            <option value="construction">
+                                🏗️ Construction
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+
+                    <!-- =============================================
+                         DESCRIPTION
+                    ============================================== -->
+
+                    <div class="maint-field">
+
+                        <label
+                            for="maintDescription"
+                        >
+                            What needs attention?
+                        </label>
+
+
+                        <textarea
+                            id="maintDescription"
+                            name="description"
+                            maxlength="1000"
+                            rows="5"
+                            placeholder="Describe the problem or maintenance required..."
+                            required
+                        ></textarea>
+
+
+                        <span
+                            id="maintCharacterCounter"
+                            class="maint-character-counter"
+                        >
+                            0/1000
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- =============================================
+                         SUBMIT
+                    ============================================== -->
 
                     <button
                         type="submit"
@@ -332,17 +338,22 @@
                         disabled
                     >
 
-                        <i class="bi bi-tools"></i>
+                        <i
+                            class="bi bi-tools"
+                            aria-hidden="true"
+                        ></i>
 
-                        Submit Maintenance Report
+                        <span>
+                            Submit Maintenance Report
+                        </span>
 
                     </button>
 
-                </div>
+
+                </form>
 
 
-            </form>
-
+            </div>
 
         </main>
 
@@ -360,141 +371,192 @@
 <style>
 
 /* =========================================================
-   MAINTENANCE COMPOSER CARD
+   ROOT
 ========================================================= */
 
-.maint-composer-card {
-
-    width: 100%;
-
-    background: #ffffff;
-
-    border-radius: 16px;
-
-    padding: 16px;
-
-    margin-bottom: 16px;
+.maint-composer,
+.maint-composer *,
+.maint-modal,
+.maint-modal * {
 
     box-sizing: border-box;
 
-    border: 1px solid #e7eee9;
-
-}
-
-
-.maint-composer-header {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-}
-
-
-.maint-composer-avatar {
-
-    flex-shrink: 0;
-
-}
-
-
-.maint-avatar-sm {
-
-    width: 44px;
-    height: 44px;
-
-    border-radius: 50%;
-
-    object-fit: cover;
-
-    display: block;
-
-}
-
-
-.maint-composer-heading {
-
-    min-width: 0;
-
-    font-size: 14px;
-
-    line-height: 1.5;
-
-    color: #555;
-
-}
-
-
-.maint-heading-line {
-
-    display: block;
-
-}
-
-
-.maint-composer-heading strong {
-
-    color: #222;
-
 }
 
 
 
 /* =========================================================
-   CLICKABLE TRIGGER
+   REAL UPDATE CARD
 ========================================================= */
 
-.maint-composer-trigger {
+.maint-composer {
 
-    margin-top: 14px;
+    width: 112px;
 
-    min-height: 48px;
+    flex: 0 0 112px;
 
-    padding: 0 16px;
+    margin: 0 0 16px;
 
-    border: 1px solid #dfe8e2;
+}
 
-    border-radius: 24px;
+
+.maint-composer__card {
+
+    position: relative;
+
+    width: 112px;
+    height: 155px;
+
+    padding: 0;
 
     display: flex;
 
+    flex-direction: column;
+
     align-items: center;
+    justify-content: center;
 
-    color: #777;
+    gap: 7px;
 
-    background: #f8faf8;
+    overflow: hidden;
+
+    border: 1px solid #dce7e0;
+
+    border-radius: 15px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f3f8f5
+        );
+
+    color: #198754;
+
+    font-family: inherit;
 
     cursor: pointer;
 
+    text-align: center;
+
     transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        transform 0.15s ease;
+        transform .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease;
 
 }
 
 
-.maint-composer-trigger:hover {
+.maint-composer__card:hover {
 
-    background: #f1f7f3;
+    border-color: #198754;
 
-    border-color: #2e8b57;
+    box-shadow:
+        0 5px 15px
+        rgba(25, 135, 84, .10);
 
 }
 
 
-.maint-composer-trigger:active {
+.maint-composer__card:active {
 
-    transform: scale(0.99);
+    transform: scale(.95);
+
+}
+
+
+.maint-composer__card:focus-visible {
+
+    outline: 2px solid #198754;
+
+    outline-offset: 2px;
 
 }
 
 
 
 /* =========================================================
-   FULL SCREEN MODAL
+   MAINTENANCE ICON
+========================================================= */
+
+.maint-composer__icon {
+
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    font-size: 22px;
+
+    line-height: 1;
+
+    box-shadow:
+        0 4px 12px
+        rgba(25, 135, 84, .20);
+
+}
+
+
+.maint-composer__icon i {
+
+    line-height: 1;
+
+}
+
+
+
+/* =========================================================
+   CARD LABEL
+========================================================= */
+
+.maint-composer__label {
+
+    display: block;
+
+    color: #26322b;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+}
+
+
+.maint-composer__target {
+
+    display: block;
+
+    max-width: 88px;
+
+    overflow: hidden;
+
+    color: #8a928d;
+
+    font-size: 10px;
+
+    line-height: 1.25;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+
+/* =========================================================
+   FULL-SCREEN MODAL
 ========================================================= */
 
 .maint-modal {
@@ -504,16 +566,15 @@
     inset: 0;
 
     width: 100vw;
-
     height: 100dvh;
-
-    background: #ffffff;
 
     z-index: 99999;
 
     display: none;
 
     overflow: hidden;
+
+    background: #ffffff;
 
 }
 
@@ -525,12 +586,14 @@
 }
 
 
-.maint-modal-content {
 
-    position: relative;
+/* =========================================================
+   MODAL CONTENT
+========================================================= */
+
+.maint-modal__content {
 
     width: 100%;
-
     height: 100%;
 
     display: flex;
@@ -547,66 +610,81 @@
    MODAL HEADER
 ========================================================= */
 
-.maint-modal-header {
+.maint-modal__header {
 
-    flex: 0 0 auto;
-
-    height: 64px;
+    flex: 0 0 64px;
 
     width: 100%;
+    height: 64px;
 
     display: flex;
 
     align-items: center;
 
-    padding: 0 16px;
+    padding: 0 15px;
 
-    box-sizing: border-box;
-
-    border-bottom: 1px solid #e8eee9;
+    border-bottom: 1px solid #e7ede9;
 
     background: #ffffff;
 
 }
 
 
-.maint-back-button {
+.maint-modal__back {
 
     width: 44px;
-
     height: 44px;
 
+    flex: 0 0 44px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
     border: none;
+
+    border-radius: 50%;
 
     background: transparent;
 
     color: #198754;
 
-    display: flex;
+    font-size: 27px;
 
-    align-items: center;
-
-    justify-content: center;
+    line-height: 1;
 
     cursor: pointer;
 
-    font-size: 27px;
+}
 
-    padding: 0;
 
-    flex-shrink: 0;
+.maint-modal__back:active {
+
+    background: #edf7f1;
 
 }
 
 
-.maint-back-button:hover {
+.maint-modal__back:focus-visible {
 
-    color: #146c43;
+    outline: 2px solid #198754;
+
+    outline-offset: 2px;
 
 }
 
 
-.maint-modal-title {
+
+/* =========================================================
+   MODAL TITLE
+========================================================= */
+
+.maint-modal__title {
+
+    min-width: 0;
 
     margin-left: 8px;
 
@@ -619,27 +697,35 @@
 }
 
 
-.maint-modal-title strong {
-
-    font-size: 17px;
+.maint-modal__title strong {
 
     color: #202520;
 
+    font-size: 17px;
+
 }
 
 
-.maint-modal-title span {
+.maint-modal__title span {
+
+    max-width: 72vw;
 
     margin-top: 2px;
 
+    overflow: hidden;
+
+    color: #7b847e;
+
     font-size: 12px;
 
-    color: #7a817d;
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
 
 }
 
 
-.maint-header-spacer {
+.maint-modal__spacer {
 
     flex: 1;
 
@@ -651,7 +737,7 @@
    MODAL BODY
 ========================================================= */
 
-.maint-modal-body {
+.maint-modal__body {
 
     flex: 1 1 auto;
 
@@ -661,7 +747,16 @@
 
     padding: 20px;
 
-    box-sizing: border-box;
+}
+
+
+.maint-modal__fields {
+
+    width: 100%;
+
+    max-width: 700px;
+
+    margin: 0 auto;
 
 }
 
@@ -698,6 +793,8 @@
 
 .maint-target {
 
+    width: 100%;
+
     display: flex;
 
     align-items: center;
@@ -706,59 +803,90 @@
 
     margin-bottom: 24px;
 
-    padding: 12px;
+    padding: 12px 13px;
 
-    border: 1px solid #e1ebe4;
+    border: 1px solid #dcebe2;
 
-    border-radius: 14px;
+    border-radius: 13px;
 
-    background: #f7faf8;
+    background: #f6faf7;
 
 }
 
 
-.maint-target-image {
+.maint-target__image,
+.maint-target__placeholder {
 
     width: 52px;
-
     height: 52px;
 
-    flex-shrink: 0;
+    flex: 0 0 52px;
 
-    object-fit: cover;
+    overflow: hidden;
 
     border-radius: 50%;
 
 }
 
 
-.maint-target-info {
+.maint-target__image {
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+.maint-target__placeholder {
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    font-size: 20px;
+
+}
+
+
+.maint-target__info {
+
+    min-width: 0;
 
     display: flex;
 
     flex-direction: column;
 
-    min-width: 0;
+}
+
+
+.maint-target__info span {
+
+    color: #78827c;
+
+    font-size: 10px;
 
 }
 
 
-.maint-target-info strong {
-
-    color: #202520;
-
-    font-size: 15px;
-
-}
-
-
-.maint-target-info span {
+.maint-target__info strong {
 
     margin-top: 3px;
 
-    color: #7a817d;
+    overflow: hidden;
 
-    font-size: 12px;
+    color: #235d3e;
+
+    font-size: 14px;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
 
 }
 
@@ -768,7 +896,7 @@
    FORM
 ========================================================= */
 
-#maintForm {
+.maint-form {
 
     width: 100%;
 
@@ -781,6 +909,8 @@
 
     position: relative;
 
+    width: 100%;
+
     margin-bottom: 20px;
 
 }
@@ -792,24 +922,25 @@
 
     margin-bottom: 7px;
 
-    color: #37413a;
+    color: #6d7771;
 
-    font-size: 13px;
+    font-size: 11px;
 
     font-weight: 700;
+
+    letter-spacing: .04em;
+
+    text-transform: uppercase;
 
 }
 
 
 .maint-field select,
-
 .maint-field textarea {
 
     width: 100%;
 
-    box-sizing: border-box;
-
-    border: 1px solid #d6e0d9;
+    border: 1px solid #e0e7e2;
 
     border-radius: 12px;
 
@@ -819,7 +950,7 @@
 
     color: #202520;
 
-    font-family: inherit;
+    font: inherit;
 
     font-size: 15px;
 
@@ -830,7 +961,7 @@
 
     height: 48px;
 
-    padding: 0 12px;
+    padding: 0 13px;
 
 }
 
@@ -839,11 +970,11 @@
 
     min-height: 130px;
 
+    max-height: 300px;
+
     resize: vertical;
 
-    padding: 13px;
-
-    padding-bottom: 28px;
+    padding: 13px 14px 30px;
 
     line-height: 1.5;
 
@@ -851,7 +982,6 @@
 
 
 .maint-field select:focus,
-
 .maint-field textarea:focus {
 
     border-color: #198754;
@@ -860,7 +990,7 @@
 
     box-shadow:
         0 0 0 3px
-        rgba(25, 135, 84, 0.10);
+        rgba(25, 135, 84, .10);
 
 }
 
@@ -874,15 +1004,27 @@
 
     position: absolute;
 
-    right: 10px;
+    right: 11px;
 
-    bottom: 8px;
+    bottom: 9px;
 
-    color: #89938d;
+    padding-left: 3px;
+
+    background: #f8faf8;
+
+    color: #8a928d;
 
     font-size: 10px;
 
     pointer-events: none;
+
+}
+
+
+.maint-field textarea:focus
+~ .maint-character-counter {
+
+    background: #ffffff;
 
 }
 
@@ -892,20 +1034,20 @@
    SUBMIT
 ========================================================= */
 
-.maint-submit-wrapper {
-
-    width: 100%;
-
-    margin-top: 6px;
-
-}
-
-
 .maint-submit-button {
 
     width: 100%;
 
     min-height: 50px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    padding: 10px 14px;
 
     border: none;
 
@@ -923,17 +1065,10 @@
 
     cursor: pointer;
 
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    gap: 8px;
-
     transition:
-        background 0.2s ease,
-        transform 0.15s ease;
+        background .2s ease,
+        transform .15s ease,
+        opacity .15s ease;
 
 }
 
@@ -947,7 +1082,7 @@
 
 .maint-submit-button:not(:disabled):active {
 
-    transform: scale(0.99);
+    transform: scale(.99);
 
 }
 
@@ -961,6 +1096,13 @@
 }
 
 
+.maint-submit-button i {
+
+    font-size: 16px;
+
+}
+
+
 
 /* =========================================================
    MOBILE
@@ -968,7 +1110,37 @@
 
 @media (max-width: 600px) {
 
-    .maint-modal-header {
+    .maint-composer {
+
+        width: 108px;
+
+        flex-basis: 108px;
+
+    }
+
+
+    .maint-composer__card {
+
+        width: 108px;
+
+        height: 150px;
+
+    }
+
+
+    .maint-composer__icon {
+
+        width: 46px;
+        height: 46px;
+
+        font-size: 21px;
+
+    }
+
+
+    .maint-modal__header {
+
+        flex-basis: 60px;
 
         height: 60px;
 
@@ -977,45 +1149,41 @@
     }
 
 
-    .maint-modal-title strong {
+    .maint-modal__body {
 
-        font-size: 16px;
-
-    }
-
-
-    .maint-modal-body {
-
-        padding: 16px;
+        padding: 14px;
 
     }
 
 
     .maint-question {
 
-        font-size: 18px;
+        font-size: 19px;
+
+    }
+
+
+    .maint-target {
+
+        margin-bottom: 20px;
 
     }
 
 }
 
 
-/* =========================================================
-   SMALL PHONES
-========================================================= */
-
 @media (max-width: 380px) {
 
-    .maint-modal-body {
+    .maint-modal__title span {
 
-        padding: 12px;
+        display: none;
 
     }
 
 
-    .maint-modal-title span {
+    .maint-modal__body {
 
-        display: none;
+        padding: 10px;
 
     }
 
@@ -1039,30 +1207,62 @@
     function initializeMaintenanceComposer() {
 
 
+        /* =====================================================
+           ELEMENTS
+        ====================================================== */
+
         const modal =
-            document.getElementById("maintModal");
+            document.getElementById(
+                "maintModal"
+            );
+
 
         const openButton =
-            document.getElementById("openMaintComposer");
+            document.getElementById(
+                "openMaintComposer"
+            );
+
 
         const closeButton =
-            document.getElementById("closeMaintModal");
+            document.getElementById(
+                "closeMaintModal"
+            );
+
 
         const typeInput =
-            document.getElementById("maintType");
+            document.getElementById(
+                "maintType"
+            );
+
 
         const descriptionInput =
-            document.getElementById("maintDescription");
+            document.getElementById(
+                "maintDescription"
+            );
+
 
         const characterCounter =
-            document.getElementById("maintCharacterCounter");
+            document.getElementById(
+                "maintCharacterCounter"
+            );
+
 
         const submitButton =
-            document.getElementById("submitMaintButton");
+            document.getElementById(
+                "submitMaintButton"
+            );
+
 
         const form =
-            document.getElementById("maintForm");
+            document.getElementById(
+                "maintForm"
+            );
 
+
+
+        /* =====================================================
+           SAFETY CHECK
+        ====================================================== */
 
         if (
             !modal ||
@@ -1075,51 +1275,66 @@
             !form
         ) {
 
+            console.error(
+                "MAINTCOMPOSER.EJS: Required elements are missing."
+            );
+
             return;
 
         }
 
 
 
-        /* =================================================
-           OPEN
-        ================================================== */
+        /* =====================================================
+           OPEN MODAL
+        ====================================================== */
 
         function openModal() {
 
-            modal.classList.add("active");
+            modal.classList.add(
+                "active"
+            );
+
 
             modal.setAttribute(
                 "aria-hidden",
                 "false"
             );
 
+
             document.body.style.overflow =
                 "hidden";
 
 
-            setTimeout(function () {
+            window.setTimeout(
+                function () {
 
-                typeInput.focus();
+                    typeInput.focus();
 
-            }, 100);
+                },
+                100
+            );
 
         }
 
 
 
-        /* =================================================
-           CLOSE
-        ================================================== */
+        /* =====================================================
+           CLOSE MODAL
+        ====================================================== */
 
         function closeModal() {
 
-            modal.classList.remove("active");
+            modal.classList.remove(
+                "active"
+            );
+
 
             modal.setAttribute(
                 "aria-hidden",
                 "true"
             );
+
 
             document.body.style.overflow =
                 "";
@@ -1128,44 +1343,71 @@
 
 
 
-        /* =================================================
+        /* =====================================================
            VALIDATION
-        ================================================== */
+        ====================================================== */
 
         function updateSubmitButton() {
 
-            const validType =
-                typeInput.value.trim() !== "";
+            const hasType =
+                typeInput.value.trim().length > 0;
 
-            const validDescription =
+
+            const hasDescription =
                 descriptionInput.value.trim().length > 0;
 
+
             submitButton.disabled =
-                !(validType && validDescription);
+                !(
+                    hasType &&
+                    hasDescription
+                );
 
         }
 
 
 
-        /* =================================================
-           CHARACTER COUNT
-        ================================================== */
+        /* =====================================================
+           CHARACTER COUNTER
+        ====================================================== */
 
         function updateCharacterCounter() {
 
-            const length =
-                descriptionInput.value.length;
-
             characterCounter.textContent =
-                length + "/1000";
+                descriptionInput.value.length +
+                "/1000";
 
         }
 
 
 
-        /* =================================================
-           OPEN EVENTS
-        ================================================== */
+        /* =====================================================
+           TEXTAREA RESIZE
+        ====================================================== */
+
+        function resizeTextarea() {
+
+            descriptionInput.style.height =
+                "auto";
+
+
+            const height =
+                Math.min(
+                    descriptionInput.scrollHeight,
+                    300
+                );
+
+
+            descriptionInput.style.height =
+                height + "px";
+
+        }
+
+
+
+        /* =====================================================
+           OPEN
+        ====================================================== */
 
         openButton.addEventListener(
             "click",
@@ -1173,29 +1415,10 @@
         );
 
 
-        openButton.addEventListener(
-            "keydown",
-            function (event) {
 
-                if (
-                    event.key === "Enter" ||
-                    event.key === " "
-                ) {
-
-                    event.preventDefault();
-
-                    openModal();
-
-                }
-
-            }
-        );
-
-
-
-        /* =================================================
-           CLOSE EVENTS
-        ================================================== */
+        /* =====================================================
+           CLOSE
+        ====================================================== */
 
         closeButton.addEventListener(
             "click",
@@ -1203,13 +1426,20 @@
         );
 
 
+
+        /* =====================================================
+           ESCAPE
+        ====================================================== */
+
         document.addEventListener(
             "keydown",
             function (event) {
 
                 if (
                     event.key === "Escape" &&
-                    modal.classList.contains("active")
+                    modal.classList.contains(
+                        "active"
+                    )
                 ) {
 
                     closeModal();
@@ -1221,9 +1451,9 @@
 
 
 
-        /* =================================================
-           INPUT EVENTS
-        ================================================== */
+        /* =====================================================
+           TYPE
+        ====================================================== */
 
         typeInput.addEventListener(
             "change",
@@ -1231,11 +1461,18 @@
         );
 
 
+
+        /* =====================================================
+           DESCRIPTION
+        ====================================================== */
+
         descriptionInput.addEventListener(
             "input",
             function () {
 
                 updateCharacterCounter();
+
+                resizeTextarea();
 
                 updateSubmitButton();
 
@@ -1244,30 +1481,34 @@
 
 
 
-        /* =================================================
+        /* =====================================================
            FORM SUBMIT
-        ================================================== */
+        ====================================================== */
 
         form.addEventListener(
             "submit",
             function () {
 
-                submitButton.disabled = true;
+                submitButton.disabled =
+                    true;
+
 
                 submitButton.innerHTML =
-                    '<i class="bi bi-hourglass-split"></i> ' +
-                    'Submitting...';
+                    '<i class="bi bi-hourglass-split"></i>' +
+                    '<span>Submitting...</span>';
 
             }
         );
 
 
 
-        /* =================================================
+        /* =====================================================
            INITIAL STATE
-        ================================================== */
+        ====================================================== */
 
         updateCharacterCounter();
+
+        resizeTextarea();
 
         updateSubmitButton();
 
@@ -1275,9 +1516,9 @@
 
 
 
-    /* =====================================================
+    /* =========================================================
        DOM READY
-    ====================================================== */
+    ========================================================= */
 
     if (
         document.readyState === "loading"
