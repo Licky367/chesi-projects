@@ -1,44 +1,59 @@
 <% /*
-==========================================================
+============================================================
 UPDATE CARDS
 
 FILE:
     views/update/update-cards.ejs
 
 PURPOSE:
-----------------------------------------------------------
-Main update area for the currently viewed dairy asset.
+    Main update-card strip for the CURRENT dairy asset.
 
 RULES:
-----------------------------------------------------------
+------------------------------------------------------------
 
 1. create.ejs
-   • Appears for ALL dairy assets.
+   ALWAYS appears.
 
 2. milk-status.ejs
-   • Appears ONLY when dairy.code is a positive EVEN number.
+   Appears ONLY when:
+       dairy.code is a positive EVEN number.
 
 3. maintComposer.ejs
-   • Appears ONLY when:
-       - dairy.needsMaintenance === false
-       - AND dairy has no code
-         OR dairy.code is undefined
-         OR dairy.code is null
+   Appears ONLY when:
+       dairy.needsMaintenance === false
+       AND
+       dairy.code is undefined OR null.
 
 4. maintenanceClearComposer.ejs
-   • Appears ONLY when:
-       - dairy.needsMaintenance === true
+   Appears ONLY when:
+       dairy.needsMaintenance === true.
 
 5. milking-history.ejs
-   • Appears for dairy assets with a positive EVEN code.
-   • The card itself handles navigation to:
-       /milk/history/<dairy._id>
+   Appears ONLY when:
+       dairy.code is a positive EVEN number.
+
+CARD LAYOUT:
+------------------------------------------------------------
+Cards remain in ONE horizontal row.
+
+They do NOT wrap.
+
+If the cards are wider than the available screen,
+the user can SWIPE LEFT/RIGHT horizontally.
+
+ORDER:
+------------------------------------------------------------
+1. Add an update
+2. Milking status       [eligible assets only]
+3. Milking history      [eligible assets only]
+4. Maintenance          [eligible assets only]
+5. Clear maintenance    [when required]
 
 EXPECTED DATA:
-----------------------------------------------------------
+------------------------------------------------------------
 dairy
 user
-==========================================================
+============================================================
 */ %>
 
 
@@ -48,9 +63,9 @@ user
 <section class="update-cards">
 
 
-    <!-- =================================================
+    <!-- =====================================================
          TITLE
-    ================================================== -->
+    ====================================================== -->
 
     <div class="update-cards-heading">
 
@@ -58,10 +73,14 @@ user
             Updates
         </h1>
 
+
         <p class="update-cards-description">
 
-            Keep us updated about <strong><%= dairy.name %>'s</strong>
-            conditions, activities, maintenance and
+            Keep
+            <strong>
+                <%= dairy.name %>
+            </strong>
+            updated with activities, maintenance and
             important status changes.
 
         </p>
@@ -70,23 +89,64 @@ user
 
 
 
-    <!-- =================================================
+    <!-- =====================================================
          TITLE ACCENT
-    ================================================== -->
+    ====================================================== -->
 
     <div class="update-cards-accent"></div>
 
 
 
-    <!-- =================================================
-         UPDATE CONTENT
-    ================================================== -->
+    <!-- =====================================================
+         DETERMINE MILKING ELIGIBILITY
+    ====================================================== -->
 
-    <div class="update-cards-list">
+    <%
+        const dairyCodeNumber =
+            Number(dairy.code);
+
+        const showMilkingCards =
+            Number.isFinite(dairyCodeNumber) &&
+            dairyCodeNumber > 0 &&
+            dairyCodeNumber % 2 === 0;
+    %>
+
+
+
+    <!-- =====================================================
+         DETERMINE WHETHER DAIRY HAS NO CODE
+    ====================================================== -->
+
+    <%
+        const hasNoDairyCode =
+            dairy.code === undefined ||
+            dairy.code === null;
+
+        const showMaintenanceComposer =
+            dairy.needsMaintenance === false &&
+            hasNoDairyCode;
+    %>
+
+
+
+    <!-- =====================================================
+         HORIZONTAL CARD STRIP
+
+         IMPORTANT:
+         - NO flex-wrap
+         - NO wrapping
+         - Cards stay left-to-right
+         - Horizontal swipe on smaller screens
+    ====================================================== -->
+
+    <div
+        class="update-cards-list"
+        aria-label="Available updates"
+    >
 
 
         <!-- =================================================
-             1. CREATE COMPOSER
+             1. CREATE
 
              ALWAYS VISIBLE
         ================================================== -->
@@ -99,31 +159,9 @@ user
 
 
         <!-- =================================================
-             DAIRY CODE
-
-             Used by the milking-related cards.
-        ================================================== -->
-
-        <%
-            const dairyCodeNumber =
-                Number(dairy.code);
-
-            const showMilkingCards =
-                Number.isFinite(dairyCodeNumber) &&
-                dairyCodeNumber > 0 &&
-                dairyCodeNumber % 2 === 0;
-        %>
-
-
-
-        <!-- =================================================
              2. MILKING STATUS
 
-             ONLY VISIBLE WHEN:
-
-             dairy.code is positive
-             AND
-             dairy.code is even
+             Positive EVEN dairy code only.
         ================================================== -->
 
         <% if (showMilkingCards) { %>
@@ -140,12 +178,11 @@ user
         <!-- =================================================
              3. MILKING HISTORY
 
-             ONLY VISIBLE FOR THE SAME DAIRY ANIMALS
-             THAT HAVE THE MILKING STATUS CARD.
+             Positive EVEN dairy code only.
 
-             milking-history.ejs handles the link:
+             The card itself links to:
 
-                 /milk/history/<%= dairy._id %>
+                 /milk/history/<dairy._id>
         ================================================== -->
 
         <% if (showMilkingCards) { %>
@@ -162,30 +199,14 @@ user
         <!-- =================================================
              4. MAINTENANCE COMPOSER
 
-             ONLY VISIBLE WHEN:
+             Only when:
+                 needsMaintenance === false
 
-             dairy.needsMaintenance === false
-
-             AND
-
-             dairy has NO code
-
-             Code conditions:
-
-                 null
-                 undefined
+             AND:
+                 code === undefined
+                 OR
+                 code === null
         ================================================== -->
-
-        <%
-            const hasNoDairyCode =
-                dairy.code === null ||
-                dairy.code === undefined;
-
-            const showMaintenanceComposer =
-                dairy.needsMaintenance === false &&
-                hasNoDairyCode;
-        %>
-
 
         <% if (showMaintenanceComposer) { %>
 
@@ -199,11 +220,10 @@ user
 
 
         <!-- =================================================
-             5. CLEAR MAINTENANCE COMPOSER
+             5. CLEAR MAINTENANCE
 
-             ONLY VISIBLE WHEN:
-
-                 dairy.needsMaintenance === true
+             Only when:
+                 needsMaintenance === true
         ================================================== -->
 
         <% if (dairy.needsMaintenance === true) { %>
@@ -244,7 +264,7 @@ user
 
 
 /* ==========================================================
-   TITLE SECTION
+   TITLE
 ========================================================== */
 
 .update-cards-heading {
@@ -259,11 +279,6 @@ user
 
 }
 
-
-
-/* ==========================================================
-   TITLE
-========================================================== */
 
 .update-cards-title {
 
@@ -335,7 +350,7 @@ user
 
 
 /* ==========================================================
-   UPDATE CONTENT
+   CARD STRIP
 ========================================================== */
 
 .update-cards-list {
@@ -346,11 +361,79 @@ user
 
     display: flex;
 
-    flex-wrap: wrap;
+    flex-direction: row;
+
+    flex-wrap: nowrap;
 
     align-items: flex-start;
 
+    justify-content: flex-start;
+
     gap: 16px;
+
+    overflow-x: auto;
+
+    overflow-y: hidden;
+
+    padding:
+        2px
+        4px
+        12px;
+
+    scroll-snap-type: x proximity;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: thin;
+
+}
+
+
+
+/* ==========================================================
+   PREVENT INCLUDED CARDS FROM SHRINKING
+========================================================== */
+
+.update-cards-list > * {
+
+    flex-shrink: 0;
+
+}
+
+
+
+/* ==========================================================
+   HORIZONTAL SCROLLBAR
+========================================================== */
+
+.update-cards-list::-webkit-scrollbar {
+
+    height: 5px;
+
+}
+
+
+.update-cards-list::-webkit-scrollbar-track {
+
+    background: #edf4ef;
+
+    border-radius: 999px;
+
+}
+
+
+.update-cards-list::-webkit-scrollbar-thumb {
+
+    background: #a9cbb5;
+
+    border-radius: 999px;
+
+}
+
+
+.update-cards-list::-webkit-scrollbar-thumb:hover {
+
+    background: #198754;
 
 }
 
@@ -400,6 +483,12 @@ user
 
         gap: 12px;
 
+        padding-left: 4px;
+
+        padding-right: 4px;
+
+        padding-bottom: 10px;
+
     }
 
 }
@@ -422,6 +511,13 @@ user
     .update-cards-description {
 
         font-size: 12px;
+
+    }
+
+
+    .update-cards-list {
+
+        gap: 10px;
 
     }
 
