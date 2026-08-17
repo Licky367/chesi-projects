@@ -12,23 +12,33 @@
 //     • Restock existing feed categories
 //     • Create new feed categories
 //     • Maintain Dairy.feedsAmount
+//     • Normalize uploaded image paths
 //
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// The Dairy model is the source of truth for feed inventory.
+// Dairy is the source of truth for inventory.
 //
-// Individual feed values are stored in:
+// Individual feed values:
 //
 //     dairy.feeds[]
 //
-// The aggregate value is:
+// Aggregate:
 //
 //     dairy.feedsAmount
 //
-// feedsAmount is ALWAYS recalculated from dairy.feeds.
+// feedsAmount is ALWAYS calculated from dairy.feeds.
 //
-// The controller does not calculate inventory totals.
+// IMPORTANT IMAGE RULE
+// ----------------------------------------------------------
+//
+// MongoDB stores PUBLIC browser paths:
+//
+//     /uploads/images/photo.jpg
+//
+// NEVER:
+//
+//     /opt/render/project/src/public/uploads/images/photo.jpg
 //
 // ==========================================================
 
@@ -176,6 +186,182 @@ function normalizePercentage(
 }
 
 
+// ==========================================================
+// NORMALIZE PUBLIC IMAGE PATH
+// ==========================================================
+//
+// Converts:
+//
+//     /opt/render/project/src/public/uploads/images/a.jpg
+//
+// into:
+//
+//     /uploads/images/a.jpg
+//
+// Also supports:
+//
+//     C:\project\public\uploads\images\a.jpg
+//
+// and:
+//
+//     /uploads/images/a.jpg
+//
+// and:
+//
+//     https://example.com/image.jpg
+//
+// ==========================================================
+
+function normalizePublicImage(
+    value
+) {
+
+    const image =
+        cleanString(value);
+
+
+    if (!image) {
+
+        return "";
+
+    }
+
+
+    // ------------------------------------------------------
+    // Already an absolute URL
+    // ------------------------------------------------------
+
+    if (
+        image.startsWith("http://") ||
+        image.startsWith("https://")
+    ) {
+
+        return image;
+
+    }
+
+
+    // ------------------------------------------------------
+    // Normalize Windows separators
+    // ------------------------------------------------------
+
+    const normalized =
+        image.replace(
+            /\\/g,
+            "/"
+        );
+
+
+    // ------------------------------------------------------
+    // Already a public browser path
+    // ------------------------------------------------------
+
+    if (
+        normalized.startsWith("/")
+    ) {
+
+        // Absolute filesystem path
+        // may still begin with /opt/...
+        //
+        // Handle public directory below.
+
+        if (
+            normalized.includes("/public/")
+        ) {
+
+            const publicIndex =
+                normalized.indexOf(
+                    "/public/"
+                );
+
+            return normalized.substring(
+                publicIndex +
+                "/public".length
+            );
+
+        }
+
+
+        return normalized;
+
+    }
+
+
+    // ------------------------------------------------------
+    // Filesystem path containing /public/
+    // ------------------------------------------------------
+
+    const publicMarker =
+        "/public/";
+
+
+    const publicIndex =
+        normalized.indexOf(
+            publicMarker
+        );
+
+
+    if (
+        publicIndex !== -1
+    ) {
+
+        return normalized.substring(
+            publicIndex +
+            "/public".length
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // Filesystem path containing uploads/images
+    // ------------------------------------------------------
+
+    const imageMarker =
+        "/uploads/images/";
+
+
+    const imageIndex =
+        normalized.indexOf(
+            imageMarker
+        );
+
+
+    if (
+        imageIndex !== -1
+    ) {
+
+        return normalized.substring(
+            imageIndex
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // Filename only
+    // ------------------------------------------------------
+
+    if (
+        !normalized.includes("/")
+    ) {
+
+        return `/uploads/images/${normalized}`;
+
+    }
+
+
+    // ------------------------------------------------------
+    // Unknown value
+    //
+    // Return it unchanged rather than destroying data.
+    // ------------------------------------------------------
+
+    return normalized;
+
+}
+
+
 // ----------------------------------------------------------
 // NORMALIZE IMAGES
 // ----------------------------------------------------------
@@ -196,7 +382,7 @@ function normalizeImages(
     return images
 
         .map(
-            cleanString
+            normalizePublicImage
         )
 
         .filter(Boolean)
@@ -241,13 +427,6 @@ function validateObjectId(
 
 // ==========================================================
 // FIND FEED STORE
-// ==========================================================
-//
-// Ensures:
-//
-//     • Dairy exists
-//     • Dairy is actually a feedStore structure
-//
 // ==========================================================
 
 async function findFeedStore(
@@ -303,24 +482,14 @@ async function findFeedStore(
 
 
 // ==========================================================
-// GET FEED ARRAY
-// ==========================================================
-//
-// The current Dairy structure uses:
-//
-//     dairy.feeds
-//
-// Make sure callers always receive an array.
-//
+// GET FEEDS
 // ==========================================================
 
 function getFeeds(
     dairy
 ) {
 
-    if (
-        !dairy
-    ) {
+    if (!dairy) {
 
         return [];
 
@@ -345,14 +514,6 @@ function getFeeds(
 
 // ==========================================================
 // CALCULATE FEEDS AMOUNT
-// ==========================================================
-//
-// SINGLE SOURCE OF TRUTH.
-//
-// feedsAmount is derived from:
-//
-//     dairy.feeds[].amount
-//
 // ==========================================================
 
 function calculateFeedsAmount(
@@ -379,7 +540,7 @@ function calculateFeedsAmount(
             return (
                 total +
                 toNumber(
-                    feed.amount
+                    feed?.amount
                 )
             );
 
@@ -422,22 +583,6 @@ function synchronizeFeedsAmount(
 // ==========================================================
 // GET RECENT FEED STORE UPDATES
 // ==========================================================
-//
-// IMPORTANT
-// ----------------------------------------------------------
-//
-// The current Update.js does not yet contain a dedicated
-// feedStore subdocument or feedStore update type.
-//
-// Therefore feed-store reports are stored as:
-//
-//     type: "post"
-//
-// with:
-//
-//     title: "Feed Store Update"
-//
-// ==========================================================
 
 async function getRecentFeedStoreUpdates(
     dairyId
@@ -463,11 +608,6 @@ async function getRecentFeedStoreUpdates(
 
         })
 
-        .populate(
-            "user",
-            "name profileImage"
-        )
-
         .sort({
             createdAt: -1
         })
@@ -479,11 +619,43 @@ async function getRecentFeedStoreUpdates(
         .lean();
 
 
-    return Array.isArray(
-        updates
-    )
-        ? updates
-        : [];
+    if (
+        !Array.isArray(
+            updates
+        )
+    ) {
+
+        return [];
+
+    }
+
+
+    // ------------------------------------------------------
+    // Normalize images and user images before sending data
+    // to EJS.
+    // ------------------------------------------------------
+
+    return updates.map(
+        update => {
+
+            return {
+
+                ...update,
+
+                images:
+                    normalizeImages(
+                        update.images
+                    ),
+
+                userImage:
+                    normalizePublicImage(
+                        update.userImage
+                    )
+
+            };
+
+        }
+    );
 
 }
 
@@ -491,26 +663,12 @@ async function getRecentFeedStoreUpdates(
 // ==========================================================
 // GET FEED STORE PAGE DATA
 // ==========================================================
-//
-// Used by:
-//
-//     controllers/update/feedsController.js
-//
-// Returns:
-//
-//     feeds
-//     feedsAmount
-//     updates
-//
-// ==========================================================
 
 async function getFeedStorePageData(
     dairy
 ) {
 
-    if (
-        !dairy
-    ) {
+    if (!dairy) {
 
         const error =
             new Error(
@@ -576,21 +734,6 @@ async function getFeedStorePageData(
 
 // ==========================================================
 // CREATE FEED STORE UPDATE
-// ==========================================================
-//
-// Creates an Update document using the CURRENT Update.js:
-//
-//     dairy
-//     user
-//     userName
-//     userImage
-//     type
-//     title
-//     text
-//     images
-//
-// No unsupported `feedStore` property is written.
-//
 // ==========================================================
 
 async function createFeedStoreUpdate(
@@ -669,13 +812,7 @@ async function createFeedStoreUpdate(
 
 
     // ------------------------------------------------------
-    // BUILD REPORT TEXT
-    // ------------------------------------------------------
-    //
-    // Since the current Update.js does not have dedicated
-    // feedStore fields, the operational details are kept
-    // inside the normal Update.text field.
-    //
+    // BUILD REPORT
     // ------------------------------------------------------
 
     const reportParts = [];
@@ -753,19 +890,23 @@ async function createFeedStoreUpdate(
 
 
     // ------------------------------------------------------
-    // GET USER SNAPSHOT
+    // GET USER
     // ------------------------------------------------------
 
+    const User =
+        mongoose.model(
+            "User"
+        );
+
+
     const user =
-        await mongoose
-            .model("User")
-            .findById(
-                userId
-            )
-            .select(
-                "name profileImage"
-            )
-            .lean();
+        await User.findById(
+            userId
+        )
+        .select(
+            "name profileImage"
+        )
+        .lean();
 
 
     // ------------------------------------------------------
@@ -785,7 +926,9 @@ async function createFeedStoreUpdate(
                 user?.name || "",
 
             userImage:
-                user?.profileImage || "",
+                normalizePublicImage(
+                    user?.profileImage
+                ),
 
             type:
                 UPDATE_TYPE,
@@ -816,19 +959,6 @@ async function createFeedStoreUpdate(
 
 // ==========================================================
 // RESTOCK FEED STORE
-// ==========================================================
-//
-// ADMIN authorization is handled by the controller.
-//
-// The service:
-//
-//     • finds the feed store
-//     • finds an existing feed category
-//     • adds to its amount
-//     • OR creates a new category
-//     • recalculates feedsAmount
-//     • saves Dairy
-//
 // ==========================================================
 
 async function restockFeedStore(
@@ -879,7 +1009,7 @@ async function restockFeedStore(
 
 
     // ------------------------------------------------------
-    // DETERMINE STOCK NAME
+    // DETERMINE FEED NAME
     // ------------------------------------------------------
 
     let name =
@@ -926,7 +1056,7 @@ async function restockFeedStore(
 
 
     // ------------------------------------------------------
-    // OPTIONAL FIELDS
+    // OPTIONAL DATA
     // ------------------------------------------------------
 
     const stockUnit =
@@ -952,9 +1082,7 @@ async function restockFeedStore(
     // VALIDATION
     // ------------------------------------------------------
 
-    if (
-        !name
-    ) {
+    if (!name) {
 
         const error =
             new Error(
@@ -1004,7 +1132,7 @@ async function restockFeedStore(
 
 
     // ------------------------------------------------------
-    // ENSURE FEEDS ARRAY
+    // ENSURE FEEDS
     // ------------------------------------------------------
 
     const feeds =
@@ -1023,11 +1151,16 @@ async function restockFeedStore(
 
     let feed =
         feeds.find(
-            item =>
-                cleanString(
-                    item.name
-                ).toLowerCase() ===
-                normalizedName
+            item => {
+
+                return (
+                    cleanString(
+                        item?.name
+                    ).toLowerCase() ===
+                    normalizedName
+                );
+
+            }
         );
 
 
@@ -1035,9 +1168,7 @@ async function restockFeedStore(
     // EXISTING FEED
     // ======================================================
 
-    if (
-        feed
-    ) {
+    if (feed) {
 
         feed.amount =
             toNumber(
@@ -1152,6 +1283,10 @@ module.exports = {
 
     restockFeedStore,
 
-    calculateFeedsAmount
+    calculateFeedsAmount,
+
+    normalizePublicImage,
+
+    normalizeImages
 
 };
