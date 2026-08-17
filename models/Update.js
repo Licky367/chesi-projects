@@ -2,7 +2,8 @@
 // models/Update.js
 // ==========================================================
 
-const mongoose = require("mongoose");
+const mongoose =
+    require("mongoose");
 
 
 // ==========================================================
@@ -22,7 +23,8 @@ const postCommentSchema = new mongoose.Schema(
 
         userId: {
 
-            type: mongoose.Schema.Types.ObjectId,
+            type:
+                mongoose.Schema.Types.ObjectId,
 
             required: true
 
@@ -133,7 +135,8 @@ const medicalSchema = new mongoose.Schema(
 
         markedBy: {
 
-            type: mongoose.Schema.Types.ObjectId,
+            type:
+                mongoose.Schema.Types.ObjectId,
 
             default: null
 
@@ -151,7 +154,8 @@ const medicalSchema = new mongoose.Schema(
 
         clearedBy: {
 
-            type: mongoose.Schema.Types.ObjectId,
+            type:
+                mongoose.Schema.Types.ObjectId,
 
             default: null
 
@@ -242,7 +246,8 @@ const maintenanceSchema = new mongoose.Schema(
 
         markedBy: {
 
-            type: mongoose.Schema.Types.ObjectId,
+            type:
+                mongoose.Schema.Types.ObjectId,
 
             default: null
 
@@ -260,7 +265,8 @@ const maintenanceSchema = new mongoose.Schema(
 
         clearedBy: {
 
-            type: mongoose.Schema.Types.ObjectId,
+            type:
+                mongoose.Schema.Types.ObjectId,
 
             default: null
 
@@ -307,11 +313,18 @@ const maintenanceSchema = new mongoose.Schema(
 //
 // The Update belongs to the PARENT DAIRY FARM.
 //
+// The parent service stores a snapshot of the asset here so
+// the feed card can render without querying Dairy again.
+//
 // ==========================================================
 
 const assetAddSchema = new mongoose.Schema(
 
     {
+
+        // ==================================================
+        // ASSET ID
+        // ==================================================
 
         assetId: {
 
@@ -324,6 +337,10 @@ const assetAddSchema = new mongoose.Schema(
 
         },
 
+
+        // ==================================================
+        // ASSET DETAILS
+        // ==================================================
 
         name: {
 
@@ -409,6 +426,55 @@ const assetAddSchema = new mongoose.Schema(
             default: "active",
 
             trim: true
+
+        },
+
+
+        // ==================================================
+        // ASSET CODE
+        // ==================================================
+
+        assetCode: {
+
+            type: Number,
+
+            default: null
+
+        },
+
+
+        // ==================================================
+        // PARENT DAIRY
+        // ==================================================
+
+        parentDairyId: {
+
+            type:
+                mongoose.Schema.Types.ObjectId,
+
+            ref: "Dairy",
+
+            default: null
+
+        },
+
+
+        parentDairyName: {
+
+            type: String,
+
+            default: "",
+
+            trim: true
+
+        },
+
+
+        parentDairyCode: {
+
+            type: Number,
+
+            default: null
 
         }
 
@@ -555,16 +621,6 @@ const updateSchema = new mongoose.Schema(
         // ==================================================
         // POST IMAGES
         // ==================================================
-        //
-        // New multi-image post system.
-        //
-        // Maximum:
-        //
-        //     10 images per post.
-        //
-        // The order is preserved.
-        //
-        // ==================================================
 
         images: {
 
@@ -584,18 +640,19 @@ const updateSchema = new mongoose.Schema(
 
             validate: {
 
-                validator: function(images) {
+                validator:
+                    function(images) {
 
-                    return (
+                        return (
 
-                        Array.isArray(images) &&
+                            Array.isArray(images) &&
 
-                        images.length <=
-                            MAX_POST_IMAGES
+                            images.length <=
+                                MAX_POST_IMAGES
 
-                    );
+                        );
 
-                },
+                    },
 
                 message:
                     `A maximum of ${MAX_POST_IMAGES} images is allowed per post.`
@@ -607,12 +664,6 @@ const updateSchema = new mongoose.Schema(
 
         // ==================================================
         // LEGACY SINGLE IMAGE
-        // ==================================================
-        //
-        // Kept for older records and older code.
-        //
-        // New posts should use `images`.
-        //
         // ==================================================
 
         image: {
@@ -671,7 +722,8 @@ const updateSchema = new mongoose.Schema(
 
         comments: {
 
-            type: [postCommentSchema],
+            type:
+                [postCommentSchema],
 
             default: []
 
@@ -684,7 +736,8 @@ const updateSchema = new mongoose.Schema(
 
         medical: {
 
-            type: medicalSchema,
+            type:
+                medicalSchema,
 
             default: undefined
 
@@ -697,7 +750,8 @@ const updateSchema = new mongoose.Schema(
 
         maintenance: {
 
-            type: maintenanceSchema,
+            type:
+                maintenanceSchema,
 
             default: undefined
 
@@ -707,10 +761,20 @@ const updateSchema = new mongoose.Schema(
         // ==================================================
         // ASSET ADDED
         // ==================================================
+        //
+        // Feed type:
+        //
+        //     "assetAdd"
+        //
+        // The corresponding asset information is stored
+        // inside this subdocument.
+        //
+        // ==================================================
 
         asset: {
 
-            type: assetAddSchema,
+            type:
+                assetAddSchema,
 
             default: undefined
 
@@ -776,11 +840,6 @@ updateSchema.pre(
         // ==================================================
         // LEGACY IMAGE FALLBACK
         // ==================================================
-        //
-        // If an old record has only `image`, expose it
-        // through the new `images` array as well.
-        //
-        // ==================================================
 
         if (
 
@@ -803,13 +862,6 @@ updateSchema.pre(
 
         // ==================================================
         // KEEP LEGACY IMAGE SYNCHRONIZED
-        // ==================================================
-        //
-        // The first image is the primary image.
-        //
-        // Older code using `update.image` therefore
-        // continues to work.
-        //
         // ==================================================
 
         if (
