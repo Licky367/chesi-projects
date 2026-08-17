@@ -863,7 +863,8 @@ async function restockFeedStore(
         feed:
             stock,
 
-        feedsAmount
+        feedsAmount,
+updates
 
     };
 
