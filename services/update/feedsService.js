@@ -2,22 +2,52 @@
 // services/update/feedsService.js
 // ==========================================================
 //
-// FEED STORE SERVICE
+// FEED STORE / STOCK SERVICE
 //
 // Responsibilities:
 //
 //     • Retrieve Feed Store page data
-//     • Create feed-store reports
-//     • Retrieve recent feed-store reports
+//     • Create STOCK feed reports
+//     • Retrieve recent STOCK reports
 //     • Restock existing feed categories
 //     • Create new feed categories
 //     • Maintain Dairy.feedsAmount
 //     • Normalize uploaded image paths
 //
+// FEED INTEGRATION
+// ----------------------------------------------------------
+//
+// Feed-store reports are now real feed items:
+//
+//     type: "stock"
+//
+// They are therefore rendered by:
+//
+//     views/update/stock.ejs
+//
+// and participate in:
+//
+//     feed.ejs
+//     feed-actions.ejs
+//
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// Dairy is the source of truth for inventory.
+// Only:
+//
+//     dairyWorker
+//
+// may submit a stock report.
+//
+// Admin may:
+//
+//     • restock feed
+//     • create feed categories
+//
+// Admin restocking DOES NOT create a feed item.
+//
+// INVENTORY SOURCE OF TRUTH
+// ----------------------------------------------------------
 //
 // Individual feed values:
 //
@@ -29,7 +59,7 @@
 //
 // feedsAmount is ALWAYS calculated from dairy.feeds.
 //
-// IMPORTANT IMAGE RULE
+// IMAGE RULE
 // ----------------------------------------------------------
 //
 // MongoDB stores PUBLIC browser paths:
@@ -63,16 +93,32 @@ const FEED_STORE_TYPE =
     "feedStore";
 
 
-const UPDATE_TYPE =
-    "post";
+/*
+ * Feed item type used by the main chronological feed.
+ */
+const STOCK_UPDATE_TYPE =
+    "stock";
 
 
+/*
+ * Maximum number of images allowed on one report.
+ */
 const MAX_IMAGES =
     10;
 
 
+/*
+ * Number of reports displayed on the Feed Store page.
+ */
 const MAX_RECENT_UPDATES =
     20;
+
+
+/*
+ * Only dairy workers may create stock reports.
+ */
+const STOCK_REPORT_ROLE =
+    "dairyWorker";
 
 
 // ==========================================================
@@ -93,7 +139,9 @@ function toNumber(
         Number(value);
 
 
-    return Number.isFinite(number)
+    return Number.isFinite(
+        number
+    )
         ? number
         : fallback;
 
@@ -118,7 +166,9 @@ function cleanString(
     }
 
 
-    return String(value).trim();
+    return String(
+        value
+    ).trim();
 
 }
 
@@ -202,11 +252,7 @@ function normalizePercentage(
 //
 //     C:\project\public\uploads\images\a.jpg
 //
-// and:
-//
 //     /uploads/images/a.jpg
-//
-// and:
 //
 //     https://example.com/image.jpg
 //
@@ -217,7 +263,9 @@ function normalizePublicImage(
 ) {
 
     const image =
-        cleanString(value);
+        cleanString(
+            value
+        );
 
 
     if (!image) {
@@ -228,12 +276,16 @@ function normalizePublicImage(
 
 
     // ------------------------------------------------------
-    // Already an absolute URL
+    // ABSOLUTE URL
     // ------------------------------------------------------
 
     if (
-        image.startsWith("http://") ||
-        image.startsWith("https://")
+        image.startsWith(
+            "http://"
+        ) ||
+        image.startsWith(
+            "https://"
+        )
     ) {
 
         return image;
@@ -242,7 +294,7 @@ function normalizePublicImage(
 
 
     // ------------------------------------------------------
-    // Normalize Windows separators
+    // NORMALIZE WINDOWS SLASHES
     // ------------------------------------------------------
 
     const normalized =
@@ -253,26 +305,29 @@ function normalizePublicImage(
 
 
     // ------------------------------------------------------
-    // Already a public browser path
+    // ALREADY A PUBLIC PATH
     // ------------------------------------------------------
 
     if (
         normalized.startsWith("/")
     ) {
 
-        // Absolute filesystem path
-        // may still begin with /opt/...
-        //
-        // Handle public directory below.
+        /*
+         * Handle an absolute filesystem path containing
+         * /public/.
+         */
 
         if (
-            normalized.includes("/public/")
+            normalized.includes(
+                "/public/"
+            )
         ) {
 
             const publicIndex =
                 normalized.indexOf(
                     "/public/"
                 );
+
 
             return normalized.substring(
                 publicIndex +
@@ -288,7 +343,7 @@ function normalizePublicImage(
 
 
     // ------------------------------------------------------
-    // Filesystem path containing /public/
+    // FILESYSTEM PATH CONTAINING /public/
     // ------------------------------------------------------
 
     const publicMarker =
@@ -314,7 +369,7 @@ function normalizePublicImage(
 
 
     // ------------------------------------------------------
-    // Filesystem path containing uploads/images
+    // PATH CONTAINING /uploads/images/
     // ------------------------------------------------------
 
     const imageMarker =
@@ -339,22 +394,22 @@ function normalizePublicImage(
 
 
     // ------------------------------------------------------
-    // Filename only
+    // FILENAME ONLY
     // ------------------------------------------------------
 
     if (
         !normalized.includes("/")
     ) {
 
-        return `/uploads/images/${normalized}`;
+        return (
+            `/uploads/images/${normalized}`
+        );
 
     }
 
 
     // ------------------------------------------------------
-    // Unknown value
-    //
-    // Return it unchanged rather than destroying data.
+    // UNKNOWN VALUE
     // ------------------------------------------------------
 
     return normalized;
@@ -371,7 +426,9 @@ function normalizeImages(
 ) {
 
     if (
-        !Array.isArray(images)
+        !Array.isArray(
+            images
+        )
     ) {
 
         return [];
@@ -385,7 +442,9 @@ function normalizeImages(
             normalizePublicImage
         )
 
-        .filter(Boolean)
+        .filter(
+            Boolean
+        )
 
         .slice(
             0,
@@ -417,6 +476,40 @@ function validateObjectId(
             );
 
         error.status = 400;
+
+        throw error;
+
+    }
+
+}
+
+
+// ==========================================================
+// VALIDATE STOCK REPORT ROLE
+// ==========================================================
+//
+// This is intentionally enforced inside the service.
+//
+// Even if somebody bypasses the controller and directly
+// calls the service, an admin cannot create a stock feed
+// report.
+//
+// ==========================================================
+
+function validateStockReportRole(
+    role
+) {
+
+    if (
+        role !== STOCK_REPORT_ROLE
+    ) {
+
+        const error =
+            new Error(
+                "Only a dairy worker can submit a stock report."
+            );
+
+        error.status = 403;
 
         throw error;
 
@@ -581,7 +674,94 @@ function synchronizeFeedsAmount(
 
 
 // ==========================================================
-// GET RECENT FEED STORE UPDATES
+// NORMALIZE STOCK UPDATE
+// ==========================================================
+//
+// Makes the object safe and consistent for EJS.
+//
+// ==========================================================
+
+function normalizeStockUpdate(
+    update
+) {
+
+    if (!update) {
+
+        return null;
+
+    }
+
+
+    const normalized =
+        {
+            ...update,
+
+            type:
+                STOCK_UPDATE_TYPE,
+
+            images:
+                normalizeImages(
+                    update.images
+                ),
+
+            userImage:
+                normalizePublicImage(
+                    update.userImage
+                ),
+
+            likes:
+                toNumber(
+                    update.likes,
+                    0
+                ),
+
+            comments:
+                Array.isArray(
+                    update.comments
+                )
+                    ? update.comments
+                    : []
+
+        };
+
+
+    /*
+     * The stock card can use either text or message.
+     *
+     * We keep both available so the EJS partial remains
+     * flexible.
+     */
+
+    if (
+        !normalized.text &&
+        normalized.message
+    ) {
+
+        normalized.text =
+            normalized.message;
+
+    }
+
+
+    return normalized;
+
+}
+
+
+// ==========================================================
+// GET RECENT STOCK REPORTS
+// ==========================================================
+//
+// These are the reports displayed on the Feed Store page.
+//
+// IMPORTANT:
+//
+//     type = "stock"
+//
+// NOT:
+//
+//     type = "post"
+//
 // ==========================================================
 
 async function getRecentFeedStoreUpdates(
@@ -601,15 +781,15 @@ async function getRecentFeedStoreUpdates(
                 dairyId,
 
             type:
-                UPDATE_TYPE,
-
-            title:
-                "Feed Store Update"
+                STOCK_UPDATE_TYPE
 
         })
 
         .sort({
-            createdAt: -1
+
+            createdAt:
+                -1
+
         })
 
         .limit(
@@ -630,32 +810,15 @@ async function getRecentFeedStoreUpdates(
     }
 
 
-    // ------------------------------------------------------
-    // Normalize images and user images before sending data
-    // to EJS.
-    // ------------------------------------------------------
+    return updates
 
-    return updates.map(
-        update => {
+        .map(
+            normalizeStockUpdate
+        )
 
-            return {
-
-                ...update,
-
-                images:
-                    normalizeImages(
-                        update.images
-                    ),
-
-                userImage:
-                    normalizePublicImage(
-                        update.userImage
-                    )
-
-            };
-
-        }
-    );
+        .filter(
+            Boolean
+        );
 
 }
 
@@ -733,7 +896,17 @@ async function getFeedStorePageData(
 
 
 // ==========================================================
-// CREATE FEED STORE UPDATE
+// CREATE STOCK FEED REPORT
+// ==========================================================
+//
+// Creates a real chronological feed item:
+//
+//     type: "stock"
+//
+// Only dairyWorker is allowed.
+//
+// Admin DOES NOT create stock feed items.
+//
 // ==========================================================
 
 async function createFeedStoreUpdate(
@@ -745,6 +918,8 @@ async function createFeedStoreUpdate(
         dairyId,
 
         userId,
+
+        role,
 
         message,
 
@@ -759,6 +934,19 @@ async function createFeedStoreUpdate(
     } = data || {};
 
 
+    // ------------------------------------------------------
+    // ROLE
+    // ------------------------------------------------------
+
+    validateStockReportRole(
+        role
+    );
+
+
+    // ------------------------------------------------------
+    // IDs
+    // ------------------------------------------------------
+
     validateObjectId(
         dairyId,
         "Dairy ID"
@@ -770,6 +958,10 @@ async function createFeedStoreUpdate(
         "User ID"
     );
 
+
+    // ------------------------------------------------------
+    // FEED STORE
+    // ------------------------------------------------------
 
     const dairy =
         await findFeedStore(
@@ -812,10 +1004,40 @@ async function createFeedStoreUpdate(
 
 
     // ------------------------------------------------------
-    // BUILD REPORT
+    // REQUIRE REPORT CONTENT
     // ------------------------------------------------------
 
-    const reportParts = [];
+    if (
+        !cleanMessage &&
+        !cleanCondition &&
+        !cleanFeedQuality &&
+        remaining === null &&
+        cleanImages.length === 0
+    ) {
+
+        const error =
+            new Error(
+                "A stock report must contain report information or at least one image."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // BUILD HUMAN-READABLE FEED TEXT
+    // ======================================================
+    //
+    // The structured fields are also stored separately so
+    // stock.ejs can display them as badges/cards.
+    //
+    // ======================================================
+
+    const reportParts =
+        [];
 
 
     if (
@@ -868,30 +1090,9 @@ async function createFeedStoreUpdate(
         );
 
 
-    // ------------------------------------------------------
-    // REQUIRE CONTENT
-    // ------------------------------------------------------
-
-    if (
-        !reportText &&
-        cleanImages.length === 0
-    ) {
-
-        const error =
-            new Error(
-                "A feed-store update must contain a report or image."
-            );
-
-        error.status = 400;
-
-        throw error;
-
-    }
-
-
-    // ------------------------------------------------------
+    // ======================================================
     // GET USER
-    // ------------------------------------------------------
+    // ======================================================
 
     const User =
         mongoose.model(
@@ -903,18 +1104,61 @@ async function createFeedStoreUpdate(
         await User.findById(
             userId
         )
+
         .select(
-            "name profileImage"
+            "name profileImage role"
         )
+
         .lean();
 
 
-    // ------------------------------------------------------
-    // CREATE UPDATE
-    // ------------------------------------------------------
+    if (!user) {
+
+        const error =
+            new Error(
+                "Submitting user not found."
+            );
+
+        error.status = 404;
+
+        throw error;
+
+    }
+
+
+    /*
+     * Double-check the actual database role.
+     *
+     * This protects against a forged req.user.role.
+     */
+
+    if (
+        user.role !==
+        STOCK_REPORT_ROLE
+    ) {
+
+        const error =
+            new Error(
+                "Only a dairy worker can submit a stock report."
+            );
+
+        error.status = 403;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // CREATE STOCK FEED ITEM
+    // ======================================================
 
     const update =
         new Update({
+
+            // ------------------------------------------------
+            // FEED IDENTITY
+            // ------------------------------------------------
 
             dairy:
                 dairy._id,
@@ -922,25 +1166,67 @@ async function createFeedStoreUpdate(
             user:
                 userId,
 
+            type:
+                STOCK_UPDATE_TYPE,
+
+
+            // ------------------------------------------------
+            // AUTHOR
+            // ------------------------------------------------
+
             userName:
-                user?.name || "",
+                user.name || "",
 
             userImage:
                 normalizePublicImage(
-                    user?.profileImage
+                    user.profileImage
                 ),
 
-            type:
-                UPDATE_TYPE,
+
+            // ------------------------------------------------
+            // STOCK REPORT
+            // ------------------------------------------------
 
             title:
-                "Feed Store Update",
+                "Stock Report",
 
             text:
                 reportText,
 
+            condition:
+                cleanCondition,
+
+            feedQuality:
+                cleanFeedQuality,
+
+            percentageRemaining:
+                remaining,
+
+
+            // ------------------------------------------------
+            // IMAGES
+            // ------------------------------------------------
+
             images:
-                cleanImages
+                cleanImages,
+
+
+            // ------------------------------------------------
+            // FEED ACTIONS
+            // ------------------------------------------------
+            //
+            // These are deliberately initialized so stock
+            // items behave like every other feed item.
+            //
+            // If the Update schema already provides defaults,
+            // these values simply remain consistent.
+            // ------------------------------------------------
+
+            likes:
+                0,
+
+            comments:
+                []
 
         });
 
@@ -959,6 +1245,16 @@ async function createFeedStoreUpdate(
 
 // ==========================================================
 // RESTOCK FEED STORE
+// ==========================================================
+//
+// ADMIN OPERATION
+//
+// IMPORTANT:
+//
+// Restocking changes inventory only.
+//
+// It DOES NOT create a feed item.
+//
 // ==========================================================
 
 async function restockFeedStore(
@@ -990,6 +1286,10 @@ async function restockFeedStore(
     } = data || {};
 
 
+    // ------------------------------------------------------
+    // IDs
+    // ------------------------------------------------------
+
     validateObjectId(
         dairyId,
         "Dairy ID"
@@ -1001,6 +1301,10 @@ async function restockFeedStore(
         "User ID"
     );
 
+
+    // ------------------------------------------------------
+    // FEED STORE
+    // ------------------------------------------------------
 
     const dairy =
         await findFeedStore(
@@ -1020,7 +1324,8 @@ async function restockFeedStore(
 
     if (
         !name &&
-        restockMode === "existing"
+        restockMode ===
+        "existing"
     ) {
 
         name =
@@ -1033,7 +1338,8 @@ async function restockFeedStore(
 
     if (
         !name &&
-        restockMode === "new"
+        restockMode ===
+        "new"
     ) {
 
         name =
@@ -1131,9 +1437,9 @@ async function restockFeedStore(
     }
 
 
-    // ------------------------------------------------------
-    // ENSURE FEEDS
-    // ------------------------------------------------------
+    // ======================================================
+    // ENSURE FEEDS ARRAY
+    // ======================================================
 
     const feeds =
         getFeeds(
@@ -1141,9 +1447,9 @@ async function restockFeedStore(
         );
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // FIND EXISTING FEED
-    // ------------------------------------------------------
+    // ======================================================
 
     const normalizedName =
         name.toLowerCase();
@@ -1154,10 +1460,12 @@ async function restockFeedStore(
             item => {
 
                 return (
+
                     cleanString(
                         item?.name
                     ).toLowerCase() ===
                     normalizedName
+
                 );
 
             }
@@ -1250,7 +1558,7 @@ async function restockFeedStore(
 
 
     // ------------------------------------------------------
-    // SAVE
+    // SAVE INVENTORY
     // ------------------------------------------------------
 
     await dairy.save();
@@ -1272,7 +1580,7 @@ async function restockFeedStore(
 
 
 // ==========================================================
-// EXPORT
+// EXPORTS
 // ==========================================================
 
 module.exports = {
@@ -1283,7 +1591,11 @@ module.exports = {
 
     restockFeedStore,
 
+    getRecentFeedStoreUpdates,
+
     calculateFeedsAmount,
+
+    synchronizeFeedsAmount,
 
     normalizePublicImage,
 
