@@ -21,9 +21,11 @@
 //
 // ==========================================================
 
-const express = require("express");
+const express =
+    require("express");
 
-const router = express.Router();
+const router =
+    express.Router();
 
 
 // ==========================================================
@@ -46,7 +48,11 @@ const upload =
 // AUTH MIDDLEWARE
 // ==========================================================
 
-function isAuth(req, res, next) {
+function isAuth(
+    req,
+    res,
+    next
+) {
 
     if (!req.session.user) {
 
@@ -115,69 +121,23 @@ router.get(
 // FEED STORE
 // ==========================================================
 //
-// The feed store is attached directly to the Dairy asset:
+// IMPORTANT
+// ----------------------------------------------------------
 //
-//     /dairy/:id/feedstore
+// Feed-store routes intentionally use:
 //
-// There are two completely different update operations:
+//     /dairy/feedstore/:id
 //
+// Therefore:
 //
-//     ADMIN
-//     -----
+//     /dairy/feedstore/:id
 //
-//     POST /dairy/:id/feedstore/restock
+//     /dairy/feedstore/:id/update
 //
-//     Used to add newly available:
+//     /dairy/feedstore/:id/restock
 //
-//         • Animal feed
-//         • Veterinary medicine
+// The :id is always the Dairy / Feed Store asset ID.
 //
-//     The admin supplies:
-//
-//         • stock type
-//         • stock name
-//         • quantity
-//         • unit
-//         • price
-//         • instructions
-//         • expected duration
-//         • optional images
-//
-//     The service then:
-//
-//         • creates the stock record
-//         • recalculates feedsAmount
-//         • creates the automatic System feed item
-//
-//
-//     DAIRY WORKER
-//     ------------
-//
-//     POST /dairy/:id/feedstore/update
-//
-//     Used to report remaining stock.
-//
-//     The worker supplies:
-//
-//         • selected stock item
-//         • remaining quantity
-//         • unit
-//         • additional information
-//         • optional images
-//
-//     The worker does NOT supply:
-//
-//         • price
-//         • cost
-//         • feedsAmount
-//
-//     The controller/service handles the role restriction.
-//
-// ==========================================================
-
-
-// ==========================================================
-// FEED STORE
 // ==========================================================
 
 
@@ -188,6 +148,10 @@ router.get(
 // GET:
 //
 //     /dairy/feedstore/:id
+//
+// Example:
+//
+//     /dairy/feedstore/6a802fb518fcceb7ac81eef1
 //
 // ----------------------------------------------------------
 
@@ -205,6 +169,31 @@ router.get(
 // POST:
 //
 //     /dairy/feedstore/:id/update
+//
+// Available to:
+//
+//     admin
+//     dairyWorker
+//
+// Can contain:
+//
+//     • facility condition
+//     • feed quality
+//     • percentage remaining
+//     • message
+//     • multiple images
+//
+// Upload field:
+//
+//     images
+//
+// Maximum:
+//
+//     10 images
+//
+// Business logic:
+//
+//     services/update/feedsService.js
 //
 // ----------------------------------------------------------
 
@@ -227,6 +216,23 @@ router.post(
 //
 //     /dairy/feedstore/:id/restock
 //
+// Intended for:
+//
+//     admin
+//
+// Used to:
+//
+//     • restock existing feed
+//     • create new feed stock
+//     • update quantities
+//     • update financial amounts
+//     • record expenditure
+//     • recalculate feedsAmount
+//
+// Business logic:
+//
+//     services/update/feedsService.js
+//
 // ----------------------------------------------------------
 
 router.post(
@@ -244,19 +250,10 @@ router.post(
 //
 //     /dairy/:id
 //
-// IMPORTANT:
+// IMPORTANT
+// ----------------------------------------------------------
 //
-// This remains AFTER:
-//
-//     /dairy/:id/feedstore
-//
-// so Express does not treat:
-//
-//     /dairy/:id/feedstore
-//
-// as:
-//
-//     /dairy/:id
+// This route comes after the more specific feed-store routes.
 //
 // ----------------------------------------------------------
 
@@ -440,6 +437,12 @@ router.post(
 //     POST /maintenance/:id/like
 //     POST /milk/:id/like
 //
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// This generic route is deliberately placed AFTER all
+// specific /dairy/... routes.
+//
 // ----------------------------------------------------------
 
 router.post(
@@ -548,7 +551,7 @@ router.post(
 
 // ----------------------------------------------------------
 // MARK MAINTENANCE
-// ==========================================================
+// ----------------------------------------------------------
 //
 // POST:
 //
@@ -565,7 +568,7 @@ router.post(
 
 // ----------------------------------------------------------
 // CLEAR MAINTENANCE
-// ==========================================================
+// ----------------------------------------------------------
 //
 // POST:
 //
@@ -601,4 +604,5 @@ router.delete(
 // EXPORT
 // ==========================================================
 
-module.exports = router;
+module.exports =
+    router;
