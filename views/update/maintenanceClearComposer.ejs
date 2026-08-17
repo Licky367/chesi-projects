@@ -1,154 +1,144 @@
 <% /*
-==========================================================
+============================================================
 MAINTENANCE CLEAR COMPOSER
 
 FILE:
-    views/update/maintClearComposer.ejs
+    views/update/maintenanceClearComposer.ejs
 
 PURPOSE:
-----------------------------------------------------------
-Allows an admin to record completed maintenance work
-and clear the maintenance status of the current asset.
+    Compact status-style card for recording completed
+    maintenance work on the CURRENT dairy asset.
 
-CONDITIONS:
-----------------------------------------------------------
-• User must be an admin.
-• Dairy must have no asset code.
-• Dairy must currently require maintenance.
+CARD STANDARD:
+    Matches maintComposer.ejs / create.ejs:
 
-EXPECTED DATA:
-----------------------------------------------------------
-dairy
-user
+        Desktop:
+            112px × 155px
 
-ROUTE:
-----------------------------------------------------------
-POST /dairy/:id/maintenance/clear
-==========================================================
+        Mobile:
+            108px × 150px
+
+AUTHORIZED USER:
+    admin
+
+CONDITION:
+    Dairy must have:
+        code === undefined OR null
+        AND
+        needsMaintenance === true
+
+FORM:
+    POST /dairy/:id/maintenance/clear
+============================================================
 */ %>
 
 
 <% if (
-    user &&
-    user.role === "admin" &&
     dairy &&
     (
         dairy.code === null ||
         dairy.code === undefined
     ) &&
-    dairy.needsMaintenance === true
+    dairy.needsMaintenance === true &&
+    user &&
+    user.role === "admin"
 ) { %>
 
 
 <!-- =========================================================
-     MAINTENANCE CLEAR COMPOSER
+     MAINTENANCE CLEAR CARD
 ========================================================= -->
 
 <section
-    class="maint-clear-composer-card"
-    data-maint-clear-card
-    data-dairy-id="<%= dairy._id %>"
+    class="maint-clear-composer"
+    aria-label="Clear maintenance"
 >
 
 
-    <!-- =====================================================
-         COMPOSER HEADER
-    ====================================================== -->
-
-    <div class="maint-clear-composer-header">
-
-
-        <!-- ADMIN AVATAR -->
-
-        <div class="maint-clear-composer-avatar">
-
-            <img
-                src="<%= user.profileImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(user.name)) %>"
-                alt="<%= user.name %>"
-                class="maint-clear-avatar-sm"
-            >
-
-        </div>
-
-
-        <!-- HEADING -->
-
-        <div class="maint-clear-composer-heading">
-
-            <div class="maint-clear-heading-line">
-
-                <strong>
-                    <%= user.name.split(" ")[0] %>
-                </strong>
-
-                , has the maintenance work on this
-                facility been completed?
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- =====================================================
-         CLICKABLE TRIGGER
-    ====================================================== -->
-
-    <div
-        class="maint-clear-composer-trigger"
-        data-open-maint-clear
-        role="button"
-        tabindex="0"
-        aria-label="Record completed maintenance"
+    <button
+        type="button"
+        id="openMaintClearComposer"
+        class="maint-clear-composer__card"
+        aria-label="Record completed maintenance for <%= dairy.name %>"
     >
 
-        <span>
-            ✓ Record completed maintenance...
+
+        <!-- =================================================
+             ICON
+        ================================================== -->
+
+        <span
+            class="maint-clear-composer__icon"
+            aria-hidden="true"
+        >
+
+            <i class="bi bi-check-circle"></i>
+
         </span>
 
-    </div>
 
+        <!-- =================================================
+             LABEL
+        ================================================== -->
+
+        <span class="maint-clear-composer__label">
+            Clear Maintenance
+        </span>
+
+
+        <!-- =================================================
+             TARGET
+        ================================================== -->
+
+        <span class="maint-clear-composer__target">
+
+            <%= dairy.name %>
+
+        </span>
+
+
+    </button>
 
 </section>
 
 
 
 <!-- =========================================================
-     FULL SCREEN MAINTENANCE CLEAR MODAL
+     FULL-SCREEN MAINTENANCE CLEAR MODAL
 ========================================================= -->
 
 <div
+    id="maintClearModal"
     class="maint-clear-modal"
-    data-maint-clear-modal
     aria-hidden="true"
 >
 
 
-    <div class="maint-clear-modal-content">
+    <div class="maint-clear-modal__content">
 
 
         <!-- =================================================
              MODAL HEADER
         ================================================== -->
 
-        <header class="maint-clear-modal-header">
+        <header class="maint-clear-modal__header">
 
 
             <button
                 type="button"
-                class="maint-clear-back-button"
-                data-close-maint-clear
-                aria-label="Go back"
+                id="closeMaintClearModal"
+                class="maint-clear-modal__back"
+                aria-label="Close maintenance clearance"
             >
 
-                <i class="bi bi-arrow-left"></i>
+                <span aria-hidden="true">
+                    &#8592;
+                </span>
 
             </button>
 
 
-            <div class="maint-clear-modal-title">
+            <div class="maint-clear-modal__title">
 
                 <strong>
                     Clear Maintenance
@@ -161,7 +151,10 @@ POST /dairy/:id/maintenance/clear
             </div>
 
 
-            <div class="maint-clear-header-spacer"></div>
+            <div
+                class="maint-clear-modal__spacer"
+                aria-hidden="true"
+            ></div>
 
 
         </header>
@@ -172,206 +165,228 @@ POST /dairy/:id/maintenance/clear
              MODAL BODY
         ================================================== -->
 
-        <main class="maint-clear-modal-body">
+        <main class="maint-clear-modal__body">
 
 
-            <!-- =================================================
-                 QUESTION
-            ================================================== -->
-
-            <div class="maint-clear-question">
-
-                <strong>
-                    <%= user.name.split(" ")[0] %>
-                </strong>,
-
-                has the maintenance work on this facility
-                been completed?
-
-            </div>
+            <div class="maint-clear-modal__fields">
 
 
+                <!-- =================================================
+                     QUESTION
+                ================================================== -->
 
-            <!-- =================================================
-                 TARGET ASSET
-            ================================================== -->
-
-            <div class="maint-clear-target">
-
-
-                <% if (
-                    dairy.profileImage &&
-                    dairy.profileImage.trim() !== ""
-                ) { %>
-
-                    <img
-                        src="<%= dairy.profileImage %>"
-                        class="maint-clear-target-image"
-                        alt="<%= dairy.name %>"
-                    >
-
-                <% } else { %>
-
-                    <img
-                        src="https://ui-avatars.com/api/?name=<%= encodeURIComponent(dairy.name) %>&background=0b5d1e&color=fff"
-                        class="maint-clear-target-image"
-                        alt="<%= dairy.name %>"
-                    >
-
-                <% } %>
-
-
-                <div class="maint-clear-target-info">
+                <div class="maint-clear-question">
 
                     <strong>
-                        <%= dairy.name %>
-                    </strong>
+                        <%= user.name.split(" ")[0] %>
+                    </strong>,
 
-                    <span>
-                        Maintenance currently required
-                    </span>
+                    has the maintenance work on this facility
+                    been completed?
 
                 </div>
 
 
-            </div>
+
+                <!-- =================================================
+                     TARGET
+                ================================================== -->
+
+                <section
+                    class="maint-clear-target"
+                    aria-label="Maintenance target"
+                >
 
 
+                    <% if (
+                        dairy.profileImage &&
+                        dairy.profileImage.trim() !== ""
+                    ) { %>
 
-            <!-- =================================================
-                 MAINTENANCE STATUS
-            ================================================== -->
-
-            <div class="maint-clear-status">
-
-                <span class="maint-clear-status-icon">
-                    ⚠️
-                </span>
-
-
-                <div>
-
-                    <strong>
-                        Maintenance in progress
-                    </strong>
-
-                    <span>
-                        Record the completed work below to
-                        clear the maintenance status.
-                    </span>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- =================================================
-                 CLEAR MAINTENANCE FORM
-            ================================================== -->
-
-            <form
-                class="maint-clear-form"
-                action="/dairy/<%= dairy._id %>/maintenance/clear"
-                method="POST"
-                autocomplete="off"
-            >
-
-
-                <!-- =============================================
-                     CHARGES
-                ============================================== -->
-
-                <div class="maint-clear-field">
-
-                    <label for="maintClearCharges">
-
-                        Charges incurred
-
-                    </label>
-
-
-                    <div class="maint-clear-money-input">
-
-                        <span>
-                            KES
-                        </span>
-
-
-                        <input
-                            type="number"
-                            id="maintClearCharges"
-                            name="charges"
-                            min="0"
-                            step="0.01"
-                            inputmode="decimal"
-                            placeholder="0.00"
-                            required
+                        <img
+                            src="<%= dairy.profileImage %>"
+                            class="maint-clear-target__image"
+                            alt="<%= dairy.name %>"
                         >
 
+                    <% } else { %>
+
+                        <div
+                            class="maint-clear-target__placeholder"
+                            aria-hidden="true"
+                        >
+
+                            <i class="bi bi-tools"></i>
+
+                        </div>
+
+                    <% } %>
+
+
+                    <div class="maint-clear-target__info">
+
+                        <span>
+                            Maintenance currently required
+                        </span>
+
+                        <strong>
+                            <%= dairy.name %>
+                        </strong>
+
                     </div>
 
-                </div>
+
+                </section>
 
 
 
-                <!-- =============================================
-                     DESCRIPTION
-                ============================================== -->
+                <!-- =================================================
+                     STATUS NOTICE
+                ================================================== -->
 
-                <div class="maint-clear-field">
-
-                    <label for="maintClearDescription">
-
-                        Work completed
-
-                    </label>
+                <section
+                    class="maint-clear-status"
+                    aria-label="Maintenance status"
+                >
 
 
-                    <textarea
-                        id="maintClearDescription"
-                        name="description"
-                        maxlength="1000"
-                        placeholder="Describe the maintenance work completed..."
-                        required
-                    ></textarea>
-
-
-                    <div
-                        class="maint-clear-character-counter"
-                        data-maint-clear-counter
+                    <span
+                        class="maint-clear-status__icon"
+                        aria-hidden="true"
                     >
-                        0/1000
+                        ⚠️
+                    </span>
+
+
+                    <div>
+
+                        <strong>
+                            Maintenance in progress
+                        </strong>
+
+                        <span>
+                            Record the completed work below to
+                            clear the maintenance status.
+                        </span>
+
                     </div>
 
-                </div>
+
+                </section>
 
 
 
-                <!-- =============================================
-                     SUBMIT
-                ============================================== -->
+                <!-- =================================================
+                     CLEAR MAINTENANCE FORM
+                ================================================== -->
 
-                <div class="maint-clear-submit-wrapper">
+                <form
+                    id="maintClearForm"
+                    class="maint-clear-form"
+                    action="/dairy/<%= dairy._id %>/maintenance/clear"
+                    method="POST"
+                    autocomplete="off"
+                >
+
+
+                    <!-- =============================================
+                         CHARGES
+                    ============================================== -->
+
+                    <div class="maint-clear-field">
+
+                        <label
+                            for="maintClearCharges"
+                        >
+                            Charges incurred
+                        </label>
+
+
+                        <div class="maint-clear-money-input">
+
+                            <span>
+                                KES
+                            </span>
+
+
+                            <input
+                                type="number"
+                                id="maintClearCharges"
+                                name="charges"
+                                min="0"
+                                step="0.01"
+                                inputmode="decimal"
+                                placeholder="0.00"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- =============================================
+                         DESCRIPTION
+                    ============================================== -->
+
+                    <div class="maint-clear-field">
+
+                        <label
+                            for="maintClearDescription"
+                        >
+                            Work completed
+                        </label>
+
+
+                        <textarea
+                            id="maintClearDescription"
+                            name="description"
+                            maxlength="1000"
+                            rows="5"
+                            placeholder="Describe the maintenance work completed..."
+                            required
+                        ></textarea>
+
+
+                        <span
+                            id="maintClearCharacterCounter"
+                            class="maint-clear-character-counter"
+                        >
+                            0/1000
+                        </span>
+
+                    </div>
+
+
+
+                    <!-- =============================================
+                         SUBMIT
+                    ============================================== -->
 
                     <button
                         type="submit"
+                        id="submitMaintClearButton"
                         class="maint-clear-submit-button"
-                        data-maint-clear-submit
                         disabled
                     >
 
-                        <i class="bi bi-check-circle"></i>
+                        <i
+                            class="bi bi-check-circle"
+                            aria-hidden="true"
+                        ></i>
 
-                        Clear Maintenance
+                        <span>
+                            Clear Maintenance
+                        </span>
 
                     </button>
 
-                </div>
+
+                </form>
 
 
-            </form>
-
+            </div>
 
         </main>
 
@@ -389,148 +404,194 @@ POST /dairy/:id/maintenance/clear
 <style>
 
 /* =========================================================
-   COMPOSER CARD
+   ROOT
 ========================================================= */
 
-.maint-clear-composer-card {
-
-    width: 100%;
+.maint-clear-composer,
+.maint-clear-composer *,
+.maint-clear-modal,
+.maint-clear-modal * {
 
     box-sizing: border-box;
-
-    padding: 16px;
-
-    margin-bottom: 16px;
-
-    background: #ffffff;
-
-    border: 1px solid #e7eee9;
-
-    border-radius: 16px;
-
-}
-
-
-/* =========================================================
-   COMPOSER HEADER
-========================================================= */
-
-.maint-clear-composer-header {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-}
-
-
-.maint-clear-composer-avatar {
-
-    flex: 0 0 auto;
-
-}
-
-
-.maint-clear-avatar-sm {
-
-    width: 44px;
-
-    height: 44px;
-
-    display: block;
-
-    object-fit: cover;
-
-    border-radius: 50%;
-
-}
-
-
-.maint-clear-composer-heading {
-
-    min-width: 0;
-
-    color: #555555;
-
-    font-size: 14px;
-
-    line-height: 1.5;
-
-}
-
-
-.maint-clear-heading-line {
-
-    display: block;
-
-}
-
-
-.maint-clear-composer-heading strong {
-
-    color: #222222;
 
 }
 
 
 
 /* =========================================================
-   CLICKABLE COMPOSER TRIGGER
+   REAL UPDATE CARD
 ========================================================= */
 
-.maint-clear-composer-trigger {
+.maint-clear-composer {
 
-    min-height: 48px;
+    width: 112px;
 
-    box-sizing: border-box;
+    flex: 0 0 112px;
+
+    margin: 0 0 16px;
+
+}
+
+
+.maint-clear-composer__card {
+
+    position: relative;
+
+    width: 112px;
+    height: 155px;
+
+    padding: 0;
 
     display: flex;
 
+    flex-direction: column;
+
     align-items: center;
+    justify-content: center;
 
-    margin-top: 14px;
+    gap: 7px;
 
-    padding: 0 16px;
+    overflow: hidden;
 
-    border: 1px solid #dfe8e2;
+    border: 1px solid #dce7e0;
 
-    border-radius: 24px;
+    border-radius: 15px;
 
-    background: #f8faf8;
+    background:
+        linear-gradient(
+            145deg,
+            #ffffff,
+            #f3f8f5
+        );
 
-    color: #777777;
+    color: #198754;
+
+    font-family: inherit;
 
     cursor: pointer;
 
+    text-align: center;
+
     transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        transform 0.15s ease;
+        transform .15s ease,
+        border-color .15s ease,
+        box-shadow .15s ease;
 
 }
 
 
-.maint-clear-composer-trigger:hover {
-
-    background: #f1f7f3;
+.maint-clear-composer__card:hover {
 
     border-color: #198754;
 
+    box-shadow:
+        0 5px 15px
+        rgba(25, 135, 84, .10);
+
 }
 
 
-.maint-clear-composer-trigger:active {
+.maint-clear-composer__card:active {
 
-    transform: scale(0.99);
+    transform: scale(.95);
+
+}
+
+
+.maint-clear-composer__card:focus-visible {
+
+    outline: 2px solid #198754;
+
+    outline-offset: 2px;
 
 }
 
 
 
 /* =========================================================
-   FULL SCREEN MODAL
+   ICON
+========================================================= */
+
+.maint-clear-composer__icon {
+
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    font-size: 22px;
+
+    line-height: 1;
+
+    box-shadow:
+        0 4px 12px
+        rgba(25, 135, 84, .20);
+
+}
+
+
+.maint-clear-composer__icon i {
+
+    line-height: 1;
+
+}
+
+
+
+/* =========================================================
+   CARD LABEL
+========================================================= */
+
+.maint-clear-composer__label {
+
+    display: block;
+
+    max-width: 94px;
+
+    color: #26322b;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+}
+
+
+.maint-clear-composer__target {
+
+    display: block;
+
+    max-width: 88px;
+
+    overflow: hidden;
+
+    color: #8a928d;
+
+    font-size: 10px;
+
+    line-height: 1.25;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+
+}
+
+
+
+/* =========================================================
+   FULL-SCREEN MODAL
 ========================================================= */
 
 .maint-clear-modal {
@@ -540,18 +601,15 @@ POST /dairy/:id/maintenance/clear
     inset: 0;
 
     width: 100vw;
-
     height: 100dvh;
+
+    z-index: 99999;
 
     display: none;
 
     overflow: hidden;
 
-    box-sizing: border-box;
-
     background: #ffffff;
-
-    z-index: 99999;
 
 }
 
@@ -563,10 +621,14 @@ POST /dairy/:id/maintenance/clear
 }
 
 
-.maint-clear-modal-content {
+
+/* =========================================================
+   MODAL CONTENT
+========================================================= */
+
+.maint-clear-modal__content {
 
     width: 100%;
-
     height: 100%;
 
     display: flex;
@@ -583,33 +645,29 @@ POST /dairy/:id/maintenance/clear
    MODAL HEADER
 ========================================================= */
 
-.maint-clear-modal-header {
+.maint-clear-modal__header {
 
-    flex: 0 0 auto;
+    flex: 0 0 64px;
 
     width: 100%;
-
     height: 64px;
-
-    box-sizing: border-box;
 
     display: flex;
 
     align-items: center;
 
-    padding: 0 16px;
+    padding: 0 15px;
 
-    border-bottom: 1px solid #e8eee9;
+    border-bottom: 1px solid #e7ede9;
 
     background: #ffffff;
 
 }
 
 
-.maint-clear-back-button {
+.maint-clear-modal__back {
 
     width: 44px;
-
     height: 44px;
 
     flex: 0 0 44px;
@@ -617,12 +675,13 @@ POST /dairy/:id/maintenance/clear
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
     padding: 0;
 
     border: none;
+
+    border-radius: 50%;
 
     background: transparent;
 
@@ -630,34 +689,50 @@ POST /dairy/:id/maintenance/clear
 
     font-size: 27px;
 
+    line-height: 1;
+
     cursor: pointer;
 
 }
 
 
-.maint-clear-back-button:hover {
+.maint-clear-modal__back:active {
 
-    color: #146c43;
+    background: #edf7f1;
 
 }
 
 
-.maint-clear-modal-title {
+.maint-clear-modal__back:focus-visible {
+
+    outline: 2px solid #198754;
+
+    outline-offset: 2px;
+
+}
+
+
+
+/* =========================================================
+   MODAL TITLE
+========================================================= */
+
+.maint-clear-modal__title {
 
     min-width: 0;
+
+    margin-left: 8px;
 
     display: flex;
 
     flex-direction: column;
-
-    margin-left: 8px;
 
     line-height: 1.25;
 
 }
 
 
-.maint-clear-modal-title strong {
+.maint-clear-modal__title strong {
 
     color: #202520;
 
@@ -666,18 +741,26 @@ POST /dairy/:id/maintenance/clear
 }
 
 
-.maint-clear-modal-title span {
+.maint-clear-modal__title span {
+
+    max-width: 72vw;
 
     margin-top: 2px;
 
-    color: #7a817d;
+    overflow: hidden;
+
+    color: #7b847e;
 
     font-size: 12px;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
 
 }
 
 
-.maint-clear-header-spacer {
+.maint-clear-modal__spacer {
 
     flex: 1;
 
@@ -689,17 +772,26 @@ POST /dairy/:id/maintenance/clear
    MODAL BODY
 ========================================================= */
 
-.maint-clear-modal-body {
+.maint-clear-modal__body {
 
     flex: 1 1 auto;
 
     min-height: 0;
 
-    box-sizing: border-box;
-
     overflow-y: auto;
 
     padding: 20px;
+
+}
+
+
+.maint-clear-modal__fields {
+
+    width: 100%;
+
+    max-width: 700px;
+
+    margin: 0 auto;
 
 }
 
@@ -736,43 +828,68 @@ POST /dairy/:id/maintenance/clear
 
 .maint-clear-target {
 
+    width: 100%;
+
     display: flex;
 
     align-items: center;
 
     gap: 12px;
 
-    box-sizing: border-box;
-
     margin-bottom: 16px;
 
-    padding: 12px;
+    padding: 12px 13px;
 
-    border: 1px solid #e1ebe4;
+    border: 1px solid #dcebe2;
 
-    border-radius: 14px;
+    border-radius: 13px;
 
-    background: #f7faf8;
+    background: #f6faf7;
 
 }
 
 
-.maint-clear-target-image {
+.maint-clear-target__image,
+.maint-clear-target__placeholder {
 
     width: 52px;
-
     height: 52px;
 
     flex: 0 0 52px;
 
-    object-fit: cover;
+    overflow: hidden;
 
     border-radius: 50%;
 
 }
 
 
-.maint-clear-target-info {
+.maint-clear-target__image {
+
+    display: block;
+
+    object-fit: cover;
+
+}
+
+
+.maint-clear-target__placeholder {
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    font-size: 20px;
+
+}
+
+
+.maint-clear-target__info {
 
     min-width: 0;
 
@@ -783,28 +900,28 @@ POST /dairy/:id/maintenance/clear
 }
 
 
-.maint-clear-target-info strong {
+.maint-clear-target__info span {
 
-    overflow: hidden;
+    color: #78827c;
 
-    color: #202520;
-
-    font-size: 15px;
-
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
+    font-size: 10px;
 
 }
 
 
-.maint-clear-target-info span {
+.maint-clear-target__info strong {
 
     margin-top: 3px;
 
-    color: #7a817d;
+    overflow: hidden;
 
-    font-size: 12px;
+    color: #235d3e;
+
+    font-size: 14px;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
 
 }
 
@@ -822,7 +939,7 @@ POST /dairy/:id/maintenance/clear
 
     gap: 11px;
 
-    box-sizing: border-box;
+    width: 100%;
 
     margin-bottom: 24px;
 
@@ -837,10 +954,9 @@ POST /dairy/:id/maintenance/clear
 }
 
 
-.maint-clear-status-icon {
+.maint-clear-status__icon {
 
     width: 30px;
-
     height: 30px;
 
     flex: 0 0 30px;
@@ -848,7 +964,6 @@ POST /dairy/:id/maintenance/clear
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
     border-radius: 50%;
@@ -911,6 +1026,8 @@ POST /dairy/:id/maintenance/clear
 
     position: relative;
 
+    width: 100%;
+
     margin-bottom: 20px;
 
 }
@@ -922,27 +1039,28 @@ POST /dairy/:id/maintenance/clear
 
     margin-bottom: 7px;
 
-    color: #37413a;
+    color: #6d7771;
 
-    font-size: 13px;
+    font-size: 11px;
 
     font-weight: 700;
+
+    letter-spacing: .04em;
+
+    text-transform: uppercase;
 
 }
 
 
 
 /* =========================================================
-   CHARGES INPUT
+   CHARGES
 ========================================================= */
 
 .maint-clear-money-input {
 
     width: 100%;
-
     height: 48px;
-
-    box-sizing: border-box;
 
     display: flex;
 
@@ -950,16 +1068,11 @@ POST /dairy/:id/maintenance/clear
 
     overflow: hidden;
 
-    border: 1px solid #d6e0d9;
+    border: 1px solid #e0e7e2;
 
     border-radius: 12px;
 
     background: #f8faf8;
-
-    transition:
-        border-color 0.2s ease,
-        background 0.2s ease,
-        box-shadow 0.2s ease;
 
 }
 
@@ -972,7 +1085,7 @@ POST /dairy/:id/maintenance/clear
 
     box-shadow:
         0 0 0 3px
-        rgba(25, 135, 84, 0.10);
+        rgba(25, 135, 84, .10);
 
 }
 
@@ -980,8 +1093,6 @@ POST /dairy/:id/maintenance/clear
 .maint-clear-money-input span {
 
     height: 100%;
-
-    box-sizing: border-box;
 
     display: flex;
 
@@ -1007,12 +1118,9 @@ POST /dairy/:id/maintenance/clear
     flex: 1;
 
     width: 100%;
-
     min-width: 0;
 
     height: 100%;
-
-    box-sizing: border-box;
 
     padding: 0 12px;
 
@@ -1041,16 +1149,13 @@ POST /dairy/:id/maintenance/clear
     width: 100%;
 
     min-height: 130px;
+    max-height: 300px;
 
-    box-sizing: border-box;
-
-    padding: 13px;
-
-    padding-bottom: 28px;
+    padding: 13px 14px 30px;
 
     resize: vertical;
 
-    border: 1px solid #d6e0d9;
+    border: 1px solid #e0e7e2;
 
     border-radius: 12px;
 
@@ -1066,11 +1171,6 @@ POST /dairy/:id/maintenance/clear
 
     line-height: 1.5;
 
-    transition:
-        border-color 0.2s ease,
-        background 0.2s ease,
-        box-shadow 0.2s ease;
-
 }
 
 
@@ -1082,7 +1182,7 @@ POST /dairy/:id/maintenance/clear
 
     box-shadow:
         0 0 0 3px
-        rgba(25, 135, 84, 0.10);
+        rgba(25, 135, 84, .10);
 
 }
 
@@ -1096,15 +1196,27 @@ POST /dairy/:id/maintenance/clear
 
     position: absolute;
 
-    right: 10px;
+    right: 11px;
 
-    bottom: 8px;
+    bottom: 9px;
 
-    color: #89938d;
+    padding-left: 3px;
+
+    background: #f8faf8;
+
+    color: #8a928d;
 
     font-size: 10px;
 
     pointer-events: none;
+
+}
+
+
+.maint-clear-field textarea:focus
+~ .maint-clear-character-counter {
+
+    background: #ffffff;
 
 }
 
@@ -1114,30 +1226,20 @@ POST /dairy/:id/maintenance/clear
    SUBMIT
 ========================================================= */
 
-.maint-clear-submit-wrapper {
-
-    width: 100%;
-
-    margin-top: 6px;
-
-}
-
-
 .maint-clear-submit-button {
 
     width: 100%;
 
     min-height: 50px;
 
-    box-sizing: border-box;
-
     display: flex;
 
     align-items: center;
-
     justify-content: center;
 
     gap: 8px;
+
+    padding: 10px 14px;
 
     border: none;
 
@@ -1156,8 +1258,9 @@ POST /dairy/:id/maintenance/clear
     cursor: pointer;
 
     transition:
-        background 0.2s ease,
-        transform 0.15s ease;
+        background .2s ease,
+        transform .15s ease,
+        opacity .15s ease;
 
 }
 
@@ -1171,7 +1274,7 @@ POST /dairy/:id/maintenance/clear
 
 .maint-clear-submit-button:not(:disabled):active {
 
-    transform: scale(0.99);
+    transform: scale(.99);
 
 }
 
@@ -1185,14 +1288,58 @@ POST /dairy/:id/maintenance/clear
 }
 
 
+.maint-clear-submit-button i {
+
+    font-size: 16px;
+
+}
+
+
 
 /* =========================================================
-   MOBILE
+   MOBILE CARD
 ========================================================= */
 
 @media (max-width: 600px) {
 
-    .maint-clear-modal-header {
+    .maint-clear-composer {
+
+        width: 108px;
+
+        flex-basis: 108px;
+
+    }
+
+
+    .maint-clear-composer__card {
+
+        width: 108px;
+
+        height: 150px;
+
+    }
+
+
+    .maint-clear-composer__icon {
+
+        width: 46px;
+        height: 46px;
+
+        font-size: 21px;
+
+    }
+
+
+    .maint-clear-composer__label {
+
+        font-size: 12px;
+
+    }
+
+
+    .maint-clear-modal__header {
+
+        flex-basis: 60px;
 
         height: 60px;
 
@@ -1201,23 +1348,16 @@ POST /dairy/:id/maintenance/clear
     }
 
 
-    .maint-clear-modal-title strong {
+    .maint-clear-modal__body {
 
-        font-size: 16px;
-
-    }
-
-
-    .maint-clear-modal-body {
-
-        padding: 16px;
+        padding: 14px;
 
     }
 
 
     .maint-clear-question {
 
-        font-size: 18px;
+        font-size: 19px;
 
     }
 
@@ -1231,16 +1371,16 @@ POST /dairy/:id/maintenance/clear
 
 @media (max-width: 380px) {
 
-    .maint-clear-modal-body {
+    .maint-clear-modal__title span {
 
-        padding: 12px;
+        display: none;
 
     }
 
 
-    .maint-clear-modal-title span {
+    .maint-clear-modal__body {
 
-        display: none;
+        padding: 10px;
 
     }
 
@@ -1264,73 +1404,67 @@ POST /dairy/:id/maintenance/clear
     function initializeMaintenanceClearComposer() {
 
 
-        const card =
-            document.querySelector(
-                "[data-maint-clear-card]"
-            );
-
+        /* =====================================================
+           ELEMENTS
+        ====================================================== */
 
         const modal =
-            document.querySelector(
-                "[data-maint-clear-modal]"
+            document.getElementById(
+                "maintClearModal"
             );
 
 
         const openButton =
-            document.querySelector(
-                "[data-open-maint-clear]"
+            document.getElementById(
+                "openMaintClearComposer"
             );
 
 
         const closeButton =
-            document.querySelector(
-                "[data-close-maint-clear]"
+            document.getElementById(
+                "closeMaintClearModal"
             );
 
 
-        if (
-            !card ||
-            !modal ||
-            !openButton ||
-            !closeButton
-        ) {
-
-            return;
-
-        }
-
-
         const chargesInput =
-            card.parentElement.querySelector(
-                "#maintClearCharges"
+            document.getElementById(
+                "maintClearCharges"
             );
 
 
         const descriptionInput =
-            card.parentElement.querySelector(
-                "#maintClearDescription"
+            document.getElementById(
+                "maintClearDescription"
             );
 
 
         const characterCounter =
-            card.parentElement.querySelector(
-                "[data-maint-clear-counter]"
+            document.getElementById(
+                "maintClearCharacterCounter"
             );
 
 
         const submitButton =
-            card.parentElement.querySelector(
-                "[data-maint-clear-submit]"
+            document.getElementById(
+                "submitMaintClearButton"
             );
 
 
         const form =
-            card.parentElement.querySelector(
-                ".maint-clear-form"
+            document.getElementById(
+                "maintClearForm"
             );
 
 
+
+        /* =====================================================
+           SAFETY CHECK
+        ====================================================== */
+
         if (
+            !modal ||
+            !openButton ||
+            !closeButton ||
             !chargesInput ||
             !descriptionInput ||
             !characterCounter ||
@@ -1338,51 +1472,66 @@ POST /dairy/:id/maintenance/clear
             !form
         ) {
 
+            console.error(
+                "MAINTENANCECLEARCOMPOSER.EJS: Required elements are missing."
+            );
+
             return;
 
         }
 
 
 
-        /* =================================================
+        /* =====================================================
            OPEN MODAL
-        ================================================== */
+        ====================================================== */
 
         function openModal() {
 
-            modal.classList.add("active");
+            modal.classList.add(
+                "active"
+            );
+
 
             modal.setAttribute(
                 "aria-hidden",
                 "false"
             );
 
+
             document.body.style.overflow =
                 "hidden";
 
 
-            setTimeout(function () {
+            window.setTimeout(
+                function () {
 
-                chargesInput.focus();
+                    chargesInput.focus();
 
-            }, 100);
+                },
+                100
+            );
 
         }
 
 
 
-        /* =================================================
+        /* =====================================================
            CLOSE MODAL
-        ================================================== */
+        ====================================================== */
 
         function closeModal() {
 
-            modal.classList.remove("active");
+            modal.classList.remove(
+                "active"
+            );
+
 
             modal.setAttribute(
                 "aria-hidden",
                 "true"
             );
+
 
             document.body.style.overflow =
                 "";
@@ -1391,9 +1540,9 @@ POST /dairy/:id/maintenance/clear
 
 
 
-        /* =================================================
-           VALIDATE FORM
-        ================================================== */
+        /* =====================================================
+           FORM VALIDATION
+        ====================================================== */
 
         function updateSubmitButton() {
 
@@ -1431,80 +1580,45 @@ POST /dairy/:id/maintenance/clear
 
 
 
-        /* =================================================
+        /* =====================================================
            CHARACTER COUNTER
-        ================================================== */
+        ====================================================== */
 
         function updateCharacterCounter() {
 
-            const length =
-                descriptionInput.value.length;
-
-
             characterCounter.textContent =
-                length + "/1000";
+                descriptionInput.value.length +
+                "/1000";
 
         }
 
 
 
-        /* =================================================
-           OPEN CLICK
-        ================================================== */
+        /* =====================================================
+           OPEN
+        ====================================================== */
 
         openButton.addEventListener(
             "click",
-            function () {
-
-                openModal();
-
-            }
+            openModal
         );
 
 
 
-        /* =================================================
-           OPEN KEYBOARD
-        ================================================== */
-
-        openButton.addEventListener(
-            "keydown",
-            function (event) {
-
-                if (
-                    event.key === "Enter" ||
-                    event.key === " "
-                ) {
-
-                    event.preventDefault();
-
-                    openModal();
-
-                }
-
-            }
-        );
-
-
-
-        /* =================================================
-           CLOSE BUTTON
-        ================================================== */
+        /* =====================================================
+           CLOSE
+        ====================================================== */
 
         closeButton.addEventListener(
             "click",
-            function () {
-
-                closeModal();
-
-            }
+            closeModal
         );
 
 
 
-        /* =================================================
-           ESCAPE KEY
-        ================================================== */
+        /* =====================================================
+           ESCAPE
+        ====================================================== */
 
         document.addEventListener(
             "keydown",
@@ -1512,7 +1626,9 @@ POST /dairy/:id/maintenance/clear
 
                 if (
                     event.key === "Escape" &&
-                    modal.classList.contains("active")
+                    modal.classList.contains(
+                        "active"
+                    )
                 ) {
 
                     closeModal();
@@ -1524,24 +1640,20 @@ POST /dairy/:id/maintenance/clear
 
 
 
-        /* =================================================
-           CHARGES INPUT
-        ================================================== */
+        /* =====================================================
+           CHARGES
+        ====================================================== */
 
         chargesInput.addEventListener(
             "input",
-            function () {
-
-                updateSubmitButton();
-
-            }
+            updateSubmitButton
         );
 
 
 
-        /* =================================================
-           DESCRIPTION INPUT
-        ================================================== */
+        /* =====================================================
+           DESCRIPTION
+        ====================================================== */
 
         descriptionInput.addEventListener(
             "input",
@@ -1556,9 +1668,9 @@ POST /dairy/:id/maintenance/clear
 
 
 
-        /* =================================================
+        /* =====================================================
            FORM SUBMIT
-        ================================================== */
+        ====================================================== */
 
         form.addEventListener(
             "submit",
@@ -1569,17 +1681,17 @@ POST /dairy/:id/maintenance/clear
 
 
                 submitButton.innerHTML =
-                    '<i class="bi bi-hourglass-split"></i> ' +
-                    'Clearing...';
+                    '<i class="bi bi-hourglass-split"></i>' +
+                    '<span>Clearing...</span>';
 
             }
         );
 
 
 
-        /* =================================================
+        /* =====================================================
            INITIAL STATE
-        ================================================== */
+        ====================================================== */
 
         updateCharacterCounter();
 
@@ -1589,9 +1701,9 @@ POST /dairy/:id/maintenance/clear
 
 
 
-    /* =====================================================
+    /* =========================================================
        DOM READY
-    ====================================================== */
+    ========================================================= */
 
     if (
         document.readyState === "loading"
