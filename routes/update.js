@@ -4,34 +4,6 @@
 //
 // DAIRY PROFILE / UPDATE ROUTES
 //
-// PROFILE IMAGE DESIGN
-// ----------------------------------------------------------
-// A Dairy document may contain:
-//
-//     profileImages
-//         -> maximum 5 images
-//
-//     profileImage
-//         -> the currently selected MAIN profile image
-//
-// The browser uploads the selected photos using:
-//
-//     name="profileImages"
-//
-// Therefore the upload middleware MUST use:
-//
-//     upload.array("profileImages", 5)
-//
-// The controller receives:
-//
-//     req.files
-//
-// and is responsible for:
-//
-//     1. storing the uploaded images
-//     2. storing profileImages
-//     3. determining profileImage
-//
 // ==========================================================
 
 const express = require("express");
@@ -112,6 +84,107 @@ router.get(
 
 
 // ==========================================================
+// FEED STORE
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This route MUST appear BEFORE:
+//
+//     /dairy/:id
+//
+// because "feedstore" would otherwise be interpreted as
+// the :id parameter.
+//
+// GET:
+//
+//     /dairy/feedstore/:id
+//
+// Renders:
+//
+//     views/updates/feeds-store.ejs
+//
+// ==========================================================
+
+router.get(
+    "/dairy/feedstore/:id",
+    isAuth,
+    controller.viewFeedStore
+);
+
+
+// ==========================================================
+// FEED STORE CONDITION / STOCK UPDATE
+// ==========================================================
+//
+// Used by:
+//
+//     admin
+//     dairyWorker
+//
+// Allows submission of:
+//
+//     • overall facility condition
+//     • animal feed quality
+//     • percentage of food remaining
+//     • message
+//     • multiple images
+//
+// Images:
+//
+//     field name = images
+//
+// Maximum:
+//
+//     10 images
+//
+// Financial feedsAmount is handled by the controller/service.
+//
+// POST:
+//
+//     /dairy/:id/feedstore/update
+//
+// ==========================================================
+
+router.post(
+    "/dairy/:id/feedstore/update",
+    isAuth,
+    upload.array(
+        "images",
+        10
+    ),
+    controller.updateFeedStore
+);
+
+
+// ==========================================================
+// FEED STORE RESTOCK
+// ==========================================================
+//
+// ADMIN ONLY
+//
+// Used to:
+//
+//     • restock an existing feed category
+//     • create a new feed category
+//     • record the financial amount used
+//     • update the individual feed amount
+//     • recalculate the aggregate feedsAmount
+//
+// POST:
+//
+//     /dairy/:id/feedstore/restock
+//
+// ==========================================================
+
+router.post(
+    "/dairy/:id/feedstore/restock",
+    isAuth,
+    controller.restockFeedStore
+);
+
+
+// ==========================================================
 // DAIRY PROFILE
 // ==========================================================
 //
@@ -137,16 +210,6 @@ router.get(
 //
 //     /dairy/:id/toggle-milking
 //
-// Toggles:
-//
-//     dairy.isMilking
-//
-// true  -> false
-// false -> true
-//
-// This route ONLY changes the milking status.
-// It does NOT create, edit or delete milk records.
-//
 // ==========================================================
 
 router.post(
@@ -159,8 +222,6 @@ router.post(
 // ==========================================================
 // SWITCH DAIRY FARM
 // ==========================================================
-//
-// Used when a dairy worker has multiple assigned farms.
 //
 // Example:
 //
@@ -179,9 +240,9 @@ router.get(
 // GENERAL DAIRY COMMENT
 // ==========================================================
 //
-// Example:
+// POST:
 //
-//     POST /dairy/:id/comment
+//     /dairy/:id/comment
 //
 // ==========================================================
 
@@ -196,44 +257,15 @@ router.post(
 // DAIRY PROFILE IMAGES
 // ==========================================================
 //
-// IMPORTANT
-// ----------------------------------------------------------
-//
-// The frontend sends:
-//
-//     FormData
-//
-// with:
+// Frontend:
 //
 //     profileImages = photo 1
 //     profileImages = photo 2
-//     profileImages = photo 3
-//     profileImages = photo 4
-//     profileImages = photo 5
+//     ...
 //
-// The browser may send fewer than five.
+// Maximum:
 //
-// The upload middleware therefore MUST use:
-//
-//     upload.array("profileImages", 5)
-//
-// NOT:
-//
-//     upload.single("profileImage")
-//
-// The controller receives:
-//
-//     req.files
-//
-// The controller is responsible for saving:
-//
-//     profileImages
-//
-// and determining:
-//
-//     profileImage
-//
-// where profileImage is the MAIN image.
+//     5 images
 //
 // ==========================================================
 
@@ -252,18 +284,9 @@ router.put(
 // UPDATE DAIRY PROFILE INFORMATION
 // ==========================================================
 //
-// Updates normal editable profile information:
+// PUT:
 //
-//     • name
-//     • mass
-//     • dateOfBirth
-//     • other permitted profile fields
-//
-// The frontend sends JSON.
-//
-// Example:
-//
-//     PUT /dairy/:id/update
+//     /dairy/:id/update
 //
 // ==========================================================
 
@@ -278,17 +301,13 @@ router.put(
 // CREATE POST
 // ==========================================================
 //
-// A post may contain:
+// POST:
 //
-//     • title
-//     • text
-//     • zero images
-//     • one image
-//     • multiple images
+//     /dairy/:id/post
 //
-// Frontend field:
+// Images:
 //
-//     images
+//     field = images
 //
 // Maximum:
 //
@@ -310,12 +329,6 @@ router.post(
 // ==========================================================
 // POST LIKE
 // ==========================================================
-//
-// Example:
-//
-//     POST /post/:id/like
-//
-// ==========================================================
 
 router.post(
     "/post/:id/like",
@@ -326,12 +339,6 @@ router.post(
 
 // ==========================================================
 // POST COMMENT
-// ==========================================================
-//
-// Example:
-//
-//     POST /post/:id/comment
-//
 // ==========================================================
 
 router.post(
@@ -382,9 +389,9 @@ router.post(
 // DELETE POST
 // ==========================================================
 //
-// Example:
+// DELETE:
 //
-//     DELETE /post/:id
+//     /post/:id
 //
 // ==========================================================
 
@@ -399,9 +406,9 @@ router.delete(
 // DELETE COMMENT
 // ==========================================================
 //
-// Example:
+// DELETE:
 //
-//     DELETE /comment/:id
+//     /comment/:id
 //
 // ==========================================================
 
@@ -455,7 +462,7 @@ router.post(
 
 // ----------------------------------------------------------
 // CLEAR MAINTENANCE
-// ==========================================================
+// ----------------------------------------------------------
 
 router.post(
     "/dairy/:id/maintenance/clear",
@@ -468,9 +475,9 @@ router.post(
 // DELETE DAIRY PROFILE
 // ==========================================================
 //
-// Example:
+// DELETE:
 //
-//     DELETE /dairy/:id
+//     /dairy/:id
 //
 // ==========================================================
 
