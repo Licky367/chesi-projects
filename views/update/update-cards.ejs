@@ -7,14 +7,27 @@ FILE:
 
 PURPOSE:
 ----------------------------------------------------------
-Main container for update-related cards and composers
-belonging to the currently viewed dairy asset.
+Main update area for the currently viewed dairy asset.
 
-INCLUDES:
+RULES:
 ----------------------------------------------------------
-• milk-status.ejs
-• maintComposer.ejs
-• maintenanceClearComposer.ejs
+
+1. create.ejs
+   • Appears for ALL dairy assets.
+
+2. milk-status.ejs
+   • Appears ONLY when dairy.code is a positive EVEN number.
+
+3. maintComposer.ejs
+   • Appears ONLY when:
+       - dairy.needsMaintenance is false
+       - AND dairy has no code
+         OR dairy.code is undefined
+         OR dairy.code is null
+
+4. maintenanceClearComposer.ejs
+   • Appears ONLY when:
+       - dairy.needsMaintenance === true
 
 EXPECTED DATA:
 ----------------------------------------------------------
@@ -42,12 +55,9 @@ user
 
         <p class="update-cards-description">
 
-            Manage activities, maintenance and status
-            for
-
-            <strong>
-                <%= dairy.name %>
-            </strong>
+            Keep <strong><%= dairy.name %></strong>
+            updated with activities, maintenance and
+            important status changes.
 
         </p>
 
@@ -71,10 +81,20 @@ user
 
 
         <!-- =================================================
-             MILKING STATUS
+             1. CREATE COMPOSER
+
+             ALWAYS VISIBLE
+
+             This composer appears for every dairy asset,
+             regardless of:
+
+             • code
+             • gender
+             • milking status
+             • maintenance status
         ================================================== -->
 
-        <%- include("milk-status", {
+        <%- include("create", {
             dairy: dairy,
             user: user
         }) %>
@@ -82,27 +102,107 @@ user
 
 
         <!-- =================================================
-             MAINTENANCE REPORT
+             2. MILKING STATUS
+
+             ONLY VISIBLE WHEN:
+
+             dairy.code is positive
+             AND
+             dairy.code is even
+
+             Examples:
+
+                 2   → SHOW
+                 4   → SHOW
+                 10  → SHOW
+                 20  → SHOW
+
+                 1   → HIDE
+                 3   → HIDE
+                 5   → HIDE
+                 0   → HIDE
+                 null → HIDE
+                 undefined → HIDE
         ================================================== -->
 
-        <%- include("maintComposer", {
-            dairy: dairy,
-            user: user
-        }) %>
+        <%
+            const dairyCodeNumber =
+                Number(dairy.code);
+
+            const showMilkStatus =
+                Number.isFinite(dairyCodeNumber) &&
+                dairyCodeNumber > 0 &&
+                dairyCodeNumber % 2 === 0;
+        %>
+
+
+        <% if (showMilkStatus) { %>
+
+            <%- include("milk-status", {
+                dairy: dairy,
+                user: user
+            }) %>
+
+        <% } %>
 
 
 
         <!-- =================================================
-             CLEAR COMPLETED MAINTENANCE
+             3. MAINTENANCE COMPOSER
 
-             EXACT FILE:
-                 maintenanceClearComposer.ejs
+             ONLY VISIBLE WHEN:
+
+             dairy.needsMaintenance === false
+
+             AND
+
+             dairy has NO code
+
+             Code conditions:
+
+                 null
+                 undefined
+
         ================================================== -->
 
-        <%- include("maintenanceClearComposer", {
-            dairy: dairy,
-            user: user
-        }) %>
+        <%
+            const hasNoDairyCode =
+                dairy.code === null ||
+                dairy.code === undefined;
+
+            const showMaintenanceComposer =
+                dairy.needsMaintenance === false &&
+                hasNoDairyCode;
+        %>
+
+
+        <% if (showMaintenanceComposer) { %>
+
+            <%- include("maintComposer", {
+                dairy: dairy,
+                user: user
+            }) %>
+
+        <% } %>
+
+
+
+        <!-- =================================================
+             4. CLEAR MAINTENANCE COMPOSER
+
+             ONLY VISIBLE WHEN:
+
+                 dairy.needsMaintenance === true
+        ================================================== -->
+
+        <% if (dairy.needsMaintenance === true) { %>
+
+            <%- include("maintenanceClearComposer", {
+                dairy: dairy,
+                user: user
+            }) %>
+
+        <% } %>
 
 
     </div>
@@ -115,7 +215,7 @@ user
 <style>
 
 /* ==========================================================
-   UPDATE CARDS CONTAINER
+   UPDATE CARDS
 ========================================================== */
 
 .update-cards {
@@ -131,8 +231,9 @@ user
 }
 
 
+
 /* ==========================================================
-   TITLE AREA
+   TITLE SECTION
 ========================================================== */
 
 .update-cards-heading {
@@ -141,15 +242,16 @@ user
 
     box-sizing: border-box;
 
-    margin: 0 0 5px;
+    margin: 0;
 
     padding: 0 4px;
 
 }
 
 
+
 /* ==========================================================
-   MAIN TITLE
+   TITLE
 ========================================================== */
 
 .update-cards-title {
@@ -162,11 +264,12 @@ user
 
     font-weight: 800;
 
-    line-height: 1.1;
+    line-height: 1.08;
 
     letter-spacing: -0.8px;
 
 }
+
 
 
 /* ==========================================================
@@ -199,13 +302,14 @@ user
 }
 
 
+
 /* ==========================================================
    TITLE ACCENT
 ========================================================== */
 
 .update-cards-accent {
 
-    width: 52px;
+    width: 54px;
 
     height: 4px;
 
@@ -218,8 +322,9 @@ user
 }
 
 
+
 /* ==========================================================
-   UPDATE CARDS LIST
+   UPDATE CONTENT
 ========================================================== */
 
 .update-cards-list {
@@ -236,9 +341,8 @@ user
 
     gap: 16px;
 
-    color: #24352b;
-
 }
+
 
 
 /* ==========================================================
@@ -288,6 +392,7 @@ user
     }
 
 }
+
 
 
 /* ==========================================================
