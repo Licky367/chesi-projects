@@ -80,7 +80,7 @@ async function viewFeedStore(req, res) {
 
 
         return res.render(
-            "updates/feeds-store",
+            "update/feeds-store",
             data
         );
 
