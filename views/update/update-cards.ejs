@@ -56,7 +56,7 @@ user
 
 
     <!-- =================================================
-         GREEN TITLE ACCENT
+         TITLE ACCENT
     ================================================== -->
 
     <div class="update-cards-accent"></div>
@@ -74,7 +74,7 @@ user
              MILKING STATUS
         ================================================== -->
 
-        <%- include("update/milk-status.ejs", {
+        <%- include("milk-status", {
             dairy: dairy,
             user: user
         }) %>
@@ -85,7 +85,7 @@ user
              MAINTENANCE REPORT
         ================================================== -->
 
-        <%- include("update/maintComposer.ejs", {
+        <%- include("maintComposer", {
             dairy: dairy,
             user: user
         }) %>
@@ -99,7 +99,7 @@ user
                  maintenanceClearComposer.ejs
         ================================================== -->
 
-        <%- include("update/maintenanceClearComposer.ejs", {
+        <%- include("maintenanceClearComposer", {
             dairy: dairy,
             user: user
         }) %>
@@ -236,29 +236,9 @@ user
 
     gap: 16px;
 
-}
-
-
-/* ==========================================================
-   GREENISH THEME SUPPORT
-
-   Keeps the surrounding update area visually consistent
-   with the green dairy theme.
-========================================================== */
-
-.update-cards-list {
-
     color: #24352b;
 
 }
-
-
-.update-cards-list * {
-
-    box-sizing: border-box;
-
-}
-
 
 
 /* ==========================================================
@@ -308,7 +288,6 @@ user
     }
 
 }
-
 
 
 /* ==========================================================
