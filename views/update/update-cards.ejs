@@ -22,30 +22,41 @@ RULES:
    Appears ONLY when:
        dairy.code is a positive EVEN number.
 
-4. medical-mark-composer.ejs
+4. feedstorecard.ejs
+   Appears ONLY when:
+       dairy is a STRUCTURE
+       AND
+       dairy.type === "feedStore".
+
+   Navigation:
+       /dairy/feedstore/<dairy._id>
+
+5. medical-mark-composer.ejs
    Appears when:
        dairy is NOT currently marked for medical attention
        AND
        user is admin OR dairyWorker.
 
-5. medical-unmark-composer.ejs
+6. medical-unmark-composer.ejs
    Appears when:
        dairy IS currently marked for medical attention
        AND
        user is admin.
 
-6. maintComposer.ejs
+7. maintComposer.ejs
    Appears ONLY when:
        dairy.needsMaintenance === false
        AND
        dairy.code is undefined OR null.
 
-7. maintenanceClearComposer.ejs
+8. maintenanceClearComposer.ejs
    Appears ONLY when:
        dairy.needsMaintenance === true.
 
+
 CARD LAYOUT:
 ------------------------------------------------------------
+
 Cards remain in ONE horizontal row.
 
 They DO NOT wrap.
@@ -53,19 +64,25 @@ They DO NOT wrap.
 If the cards are wider than the available screen,
 the user can SWIPE LEFT/RIGHT horizontally.
 
+
 ORDER:
 ------------------------------------------------------------
+
 1. Add an update
 2. Milking status
 3. Milking history
-4. Medical
-5. Maintenance
-6. Clear maintenance
+4. Food Stock
+5. Medical
+6. Maintenance
+7. Clear maintenance
+
 
 EXPECTED DATA:
 ------------------------------------------------------------
+
 dairy
 user
+
 ============================================================
 */ %>
 
@@ -132,6 +149,9 @@ user
     <!-- =====================================================
          DETERMINE WHETHER DAIRY HAS NO CODE
 
+         Structures have:
+             code === null
+
          Maintenance composer is ONLY for assets
          without a code.
     ====================================================== -->
@@ -144,6 +164,32 @@ user
         const showMaintenanceComposer =
             dairy.needsMaintenance === false &&
             hasNoDairyCode;
+    %>
+
+
+
+    <!-- =====================================================
+         DETERMINE FEED STORE
+
+         A Feed Store is a STRUCTURE whose exact
+         STRUCTURE_TYPES value is:
+
+             "feedStore"
+
+         Structures are identified by:
+             code === null
+             OR
+             code === undefined
+    ====================================================== -->
+
+    <%
+        const isDairyStructure =
+            dairy.code === undefined ||
+            dairy.code === null;
+
+        const isFeedStore =
+            isDairyStructure &&
+            dairy.type === "feedStore";
     %>
 
 
@@ -246,7 +292,33 @@ user
 
 
         <!-- =================================================
-             4. MARK MEDICAL
+             4. FOOD STOCK
+
+             Appears ONLY for a structure whose exact
+             structure type is:
+
+                 "feedStore"
+
+             Card:
+                 feedstorecard.ejs
+
+             Navigation:
+                 /dairy/feedstore/<dairy._id>
+        ================================================== -->
+
+        <% if (isFeedStore) { %>
+
+            <%- include("feedstorecard", {
+                dairy: dairy,
+                user: user
+            }) %>
+
+        <% } %>
+
+
+
+        <!-- =================================================
+             5. MARK MEDICAL
 
              Appears when:
 
@@ -266,7 +338,7 @@ user
 
 
         <!-- =================================================
-             5. CLEAR MEDICAL
+             6. CLEAR MEDICAL
 
              Appears when:
 
@@ -286,7 +358,7 @@ user
 
 
         <!-- =================================================
-             6. MAINTENANCE COMPOSER
+             7. MAINTENANCE COMPOSER
 
              ONLY when:
 
@@ -311,7 +383,7 @@ user
 
 
         <!-- =================================================
-             7. CLEAR MAINTENANCE
+             8. CLEAR MAINTENANCE
 
              ONLY when:
 
