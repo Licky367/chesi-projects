@@ -5,66 +5,40 @@ FEED STORE PAGE
 FILE:
     views/updates/feeds-store.ejs
 
-PURPOSE:
-    Feed-store management page for a Dairy structure whose
-    structure type is:
-
-        feedStore
-
-PAGE ROUTE:
+ROUTE:
     GET /dairy/feedstore/:id
 
-CURRENT ASSET:
-    dairy
+UPDATE ROUTE:
+    POST /dairy/:id/feedstore/update
 
-USER:
-    user
+RESTOCK ROUTE:
+    POST /dairy/:id/feedstore/restock
 
-FUNCTIONS
+CONTROLLER CONTRACT
 ------------------------------------------------------------
 
-DAIRY WORKER:
-    • Report general facility condition
-    • Report feed quality
-    • Estimate percentage of feed remaining
-    • Attach multiple images
-    • Submit text + images
+updateFeedStore receives:
 
-ADMIN:
-    • Everything a dairyWorker can do
-    • View feed financial inventory
-    • Restock existing feed categories
-    • Create new feed categories
-    • Enter financial amount for restocking
+    message
+    condition
+    feedQuality
+    percentageRemaining
+    images[]
 
-FINANCIAL RULE
-------------------------------------------------------------
+restockFeedStore receives:
 
-Individual feed amounts are stored separately.
-
-Example:
-
-    Fodder      25,000
-    Silage      18,000
-    Hay         12,000
-
-Then:
-
-    feedsAmount = 55,000
-
-feedsAmount is the aggregate financial value of all
-individual feed stocks.
+    feedName
+    amount
+    cost
+    unit
+    description
 
 IMPORTANT:
-    The user does NOT manually enter feedsAmount.
 
-    Backend should calculate:
+    feedsAmount is NOT entered by the user.
 
-        SUM(all feed.amount)
-
-    and save that result as:
-
-        feedsAmount
+    Backend/service calculates the aggregate value
+    from the individual feed records.
 
 ============================================================
 */ %>
@@ -83,7 +57,7 @@ IMPORTANT:
     <header class="feedstore-header">
 
         <div class="feedstore-header__icon">
-            🥬
+            🌾
         </div>
 
         <div class="feedstore-header__content">
@@ -97,8 +71,8 @@ IMPORTANT:
             </h1>
 
             <p>
-                Manage feed stock, monitor conditions and keep
-                <strong><%= dairy.name %></strong> updated.
+                Manage food stock and report the condition of
+                <strong><%= dairy.name %></strong>.
             </p>
 
         </div>
@@ -126,25 +100,28 @@ IMPORTANT:
 
             <div class="feedstore-total-card__amount">
 
-                KES
+                <span class="feedstore-currency">
+                    KES
+                </span>
 
-                <span>
+                <strong>
                     <%= Number(
                         dairy.feedsAmount || 0
                     ).toLocaleString() %>
-                </span>
+                </strong>
 
             </div>
 
             <div class="feedstore-total-card__note">
-                Combined value of all feed categories
+                Combined value of all food stock
             </div>
 
         </article>
 
 
+
         <!-- =================================================
-             FEED STORE IDENTITY
+             FACILITY
         ================================================== -->
 
         <article class="feedstore-info-card">
@@ -169,7 +146,7 @@ IMPORTANT:
 
 
     <!-- ====================================================
-         FEED INVENTORY
+         CURRENT FOOD STOCK
     ===================================================== -->
 
     <section class="feedstore-section">
@@ -184,7 +161,8 @@ IMPORTANT:
                 </h2>
 
                 <p>
-                    Current financial allocation by feed category.
+                    Financial value currently assigned to each
+                    feed category.
                 </p>
 
             </div>
@@ -194,9 +172,8 @@ IMPORTANT:
 
 
         <% if (
-            dairy.feeds &&
             Array.isArray(dairy.feeds) &&
-            dairy.feeds.length
+            dairy.feeds.length > 0
         ) { %>
 
 
@@ -217,11 +194,22 @@ IMPORTANT:
                             <div>
 
                                 <div class="feedstock-row__name">
-                                    <%= feed.name %>
+                                    <%= feed.name || "Unnamed Feed" %>
                                 </div>
 
                                 <div class="feedstock-row__label">
-                                    Current stock value
+
+                                    <% if (feed.unit) { %>
+
+                                        Unit:
+                                        <%= feed.unit %>
+
+                                    <% } else { %>
+
+                                        Current stock value
+
+                                    <% } %>
+
                                 </div>
 
                             </div>
@@ -229,9 +217,13 @@ IMPORTANT:
                         </div>
 
 
+
                         <div class="feedstock-row__amount">
 
-                            KES
+                            <span>
+                                KES
+                            </span>
+
                             <strong>
                                 <%= Number(
                                     feed.amount || 0
@@ -271,7 +263,7 @@ IMPORTANT:
 
                     <p class="feedstore-empty__admin-note">
                         Use the restocking section below to add
-                        the first stock category.
+                        the first food stock category.
                     </p>
 
                 <% } %>
@@ -287,7 +279,7 @@ IMPORTANT:
 
 
     <!-- ====================================================
-         OPERATIONAL REPORTING
+         STORE CONDITION REPORT
     ===================================================== -->
 
     <section class="feedstore-section">
@@ -302,8 +294,8 @@ IMPORTANT:
                 </h2>
 
                 <p>
-                    Report the condition of the facility and
-                    the quality of the feed.
+                    Report the condition of the facility,
+                    feed quality and remaining stock.
                 </p>
 
             </div>
@@ -321,35 +313,42 @@ IMPORTANT:
 
 
             <!-- =============================================
-                 REPORT TYPE
+                 FACILITY CONDITION
             ============================================== -->
 
             <div class="feedstore-field">
 
-                <label for="feedstoreReportType">
-                    Report type
+                <label for="feedstoreCondition">
+                    Facility condition
                 </label>
 
                 <select
-                    id="feedstoreReportType"
-                    name="feedstoreReportType"
-                    required
+                    id="feedstoreCondition"
+                    name="condition"
                 >
 
                     <option value="">
-                        Select report type
+                        Select condition
                     </option>
 
-                    <option value="facilityCondition">
-                        Facility condition
+                    <option value="excellent">
+                        Excellent
                     </option>
 
-                    <option value="feedQuality">
-                        Feed quality
+                    <option value="good">
+                        Good
                     </option>
 
-                    <option value="facilityAndFeed">
-                        Facility and feed quality
+                    <option value="fair">
+                        Fair
+                    </option>
+
+                    <option value="poor">
+                        Poor
+                    </option>
+
+                    <option value="critical">
+                        Critical
                     </option>
 
                 </select>
@@ -359,7 +358,89 @@ IMPORTANT:
 
 
             <!-- =============================================
-                 MESSAGE
+                 FEED QUALITY
+            ============================================== -->
+
+            <div class="feedstore-field">
+
+                <label for="feedQuality">
+                    Feed quality
+                </label>
+
+                <select
+                    id="feedQuality"
+                    name="feedQuality"
+                >
+
+                    <option value="">
+                        Select feed quality
+                    </option>
+
+                    <option value="excellent">
+                        Excellent
+                    </option>
+
+                    <option value="good">
+                        Good
+                    </option>
+
+                    <option value="fair">
+                        Fair
+                    </option>
+
+                    <option value="poor">
+                        Poor
+                    </option>
+
+                    <option value="spoiled">
+                        Spoiled / Unusable
+                    </option>
+
+                </select>
+
+            </div>
+
+
+
+            <!-- =============================================
+                 PERCENTAGE REMAINING
+            ============================================== -->
+
+            <div class="feedstore-field">
+
+                <label for="percentageRemaining">
+                    Estimated food remaining
+                </label>
+
+                <div class="feedstore-percentage-input">
+
+                    <input
+                        id="percentageRemaining"
+                        type="number"
+                        name="percentageRemaining"
+                        min="0"
+                        max="100"
+                        step="1"
+                        placeholder="0"
+                    >
+
+                    <span>
+                        %
+                    </span>
+
+                </div>
+
+                <div class="feedstore-field__hint">
+                    Estimate the percentage of the total food
+                    stock that remains in the store.
+                </div>
+
+            </div>
+
+
+
+            <!-- =============================================
+                 REPORT MESSAGE
             ============================================== -->
 
             <div class="feedstore-field">
@@ -372,16 +453,10 @@ IMPORTANT:
                     id="feedstoreMessage"
                     name="message"
                     rows="6"
-                    maxlength="3000"
-                    placeholder="Describe the condition of the feed store and/or the quality of the animal feed..."
+                    maxlength="1000"
+                    placeholder="Describe the condition of the feed store, feed quality, storage conditions, damage, moisture, deterioration or anything important..."
                     required
                 ></textarea>
-
-                <div class="feedstore-field__hint">
-                    Include anything important about cleanliness,
-                    storage conditions, moisture, feed quality,
-                    damage or deterioration.
-                </div>
 
             </div>
 
@@ -406,8 +481,7 @@ IMPORTANT:
                 >
 
                 <div class="feedstore-field__hint">
-                    You may attach several photos showing the
-                    condition of the facility or feed.
+                    You may attach up to 10 photos.
                 </div>
 
             </div>
@@ -427,145 +501,7 @@ IMPORTANT:
                     📤
                 </span>
 
-                Submit Condition Report
-
-            </button>
-
-
-        </form>
-
-
-    </section>
-
-
-
-    <!-- ====================================================
-         REMAINING STOCK REPORT
-    ===================================================== -->
-
-    <section class="feedstore-section">
-
-
-        <div class="feedstore-section-heading">
-
-            <div>
-
-                <h2>
-                    Food Remaining
-                </h2>
-
-                <p>
-                    Give an estimate of how much food remains
-                    in the store.
-                </p>
-
-            </div>
-
-        </div>
-
-
-
-        <form
-            class="feedstore-report-card"
-            action="/dairy/<%= dairy._id %>/feedstore/remaining"
-            method="POST"
-            enctype="multipart/form-data"
-        >
-
-
-            <!-- =============================================
-                 PERCENTAGE
-            ============================================== -->
-
-            <div class="feedstore-percentage-box">
-
-                <label for="feedRemaining">
-                    Estimated food remaining
-                </label>
-
-                <div class="feedstore-percentage-input">
-
-                    <input
-                        id="feedRemaining"
-                        type="number"
-                        name="remainingPercentage"
-                        min="0"
-                        max="100"
-                        step="1"
-                        placeholder="0"
-                        required
-                    >
-
-                    <span>
-                        %
-                    </span>
-
-                </div>
-
-            </div>
-
-
-
-            <!-- =============================================
-                 MESSAGE
-            ============================================== -->
-
-            <div class="feedstore-field">
-
-                <label for="remainingMessage">
-                    Observation
-                </label>
-
-                <textarea
-                    id="remainingMessage"
-                    name="message"
-                    rows="5"
-                    maxlength="2000"
-                    placeholder="Describe the current food levels, which feeds are running low, or anything that should be noted..."
-                    required
-                ></textarea>
-
-            </div>
-
-
-
-            <!-- =============================================
-                 IMAGES
-            ============================================== -->
-
-            <div class="feedstore-field">
-
-                <label for="remainingImages">
-                    Photos
-                </label>
-
-                <input
-                    id="remainingImages"
-                    type="file"
-                    name="images"
-                    accept="image/*"
-                    multiple
-                >
-
-                <div class="feedstore-field__hint">
-                    Attach several images if they help show
-                    the remaining stock.
-                </div>
-
-            </div>
-
-
-
-            <button
-                type="submit"
-                class="feedstore-primary-button"
-            >
-
-                <span>
-                    📊
-                </span>
-
-                Submit Stock Estimate
+                Submit Store Report
 
             </button>
 
@@ -600,8 +536,8 @@ IMPORTANT:
                 </h2>
 
                 <p>
-                    Add financial value to an existing feed
-                    category or create a new category.
+                    Add value to an existing feed category or
+                    create a new one.
                 </p>
 
             </div>
@@ -618,104 +554,52 @@ IMPORTANT:
 
 
             <!-- =============================================
-                 RESTOCK MODE
+                 FEED NAME
             ============================================== -->
 
             <div class="feedstore-field">
 
-                <label for="restockMode">
-                    Stock action
+                <label for="feedName">
+                    Feed category
                 </label>
 
-                <select
-                    id="restockMode"
-                    name="restockMode"
-                    onchange="toggleFeedStoreRestockMode()"
+                <input
+                    id="feedName"
+                    type="text"
+                    name="feedName"
+                    list="existingFeedCategories"
+                    maxlength="100"
+                    placeholder="e.g. Fodder, Silage, Hay, Dairy Meal"
                     required
                 >
 
-                    <option value="existing">
-                        Restock existing stock
-                    </option>
 
-                    <option value="new">
-                        Add new stock category
-                    </option>
-
-                </select>
-
-            </div>
-
-
-
-            <!-- =============================================
-                 EXISTING STOCK
-            ============================================== -->
-
-            <div
-                id="existingFeedStockField"
-                class="feedstore-field"
-            >
-
-                <label for="existingFeedStock">
-                    Existing stock
-                </label>
-
-                <select
-                    id="existingFeedStock"
-                    name="existingStock"
-                >
-
-                    <option value="">
-                        Select feed stock
-                    </option>
-
+                <datalist id="existingFeedCategories">
 
                     <% if (
-                        dairy.feeds &&
                         Array.isArray(dairy.feeds)
                     ) { %>
 
                         <% dairy.feeds.forEach(function(feed) { %>
 
-                            <option value="<%= feed.name %>">
-                                <%= feed.name %>
-                            </option>
+                            <% if (feed.name) { %>
+
+                                <option
+                                    value="<%= feed.name %>"
+                                >
+
+                            <% } %>
 
                         <% }); %>
 
                     <% } %>
 
-                </select>
+                </datalist>
 
-            </div>
-
-
-
-            <!-- =============================================
-                 NEW STOCK
-            ============================================== -->
-
-            <div
-                id="newFeedStockField"
-                class="feedstore-field"
-                style="display: none;"
-            >
-
-                <label for="newFeedStock">
-                    New stock name
-                </label>
-
-                <input
-                    id="newFeedStock"
-                    type="text"
-                    name="newStock"
-                    maxlength="100"
-                    placeholder="e.g. Dairy Meal"
-                >
 
                 <div class="feedstore-field__hint">
-                    Enter the name of a new feed category.
+                    Enter an existing feed category to restock
+                    it, or enter a new category name.
                 </div>
 
             </div>
@@ -729,7 +613,7 @@ IMPORTANT:
             <div class="feedstore-field">
 
                 <label for="restockAmount">
-                    Amount added
+                    Stock amount
                 </label>
 
                 <div class="feedstore-money-input">
@@ -750,12 +634,74 @@ IMPORTANT:
 
                 </div>
 
+                <div class="feedstore-field__hint">
+                    Financial value being added to this feed
+                    category.
+                </div>
+
             </div>
 
 
 
             <!-- =============================================
-                 RESTOCK NOTE
+                 COST
+            ============================================== -->
+
+            <div class="feedstore-field">
+
+                <label for="restockCost">
+                    Purchase cost
+                </label>
+
+                <div class="feedstore-money-input">
+
+                    <span>
+                        KES
+                    </span>
+
+                    <input
+                        id="restockCost"
+                        type="number"
+                        name="cost"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                    >
+
+                </div>
+
+                <div class="feedstore-field__hint">
+                    Cost associated with this restocking.
+                </div>
+
+            </div>
+
+
+
+            <!-- =============================================
+                 UNIT
+            ============================================== -->
+
+            <div class="feedstore-field">
+
+                <label for="restockUnit">
+                    Unit
+                </label>
+
+                <input
+                    id="restockUnit"
+                    type="text"
+                    name="unit"
+                    maxlength="30"
+                    placeholder="e.g. kg, bags, tonnes"
+                >
+
+            </div>
+
+
+
+            <!-- =============================================
+                 DESCRIPTION
             ============================================== -->
 
             <div class="feedstore-field">
@@ -805,13 +751,12 @@ IMPORTANT:
 
 
     <!-- ====================================================
-         RECENT FEED STORE UPDATES
+         RECENT FEED STORE REPORTS
     ===================================================== -->
 
     <% if (
-        updates &&
         Array.isArray(updates) &&
-        updates.length
+        updates.length > 0
     ) { %>
 
 
@@ -852,9 +797,18 @@ IMPORTANT:
 
                 <div class="feedstore-update-header">
 
+
                     <div class="feedstore-update-avatar">
 
-                        <% if (
+                        <% if (update.userImage) { %>
+
+                            <img
+                                src="<%= update.userImage %>"
+                                alt=""
+                                loading="lazy"
+                            >
+
+                        <% } else if (
                             update.user &&
                             update.user.profileImage
                         ) { %>
@@ -862,6 +816,7 @@ IMPORTANT:
                             <img
                                 src="<%= update.user.profileImage %>"
                                 alt=""
+                                loading="lazy"
                             >
 
                         <% } else { %>
@@ -875,13 +830,17 @@ IMPORTANT:
                     </div>
 
 
+
                     <div class="feedstore-update-author">
 
                         <strong>
 
-                            <%= update.user
-                                ? update.user.name
-                                : "User" %>
+                            <%= update.userName ||
+                                (
+                                    update.user &&
+                                    update.user.name
+                                ) ||
+                                "User" %>
 
                         </strong>
 
@@ -897,15 +856,77 @@ IMPORTANT:
 
                     </div>
 
+
                 </div>
 
 
 
                 <!-- =========================================
-                     UPDATE MESSAGE
+                     REPORT DETAILS
                 ========================================== -->
 
-                <% if (update.message) { %>
+                <div class="feedstore-update-details">
+
+
+                    <% if (update.condition) { %>
+
+                        <span class="feedstore-report-tag">
+
+                            Condition:
+                            <%= update.condition %>
+
+                        </span>
+
+                    <% } %>
+
+
+                    <% if (update.feedQuality) { %>
+
+                        <span class="feedstore-report-tag">
+
+                            Feed:
+                            <%= update.feedQuality %>
+
+                        </span>
+
+                    <% } %>
+
+
+                    <% if (
+                        update.percentageRemaining !==
+                        undefined &&
+                        update.percentageRemaining !==
+                        null &&
+                        update.percentageRemaining !== ""
+                    ) { %>
+
+                        <span class="feedstore-report-tag">
+
+                            Remaining:
+                            <%= update.percentageRemaining %>%
+
+                        </span>
+
+                    <% } %>
+
+
+                </div>
+
+
+
+                <!-- =========================================
+                     UPDATE TEXT
+                ========================================== -->
+
+                <% if (update.text) { %>
+
+                    <div class="feedstore-update-message">
+
+                        <%= update.text %>
+
+                    </div>
+
+                <% } else if (update.message) { %>
 
                     <div class="feedstore-update-message">
 
@@ -922,9 +943,8 @@ IMPORTANT:
                 ========================================== -->
 
                 <% if (
-                    update.images &&
                     Array.isArray(update.images) &&
-                    update.images.length
+                    update.images.length > 0
                 ) { %>
 
 
@@ -933,11 +953,15 @@ IMPORTANT:
 
                         <% update.images.forEach(function(image) { %>
 
-                            <img
-                                src="<%= image %>"
-                                alt="Feed store condition"
-                                loading="lazy"
-                            >
+                            <% if (image) { %>
+
+                                <img
+                                    src="<%= image %>"
+                                    alt="Feed store report"
+                                    loading="lazy"
+                                >
+
+                            <% } %>
 
                         <% }); %>
 
@@ -946,7 +970,6 @@ IMPORTANT:
 
 
                 <% } %>
-
 
 
             </article>
@@ -964,114 +987,10 @@ IMPORTANT:
     <% } %>
 
 
-
 </div>
 
 
-
-<!-- ========================================================
-     JAVASCRIPT
-========================================================= -->
-
-<script>
-
-(function () {
-
-    "use strict";
-
-
-    window.toggleFeedStoreRestockMode =
-        function () {
-
-            const mode =
-                document.getElementById(
-                    "restockMode"
-                );
-
-            const existingField =
-                document.getElementById(
-                    "existingFeedStockField"
-                );
-
-            const newField =
-                document.getElementById(
-                    "newFeedStockField"
-                );
-
-            const existingSelect =
-                document.getElementById(
-                    "existingFeedStock"
-                );
-
-            const newInput =
-                document.getElementById(
-                    "newFeedStock"
-                );
-
-
-            if (
-                !mode ||
-                !existingField ||
-                !newField
-            ) {
-
-                return;
-
-            }
-
-
-            if (mode.value === "new") {
-
-                existingField.style.display =
-                    "none";
-
-                newField.style.display =
-                    "flex";
-
-                if (existingSelect) {
-
-                    existingSelect.required =
-                        false;
-
-                }
-
-                if (newInput) {
-
-                    newInput.required =
-                        true;
-
-                }
-
-            } else {
-
-                existingField.style.display =
-                    "flex";
-
-                newField.style.display =
-                    "none";
-
-                if (existingSelect) {
-
-                    existingSelect.required =
-                        true;
-
-                }
-
-                if (newInput) {
-
-                    newInput.required =
-                        false;
-
-                }
-
-            }
-
-        };
-
-
-})();
-
-</script>
+<% } %>
 
 
 
@@ -1188,8 +1107,6 @@ IMPORTANT:
 
     line-height: 1.1;
 
-    letter-spacing: -.7px;
-
 }
 
 
@@ -1281,26 +1198,33 @@ IMPORTANT:
 
 .feedstore-total-card__amount {
 
+    display: flex;
+
+    align-items: baseline;
+
+    gap: 7px;
+
     margin-top: 12px;
 
     color: #14532d;
 
-    font-size: 17px;
+}
+
+
+.feedstore-currency {
+
+    font-size: 15px;
 
     font-weight: 700;
 
 }
 
 
-.feedstore-total-card__amount span {
-
-    margin-left: 5px;
+.feedstore-total-card__amount strong {
 
     font-size: 31px;
 
     font-weight: 800;
-
-    letter-spacing: -.5px;
 
 }
 
@@ -1378,8 +1302,6 @@ IMPORTANT:
     font-size: 22px;
 
     font-weight: 800;
-
-    line-height: 1.2;
 
 }
 
@@ -1590,7 +1512,7 @@ IMPORTANT:
 
 
 /* ==========================================================
-   REPORT / RESTOCK CARDS
+   FORMS
 ========================================================== */
 
 .feedstore-report-card,
@@ -1634,15 +1556,7 @@ IMPORTANT:
 }
 
 
-.feedstore-field:last-of-type {
-
-    margin-bottom: 0;
-
-}
-
-
-.feedstore-field label,
-.feedstore-percentage-box label {
+.feedstore-field label {
 
     color: #344139;
 
@@ -1722,13 +1636,6 @@ IMPORTANT:
    PERCENTAGE
 ========================================================== */
 
-.feedstore-percentage-box {
-
-    margin-bottom: 18px;
-
-}
-
-
 .feedstore-percentage-input {
 
     display: flex;
@@ -1736,8 +1643,6 @@ IMPORTANT:
     align-items: center;
 
     max-width: 220px;
-
-    margin-top: 7px;
 
     overflow: hidden;
 
@@ -1776,8 +1681,6 @@ IMPORTANT:
     background: transparent;
 
     color: #14532d;
-
-    font: inherit;
 
     font-size: 22px;
 
@@ -1892,10 +1795,6 @@ IMPORTANT:
 
     cursor: pointer;
 
-    transition:
-        transform .15s ease,
-        box-shadow .15s ease;
-
 }
 
 
@@ -1903,38 +1802,12 @@ IMPORTANT:
 
     background: #198754;
 
-    box-shadow:
-        0 5px 14px
-        rgba(25, 135, 84, .14);
-
 }
 
 
 .feedstore-admin-button {
 
     background: #14532d;
-
-    box-shadow:
-        0 5px 14px
-        rgba(20, 83, 45, .14);
-
-}
-
-
-.feedstore-primary-button:hover,
-.feedstore-admin-button:hover {
-
-    box-shadow:
-        0 7px 18px
-        rgba(25, 135, 84, .18);
-
-}
-
-
-.feedstore-primary-button:active,
-.feedstore-admin-button:active {
-
-    transform: scale(.98);
 
 }
 
@@ -1970,6 +1843,45 @@ IMPORTANT:
     font-weight: 900;
 
     letter-spacing: .8px;
+
+}
+
+
+
+/* ==========================================================
+   REPORT TAGS
+========================================================== */
+
+.feedstore-update-details {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 6px;
+
+    margin-top: 12px;
+
+}
+
+
+.feedstore-report-tag {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    padding: 5px 8px;
+
+    border-radius: 999px;
+
+    background: #edf7f0;
+
+    color: #198754;
+
+    font-size: 10px;
+
+    font-weight: 700;
 
 }
 
@@ -2195,7 +2107,7 @@ IMPORTANT:
     }
 
 
-    .feedstore-total-card__amount span {
+    .feedstore-total-card__amount strong {
 
         font-size: 27px;
 
@@ -2253,7 +2165,7 @@ IMPORTANT:
     }
 
 
-    .feedstore-total-card__amount span {
+    .feedstore-total-card__amount strong {
 
         font-size: 24px;
 
@@ -2289,6 +2201,3 @@ IMPORTANT:
 }
 
 </style>
-
-
-<% } %>
