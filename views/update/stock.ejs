@@ -1,1916 +1,255 @@
-<% /*
-==============================================================
-     COREVESTER STOCK REPORT FEED ITEM
+<!-- ==========================================================
+     FEED STOCK RECORD
 
      FILE:
          views/update/stock.ejs
 
      PURPOSE:
-         Feed item for Feed Store / Food Stock reports.
-
-     AUTHOR:
-         dairyWorker ONLY
-
-     FEED TYPE:
-         stock
-
-     FEED ACTIONS:
-         Uses the centralized feed-actions.ejs
-
-         LIKE:
-             /stock/:id/like
-
-         COMMENTS:
-             /stock/:id/comment
-
-     IMPORTANT:
-         This component intentionally uses:
-
-             .feed-card
-
-         because feed-actions.ejs locates its parent
-         feed card using:
-
-             button.closest(".feed-card")
-
-==============================================================
-*/ %>
-
-
-<%
-/* ==========================================================
-   AUTHOR ROLE
-========================================================== */
-
-const cstockRole =
-    item &&
-    (
-        item.userRole ||
-        (item.user && item.user.role) ||
-        item.role
-    );
-
-
-const cstockIsDairyWorker =
-    cstockRole === "dairyWorker";
-
-
-/* ==========================================================
-   AUTHOR
-========================================================== */
-
-const cstockAuthorName =
-    (
-        item &&
-        (
-            item.userName ||
-            (item.user && item.user.name)
-        )
-    ) ||
-    "Dairy Worker";
-
-
-/* ==========================================================
-   AUTHOR IMAGE
-========================================================== */
-
-const cstockAuthorImage =
-    (
-        item &&
-        (
-            item.userImage ||
-            (item.user && item.user.profileImage)
-        )
-    ) ||
-    null;
-
-
-/* ==========================================================
-   REPORT MESSAGE
-========================================================== */
-
-const cstockMessage =
-    (
-        item &&
-        (
-            item.text ||
-            item.message
-        )
-    ) ||
-    "";
-
-
-/* ==========================================================
-   DATE
-========================================================== */
-
-const cstockDate =
-    item && item.createdAt
-        ? new Date(item.createdAt)
-        : null;
-
-
-/* ==========================================================
-   DAIRY / FACILITY
-========================================================== */
-
-const cstockDairyName =
-    (
-        item &&
-        (
-            item.dairyName ||
-            (item.dairy && item.dairy.name)
-        )
-    ) ||
-    null;
-
-
-/* ==========================================================
-   CONDITION
-========================================================== */
-
-const cstockCondition =
-    item && item.condition
-        ? String(item.condition)
-        : null;
-
-
-/* ==========================================================
-   FEED QUALITY
-========================================================== */
-
-const cstockFeedQuality =
-    item && item.feedQuality
-        ? String(item.feedQuality)
-        : null;
-
-
-/* ==========================================================
-   REMAINING
-========================================================== */
-
-const cstockRemaining =
-    item &&
-    item.percentageRemaining !== undefined &&
-    item.percentageRemaining !== null &&
-    item.percentageRemaining !== ""
-        ? Number(item.percentageRemaining)
-        : null;
-
-
-/* ==========================================================
-   VALUE FORMATTER
-========================================================== */
-
-function cstockCap(value) {
-
-    if (!value) {
-        return "";
-    }
-
-    const text =
-        String(value).toLowerCase();
-
-    return text.charAt(0).toUpperCase() +
-           text.slice(1);
-}
-
-
-/* ==========================================================
-   STATUS CLASS
-========================================================== */
-
-function cstockStatusClass(value) {
-
-    if (!value) {
-        return "cstock-neutral";
-    }
-
-    const normalized =
-        String(value)
-            .toLowerCase()
-            .trim();
-
-
-    if (
-        normalized === "excellent" ||
-        normalized === "good"
-    ) {
-
-        return "cstock-positive";
-
-    }
-
-
-    if (
-        normalized === "fair"
-    ) {
-
-        return "cstock-warning";
-
-    }
-
-
-    if (
-        normalized === "poor" ||
-        normalized === "critical" ||
-        normalized === "spoiled" ||
-        normalized === "unusable"
-    ) {
-
-        return "cstock-danger";
-
-    }
-
-
-    return "cstock-neutral";
-
-}
-
-
-/* ==========================================================
-   REMAINING CLASS
-========================================================== */
-
-function cstockRemainingClass(value) {
-
-    if (
-        value === null ||
-        isNaN(value)
-    ) {
-
-        return "cstock-neutral";
-
-    }
-
-
-    if (value >= 60) {
-
-        return "cstock-positive";
-
-    }
-
-
-    if (value >= 30) {
-
-        return "cstock-warning";
-
-    }
-
-
-    return "cstock-danger";
-
-}
-
-
-/* ==========================================================
-   SAFE PROGRESS VALUE
-========================================================== */
-
-const cstockProgress =
-    cstockRemaining !== null &&
-    !isNaN(cstockRemaining)
-        ? Math.max(
-            0,
-            Math.min(
-                100,
-                cstockRemaining
-            )
-        )
-        : 0;
-
-%>
-
-
-<% if (cstockIsDairyWorker) { %>
-
-
-<!-- ==========================================================
-     FEED CARD
-
-     IMPORTANT:
-     .feed-card is required by feed-actions.ejs
+         Display a feed-stock / restocking event inside the
+         chronological dairy feed.
+
+     DESIGN:
+         Purpose-built stock record.
+         NOT based on post.ejs.
 ========================================================== -->
 
+
 <article
-    class="feed-card cstock-card"
-    data-feed-id="<%= item._id %>"
-    data-feed-type="stock"
+    class="feed-card stock-card"
+    data-id="<%= item._id %>"
+    data-type="stock"
 >
 
 
-    <!-- ======================================================
-         TOP ACCENT
-    ======================================================= -->
-
-    <div class="cstock-accent"></div>
-
-
-
-    <!-- ======================================================
+    <!-- =================================================
          HEADER
-    ======================================================= -->
+    ================================================== -->
 
-    <header class="cstock-header">
+    <div class="feed-header">
 
+        <div class="feed-user">
 
-        <!-- ==================================================
-             AVATAR
-        =================================================== -->
-
-        <div class="cstock-avatar">
-
-            <% if (cstockAuthorImage) { %>
-
-                <img
-                    src="<%= cstockAuthorImage %>"
-                    alt=""
-                    loading="lazy"
-                >
-
-            <% } else { %>
-
-                <span>
-                    👤
-                </span>
-
-            <% } %>
-
-        </div>
-
-
-
-        <!-- ==================================================
-             AUTHOR
-        =================================================== -->
-
-        <div class="cstock-author">
-
-
-            <div class="cstock-author__name-row">
-
-                <strong>
-                    <%= cstockAuthorName %>
-                </strong>
-
-                <span class="cstock-worker-badge">
-                    DAIRY WORKER
-                </span>
-
-            </div>
-
-
-            <div class="cstock-author__meta">
-
-                <span>
-                    Feed Store Report
-                </span>
-
-
-                <% if (
-                    cstockDate &&
-                    !isNaN(cstockDate)
-                ) { %>
-
-                    <span class="cstock-dot">
-                        ·
-                    </span>
-
-                    <time
-                        datetime="<%= cstockDate.toISOString() %>"
-                    >
-
-                        <%= cstockDate.toLocaleString(
-                            undefined,
-                            {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                                hour: "numeric",
-                                minute: "2-digit"
-                            }
-                        ) %>
-
-                    </time>
-
-                <% } %>
-
-            </div>
-
-
-        </div>
-
-
-
-        <!-- ==================================================
-             ICON
-        =================================================== -->
-
-        <div
-            class="cstock-icon"
-            aria-hidden="true"
-        >
-            🌾
-        </div>
-
-
-    </header>
-
-
-
-    <!-- ======================================================
-         FACILITY
-    ======================================================= -->
-
-    <% if (cstockDairyName) { %>
-
-        <div class="cstock-facility">
-
-            <span class="cstock-facility__icon">
-                🏠
-            </span>
-
-            <span class="cstock-facility__text">
-
-                Feed Store
-
-                <span>
-                    ·
-                </span>
-
-                <strong>
-                    <%= cstockDairyName %>
-                </strong>
-
-            </span>
-
-        </div>
-
-    <% } %>
-
-
-
-    <!-- ======================================================
-         REPORT TITLE
-    ======================================================= -->
-
-    <div class="cstock-title">
-
-        <div class="cstock-title__icon">
-            📋
-        </div>
-
-        <div>
-
-            <h3>
-                Food Stock Assessment
-            </h3>
-
-            <p>
-                Current condition of the feed store
-            </p>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- ======================================================
-         STATUS INFORMATION
-    ======================================================= -->
-
-    <% if (
-        cstockCondition ||
-        cstockFeedQuality ||
-        cstockRemaining !== null
-    ) { %>
-
-
-        <div class="cstock-status-grid">
-
-
-            <!-- =================================================
-                 STORE CONDITION
-            ================================================== -->
-
-            <% if (cstockCondition) { %>
-
-                <div
-                    class="
-                        cstock-status
-                        <%= cstockStatusClass(
-                            cstockCondition
-                        ) %>
-                    "
-                >
-
-                    <div class="cstock-status__icon">
-                        🏠
-                    </div>
-
-                    <div class="cstock-status__body">
-
-                        <span>
-                            STORE CONDITION
-                        </span>
-
-                        <strong>
-                            <%= cstockCap(
-                                cstockCondition
-                            ) %>
-                        </strong>
-
-                    </div>
-
-                </div>
-
-            <% } %>
-
-
-
-            <!-- =================================================
-                 FEED QUALITY
-            ================================================== -->
-
-            <% if (cstockFeedQuality) { %>
-
-                <div
-                    class="
-                        cstock-status
-                        <%= cstockStatusClass(
-                            cstockFeedQuality
-                        ) %>
-                    "
-                >
-
-                    <div class="cstock-status__icon">
-                        🌾
-                    </div>
-
-                    <div class="cstock-status__body">
-
-                        <span>
-                            FEED QUALITY
-                        </span>
-
-                        <strong>
-                            <%= cstockCap(
-                                cstockFeedQuality
-                            ) %>
-                        </strong>
-
-                    </div>
-
-                </div>
-
-            <% } %>
-
-
-
-            <!-- =================================================
-                 STOCK REMAINING
-            ================================================== -->
-
-            <% if (cstockRemaining !== null) { %>
-
-                <div
-                    class="
-                        cstock-status
-                        <%= cstockRemainingClass(
-                            cstockRemaining
-                        ) %>
-                    "
-                >
-
-                    <div class="cstock-status__icon">
-                        📦
-                    </div>
-
-                    <div class="cstock-status__body">
-
-                        <span>
-                            STOCK REMAINING
-                        </span>
-
-                        <strong>
-                            <%= cstockRemaining %>%
-                        </strong>
-
-                    </div>
-
-                </div>
-
-            <% } %>
-
-
-        </div>
-
-
-    <% } %>
-
-
-
-    <!-- ======================================================
-         STOCK LEVEL
-    ======================================================= -->
-
-    <% if (cstockRemaining !== null) { %>
-
-
-        <div class="cstock-stock-level">
-
-
-            <div class="cstock-stock-level__heading">
-
-                <span>
-                    Estimated food remaining
-                </span>
-
-                <strong>
-                    <%= cstockRemaining %>%
-                </strong>
-
-            </div>
-
-
-            <div
-                class="cstock-progress"
-                role="progressbar"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-valuenow="<%= cstockProgress %>"
+            <img
+                src="<%= item.userImage || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(item.userName || 'User')) %>"
+                class="avatar-sm"
+                alt="<%= item.userName || 'User' %>"
             >
 
-                <div
-                    class="
-                        cstock-progress__fill
-                        <%= cstockRemainingClass(
-                            cstockRemaining
-                        ) %>
-                    "
-                    style="width:<%= cstockProgress %>%"
-                ></div>
 
-            </div>
+            <div class="feed-user-info">
 
+                <!-- =========================================
+                     STOCK META
+                ========================================== -->
 
-        </div>
+                <div class="post-meta-line">
 
+                    <strong class="post-user-name">
 
-    <% } %>
+                        📦 <%= item.userName || "User" %>
+
+                    </strong>
 
 
+                    <% if (item.dairyName && item.dairyId) { %>
 
-    <!-- ======================================================
-         WORKER REPORT
-    ======================================================= -->
+                        <span class="post-meta-action">
 
-    <% if (cstockMessage) { %>
+                            restocked
 
-
-        <div class="cstock-report">
+                        </span>
 
 
-            <div class="cstock-report__heading">
+                        <a
+                            href="/dairy/<%= item.dairyId %>"
+                            class="post-subject"
+                            title="View <%= item.dairyName %>"
+                        >
 
-                <span>
-                    💬
-                </span>
+                            <%= item.dairyName %>
 
-                WORKER'S REPORT
-
-            </div>
-
-
-            <div class="cstock-report__text">
-
-                <%= cstockMessage %>
-
-            </div>
-
-
-        </div>
-
-
-    <% } %>
-
-
-
-    <!-- ======================================================
-         REPORT IMAGES
-    ======================================================= -->
-
-    <% if (
-        Array.isArray(item.images) &&
-        item.images.filter(Boolean).length > 0
-    ) { %>
-
-
-        <%
-            const cstockImages =
-                item.images
-                    .filter(Boolean)
-                    .slice(0, 10);
-        %>
-
-
-        <div
-            class="
-                cstock-images
-                cstock-images--<%= Math.min(
-                    cstockImages.length,
-                    4
-                ) %>
-            "
-        >
-
-
-            <% cstockImages
-                .slice(0, 4)
-                .forEach(function(image, index) {
-            { %>
-
-
-                <div class="cstock-image">
-
-
-                    <img
-                        src="<%= image %>"
-                        alt="Feed store report"
-                        loading="lazy"
-                    >
-
-
-                    <% if (
-                        index === 3 &&
-                        cstockImages.length > 4
-                    ) { %>
-
-                        <div class="cstock-image__more">
-
-                            +<%= cstockImages.length - 4 %>
-
-                        </div>
+                        </a>
 
                     <% } %>
 
-
                 </div>
 
 
-            <% }); %>
+                <!-- =========================================
+                     DATE / TIME
+                ========================================== -->
 
+                <small class="post-time">
 
-        </div>
+                    <%= item.dateText || "" %>
 
+                </small>
 
-    <% } %>
-
-
-
-    <!-- ======================================================
-         REPORT FOOTER
-    ======================================================= -->
-
-    <div class="cstock-report-footer">
-
-        <div class="cstock-report-footer__left">
-
-            <span class="cstock-check">
-                ✓
-            </span>
-
-            <span>
-                Dairy worker report
-            </span>
+            </div>
 
         </div>
 
 
-        <span class="cstock-type">
-            STOCK
-        </span>
+        <!-- =================================================
+             DELETE STOCK RECORD
+        ================================================== -->
+
+        <% if (
+            user &&
+            (
+                user.role === "admin" ||
+                (
+                    user._id &&
+                    item.userId &&
+                    user._id.toString() ===
+                    item.userId.toString()
+                )
+            )
+        ) { %>
+
+            <button
+                class="delete-post"
+                data-id="<%= item._id %>"
+                data-type="stock"
+                title="Delete Stock Record"
+                aria-label="Delete Stock Record"
+                type="button"
+            >
+
+                <i
+                    class="bi bi-trash3-fill"
+                    aria-hidden="true"
+                ></i>
+
+            </button>
+
+        <% } %>
 
     </div>
 
 
 
-    <!-- ======================================================
-         FEED ACTIONS
+    <!-- =================================================
+         STOCK BODY
+    ================================================== -->
 
-         IMPORTANT:
-         This uses the EXISTING centralized component.
+    <div class="feed-body">
 
-         The type is explicitly "stock" so that:
 
-             /stock/:id/like
-             /stock/:id/comment
+        <h3>
 
-         are used by feed-actions.ejs.
-    ======================================================= -->
+            📦 Feed Stock
 
-    <%- include("feed-actions", {
-        item: item,
+        </h3>
+
+
+        <!-- =============================================
+             FEED NAME
+        ============================================== -->
+
+        <% if (item.feedName || item.name) { %>
+
+            <p>
+
+                <strong>Feed:</strong>
+
+                <%= item.feedName || item.name %>
+
+            </p>
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             QUANTITY
+        ============================================== -->
+
+        <% if (
+            item.amount !== undefined &&
+            item.amount !== null &&
+            item.amount !== ""
+        ) { %>
+
+            <p>
+
+                <strong>Quantity:</strong>
+
+                <%= item.amount %>
+
+                <% if (item.unit) { %>
+
+                    <%= item.unit %>
+
+                <% } %>
+
+            </p>
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             COST
+        ============================================== -->
+
+        <% if (
+            item.cost !== undefined &&
+            item.cost !== null &&
+            item.cost !== ""
+        ) { %>
+
+            <p>
+
+                <strong>Cost:</strong>
+
+                <%= item.cost %>
+
+            </p>
+
+        <% } %>
+
+
+
+        <!-- =============================================
+             DESCRIPTION
+        ============================================== -->
+
+        <% if (item.description) { %>
+
+            <p>
+
+                <%= item.description %>
+
+            </p>
+
+        <% } %>
+
+
+    </div>
+
+
+
+    <!-- =================================================
+         ACTIONS
+    ================================================== -->
+
+    <%- include("partials/feed-actions", {
+        item,
+        type: "stock"
+    }) %>
+
+
+
+    <!-- =================================================
+         COMMENTS
+    ================================================== -->
+
+    <%- include("comment-section", {
+        item,
+        user,
         type: "stock"
     }) %>
 
 
 </article>
-
-
-<% } %>
-
-
-
-<style>
-
-/* ==========================================================
-   COREVESTER STOCK FEED CARD
-
-   UNIQUE NAMESPACE:
-       cstock-
-
-   IMPORTANT:
-       .feed-card is intentionally retained on the outer
-       element because feed-actions.ejs depends on it.
-========================================================== */
-
-
-/* ==========================================================
-   CARD
-========================================================== */
-
-.cstock-card {
-
-    position: relative;
-
-    width: 100%;
-
-    overflow: hidden;
-
-    margin: 0 0 14px;
-
-    border: 1px solid #e0e9e3;
-
-    border-radius: 18px;
-
-    background: #ffffff;
-
-    color: #26322b;
-
-    box-shadow:
-        0 4px 16px
-        rgba(20, 83, 45, .045);
-
-}
-
-
-.cstock-card *,
-.cstock-card *::before,
-.cstock-card *::after {
-
-    box-sizing: border-box;
-
-}
-
-
-
-/* ==========================================================
-   ACCENT
-========================================================== */
-
-.cstock-accent {
-
-    width: 100%;
-
-    height: 3px;
-
-    background:
-        linear-gradient(
-            90deg,
-            #198754,
-            #64a97d,
-            #e3efe7
-        );
-
-}
-
-
-
-/* ==========================================================
-   HEADER
-========================================================== */
-
-.cstock-header {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 11px;
-
-    padding: 14px 16px 10px;
-
-}
-
-
-.cstock-avatar {
-
-    width: 43px;
-
-    height: 43px;
-
-    flex: 0 0 43px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    overflow: hidden;
-
-    border: 2px solid #e1eee5;
-
-    border-radius: 50%;
-
-    background: #edf6f0;
-
-    color: #198754;
-
-}
-
-
-.cstock-avatar img {
-
-    width: 100%;
-
-    height: 100%;
-
-    display: block;
-
-    object-fit: cover;
-
-}
-
-
-.cstock-avatar span {
-
-    font-size: 18px;
-
-}
-
-
-.cstock-author {
-
-    flex: 1;
-
-    min-width: 0;
-
-}
-
-
-.cstock-author__name-row {
-
-    display: flex;
-
-    align-items: center;
-
-    flex-wrap: wrap;
-
-    gap: 6px;
-
-}
-
-
-.cstock-author__name-row strong {
-
-    color: #26322b;
-
-    font-size: 13px;
-
-    font-weight: 800;
-
-}
-
-
-.cstock-worker-badge {
-
-    display: inline-flex;
-
-    align-items: center;
-
-    padding: 3px 6px;
-
-    border-radius: 999px;
-
-    background: #edf7f0;
-
-    color: #198754;
-
-    font-size: 8px;
-
-    font-weight: 900;
-
-    letter-spacing: .55px;
-
-}
-
-
-.cstock-author__meta {
-
-    display: flex;
-
-    align-items: center;
-
-    flex-wrap: wrap;
-
-    gap: 4px;
-
-    margin-top: 3px;
-
-    color: #89938d;
-
-    font-size: 10px;
-
-}
-
-
-.cstock-dot {
-
-    color: #b2bbb5;
-
-}
-
-
-.cstock-icon {
-
-    width: 36px;
-
-    height: 36px;
-
-    flex: 0 0 36px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 11px;
-
-    background: #f1f8f3;
-
-    font-size: 17px;
-
-}
-
-
-
-/* ==========================================================
-   FACILITY
-========================================================== */
-
-.cstock-facility {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-    margin: 0 16px;
-
-    padding: 8px 10px;
-
-    border: 1px solid #edf2ee;
-
-    border-radius: 9px;
-
-    background: #fafcfb;
-
-}
-
-
-.cstock-facility__icon {
-
-    font-size: 12px;
-
-}
-
-
-.cstock-facility__text {
-
-    min-width: 0;
-
-    overflow: hidden;
-
-    color: #7b867f;
-
-    font-size: 10px;
-
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
-
-}
-
-
-.cstock-facility__text span {
-
-    margin: 0 3px;
-
-    color: #b1bab4;
-
-}
-
-
-.cstock-facility__text strong {
-
-    color: #3e4b43;
-
-}
-
-
-
-/* ==========================================================
-   TITLE
-========================================================== */
-
-.cstock-title {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-    margin: 14px 16px 0;
-
-    padding: 11px 12px;
-
-    border-left: 3px solid #198754;
-
-    border-radius: 0 10px 10px 0;
-
-    background: #f6faf7;
-
-}
-
-
-.cstock-title__icon {
-
-    width: 31px;
-
-    height: 31px;
-
-    flex: 0 0 31px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 9px;
-
-    background: #e8f4eb;
-
-    font-size: 14px;
-
-}
-
-
-.cstock-title h3 {
-
-    margin: 0;
-
-    color: #2f3c34;
-
-    font-size: 12px;
-
-    font-weight: 800;
-
-}
-
-
-.cstock-title p {
-
-    margin: 2px 0 0;
-
-    color: #89938d;
-
-    font-size: 9px;
-
-}
-
-
-
-/* ==========================================================
-   STATUS GRID
-========================================================== */
-
-.cstock-status-grid {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(3, minmax(0, 1fr));
-
-    gap: 7px;
-
-    margin: 12px 16px 0;
-
-}
-
-
-.cstock-status {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 7px;
-
-    min-width: 0;
-
-    padding: 9px;
-
-    border: 1px solid #e4ebe6;
-
-    border-radius: 11px;
-
-    background: #ffffff;
-
-}
-
-
-.cstock-status__icon {
-
-    width: 29px;
-
-    height: 29px;
-
-    flex: 0 0 29px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 8px;
-
-    background: #f1f5f2;
-
-    font-size: 13px;
-
-}
-
-
-.cstock-status__body {
-
-    min-width: 0;
-
-}
-
-
-.cstock-status__body span {
-
-    display: block;
-
-    overflow: hidden;
-
-    color: #8a948e;
-
-    font-size: 7px;
-
-    font-weight: 800;
-
-    letter-spacing: .35px;
-
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
-
-}
-
-
-.cstock-status__body strong {
-
-    display: block;
-
-    overflow: hidden;
-
-    margin-top: 2px;
-
-    color: #344139;
-
-    font-size: 10px;
-
-    font-weight: 800;
-
-    text-overflow: ellipsis;
-
-    white-space: nowrap;
-
-}
-
-
-
-/* ==========================================================
-   STATUS STATES
-========================================================== */
-
-.cstock-positive {
-
-    border-color: #d8eade;
-
-}
-
-
-.cstock-positive .cstock-status__icon {
-
-    background: #edf7f0;
-
-}
-
-
-.cstock-positive .cstock-status__body strong {
-
-    color: #198754;
-
-}
-
-
-.cstock-warning {
-
-    border-color: #eee4c9;
-
-}
-
-
-.cstock-warning .cstock-status__icon {
-
-    background: #faf5e8;
-
-}
-
-
-.cstock-warning .cstock-status__body strong {
-
-    color: #9a741b;
-
-}
-
-
-.cstock-danger {
-
-    border-color: #ecdada;
-
-}
-
-
-.cstock-danger .cstock-status__icon {
-
-    background: #faeeee;
-
-}
-
-
-.cstock-danger .cstock-status__body strong {
-
-    color: #a94442;
-
-}
-
-
-.cstock-neutral {
-
-    border-color: #e4e9e5;
-
-}
-
-
-
-/* ==========================================================
-   STOCK LEVEL
-========================================================== */
-
-.cstock-stock-level {
-
-    margin: 13px 16px 0;
-
-}
-
-
-.cstock-stock-level__heading {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 10px;
-
-    margin-bottom: 6px;
-
-}
-
-
-.cstock-stock-level__heading span {
-
-    color: #7d8881;
-
-    font-size: 9px;
-
-    font-weight: 600;
-
-}
-
-
-.cstock-stock-level__heading strong {
-
-    color: #198754;
-
-    font-size: 10px;
-
-    font-weight: 800;
-
-}
-
-
-.cstock-progress {
-
-    width: 100%;
-
-    height: 6px;
-
-    overflow: hidden;
-
-    border-radius: 999px;
-
-    background: #edf1ee;
-
-}
-
-
-.cstock-progress__fill {
-
-    height: 100%;
-
-    border-radius: inherit;
-
-    background: #198754;
-
-}
-
-
-.cstock-progress__fill.cstock-warning {
-
-    background: #b58a27;
-
-}
-
-
-.cstock-progress__fill.cstock-danger {
-
-    background: #a94442;
-
-}
-
-
-
-/* ==========================================================
-   REPORT
-========================================================== */
-
-.cstock-report {
-
-    margin: 14px 16px 0;
-
-}
-
-
-.cstock-report__heading {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 5px;
-
-    margin-bottom: 6px;
-
-    color: #718078;
-
-    font-size: 8px;
-
-    font-weight: 900;
-
-    letter-spacing: .65px;
-
-}
-
-
-.cstock-report__heading span {
-
-    font-size: 11px;
-
-}
-
-
-.cstock-report__text {
-
-    color: #4b5750;
-
-    font-size: 13px;
-
-    line-height: 1.55;
-
-    white-space: pre-wrap;
-
-    overflow-wrap: anywhere;
-
-}
-
-
-
-/* ==========================================================
-   IMAGES
-========================================================== */
-
-.cstock-images {
-
-    display: grid;
-
-    gap: 5px;
-
-    margin: 14px 16px 0;
-
-    overflow: hidden;
-
-    border-radius: 12px;
-
-}
-
-
-.cstock-images--1 {
-
-    grid-template-columns: 1fr;
-
-}
-
-
-.cstock-images--2 {
-
-    grid-template-columns:
-        repeat(2, 1fr);
-
-}
-
-
-.cstock-images--3 {
-
-    grid-template-columns:
-        repeat(3, 1fr);
-
-}
-
-
-.cstock-images--4 {
-
-    grid-template-columns:
-        repeat(2, 1fr);
-
-}
-
-
-.cstock-image {
-
-    position: relative;
-
-    min-width: 0;
-
-    overflow: hidden;
-
-    background: #f1f4f2;
-
-}
-
-
-.cstock-images--1
-.cstock-image {
-
-    height: 230px;
-
-}
-
-
-.cstock-images--2
-.cstock-image {
-
-    height: 170px;
-
-}
-
-
-.cstock-images--3
-.cstock-image {
-
-    height: 135px;
-
-}
-
-
-.cstock-images--4
-.cstock-image {
-
-    height: 135px;
-
-}
-
-
-.cstock-image img {
-
-    width: 100%;
-
-    height: 100%;
-
-    display: block;
-
-    object-fit: cover;
-
-}
-
-
-.cstock-image__more {
-
-    position: absolute;
-
-    inset: 0;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    background: rgba(
-        20,
-        83,
-        45,
-        .48
-    );
-
-    color: #ffffff;
-
-    font-size: 18px;
-
-    font-weight: 800;
-
-}
-
-
-
-/* ==========================================================
-   REPORT FOOTER
-========================================================== */
-
-.cstock-report-footer {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 10px;
-
-    margin-top: 15px;
-
-    padding: 10px 16px;
-
-    border-top: 1px solid #eef2ef;
-
-    background: #fcfdfc;
-
-}
-
-
-.cstock-report-footer__left {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 6px;
-
-    min-width: 0;
-
-    color: #87918b;
-
-    font-size: 9px;
-
-}
-
-
-.cstock-check {
-
-    width: 17px;
-
-    height: 17px;
-
-    flex: 0 0 17px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background: #e8f4eb;
-
-    color: #198754;
-
-    font-size: 9px;
-
-    font-weight: 900;
-
-}
-
-
-.cstock-type {
-
-    flex-shrink: 0;
-
-    color: #a0aaa4;
-
-    font-size: 7px;
-
-    font-weight: 900;
-
-    letter-spacing: .7px;
-
-}
-
-
-
-/* ==========================================================
-   MOBILE
-========================================================== */
-
-@media (max-width: 600px) {
-
-    .cstock-card {
-
-        border-radius: 15px;
-
-    }
-
-
-    .cstock-header {
-
-        padding:
-            13px
-            13px
-            9px;
-
-    }
-
-
-    .cstock-avatar {
-
-        width: 40px;
-
-        height: 40px;
-
-        flex-basis: 40px;
-
-    }
-
-
-    .cstock-icon {
-
-        width: 33px;
-
-        height: 33px;
-
-        flex-basis: 33px;
-
-        font-size: 15px;
-
-    }
-
-
-    .cstock-status-grid {
-
-        grid-template-columns:
-            1fr;
-
-        gap: 6px;
-
-    }
-
-
-    .cstock-status {
-
-        min-height: 47px;
-
-    }
-
-
-    .cstock-images--1
-    .cstock-image {
-
-        height: 210px;
-
-    }
-
-
-    .cstock-images--2
-    .cstock-image {
-
-        height: 135px;
-
-    }
-
-
-    .cstock-images--3
-    .cstock-image,
-    .cstock-images--4
-    .cstock-image {
-
-        height: 110px;
-
-    }
-
-}
-
-
-
-/* ==========================================================
-   SMALL PHONES
-========================================================== */
-
-@media (max-width: 380px) {
-
-    .cstock-header {
-
-        gap: 8px;
-
-    }
-
-
-    .cstock-worker-badge {
-
-        display: none;
-
-    }
-
-
-    .cstock-title,
-    .cstock-report,
-    .cstock-stock-level,
-    .cstock-images {
-
-        margin-left: 12px;
-
-        margin-right: 12px;
-
-    }
-
-
-    .cstock-status-grid {
-
-        margin-left: 12px;
-
-        margin-right: 12px;
-
-    }
-
-
-    .cstock-facility {
-
-        margin-left: 12px;
-
-        margin-right: 12px;
-
-    }
-
-
-    .cstock-report-footer {
-
-        padding-left: 12px;
-
-        padding-right: 12px;
-
-    }
-
-}
-
-</style>
