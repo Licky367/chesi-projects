@@ -15,7 +15,7 @@
 //
 //     /dairy/:id
 //
-// means exactly:
+// means:
 //
 //     /dairy/:id
 //
@@ -124,19 +124,16 @@ router.get(
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// Feed-store routes intentionally use:
+// The feed-store routes use the Dairy asset ID after
+// /dairy/:
 //
-//     /dairy/feedstore/:id
+//     GET  /dairy/feedstore/:id
 //
-// Therefore:
+//     POST /dairy/:id/feedstore/restock
 //
-//     /dairy/feedstore/:id
+//     POST /dairy/:id/feedstore/update
 //
-//     /dairy/feedstore/:id/update
-//
-//     /dairy/feedstore/:id/restock
-//
-// The :id is always the Dairy / Feed Store asset ID.
+// This matches the feedstore EJS form actions exactly.
 //
 // ==========================================================
 
@@ -163,25 +160,31 @@ router.get(
 
 
 // ----------------------------------------------------------
-// FEED STORE CONDITION UPDATE
+// ADMIN RESTOCK
 // ----------------------------------------------------------
 //
 // POST:
 //
-//     /dairy/feedstore/:id/update
+//     /dairy/:id/feedstore/restock
 //
-// Available to:
+// Matches:
+//
+//     action="/dairy/<%= dairy._id %>/feedstore/restock"
+//
+// Intended for:
 //
 //     admin
-//     dairyWorker
 //
-// Can contain:
+// Used to:
 //
-//     • facility condition
-//     • feed quality
-//     • percentage remaining
-//     • message
-//     • multiple images
+//     • add new feed stock
+//     • restock existing feed stock
+//     • add veterinary medicine
+//     • update stock quantity
+//     • record financial value
+//     • record instructions
+//     • record expected duration
+//     • upload stock images
 //
 // Upload field:
 //
@@ -191,54 +194,62 @@ router.get(
 //
 //     10 images
 //
-// Business logic:
+// ----------------------------------------------------------
+
+router.post(
+    "/dairy/:id/feedstore/restock",
+    isAuth,
+    upload.array(
+        "images",
+        10
+    ),
+    controller.restockFeedStore
+);
+
+
+// ----------------------------------------------------------
+// WORKER STOCK UPDATE
+// ----------------------------------------------------------
 //
-//     services/update/feedsService.js
+// POST:
+//
+//     /dairy/:id/feedstore/update
+//
+// Matches:
+//
+//     action="/dairy/<%= dairy._id %>/feedstore/update"
+//
+// Available to:
+//
+//     dairyWorker
+//     admin
+//
+// Used to:
+//
+//     • select existing stock
+//     • record quantity remaining
+//     • record unit
+//     • add an observation/message
+//     • upload stock images
+//
+// Upload field:
+//
+//     images
+//
+// Maximum:
+//
+//     10 images
 //
 // ----------------------------------------------------------
 
 router.post(
-    "/dairy/feedstore/:id/update",
+    "/dairy/:id/feedstore/update",
     isAuth,
     upload.array(
         "images",
         10
     ),
     controller.updateFeedStore
-);
-
-
-// ----------------------------------------------------------
-// FEED STORE RESTOCK
-// ----------------------------------------------------------
-//
-// POST:
-//
-//     /dairy/feedstore/:id/restock
-//
-// Intended for:
-//
-//     admin
-//
-// Used to:
-//
-//     • restock existing feed
-//     • create new feed stock
-//     • update quantities
-//     • update financial amounts
-//     • record expenditure
-//     • recalculate feedsAmount
-//
-// Business logic:
-//
-//     services/update/feedsService.js
-//
-// ----------------------------------------------------------
-
-router.post(
-    "/dairy/feedstore/:id/restock",
-    isAuth,
-    controller.restockFeedStore
 );
 
 
@@ -253,7 +264,18 @@ router.post(
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// This route comes after the more specific feed-store routes.
+// This route comes AFTER:
+//
+//     /dairy/feedstore/:id
+//
+// so that:
+//
+//     /dairy/feedstore/ABC
+//
+// is handled by the feed-store page rather than being
+// interpreted as:
+//
+//     /dairy/:id
 //
 // ----------------------------------------------------------
 
@@ -271,7 +293,7 @@ router.get(
 //
 //     /dairy/:id/toggle-milking
 //
-// Changes only:
+// Changes:
 //
 //     dairy.isMilking
 //
@@ -440,8 +462,8 @@ router.post(
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// This generic route is deliberately placed AFTER all
-// specific /dairy/... routes.
+// This generic route remains AFTER the specific dairy and
+// feed-store routes.
 //
 // ----------------------------------------------------------
 
