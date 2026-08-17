@@ -1,11 +1,20 @@
 <!-- =====================================================
      FEED
-     
+
      FILE:
          views/update/feed.ejs
 
      PURPOSE:
          Render the chronological dairy feed.
+
+     FEED ITEM TYPES:
+     ------------------------------------------------------
+         post
+         milk
+         medical
+         maintenance
+         assetAdd
+         stock
 
      RECURRING INSERTIONS:
      ------------------------------------------------------
@@ -14,6 +23,14 @@
 
          asset-cards.ejs
              Recurs after a random number of feed items.
+
+     STOCK RULE:
+     ------------------------------------------------------
+         stock.ejs is rendered only when the report was
+         submitted by a dairyWorker.
+
+         Admin stock/restocking activity is NOT rendered
+         as a stock feed item.
 
      IMPORTANT:
      ------------------------------------------------------
@@ -36,11 +53,6 @@
  * ---------------------------------------------------------
  * CREATE POST
  * ---------------------------------------------------------
- *
- * After this many feed items, another create-post card
- * becomes eligible to appear.
- *
- * The actual interval is randomized between these values.
  */
 
 const CREATE_POST_MIN_GAP = 8;
@@ -51,8 +63,6 @@ const CREATE_POST_MAX_GAP = 20;
  * ---------------------------------------------------------
  * ASSET CARDS
  * ---------------------------------------------------------
- *
- * Asset cards can appear more frequently than create-post.
  */
 
 const ASSET_CARD_MIN_GAP = 5;
@@ -133,21 +143,9 @@ const hasAssetCards =
 
 
         <%
-        /*
-         * =====================================================
-         * COUNT THIS FEED ITEM
-         * =====================================================
-         *
-         * Every actual feed record counts.
-         *
-         * This includes:
-         *
-         * post
-         * milk
-         * medical
-         * maintenance
-         * assetAdd
-         */
+        /* =====================================================
+           COUNT THIS FEED ITEM
+        ===================================================== */
 
         feedItemNumber++;
         %>
@@ -157,7 +155,6 @@ const hasAssetCards =
         <!-- =================================================
              RECURRING INSERTIONS
         ================================================== -->
-
 
         <%
         /*
@@ -178,18 +175,8 @@ const hasAssetCards =
 
         /*
          * =====================================================
-         * BOTH ARE READY
+         * DETERMINE INSERTION TYPE
          * =====================================================
-         *
-         * If both happen to become due at the same time,
-         * choose one.
-         *
-         * This prevents:
-         *
-         *     ASSET CARDS
-         *     CREATE POST
-         *
-         * from appearing directly beside each other.
          */
 
         let insertionType =
@@ -201,12 +188,9 @@ const hasAssetCards =
             assetCardsReady
         ) {
 
-            /*
-             * If one was inserted recently, prefer the
-             * other one.
-             */
-
-            if (lastInsertion === "create-post") {
+            if (
+                lastInsertion === "create-post"
+            ) {
 
                 insertionType =
                     "asset-cards";
@@ -220,11 +204,6 @@ const hasAssetCards =
 
             } else {
 
-                /*
-                 * First collision:
-                 * randomly choose one.
-                 */
-
                 insertionType =
                     Math.random() < 0.5
                         ? "create-post"
@@ -232,12 +211,16 @@ const hasAssetCards =
 
             }
 
-        } else if (createPostReady) {
+        } else if (
+            createPostReady
+        ) {
 
             insertionType =
                 "create-post";
 
-        } else if (assetCardsReady) {
+        } else if (
+            assetCardsReady
+        ) {
 
             insertionType =
                 "asset-cards";
@@ -255,13 +238,6 @@ const hasAssetCards =
         if (
             insertionType === "create-post"
         ) {
-
-            /*
-             * Do not allow it immediately after another
-             * insertion.
-             *
-             * This is an additional safety check.
-             */
 
             if (
                 lastInsertion !== "asset-cards"
@@ -292,10 +268,6 @@ const hasAssetCards =
                     "create-post";
 
 
-                /*
-                 * Schedule the next create-post.
-                 */
-
                 nextCreatePostAt =
                     feedItemNumber +
                     randomFeedInterval(
@@ -304,12 +276,6 @@ const hasAssetCards =
                     );
 
             } else {
-
-                /*
-                 * It was too close to the asset card.
-                 *
-                 * Delay create-post.
-                 */
 
                 nextCreatePostAt =
                     feedItemNumber + 3;
@@ -329,11 +295,6 @@ const hasAssetCards =
         if (
             insertionType === "asset-cards"
         ) {
-
-            /*
-             * Never place asset cards immediately after
-             * another create-post insertion.
-             */
 
             if (
                 lastInsertion !== "create-post"
@@ -364,10 +325,6 @@ const hasAssetCards =
                     "asset-cards";
 
 
-                /*
-                 * Schedule the next asset-card insertion.
-                 */
-
                 nextAssetCardsAt =
                     feedItemNumber +
                     randomFeedInterval(
@@ -376,12 +333,6 @@ const hasAssetCards =
                     );
 
             } else {
-
-                /*
-                 * It was too close to create-post.
-                 *
-                 * Delay asset cards.
-                 */
 
                 nextAssetCardsAt =
                     feedItemNumber + 3;
@@ -402,7 +353,8 @@ const hasAssetCards =
 
             <%- include("post", {
                 item,
-                user
+                user,
+                type: "post"
             }) %>
 
         <% } %>
@@ -417,7 +369,8 @@ const hasAssetCards =
 
             <%- include("milk", {
                 item,
-                user
+                user,
+                type: "milk"
             }) %>
 
         <% } %>
@@ -435,7 +388,8 @@ const hasAssetCards =
 
             <%- include("medical-marked", {
                 item,
-                user
+                user,
+                type: "medical"
             }) %>
 
         <% } %>
@@ -448,7 +402,8 @@ const hasAssetCards =
 
             <%- include("medical-cleared", {
                 item,
-                user
+                user,
+                type: "medical"
             }) %>
 
         <% } %>
@@ -466,7 +421,8 @@ const hasAssetCards =
 
             <%- include("maintenance-marked", {
                 item,
-                user
+                user,
+                type: "maintenance"
             }) %>
 
         <% } %>
@@ -479,7 +435,8 @@ const hasAssetCards =
 
             <%- include("maintenance-cleared", {
                 item,
-                user
+                user,
+                type: "maintenance"
             }) %>
 
         <% } %>
@@ -494,10 +451,72 @@ const hasAssetCards =
 
             <%- include("addAsset", {
                 item,
-                user
+                user,
+                type: "assetAdd"
             }) %>
 
         <% } %>
+
+
+
+        <!-- =================================================
+             FEED STORE / STOCK REPORT
+             
+             IMPORTANT:
+             --------------------------------------------------
+             Only a dairyWorker's report becomes a feed card.
+
+             Admin activity is intentionally excluded.
+        ================================================== -->
+
+        <%
+        if (item.type === "stock") {
+
+            /*
+             * Determine the author role.
+             *
+             * Depending on how the controller populates
+             * the feed item, the role may be available as:
+             *
+             *     item.userRole
+             *     item.role
+             *     item.user.role
+             */
+
+            const stockAuthorRole =
+                item.userRole ||
+                item.role ||
+                (
+                    item.user &&
+                    item.user.role
+                ) ||
+                null;
+
+
+            const isDairyWorkerReport =
+                stockAuthorRole === "dairyWorker";
+
+
+            if (isDairyWorkerReport) {
+        %>
+
+
+                <!-- =========================================
+                     DAIRY WORKER STOCK REPORT
+                ========================================== -->
+
+                <%- include("stock", {
+                    item,
+                    user,
+                    type: "stock"
+                }) %>
+
+
+        <%
+            }
+
+        }
+        %>
 
 
     <% }) %>
@@ -505,14 +524,12 @@ const hasAssetCards =
 
 
     <!-- =====================================================
-         OPTIONAL END-OF-FEED INSERTION
+         END OF FEED
          
-         If the feed ends immediately before one of the
-         scheduled insertion points, don't force an extra
-         card here.
+         No forced insertion is made here.
          
-         The cards are intentionally inserted only between
-         actual feed items.
+         Recurring cards are intentionally inserted only
+         between actual feed items.
     ====================================================== -->
 
 </section>
@@ -521,9 +538,11 @@ const hasAssetCards =
 
 <!-- =====================================================
      RECURRING FEED CARD STYLING
-     
-     Kept intentionally minimal so the actual partials
-     remain responsible for their own UI.
+
+     Intentionally minimal.
+
+     Individual feed partials remain responsible for
+     their own visual design.
 ====================================================== -->
 
 <style>
@@ -551,6 +570,5 @@ const hasAssetCards =
     width: 100%;
 
 }
-
 
 </style>
