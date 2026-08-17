@@ -6,30 +6,29 @@
 //
 // Responsibilities:
 //
-//     • Retrieve Food Stock page data
-//     • Create feed-store condition updates
-//     • Manage multiple feed-stock categories
+//     • Retrieve Feed Store page data
+//     • Create feed-store reports
+//     • Retrieve recent feed-store reports
 //     • Restock existing feed categories
 //     • Create new feed categories
-//     • Maintain the aggregate Dairy.feedsAmount
+//     • Maintain Dairy.feedsAmount
 //
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// Individual feed amounts are stored separately.
+// The Dairy model is the source of truth for feed inventory.
 //
-// Example:
+// Individual feed values are stored in:
 //
-//     Fodder   = 15000
-//     Silage   = 8000
-//     Hay      = 5000
+//     dairy.feeds[]
 //
-// Therefore:
+// The aggregate value is:
 //
-//     feedsAmount = 28000
+//     dairy.feedsAmount
 //
-// feedsAmount MUST always be recalculated from the individual
-// feed-stock amounts.
+// feedsAmount is ALWAYS recalculated from dairy.feeds.
+//
+// The controller does not calculate inventory totals.
 //
 // ==========================================================
 
@@ -37,8 +36,10 @@
 const mongoose =
     require("mongoose");
 
+
 const Dairy =
     require("../../models/dairy");
+
 
 const Update =
     require("../../models/Update");
@@ -51,8 +52,17 @@ const Update =
 const FEED_STORE_TYPE =
     "feedStore";
 
+
+const UPDATE_TYPE =
+    "post";
+
+
 const MAX_IMAGES =
     10;
+
+
+const MAX_RECENT_UPDATES =
+    20;
 
 
 // ==========================================================
@@ -64,10 +74,14 @@ const MAX_IMAGES =
 // CONVERT TO NUMBER
 // ----------------------------------------------------------
 
-function toNumber(value, fallback = 0) {
+function toNumber(
+    value,
+    fallback = 0
+) {
 
     const number =
         Number(value);
+
 
     return Number.isFinite(number)
         ? number
@@ -80,7 +94,9 @@ function toNumber(value, fallback = 0) {
 // NORMALIZE STRING
 // ----------------------------------------------------------
 
-function cleanString(value) {
+function cleanString(
+    value
+) {
 
     if (
         value === undefined ||
@@ -91,6 +107,7 @@ function cleanString(value) {
 
     }
 
+
     return String(value).trim();
 
 }
@@ -100,7 +117,9 @@ function cleanString(value) {
 // NORMALIZE PERCENTAGE
 // ----------------------------------------------------------
 
-function normalizePercentage(value) {
+function normalizePercentage(
+    value
+) {
 
     if (
         value === undefined ||
@@ -112,29 +131,45 @@ function normalizePercentage(value) {
 
     }
 
+
     const percentage =
         Number(value);
 
+
     if (
-        !Number.isFinite(percentage)
+        !Number.isFinite(
+            percentage
+        )
     ) {
 
-        throw new Error(
-            "Percentage remaining must be a valid number."
-        );
+        const error =
+            new Error(
+                "Percentage remaining must be a valid number."
+            );
+
+        error.status = 400;
+
+        throw error;
 
     }
+
 
     if (
         percentage < 0 ||
         percentage > 100
     ) {
 
-        throw new Error(
-            "Percentage remaining must be between 0 and 100."
-        );
+        const error =
+            new Error(
+                "Percentage remaining must be between 0 and 100."
+            );
+
+        error.status = 400;
+
+        throw error;
 
     }
+
 
     return percentage;
 
@@ -145,7 +180,9 @@ function normalizePercentage(value) {
 // NORMALIZE IMAGES
 // ----------------------------------------------------------
 
-function normalizeImages(images) {
+function normalizeImages(
+    images
+) {
 
     if (
         !Array.isArray(images)
@@ -155,9 +192,15 @@ function normalizeImages(images) {
 
     }
 
+
     return images
-        .map(cleanString)
+
+        .map(
+            cleanString
+        )
+
         .filter(Boolean)
+
         .slice(
             0,
             MAX_IMAGES
@@ -167,19 +210,29 @@ function normalizeImages(images) {
 
 
 // ----------------------------------------------------------
-// ENSURE VALID OBJECT ID
+// VALIDATE OBJECT ID
 // ----------------------------------------------------------
 
-function validateObjectId(id, label) {
+function validateObjectId(
+    id,
+    label
+) {
 
     if (
         !id ||
-        !mongoose.Types.ObjectId.isValid(id)
+        !mongoose.Types.ObjectId.isValid(
+            id
+        )
     ) {
 
-        throw new Error(
-            `${label} is invalid.`
-        );
+        const error =
+            new Error(
+                `${label} is invalid.`
+            );
+
+        error.status = 400;
+
+        throw error;
 
     }
 
@@ -188,6 +241,13 @@ function validateObjectId(id, label) {
 
 // ==========================================================
 // FIND FEED STORE
+// ==========================================================
+//
+// Ensures:
+//
+//     • Dairy exists
+//     • Dairy is actually a feedStore structure
+//
 // ==========================================================
 
 async function findFeedStore(
@@ -221,7 +281,8 @@ async function findFeedStore(
 
 
     if (
-        dairy.type !== FEED_STORE_TYPE
+        dairy.type !==
+        FEED_STORE_TYPE
     ) {
 
         const error =
@@ -242,25 +303,66 @@ async function findFeedStore(
 
 
 // ==========================================================
+// GET FEED ARRAY
+// ==========================================================
+//
+// The current Dairy structure uses:
+//
+//     dairy.feeds
+//
+// Make sure callers always receive an array.
+//
+// ==========================================================
+
+function getFeeds(
+    dairy
+) {
+
+    if (
+        !dairy
+    ) {
+
+        return [];
+
+    }
+
+
+    if (
+        !Array.isArray(
+            dairy.feeds
+        )
+    ) {
+
+        dairy.feeds = [];
+
+    }
+
+
+    return dairy.feeds;
+
+}
+
+
+// ==========================================================
 // CALCULATE FEEDS AMOUNT
 // ==========================================================
 //
-// IMPORTANT:
+// SINGLE SOURCE OF TRUTH.
 //
-// This is the single calculation point for:
+// feedsAmount is derived from:
 //
-//     Dairy.feedsAmount
-//
-// It MUST NOT be calculated differently in controllers.
+//     dairy.feeds[].amount
 //
 // ==========================================================
 
 function calculateFeedsAmount(
-    stocks
+    feeds
 ) {
 
     if (
-        !Array.isArray(stocks)
+        !Array.isArray(
+            feeds
+        )
     ) {
 
         return 0;
@@ -268,16 +370,16 @@ function calculateFeedsAmount(
     }
 
 
-    return stocks.reduce(
+    return feeds.reduce(
         (
             total,
-            stock
+            feed
         ) => {
 
             return (
                 total +
                 toNumber(
-                    stock.amount
+                    feed.amount
                 )
             );
 
@@ -291,28 +393,20 @@ function calculateFeedsAmount(
 // ==========================================================
 // SYNCHRONIZE FEEDS AMOUNT
 // ==========================================================
-//
-// Takes the individual stock amounts and writes:
-//
-//     dairy.feedsAmount
-//
-// ==========================================================
 
 function synchronizeFeedsAmount(
     dairy
 ) {
 
-    const stocks =
-        Array.isArray(
-            dairy.feedStore?.stocks
-        )
-            ? dairy.feedStore.stocks
-            : [];
+    const feeds =
+        getFeeds(
+            dairy
+        );
 
 
     const total =
         calculateFeedsAmount(
-            stocks
+            feeds
         );
 
 
@@ -326,6 +420,75 @@ function synchronizeFeedsAmount(
 
 
 // ==========================================================
+// GET RECENT FEED STORE UPDATES
+// ==========================================================
+//
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// The current Update.js does not yet contain a dedicated
+// feedStore subdocument or feedStore update type.
+//
+// Therefore feed-store reports are stored as:
+//
+//     type: "post"
+//
+// with:
+//
+//     title: "Feed Store Update"
+//
+// ==========================================================
+
+async function getRecentFeedStoreUpdates(
+    dairyId
+) {
+
+    validateObjectId(
+        dairyId,
+        "Dairy ID"
+    );
+
+
+    const updates =
+        await Update.find({
+
+            dairy:
+                dairyId,
+
+            type:
+                UPDATE_TYPE,
+
+            title:
+                "Feed Store Update"
+
+        })
+
+        .populate(
+            "user",
+            "name profileImage"
+        )
+
+        .sort({
+            createdAt: -1
+        })
+
+        .limit(
+            MAX_RECENT_UPDATES
+        )
+
+        .lean();
+
+
+    return Array.isArray(
+        updates
+    )
+        ? updates
+        : [];
+
+}
+
+
+// ==========================================================
 // GET FEED STORE PAGE DATA
 // ==========================================================
 //
@@ -333,23 +496,37 @@ function synchronizeFeedsAmount(
 //
 //     controllers/update/feedsController.js
 //
+// Returns:
+//
+//     feeds
+//     feedsAmount
+//     updates
+//
 // ==========================================================
 
 async function getFeedStorePageData(
     dairy
 ) {
 
-    if (!dairy) {
+    if (
+        !dairy
+    ) {
 
-        throw new Error(
-            "Dairy asset is required."
-        );
+        const error =
+            new Error(
+                "Dairy asset is required."
+            );
+
+        error.status = 400;
+
+        throw error;
 
     }
 
 
     if (
-        dairy.type !== FEED_STORE_TYPE
+        dairy.type !==
+        FEED_STORE_TYPE
     ) {
 
         const error =
@@ -364,34 +541,33 @@ async function getFeedStorePageData(
     }
 
 
-    const stocks =
+    const feeds =
         Array.isArray(
-            dairy.feedStore?.stocks
+            dairy.feeds
         )
-            ? dairy.feedStore.stocks
+            ? dairy.feeds
             : [];
 
 
     const feedsAmount =
         calculateFeedsAmount(
-            stocks
+            feeds
+        );
+
+
+    const updates =
+        await getRecentFeedStoreUpdates(
+            dairy._id
         );
 
 
     return {
 
-        stocks,
+        feeds,
 
         feedsAmount,
 
-        feedStore:
-            dairy.feedStore || {
-
-                stocks: [],
-
-                feedsAmount: 0
-
-            }
+        updates
 
     };
 
@@ -402,15 +578,18 @@ async function getFeedStorePageData(
 // CREATE FEED STORE UPDATE
 // ==========================================================
 //
-// Creates an Update.js document containing:
+// Creates an Update document using the CURRENT Update.js:
 //
-//     • message
-//     • images
-//     • facility condition
-//     • feed quality
-//     • percentage remaining
+//     dairy
+//     user
+//     userName
+//     userImage
+//     type
+//     title
+//     text
+//     images
 //
-// This does NOT change the inventory.
+// No unsupported `feedStore` property is written.
 //
 // ==========================================================
 
@@ -424,8 +603,6 @@ async function createFeedStoreUpdate(
 
         userId,
 
-        role,
-
         message,
 
         condition,
@@ -436,7 +613,7 @@ async function createFeedStoreUpdate(
 
         images
 
-    } = data;
+    } = data || {};
 
 
     validateObjectId(
@@ -458,7 +635,7 @@ async function createFeedStoreUpdate(
 
 
     // ------------------------------------------------------
-    // Normalize submitted data
+    // NORMALIZE INPUT
     // ------------------------------------------------------
 
     const cleanMessage =
@@ -466,20 +643,24 @@ async function createFeedStoreUpdate(
             message
         );
 
+
     const cleanCondition =
         cleanString(
             condition
         );
+
 
     const cleanFeedQuality =
         cleanString(
             feedQuality
         );
 
+
     const cleanImages =
         normalizeImages(
             images
         );
+
 
     const remaining =
         normalizePercentage(
@@ -488,20 +669,80 @@ async function createFeedStoreUpdate(
 
 
     // ------------------------------------------------------
-    // Require at least some report content.
+    // BUILD REPORT TEXT
+    // ------------------------------------------------------
+    //
+    // Since the current Update.js does not have dedicated
+    // feedStore fields, the operational details are kept
+    // inside the normal Update.text field.
+    //
+    // ------------------------------------------------------
+
+    const reportParts = [];
+
+
+    if (
+        cleanCondition
+    ) {
+
+        reportParts.push(
+            `Facility condition: ${cleanCondition}`
+        );
+
+    }
+
+
+    if (
+        cleanFeedQuality
+    ) {
+
+        reportParts.push(
+            `Feed quality: ${cleanFeedQuality}`
+        );
+
+    }
+
+
+    if (
+        remaining !== null
+    ) {
+
+        reportParts.push(
+            `Estimated food remaining: ${remaining}%`
+        );
+
+    }
+
+
+    if (
+        cleanMessage
+    ) {
+
+        reportParts.push(
+            cleanMessage
+        );
+
+    }
+
+
+    const reportText =
+        reportParts.join(
+            "\n\n"
+        );
+
+
+    // ------------------------------------------------------
+    // REQUIRE CONTENT
     // ------------------------------------------------------
 
     if (
-        !cleanMessage &&
-        !cleanCondition &&
-        !cleanFeedQuality &&
-        remaining === null &&
+        !reportText &&
         cleanImages.length === 0
     ) {
 
         const error =
             new Error(
-                "A feed-store update must contain a message, condition, feed quality, percentage or image."
+                "A feed-store update must contain a report or image."
             );
 
         error.status = 400;
@@ -512,47 +753,57 @@ async function createFeedStoreUpdate(
 
 
     // ------------------------------------------------------
-    // Create Update document.
-    //
-    // The Update model will contain a dedicated feedStore
-    // section.
+    // GET USER SNAPSHOT
+    // ------------------------------------------------------
+
+    const user =
+        await mongoose
+            .model("User")
+            .findById(
+                userId
+            )
+            .select(
+                "name profileImage"
+            )
+            .lean();
+
+
+    // ------------------------------------------------------
+    // CREATE UPDATE
     // ------------------------------------------------------
 
     const update =
         new Update({
 
-            dairyId:
+            dairy:
                 dairy._id,
 
-            userId,
+            user:
+                userId,
+
+            userName:
+                user?.name || "",
+
+            userImage:
+                user?.profileImage || "",
 
             type:
-                FEED_STORE_TYPE,
+                UPDATE_TYPE,
 
-            message:
-                cleanMessage,
+            title:
+                "Feed Store Update",
+
+            text:
+                reportText,
 
             images:
-                cleanImages,
-
-            feedStore: {
-
-                condition:
-                    cleanCondition,
-
-                feedQuality:
-                    cleanFeedQuality,
-
-                percentageRemaining:
-                    remaining
-
-            }
+                cleanImages
 
         });
 
 
     // ------------------------------------------------------
-    // Save
+    // SAVE
     // ------------------------------------------------------
 
     await update.save();
@@ -567,16 +818,16 @@ async function createFeedStoreUpdate(
 // RESTOCK FEED STORE
 // ==========================================================
 //
-// ADMIN ONLY authorization is performed by the controller.
+// ADMIN authorization is handled by the controller.
 //
-// This service:
+// The service:
 //
-//     1. Finds the feed store
-//     2. Finds an existing stock by name
-//     3. Updates it OR creates a new stock
-//     4. Records the financial amount
-//     5. Recalculates feedsAmount
-//     6. Saves the Dairy document
+//     • finds the feed store
+//     • finds an existing feed category
+//     • adds to its amount
+//     • OR creates a new category
+//     • recalculates feedsAmount
+//     • saves Dairy
 //
 // ==========================================================
 
@@ -598,9 +849,15 @@ async function restockFeedStore(
 
         unit,
 
-        description
+        description,
 
-    } = data;
+        restockMode,
+
+        existingStock,
+
+        newStock
+
+    } = data || {};
 
 
     validateObjectId(
@@ -622,13 +879,44 @@ async function restockFeedStore(
 
 
     // ------------------------------------------------------
-    // Normalize input
+    // DETERMINE STOCK NAME
     // ------------------------------------------------------
 
-    const name =
+    let name =
         cleanString(
             feedName
         );
+
+
+    if (
+        !name &&
+        restockMode === "existing"
+    ) {
+
+        name =
+            cleanString(
+                existingStock
+            );
+
+    }
+
+
+    if (
+        !name &&
+        restockMode === "new"
+    ) {
+
+        name =
+            cleanString(
+                newStock
+            );
+
+    }
+
+
+    // ------------------------------------------------------
+    // AMOUNT
+    // ------------------------------------------------------
 
     const stockAmount =
         toNumber(
@@ -636,16 +924,16 @@ async function restockFeedStore(
             NaN
         );
 
-    const stockCost =
-        toNumber(
-            cost,
-            0
-        );
+
+    // ------------------------------------------------------
+    // OPTIONAL FIELDS
+    // ------------------------------------------------------
 
     const stockUnit =
         cleanString(
             unit
         );
+
 
     const stockDescription =
         cleanString(
@@ -653,11 +941,20 @@ async function restockFeedStore(
         );
 
 
+    const restockCost =
+        toNumber(
+            cost,
+            0
+        );
+
+
     // ------------------------------------------------------
-    // Validation
+    // VALIDATION
     // ------------------------------------------------------
 
-    if (!name) {
+    if (
+        !name
+    ) {
 
         const error =
             new Error(
@@ -691,7 +988,7 @@ async function restockFeedStore(
 
 
     if (
-        stockCost < 0
+        restockCost < 0
     ) {
 
         const error =
@@ -707,47 +1004,25 @@ async function restockFeedStore(
 
 
     // ------------------------------------------------------
-    // Ensure stock array exists.
+    // ENSURE FEEDS ARRAY
     // ------------------------------------------------------
 
-    if (
-        !dairy.feedStore
-    ) {
-
-        dairy.feedStore = {
-
-            stocks: [],
-
-            feedsAmount: 0
-
-        };
-
-    }
-
-
-    if (
-        !Array.isArray(
-            dairy.feedStore.stocks
-        )
-    ) {
-
-        dairy.feedStore.stocks = [];
-
-    }
+    const feeds =
+        getFeeds(
+            dairy
+        );
 
 
     // ------------------------------------------------------
-    // FIND EXISTING STOCK
-    //
-    // Case-insensitive comparison.
+    // FIND EXISTING FEED
     // ------------------------------------------------------
 
     const normalizedName =
         name.toLowerCase();
 
 
-    let stock =
-        dairy.feedStore.stocks.find(
+    let feed =
+        feeds.find(
             item =>
                 cleanString(
                     item.name
@@ -757,14 +1032,16 @@ async function restockFeedStore(
 
 
     // ======================================================
-    // EXISTING STOCK
+    // EXISTING FEED
     // ======================================================
 
-    if (stock) {
+    if (
+        feed
+    ) {
 
-        stock.amount =
+        feed.amount =
             toNumber(
-                stock.amount
+                feed.amount
             ) +
             stockAmount;
 
@@ -773,7 +1050,7 @@ async function restockFeedStore(
             stockUnit
         ) {
 
-            stock.unit =
+            feed.unit =
                 stockUnit;
 
         }
@@ -783,25 +1060,25 @@ async function restockFeedStore(
             stockDescription
         ) {
 
-            stock.description =
+            feed.description =
                 stockDescription;
 
         }
 
 
-        stock.updatedAt =
+        feed.updatedAt =
             new Date();
 
     }
 
 
     // ======================================================
-    // NEW STOCK CATEGORY
+    // NEW FEED
     // ======================================================
 
     else {
 
-        dairy.feedStore.stocks.push({
+        feeds.push({
 
             name,
 
@@ -823,22 +1100,16 @@ async function restockFeedStore(
         });
 
 
-        stock =
-            dairy.feedStore.stocks[
-                dairy.feedStore.stocks.length - 1
+        feed =
+            feeds[
+                feeds.length - 1
             ];
 
     }
 
 
     // ======================================================
-    // RE-CALCULATE AGGREGATE
-    // ======================================================
-    //
-    // NEVER manually add to feedsAmount here.
-    //
-    // Always derive it from the individual stocks.
-    //
+    // RECALCULATE TOTAL
     // ======================================================
 
     const feedsAmount =
@@ -848,23 +1119,21 @@ async function restockFeedStore(
 
 
     // ------------------------------------------------------
-    // Save Dairy
+    // SAVE
     // ------------------------------------------------------
 
     await dairy.save();
 
 
-    // ======================================================
+    // ------------------------------------------------------
     // RETURN
-    // ======================================================
+    // ------------------------------------------------------
 
     return {
 
-        feed:
-            stock,
+        feed,
 
-        feedsAmount,
-updates
+        feedsAmount
 
     };
 
