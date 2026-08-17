@@ -1,271 +1,301 @@
-<!-- ==========================================================
-     DAIRY FEED STOCK REPORT
+<% /*
+==============================================================
+STOCK FEED ITEM
 
-     FILE:
-         views/update/stock.ejs
+FILE:
+    views/updates/stock.ejs
 
-     PURPOSE:
-         Display a Feed Store report inside the chronological
-         dairy feed.
+PURPOSE:
+    Render feed-store stock announcements and subsequent
+    stock updates inside the normal Updates feed.
 
-     DESIGN:
-         ------------------------------------------------------
-         This is NOT a social-media post card.
+SYSTEM STOCK ANNOUNCEMENT:
+    Uses /images/h1.png
+    Sender = System
 
-         It is a compact operational report containing:
+WORKER STOCK UPDATE:
+    Uses the actual user's profile image/name.
 
-             • Report title
-             • Dairy/feed-store name
-             • Date
-             • Facility condition
-             • Feed quality
-             • Estimated stock remaining
-             • Report message
-             • Optional images
-             • Feed actions
-             • Comments
-
-         No avatar.
-         No "about".
-         No social-post header.
-         No unnecessary empty space.
-========================================================== -->
+EXPECTED:
+    update
+    dairy
+==============================================================
+*/ %>
 
 
 <%
-/* ==========================================================
-   DATA
-========================================================== */
+    const isSystem =
+        update &&
+        (
+            update.authorType === "system" ||
+            update.source === "system" ||
+            update.isSystem === true ||
+            update.userName === "System"
+        );
 
-const stockDairyName =
-    item.dairyName ||
-    dairy?.name ||
-    "Dairy Feed Store";
+    const isMedicine =
+        update &&
+        (
+            update.category === "medicine" ||
+            update.stockType === "medicine" ||
+            update.type === "medicine"
+        );
 
+    const senderName =
+        isSystem
+            ? "System"
+            : (
+                update.userName ||
+                (
+                    update.user &&
+                    update.user.name
+                ) ||
+                "User"
+            );
 
-const stockDate =
-    item.dateText ||
-    (
-        item.createdAt
-            ? new Date(item.createdAt).toLocaleString(
-                "en-GB",
-                {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit"
-                }
-            )
-            : ""
-    );
+    const senderImage =
+        isSystem
+            ? "/images/h1.png"
+            : (
+                update.userImage ||
+                (
+                    update.user &&
+                    update.user.profileImage
+                ) ||
+                "/images/h1.png"
+            );
 
+    const title =
+        update.title ||
+        (
+            isSystem
+                ? (
+                    isMedicine
+                        ? "More Veterinary Meds Available"
+                        : "More Animal Feed Available"
+                )
+                : "Foodstock Update"
+        );
 
-/*
- * ----------------------------------------------------------
- * REPORT TEXT
- * ----------------------------------------------------------
- *
- * The current feedsService stores the report as:
- *
- * Facility condition: ...
- *
- * Feed quality: ...
- *
- * Estimated food remaining: ...%
- *
- * Message
- *
- * We preserve that information exactly as supplied.
- */
+    const quantity =
+        update.quantity ??
+        update.addedQuantity ??
+        update.quantityRemaining ??
+        update.amount;
 
-const reportText =
-    item.text ||
-    item.description ||
-    "";
+    const unit =
+        update.unit ||
+        "";
 
+    const instructions =
+        update.instructions ||
+        update.usageInstructions ||
+        "";
 
-/*
- * ----------------------------------------------------------
- * OPTIONAL STRUCTURED VALUES
- * ----------------------------------------------------------
- *
- * These are supported if the service/feed mapping supplies
- * them directly in the future.
- */
+    const duration =
+        update.expectedDuration ||
+        update.duration ||
+        "";
 
-const condition =
-    item.condition ||
-    null;
+    const message =
+        update.message ||
+        update.text ||
+        "";
 
+    const images =
+        Array.isArray(update.images)
+            ? update.images
+            : [];
 
-const feedQuality =
-    item.feedQuality ||
-    null;
-
-
-const percentageRemaining =
-    item.percentageRemaining !== undefined &&
-    item.percentageRemaining !== null &&
-    item.percentageRemaining !== ""
-        ? item.percentageRemaining
-        : null;
-
-
-/*
- * ----------------------------------------------------------
- * IMAGES
- * ----------------------------------------------------------
- */
-
-const stockImages =
-    Array.isArray(item.images)
-        ? item.images
-        : [];
-
+    const created =
+        update.createdAt
+            ? new Date(update.createdAt)
+            : new Date();
 %>
 
 
 
 <article
-    class="feed-stock-report"
-    data-id="<%= item._id %>"
-    data-type="stock"
+    class="stock-feed-item"
+    data-update-id="<%= update._id || "" %>"
 >
 
 
     <!-- ======================================================
-         REPORT HEADING
+         HEADER
     ======================================================= -->
 
-    <header class="feed-stock-report__header">
-
-        <div>
-
-            <p class="feed-stock-report__eyebrow">
-
-                FEED STORE
-
-            </p>
+    <header class="stock-feed-header">
 
 
-            <h2 class="feed-stock-report__title">
+        <!-- ==================================================
+             PROFILE IMAGE
+        =================================================== -->
 
-                Dairy Feed Stock Report
+        <div class="stock-feed-avatar">
 
-            </h2>
-
-
-            <h3 class="feed-stock-report__dairy">
-
-                <%= stockDairyName %>
-
-            </h3>
+            <img
+                src="<%= senderImage %>"
+                alt="<%= senderName %>"
+                loading="lazy"
+            >
 
         </div>
 
 
-        <% if (stockDate) { %>
+
+        <!-- ==================================================
+             AUTHOR + DATE
+        =================================================== -->
+
+        <div class="stock-feed-author">
+
+            <div class="stock-feed-author-line">
+
+                <strong>
+                    <%= senderName %>
+                </strong>
+
+            </div>
+
+
+            <div class="stock-feed-context">
+
+                <% if (isSystem) { %>
+
+                    The System updated
+
+                    <a
+                        href="/dairy/<%= dairy._id %>"
+                        class="stock-feed-dairy-link"
+                    >
+                        <%= dairy.name %>'s Foodstock
+                    </a>
+
+                <% } else { %>
+
+                    updated
+
+                    <a
+                        href="/dairy/<%= dairy._id %>"
+                        class="stock-feed-dairy-link"
+                    >
+                        <%= dairy.name %>'s Foodstock
+                    </a>
+
+                <% } %>
+
+            </div>
+
 
             <time
-                class="feed-stock-report__date"
-                datetime="<%= item.createdAt || "" %>"
+                class="stock-feed-date"
+                datetime="<%= created.toISOString() %>"
             >
-
-                <%= stockDate %>
-
+                <%= created.toLocaleString() %>
             </time>
 
-        <% } %>
+        </div>
+
 
     </header>
 
 
 
     <!-- ======================================================
-         REPORT CONTENT
+         BODY
     ======================================================= -->
 
-    <section class="feed-stock-report__body">
+    <div class="stock-feed-body">
 
 
         <!-- ==================================================
-             STRUCTURED REPORT
+             TITLE
         =================================================== -->
 
-        <% if (
-            condition ||
-            feedQuality ||
-            percentageRemaining !== null
-        ) { %>
+        <h3 class="stock-feed-title">
 
-            <div class="feed-stock-report__summary">
+            <%= title %>
 
-
-                <% if (condition) { %>
-
-                    <div class="feed-stock-report__field">
-
-                        <span class="feed-stock-report__label">
-
-                            Facility Condition
-
-                        </span>
-
-                        <strong class="feed-stock-report__value">
-
-                            <%= condition %>
-
-                        </strong>
-
-                    </div>
-
-                <% } %>
+        </h3>
 
 
 
-                <% if (feedQuality) { %>
+        <!-- ==================================================
+             STOCK DETAILS
+        =================================================== -->
 
-                    <div class="feed-stock-report__field">
-
-                        <span class="feed-stock-report__label">
-
-                            Feed Quality
-
-                        </span>
-
-                        <strong class="feed-stock-report__value">
-
-                            <%= feedQuality %>
-
-                        </strong>
-
-                    </div>
-
-                <% } %>
+        <div class="stock-feed-details">
 
 
+            <% if (
+                quantity !== undefined &&
+                quantity !== null &&
+                quantity !== ""
+            ) { %>
 
-                <% if (percentageRemaining !== null) { %>
+                <div class="stock-feed-detail">
 
-                    <div class="feed-stock-report__field">
+                    <span class="stock-feed-detail-label">
+                        <%= isSystem
+                            ? "Added quantity"
+                            : "Quantity remaining" %>
+                    </span>
 
-                        <span class="feed-stock-report__label">
+                    <strong>
 
-                            Estimated Feed Remaining
+                        <%= Number(quantity).toLocaleString() %>
 
-                        </span>
+                        <% if (unit) { %>
 
-                        <strong class="feed-stock-report__value feed-stock-report__value--percentage">
+                            <%= unit %>
 
-                            <%= percentageRemaining %>%
+                        <% } %>
 
-                        </strong>
+                    </strong>
 
-                    </div>
+                </div>
 
-                <% } %>
+            <% } %>
 
+
+
+            <% if (duration) { %>
+
+                <div class="stock-feed-detail">
+
+                    <span class="stock-feed-detail-label">
+                        Expected duration
+                    </span>
+
+                    <strong>
+                        <%= duration %>
+                    </strong>
+
+                </div>
+
+            <% } %>
+
+
+        </div>
+
+
+
+        <!-- ==================================================
+             INSTRUCTIONS
+        =================================================== -->
+
+        <% if (instructions) { %>
+
+            <div class="stock-feed-instructions">
+
+                <div class="stock-feed-subheading">
+                    Instructions of use
+                </div>
+
+                <p>
+                    <%= instructions %>
+                </p>
 
             </div>
 
@@ -274,42 +304,14 @@ const stockImages =
 
 
         <!-- ==================================================
-             REPORT TEXT
+             WORKER MESSAGE
         =================================================== -->
 
-        <% if (reportText) { %>
+        <% if (message) { %>
 
-            <div class="feed-stock-report__message">
+            <div class="stock-feed-message">
 
-                <span class="feed-stock-report__label">
-
-                    Report
-
-                </span>
-
-
-                <div class="feed-stock-report__message-text">
-
-                    <%
-                    const reportLines =
-                        reportText
-                            .split(/\n+/)
-                            .map(line => line.trim())
-                            .filter(Boolean);
-                    %>
-
-
-                    <% reportLines.forEach(function(line) { %>
-
-                        <p>
-
-                            <%= line %>
-
-                        </p>
-
-                    <% }); %>
-
-                </div>
+                <%= message %>
 
             </div>
 
@@ -321,21 +323,21 @@ const stockImages =
              IMAGES
         =================================================== -->
 
-        <% if (stockImages.length) { %>
+        <% if (images.length > 0) { %>
 
-            <div class="feed-stock-report__images">
+            <div class="stock-feed-images">
 
-                <% stockImages.forEach(function(image) { %>
+                <% images.forEach(function(image) { %>
 
-                    <figure class="feed-stock-report__image">
+                    <% if (image) { %>
 
                         <img
                             src="<%= image %>"
-                            alt="Feed store report image"
+                            alt="Foodstock"
                             loading="lazy"
                         >
 
-                    </figure>
+                    <% } %>
 
                 <% }); %>
 
@@ -344,355 +346,344 @@ const stockImages =
         <% } %>
 
 
-    </section>
-
-
-
-    <!-- ======================================================
-         ACTIONS
-    ======================================================= -->
-
-    <div class="feed-stock-report__actions">
-
-        <%- include("partials/feed-actions", {
-            item,
-            type: "stock"
-        }) %>
-
     </div>
-
-
-
-    <!-- ======================================================
-         COMMENTS
-    ======================================================= -->
-
-    <%- include("comment-section", {
-        item,
-        user,
-        type: "stock"
-    }) %>
 
 
 </article>
 
 
 
-<!-- ==========================================================
-     STOCK REPORT STYLES
-     
-     Completely isolated from post.ejs / post.css.
-========================================================== -->
-
 <style>
 
 /* ==========================================================
-   CONTAINER
+   STOCK FEED ITEM
 ========================================================== */
 
-.feed-stock-report {
+.stock-feed-item {
 
     width: 100%;
 
-    margin: 16px 0;
+    padding: 16px 0 19px;
 
-    background: #ffffff;
-
-    border: 1px solid #dfe8e1;
-
-    border-left: 5px solid #187a3a;
-
-    border-radius: 14px;
-
-    overflow: hidden;
-
-    box-shadow:
-        0 4px 14px rgba(0, 0, 0, 0.06);
+    border-bottom: 1px solid #e5ebe7;
 
 }
+
+
+.stock-feed-item:last-child {
+
+    border-bottom: none;
+
+}
+
 
 
 /* ==========================================================
    HEADER
 ========================================================== */
 
-.feed-stock-report__header {
+.stock-feed-header {
 
     display: flex;
 
     align-items: flex-start;
 
-    justify-content: space-between;
-
-    gap: 18px;
-
-    padding: 20px 20px 17px;
-
-    background:
-        linear-gradient(
-            to right,
-            #f4faf5,
-            #ffffff
-        );
-
-    border-bottom: 1px solid #e4ebe5;
+    gap: 11px;
 
 }
 
 
-.feed-stock-report__eyebrow {
+.stock-feed-avatar {
 
-    margin: 0 0 5px;
+    width: 44px;
+    height: 44px;
 
-    font-size: 11px;
-
-    font-weight: 800;
-
-    letter-spacing: 1.3px;
-
-    color: #187a3a;
-
-}
-
-
-.feed-stock-report__title {
-
-    margin: 0;
-
-    font-size: 22px;
-
-    line-height: 1.25;
-
-    font-weight: 800;
-
-    color: #17351f;
-
-}
-
-
-.feed-stock-report__dairy {
-
-    margin: 5px 0 0;
-
-    font-size: 16px;
-
-    line-height: 1.35;
-
-    font-weight: 600;
-
-    color: #4c6253;
-
-}
-
-
-.feed-stock-report__date {
-
-    flex-shrink: 0;
-
-    padding-top: 4px;
-
-    font-size: 12px;
-
-    line-height: 1.4;
-
-    color: #6d7c72;
-
-    text-align: right;
-
-}
-
-
-/* ==========================================================
-   BODY
-========================================================== */
-
-.feed-stock-report__body {
-
-    padding: 20px;
-
-}
-
-
-/* ==========================================================
-   SUMMARY
-========================================================== */
-
-.feed-stock-report__summary {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(
-            3,
-            minmax(0, 1fr)
-        );
-
-    gap: 10px;
-
-    margin-bottom: 18px;
-
-}
-
-
-.feed-stock-report__field {
-
-    min-width: 0;
-
-    padding: 13px 14px;
-
-    background: #f7faf8;
-
-    border: 1px solid #e3ebe5;
-
-    border-radius: 10px;
-
-}
-
-
-.feed-stock-report__label {
-
-    display: block;
-
-    margin-bottom: 5px;
-
-    font-size: 11px;
-
-    line-height: 1.3;
-
-    font-weight: 800;
-
-    letter-spacing: .4px;
-
-    text-transform: uppercase;
-
-    color: #718078;
-
-}
-
-
-.feed-stock-report__value {
-
-    display: block;
-
-    font-size: 15px;
-
-    line-height: 1.35;
-
-    font-weight: 700;
-
-    color: #273b2e;
-
-    overflow-wrap: anywhere;
-
-}
-
-
-.feed-stock-report__value--percentage {
-
-    color: #187a3a;
-
-}
-
-
-/* ==========================================================
-   REPORT MESSAGE
-========================================================== */
-
-.feed-stock-report__message {
-
-    padding-top: 2px;
-
-}
-
-
-.feed-stock-report__message-text {
-
-    margin-top: 8px;
-
-    color: #39483f;
-
-    font-size: 15px;
-
-    line-height: 1.65;
-
-}
-
-
-.feed-stock-report__message-text p {
-
-    margin: 0 0 10px;
-
-}
-
-
-.feed-stock-report__message-text p:last-child {
-
-    margin-bottom: 0;
-
-}
-
-
-/* ==========================================================
-   IMAGES
-========================================================== */
-
-.feed-stock-report__images {
-
-    display: grid;
-
-    grid-template-columns:
-        repeat(
-            auto-fit,
-            minmax(
-                140px,
-                1fr
-            )
-        );
-
-    gap: 10px;
-
-    margin-top: 20px;
-
-}
-
-
-.feed-stock-report__image {
-
-    margin: 0;
+    flex: 0 0 44px;
 
     overflow: hidden;
 
-    border-radius: 10px;
+    border-radius: 50%;
 
-    background: #f1f4f2;
+    background: #edf5ef;
 
 }
 
 
-.feed-stock-report__image img {
-
-    display: block;
+.stock-feed-avatar img {
 
     width: 100%;
+    height: 100%;
 
-    height: 180px;
+    display: block;
 
     object-fit: cover;
 
 }
 
 
-/* ==========================================================
-   ACTION AREA
-========================================================== */
+.stock-feed-author {
 
-.feed-stock-report__actions {
+    min-width: 0;
 
-    border-top: 1px solid #e8eeea;
-
-    padding: 4px 12px;
+    padding-top: 1px;
 
 }
+
+
+.stock-feed-author-line {
+
+    display: flex;
+    align-items: center;
+
+}
+
+
+.stock-feed-author-line strong {
+
+    color: #26352d;
+
+    font-size: 13px;
+    font-weight: 850;
+
+}
+
+
+.stock-feed-context {
+
+    margin-top: 2px;
+
+    color: #68756e;
+
+    font-size: 11px;
+
+    line-height: 1.4;
+
+}
+
+
+.stock-feed-dairy-link {
+
+    color: #198754;
+
+    font-weight: 750;
+
+    text-decoration: none;
+
+}
+
+
+.stock-feed-dairy-link:hover {
+
+    text-decoration: underline;
+
+}
+
+
+.stock-feed-date {
+
+    display: block;
+
+    margin-top: 3px;
+
+    color: #99a19c;
+
+    font-size: 10px;
+
+}
+
+
+
+/* ==========================================================
+   BODY
+========================================================== */
+
+.stock-feed-body {
+
+    margin-left: 55px;
+
+    margin-top: 13px;
+
+}
+
+
+.stock-feed-title {
+
+    margin: 0 0 12px;
+
+    color: #198754;
+
+    font-size: 18px;
+    line-height: 1.3;
+
+    font-weight: 900;
+
+}
+
+
+
+/* ==========================================================
+   DETAILS
+========================================================== */
+
+.stock-feed-details {
+
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    margin-bottom: 12px;
+
+}
+
+
+.stock-feed-detail {
+
+    min-width: 150px;
+
+    padding: 9px 11px;
+
+    border-radius: 10px;
+
+    background: #f3f8f4;
+
+}
+
+
+.stock-feed-detail-label {
+
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #829087;
+
+    font-size: 9px;
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    letter-spacing: .4px;
+
+}
+
+
+.stock-feed-detail strong {
+
+    color: #245a3b;
+
+    font-size: 13px;
+    font-weight: 850;
+
+}
+
+
+
+/* ==========================================================
+   INSTRUCTIONS
+========================================================== */
+
+.stock-feed-instructions {
+
+    margin-top: 8px;
+
+    padding: 11px 13px;
+
+    border-left: 3px solid #198754;
+
+    border-radius: 0 9px 9px 0;
+
+    background: #f7faf8;
+
+}
+
+
+.stock-feed-subheading {
+
+    margin-bottom: 4px;
+
+    color: #31553f;
+
+    font-size: 10px;
+    font-weight: 850;
+
+    text-transform: uppercase;
+
+    letter-spacing: .5px;
+
+}
+
+
+.stock-feed-instructions p {
+
+    margin: 0;
+
+    color: #4f5d55;
+
+    font-size: 12px;
+
+    line-height: 1.55;
+
+    white-space: pre-wrap;
+
+}
+
+
+
+/* ==========================================================
+   MESSAGE
+========================================================== */
+
+.stock-feed-message {
+
+    margin-top: 12px;
+
+    color: #4e5b54;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+
+    white-space: pre-wrap;
+
+}
+
+
+
+/* ==========================================================
+   IMAGES
+========================================================== */
+
+.stock-feed-images {
+
+    display: flex;
+
+    gap: 7px;
+
+    margin-top: 13px;
+
+    overflow-x: auto;
+
+    padding-bottom: 3px;
+
+}
+
+
+.stock-feed-images img {
+
+    width: 125px;
+    height: 105px;
+
+    flex: 0 0 125px;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 10px;
+
+}
+
 
 
 /* ==========================================================
@@ -701,91 +692,37 @@ const stockImages =
 
 @media (max-width: 600px) {
 
-    .feed-stock-report {
+    .stock-feed-body {
 
-        margin: 12px 0;
+        margin-left: 0;
 
-        border-radius: 12px;
-
-    }
-
-
-    .feed-stock-report__header {
-
-        padding: 17px 16px 15px;
-
-        gap: 10px;
+        margin-top: 12px;
 
     }
 
 
-    .feed-stock-report__title {
+    .stock-feed-title {
 
-        font-size: 20px;
-
-    }
-
-
-    .feed-stock-report__dairy {
-
-        font-size: 15px;
+        font-size: 17px;
 
     }
 
 
-    .feed-stock-report__date {
+    .stock-feed-detail {
 
-        font-size: 11px;
+        flex: 1 1 100%;
 
-    }
-
-
-    .feed-stock-report__body {
-
-        padding: 16px;
+        min-width: 0;
 
     }
 
 
-    .feed-stock-report__summary {
+    .stock-feed-images img {
 
-        grid-template-columns: 1fr;
+        width: 110px;
+        height: 92px;
 
-        gap: 8px;
-
-    }
-
-
-    .feed-stock-report__field {
-
-        padding: 11px 12px;
-
-    }
-
-
-    .feed-stock-report__message-text {
-
-        font-size: 14px;
-
-        line-height: 1.6;
-
-    }
-
-
-    .feed-stock-report__images {
-
-        grid-template-columns:
-            repeat(
-                2,
-                minmax(0, 1fr)
-            );
-
-    }
-
-
-    .feed-stock-report__image img {
-
-        height: 135px;
+        flex-basis: 110px;
 
     }
 
