@@ -20,7 +20,7 @@ RULES:
 
 3. maintComposer.ejs
    • Appears ONLY when:
-       - dairy.needsMaintenance is false
+       - dairy.needsMaintenance === false
        - AND dairy has no code
          OR dairy.code is undefined
          OR dairy.code is null
@@ -28,6 +28,11 @@ RULES:
 4. maintenanceClearComposer.ejs
    • Appears ONLY when:
        - dairy.needsMaintenance === true
+
+5. milking-history.ejs
+   • Appears for dairy assets with a positive EVEN code.
+   • The card itself handles navigation to:
+       /milk/history/<dairy._id>
 
 EXPECTED DATA:
 ----------------------------------------------------------
@@ -55,8 +60,8 @@ user
 
         <p class="update-cards-description">
 
-            Keep <strong><%= dairy.name %></strong>
-            updated with activities, maintenance and
+            Keep us updated about <strong><%= dairy.name %>'s</strong>
+            conditions, activities, maintenance and
             important status changes.
 
         </p>
@@ -84,20 +89,30 @@ user
              1. CREATE COMPOSER
 
              ALWAYS VISIBLE
-
-             This composer appears for every dairy asset,
-             regardless of:
-
-             • code
-             • gender
-             • milking status
-             • maintenance status
         ================================================== -->
 
         <%- include("create", {
             dairy: dairy,
             user: user
         }) %>
+
+
+
+        <!-- =================================================
+             DAIRY CODE
+
+             Used by the milking-related cards.
+        ================================================== -->
+
+        <%
+            const dairyCodeNumber =
+                Number(dairy.code);
+
+            const showMilkingCards =
+                Number.isFinite(dairyCodeNumber) &&
+                dairyCodeNumber > 0 &&
+                dairyCodeNumber % 2 === 0;
+        %>
 
 
 
@@ -109,34 +124,9 @@ user
              dairy.code is positive
              AND
              dairy.code is even
-
-             Examples:
-
-                 2   → SHOW
-                 4   → SHOW
-                 10  → SHOW
-                 20  → SHOW
-
-                 1   → HIDE
-                 3   → HIDE
-                 5   → HIDE
-                 0   → HIDE
-                 null → HIDE
-                 undefined → HIDE
         ================================================== -->
 
-        <%
-            const dairyCodeNumber =
-                Number(dairy.code);
-
-            const showMilkStatus =
-                Number.isFinite(dairyCodeNumber) &&
-                dairyCodeNumber > 0 &&
-                dairyCodeNumber % 2 === 0;
-        %>
-
-
-        <% if (showMilkStatus) { %>
+        <% if (showMilkingCards) { %>
 
             <%- include("milk-status", {
                 dairy: dairy,
@@ -148,7 +138,29 @@ user
 
 
         <!-- =================================================
-             3. MAINTENANCE COMPOSER
+             3. MILKING HISTORY
+
+             ONLY VISIBLE FOR THE SAME DAIRY ANIMALS
+             THAT HAVE THE MILKING STATUS CARD.
+
+             milking-history.ejs handles the link:
+
+                 /milk/history/<%= dairy._id %>
+        ================================================== -->
+
+        <% if (showMilkingCards) { %>
+
+            <%- include("milking-history", {
+                dairy: dairy,
+                user: user
+            }) %>
+
+        <% } %>
+
+
+
+        <!-- =================================================
+             4. MAINTENANCE COMPOSER
 
              ONLY VISIBLE WHEN:
 
@@ -162,7 +174,6 @@ user
 
                  null
                  undefined
-
         ================================================== -->
 
         <%
@@ -188,7 +199,7 @@ user
 
 
         <!-- =================================================
-             4. CLEAR MAINTENANCE COMPOSER
+             5. CLEAR MAINTENANCE COMPOSER
 
              ONLY VISIBLE WHEN:
 
