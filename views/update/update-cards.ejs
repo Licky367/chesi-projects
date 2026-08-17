@@ -7,20 +7,14 @@ FILE:
 
 PURPOSE:
 ----------------------------------------------------------
-Container for the interactive update/action cards shown
-on the dairy update page.
+Central container for the update-related cards/composers
+shown on a dairy asset page.
 
-This file:
-
-• Displays the section title.
-• Includes the individual update composers/cards.
-• Keeps the cards together in one clean green-themed area.
-
-INDIVIDUAL COMPONENTS:
+INCLUDES:
 ----------------------------------------------------------
-• milk-status.ejs
-• maintComposer.ejs
-• maintClearComposer.ejs
+• Maintenance composer
+• Maintenance clear composer
+• Milking status card
 
 EXPECTED DATA:
 ----------------------------------------------------------
@@ -30,53 +24,43 @@ user
 */ %>
 
 
-<!-- =========================================================
-     UPDATE CARDS SECTION
-========================================================= -->
-
-<section class="update-cards-section">
+<% if (dairy) { %>
 
 
-    <!-- =====================================================
-         SECTION HEADER
-    ====================================================== -->
+<section class="update-cards">
 
-    <header class="update-cards-header">
 
-        <div class="update-cards-title-wrap">
+    <!-- =================================================
+         PAGE TITLE
+    ================================================== -->
 
-            <span class="update-cards-title-accent"></span>
+    <div class="update-cards-title-section">
 
-            <div>
+        <h1 class="update-cards-title">
+            Updates
+        </h1>
 
-                <h2 class="update-cards-title">
-                    Farm Updates
-                </h2>
+        <p class="update-cards-subtitle">
+            Manage activities, maintenance and status
+            for <strong><%= dairy.name %></strong>.
+        </p>
 
-                <p class="update-cards-subtitle">
-                    Manage and update this dairy asset
-                </p>
-
-            </div>
-
-        </div>
-
-    </header>
+    </div>
 
 
 
-    <!-- =====================================================
-         CARDS CONTAINER
-    ====================================================== -->
+    <!-- =================================================
+         UPDATE CARDS CONTENT
+    ================================================== -->
 
-    <div class="update-cards-container">
+    <div class="update-cards-list">
 
 
         <!-- =================================================
              MILKING STATUS
         ================================================== -->
 
-        <%- include("./milk-status", {
+        <%- include("milk-status", {
             dairy: dairy,
             user: user
         }) %>
@@ -84,10 +68,10 @@ user
 
 
         <!-- =================================================
-             REPORT MAINTENANCE
+             MAINTENANCE COMPOSER
         ================================================== -->
 
-        <%- include("./maintComposer", {
+        <%- include("maintComposer", {
             dairy: dairy,
             user: user
         }) %>
@@ -95,10 +79,10 @@ user
 
 
         <!-- =================================================
-             CLEAR MAINTENANCE
+             CLEAR MAINTENANCE COMPOSER
         ================================================== -->
 
-        <%- include("./maintClearComposer", {
+        <%- include("maintClearComposer", {
             dairy: dairy,
             user: user
         }) %>
@@ -111,74 +95,36 @@ user
 
 
 
-<!-- =========================================================
-     CSS
-========================================================= -->
-
 <style>
 
-/* =========================================================
-   MAIN SECTION
-========================================================= */
+/* ==========================================================
+   UPDATE CARDS
+========================================================== */
 
-.update-cards-section {
-
-    width: 100%;
-
-    box-sizing: border-box;
-
-    margin: 24px 0;
-
-    padding: 0;
-
-}
-
-
-
-/* =========================================================
-   SECTION HEADER
-========================================================= */
-
-.update-cards-header {
+.update-cards {
 
     width: 100%;
 
     box-sizing: border-box;
 
-    margin-bottom: 18px;
-
-    padding: 0 2px;
+    padding: 4px 0 24px;
 
 }
 
 
-.update-cards-title-wrap {
+/* ==========================================================
+   TITLE SECTION
+========================================================== */
 
-    display: flex;
+.update-cards-title-section {
 
-    align-items: center;
+    width: 100%;
 
-    gap: 12px;
+    margin-bottom: 22px;
 
-}
+    padding: 4px 4px 0;
 
-
-.update-cards-title-accent {
-
-    width: 5px;
-
-    height: 46px;
-
-    flex: 0 0 5px;
-
-    border-radius: 999px;
-
-    background:
-        linear-gradient(
-            to bottom,
-            #166534,
-            #22c55e
-        );
+    box-sizing: border-box;
 
 }
 
@@ -187,44 +133,77 @@ user
 
     margin: 0;
 
-    color: #123d28;
+    color: #14532d;
 
-    font-size: 28px;
+    font-size: 32px;
 
     font-weight: 800;
 
     line-height: 1.1;
 
-    letter-spacing: -0.6px;
+    letter-spacing: -0.7px;
 
 }
 
 
 .update-cards-subtitle {
 
-    margin: 5px 0 0;
+    margin: 8px 0 0;
 
-    color: #6b7f72;
+    max-width: 650px;
 
-    font-size: 13px;
+    color: #66736b;
+
+    font-size: 14px;
 
     font-weight: 500;
 
-    line-height: 1.4;
+    line-height: 1.5;
+
+}
+
+
+.update-cards-subtitle strong {
+
+    color: #198754;
+
+    font-weight: 700;
 
 }
 
 
 
-/* =========================================================
-   CARDS CONTAINER
-========================================================= */
+/* ==========================================================
+   GREEN TITLE ACCENT
+========================================================== */
 
-.update-cards-container {
+.update-cards-title-section::after {
+
+    content: "";
+
+    display: block;
+
+    width: 48px;
+
+    height: 4px;
+
+    margin-top: 13px;
+
+    border-radius: 999px;
+
+    background: #198754;
+
+}
+
+
+
+/* ==========================================================
+   CARDS LIST
+========================================================== */
+
+.update-cards-list {
 
     width: 100%;
-
-    box-sizing: border-box;
 
     display: flex;
 
@@ -234,133 +213,64 @@ user
 
     gap: 16px;
 
-    padding: 18px;
-
-    border: 1px solid #dceee3;
-
-    border-radius: 18px;
-
-    background:
-        linear-gradient(
-            145deg,
-            #f8fcf9,
-            #f1f8f4
-        );
-
-    box-shadow:
-        0 5px 18px
-        rgba(22, 101, 52, 0.06);
-
 }
 
 
 
-/* =========================================================
-   CHILD COMPONENT WIDTH
-========================================================= */
-
-.update-cards-container
-> .milk-status-card {
-
-    flex: 0 0 auto;
-
-}
-
-
-.update-cards-container
-> .maint-composer-card,
-
-.update-cards-container
-> .maint-clear-composer-card {
-
-    flex: 1 1 300px;
-
-    min-width: 280px;
-
-}
-
-
-
-/* =========================================================
+/* ==========================================================
    MOBILE
-========================================================= */
+========================================================== */
 
-@media (max-width: 700px) {
+@media (max-width: 650px) {
 
-    .update-cards-section {
+    .update-cards {
 
-        margin: 20px 0;
+        padding-bottom: 20px;
 
     }
 
 
     .update-cards-title {
 
-        font-size: 24px;
+        font-size: 28px;
 
-    }
-
-
-    .update-cards-title-accent {
-
-        height: 40px;
-
-    }
-
-
-    .update-cards-container {
-
-        padding: 12px;
-
-        gap: 12px;
-
-        border-radius: 15px;
-
-    }
-
-
-    .update-cards-container
-    > .maint-composer-card,
-
-    .update-cards-container
-    > .maint-clear-composer-card {
-
-        flex: 1 1 100%;
-
-        min-width: 0;
-
-    }
-
-}
-
-
-
-/* =========================================================
-   SMALL PHONES
-========================================================= */
-
-@media (max-width: 380px) {
-
-    .update-cards-title {
-
-        font-size: 22px;
+        letter-spacing: -0.5px;
 
     }
 
 
     .update-cards-subtitle {
 
-        font-size: 12px;
+        font-size: 13px;
 
     }
 
 
-    .update-cards-container {
+    .update-cards-list {
 
-        padding: 10px;
+        gap: 12px;
+
+    }
+
+}
+
+
+
+/* ==========================================================
+   SMALL PHONES
+========================================================== */
+
+@media (max-width: 380px) {
+
+    .update-cards-title {
+
+        font-size: 25px;
 
     }
 
 }
 
 </style>
+
+
+<% } %>
