@@ -176,84 +176,40 @@ router.get(
 // ==========================================================
 
 
+// ==========================================================
+// FEED STORE
+// ==========================================================
+
+
 // ----------------------------------------------------------
 // VIEW FEED STORE
 // ----------------------------------------------------------
 //
 // GET:
 //
-//     /dairy/:id/feedstore
-//
-// Example:
-//
-//     /dairy/665abc123/feedstore
-//
-// Controller:
-//
-//     controller.viewFeedStore
+//     /dairy/feedstore/:id
 //
 // ----------------------------------------------------------
 
 router.get(
-    "/dairy/:id/feedstore",
+    "/dairy/feedstore/:id",
     isAuth,
     controller.viewFeedStore
 );
 
 
 // ----------------------------------------------------------
-// UPDATE REMAINING STOCK
+// FEED STORE CONDITION UPDATE
 // ----------------------------------------------------------
 //
 // POST:
 //
-//     /dairy/:id/feedstore/update
-//
-// Intended primarily for:
-//
-//     dairyWorker
-//
-// Admin may also use the endpoint because the controller
-// permits both:
-//
-//     dairyWorker
-//     admin
-//
-// Worker can:
-//
-//     • select existing feed/medicine
-//     • update remaining quantity
-//     • update unit
-//     • add additional information
-//     • upload images
-//
-// Worker cannot:
-//
-//     • create stock
-//     • change price
-//     • change cost
-//     • directly set feedsAmount
-//
-// Upload field:
-//
-//     images
-//
-// Maximum:
-//
-//     10 images
-//
-// Controller:
-//
-//     controller.updateFeedStore
-//
-// Business logic:
-//
-//     services/update/feedsService.js
+//     /dairy/feedstore/:id/update
 //
 // ----------------------------------------------------------
 
 router.post(
-    "/dairy/:id/feedstore/update",
+    "/dairy/feedstore/:id/update",
     isAuth,
     upload.array(
         "images",
@@ -264,92 +220,18 @@ router.post(
 
 
 // ----------------------------------------------------------
-// ADMIN: ADD AVAILABLE STOCK
+// FEED STORE RESTOCK
 // ----------------------------------------------------------
 //
 // POST:
 //
-//     /dairy/:id/feedstore/restock
-//
-// ADMIN ONLY
-//
-// This is no longer a generic "restock report".
-//
-// It is the administrative stock-creation endpoint.
-//
-// The admin can add:
-//
-//     • Animal feed
-//     • Veterinary medicine
-//
-// The submitted information may include:
-//
-//     • category
-//     • feedName
-//     • medicineName
-//     • quantity
-//     • unit
-//     • price
-//     • instructions
-//     • expectedDuration
-//     • images
-//
-// The service automatically:
-//
-//     1. Adds the stock to the dairy inventory.
-//
-//     2. Calculates:
-//
-//            feedsAmount =
-//                sum of stored stock prices
-//
-//     3. Saves the new feedsAmount.
-//
-//     4. Creates a System update.
-//
-// The System update uses:
-//
-//     Name:
-//
-//         System
-//
-//     Image:
-//
-//         /images/h1.png
-//
-//     Feed title:
-//
-//         More Animal Feed Available
-//
-//     OR:
-//
-//         More Veterinary Meds Available
-//
-// Upload field:
-//
-//     images
-//
-// Maximum:
-//
-//     10 images
-//
-// Controller:
-//
-//     controller.restockFeedStore
-//
-// Business logic:
-//
-//     services/update/feedsService.js
+//     /dairy/feedstore/:id/restock
 //
 // ----------------------------------------------------------
 
 router.post(
-    "/dairy/:id/feedstore/restock",
+    "/dairy/feedstore/:id/restock",
     isAuth,
-    upload.array(
-        "images",
-        10
-    ),
     controller.restockFeedStore
 );
 
