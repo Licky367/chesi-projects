@@ -251,7 +251,7 @@ async function(req, res, next) {
         // --------------------------------------------------
 
         return res.render(
-            "updates/feeds-store",
+            "update/feeds-store",
             {
 
                 dairy,
