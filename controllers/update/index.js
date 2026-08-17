@@ -16,6 +16,8 @@ module.exports = {
 
     ...require("./medicalController"),
 
-    ...require("./maintenanceController")
+    ...require("./maintenanceController"),
+
+    ...require("./feedsController")
 
 };
