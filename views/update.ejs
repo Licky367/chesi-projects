@@ -7,10 +7,6 @@
      PURPOSE:
          Dairy update/feed page.
 
-     FIXED TOP ORDER:
-         1. Create Post
-         2. H1
-
      FEED ITEMS:
          • Normal Posts
          • Weekly Milk Reports
@@ -19,9 +15,34 @@
          • Maintenance Updates
          • Asset Added Updates
 
-     RECURRING FEED INSERTIONS:
-         • Asset Cards
-         • Create Post
+     IMPORTANT FEED CONTRACT:
+     -----------------------------------------------------
+     Every item coming from `feed` is passed to its
+     corresponding card as:
+
+         item
+
+     Therefore:
+
+         post.ejs       → item
+         milk.ejs       → item
+         stock.ejs      → item
+         medical*.ejs   → item
+         maintenance*.ejs → item
+         addAsset.ejs   → item
+
+     This prevents naming collisions such as:
+
+         update is not defined
+
+     STOCK UPDATE:
+         item.type === "stock"
+
+         The stock card receives:
+
+             item: item
+             user: user
+
 ===================================================== -->
 
 
@@ -65,7 +86,7 @@
 
         <!-- =============================================
              ADD ASSETS
-             
+
              ADMIN ONLY
         ============================================== -->
 
@@ -171,7 +192,7 @@
 
 
     <!-- =================================================
-         FEED
+         MAIN FEED
     ================================================== -->
 
     <section
@@ -188,6 +209,24 @@
 
 
             <%
+                /*
+                ==================================================
+                RECURRING INSERTION POSITIONS
+                ==================================================
+
+                These positions are unrelated to the actual
+                feed item type.
+
+                The actual feed is still rendered strictly from:
+
+                    feed[]
+
+                Therefore a stock update does NOT replace a
+                normal post.
+
+                ==================================================
+                */
+
                 const insertionPattern = [
                     5,
                     12,
@@ -195,6 +234,7 @@
                     28,
                     37
                 ];
+
 
                 const hasAssetCards =
                     Array.isArray(assetDairies) &&
@@ -204,169 +244,227 @@
 
 
             <!-- =================================================
-                 LOOP THROUGH FEED
+                 FEED LOOP
             ================================================== -->
 
             <% feed.forEach(function(item, index) { %>
 
 
                 <%
+                    /*
+                    ==================================================
+                    CURRENT FEED POSITION
+                    ==================================================
+                    */
+
                     const feedPosition =
                         index + 1;
+
 
                     const insertionNumber =
                         insertionPattern.indexOf(
                             feedPosition
                         );
 
+
                     const shouldInsertHere =
                         insertionNumber !== -1;
+
 
                     let insertAsset =
                         insertionNumber % 2 === 0;
 
+
                     if (!hasAssetCards) {
+
                         insertAsset = false;
+
                     }
                 %>
 
 
 
-                <!-- =============================================
+                <!-- =================================================
                      NORMAL POST
-                ============================================== -->
+                ================================================== -->
 
                 <% if (item.type === "post") { %>
 
-                    <%- include("update/post", {
-                        item: item,
-                        user: user
-                    }) %>
+
+                    <%- include(
+                        "update/post",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
 
                 <% } %>
 
 
 
-                <!-- =============================================
+                <!-- =================================================
                      WEEKLY MILK REPORT
-                ============================================== -->
+                ================================================== -->
 
                 <% if (item.type === "milk") { %>
 
-                    <%- include("update/milk", {
-                        item: item,
-                        user: user
-                    }) %>
+
+                    <%- include(
+                        "update/milk",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
 
                 <% } %>
 
 
 
-                <!-- =============================================
+                <!-- =================================================
                      STOCK UPDATE
-                     
-                     THIS IS THE IMPORTANT ADDITION.
-                     
+
+                     IMPORTANT:
+
                      feedsService creates:
+
                          type: "stock"
 
-                     This sends the item to:
-                         views/update/stock.ejs
-                ============================================== -->
+                     stock.ejs receives:
+
+                         item
+
+                     NOT:
+
+                         update
+                ================================================== -->
 
                 <% if (item.type === "stock") { %>
 
-                    <%- include("update/stock", {
-                        item: item,
-                        user: user
-                    }) %>
+
+                    <%- include(
+                        "update/stock",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
 
                 <% } %>
 
 
 
-                <!-- =============================================
+                <!-- =================================================
                      MEDICAL — MARKED
-                ============================================== -->
+                ================================================== -->
 
                 <% if (
                     item.type === "medical" &&
                     item.status === "marked"
                 ) { %>
 
-                    <%- include("update/medical-marked", {
-                        item: item,
-                        user: user
-                    }) %>
+
+                    <%- include(
+                        "update/medical-marked",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
 
                 <% } %>
 
 
 
-                <!-- =============================================
+                <!-- =================================================
                      MEDICAL — CLEARED
-                ============================================== -->
+                ================================================== -->
 
                 <% if (
                     item.type === "medical" &&
                     item.status === "cleared"
                 ) { %>
 
-                    <%- include("update/medical-cleared", {
-                        item: item,
-                        user: user
-                    }) %>
+
+                    <%- include(
+                        "update/medical-cleared",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
 
                 <% } %>
 
 
 
-                <!-- =============================================
+                <!-- =================================================
                      MAINTENANCE — MARKED
-                ============================================== -->
+                ================================================== -->
 
                 <% if (
                     item.type === "maintenance" &&
                     item.status === "marked"
                 ) { %>
 
-                    <%- include("update/maintenance-marked", {
-                        item: item,
-                        user: user
-                    }) %>
+
+                    <%- include(
+                        "update/maintenance-marked",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
 
                 <% } %>
 
 
 
-                <!-- =============================================
+                <!-- =================================================
                      MAINTENANCE — CLEARED
-                ============================================== -->
+                ================================================== -->
 
                 <% if (
                     item.type === "maintenance" &&
                     item.status === "cleared"
                 ) { %>
 
-                    <%- include("update/maintenance-cleared", {
-                        item: item,
-                        user: user
-                    }) %>
+
+                    <%- include(
+                        "update/maintenance-cleared",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
 
                 <% } %>
 
 
 
-                <!-- =============================================
+                <!-- =================================================
                      ASSET ADDED
-                ============================================== -->
+                ================================================== -->
 
                 <% if (item.type === "assetAdd") { %>
 
-                    <%- include("update/addAsset", {
-                        item: item,
-                        user: user
-                    }) %>
+
+                    <%- include(
+                        "update/addAsset",
+                        {
+                            item: item,
+                            user: user
+                        }
+                    ) %>
+
 
                 <% } %>
 
@@ -385,10 +483,15 @@
 
                     <% if (insertAsset) { %>
 
-                        <%- include("update/asset-cards", {
-                            dairy: dairy,
-                            assetDairies: assetDairies || []
-                        }) %>
+
+                        <%- include(
+                            "update/asset-cards",
+                            {
+                                dairy: dairy,
+                                assetDairies:
+                                    assetDairies || []
+                            }
+                        ) %>
 
 
                     <!-- =============================================
@@ -397,11 +500,17 @@
 
                     <% } else { %>
 
-                        <%- include("update/create-post", {
-                            dairy: dairy,
-                            user: user,
-                            assetDairies: assetDairies || []
-                        }) %>
+
+                        <%- include(
+                            "update/create-post",
+                            {
+                                dairy: dairy,
+                                user: user,
+                                assetDairies:
+                                    assetDairies || []
+                            }
+                        ) %>
+
 
                     <% } %>
 
@@ -410,6 +519,7 @@
 
 
             <% }); %>
+
 
 
         <!-- =================================================
@@ -433,6 +543,7 @@
                     class="bi bi-journal-text"
                     aria-hidden="true"
                 ></i>
+
 
                 <p>
                     No updates have been recorded yet.
