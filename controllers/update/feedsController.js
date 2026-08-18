@@ -9,8 +9,9 @@
 //     • Render feed-store page
 //     • Allow ADMIN to add animal feed
 //     • Allow ADMIN to add veterinary medicine
+//     • Allow ADMIN to update/restock existing stock
 //     • Allow DAIRY WORKER to update remaining stock
-//     • Allow ADMIN to update remaining stock
+//     • Prevent workers from changing stock units
 //     • Pass uploaded images to the service
 //     • Keep financial information away from workers
 //     • Return consistent success/error redirects
@@ -86,6 +87,10 @@ function getFiles(req) {
 }
 
 
+// ==========================================================
+// ERROR REDIRECT
+// ==========================================================
+
 function redirectWithError(
     res,
     dairyId,
@@ -112,28 +117,42 @@ function redirectWithError(
 
 
 // ==========================================================
+// SUCCESS REDIRECT
+// ==========================================================
+
+function redirectWithSuccess(
+    res,
+    dairyId,
+    message
+) {
+
+    return res.redirect(
+
+        `/dairy/feedstore/${dairyId}` +
+        `?success=${encodeURIComponent(message)}`
+
+    );
+
+}
+
+
+// ==========================================================
 // BUILD UNIFIED FOODSTOCK HISTORY
 // ==========================================================
 //
-// The feed-store page must display:
+// The feed-store page displays:
 //
-//     • Add Available Stock updates
-//     • Update Remaining Stock updates
+//     • Stock additions
+//     • Remaining-stock updates
 //
-// The service may return these separately as:
+// The service may return:
 //
 //     data.updates
 //     data.feedUpdates
 //
-// They are combined here into ONE array.
+// These are combined into ONE history array.
 //
-// IMPORTANT:
-//
-// The EJS receives:
-//
-//     updates
-//
-// Every document remains independent.
+// Every Update document remains independent.
 //
 // stock.ejs receives:
 //
@@ -161,10 +180,6 @@ function buildFoodstockUpdates(data) {
             : [];
 
 
-    // ======================================================
-    // COMBINE BOTH SOURCES
-    // ======================================================
-
     const combined =
         [
             ...stockUpdates,
@@ -174,9 +189,6 @@ function buildFoodstockUpdates(data) {
 
     // ======================================================
     // REMOVE DUPLICATES
-    //
-    // This protects against the service returning the same
-    // Update document in both arrays.
     // ======================================================
 
     const seen =
@@ -193,10 +205,6 @@ function buildFoodstockUpdates(data) {
 
                 }
 
-
-                // ------------------------------------------
-                // Prefer MongoDB _id
-                // ------------------------------------------
 
                 const id =
                     item._id
@@ -226,15 +234,6 @@ function buildFoodstockUpdates(data) {
 
     // ======================================================
     // NEWEST FIRST
-    //
-    // If createdAt exists, the newest stock event appears
-    // first regardless of whether it was:
-    //
-    //     Add Stock
-    //
-    // or:
-    //
-    //     Update Remaining Stock
     // ======================================================
 
     uniqueUpdates.sort(
@@ -274,29 +273,66 @@ function buildFoodstockUpdates(data) {
 
 
 // ==========================================================
+// PREPARE STOCK DATA FOR THE PAGE
+// ==========================================================
+//
+// This is important for the new clickable-stock workflow.
+//
+// The EJS needs the actual current stock values from the DB:
+//
+//     • _id
+//     • name
+//     • category
+//     • quantityRemaining
+//     • unit
+//     • price
+//     • instructions
+//     • expectedDuration
+//
+// The controller does not manufacture stock quantities.
+//
+// It simply passes through what the service loaded from
+// MongoDB.
+//
+// ==========================================================
+
+function prepareFeedStocks(
+    dairy
+) {
+
+    if (
+        !dairy ||
+        !Array.isArray(dairy.feedStocks)
+    ) {
+
+        return [];
+
+    }
+
+
+    return dairy.feedStocks.map(
+        function(stock) {
+
+            if (!stock) {
+
+                return stock;
+
+            }
+
+
+            return stock;
+
+        }
+    );
+
+}
+
+
+// ==========================================================
 // VIEW FEED STORE
 // ==========================================================
 //
 // GET /dairy/feedstore/:id
-//
-// The service may return:
-//
-//     dairy
-//     user
-//     updates
-//     feedUpdates
-//     feedTypes
-//     medicineTypes
-//     stockUnits
-//
-// IMPORTANT:
-//
-//     updates
-//
-// passed to the EJS is now a UNIFIED history containing:
-//
-//     1. Add Stock records
-//     2. Update Remaining Stock records
 //
 // ==========================================================
 
@@ -360,27 +396,7 @@ async function viewFeedStore(
 
 
         // ==================================================
-        // BUILD UNIFIED FOODSTOCK HISTORY
-        // ==================================================
-        //
-        // This is the important change.
-        //
-        // Both:
-        //
-        //     data.updates
-        //
-        // and:
-        //
-        //     data.feedUpdates
-        //
-        // are now displayed by the Foodstock Updates tab.
-        //
-        // The resulting array is passed as:
-        //
-        //     updates
-        //
-        // to feeds-store.ejs.
-        //
+        // BUILD UNIFIED HISTORY
         // ==================================================
 
         const unifiedUpdates =
@@ -390,32 +406,62 @@ async function viewFeedStore(
 
 
         // ==================================================
-        // SAFETY
+        // CURRENT DAIRY
+        // ==================================================
+
+        const currentDairy =
+            data &&
+            data.dairy
+                ? data.dairy
+                : null;
+
+
+        // ==================================================
+        // CURRENT STOCK
         //
-        // Ensure the variables expected by feeds-store.ejs
-        // always exist.
+        // This is the REAL DB inventory.
+        //
+        // The EJS uses this to:
+        //
+        //     • display current remainder
+        //     • prefill the update form
+        //     • identify the selected stock
+        //     • enforce the correct unit display
+        //
+        // ==================================================
+
+        const currentFeedStocks =
+            prepareFeedStocks(
+                currentDairy
+            );
+
+
+        // ==================================================
+        // PAGE DATA
         // ==================================================
 
         const pageData = {
 
             ...data,
 
+
             dairy:
-                data &&
-                data.dairy
-                    ? data.dairy
-                    : null,
+                currentDairy,
+
 
             user,
 
+
+            // ==================================================
+            // REAL CURRENT INVENTORY
+            // ==================================================
+
+            feedStocks:
+                currentFeedStocks,
+
+
             // ==================================================
             // UNIFIED FOODSTOCK HISTORY
-            //
-            // Contains BOTH:
-            //
-            //     Add Stock
-            //     Update Remaining Stock
-            //
             // ==================================================
 
             updates:
@@ -423,37 +469,46 @@ async function viewFeedStore(
 
 
             // ==================================================
-            // KEEP feedUpdates AVAILABLE
-            //
-            // This does not break anything that may still use
-            // feedUpdates elsewhere.
+            // KEEP ORIGINAL HISTORY AVAILABLE
             // ==================================================
 
             feedUpdates:
                 data &&
                 Array.isArray(data.feedUpdates)
+
                     ? data.feedUpdates
+
                     : [],
 
+
+            // ==================================================
+            // FORM OPTIONS
+            // ==================================================
 
             feedTypes:
                 data &&
                 Array.isArray(data.feedTypes)
+
                     ? data.feedTypes
+
                     : [],
 
 
             medicineTypes:
                 data &&
                 Array.isArray(data.medicineTypes)
+
                     ? data.medicineTypes
+
                     : [],
 
 
             stockUnits:
                 data &&
                 Array.isArray(data.stockUnits)
+
                     ? data.stockUnits
+
                     : []
 
         };
@@ -504,6 +559,7 @@ async function viewFeedStore(
         return res
             .status(500)
             .send(
+
                 error &&
                 error.message
 
@@ -519,22 +575,33 @@ async function viewFeedStore(
 
 
 // ==========================================================
-// ADMIN — RESTOCK
+// ADMIN — ADD / RESTOCK STOCK
 // ==========================================================
 //
 // POST /dairy/:id/feedstore/restock
 //
 // ADMIN ONLY.
 //
-// Can:
+// This endpoint handles:
 //
-//     • Add animal feed
-//     • Add veterinary medicine
-//     • Increase existing stock
-//     • Set financial value
-//     • Set instructions
-//     • Set expected duration
-//     • Upload images
+//     • Adding a completely new stock item
+//     • Adding to an existing stock item
+//     • Changing quantity
+//     • Changing unit
+//     • Price/value
+//     • Instructions
+//     • Expected duration
+//     • Images
+//
+// The service decides whether this is:
+//
+//     NEW STOCK
+//
+// or:
+//
+//     EXISTING STOCK
+//
+// based on the supplied stockId.
 //
 // ==========================================================
 
@@ -580,7 +647,7 @@ async function restockFeedStore(
             return res
                 .status(403)
                 .send(
-                    "Only administrators can add feed or medicine stock."
+                    "Only administrators can add or restock feed or medicine."
                 );
 
         }
@@ -606,11 +673,13 @@ async function restockFeedStore(
         // ==================================================
 
         const body =
-            req.body || {};
+            {
+                ...(req.body || {})
+            };
 
 
         // ==================================================
-        // UPLOADED FILES
+        // FILES
         // ==================================================
 
         const files =
@@ -618,7 +687,18 @@ async function restockFeedStore(
 
 
         // ==================================================
-        // ADD STOCK
+        // ADMIN CAN EDIT UNIT
+        // ==================================================
+        //
+        // Therefore unit is deliberately retained.
+        //
+        // The service must validate that the unit is valid.
+        //
+        // ==================================================
+
+
+        // ==================================================
+        // ADD / RESTOCK
         // ==================================================
 
         await feedsService.addStock({
@@ -638,11 +718,10 @@ async function restockFeedStore(
         // SUCCESS
         // ==================================================
 
-        return res.redirect(
-
-            `/dairy/feedstore/${dairyId}` +
-            "?success=stock-added"
-
+        return redirectWithSuccess(
+            res,
+            dairyId,
+            "stock-added"
         );
 
     } catch (error) {
@@ -675,24 +754,38 @@ async function restockFeedStore(
 //     dairyWorker
 //     admin
 //
-// Worker may submit:
+// NEW WORKFLOW:
 //
-//     stockId
-//     quantityRemaining
-//     unit
-//     message
-//     images
+//     User clicks an available stock item.
 //
-// Worker must NOT be allowed to modify:
+//     The EJS opens the update section and pre-fills:
 //
-//     price
-//     feedsAmount
-//     stock name
-//     category
-//     initial quantity
-//     financial records
+//         stockId
+//         current quantity
+//         current unit
 //
-// The service is responsible for enforcing those rules.
+//     Then the user submits the update.
+//
+// ADMIN:
+//
+//     • Can change quantity
+//     • Can change unit
+//     • Can add information
+//     • Can upload images
+//
+// DAIRY WORKER:
+//
+//     • Can change remaining quantity
+//     • Cannot change unit
+//     • Cannot increase quantity above the DB quantity
+//     • Can add information
+//     • Can upload images
+//
+// IMPORTANT:
+//
+// The worker restriction is enforced here AND must also be
+// enforced inside the service.
+//
 // ==========================================================
 
 async function updateFeedStore(
@@ -767,11 +860,99 @@ async function updateFeedStore(
         // ==================================================
 
         const body =
-            req.body || {};
+            {
+                ...(req.body || {})
+            };
 
 
         // ==================================================
-        // UPLOADED FILES
+        // STOCK ID REQUIRED
+        // ==================================================
+
+        if (
+            !body.stockId
+        ) {
+
+            return res
+                .status(400)
+                .send(
+                    "Stock item is required."
+                );
+
+        }
+
+
+        // ==================================================
+        // QUANTITY REQUIRED
+        // ==================================================
+
+        if (
+            body.quantityRemaining === undefined ||
+            body.quantityRemaining === null ||
+            body.quantityRemaining === ""
+        ) {
+
+            return res
+                .status(400)
+                .send(
+                    "Quantity remaining is required."
+                );
+
+        }
+
+
+        // ==================================================
+        // NORMALIZE QUANTITY
+        // ==================================================
+
+        const submittedQuantity =
+            Number(
+                body.quantityRemaining
+            );
+
+
+        if (
+            !Number.isFinite(
+                submittedQuantity
+            ) ||
+            submittedQuantity < 0
+        ) {
+
+            return res
+                .status(400)
+                .send(
+                    "Quantity remaining must be a valid non-negative number."
+                );
+
+        }
+
+
+        body.quantityRemaining =
+            submittedQuantity;
+
+
+        // ==================================================
+        // WORKER RESTRICTION
+        // ==================================================
+        //
+        // A worker must NOT be allowed to submit a new unit.
+        //
+        // The current unit belongs to the stock record in the
+        // database and is therefore controlled by the admin.
+        //
+        // ==================================================
+
+        if (
+            role === "dairyWorker"
+        ) {
+
+            delete body.unit;
+
+        }
+
+
+        // ==================================================
+        // FILES
         // ==================================================
 
         const files =
@@ -780,6 +961,20 @@ async function updateFeedStore(
 
         // ==================================================
         // UPDATE REMAINING STOCK
+        // ==================================================
+        //
+        // The service MUST:
+        //
+        //     1. Load the stock from MongoDB.
+        //     2. Read its current quantityRemaining.
+        //     3. If worker:
+        //            submitted <= current
+        //     4. Preserve existing unit.
+        //     5. If admin:
+        //            permit unit change.
+        //     6. Save the stock.
+        //     7. Create the history Update document.
+        //
         // ==================================================
 
         await feedsService.updateRemainingStock({
@@ -799,11 +994,10 @@ async function updateFeedStore(
         // SUCCESS
         // ==================================================
 
-        return res.redirect(
-
-            `/dairy/feedstore/${dairyId}` +
-            "?success=stock-updated"
-
+        return redirectWithSuccess(
+            res,
+            dairyId,
+            "stock-updated"
         );
 
     } catch (error) {
