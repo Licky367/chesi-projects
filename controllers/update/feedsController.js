@@ -6,17 +6,21 @@
 //
 // Responsibilities:
 //
-//     • Render the dairy feed-store page
+//     • Render feed-store page
 //     • Allow ADMIN to add animal feed
 //     • Allow ADMIN to add veterinary medicine
 //     • Allow DAIRY WORKER to update remaining stock
+//     • Allow ADMIN to update remaining stock
 //     • Pass uploaded images to the service
 //     • Keep financial information away from workers
+//     • Return consistent success/error redirects
 //
-// Routes:
+// ROUTES:
 //
 //     GET  /dairy/feedstore/:id
+//
 //     POST /dairy/:id/feedstore/restock
+//
 //     POST /dairy/:id/feedstore/update
 //
 // ==========================================================
@@ -26,64 +30,150 @@ const feedsService =
     require("../../services/update/feedsService");
 
 
+// ==========================================================
+// HELPERS
+// ==========================================================
 
-// ==========================================================
-// HELPER
-// ==========================================================
+function getUser(req) {
+
+    return req.user || null;
+
+}
+
 
 function getUserRole(req) {
 
+    const user =
+        getUser(req);
+
     return (
-        req.user &&
-        req.user.role
+        user &&
+        user.role
     ) || null;
 
 }
 
 
+function getDairyId(req) {
+
+    return (
+        req.params &&
+        req.params.id
+    ) || null;
+
+}
+
+
+function redirectWithError(
+    res,
+    dairyId,
+    error
+) {
+
+    const message =
+        error &&
+        error.message
+
+            ? error.message
+
+            : "Unable to process feed-store request.";
+
+
+    return res.redirect(
+
+        `/dairy/feedstore/${dairyId}` +
+        `?error=${encodeURIComponent(message)}`
+
+    );
+
+}
+
 
 // ==========================================================
-// GET FEED STORE
+// VIEW FEED STORE
 // ==========================================================
 //
 // GET /dairy/feedstore/:id
 //
 // ==========================================================
 
-async function viewFeedStore(req, res) {
+async function viewFeedStore(
+    req,
+    res
+) {
+
+    const dairyId =
+        getDairyId(req);
+
 
     try {
 
-        const dairyId =
-            req.params.id;
+        // --------------------------------------------------
+        // AUTHENTICATION
+        // --------------------------------------------------
 
         const user =
-            req.user;
+            getUser(req);
 
 
         if (!user) {
 
-            return res.status(401).send(
-                "Authentication required."
-            );
+            return res
+                .status(401)
+                .send(
+                    "Authentication required."
+                );
 
         }
 
 
+        // --------------------------------------------------
+        // ID
+        // --------------------------------------------------
+
+        if (!dairyId) {
+
+            return res
+                .status(400)
+                .send(
+                    "Dairy ID is required."
+                );
+
+        }
+
+
+        // --------------------------------------------------
+        // LOAD PAGE DATA
+        // --------------------------------------------------
 
         const data =
             await feedsService.getFeedStorePage({
+
                 dairyId,
+
                 user
+
             });
 
 
+        // --------------------------------------------------
+        // RENDER
+        // --------------------------------------------------
 
         return res.render(
-            "update/feeds-store",
-            data
-        );
 
+            "update/feeds-store",
+
+            {
+
+                ...data,
+
+                title:
+                    "Feed Store"
+
+            }
+
+        );
 
     } catch (error) {
 
@@ -93,68 +183,121 @@ async function viewFeedStore(req, res) {
         );
 
 
-        return res.status(500).send(
-            "Unable to load the feed store."
-        );
+        return res
+            .status(500)
+            .send(
+                error.message ||
+                "Unable to load the feed store."
+            );
 
     }
 
 }
 
 
-
 // ==========================================================
-// ADMIN: ADD STOCK
+// ADMIN: RESTOCK
 // ==========================================================
 //
 // POST /dairy/:id/feedstore/restock
 //
-// Only ADMIN.
+// ADMIN ONLY.
+//
+// Can:
+//
+//     • Add new feed
+//     • Add new medicine
+//     • Increase existing stock
+//     • Set financial value
+//     • Set instructions
+//     • Set expected duration
+//     • Upload images
 //
 // ==========================================================
 
-async function restockFeedStore(req, res) {
+async function restockFeedStore(
+    req,
+    res
+) {
+
+    const dairyId =
+        getDairyId(req);
+
 
     try {
 
-        const dairyId =
-            req.params.id;
+        // --------------------------------------------------
+        // AUTHENTICATION
+        // --------------------------------------------------
 
         const user =
-            req.user;
+            getUser(req);
 
 
         if (!user) {
 
-            return res.status(401).send(
-                "Authentication required."
-            );
+            return res
+                .status(401)
+                .send(
+                    "Authentication required."
+                );
 
         }
 
 
-
         // --------------------------------------------------
-        // ROLE PROTECTION
+        // ROLE
         // --------------------------------------------------
 
-        if (getUserRole(req) !== "admin") {
+        if (
+            getUserRole(req) !==
+            "admin"
+        ) {
 
-            return res.status(403).send(
-                "Only administrators can add feed or medicine stock."
-            );
+            return res
+                .status(403)
+                .send(
+                    "Only administrators can add feed or medicine stock."
+                );
 
         }
 
 
+        // --------------------------------------------------
+        // ID
+        // --------------------------------------------------
+
+        if (!dairyId) {
+
+            return res
+                .status(400)
+                .send(
+                    "Dairy ID is required."
+                );
+
+        }
+
 
         // --------------------------------------------------
-        // UPLOADED FILES
+        // BODY
         // --------------------------------------------------
 
-        const images =
-            req.files || [];
+        const body =
+            req.body || {};
 
+
+        // --------------------------------------------------
+        // FILES
+        // --------------------------------------------------
+
+        const files =
+            Array.isArray(
+                req.files
+            )
+
+                ? req.files
+
+                : [];
 
 
         // --------------------------------------------------
@@ -162,22 +305,28 @@ async function restockFeedStore(req, res) {
         // --------------------------------------------------
 
         await feedsService.addStock({
+
             dairyId,
+
             user,
-            body: req.body,
-            files: images
+
+            body,
+
+            files
+
         });
 
 
-
         // --------------------------------------------------
-        // REDIRECT
+        // SUCCESS
         // --------------------------------------------------
 
         return res.redirect(
-            `/dairy/feedstore/${dairyId}?success=stock-added`
-        );
 
+            `/dairy/feedstore/${dairyId}` +
+            "?success=stock-added"
+
+        );
 
     } catch (error) {
 
@@ -187,14 +336,10 @@ async function restockFeedStore(req, res) {
         );
 
 
-        const dairyId =
-            req.params.id;
-
-
-        return res.redirect(
-            `/dairy/feedstore/${dairyId}?error=${encodeURIComponent(
-                error.message || "Unable to add stock."
-            )}`
+        return redirectWithError(
+            res,
+            dairyId,
+            error
         );
 
     }
@@ -202,53 +347,67 @@ async function restockFeedStore(req, res) {
 }
 
 
-
 // ==========================================================
-// WORKER: UPDATE REMAINING STOCK
+// UPDATE REMAINING STOCK
 // ==========================================================
 //
 // POST /dairy/:id/feedstore/update
 //
-// Dairy workers can:
+// AVAILABLE TO:
 //
-//     • Select an existing stock item
-//     • Enter remaining quantity
-//     • Enter unit
-//     • Add information
-//     • Upload images
+//     dairyWorker
+//     admin
 //
-// They CANNOT:
+// WORKER MAY CHANGE:
 //
-//     • Change price
-//     • Change feedsAmount
-//     • Add new stock
-//     • Create financial records
+//     • Remaining quantity
+//     • Unit
+//     • Message
+//     • Images
+//
+// WORKER CANNOT CHANGE:
+//
+//     • Price
+//     • feedsAmount
+//     • Stock name
+//     • Category
+//     • Initial quantity
+//     • Financial records
 //
 // ==========================================================
 
-async function updateFeedStore(req, res) {
+async function updateFeedStore(
+    req,
+    res
+) {
+
+    const dairyId =
+        getDairyId(req);
+
 
     try {
 
-        const dairyId =
-            req.params.id;
+        // --------------------------------------------------
+        // AUTHENTICATION
+        // --------------------------------------------------
 
         const user =
-            req.user;
+            getUser(req);
 
 
         if (!user) {
 
-            return res.status(401).send(
-                "Authentication required."
-            );
+            return res
+                .status(401)
+                .send(
+                    "Authentication required."
+                );
 
         }
 
 
-
         // --------------------------------------------------
-        // ROLE PROTECTION
+        // ROLE
         // --------------------------------------------------
 
         const role =
@@ -260,21 +419,50 @@ async function updateFeedStore(req, res) {
             role !== "admin"
         ) {
 
-            return res.status(403).send(
-                "You are not authorized to update feed store stock."
-            );
+            return res
+                .status(403)
+                .send(
+                    "You are not authorized to update feed-store stock."
+                );
 
         }
 
+
+        // --------------------------------------------------
+        // ID
+        // --------------------------------------------------
+
+        if (!dairyId) {
+
+            return res
+                .status(400)
+                .send(
+                    "Dairy ID is required."
+                );
+
+        }
+
+
+        // --------------------------------------------------
+        // BODY
+        // --------------------------------------------------
+
+        const body =
+            req.body || {};
 
 
         // --------------------------------------------------
         // FILES
         // --------------------------------------------------
 
-        const images =
-            req.files || [];
+        const files =
+            Array.isArray(
+                req.files
+            )
 
+                ? req.files
+
+                : [];
 
 
         // --------------------------------------------------
@@ -282,22 +470,28 @@ async function updateFeedStore(req, res) {
         // --------------------------------------------------
 
         await feedsService.updateRemainingStock({
+
             dairyId,
+
             user,
-            body: req.body,
-            files: images
+
+            body,
+
+            files
+
         });
 
 
-
         // --------------------------------------------------
-        // REDIRECT
+        // SUCCESS
         // --------------------------------------------------
 
         return res.redirect(
-            `/dairy/feedstore/${dairyId}?success=stock-updated`
-        );
 
+            `/dairy/feedstore/${dairyId}` +
+            "?success=stock-updated"
+
+        );
 
     } catch (error) {
 
@@ -307,20 +501,15 @@ async function updateFeedStore(req, res) {
         );
 
 
-        const dairyId =
-            req.params.id;
-
-
-        return res.redirect(
-            `/dairy/feedstore/${dairyId}?error=${encodeURIComponent(
-                error.message || "Unable to update remaining stock."
-            )}`
+        return redirectWithError(
+            res,
+            dairyId,
+            error
         );
 
     }
 
 }
-
 
 
 // ==========================================================
@@ -330,7 +519,9 @@ async function updateFeedStore(req, res) {
 module.exports = {
 
     viewFeedStore,
+
     restockFeedStore,
+
     updateFeedStore
 
 };
