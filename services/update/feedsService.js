@@ -21,14 +21,34 @@
 //         Created when ADMIN or DAIRY WORKER updates
 //         the remaining quantity.
 //
-// IMPORTANT:
+// WORKFLOW:
 //
-//     Foodstock Updates must display BOTH:
+//     Available Stock
+//          ↓
+//     User clicks stock item
+//          ↓
+//     Selected stock is opened in the stock/restock section
+//          ↓
+//     ADMIN
+//          • Can edit stock details
+//          • Can edit quantity
+//          • Can edit unit
+//          • Can edit price/value
+//          • Can edit instructions
+//          • Can add photos
 //
-//         • Add Stock history
-//         • Update Remaining Stock history
+//     DAIRY WORKER
+//          • Can edit remaining quantity
+//          • Cannot increase quantity above current DB quantity
+//          • Cannot edit unit
+//          • Can add information
+//          • Can add photos
 //
-//     Every stock action creates its own Update document.
+// HISTORY:
+//
+//     Every stock action creates a separate Update document.
+//
+//     History is associated with the specific stock item.
 //
 // ==========================================================
 
@@ -97,6 +117,7 @@ const STOCK_UNITS = [
     "kg",
     "bags",
     "tonnes",
+    "bales",
     "litres",
     "bottles",
     "packs",
@@ -233,7 +254,7 @@ function resolveStockName(body) {
 
 
 // ==========================================================
-// STOCK NAME FROM CURRENT STOCK
+// GET STOCK NAME
 // ==========================================================
 
 function getStockName(stock) {
@@ -255,7 +276,9 @@ function getStockName(stock) {
 
         stock.stockName ||
 
-        stock.productName
+        stock.productName ||
+
+        stock.itemName
 
     );
 
@@ -263,7 +286,7 @@ function getStockName(stock) {
 
 
 // ==========================================================
-// STOCK CATEGORY
+// GET STOCK CATEGORY
 // ==========================================================
 
 function getStockCategory(stock) {
@@ -284,6 +307,154 @@ function getStockCategory(stock) {
         stock.type
 
     ).toLowerCase();
+
+}
+
+
+// ==========================================================
+// GET CURRENT STOCK QUANTITY
+// ==========================================================
+//
+// quantity is the current remainder in the database.
+//
+// quantityRemaining is also supported so the service remains
+// compatible with older records.
+//
+// ==========================================================
+
+function getCurrentStockQuantity(stock) {
+
+    if (!stock) {
+
+        return 0;
+
+    }
+
+
+    if (
+        stock.quantity !== undefined &&
+        stock.quantity !== null
+    ) {
+
+        const quantity =
+            Number(stock.quantity);
+
+
+        if (
+            Number.isFinite(quantity)
+        ) {
+
+            return quantity;
+
+        }
+
+    }
+
+
+    if (
+        stock.quantityRemaining !== undefined &&
+        stock.quantityRemaining !== null
+    ) {
+
+        const quantity =
+            Number(
+                stock.quantityRemaining
+            );
+
+
+        if (
+            Number.isFinite(quantity)
+        ) {
+
+            return quantity;
+
+        }
+
+    }
+
+
+    if (
+        stock.remaining !== undefined &&
+        stock.remaining !== null
+    ) {
+
+        const quantity =
+            Number(
+                stock.remaining
+            );
+
+
+        if (
+            Number.isFinite(quantity)
+        ) {
+
+            return quantity;
+
+        }
+
+    }
+
+
+    return 0;
+
+}
+
+
+// ==========================================================
+// GET INITIAL QUANTITY
+// ==========================================================
+
+function getInitialQuantity(stock) {
+
+    if (!stock) {
+
+        return 0;
+
+    }
+
+
+    const initial =
+        Number(
+            stock.initialQuantity
+        );
+
+
+    if (
+        Number.isFinite(initial)
+    ) {
+
+        return initial;
+
+    }
+
+
+    return getCurrentStockQuantity(
+        stock
+    );
+
+}
+
+
+// ==========================================================
+// GET STOCK UNIT
+// ==========================================================
+
+function getStockUnit(stock) {
+
+    if (!stock) {
+
+        return "";
+
+    }
+
+
+    return cleanString(
+
+        stock.unit ||
+
+        stock.stockUnit
+
+    );
 
 }
 
@@ -483,21 +654,72 @@ async function getDairy(
 
 
 // ==========================================================
+// FIND STOCK BY ID
+// ==========================================================
+
+function findStock(
+    dairy,
+    stockId
+) {
+
+    if (
+        !dairy ||
+        !stockId
+    ) {
+
+        return null;
+
+    }
+
+
+    if (
+        !isValidObjectId(
+            stockId
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    if (
+        !Array.isArray(
+            dairy.feedStocks
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    return dairy.feedStocks.id(
+        stockId
+    );
+
+}
+
+
+// ==========================================================
 // GET FEED STORE PAGE
 // ==========================================================
 //
-// IMPORTANT:
+// The page receives:
 //
-//     updates contains BOTH:
-//
-//         1. Add Stock events
-//         2. Update Remaining Stock events
-//
-// The EJS uses:
-//
+//     dairy
+//     user
 //     updates
+//     feedTypes
+//     medicineTypes
+//     stockUnits
 //
-// for the Foodstock Updates tab.
+// The actual current stock comes directly from:
+//
+//     dairy.feedStocks[]
+//
+// Therefore the Available Stock tab always reflects the
+// current database remainder.
 //
 // ==========================================================
 
@@ -520,10 +742,6 @@ async function getFeedStorePage({
             dairyId
         );
 
-
-    // ======================================================
-    // GET ALL FOODSTOCK HISTORY
-    // ======================================================
 
     const updates =
         await getFeedStoreUpdates(
@@ -588,6 +806,11 @@ async function getFeedStorePage({
                     };
 
 
+                    // ------------------------------------------------
+                    // Financial information is never exposed to
+                    // dairy workers.
+                    // ------------------------------------------------
+
                     delete safeStock.price;
 
                     delete safeStock.feedsAmount;
@@ -619,6 +842,12 @@ async function getFeedStorePage({
         medicineTypes:
             VETERINARY_MEDICINES,
 
+        // ------------------------------------------------------
+        // The list is still available to the EJS for display,
+        // but the worker's submitted unit is NEVER trusted by
+        // updateRemainingStock().
+        // ------------------------------------------------------
+
         stockUnits:
             STOCK_UNITS
 
@@ -631,27 +860,24 @@ async function getFeedStorePage({
 // GET FOODSTOCK HISTORY
 // ==========================================================
 //
-// THIS IS THE IMPORTANT PART.
+// BOTH:
 //
-// We intentionally retrieve:
+//     available
 //
-//     type: "stock"
+// AND:
 //
-// and require:
-//
-//     stock: { $exists: true }
-//
-// This means BOTH:
-//
-//     stock.action = "available"
-//
-// and:
-//
-//     stock.action = "remainder"
+//     remainder
 //
 // are returned.
 //
-// We DO NOT filter only for "available".
+// Every history record contains:
+//
+//     stock.stockId
+//
+// when available in the Update schema.
+//
+// This allows the frontend to show history belonging only
+// to the selected stock.
 //
 // ==========================================================
 
@@ -708,16 +934,12 @@ async function getFeedStoreUpdates(
         .lean();
 
 
-    // ======================================================
-    // NORMALIZE HISTORY
-    // ======================================================
-
     return updates.map(
         function (update) {
 
-            // ------------------------------------------------
+            // ==================================================
             // USER INFORMATION
-            // ------------------------------------------------
+            // ==================================================
 
             if (
                 update.user &&
@@ -742,9 +964,9 @@ async function getFeedStoreUpdates(
             }
 
 
-            // ------------------------------------------------
-            // NORMALIZE STOCK OBJECT
-            // ------------------------------------------------
+            // ==================================================
+            // NORMALIZE STOCK
+            // ==================================================
 
             if (
                 update.stock &&
@@ -752,16 +974,11 @@ async function getFeedStoreUpdates(
                     "object"
             ) {
 
-                // Ensure action always exists
-                // for the EJS/history card.
-
                 update.stock.action =
                     cleanString(
                         update.stock.action
                     );
 
-
-                // Ensure item name exists.
 
                 update.stock.itemName =
                     cleanString(
@@ -769,13 +986,39 @@ async function getFeedStoreUpdates(
                     );
 
 
-                // Ensure category exists.
-
                 update.stock.category =
                     cleanString(
+
                         update.stock.category ||
+
                         update.stock.stockType
+
                     ).toLowerCase();
+
+
+                update.stock.unit =
+                    cleanString(
+                        update.stock.unit
+                    );
+
+
+                // ------------------------------------------------
+                // Keep stockId when present.
+                //
+                // The model/update schema will be aligned with
+                // this field.
+                // ------------------------------------------------
+
+                if (
+                    update.stock.stockId
+                ) {
+
+                    update.stock.stockId =
+                        String(
+                            update.stock.stockId
+                        );
+
+                }
 
             }
 
@@ -789,7 +1032,36 @@ async function getFeedStoreUpdates(
 
 
 // ==========================================================
-// ADMIN: ADD STOCK
+// ADMIN: ADD / RESTOCK / EDIT STOCK
+// ==========================================================
+//
+// POST:
+//
+//     /dairy/:id/feedstore/restock
+//
+// TWO MODES:
+//
+// 1. NEW STOCK
+//
+//     No stockId.
+//
+//     Creates a new feedStocks[] item.
+//
+// 2. EXISTING STOCK
+//
+//     stockId supplied.
+//
+//     Updates that exact stock item.
+//
+// ADMIN CAN EDIT:
+//
+//     quantity
+//     unit
+//     price
+//     instructions
+//     expectedDuration
+//     images
+//
 // ==========================================================
 
 async function addStock({
@@ -799,17 +1071,13 @@ async function addStock({
     files
 }) {
 
-    // ======================================================
-    // SECURITY
-    // ======================================================
-
     if (
         !user ||
         user.role !== "admin"
     ) {
 
         throw new Error(
-            "Only administrators can add stock."
+            "Only administrators can add or edit stock."
         );
 
     }
@@ -823,6 +1091,16 @@ async function addStock({
 
     body =
         body || {};
+
+
+    // ======================================================
+    // EXISTING STOCK ID
+    // ======================================================
+
+    const stockId =
+        cleanString(
+            body.stockId
+        );
 
 
     // ======================================================
@@ -851,10 +1129,58 @@ async function addStock({
     // NAME
     // ======================================================
 
-    const stockName =
+    let stockName =
         resolveStockName(
             body
         );
+
+
+    // ======================================================
+    // IF EDITING EXISTING STOCK
+    //
+    // The backend remains authoritative.
+    //
+    // If the form does not submit the name because the stock
+    // was selected from Available Stock, recover it from DB.
+    // ======================================================
+
+    let stock =
+        null;
+
+
+    if (stockId) {
+
+        stock =
+            findStock(
+                dairy,
+                stockId
+            );
+
+
+        if (!stock) {
+
+            throw new Error(
+                "The selected stock item could not be found."
+            );
+
+        }
+
+
+        // --------------------------------------------------
+        // Existing stock name remains authoritative if no
+        // new name was supplied.
+        // --------------------------------------------------
+
+        if (!stockName) {
+
+            stockName =
+                getStockName(
+                    stock
+                );
+
+        }
+
+    }
 
 
     if (!stockName) {
@@ -927,6 +1253,11 @@ async function addStock({
 
     // ======================================================
     // UNIT
+    //
+    // ADMIN IS ALLOWED TO EDIT THE UNIT.
+    //
+    // This is intentionally different from the worker
+    // remainder update.
     // ======================================================
 
     const unit =
@@ -997,56 +1328,60 @@ async function addStock({
 
 
     // ======================================================
-    // FIND EXISTING STOCK
-    // ======================================================
-
-    let stock =
-        dairy.feedStocks.find(
-            function (item) {
-
-                return (
-
-                    getStockCategory(item) ===
-                        category &&
-
-                    getStockName(item) ===
-                        stockName &&
-
-                    cleanString(item.unit) ===
-                        unit
-
-                );
-
-            }
-        );
-
-
-    // ======================================================
-    // EXISTING STOCK
+    // EDIT EXISTING STOCK
     // ======================================================
 
     if (stock) {
 
         const oldQuantity =
-            Number(
-                stock.quantity
-            ) || 0;
+            getCurrentStockQuantity(
+                stock
+            );
 
 
         const oldInitialQuantity =
-            Number(
-                stock.initialQuantity
-            ) || 0;
+            getInitialQuantity(
+                stock
+            );
+
+
+        // --------------------------------------------------
+        // IMPORTANT:
+        //
+        // Admin editing the selected stock is allowed to
+        // increase or decrease the quantity.
+        //
+        // The initial quantity follows the accumulated
+        // stock entered by admin.
+        // --------------------------------------------------
+
+        const quantityDifference =
+            quantity -
+            oldQuantity;
 
 
         stock.quantity =
-            oldQuantity +
             quantity;
 
+
+        // --------------------------------------------------
+        // When admin changes the current quantity, preserve
+        // the previous initial quantity and adjust it by
+        // the actual stock addition/removal.
+        //
+        // Never allow initialQuantity to become negative.
+        // --------------------------------------------------
 
         stock.initialQuantity =
-            oldInitialQuantity +
-            quantity;
+            Math.max(
+                0,
+                oldInitialQuantity +
+                quantityDifference
+            );
+
+
+        stock.unit =
+            unit;
 
 
         stock.price =
@@ -1092,7 +1427,7 @@ async function addStock({
 
 
     // ======================================================
-    // NEW STOCK
+    // CREATE NEW STOCK
     // ======================================================
 
     else {
@@ -1161,37 +1496,29 @@ async function addStock({
 
 
     // ======================================================
-    // GET SAVED STOCK
+    // GET ACTUAL SAVED STOCK
     // ======================================================
 
-    const savedStock =
-        dairy.feedStocks.find(
-            function (item) {
+    let savedStock =
+        stock;
 
-                return (
 
-                    getStockCategory(item) ===
-                        category &&
+    if (
+        stock._id
+    ) {
 
-                    getStockName(item) ===
-                        stockName &&
+        savedStock =
+            dairy.feedStocks.id(
+                stock._id
+            ) || stock;
 
-                    cleanString(item.unit) ===
-                        unit
-
-                );
-
-            }
-        );
+    }
 
 
     // ======================================================
-    // CREATE HISTORY
+    // HISTORY
     //
-    // ACTION:
-    //
-    //     available
-    //
+    // Admin restock/edit is recorded as "available".
     // ======================================================
 
     const update =
@@ -1199,9 +1526,18 @@ async function addStock({
 
             dairy,
 
-            category,
+            stock:
+                savedStock,
 
-            stockName,
+            category:
+                getStockCategory(
+                    savedStock
+                ),
+
+            stockName:
+                getStockName(
+                    savedStock
+                ),
 
             quantity,
 
@@ -1213,7 +1549,10 @@ async function addStock({
 
             expectedDuration,
 
-            images
+            images,
+
+            action:
+                "available"
 
         });
 
@@ -1239,24 +1578,27 @@ async function addStock({
 // WORKER / ADMIN: UPDATE REMAINING STOCK
 // ==========================================================
 //
-// IMPORTANT:
+// POST:
 //
-// This function creates a NEW Update document.
+//     /dairy/:id/feedstore/update
 //
-// It does NOT modify or replace the previous Add Stock
-// history document.
+// IMPORTANT WORKER RULE:
 //
-// Therefore:
+//     worker quantityRemaining
 //
-//     Add Stock
-//         ↓
-//     Update document #1
+//     MUST NOT be greater than:
 //
-//     Update Remaining
-//         ↓
-//     Update document #2
+//     current quantity in MongoDB.
 //
-// Both appear independently in Foodstock Updates.
+// The submitted unit is deliberately ignored.
+//
+// The unit is ALWAYS taken from the selected stock in the DB.
+//
+// ADMIN:
+//
+//     Admin may update remainder too.
+//
+//     Admin may submit a unit, but the worker cannot.
 //
 // ==========================================================
 
@@ -1267,10 +1609,6 @@ async function updateRemainingStock({
     files
 }) {
 
-    // ======================================================
-    // AUTH
-    // ======================================================
-
     if (!user) {
 
         throw new Error(
@@ -1280,9 +1618,13 @@ async function updateRemainingStock({
     }
 
 
+    const role =
+        user.role;
+
+
     if (
-        user.role !== "dairyWorker" &&
-        user.role !== "admin"
+        role !== "dairyWorker" &&
+        role !== "admin"
     ) {
 
         throw new Error(
@@ -1322,11 +1664,12 @@ async function updateRemainingStock({
 
 
     // ======================================================
-    // FIND STOCK
+    // FIND STOCK DIRECTLY FROM DATABASE
     // ======================================================
 
     const stock =
-        dairy.feedStocks.id(
+        findStock(
+            dairy,
             stockId
         );
 
@@ -1341,7 +1684,17 @@ async function updateRemainingStock({
 
 
     // ======================================================
-    // QUANTITY
+    // CURRENT DB QUANTITY
+    // ======================================================
+
+    const currentQuantity =
+        getCurrentStockQuantity(
+            stock
+        );
+
+
+    // ======================================================
+    // SUBMITTED REMAINDER
     // ======================================================
 
     const quantityRemaining =
@@ -1363,66 +1716,84 @@ async function updateRemainingStock({
 
 
     // ======================================================
-    // UNIT
+    // WORKER CANNOT INCREASE STOCK
+    // ======================================================
+    //
+    // This check is done SERVER-SIDE.
+    //
+    // Therefore changing HTML/JavaScript in the browser
+    // cannot bypass the restriction.
+    //
     // ======================================================
 
-    const unit =
-        cleanString(
-            body.unit
-        );
-
-
     if (
-        !STOCK_UNITS.includes(
-            unit
-        )
+        role === "dairyWorker" &&
+        quantityRemaining >
+            currentQuantity
     ) {
 
         throw new Error(
-            "Select a valid stock unit."
+
+            `A dairy worker cannot update ` +
+            `the remaining quantity above the ` +
+            `current stock quantity of ` +
+            `${currentQuantity}.`
+
         );
 
     }
 
 
     // ======================================================
-    // UPDATE CURRENT INVENTORY
+    // UNIT
+    // ======================================================
+    //
+    // WORKER:
+    //
+    //     NEVER trusts req.body.unit.
+    //
+    //     The unit comes directly from MongoDB.
+    //
+    // ADMIN:
+    //
+    //     May edit the unit when updating.
+    //
     // ======================================================
 
-    stock.quantity =
-        quantityRemaining;
-
-
-    stock.unit =
-        unit;
-
-
-    stock.percentageRemaining =
-        calculatePercentageRemaining(
-
-            quantityRemaining,
-
-            stock.initialQuantity
-
+    let unit =
+        getStockUnit(
+            stock
         );
 
 
-    stock.updatedAt =
-        new Date();
+    if (
+        role === "admin" &&
+        cleanString(body.unit)
+    ) {
+
+        const requestedUnit =
+            cleanString(
+                body.unit
+            );
 
 
-    // ======================================================
-    // IMPORTANT
-    //
-    // DO NOT TOUCH:
-    //
-    //     stock.price
-    //     stock.feedsAmount
-    //     dairy.feedsAmount
-    //
-    // ======================================================
+        if (
+            !STOCK_UNITS.includes(
+                requestedUnit
+            )
+        ) {
 
-    await dairy.save();
+            throw new Error(
+                "Select a valid stock unit."
+            );
+
+        }
+
+
+        unit =
+            requestedUnit;
+
+    }
 
 
     // ======================================================
@@ -1446,12 +1817,57 @@ async function updateRemainingStock({
 
 
     // ======================================================
-    // CREATE A NEW HISTORY EVENT
-    //
-    // ACTION:
-    //
-    //     remainder
-    //
+    // UPDATE CURRENT INVENTORY
+    // ======================================================
+
+    stock.quantity =
+        quantityRemaining;
+
+
+    // ------------------------------------------------------
+    // Only ADMIN can change the unit through this function.
+    // Worker unit remains exactly as stored in DB.
+    // ------------------------------------------------------
+
+    if (
+        role === "admin"
+    ) {
+
+        stock.unit =
+            unit;
+
+    }
+
+
+    // ------------------------------------------------------
+    // Never allow initial quantity to be changed by a worker.
+    // ------------------------------------------------------
+
+    stock.percentageRemaining =
+        calculatePercentageRemaining(
+
+            quantityRemaining,
+
+            getInitialQuantity(
+                stock
+            )
+
+        );
+
+
+    stock.updatedAt =
+        new Date();
+
+
+    // ======================================================
+    // SAVE
+    // ======================================================
+
+    await dairy.save();
+
+
+    // ======================================================
+    // CREATE HISTORY EVENT
     // ======================================================
 
     const update =
@@ -1465,7 +1881,10 @@ async function updateRemainingStock({
 
             quantityRemaining,
 
-            unit,
+            unit:
+                getStockUnit(
+                    stock
+                ),
 
             message,
 
@@ -1488,10 +1907,10 @@ async function updateRemainingStock({
 
 
 // ==========================================================
-// CREATE SYSTEM STOCK UPDATE
+// CREATE ADMIN STOCK UPDATE
 // ==========================================================
 //
-// ADMIN ADD STOCK HISTORY
+// ADMIN STOCK HISTORY
 //
 //     type:
 //         "stock"
@@ -1503,6 +1922,7 @@ async function updateRemainingStock({
 
 async function createSystemStockUpdate({
     dairy,
+    stock,
     category,
     stockName,
     quantity,
@@ -1510,7 +1930,8 @@ async function createSystemStockUpdate({
     price,
     instructions,
     expectedDuration,
-    images
+    images,
+    action
 }) {
 
     const isMedicine =
@@ -1520,9 +1941,16 @@ async function createSystemStockUpdate({
     const title =
         isMedicine
 
-            ? "More Veterinary Meds Available"
+            ? "Veterinary Medicine Stock Updated"
 
-            : "More Animal Feed Available";
+            : "Animal Feed Stock Updated";
+
+
+    const stockId =
+        stock &&
+        stock._id
+            ? stock._id
+            : null;
 
 
     const update =
@@ -1556,10 +1984,17 @@ async function createSystemStockUpdate({
 
             stock: {
 
+                // ------------------------------------------------
+                // Selected inventory item.
+                // ------------------------------------------------
+
+                stockId,
+
                 stockType:
                     category,
 
                 action:
+                    action ||
                     "available",
 
                 itemName:
@@ -1606,6 +2041,13 @@ async function createSystemStockUpdate({
 //     stock.action:
 //         "remainder"
 //
+// IMPORTANT:
+//
+//     stock.stockId
+//
+// identifies the exact inventory item whose remainder was
+// updated.
+//
 // ==========================================================
 
 async function createWorkerStockUpdate({
@@ -1637,6 +2079,13 @@ async function createWorkerStockUpdate({
         getStockName(
             stock
         );
+
+
+    const stockId =
+        stock &&
+        stock._id
+            ? stock._id
+            : null;
 
 
     const update =
@@ -1674,6 +2123,12 @@ async function createWorkerStockUpdate({
 
             stock: {
 
+                // ------------------------------------------------
+                // EXACT STOCK BEING UPDATED
+                // ------------------------------------------------
+
+                stockId,
+
                 stockType:
                     stockCategory,
 
@@ -1692,7 +2147,7 @@ async function createWorkerStockUpdate({
                 unit,
 
                 // ------------------------------------------------
-                // Workers do not write financial information.
+                // Workers never provide financial information.
                 // ------------------------------------------------
 
                 price:
@@ -1721,6 +2176,114 @@ async function createWorkerStockUpdate({
 
 
 // ==========================================================
+// GET UPDATES FOR ONE STOCK
+// ==========================================================
+//
+// This is useful when the selected Available Stock item is
+// opened and the UI needs ONLY the history for that stock.
+//
+// ==========================================================
+
+async function getStockUpdates({
+    dairyId,
+    stockId
+}) {
+
+    if (
+        !isValidObjectId(
+            dairyId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid dairy ID."
+        );
+
+    }
+
+
+    if (
+        !isValidObjectId(
+            stockId
+        )
+    ) {
+
+        throw new Error(
+            "Invalid stock ID."
+        );
+
+    }
+
+
+    const updates =
+        await Update.find({
+
+            dairy:
+                dairyId,
+
+            type:
+                "stock",
+
+            "stock.stockId":
+                stockId
+
+        })
+
+        .sort({
+
+            createdAt:
+                -1
+
+        })
+
+        .limit(100)
+
+        .populate(
+
+            "user",
+
+            "name profileImage role"
+
+        )
+
+        .lean();
+
+
+    return updates.map(
+        function (update) {
+
+            if (
+                update.user &&
+                typeof update.user ===
+                    "object"
+            ) {
+
+                update.userName =
+                    update.user.name ||
+                    update.userName;
+
+
+                update.userImage =
+                    update.user.profileImage ||
+                    update.userImage;
+
+
+                update.authorRole =
+                    update.user.role ||
+                    update.authorRole;
+
+            }
+
+
+            return update;
+
+        }
+    );
+
+}
+
+
+// ==========================================================
 // EXPORTS
 // ==========================================================
 
@@ -1729,6 +2292,8 @@ module.exports = {
     getFeedStorePage,
 
     getFeedStoreUpdates,
+
+    getStockUpdates,
 
     addStock,
 
