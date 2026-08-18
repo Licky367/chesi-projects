@@ -1,226 +1,332 @@
+<% /*
+==============================================================
+STOCK UPDATE FEED CARD
+
+FILE:
+    views/update/stock.ejs
+
+PURPOSE:
+    Render ONE stock history update.
+
+IMPORTANT:
+--------------------------------------------------------------
+This partial represents exactly ONE Update document.
+
+The parent page must call it once for every update:
+
+    feedStoreUpdates.forEach(function(stockUpdate) {
+
+        include("stock", {
+            update: stockUpdate
+        })
+
+    });
+
+There must be NO grouping by:
+
+    itemName
+    category
+    stockType
+    action
+    user
+    title
+
+Every Update document gets its own card.
+
+EXPECTED DATA:
+--------------------------------------------------------------
+    update.type
+    update.stock
+    update.user
+    update.userName
+    update.userImage
+    update.authorRole
+    update.title
+    update.text
+    update.images
+    update.createdAt
+
+STOCK DATA:
+--------------------------------------------------------------
+    update.stock.stockType
+    update.stock.action
+    update.stock.itemName
+    update.stock.category
+    update.stock.quantity
+    update.stock.unit
+    update.stock.price
+    update.stock.instructions
+    update.stock.expectedDuration
+    update.stock.message
+    update.stock.images
+==============================================================
+*/ %>
+
+
 <%
 /* ==========================================================
-   STOCK PARTIAL — SAFE VARIABLE RESOLUTION
+   SAFETY
 ========================================================== */
 
-const currentUpdate =
-    (typeof item !== "undefined" && item)
-        ? item
-        : (
-            typeof update !== "undefined" && update
-                ? update
-                : null
-        );
+const stockUpdate =
+    update || null;
 
-const stock =
-    currentUpdate &&
-    currentUpdate.stock
-        ? currentUpdate.stock
+const stockData =
+    stockUpdate &&
+    stockUpdate.stock
+        ? stockUpdate.stock
         : null;
 
-const isValidStock =
-    !!(
-        currentUpdate &&
-        stock
-    );
 
-%>
-
-
-<% if (isValidStock) { %>
-
-<%
 /* ==========================================================
-   SYSTEM
+   STOP IF THIS IS NOT A STOCK UPDATE
 ========================================================== */
 
-const isSystem =
-    currentUpdate.authorRole === "system" ||
-    currentUpdate.userName === "System" ||
-    (
-        currentUpdate.user === null &&
-        currentUpdate.type === "stock" &&
-        stock.action === "available"
+const isStockUpdate =
+    !!(
+        stockUpdate &&
+        stockUpdate.type === "stock" &&
+        stockData
     );
 
 
 /* ==========================================================
-   STOCK TYPE
+   BASIC VALUES
 ========================================================== */
 
 const stockType =
-    stock.stockType || "feed";
+    stockData
+        ? (
+            stockData.stockType ||
+            stockData.category ||
+            "feed"
+        )
+        : "feed";
+
+
+const stockAction =
+    stockData
+        ? (
+            stockData.action ||
+            ""
+        )
+        : "";
+
+
+const itemName =
+    stockData
+        ? (
+            stockData.itemName ||
+            stockData.name ||
+            "Unnamed Stock"
+        )
+        : "Unnamed Stock";
+
+
+const quantity =
+    stockData &&
+    stockData.quantity !== undefined &&
+    stockData.quantity !== null
+        ? Number(stockData.quantity)
+        : 0;
+
+
+const unit =
+    stockData
+        ? (
+            stockData.unit ||
+            "units"
+        )
+        : "units";
+
+
+/* ==========================================================
+   STOCK CATEGORY
+========================================================== */
 
 const isMedicine =
     stockType === "medicine";
 
 
 /* ==========================================================
-   ACTION
+   ACTION LABEL
 ========================================================== */
 
-const stockAction =
-    stock.action || "";
+let actionLabel =
+    "Stock Update";
 
 
-/* ==========================================================
-   ITEM
-========================================================== */
+if (stockAction === "available") {
 
-const itemName =
-    stock.itemName || "Stock";
+    actionLabel =
+        "Stock Available";
+
+}
 
 
-/* ==========================================================
-   CATEGORY
-========================================================== */
+if (stockAction === "remainder") {
 
-const category =
-    stock.category || "";
+    actionLabel =
+        "Remaining Stock";
+
+}
 
 
 /* ==========================================================
    AUTHOR
 ========================================================== */
 
-const senderName =
-    isSystem
-        ? "System"
-        : (
-            currentUpdate.userName ||
-            (
-                currentUpdate.user &&
-                currentUpdate.user.name
-            ) ||
-            "User"
-        );
+const authorName =
+    stockUpdate.userName ||
+    (
+        stockUpdate.user &&
+        stockUpdate.user.name
+    ) ||
+    (
+        stockUpdate.authorRole === "system"
+            ? "System"
+            : "User"
+    );
+
+
+const authorImage =
+    stockUpdate.userImage ||
+    (
+        stockUpdate.user &&
+        stockUpdate.user.profileImage
+    ) ||
+    (
+        stockUpdate.authorRole === "system"
+            ? "/images/h1.png"
+            : "/images/h1.png"
+    );
 
 
 /* ==========================================================
-   IMAGE
+   TEXT
 ========================================================== */
 
-const senderImage =
-    isSystem
-        ? "/images/h1.png"
-        : (
-            currentUpdate.userImage ||
-            (
-                currentUpdate.user &&
-                (
-                    currentUpdate.user.profileImage ||
-                    currentUpdate.user.displayImage
-                )
-            ) ||
-            "/images/h1.png"
-        );
+const message =
+    (
+        stockData &&
+        stockData.message
+    ) ||
+    stockUpdate.text ||
+    "";
 
 
 /* ==========================================================
-   TITLE
+   INSTRUCTIONS
 ========================================================== */
 
-let title =
-    currentUpdate.title || "";
+const instructions =
+    stockData &&
+    stockData.instructions
+        ? stockData.instructions
+        : "";
 
-if (!title) {
 
-    if (isSystem) {
+/* ==========================================================
+   EXPECTED DURATION
+========================================================== */
 
-        title =
-            isMedicine
-                ? "More Veterinary Meds Available"
-                : "More Animal Feed Available";
+const expectedDuration =
+    stockData &&
+    stockData.expectedDuration
+        ? stockData.expectedDuration
+        : "";
 
-    } else {
 
-        title =
-            isMedicine
-                ? "Veterinary Medicine Stock Update"
-                : "Animal Feed Stock Update";
+/* ==========================================================
+   IMAGES
 
-    }
+   Use the stock-specific images first.
+
+   Fall back to update.images.
+
+   NEVER merge unrelated updates here.
+========================================================== */
+
+let stockImages = [];
+
+
+if (
+    stockData &&
+    Array.isArray(stockData.images)
+) {
+
+    stockImages =
+        stockData.images.filter(Boolean);
+
+}
+
+
+if (
+    stockImages.length === 0 &&
+    stockUpdate &&
+    Array.isArray(stockUpdate.images)
+) {
+
+    stockImages =
+        stockUpdate.images.filter(Boolean);
 
 }
 
 
 /* ==========================================================
-   STOCK VALUES
+   UNIQUE CARD ID
+
+   IMPORTANT:
+
+   We deliberately use the MongoDB Update _id.
+
+   We DO NOT use:
+
+       itemName
+       category
+       stockType
+
+   because multiple history updates can legitimately have
+   the same stock name.
 ========================================================== */
 
-const quantity =
-    stock.quantity;
-
-const unit =
-    stock.unit || "";
-
-const price =
-    Number(stock.price) || 0;
-
-const instructions =
-    stock.instructions || "";
-
-const duration =
-    stock.expectedDuration || "";
-
-const message =
-    stock.message || "";
-
-
-/* ==========================================================
-   IMAGES
-========================================================== */
-
-const images =
-    Array.isArray(stock.images)
-        ? stock.images.filter(Boolean)
-        : [];
+const cardId =
+    stockUpdate &&
+    stockUpdate._id
+        ? String(stockUpdate._id)
+        : (
+            "stock-" +
+            Math.random()
+        );
 
 
 /* ==========================================================
    DATE
 ========================================================== */
 
-const created =
-    currentUpdate.createdAt
-        ? new Date(currentUpdate.createdAt)
-        : new Date();
+const createdAt =
+    stockUpdate &&
+    stockUpdate.createdAt
+        ? new Date(stockUpdate.createdAt)
+        : null;
 
-const validCreatedDate =
-    !Number.isNaN(created.getTime())
-        ? created
-        : new Date();
-
-
-/* ==========================================================
-   LABELS
-========================================================== */
-
-const actionLabel =
-    stockAction === "remainder"
-        ? "reported remaining stock"
-        : "made stock available";
-
-const stockTypeLabel =
-    isMedicine
-        ? "Veterinary Medicine"
-        : "Animal Feed";
-
-const quantityLabel =
-    stockAction === "remainder"
-        ? "Quantity remaining"
-        : "Added quantity";
 
 %>
 
 
+<% if (isStockUpdate) { %>
+
+
 <!-- ==========================================================
-     STOCK FEED ITEM
+     ONE STOCK UPDATE CARD
+
+     ONE Update document = ONE card.
 ========================================================== -->
 
 <article
-    class="stock-feed-item"
-    data-update-id="<%= currentUpdate._id || "" %>"
+    class="stock-update-card"
+    id="stock-update-<%= cardId %>"
+    data-stock-update-id="<%= cardId %>"
     data-stock-type="<%= stockType %>"
     data-stock-action="<%= stockAction %>"
 >
@@ -230,343 +336,294 @@ const quantityLabel =
          HEADER
     ======================================================= -->
 
-    <header class="stock-feed-header">
+    <header class="stock-update-card__header">
 
 
-        <div class="stock-feed-avatar">
+        <!-- ==================================================
+             AUTHOR
+        =================================================== -->
 
-            <img
-                src="<%= senderImage %>"
-                alt="<%= senderName %>"
-                loading="lazy"
-            >
+        <div class="stock-update-card__author">
+
+
+            <div class="stock-update-card__avatar">
+
+
+                <img
+                    src="<%= authorImage %>"
+                    alt=""
+                    loading="lazy"
+                    onerror="this.onerror=null;this.src='/images/h1.png';"
+                >
+
+
+            </div>
+
+
+            <div class="stock-update-card__author-info">
+
+
+                <strong>
+                    <%= authorName %>
+                </strong>
+
+
+                <span>
+
+                    <% if (
+                        stockUpdate.authorRole === "system"
+                    ) { %>
+
+                        System
+
+                    <% } else if (
+                        stockUpdate.authorRole === "admin"
+                    ) { %>
+
+                        Administrator
+
+                    <% } else { %>
+
+                        Dairy Worker
+
+                    <% } %>
+
+                </span>
+
+
+            </div>
+
 
         </div>
 
 
-        <div class="stock-feed-author">
 
+        <!-- ==================================================
+             DATE
+        =================================================== -->
 
-            <div class="stock-feed-author-line">
-
-                <strong>
-                    <%= senderName %>
-                </strong>
-
-            </div>
-
-
-            <div class="stock-feed-context">
-
-                <% if (isSystem) { %>
-
-                    The System updated
-
-                <% } else { %>
-
-                    <%= senderName %>
-                    <%= actionLabel %>
-
-                <% } %>
-
-
-                <% if (
-                    typeof dairy !== "undefined" &&
-                    dairy &&
-                    dairy._id
-                ) { %>
-
-                    <a
-                        href="/dairy/<%= dairy._id %>"
-                        class="stock-feed-dairy-link"
-                    >
-
-                        <%= dairy.name %>'s Foodstock
-
-                    </a>
-
-                <% } else { %>
-
-                    the Foodstock
-
-                <% } %>
-
-            </div>
+        <% if (createdAt) { %>
 
 
             <time
-                class="stock-feed-date"
-                datetime="<%= validCreatedDate.toISOString() %>"
+                class="stock-update-card__date"
+                datetime="<%= createdAt.toISOString() %>"
             >
 
-                <%= validCreatedDate.toLocaleString() %>
+                <%= createdAt.toLocaleString() %>
 
             </time>
 
 
-        </div>
+        <% } %>
+
 
     </header>
 
 
 
     <!-- ======================================================
-         BODY
+         TITLE / ACTION
     ======================================================= -->
 
-    <div class="stock-feed-body">
+    <div class="stock-update-card__heading">
 
 
-        <!-- ==================================================
-             TYPE
-        =================================================== -->
+        <div
+            class="stock-update-card__icon"
+            aria-hidden="true"
+        >
 
-        <div class="stock-feed-type">
+            <% if (isMedicine) { %>
 
-            <span
-                class="stock-feed-type-icon"
-                aria-hidden="true"
-            >
+                💊
 
-                <%= isMedicine ? "💊" : "🌾" %>
+            <% } else { %>
 
-            </span>
+                🌾
 
-            <span>
-
-                <%= stockTypeLabel %>
-
-            </span>
+            <% } %>
 
         </div>
 
 
-
-        <!-- ==================================================
-             TITLE
-        =================================================== -->
-
-        <h3 class="stock-feed-title">
-
-            <%= title %>
-
-        </h3>
+        <div>
 
 
-
-        <!-- ==================================================
-             ITEM NAME
-        =================================================== -->
-
-        <div class="stock-feed-item-name">
-
-            <span class="stock-feed-item-label">
-                Item
+            <span class="stock-update-card__action">
+                <%= actionLabel %>
             </span>
+
+
+            <h3>
+                <%= stockUpdate.title || itemName %>
+            </h3>
+
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- ======================================================
+         STOCK INFORMATION
+    ======================================================= -->
+
+    <div class="stock-update-card__stock">
+
+
+        <div class="stock-update-card__item">
+
+
+            <span class="stock-update-card__label">
+                Stock
+            </span>
+
 
             <strong>
                 <%= itemName %>
             </strong>
 
-        </div>
-
-
-
-        <!-- ==================================================
-             CATEGORY
-        =================================================== -->
-
-        <% if (category) { %>
-
-            <div class="stock-feed-category">
-
-                <span class="stock-feed-category-label">
-                    Category
-                </span>
-
-                <span>
-                    <%= category %>
-                </span>
-
-            </div>
-
-        <% } %>
-
-
-
-        <!-- ==================================================
-             DETAILS
-        =================================================== -->
-
-        <div class="stock-feed-details">
-
-
-            <% if (
-                quantity !== undefined &&
-                quantity !== null &&
-                quantity !== ""
-            ) { %>
-
-                <div class="stock-feed-detail">
-
-                    <span class="stock-feed-detail-label">
-
-                        <%= quantityLabel %>
-
-                    </span>
-
-                    <strong>
-
-                        <%= Number(
-                            quantity
-                        ).toLocaleString() %>
-
-                        <% if (unit) { %>
-
-                            <%= unit %>
-
-                        <% } %>
-
-                    </strong>
-
-                </div>
-
-            <% } %>
-
-
-
-            <% if (duration) { %>
-
-                <div class="stock-feed-detail">
-
-                    <span class="stock-feed-detail-label">
-
-                        Expected duration
-
-                    </span>
-
-                    <strong>
-
-                        <%= duration %>
-
-                    </strong>
-
-                </div>
-
-            <% } %>
-
-
-
-            <% if (
-                isSystem &&
-                price > 0
-            ) { %>
-
-                <div class="stock-feed-detail">
-
-                    <span class="stock-feed-detail-label">
-
-                        Stock value
-
-                    </span>
-
-                    <strong>
-
-                        <%= price.toLocaleString(
-                            undefined,
-                            {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                            }
-                        ) %>
-
-                    </strong>
-
-                </div>
-
-            <% } %>
-
 
         </div>
 
 
 
-        <!-- ==================================================
-             INSTRUCTIONS
-        =================================================== -->
-
-        <% if (instructions) { %>
-
-            <div class="stock-feed-instructions">
-
-                <div class="stock-feed-subheading">
-
-                    Instructions of use
-
-                </div>
-
-                <p>
-
-                    <%= instructions %>
-
-                </p>
-
-            </div>
-
-        <% } %>
+        <div class="stock-update-card__quantity">
 
 
-
-        <!-- ==================================================
-             MESSAGE
-        =================================================== -->
-
-        <% if (message) { %>
-
-            <div class="stock-feed-message">
-
-                <div class="stock-feed-subheading">
-
-                    Additional information
-
-                </div>
-
-                <p>
-
-                    <%= message %>
-
-                </p>
-
-            </div>
-
-        <% } %>
+            <span class="stock-update-card__label">
+                Quantity
+            </span>
 
 
+            <strong>
 
-        <!-- ==================================================
-             IMAGES
-        =================================================== -->
+                <%= quantity.toLocaleString() %>
 
-        <% if (images.length > 0) { %>
+                <small>
+                    <%= unit %>
+                </small>
 
-            <div class="stock-feed-images">
+            </strong>
 
-                <% images.forEach(function(image) { %>
 
-                    <img
-                        src="<%= image %>"
-                        alt="<%= itemName %>"
-                        loading="lazy"
-                    >
-
-                <% }); %>
-
-            </div>
-
-        <% } %>
+        </div>
 
 
     </div>
+
+
+
+    <!-- ======================================================
+         MESSAGE
+    ======================================================= -->
+
+    <% if (message) { %>
+
+
+        <div class="stock-update-card__message">
+
+
+            <p>
+                <%= message %>
+            </p>
+
+
+        </div>
+
+
+    <% } %>
+
+
+
+    <!-- ======================================================
+         INSTRUCTIONS
+    ======================================================= -->
+
+    <% if (instructions) { %>
+
+
+        <div class="stock-update-card__detail">
+
+
+            <span>
+                Instructions
+            </span>
+
+
+            <p>
+                <%= instructions %>
+            </p>
+
+
+        </div>
+
+
+    <% } %>
+
+
+
+    <!-- ======================================================
+         EXPECTED DURATION
+    ======================================================= -->
+
+    <% if (expectedDuration) { %>
+
+
+        <div class="stock-update-card__detail">
+
+
+            <span>
+                Expected duration
+            </span>
+
+
+            <p>
+                <%= expectedDuration %>
+            </p>
+
+
+        </div>
+
+
+    <% } %>
+
+
+
+    <!-- ======================================================
+         IMAGES
+    ======================================================= -->
+
+    <% if (stockImages.length > 0) { %>
+
+
+        <div class="stock-update-card__images">
+
+
+            <% stockImages.forEach(
+                function(image, imageIndex)
+            { %>
+
+
+                <img
+                    src="<%= image %>"
+                    alt="<%= itemName %>"
+                    loading="lazy"
+                    data-stock-image-index="<%= imageIndex %>"
+                >
+
+
+            <% }); %>
+
+
+        </div>
+
+
+    <% } %>
+
 
 </article>
 
@@ -575,582 +632,428 @@ const quantityLabel =
 <style>
 
 /* ==========================================================
-   STOCK FEED ITEM
+   STOCK UPDATE CARD
 ========================================================== */
 
-.stock-feed-item {
+.stock-update-card,
+.stock-update-card * {
+
+    box-sizing: border-box;
+
+}
+
+
+.stock-update-card {
 
     width: 100%;
 
-    padding:
-        16px
-        0
-        19px;
+    margin: 0 0 14px;
 
-    border-bottom:
-        1px solid
-        #e5ebe7;
+    padding: 16px;
 
-}
+    border: 1px solid #e0e8e3;
 
-.stock-feed-item:last-child {
+    border-radius: 16px;
 
-    border-bottom:
-        none;
+    background: #ffffff;
+
+    box-shadow:
+        0 2px 8px
+        rgba(25, 60, 40, .05);
 
 }
+
 
 
 /* ==========================================================
    HEADER
 ========================================================== */
 
-.stock-feed-header {
+.stock-update-card__header {
 
-    display:
-        flex;
+    display: flex;
 
-    align-items:
-        flex-start;
+    align-items: center;
 
-    gap:
-        11px;
+    justify-content: space-between;
 
-}
+    gap: 12px;
 
-.stock-feed-avatar {
-
-    width:
-        44px;
-
-    height:
-        44px;
-
-    flex:
-        0 0 44px;
-
-    overflow:
-        hidden;
-
-    border-radius:
-        50%;
-
-    background:
-        #edf5ef;
+    margin-bottom: 14px;
 
 }
 
-.stock-feed-avatar img {
 
-    width:
-        100%;
+.stock-update-card__author {
 
-    height:
-        100%;
+    display: flex;
 
-    display:
-        block;
+    align-items: center;
 
-    object-fit:
-        cover;
+    gap: 10px;
+
+    min-width: 0;
 
 }
 
-.stock-feed-author {
 
-    min-width:
-        0;
+.stock-update-card__avatar {
 
-    padding-top:
-        1px;
+    width: 40px;
+    height: 40px;
 
-}
+    flex: 0 0 40px;
 
-.stock-feed-author-line {
+    overflow: hidden;
 
-    display:
-        flex;
+    border-radius: 50%;
 
-    align-items:
-        center;
+    background: #edf5ef;
 
 }
 
-.stock-feed-author-line strong {
 
-    color:
-        #26352d;
+.stock-update-card__avatar img {
 
-    font-size:
-        13px;
+    width: 100%;
+    height: 100%;
 
-    font-weight:
-        850;
+    display: block;
 
-}
-
-.stock-feed-context {
-
-    margin-top:
-        2px;
-
-    color:
-        #68756e;
-
-    font-size:
-        11px;
-
-    line-height:
-        1.45;
+    object-fit: cover;
 
 }
 
-.stock-feed-dairy-link {
 
-    color:
-        #198754;
+.stock-update-card__author-info {
 
-    font-weight:
-        750;
+    display: flex;
 
-    text-decoration:
-        none;
+    flex-direction: column;
 
-}
+    min-width: 0;
 
-.stock-feed-dairy-link:hover {
-
-    text-decoration:
-        underline;
+    gap: 2px;
 
 }
 
-.stock-feed-date {
 
-    display:
-        block;
+.stock-update-card__author-info strong {
 
-    margin-top:
-        3px;
+    overflow: hidden;
 
-    color:
-        #99a19c;
+    color: #27342d;
 
-    font-size:
-        10px;
+    font-size: 13px;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
 
 }
+
+
+.stock-update-card__author-info span {
+
+    color: #8a938e;
+
+    font-size: 10px;
+
+}
+
+
+.stock-update-card__date {
+
+    flex-shrink: 0;
+
+    color: #929a95;
+
+    font-size: 9px;
+
+}
+
 
 
 /* ==========================================================
-   BODY
+   HEADING
 ========================================================== */
 
-.stock-feed-body {
+.stock-update-card__heading {
 
-    margin-left:
-        55px;
+    display: flex;
 
-    margin-top:
-        13px;
+    align-items: center;
+
+    gap: 11px;
+
+    margin-bottom: 14px;
 
 }
+
+
+.stock-update-card__icon {
+
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #eef7f1;
+
+    font-size: 20px;
+
+}
+
+
+.stock-update-card__action {
+
+    display: block;
+
+    margin-bottom: 2px;
+
+    color: #198754;
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: .6px;
+
+    text-transform: uppercase;
+
+}
+
+
+.stock-update-card__heading h3 {
+
+    margin: 0;
+
+    color: #26352d;
+
+    font-size: 16px;
+
+    font-weight: 850;
+
+    line-height: 1.25;
+
+}
+
 
 
 /* ==========================================================
-   TYPE
+   STOCK DATA
 ========================================================== */
 
-.stock-feed-type {
+.stock-update-card__stock {
 
-    display:
-        inline-flex;
+    display: grid;
 
-    align-items:
-        center;
+    grid-template-columns: 1fr auto;
 
-    gap:
-        6px;
+    gap: 14px;
 
-    margin-bottom:
-        7px;
+    padding: 13px;
 
-    padding:
-        5px
-        9px;
+    border-radius: 11px;
 
-    border-radius:
-        999px;
-
-    background:
-        #f0f6f2;
-
-    color:
-        #47705a;
-
-    font-size:
-        10px;
-
-    font-weight:
-        800;
-
-}
-
-.stock-feed-type-icon {
-
-    font-size:
-        12px;
+    background: #f6faf7;
 
 }
 
 
-/* ==========================================================
-   TITLE
-========================================================== */
+.stock-update-card__item,
+.stock-update-card__quantity {
 
-.stock-feed-title {
+    display: flex;
 
-    margin:
-        0
-        0
-        12px;
+    flex-direction: column;
 
-    color:
-        #198754;
-
-    font-size:
-        18px;
-
-    line-height:
-        1.3;
-
-    font-weight:
-        900;
+    gap: 4px;
 
 }
 
 
-/* ==========================================================
-   ITEM
-========================================================== */
+.stock-update-card__label {
 
-.stock-feed-item-name {
+    color: #8a948e;
 
-    display:
-        flex;
+    font-size: 9px;
 
-    align-items:
-        baseline;
+    font-weight: 800;
 
-    flex-wrap:
-        wrap;
+    text-transform: uppercase;
 
-    gap:
-        6px;
-
-    margin-bottom:
-        8px;
-
-}
-
-.stock-feed-item-label {
-
-    color:
-        #829087;
-
-    font-size:
-        9px;
-
-    font-weight:
-        800;
-
-    text-transform:
-        uppercase;
-
-    letter-spacing:
-        .4px;
-
-}
-
-.stock-feed-item-name strong {
-
-    color:
-        #263f31;
-
-    font-size:
-        14px;
-
-    font-weight:
-        850;
+    letter-spacing: .5px;
 
 }
 
 
-/* ==========================================================
-   CATEGORY
-========================================================== */
+.stock-update-card__item strong {
 
-.stock-feed-category {
+    color: #29372f;
 
-    display:
-        inline-flex;
+    font-size: 13px;
 
-    align-items:
-        center;
-
-    gap:
-        5px;
-
-    margin-bottom:
-        11px;
-
-    color:
-        #66736b;
-
-    font-size:
-        11px;
-
-}
-
-.stock-feed-category-label {
-
-    font-weight:
-        800;
-
-    text-transform:
-        uppercase;
-
-    letter-spacing:
-        .3px;
+    font-weight: 800;
 
 }
 
 
-/* ==========================================================
-   DETAILS
-========================================================== */
+.stock-update-card__quantity {
 
-.stock-feed-details {
-
-    display:
-        flex;
-
-    flex-wrap:
-        wrap;
-
-    gap:
-        8px;
-
-    margin-bottom:
-        12px;
-
-}
-
-.stock-feed-detail {
-
-    min-width:
-        150px;
-
-    padding:
-        9px
-        11px;
-
-    border-radius:
-        10px;
-
-    background:
-        #f3f8f4;
-
-}
-
-.stock-feed-detail-label {
-
-    display:
-        block;
-
-    margin-bottom:
-        3px;
-
-    color:
-        #829087;
-
-    font-size:
-        9px;
-
-    font-weight:
-        800;
-
-    text-transform:
-        uppercase;
-
-    letter-spacing:
-        .4px;
-
-}
-
-.stock-feed-detail strong {
-
-    color:
-        #245a3b;
-
-    font-size:
-        13px;
-
-    font-weight:
-        850;
+    text-align: right;
 
 }
 
 
-/* ==========================================================
-   INSTRUCTIONS
-========================================================== */
+.stock-update-card__quantity strong {
 
-.stock-feed-instructions {
+    color: #198754;
 
-    margin-top:
-        8px;
+    font-size: 18px;
 
-    padding:
-        11px
-        13px;
-
-    border-left:
-        3px solid
-        #198754;
-
-    border-radius:
-        0
-        9px
-        9px
-        0;
-
-    background:
-        #f7faf8;
+    font-weight: 900;
 
 }
 
-.stock-feed-subheading {
 
-    margin-bottom:
-        4px;
+.stock-update-card__quantity small {
 
-    color:
-        #31553f;
+    color: #748078;
 
-    font-size:
-        10px;
+    font-size: 10px;
 
-    font-weight:
-        850;
-
-    text-transform:
-        uppercase;
-
-    letter-spacing:
-        .5px;
+    font-weight: 700;
 
 }
 
-.stock-feed-instructions p {
-
-    margin:
-        0;
-
-    color:
-        #4f5d55;
-
-    font-size:
-        12px;
-
-    line-height:
-        1.55;
-
-    white-space:
-        pre-wrap;
-
-}
 
 
 /* ==========================================================
    MESSAGE
 ========================================================== */
 
-.stock-feed-message {
+.stock-update-card__message {
 
-    margin-top:
-        12px;
+    margin-top: 13px;
 
-    padding:
-        10px
-        0;
+    padding: 11px 12px;
 
-    color:
-        #4e5b54;
+    border-left: 3px solid #198754;
 
-    font-size:
-        13px;
+    border-radius: 0 9px 9px 0;
 
-    line-height:
-        1.6;
+    background: #f7faf8;
 
 }
 
-.stock-feed-message p {
 
-    margin:
-        0;
+.stock-update-card__message p {
 
-    white-space:
-        pre-wrap;
+    margin: 0;
+
+    color: #4f5c54;
+
+    font-size: 12px;
+
+    line-height: 1.55;
 
 }
+
+
+
+/* ==========================================================
+   DETAILS
+========================================================== */
+
+.stock-update-card__detail {
+
+    margin-top: 12px;
+
+}
+
+
+.stock-update-card__detail > span {
+
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: #748078;
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: .5px;
+
+    text-transform: uppercase;
+
+}
+
+
+.stock-update-card__detail p {
+
+    margin: 0;
+
+    color: #4e5b53;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+
+}
+
 
 
 /* ==========================================================
    IMAGES
 ========================================================== */
 
-.stock-feed-images {
+.stock-update-card__images {
 
-    display:
-        flex;
+    display: grid;
 
-    gap:
-        7px;
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(90px, 1fr)
+        );
 
-    margin-top:
-        13px;
+    gap: 7px;
 
-    overflow-x:
-        auto;
-
-    padding-bottom:
-        3px;
+    margin-top: 13px;
 
 }
 
-.stock-feed-images img {
 
-    width:
-        125px;
+.stock-update-card__images img {
 
-    height:
-        105px;
+    width: 100%;
 
-    flex:
-        0 0 125px;
+    aspect-ratio: 1 / 1;
 
-    display:
-        block;
+    display: block;
 
-    object-fit:
-        cover;
+    overflow: hidden;
 
-    border-radius:
-        10px;
+    border-radius: 9px;
+
+    object-fit: cover;
+
+    background: #f1f4f2;
 
 }
+
 
 
 /* ==========================================================
@@ -1159,43 +1062,32 @@ const quantityLabel =
 
 @media (max-width: 600px) {
 
-    .stock-feed-body {
+    .stock-update-card {
 
-        margin-left:
-            0;
+        padding: 13px;
 
-        margin-top:
-            12px;
+        border-radius: 14px;
 
     }
 
-    .stock-feed-title {
 
-        font-size:
-            17px;
+    .stock-update-card__header {
 
-    }
-
-    .stock-feed-detail {
-
-        flex:
-            1 1 100%;
-
-        min-width:
-            0;
+        align-items: flex-start;
 
     }
 
-    .stock-feed-images img {
 
-        width:
-            110px;
+    .stock-update-card__date {
 
-        height:
-            92px;
+        font-size: 8px;
 
-        flex-basis:
-            110px;
+    }
+
+
+    .stock-update-card__stock {
+
+        grid-template-columns: 1fr auto;
 
     }
 
