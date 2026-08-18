@@ -2,34 +2,47 @@
 // models/dairy.js
 // ==========================================================
 //
-// DAIRY / ANIMAL / ASSET MODEL
+// DAIRY / ANIMAL / FACILITY / ASSET MODEL
 //
-// Responsibilities:
-//
-//     • Dairy farms
-//     • Dairy animals
-//     • Structures / facilities
-//     • Assets
-//     • Milking status
-//     • Maintenance
-//     • Medical attention
-//     • Profile images
-//     • Current feed-store stock
-//     • Feed-store financial values
-//
-// FEED-STORE STRUCTURE
+// ENTITY IDENTITY
 // ----------------------------------------------------------
 //
-// CURRENT INVENTORY:
+// code < 0
+//     = DAIRY FARM
 //
-//     dairy.feedStocks[]
+// code > 0
+//     = ANIMAL
 //
-// HISTORY:
+// code === null
+//     = STRUCTURE / FACILITY / ASSET
 //
-//     models/Update.js
+// STRUCTURE / FACILITY OWNERSHIP
+// ----------------------------------------------------------
 //
-// Every feedStocks item is an independent subdocument and
-// therefore has its own MongoDB `_id`.
+// assetCode
+//     = negative code of the parent Dairy Farm
+//
+// FEED STORE
+// ----------------------------------------------------------
+//
+// A feedStore is a FACILITY FOR STORING FOOD / SUPPLIES.
+//
+// It is NOT an animal dwelling.
+//
+// A dairy farm may have:
+//
+//     ZERO feed stores before initialization
+//     ONE feed store after initialization
+//
+// MongoDB enforces:
+//
+//     maximum ONE feedStore per Dairy Farm.
+//
+// Feed-store inventory:
+//
+//     feedStocks[]
+//
+// Every feedStocks item has its own MongoDB `_id`.
 //
 // Update.stock.stockId points to:
 //
@@ -37,12 +50,12 @@
 //
 // IMPORTANT:
 //
-// `feedStocks` represents CURRENT inventory.
+// feedStocks represents CURRENT inventory.
 //
-// `feedsAmount` represents the money associated with the
+// feedsAmount represents money associated with the
 // latest stock addition represented by that stock record.
 //
-// It is NOT calculated from the current quantity remaining.
+// It is NOT calculated from quantityRemaining.
 //
 // ==========================================================
 
@@ -98,6 +111,14 @@ const DAIRY_FARM_TYPES = [
 // ==========================================================
 // STRUCTURE / FACILITY TYPES
 // ==========================================================
+//
+// These are farm facilities/assets.
+//
+// feedStore is a storage facility.
+//
+// It is NOT an animal dwelling.
+//
+// ==========================================================
 
 const STRUCTURE_TYPES = [
 
@@ -136,12 +157,6 @@ const DAIRY_STATUSES = [
 // ==========================================================
 // FEED TYPES
 // ==========================================================
-//
-// These are MASTER OPTIONS.
-//
-// They are NOT generated from existing feedStocks.
-//
-// ==========================================================
 
 const FEED_TYPES = [
 
@@ -168,10 +183,6 @@ const FEED_TYPES = [
 
 // ==========================================================
 // VETERINARY MEDICINES
-// ==========================================================
-//
-// MASTER OPTIONS.
-//
 // ==========================================================
 
 const VETERINARY_MEDICINES = [
@@ -230,27 +241,9 @@ const MAX_STOCK_IMAGES = 10;
 // FEED-STORE STOCK SUBDOCUMENT
 // ==========================================================
 //
-// This represents ONE CURRENT STOCK RECORD.
+// One CURRENT stock record.
 //
-// Each record receives its own `_id`.
-//
-// CANONICAL FIELDS:
-//
-//     category
-//     feedName
-//     medicineName
-//     quantityRemaining
-//     initialQuantity
-//     percentageRemaining
-//     unit
-//     unitPrice
-//     feedsAmount
-//     instructions
-//     expectedDuration
-//     message
-//     images
-//     addedAt
-//     updatedAt
+// Every stock record gets its own `_id`.
 //
 // ==========================================================
 
@@ -283,10 +276,6 @@ const feedStockSchema = new mongoose.Schema(
         // ==================================================
         // FEED NAME
         // ==================================================
-        //
-        // Used when category === "feed".
-        //
-        // ==================================================
 
         feedName: {
 
@@ -303,10 +292,6 @@ const feedStockSchema = new mongoose.Schema(
 
         // ==================================================
         // MEDICINE NAME
-        // ==================================================
-        //
-        // Used when category === "medicine".
-        //
         // ==================================================
 
         medicineName: {
@@ -325,10 +310,6 @@ const feedStockSchema = new mongoose.Schema(
         // ==================================================
         // CURRENT QUANTITY
         // ==================================================
-        //
-        // Quantity currently available.
-        //
-        // ==================================================
 
         quantityRemaining: {
 
@@ -343,12 +324,6 @@ const feedStockSchema = new mongoose.Schema(
 
         // ==================================================
         // INITIAL QUANTITY
-        // ==================================================
-        //
-        // Baseline for percentageRemaining.
-        //
-        // This value is NOT reduced when stock is consumed.
-        //
         // ==================================================
 
         initialQuantity: {
@@ -399,10 +374,6 @@ const feedStockSchema = new mongoose.Schema(
         // ==================================================
         // UNIT PRICE
         // ==================================================
-        //
-        // Price per unit for the latest stock addition.
-        //
-        // ==================================================
 
         unitPrice: {
 
@@ -419,23 +390,9 @@ const feedStockSchema = new mongoose.Schema(
         // FEEDS AMOUNT
         // ==================================================
         //
-        // ACTUAL MONEY SPENT ON THE LATEST STOCK ADDITION.
+        // Actual money associated with the latest addition.
         //
-        // NEW STOCK:
-        //
-        //     quantity × unitPrice
-        //
-        // RESTOCK:
-        //
-        //     quantityAdded × unitPrice
-        //
-        // STOCK REDUCTION:
-        //
-        //     value remains unchanged
-        //
-        // IMPORTANT:
-        //
-        // This field must NOT be recalculated from
+        // This MUST NOT be recalculated from the current
         // quantityRemaining.
         //
         // ==================================================
@@ -574,7 +531,6 @@ const feedStockSchema = new mongoose.Schema(
 
     {
 
-        // Every stock record must have its own ID.
         _id: true
 
     }
@@ -650,10 +606,12 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // CODE
-        // =========================================================
+        // ==========================================================
         //
         // NEGATIVE = DAIRY FARM
+        //
         // POSITIVE = ANIMAL
+        //
         // NULL     = STRUCTURE / FACILITY
         //
         // ==========================================================
@@ -750,11 +708,21 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // ASSET CODE
-        // ==================================================
+        // ==========================================================
         //
-        // Negative code of the parent Dairy Farm.
+        // For animals:
         //
-        // ==================================================
+        //     Negative code of parent Dairy Farm.
+        //
+        // For facilities:
+        //
+        //     Negative code of parent Dairy Farm.
+        //
+        // For Dairy Farms:
+        //
+        //     Always null.
+        //
+        // ==========================================================
 
         assetCode: {
 
@@ -1011,7 +979,7 @@ const dairySchema = new mongoose.Schema(
         //
         //     DAIRY_BREEDS
         //
-        // Structure:
+        // Facility:
         //
         //     STRUCTURE_TYPES
         //
@@ -1030,7 +998,12 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // CURRENT FEED STORE STOCK
-        // ==================================================
+        // ==========================================================
+        //
+        // This array is meaningful ONLY for feedStore
+        // facilities.
+        //
+        // ==========================================================
 
         feedStocks: {
 
@@ -1047,15 +1020,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // TOTAL CURRENT FEED-STORE AMOUNT
-        // ==================================================
-        //
-        // Sum of feedsAmount across current feedStocks.
-        //
-        // NOT:
-        //
-        //     quantityRemaining × unitPrice
-        //
-        // ==================================================
+        // ==========================================================
 
         feedsAmount: {
 
@@ -1070,7 +1035,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // BUYING PRICE
-        // ==================================================
+        // ==========================================================
 
         buyingPrice: {
 
@@ -1085,7 +1050,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // SELLING PRICE
-        // ==================================================
+        // ==========================================================
 
         sellingPrice: {
 
@@ -1100,7 +1065,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // REVENUE
-        // ==================================================
+        // ==========================================================
 
         revenue: {
 
@@ -1115,7 +1080,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // CURRENT WORTH
-        // ==================================================
+        // ==========================================================
 
         currentWorth: {
 
@@ -1130,7 +1095,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // DESCRIPTION
-        // ==================================================
+        // ==========================================================
 
         description: {
 
@@ -1145,7 +1110,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // CONDITION
-        // ==================================================
+        // ==========================================================
 
         condition: {
 
@@ -1160,7 +1125,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // LOCATION
-        // ==================================================
+        // ==========================================================
 
         location: {
 
@@ -1175,7 +1140,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // ACQUISITION DATE
-        // ==================================================
+        // ==========================================================
 
         acquisitionDate: {
 
@@ -1188,7 +1153,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // VALUATION DATE
-        // ==================================================
+        // ==========================================================
 
         valuationDate: {
 
@@ -1201,7 +1166,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // STATUS
-        // ==================================================
+        // ==========================================================
 
         status: {
 
@@ -1375,6 +1340,30 @@ dairySchema.virtual(
     );
 
 });
+
+
+// ==========================================================
+// VIRTUAL: HAS FEED STORE
+// ==========================================================
+//
+// This virtual is useful on a Dairy Farm document.
+//
+// A farm itself does not own the feedStore object directly;
+// the feedStore is a separate Dairy document whose:
+//
+//     type = feedStore
+//     assetCode = farm.code
+//
+// ==========================================================
+//
+// NOTE:
+// This virtual is intentionally false for normal documents
+// because checking the database from a synchronous virtual
+// is not appropriate.
+//
+// Use Dairy.hasFeedStore(farmCode) for database checks.
+//
+// ==========================================================
 
 
 // ==========================================================
@@ -1665,7 +1654,7 @@ function normalizeProfileImage(
     }
 
 
-    return `/uploads/${String(image)}`;
+    return String(image);
 
 }
 
@@ -2189,17 +2178,6 @@ dairySchema.pre(
                         // ==================================
                         // FEEDS AMOUNT
                         // ==================================
-                        //
-                        // IMPORTANT:
-                        //
-                        // Do NOT calculate this from
-                        // quantityRemaining.
-                        //
-                        // storageService is responsible
-                        // for determining the amount when
-                        // stock is added/restocked.
-                        //
-                        // ==================================
 
                         let feedsAmount =
 
@@ -2428,6 +2406,95 @@ dairySchema.pre(
 
 
         // ==================================================
+        // FEED STOCK IS ONLY ALLOWED ON FEED STORE
+        // ==================================================
+
+        if (
+
+            this.feedStocks.length > 0 &&
+
+            !this.isFeedStore
+
+        ) {
+
+            const error =
+
+                new Error(
+
+                    "Feed stock can only belong to a feedStore facility."
+
+                );
+
+
+            error.status = 400;
+
+
+            return next(error);
+
+        }
+
+
+        // ==================================================
+        // FEED STORE VALIDATION
+        // ==================================================
+
+        if (
+            this.isFeedStore
+        ) {
+
+            // ----------------------------------------------
+            // A feed store MUST belong to a Dairy Farm.
+            // ----------------------------------------------
+
+            if (
+
+                this.assetCode === null ||
+
+                this.assetCode === undefined
+
+            ) {
+
+                const error =
+
+                    new Error(
+
+                        "Feed Store must belong to a Dairy Farm. assetCode is required."
+
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
+
+            if (
+                Number(this.assetCode) >= 0
+            ) {
+
+                const error =
+
+                    new Error(
+
+                        "Feed Store assetCode must be the negative code of its parent Dairy Farm."
+
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
+        }
+
+
+        // ==================================================
         // TOTAL CURRENT FEED-STORE VALUE
         // ==================================================
 
@@ -2483,6 +2550,29 @@ dairySchema.pre(
             this.isMilking = false;
 
 
+            // A Dairy Farm cannot itself be a feed store.
+
+            if (
+                this.type === "feedStore"
+            ) {
+
+                const error =
+
+                    new Error(
+
+                        "A Dairy Farm cannot have type feedStore."
+
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
+
             if (
 
                 this.type &&
@@ -2519,6 +2609,31 @@ dairySchema.pre(
         if (
             this.isAnimal
         ) {
+
+            // ----------------------------------------------
+            // Animals cannot be feed stores.
+            // ----------------------------------------------
+
+            if (
+                this.type === "feedStore"
+            ) {
+
+                const error =
+
+                    new Error(
+
+                        "An animal cannot have type feedStore."
+
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
 
             // ----------------------------------------------
             // Male animals cannot be milking.
@@ -3016,7 +3131,7 @@ dairySchema.index({
 
 
 // ==========================================================
-// FEED STORE
+// FACILITY TYPE
 // ==========================================================
 
 dairySchema.index({
@@ -3026,6 +3141,57 @@ dairySchema.index({
     status: 1
 
 });
+
+
+// ==========================================================
+// FEED STORE UNIQUENESS
+// ==========================================================
+//
+// CRITICAL:
+//
+// Only ONE feedStore may belong to each Dairy Farm.
+//
+// Example:
+//
+//     assetCode = -1
+//     type      = feedStore
+//
+// may occur only once.
+//
+// The partial index prevents other structures from being
+// affected by this uniqueness rule.
+//
+// ==========================================================
+
+dairySchema.index(
+
+    {
+
+        assetCode: 1,
+
+        type: 1
+
+    },
+
+    {
+
+        unique: true,
+
+        partialFilterExpression: {
+
+            type: "feedStore",
+
+            assetCode: {
+
+                $type: "number"
+
+            }
+
+        }
+
+    }
+
+);
 
 
 // ==========================================================
@@ -3065,10 +3231,10 @@ dairySchema.index({
 // CODE
 // ==========================================================
 //
-// Only numeric codes are indexed uniquely.
+// Only numeric codes are unique.
 //
-// Structures have code = null and are therefore excluded
-// from the unique constraint.
+// Structures use code = null and therefore are excluded
+// from this unique constraint.
 //
 // ==========================================================
 
@@ -3097,6 +3263,72 @@ dairySchema.index(
     }
 
 );
+
+
+// ==========================================================
+// STATIC: CHECK FEED STORE
+// ==========================================================
+//
+// Returns the feed store belonging to a Dairy Farm.
+//
+// ==========================================================
+
+dairySchema.statics.getFeedStore =
+    async function (farmCode) {
+
+        const code =
+            Number(farmCode);
+
+
+        if (
+
+            !Number.isInteger(code) ||
+
+            code >= 0
+
+        ) {
+
+            return null;
+
+        }
+
+
+        return this.findOne({
+
+            type: "feedStore",
+
+            assetCode: code
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: CHECK WHETHER FARM HAS FEED STORE
+// ==========================================================
+
+dairySchema.statics.hasFeedStore =
+    async function (farmCode) {
+
+        const feedStore =
+
+            await this.findOne({
+
+                type: "feedStore",
+
+                assetCode: Number(farmCode)
+
+            })
+
+            .select("_id")
+
+            .lean();
+
+
+        return !!feedStore;
+
+    };
 
 
 // ==========================================================
@@ -3190,12 +3422,6 @@ dairySchema.statics.getMaxStockImages =
 // ==========================================================
 // STATIC: GET FEED TYPES
 // ==========================================================
-//
-// Used by:
-//
-//     storageService.getStorageOptions()
-//
-// ==========================================================
 
 dairySchema.statics.getFeedTypes =
     function () {
@@ -3212,12 +3438,6 @@ dairySchema.statics.getFeedTypes =
 // ==========================================================
 // STATIC: GET VETERINARY MEDICINES
 // ==========================================================
-//
-// Used by:
-//
-//     storageService.getStorageOptions()
-//
-// ==========================================================
 
 dairySchema.statics.getVeterinaryMedicines =
     function () {
@@ -3233,12 +3453,6 @@ dairySchema.statics.getVeterinaryMedicines =
 
 // ==========================================================
 // STATIC: GET STOCK UNITS
-// ==========================================================
-//
-// Used by:
-//
-//     storageService.getStorageOptions()
-//
 // ==========================================================
 
 dairySchema.statics.getStockUnits =
