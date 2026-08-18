@@ -892,7 +892,7 @@ async function addStock(
             getUploadedImages(req);
 
 
-        await storageService.saveStock({
+        await storageService.restockStock({
 
             dairyId,
 
