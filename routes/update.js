@@ -159,7 +159,7 @@ router.get(
 // ==========================================================
 
 router.get(
-    "/dairy/feedstore/:dairyId",
+    "/dairy/:dairyId/feedstore",
     isAuth,
     storageController.getFeedStock
 );
