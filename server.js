@@ -198,6 +198,27 @@ try {
 
 
 // ----------------------------------------------------------
+// FEED STOCK
+// ----------------------------------------------------------
+
+let feedstockRoutes;
+
+try {
+
+  feedstockRoutes =
+    require("./routes/feedstock");
+
+} catch (err) {
+
+  console.warn(
+    "Warning: failed to load feedstock routes:",
+    err.message
+  );
+
+}
+
+
+// ----------------------------------------------------------
 // ADD DAIRY / ASSET
 // ----------------------------------------------------------
 
@@ -1042,6 +1063,47 @@ if (updateRoutes) {
 
 
 // ----------------------------------------------------------
+// FEED STOCK
+// ----------------------------------------------------------
+//
+// All feed-stock routes are now handled by:
+//
+//     routes/feedstock.js
+//
+// Mounted at:
+//
+//     /
+//
+// Therefore existing URLs remain unchanged.
+//
+// Examples:
+//
+//     /dairy/feedstore/:dairyId
+//
+//     /dairy/:dairyId/feedstore/add
+//
+//     /dairy/:dairyId/feedstore/:stockId
+//
+//     /dairy/:dairyId/feedstore/:stockId/update
+//
+//     /dairy/:dairyId/feedstore/:stockId/restock
+//
+// ----------------------------------------------------------
+
+if (feedstockRoutes) {
+
+  app.use(
+
+    "/",
+
+    feedstockRoutes
+
+  );
+
+}
+
+
+// ----------------------------------------------------------
 // ADD DAIRY / ASSET
 // ----------------------------------------------------------
 
@@ -1626,7 +1688,8 @@ const bootstrap = async () => {
       isProduction
     ) {
 
-      process.exit(1);
+      process.exit(1
+      );
 
     }
 
