@@ -12,9 +12,6 @@
 //
 // ==========================================================
 
-const Dairy =
-    require("../../models/dairy");
-
 const storageService =
     require("../../services/update/storageService");
 
@@ -137,6 +134,121 @@ function getUploadedImages(req) {
 
 
 // ==========================================================
+// BUILD STOCK OPTIONS
+// ==========================================================
+//
+// The storage service currently does not contain separate
+// master lists for:
+//
+//     feedTypes
+//     medicineTypes
+//     stockUnits
+//
+// Therefore derive the currently known options from the
+// dairy's existing feedStocks.
+//
+// This avoids inventing values and, importantly, guarantees
+// that the EJS variables always exist.
+//
+// ==========================================================
+
+function buildStockOptions(
+    dairy
+) {
+
+    const stocks =
+        Array.isArray(
+            dairy.feedStocks
+        )
+            ? dairy.feedStocks
+            : [];
+
+
+    const feedTypes =
+        stocks
+            .filter(function(stock) {
+
+                return (
+                    String(
+                        stock.category || ""
+                    ).toLowerCase() ===
+                    "feed"
+                );
+
+            })
+            .map(function(stock) {
+
+                return String(
+                    stock.feedName || ""
+                ).trim();
+
+            })
+            .filter(Boolean);
+
+
+    const medicineTypes =
+        stocks
+            .filter(function(stock) {
+
+                return (
+                    String(
+                        stock.category || ""
+                    ).toLowerCase() ===
+                    "medicine"
+                );
+
+            })
+            .map(function(stock) {
+
+                return String(
+                    stock.medicineName || ""
+                ).trim();
+
+            })
+            .filter(Boolean);
+
+
+    const stockUnits =
+        stocks
+            .map(function(stock) {
+
+                return String(
+                    stock.unit || ""
+                ).trim();
+
+            })
+            .filter(Boolean);
+
+
+    return {
+
+        feedTypes:
+            Array.from(
+                new Set(
+                    feedTypes
+                )
+            ),
+
+        medicineTypes:
+            Array.from(
+                new Set(
+                    medicineTypes
+                )
+            ),
+
+        stockUnits:
+            Array.from(
+                new Set(
+                    stockUnits
+                )
+            )
+
+    };
+
+}
+
+
+// ==========================================================
 // GET FEED STORE
 // ==========================================================
 //
@@ -162,7 +274,9 @@ async function getFeedStore(
     try {
 
         const dairyId =
-            getDairyId(req);
+            getDairyId(
+                req
+            );
 
 
         if (
@@ -190,30 +304,9 @@ async function getFeedStore(
         // ==================================================
 
         const dairy =
-            await Dairy
-                .findById(
-                    dairyId
-                )
-                .lean();
-
-
-        if (
-            !dairy
-        ) {
-
-            return res.status(
-                404
-            ).json({
-
-                success:
-                    false,
-
-                message:
-                    "Dairy not found."
-
-            });
-
-        }
+            await storageService.getDairy(
+                dairyId
+            );
 
 
 
@@ -222,9 +315,11 @@ async function getFeedStore(
         // ==================================================
 
         const stocks =
-            await storageService.getStocks(
-                dairyId
-            );
+            Array.isArray(
+                dairy.feedStocks
+            )
+                ? dairy.feedStocks
+                : [];
 
 
 
@@ -233,26 +328,20 @@ async function getFeedStore(
         // ==================================================
 
         const user =
-            getUser(req);
+            getUser(
+                req
+            );
 
 
 
         // ==================================================
-        // STOCK TYPE OPTIONS
-        //
-        // These are supplied to the view so the EJS
-        // template never references an undefined variable.
-        //
-        // They can be replaced with the application's
-        // configured lists when those are defined in the
-        // storage service/model.
+        // STOCK OPTIONS
         // ==================================================
 
-        const feedTypes = [];
-
-        const medicineTypes = [];
-
-        const stockUnits = [];
+        const options =
+            buildStockOptions(
+                dairy
+            );
 
 
 
@@ -271,11 +360,14 @@ async function getFeedStore(
                 feedStoreItems:
                     stocks,
 
-                feedTypes,
+                feedTypes:
+                    options.feedTypes,
 
-                medicineTypes,
+                medicineTypes:
+                    options.medicineTypes,
 
-                stockUnits
+                stockUnits:
+                    options.stockUnits
 
             }
         );
@@ -343,7 +435,9 @@ async function saveStock(
         // ==================================================
 
         if (
-            !isAdmin(req)
+            !isAdmin(
+                req
+            )
         ) {
 
             return res.status(
@@ -367,7 +461,9 @@ async function saveStock(
         // ==================================================
 
         const dairyId =
-            getDairyId(req);
+            getDairyId(
+                req
+            );
 
 
         if (
@@ -492,7 +588,9 @@ async function saveStock(
 
 
         const dairyId =
-            getDairyId(req);
+            getDairyId(
+                req
+            );
 
 
         /*
@@ -527,7 +625,9 @@ async function getStock(
     try {
 
         const dairyId =
-            getDairyId(req);
+            getDairyId(
+                req
+            );
 
 
         const stockId =
@@ -591,7 +691,9 @@ async function deleteStock(
     try {
 
         if (
-            !isAdmin(req)
+            !isAdmin(
+                req
+            )
         ) {
 
             return res.status(
@@ -610,7 +712,9 @@ async function deleteStock(
 
 
         const dairyId =
-            getDairyId(req);
+            getDairyId(
+                req
+            );
 
 
         const stockId =
