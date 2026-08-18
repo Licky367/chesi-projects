@@ -36,7 +36,10 @@ const feedsService =
 
 function getUser(req) {
 
-    return req.user || null;
+    return (
+        req &&
+        req.user
+    ) || null;
 
 }
 
@@ -57,9 +60,26 @@ function getUserRole(req) {
 function getDairyId(req) {
 
     return (
+        req &&
         req.params &&
         req.params.id
     ) || null;
+
+}
+
+
+function getFiles(req) {
+
+    if (
+        req &&
+        Array.isArray(req.files)
+    ) {
+
+        return req.files;
+
+    }
+
+    return [];
 
 }
 
@@ -95,6 +115,24 @@ function redirectWithError(
 //
 // GET /dairy/feedstore/:id
 //
+// The service is responsible for returning:
+//
+//     dairy
+//     user
+//     updates
+//     feedUpdates
+//     feedTypes
+//     medicineTypes
+//     stockUnits
+//
+// The EJS safely handles either:
+//
+//     updates
+//
+// or:
+//
+//     feedUpdates
+//
 // ==========================================================
 
 async function viewFeedStore(
@@ -108,9 +146,9 @@ async function viewFeedStore(
 
     try {
 
-        // --------------------------------------------------
+        // ==================================================
         // AUTHENTICATION
-        // --------------------------------------------------
+        // ==================================================
 
         const user =
             getUser(req);
@@ -127,9 +165,9 @@ async function viewFeedStore(
         }
 
 
-        // --------------------------------------------------
-        // ID
-        // --------------------------------------------------
+        // ==================================================
+        // DAIRY ID
+        // ==================================================
 
         if (!dairyId) {
 
@@ -142,9 +180,9 @@ async function viewFeedStore(
         }
 
 
-        // --------------------------------------------------
-        // LOAD PAGE DATA
-        // --------------------------------------------------
+        // ==================================================
+        // LOAD FEED STORE DATA
+        // ==================================================
 
         const data =
             await feedsService.getFeedStorePage({
@@ -156,9 +194,76 @@ async function viewFeedStore(
             });
 
 
-        // --------------------------------------------------
+        // ==================================================
+        // SAFETY
+        //
+        // Ensure the variables expected by feeds-store.ejs
+        // always exist.
+        // ==================================================
+
+        const pageData = {
+
+            ...data,
+
+            dairy:
+                data &&
+                data.dairy
+                    ? data.dairy
+                    : null,
+
+            user,
+
+            updates:
+                data &&
+                Array.isArray(data.updates)
+                    ? data.updates
+                    : [],
+
+            feedUpdates:
+                data &&
+                Array.isArray(data.feedUpdates)
+                    ? data.feedUpdates
+                    : [],
+
+            feedTypes:
+                data &&
+                Array.isArray(data.feedTypes)
+                    ? data.feedTypes
+                    : [],
+
+            medicineTypes:
+                data &&
+                Array.isArray(data.medicineTypes)
+                    ? data.medicineTypes
+                    : [],
+
+            stockUnits:
+                data &&
+                Array.isArray(data.stockUnits)
+                    ? data.stockUnits
+                    : []
+
+        };
+
+
+        // ==================================================
+        // DAIRY MUST EXIST
+        // ==================================================
+
+        if (!pageData.dairy) {
+
+            return res
+                .status(404)
+                .send(
+                    "Dairy profile not found."
+                );
+
+        }
+
+
+        // ==================================================
         // RENDER
-        // --------------------------------------------------
+        // ==================================================
 
         return res.render(
 
@@ -166,7 +271,7 @@ async function viewFeedStore(
 
             {
 
-                ...data,
+                ...pageData,
 
                 title:
                     "Feed Store"
@@ -186,8 +291,13 @@ async function viewFeedStore(
         return res
             .status(500)
             .send(
-                error.message ||
-                "Unable to load the feed store."
+                error &&
+                error.message
+
+                    ? error.message
+
+                    : "Unable to load the feed store."
+
             );
 
     }
@@ -196,7 +306,7 @@ async function viewFeedStore(
 
 
 // ==========================================================
-// ADMIN: RESTOCK
+// ADMIN — RESTOCK
 // ==========================================================
 //
 // POST /dairy/:id/feedstore/restock
@@ -205,8 +315,8 @@ async function viewFeedStore(
 //
 // Can:
 //
-//     • Add new feed
-//     • Add new medicine
+//     • Add animal feed
+//     • Add veterinary medicine
 //     • Increase existing stock
 //     • Set financial value
 //     • Set instructions
@@ -226,9 +336,9 @@ async function restockFeedStore(
 
     try {
 
-        // --------------------------------------------------
+        // ==================================================
         // AUTHENTICATION
-        // --------------------------------------------------
+        // ==================================================
 
         const user =
             getUser(req);
@@ -245,9 +355,9 @@ async function restockFeedStore(
         }
 
 
-        // --------------------------------------------------
-        // ROLE
-        // --------------------------------------------------
+        // ==================================================
+        // ADMIN ONLY
+        // ==================================================
 
         if (
             getUserRole(req) !==
@@ -263,9 +373,9 @@ async function restockFeedStore(
         }
 
 
-        // --------------------------------------------------
-        // ID
-        // --------------------------------------------------
+        // ==================================================
+        // DAIRY ID
+        // ==================================================
 
         if (!dairyId) {
 
@@ -278,31 +388,25 @@ async function restockFeedStore(
         }
 
 
-        // --------------------------------------------------
-        // BODY
-        // --------------------------------------------------
+        // ==================================================
+        // REQUEST BODY
+        // ==================================================
 
         const body =
             req.body || {};
 
 
-        // --------------------------------------------------
-        // FILES
-        // --------------------------------------------------
+        // ==================================================
+        // UPLOADED FILES
+        // ==================================================
 
         const files =
-            Array.isArray(
-                req.files
-            )
-
-                ? req.files
-
-                : [];
+            getFiles(req);
 
 
-        // --------------------------------------------------
-        // SERVICE
-        // --------------------------------------------------
+        // ==================================================
+        // ADD STOCK
+        // ==================================================
 
         await feedsService.addStock({
 
@@ -317,9 +421,9 @@ async function restockFeedStore(
         });
 
 
-        // --------------------------------------------------
+        // ==================================================
         // SUCCESS
-        // --------------------------------------------------
+        // ==================================================
 
         return res.redirect(
 
@@ -358,22 +462,24 @@ async function restockFeedStore(
 //     dairyWorker
 //     admin
 //
-// WORKER MAY CHANGE:
+// Worker may submit:
 //
-//     • Remaining quantity
-//     • Unit
-//     • Message
-//     • Images
+//     stockId
+//     quantityRemaining
+//     unit
+//     message
+//     images
 //
-// WORKER CANNOT CHANGE:
+// Worker must NOT be allowed to modify:
 //
-//     • Price
-//     • feedsAmount
-//     • Stock name
-//     • Category
-//     • Initial quantity
-//     • Financial records
+//     price
+//     feedsAmount
+//     stock name
+//     category
+//     initial quantity
+//     financial records
 //
+// The service is responsible for enforcing those rules.
 // ==========================================================
 
 async function updateFeedStore(
@@ -387,9 +493,9 @@ async function updateFeedStore(
 
     try {
 
-        // --------------------------------------------------
+        // ==================================================
         // AUTHENTICATION
-        // --------------------------------------------------
+        // ==================================================
 
         const user =
             getUser(req);
@@ -406,9 +512,9 @@ async function updateFeedStore(
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // ROLE
-        // --------------------------------------------------
+        // ==================================================
 
         const role =
             getUserRole(req);
@@ -428,9 +534,9 @@ async function updateFeedStore(
         }
 
 
-        // --------------------------------------------------
-        // ID
-        // --------------------------------------------------
+        // ==================================================
+        // DAIRY ID
+        // ==================================================
 
         if (!dairyId) {
 
@@ -443,31 +549,25 @@ async function updateFeedStore(
         }
 
 
-        // --------------------------------------------------
-        // BODY
-        // --------------------------------------------------
+        // ==================================================
+        // REQUEST BODY
+        // ==================================================
 
         const body =
             req.body || {};
 
 
-        // --------------------------------------------------
-        // FILES
-        // --------------------------------------------------
+        // ==================================================
+        // UPLOADED FILES
+        // ==================================================
 
         const files =
-            Array.isArray(
-                req.files
-            )
-
-                ? req.files
-
-                : [];
+            getFiles(req);
 
 
-        // --------------------------------------------------
-        // SERVICE
-        // --------------------------------------------------
+        // ==================================================
+        // UPDATE REMAINING STOCK
+        // ==================================================
 
         await feedsService.updateRemainingStock({
 
@@ -482,9 +582,9 @@ async function updateFeedStore(
         });
 
 
-        // --------------------------------------------------
+        // ==================================================
         // SUCCESS
-        // --------------------------------------------------
+        // ==================================================
 
         return res.redirect(
 
