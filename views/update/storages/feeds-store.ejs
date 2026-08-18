@@ -94,18 +94,16 @@ function stockUnit(stock) {
 
 
 /*
- * IMPORTANT:
+ * UNIT PRICE
  *
- * This is UNIT PRICE.
- *
- * It is NOT the total value of the stock.
+ * This is the price for ONE unit.
  *
  * Example:
  *
  * quantity = 100 kg
  * unitPrice = KES 80/kg
  *
- * stock value = 100 × 80 = KES 8,000
+ * total stock value = 100 × 80
  */
 
 function stockPrice(stock) {
@@ -184,8 +182,6 @@ function stockMessage(stock) {
 
     <!-- ======================================================
          ADMIN COMPOSER
-         
-         ONLY ADMIN SEES THIS.
     ======================================================= -->
 
     <% if (isAdmin) { %>
@@ -291,7 +287,7 @@ function stockMessage(stock) {
 
 
                     <!-- ==================================================
-                         CLICKABLE STOCK ITEM
+                         STOCK ITEM
                     =================================================== -->
 
                     <article
@@ -420,21 +416,6 @@ function stockMessage(stock) {
 
 <!-- ==========================================================
      STOCK MODAL
-     
-     IMPORTANT LAYOUT:
-     
-     Header     = 70px
-     Top menu   = 50px
-     Footer     = 50px
-     
-     Modal area:
-     
-     top    = 120px
-     bottom = 50px
-     
-     Available height:
-     
-     100vh - 170px
 ========================================================== -->
 
 <div
@@ -502,16 +483,11 @@ function stockMessage(stock) {
 
         <form
             id="stockForm"
-
             action="/dairy/<%= currentDairy._id %>/feedstore/restock"
-
             method="POST"
-
             enctype="multipart/form-data"
         >
 
-
-            <!-- EXISTING STOCK ID -->
 
             <input
                 type="hidden"
@@ -640,12 +616,6 @@ function stockMessage(stock) {
             <div class="form-grid">
 
 
-                <!-- ==================================================
-                     QUANTITY
-                     
-                     Editable when existing stock is opened.
-                =================================================== -->
-
                 <div class="form-field">
 
                     <label for="quantity">
@@ -662,20 +632,12 @@ function stockMessage(stock) {
                     >
 
                     <small id="quantityHelp">
-                        Enter the quantity being added.
+                        Enter the initial quantity.
                     </small>
 
                 </div>
 
 
-
-                <!-- ==================================================
-                     UNIT
-                     
-                     IMPORTANT:
-                     Unit becomes read-only when editing
-                     existing stock for EVERYONE.
-                =================================================== -->
 
                 <div class="form-field">
 
@@ -715,9 +677,15 @@ function stockMessage(stock) {
             <!-- ==================================================
                  UNIT PRICE
                  
-                 ADMIN ONLY.
+                 IMPORTANT:
                  
-                 This is ALWAYS the price per unit.
+                 This field is dynamically displayed only when:
+                 
+                 NEW STOCK:
+                     quantity > 0
+                 
+                 EXISTING STOCK:
+                     new quantity > current quantity
             =================================================== -->
 
             <% if (isAdmin) { %>
@@ -725,6 +693,7 @@ function stockMessage(stock) {
                 <div
                     id="priceField"
                     class="form-field"
+                    hidden
                 >
 
                     <label for="price">
@@ -748,7 +717,10 @@ function stockMessage(stock) {
                     </div>
 
                     <small>
-                        Price for one <span id="priceUnitLabel">unit</span>.
+                        Price for one
+                        <span id="priceUnitLabel">
+                            unit
+                        </span>.
                     </small>
 
                 </div>
@@ -1367,32 +1339,6 @@ function stockMessage(stock) {
    MODAL
 ========================================================== */
 
-/*
- * LAYOUT HEIGHT:
- *
- * Header     = 70px
- * Top menu   = 50px
- * Footer     = 50px
- *
- * Therefore the usable page area between the top menu
- * and footer begins at:
- *
- * 70px + 50px = 120px
- *
- * and ends 50px before the bottom.
- *
- * The modal is therefore constrained to:
- *
- * top:    120px
- * bottom: 50px
- *
- * giving it:
- *
- * 100vh - 170px
- *
- * of usable vertical space.
- */
-
 .stock-modal {
 
     position: fixed;
@@ -1424,7 +1370,7 @@ function stockMessage(stock) {
 
 
 /* ==========================================================
-   MODAL BACKDROP
+   BACKDROP
 ========================================================== */
 
 .stock-modal-backdrop {
@@ -1443,7 +1389,7 @@ function stockMessage(stock) {
 
 
 /* ==========================================================
-   MODAL DIALOG
+   DIALOG
 ========================================================== */
 
 .stock-modal-dialog {
@@ -1454,18 +1400,13 @@ function stockMessage(stock) {
 
     max-width: 560px;
 
-    /*
-     * Parent already has the exact available height.
-     *
-     * max-height: 100% means the dialog can never
-     * escape the space between the top menu and footer.
-     */
-
     max-height: 100%;
 
     min-width: 0;
 
     overflow-y: auto;
+
+    overflow-x: hidden;
 
     border-radius: 15px;
 
@@ -1475,17 +1416,7 @@ function stockMessage(stock) {
         0 20px 60px
         rgba(0,0,0,.25);
 
-    /*
-     * Smooth scrolling on touch devices.
-     */
-
     -webkit-overflow-scrolling: touch;
-
-    /*
-     * Prevent horizontal overflow.
-     */
-
-    overflow-x: hidden;
 
 }
 
@@ -1663,8 +1594,13 @@ function stockMessage(stock) {
 }
 
 
+.form-field[hidden] {
+    display: none !important;
+}
+
+
 /* ==========================================================
-   READ-ONLY FIELDS
+   READ ONLY
 ========================================================== */
 
 .form-field input[readonly],
@@ -1837,18 +1773,6 @@ function stockMessage(stock) {
     }
 
 
-    /* ======================================================
-       MOBILE MODAL
-       
-       IMPORTANT:
-       
-       Do NOT use inset: 0 here.
-       
-       The modal must remain below the
-       70px header + 50px top menu
-       and above the 50px footer.
-    ======================================================= */
-
     .stock-modal {
 
         top: 120px;
@@ -1935,7 +1859,7 @@ function stockMessage(stock) {
 
 
 /* ==========================================================
-   VERY SHORT SCREENS
+   SHORT SCREENS
 ========================================================== */
 
 @media (max-height: 600px) {
@@ -2068,9 +1992,11 @@ document.addEventListener(
             );
 
 
-        /*
-         * PRICE EXISTS ONLY FOR ADMIN.
-         */
+        const priceField =
+            document.getElementById(
+                "priceField"
+            );
+
 
         const price =
             document.getElementById(
@@ -2162,6 +2088,28 @@ document.addEventListener(
             false;
 
 
+        /*
+         * Stores the quantity that existed before
+         * the user started editing.
+         *
+         * Example:
+         *
+         * Current stock = 100 kg
+         *
+         * New quantity = 120 kg
+         * → price shown
+         *
+         * New quantity = 100 kg
+         * → price hidden
+         *
+         * New quantity = 80 kg
+         * → price hidden
+         */
+
+        let originalQuantity =
+            0;
+
+
 
         /* ======================================================
            MODAL OPEN
@@ -2193,6 +2141,9 @@ document.addEventListener(
 
             existingStockMode =
                 false;
+
+            originalQuantity =
+                0;
 
         }
 
@@ -2242,6 +2193,182 @@ document.addEventListener(
 
 
         /* ======================================================
+           UNIT PRICE VISIBILITY
+           
+           THIS IS THE IMPORTANT PART.
+           
+           NEW STOCK:
+               quantity > 0
+                   → SHOW PRICE
+           
+               quantity <= 0
+                   → HIDE PRICE
+           
+           EXISTING STOCK:
+               quantity > originalQuantity
+                   → SHOW PRICE
+           
+               quantity <= originalQuantity
+                   → HIDE PRICE
+        ======================================================= */
+
+        function updatePriceVisibility() {
+
+            /*
+             * If this user is not admin,
+             * there is no price field to manage.
+             */
+
+            if (
+                !isAdmin ||
+                !priceField ||
+                !price
+            ) {
+
+                return;
+
+            }
+
+
+            const newQuantity =
+                Number(
+                    quantity.value
+                );
+
+
+            const validQuantity =
+                Number.isFinite(
+                    newQuantity
+                )
+                    ? newQuantity
+                    : 0;
+
+
+            let shouldShowPrice =
+                false;
+
+
+
+            /* ==================================================
+               NEW STOCK
+            =================================================== */
+
+            if (
+                !existingStockMode
+            ) {
+
+                /*
+                 * Initial stock quantity must be
+                 * greater than zero before price
+                 * becomes relevant.
+                 */
+
+                shouldShowPrice =
+                    validQuantity > 0;
+
+            }
+
+
+
+            /* ==================================================
+               EXISTING STOCK
+            =================================================== */
+
+            else {
+
+                /*
+                 * Price is relevant ONLY when the
+                 * new quantity is greater than the
+                 * quantity already in stock.
+                 */
+
+                shouldShowPrice =
+                    validQuantity >
+                    originalQuantity;
+
+            }
+
+
+
+            /* ==================================================
+               SHOW
+            =================================================== */
+
+            if (
+                shouldShowPrice
+            ) {
+
+                priceField.hidden =
+                    false;
+
+                price.disabled =
+                    false;
+
+                price.required =
+                    true;
+
+                return;
+
+            }
+
+
+
+            /* ==================================================
+               HIDE
+            =================================================== */
+
+            priceField.hidden =
+                true;
+
+            price.required =
+                false;
+
+            price.disabled =
+                true;
+
+
+            /*
+             * Clear the price so an old unit price
+             * cannot accidentally be submitted when
+             * the quantity is not increasing.
+             */
+
+            price.value =
+                "";
+
+        }
+
+
+
+        /* ======================================================
+           QUANTITY LISTENER
+           
+           Price visibility changes immediately while
+           the user types.
+        ======================================================= */
+
+        quantity.addEventListener(
+            "input",
+            function() {
+
+                updatePriceVisibility();
+
+            }
+        );
+
+
+        quantity.addEventListener(
+            "change",
+            function() {
+
+                updatePriceVisibility();
+
+            }
+        );
+
+
+
+        /* ======================================================
            CATEGORY VISIBILITY
         ======================================================= */
 
@@ -2268,10 +2395,6 @@ document.addEventListener(
 
 
 
-            /*
-             * Update unit-price description.
-             */
-
             if (
                 priceUnitLabel &&
                 unit.value
@@ -2281,6 +2404,14 @@ document.addEventListener(
                     unit.value;
 
             }
+
+
+            /*
+             * Category changes can also affect
+             * the price display.
+             */
+
+            updatePriceVisibility();
 
         }
 
@@ -2318,8 +2449,6 @@ document.addEventListener(
 
         /* ======================================================
            RESET FIELD STATE
-           
-           Used before opening Add Stock.
         ======================================================= */
 
         function resetFieldState() {
@@ -2337,14 +2466,6 @@ document.addEventListener(
                 false;
 
 
-            /*
-             * Unit is editable ONLY while creating
-             * a completely new stock item.
-             *
-             * Once an existing item is opened,
-             * it becomes read-only for everyone.
-             */
-
             unit.disabled =
                 false;
 
@@ -2356,6 +2477,12 @@ document.addEventListener(
             if (price) {
 
                 price.readOnly =
+                    false;
+
+                price.disabled =
+                    false;
+
+                price.required =
                     false;
 
             }
@@ -2407,8 +2534,6 @@ document.addEventListener(
 
         /* ======================================================
            CREATE HIDDEN COPY
-           
-           Disabled fields are not submitted by browsers.
         ======================================================= */
 
         function createHiddenCopy(
@@ -2469,36 +2594,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           LOCK EXISTING STOCK
-           
-           RULES:
-           
-           CATEGORY:
-               read-only for everyone
-           
-           NAME:
-               read-only for everyone
-           
-           QUANTITY:
-               editable
-           
-           UNIT:
-               read-only for everyone
-           
-           PRICE:
-               admin only + editable
-           
-           INSTRUCTIONS:
-               admin only + editable
-           
-           EXPECTED DURATION:
-               admin only + editable
-           
-           ADDITIONAL INFORMATION:
-               editable
-           
-           PHOTOS:
-               editable
+           LOCK EXISTING STOCK FIELDS
         ======================================================= */
 
         function lockExistingStockFields() {
@@ -2566,8 +2662,7 @@ document.addEventListener(
             /* ==================================================
                UNIT
                
-               ALWAYS READ-ONLY WHEN EDITING
-               EXISTING STOCK.
+               ALWAYS LOCKED WHEN EDITING.
             =================================================== */
 
             unit.disabled =
@@ -2584,11 +2679,8 @@ document.addEventListener(
             /* ==================================================
                PRICE
                
-               ADMIN ONLY.
-               
-               Still editable.
-               
-               This is UNIT PRICE.
+               Its visibility is controlled by
+               updatePriceVisibility().
             =================================================== */
 
             if (price) {
@@ -2601,9 +2693,7 @@ document.addEventListener(
 
 
             /* ==================================================
-               INSTRUCTIONS
-               
-               ADMIN ONLY.
+               ADMIN FIELDS
             =================================================== */
 
             if (instructions) {
@@ -2613,13 +2703,6 @@ document.addEventListener(
 
             }
 
-
-
-            /* ==================================================
-               EXPECTED DURATION
-               
-               ADMIN ONLY.
-            =================================================== */
 
             if (expectedDuration) {
 
@@ -2632,8 +2715,6 @@ document.addEventListener(
 
             /* ==================================================
                ADDITIONAL INFORMATION
-               
-               EVERYONE CAN EDIT.
             =================================================== */
 
             message.readOnly =
@@ -2643,12 +2724,18 @@ document.addEventListener(
 
             /* ==================================================
                PHOTOS
-               
-               EVERYONE CAN ADD PHOTOS.
             =================================================== */
 
             images.disabled =
                 false;
+
+
+            /*
+             * Immediately decide whether price should
+             * be visible based on the current quantity.
+             */
+
+            updatePriceVisibility();
 
         }
 
@@ -2656,8 +2743,6 @@ document.addEventListener(
 
         /* ======================================================
            OPEN NEW STOCK
-           
-           ADMIN ONLY.
         ======================================================= */
 
         function openNewStock() {
@@ -2671,6 +2756,10 @@ document.addEventListener(
 
             existingStockMode =
                 false;
+
+
+            originalQuantity =
+                0;
 
 
             resetFieldState();
@@ -2715,7 +2804,39 @@ document.addEventListener(
             }
 
 
+            /*
+             * Start with Unit Price hidden.
+             *
+             * It appears automatically when the
+             * quantity becomes greater than zero.
+             */
+
+            if (priceField) {
+
+                priceField.hidden =
+                    true;
+
+            }
+
+
+            if (price) {
+
+                price.value =
+                    "";
+
+                price.disabled =
+                    true;
+
+                price.required =
+                    false;
+
+            }
+
+
             updateCategory();
+
+
+            updatePriceVisibility();
 
 
             openModal();
@@ -2805,6 +2926,19 @@ document.addEventListener(
 
 
             /* ==================================================
+               ORIGINAL QUANTITY
+            =================================================== */
+
+            originalQuantity =
+                Number.isFinite(
+                    currentQuantity
+                )
+                    ? currentQuantity
+                    : 0;
+
+
+
+            /* ==================================================
                STOCK ID
             =================================================== */
 
@@ -2854,11 +2988,7 @@ document.addEventListener(
             =================================================== */
 
             quantity.value =
-                Number.isFinite(
-                    currentQuantity
-                )
-                    ? currentQuantity
-                    : 0;
+                originalQuantity;
 
 
 
@@ -2874,7 +3004,8 @@ document.addEventListener(
             /* ==================================================
                UNIT PRICE
                
-               ADMIN ONLY.
+               We keep the existing price in memory/UI
+               only if the user later increases quantity.
             =================================================== */
 
             if (price) {
@@ -2929,11 +3060,6 @@ document.addEventListener(
                PHOTOS
             =================================================== */
 
-            /*
-             * File inputs cannot be populated from an
-             * existing file for security reasons.
-             */
-
             images.value =
                 "";
 
@@ -2959,7 +3085,7 @@ document.addEventListener(
 
             quantityHelp.textContent =
                 "Current quantity: " +
-                currentQuantity +
+                originalQuantity +
                 " " +
                 stockUnit;
 
@@ -2974,7 +3100,8 @@ document.addEventListener(
             ) {
 
                 priceUnitLabel.textContent =
-                    stockUnit || "unit";
+                    stockUnit ||
+                    "unit";
 
             }
 
@@ -3007,6 +3134,17 @@ document.addEventListener(
 
             lockExistingStockFields();
 
+
+
+            /*
+             * At this exact moment:
+             *
+             * quantity === originalQuantity
+             *
+             * Therefore Unit Price is HIDDEN.
+             */
+
+            updatePriceVisibility();
 
 
             openModal();
@@ -3065,10 +3203,107 @@ document.addEventListener(
 
 
         /* ======================================================
+           FORM SUBMIT SAFETY
+           
+           Before submission, make absolutely sure that
+           price is not submitted unless the quantity
+           has increased.
+        ======================================================= */
+
+        form.addEventListener(
+            "submit",
+            function(event) {
+
+                if (
+                    isAdmin &&
+                    price
+                ) {
+
+                    const submittedQuantity =
+                        Number(
+                            quantity.value
+                        );
+
+
+                    const validSubmittedQuantity =
+                        Number.isFinite(
+                            submittedQuantity
+                        )
+                            ? submittedQuantity
+                            : 0;
+
+
+                    let priceAllowed =
+                        false;
+
+
+                    if (
+                        !existingStockMode
+                    ) {
+
+                        /*
+                         * New stock:
+                         * price allowed when quantity > 0.
+                         */
+
+                        priceAllowed =
+                            validSubmittedQuantity >
+                            0;
+
+                    } else {
+
+                        /*
+                         * Existing stock:
+                         * price allowed ONLY when
+                         * quantity actually increases.
+                         */
+
+                        priceAllowed =
+                            validSubmittedQuantity >
+                            originalQuantity;
+
+                    }
+
+
+                    if (
+                        !priceAllowed
+                    ) {
+
+                        /*
+                         * Do not allow stale price data
+                         * to reach the backend.
+                         */
+
+                        price.value =
+                            "";
+
+                        price.disabled =
+                            true;
+
+                        price.required =
+                            false;
+
+                    } else {
+
+                        price.disabled =
+                            false;
+
+                    }
+
+                }
+
+            }
+        );
+
+
+
+        /* ======================================================
            INITIAL STATE
         ======================================================= */
 
         updateCategory();
+
+        updatePriceVisibility();
 
 
     }
