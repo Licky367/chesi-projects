@@ -535,7 +535,7 @@ async function viewFeedStore(
 
         return res.render(
 
-            "update/feeds-store",
+            "update/storages/feeds-store",
 
             {
 
