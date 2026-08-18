@@ -1,0 +1,815 @@
+<%
+/* ==========================================================
+   ADD NEW STOCK
+   FILE:
+       views/update/storage/add-stock.ejs
+
+   PURPOSE:
+       Create a completely new feed-store stock item.
+========================================================== */
+
+const currentDairy = dairy || {};
+const currentUser = user || {};
+
+const isAdmin =
+    currentUser.role === "admin";
+
+
+const availableFeedTypes =
+    Array.isArray(feedTypes)
+        ? feedTypes
+        : [];
+
+
+const availableMedicineTypes =
+    Array.isArray(medicineTypes)
+        ? medicineTypes
+        : [];
+
+
+const availableStockUnits =
+    Array.isArray(stockUnits)
+        ? stockUnits
+        : [];
+
+%>
+
+
+<div class="storage-page">
+
+
+    <!-- ======================================================
+         HEADER
+    ======================================================= -->
+
+    <header class="storage-header">
+
+        <span class="storage-eyebrow">
+            FEED STORE
+        </span>
+
+        <h1>
+            Add New Stock
+        </h1>
+
+        <p>
+            Add a new animal feed or veterinary medicine
+            to the feed store.
+        </p>
+
+    </header>
+
+
+
+    <!-- ======================================================
+         FORM
+    ======================================================= -->
+
+    <form
+        id="addStockForm"
+        class="storage-form"
+        action="/dairy/<%= currentDairy._id %>/feedstore/restock"
+        method="POST"
+        enctype="multipart/form-data"
+    >
+
+
+        <!-- ==================================================
+             ACTION
+        =================================================== -->
+
+        <input
+            type="hidden"
+            name="action"
+            value="add"
+        >
+
+
+
+        <!-- ==================================================
+             STOCK TYPE
+        =================================================== -->
+
+        <div class="storage-field">
+
+            <label for="addCategory">
+                Stock type
+            </label>
+
+            <select
+                id="addCategory"
+                name="category"
+                required
+            >
+
+                <option value="">
+                    Select stock type
+                </option>
+
+                <option value="feed">
+                    Animal Feed
+                </option>
+
+                <option value="medicine">
+                    Veterinary Medicine
+                </option>
+
+            </select>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             FEED
+        =================================================== -->
+
+        <div
+            id="addFeedField"
+            class="storage-field"
+        >
+
+            <label for="addFeedName">
+                Animal feed
+            </label>
+
+            <select
+                id="addFeedName"
+                name="feedName"
+            >
+
+                <option value="">
+                    Select animal feed
+                </option>
+
+                <% availableFeedTypes.forEach(function(type) { %>
+
+                    <option value="<%= type %>">
+                        <%= type %>
+                    </option>
+
+                <% }); %>
+
+            </select>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             MEDICINE
+        =================================================== -->
+
+        <div
+            id="addMedicineField"
+            class="storage-field"
+            hidden
+        >
+
+            <label for="addMedicineName">
+                Veterinary medicine
+            </label>
+
+            <select
+                id="addMedicineName"
+                name="medicineName"
+            >
+
+                <option value="">
+                    Select veterinary medicine
+                </option>
+
+                <% availableMedicineTypes.forEach(function(type) { %>
+
+                    <option value="<%= type %>">
+                        <%= type %>
+                    </option>
+
+                <% }); %>
+
+            </select>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             QUANTITY + UNIT
+        =================================================== -->
+
+        <div class="storage-grid">
+
+
+            <div class="storage-field">
+
+                <label for="addQuantity">
+                    Initial quantity
+                </label>
+
+                <input
+                    id="addQuantity"
+                    type="number"
+                    name="quantity"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="Enter quantity"
+                    required
+                >
+
+            </div>
+
+
+
+            <div class="storage-field">
+
+                <label for="addUnit">
+                    Unit
+                </label>
+
+                <select
+                    id="addUnit"
+                    name="unit"
+                    required
+                >
+
+                    <option value="">
+                        Select unit
+                    </option>
+
+                    <% availableStockUnits.forEach(function(unit) { %>
+
+                        <option value="<%= unit %>">
+                            <%= unit %>
+                        </option>
+
+                    <% }); %>
+
+                </select>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- ==================================================
+             UNIT PRICE
+        =================================================== -->
+
+        <% if (isAdmin) { %>
+
+            <div class="storage-field">
+
+                <label for="addPrice">
+                    Unit price
+                </label>
+
+                <div class="money-input">
+
+                    <span>
+                        KES
+                    </span>
+
+                    <input
+                        id="addPrice"
+                        type="number"
+                        name="price"
+                        min="0"
+                        step="0.01"
+                        placeholder="Price per unit"
+                        required
+                    >
+
+                </div>
+
+                <small>
+                    Price for one unit of this stock.
+                </small>
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 INSTRUCTIONS
+            =================================================== -->
+
+            <div class="storage-field">
+
+                <label for="addInstructions">
+                    Instructions of use
+                </label>
+
+                <textarea
+                    id="addInstructions"
+                    name="instructions"
+                    rows="4"
+                    maxlength="1500"
+                    placeholder="How should this stock be used?"
+                ></textarea>
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 EXPECTED DURATION
+            =================================================== -->
+
+            <div class="storage-field">
+
+                <label for="addDuration">
+                    Expected duration
+                </label>
+
+                <input
+                    id="addDuration"
+                    type="text"
+                    name="expectedDuration"
+                    maxlength="100"
+                    placeholder="e.g. Approximately 14 days"
+                >
+
+            </div>
+
+        <% } %>
+
+
+
+        <!-- ==================================================
+             ADDITIONAL INFORMATION
+        =================================================== -->
+
+        <div class="storage-field">
+
+            <label for="addMessage">
+                Additional information
+            </label>
+
+            <textarea
+                id="addMessage"
+                name="message"
+                rows="4"
+                maxlength="1500"
+                placeholder="Add any useful information..."
+            ></textarea>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             PHOTOS
+        =================================================== -->
+
+        <div class="storage-field">
+
+            <label for="addImages">
+                Photos
+            </label>
+
+            <input
+                id="addImages"
+                type="file"
+                name="images"
+                accept="image/*"
+                multiple
+            >
+
+            <small>
+                Add photos of the feed or medicine if needed.
+            </small>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             SUBMIT
+        =================================================== -->
+
+        <button
+            type="submit"
+            class="storage-submit"
+        >
+
+            <span>
+                ➕
+            </span>
+
+            <span>
+                Add Stock
+            </span>
+
+        </button>
+
+
+    </form>
+
+</div>
+
+
+
+<style>
+
+/* ==========================================================
+   PAGE
+========================================================== */
+
+.storage-page {
+
+    width: 100%;
+
+    max-width: 650px;
+
+    margin: 0 auto;
+
+    padding: 18px 14px 50px;
+
+    color: #29362f;
+
+}
+
+
+.storage-page * {
+    box-sizing: border-box;
+}
+
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
+.storage-header {
+
+    margin-bottom: 20px;
+
+}
+
+
+.storage-eyebrow {
+
+    color: #198754;
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: 1px;
+
+}
+
+
+.storage-header h1 {
+
+    margin: 4px 0;
+
+    color: #123f29;
+
+    font-size: 24px;
+
+}
+
+
+.storage-header p {
+
+    margin: 0;
+
+    color: #7b867f;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+
+}
+
+
+/* ==========================================================
+   FORM
+========================================================== */
+
+.storage-form {
+
+    padding: 16px;
+
+    border: 1px solid #dce7e0;
+
+    border-radius: 14px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 5px 20px
+        rgba(23,65,43,.06);
+
+}
+
+
+/* ==========================================================
+   FIELD
+========================================================== */
+
+.storage-field {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+    margin-bottom: 13px;
+
+}
+
+
+.storage-field label {
+
+    color: #344139;
+
+    font-size: 10px;
+
+    font-weight: 850;
+
+}
+
+
+.storage-field input,
+.storage-field select,
+.storage-field textarea {
+
+    width: 100%;
+
+    padding: 10px;
+
+    border: 1px solid #d5e1d9;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    background: #ffffff;
+
+    color: #29362f;
+
+    font-family: inherit;
+
+    font-size: 11px;
+
+}
+
+
+.storage-field textarea {
+
+    resize: vertical;
+
+}
+
+
+.storage-field input:focus,
+.storage-field select:focus,
+.storage-field textarea:focus {
+
+    border-color: #198754;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(25,135,84,.08);
+
+}
+
+
+.storage-field small {
+
+    color: #87918b;
+
+    font-size: 8px;
+
+}
+
+
+.storage-field[hidden] {
+
+    display: none !important;
+
+}
+
+
+/* ==========================================================
+   GRID
+========================================================== */
+
+.storage-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 10px;
+
+}
+
+
+/* ==========================================================
+   MONEY
+========================================================== */
+
+.money-input {
+
+    display: flex;
+
+    align-items: center;
+
+    border: 1px solid #d5e1d9;
+
+    border-radius: 8px;
+
+    overflow: hidden;
+
+}
+
+
+.money-input span {
+
+    padding-left: 10px;
+
+    color: #198754;
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+}
+
+
+.money-input input {
+
+    border: none;
+
+    box-shadow: none;
+
+}
+
+
+.money-input input:focus {
+
+    border: none;
+
+    box-shadow: none;
+
+}
+
+
+/* ==========================================================
+   SUBMIT
+========================================================== */
+
+.storage-submit {
+
+    width: 100%;
+
+    min-height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    margin-top: 5px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    background: #0d5933;
+
+    color: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 11px;
+
+    font-weight: 850;
+
+    cursor: pointer;
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 600px) {
+
+    .storage-page {
+
+        padding:
+            12px 8px 40px;
+
+    }
+
+
+    .storage-form {
+
+        padding: 13px;
+
+    }
+
+
+    .storage-grid {
+
+        grid-template-columns: 1fr;
+
+        gap: 0;
+
+    }
+
+}
+
+</style>
+
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+
+        const category =
+            document.getElementById(
+                "addCategory"
+            );
+
+
+        const feedField =
+            document.getElementById(
+                "addFeedField"
+            );
+
+
+        const medicineField =
+            document.getElementById(
+                "addMedicineField"
+            );
+
+
+        const feedName =
+            document.getElementById(
+                "addFeedName"
+            );
+
+
+        const medicineName =
+            document.getElementById(
+                "addMedicineName"
+            );
+
+
+        if (!category) {
+            return;
+        }
+
+
+        function updateCategory() {
+
+            const value =
+                category.value;
+
+
+            feedField.hidden =
+                value !== "feed";
+
+
+            medicineField.hidden =
+                value !== "medicine";
+
+
+            feedName.required =
+                value === "feed";
+
+
+            medicineName.required =
+                value === "medicine";
+
+        }
+
+
+        category.addEventListener(
+            "change",
+            updateCategory
+        );
+
+
+        updateCategory();
+
+    }
+);
+
+</script>
