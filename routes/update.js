@@ -5,19 +5,11 @@
 // DAIRY PROFILE / UPDATE ROUTES
 //
 // ROUTER MOUNT
-// ---------------------------------------------------------
+// ----------------------------------------------------------
 //
 // This router is mounted at:
 //
 //     /
-//
-// Therefore:
-//
-//     /dairy/:id
-//
-// means:
-//
-//     /dairy/:id
 //
 // ==========================================================
 
@@ -34,6 +26,14 @@ const router =
 
 const controller =
     require("../controllers/update");
+
+
+// ==========================================================
+// STORAGE CONTROLLER
+// ==========================================================
+
+const storageController =
+    require("../controllers/update/storageController");
 
 
 // ==========================================================
@@ -54,13 +54,20 @@ function isAuth(
     next
 ) {
 
-    if (!req.session.user) {
+    if (
+        !req.session ||
+        !req.session.user
+    ) {
 
-        return res.status(401).json({
+        return res.status(
+            401
+        ).json({
 
-            success: false,
+            success:
+                false,
 
-            message: "Unauthorized"
+            message:
+                "Unauthorized"
 
         });
 
@@ -118,22 +125,12 @@ router.get(
 
 
 // ==========================================================
-// FEED STORE
+// FEED STORE / STORAGE
 // ==========================================================
 //
-// IMPORTANT
-// ----------------------------------------------------------
+// STORAGE CONTROLLER:
 //
-// The feed-store routes use the Dairy asset ID after
-// /dairy/:
-//
-//     GET  /dairy/feedstore/:id
-//
-//     POST /dairy/:id/feedstore/restock
-//
-//     POST /dairy/:id/feedstore/update
-//
-// This matches the feedstore EJS form actions exactly.
+//     controllers/update/storageController.js
 //
 // ==========================================================
 
@@ -144,47 +141,57 @@ router.get(
 //
 // GET:
 //
-//     /dairy/feedstore/:id
+//     /dairy/feedstore/:dairyId
 //
 // Example:
 //
 //     /dairy/feedstore/6a802fb518fcceb7ac81eef1
 //
+// Controller:
+//
+//     storageController.getFeedStore
+//
 // ----------------------------------------------------------
 
 router.get(
-    "/dairy/feedstore/:id",
+    "/dairy/feedstore/:dairyId",
     isAuth,
-    controller.viewFeedStore
+    storageController.getFeedStore
 );
 
 
 // ----------------------------------------------------------
-// ADMIN RESTOCK
+// GET ONE STOCK
+// ----------------------------------------------------------
+//
+// GET:
+//
+//     /dairy/:dairyId/feedstore/:stockId
+//
+// Controller:
+//
+//     storageController.getStock
+//
+// ----------------------------------------------------------
+
+router.get(
+    "/dairy/:dairyId/feedstore/:stockId",
+    isAuth,
+    storageController.getStock
+);
+
+
+// ----------------------------------------------------------
+// SAVE / RESTOCK STOCK
 // ----------------------------------------------------------
 //
 // POST:
 //
-//     /dairy/:id/feedstore/restock
+//     /dairy/:dairyId/feedstore/restock
 //
-// Matches:
+// Controller:
 //
-//     action="/dairy/<%= dairy._id %>/feedstore/restock"
-//
-// Intended for:
-//
-//     admin
-//
-// Used to:
-//
-//     • add new feed stock
-//     • restock existing feed stock
-//     • add veterinary medicine
-//     • update stock quantity
-//     • record financial value
-//     • record instructions
-//     • record expected duration
-//     • upload stock images
+//     storageController.saveStock
 //
 // Upload field:
 //
@@ -194,62 +201,43 @@ router.get(
 //
 //     10 images
 //
+// The controller itself verifies that the logged-in user
+// is an administrator.
+//
 // ----------------------------------------------------------
 
 router.post(
-    "/dairy/:id/feedstore/restock",
+    "/dairy/:dairyId/feedstore/restock",
     isAuth,
     upload.array(
         "images",
         10
     ),
-    controller.restockFeedStore
+    storageController.saveStock
 );
 
 
 // ----------------------------------------------------------
-// WORKER STOCK UPDATE
+// DELETE STOCK
 // ----------------------------------------------------------
 //
-// POST:
+// DELETE:
 //
-//     /dairy/:id/feedstore/update
+//     /dairy/:dairyId/feedstore/:stockId
 //
-// Matches:
+// Controller:
 //
-//     action="/dairy/<%= dairy._id %>/feedstore/update"
+//     storageController.deleteStock
 //
-// Available to:
-//
-//     dairyWorker
-//     admin
-//
-// Used to:
-//
-//     • select existing stock
-//     • record quantity remaining
-//     • record unit
-//     • add an observation/message
-//     • upload stock images
-//
-// Upload field:
-//
-//     images
-//
-// Maximum:
-//
-//     10 images
+// The controller itself verifies that the logged-in user
+// is an administrator.
 //
 // ----------------------------------------------------------
 
-router.post(
-    "/dairy/:id/feedstore/update",
+router.delete(
+    "/dairy/:dairyId/feedstore/:stockId",
     isAuth,
-    upload.array(
-        "images",
-        10
-    ),
-    controller.updateFeedStore
+    storageController.deleteStock
 );
 
 
@@ -264,18 +252,11 @@ router.post(
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// This route comes AFTER:
+// This remains AFTER:
 //
-//     /dairy/feedstore/:id
+//     /dairy/feedstore/:dairyId
 //
-// so that:
-//
-//     /dairy/feedstore/ABC
-//
-// is handled by the feed-store page rather than being
-// interpreted as:
-//
-//     /dairy/:id
+// and before generic parameter routes.
 //
 // ----------------------------------------------------------
 
@@ -292,10 +273,6 @@ router.get(
 // POST:
 //
 //     /dairy/:id/toggle-milking
-//
-// Changes:
-//
-//     dairy.isMilking
 //
 // ----------------------------------------------------------
 
@@ -462,8 +439,7 @@ router.post(
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// This generic route remains AFTER the specific dairy and
-// feed-store routes.
+// This generic route remains after the specific routes.
 //
 // ----------------------------------------------------------
 
