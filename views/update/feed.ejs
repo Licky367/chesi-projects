@@ -5,9 +5,9 @@
          views/update/feed.ejs
 
      PURPOSE:
-         Render the chronological dairy update feed.
+         Render the chronological dairy feed.
 
-     SUPPORTED UPDATE TYPES:
+     FEED ITEM TYPES:
      ------------------------------------------------------
          post
          milk
@@ -16,44 +16,26 @@
          assetAdd
          stock
 
-     STOCK:
-     ------------------------------------------------------
-         Every stock Update document is rendered.
-
-         System stock announcements:
-             authorRole = "system"
-             user = null
-             userName = "System"
-             userImage = "/images/h1.png"
-
-         Dairy-worker stock reports:
-             authorRole = "dairyWorker"
-             user = worker
-             userName = worker name
-             userImage = worker image
-
-         feed.ejs DOES NOT FILTER STOCK BY ROLE.
-
-         stock.ejs decides how the stock update is
-         displayed.
-
      IMPORTANT:
      ------------------------------------------------------
-         The Update model stores stock information as:
+         Every item already contained in `feed` is rendered.
 
-             item.stock
+         Stock items are NOT filtered out.
 
-         Therefore the COMPLETE Update document is passed
-         to stock.ejs as:
+         stock.ejs receives:
 
              update: item
 
-     FEED ORDER:
-     ------------------------------------------------------
-         The order of `feed` is preserved exactly.
+         because stock.ejs expects the variable name
+         `update`.
 
-         Recurring cards are inserted between feed items
-         without modifying the chronological feed order.
+     RECURRING CARDS:
+     ------------------------------------------------------
+         Create-post and asset-cards are inserted between
+         actual feed items.
+
+         They do NOT modify the chronological order of
+         the actual feed.
 ====================================================== -->
 
 
@@ -63,22 +45,27 @@
 ========================================================= */
 
 
-/* =========================================================
-   CREATE POST
-========================================================= */
+/*
+ * ---------------------------------------------------------
+ * CREATE POST
+ * ---------------------------------------------------------
+ */
 
 const CREATE_POST_MIN_GAP = 8;
 
 const CREATE_POST_MAX_GAP = 20;
 
 
-/* =========================================================
-   ASSET CARDS
-========================================================= */
+/*
+ * ---------------------------------------------------------
+ * ASSET CARDS
+ * ---------------------------------------------------------
+ */
 
 const ASSET_CARD_MIN_GAP = 5;
 
 const ASSET_CARD_MAX_GAP = 18;
+
 
 
 /* =========================================================
@@ -92,6 +79,7 @@ function randomFeedInterval(min, max) {
     ) + min;
 
 }
+
 
 
 /* =========================================================
@@ -112,6 +100,7 @@ let nextAssetCardsAt =
     );
 
 
+
 /* =========================================================
    LAST INSERTION
 ========================================================= */
@@ -119,15 +108,17 @@ let nextAssetCardsAt =
 let lastInsertion = null;
 
 
+
 /* =========================================================
-   ACTUAL FEED ITEM NUMBER
+   ACTUAL FEED ITEM COUNTER
 ========================================================= */
 
 let feedItemNumber = 0;
 
 
+
 /* =========================================================
-   ASSET CARD AVAILABILITY
+   ASSET AVAILABILITY
 ========================================================= */
 
 const hasAssetCards =
@@ -144,11 +135,7 @@ const hasAssetCards =
 >
 
 
-    <!-- =====================================================
-         FEED
-    ====================================================== -->
-
-    <% if (Array.isArray(feed) && feed.length > 0) { %>
+    <% if (Array.isArray(feed)) { %>
 
 
         <% feed.forEach(function(item) { %>
@@ -157,8 +144,6 @@ const hasAssetCards =
             <%
             /* =================================================
                COUNT REAL FEED ITEM
-
-               Recurring cards do NOT count as feed items.
             ================================================= */
 
             feedItemNumber++;
@@ -167,10 +152,16 @@ const hasAssetCards =
 
 
             <!-- =================================================
-                 DETERMINE RECURRING INSERTION
-            ================================================= -->
+                 RECURRING INSERTION LOGIC
+            ================================================== -->
 
             <%
+            /*
+             * =================================================
+             * CHECK WHICH INSERTION IS READY
+             * =================================================
+             */
+
             const createPostReady =
                 feedItemNumber >=
                 nextCreatePostAt;
@@ -182,12 +173,15 @@ const hasAssetCards =
                 nextAssetCardsAt;
 
 
+
+            /*
+             * =================================================
+             * SELECT INSERTION TYPE
+             * =================================================
+             */
+
             let insertionType = null;
 
-
-            /* =================================================
-               BOTH ARE READY
-            ================================================= */
 
             if (
                 createPostReady &&
@@ -195,8 +189,8 @@ const hasAssetCards =
             ) {
 
                 /*
-                 * Prevent the same recurring card from appearing
-                 * twice consecutively.
+                 * Never place the same recurring card twice
+                 * consecutively.
                  */
 
                 if (
@@ -224,28 +218,14 @@ const hasAssetCards =
 
                 }
 
-            }
-
-
-            /* =================================================
-               ONLY CREATE POST IS READY
-            ================================================= */
-
-            else if (
+            } else if (
                 createPostReady
             ) {
 
                 insertionType =
                     "create-post";
 
-            }
-
-
-            /* =================================================
-               ONLY ASSET CARDS ARE READY
-            ================================================= */
-
-            else if (
+            } else if (
                 assetCardsReady
             ) {
 
@@ -256,9 +236,11 @@ const hasAssetCards =
 
 
 
-            /* =================================================
-               INSERT CREATE POST
-            ================================================= */
+            /*
+             * =================================================
+             * CREATE POST
+             * =================================================
+             */
 
             if (
                 insertionType ===
@@ -272,20 +254,20 @@ const hasAssetCards =
             %>
 
 
-                    <!-- =====================================
-                         CREATE POST CARD
-                    ====================================== -->
-
                     <div
                         class="feed-recurring-card feed-recurring-create-post"
                         data-feed-insertion="create-post"
                     >
 
                         <%- include("create-post", {
+
                             dairy: dairy,
+
                             user: user,
+
                             assetDairies:
                                 assetDairies || []
+
                         }) %>
 
                     </div>
@@ -306,8 +288,8 @@ const hasAssetCards =
                 } else {
 
                     /*
-                     * If the previous recurring card was also
-                     * create-post, postpone this insertion.
+                     * Give the insertion another chance
+                     * after a few real feed items.
                      */
 
                     nextCreatePostAt =
@@ -319,9 +301,11 @@ const hasAssetCards =
 
 
 
-            /* =================================================
-               INSERT ASSET CARDS
-            ================================================= */
+            /*
+             * =================================================
+             * ASSET CARDS
+             * =================================================
+             */
 
             if (
                 insertionType ===
@@ -335,20 +319,20 @@ const hasAssetCards =
             %>
 
 
-                    <!-- =====================================
-                         ASSET CARDS
-                    ====================================== -->
-
                     <div
                         class="feed-recurring-card feed-recurring-assets"
                         data-feed-insertion="asset-cards"
                     >
 
                         <%- include("asset-cards", {
+
                             dairy: dairy,
+
                             user: user,
+
                             assetDairies:
                                 assetDairies || []
+
                         }) %>
 
                     </div>
@@ -369,8 +353,8 @@ const hasAssetCards =
                 } else {
 
                     /*
-                     * If the previous recurring card was also
-                     * asset-cards, postpone this insertion.
+                     * Give the insertion another chance
+                     * after a few real feed items.
                      */
 
                     nextAssetCardsAt =
@@ -385,24 +369,22 @@ const hasAssetCards =
 
 
             <!-- =================================================
-                 ACTUAL UPDATE
-            ================================================== -->
-
-
-            <!-- =================================================
-                 GENERAL POST
+                 NORMAL POST
             ================================================== -->
 
             <% if (
-                item &&
                 item.type === "post"
             ) { %>
 
 
                 <%- include("post", {
+
                     item: item,
+
                     user: user,
+
                     type: "post"
+
                 }) %>
 
 
@@ -415,15 +397,18 @@ const hasAssetCards =
             ================================================== -->
 
             <% if (
-                item &&
                 item.type === "milk"
             ) { %>
 
 
                 <%- include("milk", {
+
                     item: item,
+
                     user: user,
+
                     type: "milk"
+
                 }) %>
 
 
@@ -436,17 +421,19 @@ const hasAssetCards =
             ================================================== -->
 
             <% if (
-                item &&
                 item.type === "medical" &&
-                item.medical &&
-                item.medical.status === "marked"
+                item.status === "marked"
             ) { %>
 
 
                 <%- include("medical-marked", {
+
                     item: item,
+
                     user: user,
+
                     type: "medical"
+
                 }) %>
 
 
@@ -459,17 +446,19 @@ const hasAssetCards =
             ================================================== -->
 
             <% if (
-                item &&
                 item.type === "medical" &&
-                item.medical &&
-                item.medical.status === "cleared"
+                item.status === "cleared"
             ) { %>
 
 
                 <%- include("medical-cleared", {
+
                     item: item,
+
                     user: user,
+
                     type: "medical"
+
                 }) %>
 
 
@@ -482,17 +471,19 @@ const hasAssetCards =
             ================================================== -->
 
             <% if (
-                item &&
                 item.type === "maintenance" &&
-                item.maintenance &&
-                item.maintenance.status === "marked"
+                item.status === "marked"
             ) { %>
 
 
                 <%- include("maintenance-marked", {
+
                     item: item,
+
                     user: user,
+
                     type: "maintenance"
+
                 }) %>
 
 
@@ -505,17 +496,19 @@ const hasAssetCards =
             ================================================== -->
 
             <% if (
-                item &&
                 item.type === "maintenance" &&
-                item.maintenance &&
-                item.maintenance.status === "cleared"
+                item.status === "cleared"
             ) { %>
 
 
                 <%- include("maintenance-cleared", {
+
                     item: item,
+
                     user: user,
+
                     type: "maintenance"
+
                 }) %>
 
 
@@ -528,15 +521,18 @@ const hasAssetCards =
             ================================================== -->
 
             <% if (
-                item &&
                 item.type === "assetAdd"
             ) { %>
 
 
                 <%- include("addAsset", {
+
                     item: item,
+
                     user: user,
+
                     type: "assetAdd"
+
                 }) %>
 
 
@@ -547,52 +543,51 @@ const hasAssetCards =
             <!-- =================================================
                  STOCK
             ==================================================
-                 
+
                  IMPORTANT:
-                 ------------------------------------------------
-                 DO NOT FILTER BY:
 
-                     authorRole
-                     user
-                     userName
-                     source
-                     isSystem
+                 stock.ejs expects:
 
-                 Both kinds of stock updates belong in the feed.
+                     update
 
-                 The Update model structure is:
+                 NOT:
 
                      item
-                       └── stock
-                           ├── stockType
-                           ├── action
-                           ├── itemName
-                           ├── category
-                           ├── quantity
-                           ├── unit
-                           ├── price
-                           ├── instructions
-                           ├── expectedDuration
-                           ├── message
-                           └── images
 
-                 stock.ejs receives the COMPLETE Update document
-                 as `update`.
+                 Therefore the feed item is passed as:
 
+                     update: item
+
+                 ALL stock items are rendered.
+
+                 This includes:
+
+                     • System stock announcements
+                     • Dairy-worker stock reports
+
+                 There is deliberately NO author-role filter
+                 here.
+
+                 stock.ejs itself determines whether the
+                 update is a System announcement or a worker
+                 update.
             ================================================== -->
 
             <% if (
-                item &&
-                item.type === "stock" &&
-                item.stock
+                item.type === "stock"
             ) { %>
 
 
                 <%- include("stock", {
+
                     update: item,
-                    dairy: dairy,
+
                     user: user,
-                    type: "stock"
+
+                    type: "stock",
+
+                    dairy: dairy
+
                 }) %>
 
 
@@ -607,36 +602,16 @@ const hasAssetCards =
 
 
     <!-- =====================================================
-         EMPTY FEED
-    ====================================================== -->
+         END OF FEED
 
-    <% if (
-        !Array.isArray(feed) ||
-        feed.length === 0
-    ) { %>
+         Nothing is manufactured here.
 
+         Every actual feed card comes from `feed`.
 
-        <div class="feed-empty-state">
+         This includes stock updates.
 
-            <div class="feed-empty-icon">
-                📰
-            </div>
-
-            <h3>
-                No updates yet
-            </h3>
-
-            <p>
-                Dairy updates, stock announcements,
-                maintenance, medical records and other
-                activities will appear here.
-            </p>
-
-        </div>
-
-
-    <% } %>
-
+         Chronological order is therefore preserved.
+    ===================================================== -->
 
 </section>
 
@@ -653,8 +628,7 @@ const hasAssetCards =
     width: 100%;
 
     margin:
-        14px
-        0;
+        14px 0;
 
 }
 
@@ -669,66 +643,6 @@ const hasAssetCards =
 .feed-recurring-assets {
 
     width: 100%;
-
-}
-
-
-
-/* ==========================================================
-   EMPTY FEED
-========================================================== */
-
-.feed-empty-state {
-
-    width: 100%;
-
-    padding:
-        45px
-        20px;
-
-    text-align: center;
-
-}
-
-
-.feed-empty-icon {
-
-    margin-bottom: 10px;
-
-    font-size: 34px;
-
-}
-
-
-.feed-empty-state h3 {
-
-    margin:
-        0
-        0
-        7px;
-
-    color: #314038;
-
-    font-size: 17px;
-
-    font-weight: 850;
-
-}
-
-
-.feed-empty-state p {
-
-    max-width: 420px;
-
-    margin:
-        0
-        auto;
-
-    color: #7a857f;
-
-    font-size: 12px;
-
-    line-height: 1.6;
 
 }
 
