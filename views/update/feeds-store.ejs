@@ -25,35 +25,58 @@ HISTORY:
 --------------------------------------------------------------
     updates[]
 
-Each history item is an Update document:
+IMPORTANT FEED CONTRACT:
+--------------------------------------------------------------
+    Every history document is rendered independently.
 
-    update.type
-    update.stock
-    update.user
-    update.userName
-    update.userImage
-    update.authorRole
-    update.title
-    update.createdAt
+    Each history document is passed to stock.ejs as:
 
-Each history item is independently passed to:
+        item: stockItem
 
-    views/update/stock.ejs
+    stock.ejs therefore uses:
 
-as:
+        item.type
+        item.stock
+        item.user
+        item.userName
+        item.userImage
+        item.authorRole
+        item.title
+        item.text
+        item.images
+        item.createdAt
 
-    update
+STOCK DATA:
+--------------------------------------------------------------
+    item.stock.stockType
+    item.stock.action
+    item.stock.itemName
+    item.stock.category
+    item.stock.quantity
+    item.stock.unit
+    item.stock.price
+    item.stock.instructions
+    item.stock.expectedDuration
+    item.stock.message
+    item.stock.images
 
 IMPORTANT:
 --------------------------------------------------------------
-    DO NOT use:
-        item
-        feed
+    DO NOT pass:
+
+        update
         stockUpdate
 
-    inside stock.ejs.
+    to stock.ejs.
 
-    Every Update document remains a separate feed card.
+    The universal feed variable is:
+
+        item
+
+    Every Update document remains a separate card.
+
+    If updates contains 10 documents,
+    stock.ejs is included 10 times.
 ==============================================================
 */ %>
 
@@ -65,6 +88,7 @@ IMPORTANT:
 
 const currentDairy =
     dairy || null;
+
 
 const currentUser =
     user || null;
@@ -139,7 +163,9 @@ const availableStockUnits =
 function isMedicineStock(stock) {
 
     if (!stock) {
+
         return false;
+
     }
 
 
@@ -164,7 +190,9 @@ function isMedicineStock(stock) {
 function getStockName(stock) {
 
     if (!stock) {
+
         return "Unnamed Stock";
+
     }
 
 
@@ -196,7 +224,9 @@ function getStockName(stock) {
 function getStockQuantity(stock) {
 
     if (!stock) {
+
         return 0;
+
     }
 
 
@@ -256,7 +286,9 @@ function getStockQuantity(stock) {
 function getStockUnit(stock) {
 
     if (!stock) {
+
         return "units";
+
     }
 
 
@@ -302,7 +334,6 @@ function getStockUnit(stock) {
 
         <div>
 
-
             <div class="feedstore-eyebrow">
                 DAIRY FOODSTOCK
             </div>
@@ -318,7 +349,6 @@ function getStockUnit(stock) {
                 medicines and keep the remaining quantities
                 up to date.
             </p>
-
 
         </div>
 
@@ -336,9 +366,7 @@ function getStockUnit(stock) {
 
         <div class="feedstore-section-header">
 
-
             <div>
-
 
                 <h2>
                     Available Stock
@@ -350,9 +378,7 @@ function getStockUnit(stock) {
                     recorded for this dairy.
                 </p>
 
-
             </div>
-
 
         </div>
 
@@ -375,15 +401,18 @@ function getStockUnit(stock) {
                                 stockItem
                             );
 
+
                         const stockName =
                             getStockName(
                                 stockItem
                             );
 
+
                         const stockQuantity =
                             getStockQuantity(
                                 stockItem
                             );
+
 
                         const stockUnit =
                             getStockUnit(
@@ -533,7 +562,6 @@ function getStockUnit(stock) {
 
             <div>
 
-
                 <span>
                     TOTAL FOODSTOCK &amp; MEDICINE VALUE
                 </span>
@@ -553,7 +581,6 @@ function getStockUnit(stock) {
                     ) %>
 
                 </strong>
-
 
             </div>
 
@@ -585,7 +612,6 @@ function getStockUnit(stock) {
 
                 <div>
 
-
                     <div class="feedstore-admin-label">
                         ADMIN
                     </div>
@@ -600,7 +626,6 @@ function getStockUnit(stock) {
                         Record newly available animal feed or
                         veterinary medicine.
                     </p>
-
 
                 </div>
 
@@ -976,7 +1001,6 @@ function getStockUnit(stock) {
 
                 <div>
 
-
                     <h2>
                         Update Remaining Stock
                     </h2>
@@ -986,7 +1010,6 @@ function getStockUnit(stock) {
                         Record what is currently remaining
                         in the store.
                     </p>
-
 
                 </div>
 
@@ -1167,7 +1190,6 @@ function getStockUnit(stock) {
                         multiple
                     >
 
-
                 </div>
 
 
@@ -1200,19 +1222,6 @@ function getStockUnit(stock) {
 
     <!-- ======================================================
          FOODSTOCK HISTORY
-
-         IMPORTANT:
-         ------------------------------------------------------
-         EVERY Update document is rendered separately.
-
-         There is NO grouping by:
-             feed name
-             medicine name
-             stock type
-             action
-
-         If updates contains 10 documents,
-         stock.ejs is included 10 times.
     ======================================================= -->
 
     <section class="feedstore-section">
@@ -1223,7 +1232,6 @@ function getStockUnit(stock) {
 
             <div>
 
-
                 <h2>
                     Foodstock Updates
                 </h2>
@@ -1233,7 +1241,6 @@ function getStockUnit(stock) {
                     Recent additions and remaining-stock
                     updates.
                 </p>
-
 
             </div>
 
@@ -1249,14 +1256,34 @@ function getStockUnit(stock) {
 
 
                 <% feedStoreUpdates.forEach(
-                    function(stockUpdate)
+                    function(item)
                 { %>
+
+
+                    <!-- ==========================================
+                         ONE UPDATE DOCUMENT = ONE STOCK CARD
+
+                         IMPORTANT:
+
+                         stock.ejs expects:
+
+                             item
+
+                         Therefore:
+
+                             item: item
+
+                         NOT:
+
+                             update: item
+                             stockUpdate: item
+                    =========================================== -->
 
 
                     <%- include(
                         "stock",
                         {
-                            update: stockUpdate,
+                            item: item,
                             dairy: currentDairy,
                             user: currentUser
                         }
@@ -1995,23 +2022,6 @@ document.addEventListener(
     gap: 16px;
 
 }
-
-
-/*
-IMPORTANT:
-
-Each child generated by:
-
-    include("stock", ...)
-
-remains an independent card.
-
-No selector here hides:
-    :nth-child(n+2)
-    :first-child
-    duplicates
-    repeated stock names
-*/
 
 
 .feedstore-feed > * {
