@@ -808,6 +808,52 @@ document.addEventListener(
             medicineName.required =
                 value === "medicine";
 
+
+            /*
+             * IMPORTANT:
+             *
+             * Disable the inactive selector.
+             *
+             * A disabled field is NOT submitted
+             * with the form.
+             *
+             * Therefore, when "feed" is selected,
+             * medicineName is completely excluded
+             * from the POST request.
+             *
+             * When "medicine" is selected,
+             * feedName is completely excluded
+             * from the POST request.
+             */
+
+            feedName.disabled =
+                value !== "feed";
+
+
+            medicineName.disabled =
+                value !== "medicine";
+
+
+            /*
+             * Also clear the inactive selector.
+             *
+             * This prevents an old selection from
+             * accidentally remaining in the browser.
+             */
+
+            if (value === "feed") {
+
+                medicineName.value = "";
+
+            }
+
+
+            if (value === "medicine") {
+
+                feedName.value = "";
+
+            }
+
         }
 
 
@@ -818,6 +864,7 @@ document.addEventListener(
 
 
         updateCategory();
+
 
     }
 );
