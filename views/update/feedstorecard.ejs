@@ -41,7 +41,7 @@ BEHAVIOUR:
 
     Clicking the card navigates to:
 
-        /dairy/feedstore/<dairy._id>
+        /dairy/feedstore/<current dairy._id>
 ============================================================
 */ %>
 
@@ -71,7 +71,7 @@ BEHAVIOUR:
     ====================================================== -->
 
     <a
-        href="/dairy/feedstore/:dairyId"
+        href="/dairy/feedstore/<%= dairy._id %>"
         class="feedstore-card__link"
         aria-label="Open Food Stock for <%= dairy.name %>"
     >
