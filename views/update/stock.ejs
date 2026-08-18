@@ -6,72 +6,62 @@ FILE:
     views/update/stock.ejs
 
 PURPOSE:
-    Render ONE stock history update.
+    Render ONE foodstock history Update document.
 
 IMPORTANT:
 --------------------------------------------------------------
-This partial represents exactly ONE Update document.
-
 The parent page passes:
 
     include("stock", {
         item: item,
-        user: user
+        dairy: currentDairy,
+        user: currentUser
     })
 
 Therefore this file MUST use:
 
     item
 
-for the Update document.
+as the Update document.
 
-There is NO variable named:
+Every Update document is rendered independently.
 
-    update
+This partial supports BOTH:
 
-Every Update document gets its own card.
+    1. Add Stock
+       stock.action = "available"
 
-EXPECTED DATA:
+    2. Update Remaining Stock
+       stock.action = "remainder"
+
+IMPORTANT:
 --------------------------------------------------------------
-    item.type
-    item.stock
-    item.user
-    item.userName
-    item.userImage
-    item.authorRole
-    item.title
-    item.text
-    item.images
-    item.createdAt
+Do NOT merge history records.
 
-STOCK DATA:
---------------------------------------------------------------
-    item.stock.stockType
-    item.stock.action
-    item.stock.itemName
-    item.stock.category
-    item.stock.quantity
-    item.stock.unit
-    item.stock.price
-    item.stock.instructions
-    item.stock.expectedDuration
-    item.stock.message
-    item.stock.images
+If there are:
+
+    3 Add Stock updates
+    4 Remaining Stock updates
+
+then this partial renders:
+
+    7 separate cards.
 ==============================================================
 */ %>
 
 
 <%
 /* ==========================================================
-   SAFETY
-
-   IMPORTANT:
-   The parent page passes the feed document as "item".
+   SAFE UPDATE DOCUMENT
 ========================================================== */
 
 const stockUpdate =
     item || null;
 
+
+/* ==========================================================
+   SAFE STOCK DATA
+========================================================== */
 
 const stockData =
     stockUpdate &&
@@ -81,7 +71,7 @@ const stockData =
 
 
 /* ==========================================================
-   STOP IF THIS IS NOT A STOCK UPDATE
+   VALID STOCK UPDATE
 ========================================================== */
 
 const isStockUpdate =
@@ -93,45 +83,87 @@ const isStockUpdate =
 
 
 /* ==========================================================
-   BASIC STOCK VALUES
+   STOCK TYPE
 ========================================================== */
 
 const stockType =
     stockData
-        ? (
+        ? String(
             stockData.stockType ||
             stockData.category ||
             "feed"
-        )
+        ).toLowerCase()
         : "feed";
 
 
+/* ==========================================================
+   STOCK ACTION
+========================================================== */
+
 const stockAction =
     stockData
-        ? (
+        ? String(
             stockData.action ||
             ""
-        )
+        ).toLowerCase()
         : "";
 
+
+/* ==========================================================
+   STOCK NAME
+========================================================== */
 
 const itemName =
     stockData
         ? (
             stockData.itemName ||
             stockData.name ||
+            stockData.feedName ||
+            stockData.medicineName ||
             "Unnamed Stock"
         )
         : "Unnamed Stock";
 
 
-const quantity =
+/* ==========================================================
+   QUANTITY
+
+   For BOTH history types this represents the quantity
+   associated with THIS specific history event.
+
+   available:
+       quantity added
+
+   remainder:
+       quantity remaining
+========================================================== */
+
+let quantity = 0;
+
+
+if (
     stockData &&
     stockData.quantity !== undefined &&
-    stockData.quantity !== null
-        ? Number(stockData.quantity)
-        : 0;
+    stockData.quantity !== null &&
+    stockData.quantity !== ""
+) {
 
+    quantity =
+        Number(stockData.quantity);
+
+}
+
+
+if (!Number.isFinite(quantity)) {
+
+    quantity = 0;
+
+}
+
+
+/* ==========================================================
+   UNIT
+========================================================== */
 
 const unit =
     stockData
@@ -143,11 +175,23 @@ const unit =
 
 
 /* ==========================================================
-   STOCK CATEGORY
+   MEDICINE
 ========================================================== */
 
 const isMedicine =
     stockType === "medicine";
+
+
+/* ==========================================================
+   ACTION CLASSIFICATION
+========================================================== */
+
+const isAvailableUpdate =
+    stockAction === "available";
+
+
+const isRemainderUpdate =
+    stockAction === "remainder";
 
 
 /* ==========================================================
@@ -158,18 +202,37 @@ let actionLabel =
     "Stock Update";
 
 
-if (stockAction === "available") {
+if (isAvailableUpdate) {
 
     actionLabel =
-        "Stock Available";
+        "Stock Added";
 
 }
 
 
-if (stockAction === "remainder") {
+if (isRemainderUpdate) {
 
     actionLabel =
-        "Remaining Stock";
+        "Remaining Stock Updated";
+
+}
+
+
+/* ==========================================================
+   CARD TITLE
+========================================================== */
+
+let cardTitle =
+    stockUpdate &&
+    stockUpdate.title
+        ? stockUpdate.title
+        : itemName;
+
+
+if (isRemainderUpdate) {
+
+    cardTitle =
+        "Remaining " + itemName;
 
 }
 
@@ -201,26 +264,82 @@ const authorImage =
 
 
 /* ==========================================================
+   AUTHOR ROLE
+========================================================== */
+
+let authorRole =
+    "User";
+
+
+if (
+    stockUpdate.authorRole === "system"
+) {
+
+    authorRole =
+        "System";
+
+} else if (
+    stockUpdate.authorRole === "admin"
+) {
+
+    authorRole =
+        "Administrator";
+
+} else if (
+    stockUpdate.authorRole === "dairyWorker"
+) {
+
+    authorRole =
+        "Dairy Worker";
+
+}
+
+
+/* ==========================================================
    MESSAGE
 ========================================================== */
 
-const message =
-    (
-        stockData &&
-        stockData.message
-    ) ||
-    stockUpdate.text ||
-    "";
+let message = "";
+
+
+if (
+    stockData &&
+    stockData.message
+) {
+
+    message =
+        String(
+            stockData.message
+        ).trim();
+
+}
+
+
+if (
+    !message &&
+    stockUpdate.text
+) {
+
+    message =
+        String(
+            stockUpdate.text
+        ).trim();
+
+}
 
 
 /* ==========================================================
    INSTRUCTIONS
+
+   Normally associated with Add Stock events.
 ========================================================== */
 
 const instructions =
     stockData &&
     stockData.instructions
-        ? stockData.instructions
+        ? String(
+            stockData.instructions
+        ).trim()
         : "";
 
 
@@ -231,18 +350,58 @@ const instructions =
 const expectedDuration =
     stockData &&
     stockData.expectedDuration
-        ? stockData.expectedDuration
+        ? String(
+            stockData.expectedDuration
+        ).trim()
         : "";
+
+
+/* ==========================================================
+   PRICE
+
+   Only Add Stock events should display financial value.
+
+   Remaining-stock history NEVER displays price.
+========================================================== */
+
+let price = null;
+
+
+if (
+    isAvailableUpdate &&
+    stockData &&
+    stockData.price !== undefined &&
+    stockData.price !== null
+) {
+
+    const parsedPrice =
+        Number(
+            stockData.price
+        );
+
+
+    if (
+        Number.isFinite(parsedPrice) &&
+        parsedPrice >= 0
+    ) {
+
+        price =
+            parsedPrice;
+
+    }
+
+}
 
 
 /* ==========================================================
    IMAGES
 
-   Stock-specific images first.
+   First use stock-specific images.
 
-   Fall back to the Update document's images.
+   If none exist, use the images belonging to THIS
+   Update document only.
 
-   NEVER merge images from another Update.
+   Never obtain images from another history item.
 ========================================================== */
 
 let stockImages = [];
@@ -254,7 +413,8 @@ if (
 ) {
 
     stockImages =
-        stockData.images.filter(Boolean);
+        stockData.images
+            .filter(Boolean);
 
 }
 
@@ -266,15 +426,16 @@ if (
 ) {
 
     stockImages =
-        stockUpdate.images.filter(Boolean);
+        stockUpdate.images
+            .filter(Boolean);
 
 }
 
 
 /* ==========================================================
-   UNIQUE CARD ID
+   UNIQUE UPDATE ID
 
-   Always identify the individual Update document.
+   The ID belongs to the individual Update document.
 
    Do NOT use:
 
@@ -286,7 +447,9 @@ if (
 const cardId =
     stockUpdate &&
     stockUpdate._id
-        ? String(stockUpdate._id)
+        ? String(
+            stockUpdate._id
+        )
         : (
             "stock-" +
             Math.random()
@@ -300,8 +463,21 @@ const cardId =
 const createdAt =
     stockUpdate &&
     stockUpdate.createdAt
-        ? new Date(stockUpdate.createdAt)
+        ? new Date(
+            stockUpdate.createdAt
+        )
         : null;
+
+
+/* ==========================================================
+   VALID DATE
+========================================================== */
+
+const hasValidDate =
+    createdAt &&
+    !Number.isNaN(
+        createdAt.getTime()
+    );
 
 %>
 
@@ -310,13 +486,29 @@ const createdAt =
 
 
 <!-- ==========================================================
-     ONE STOCK UPDATE CARD
+     ONE STOCK HISTORY CARD
 
-     ONE item / Update document = ONE card.
+     IMPORTANT:
+
+     This card represents ONE Update document.
+
+     Both:
+
+         available
+
+     and:
+
+         remainder
+
+     arrive here.
 ========================================================== -->
 
 <article
-    class="stock-update-card"
+    class="stock-update-card
+        <%= isRemainderUpdate
+            ? "stock-update-card--remainder"
+            : "stock-update-card--available"
+        %>"
     id="stock-update-<%= cardId %>"
     data-stock-update-id="<%= cardId %>"
     data-stock-type="<%= stockType %>"
@@ -352,32 +544,16 @@ const createdAt =
 
             <div class="stock-update-card__author-info">
 
+
                 <strong>
                     <%= authorName %>
                 </strong>
 
 
                 <span>
-
-                    <% if (
-                        stockUpdate.authorRole === "system"
-                    ) { %>
-
-                        System
-
-                    <% } else if (
-                        stockUpdate.authorRole === "admin"
-                    ) { %>
-
-                        Administrator
-
-                    <% } else { %>
-
-                        Dairy Worker
-
-                    <% } %>
-
+                    <%= authorRole %>
                 </span>
+
 
             </div>
 
@@ -390,7 +566,7 @@ const createdAt =
              DATE
         =================================================== -->
 
-        <% if (createdAt) { %>
+        <% if (hasValidDate) { %>
 
             <time
                 class="stock-update-card__date"
@@ -409,7 +585,7 @@ const createdAt =
 
 
     <!-- ======================================================
-         TITLE / ACTION
+         UPDATE HEADING
     ======================================================= -->
 
     <div class="stock-update-card__heading">
@@ -433,16 +609,28 @@ const createdAt =
         </div>
 
 
-        <div>
+        <div class="stock-update-card__heading-content">
 
-            <span class="stock-update-card__action">
+
+            <span
+                class="
+                    stock-update-card__action
+                    <%= isRemainderUpdate
+                        ? "stock-update-card__action--remainder"
+                        : ""
+                    %>
+                "
+            >
+
                 <%= actionLabel %>
+
             </span>
 
 
             <h3>
-                <%= stockUpdate.title || itemName %>
+                <%= cardTitle %>
             </h3>
+
 
         </div>
 
@@ -458,7 +646,12 @@ const createdAt =
     <div class="stock-update-card__stock">
 
 
+        <!-- ==================================================
+             STOCK ITEM
+        =================================================== -->
+
         <div class="stock-update-card__item">
+
 
             <span class="stock-update-card__label">
                 Stock
@@ -469,14 +662,45 @@ const createdAt =
                 <%= itemName %>
             </strong>
 
+
+            <small>
+
+                <% if (isMedicine) { %>
+
+                    Veterinary medicine
+
+                <% } else { %>
+
+                    Animal feed
+
+                <% } %>
+
+            </small>
+
+
         </div>
 
 
 
+        <!-- ==================================================
+             QUANTITY
+        =================================================== -->
+
         <div class="stock-update-card__quantity">
 
+
             <span class="stock-update-card__label">
-                Quantity
+
+                <% if (isRemainderUpdate) { %>
+
+                    Remaining
+
+                <% } else { %>
+
+                    Added
+
+                <% } %>
+
             </span>
 
 
@@ -490,6 +714,7 @@ const createdAt =
 
             </strong>
 
+
         </div>
 
 
@@ -498,16 +723,114 @@ const createdAt =
 
 
     <!-- ======================================================
+         REMAINING STOCK NOTICE
+
+         Makes it visually obvious that this history item
+         came from "Update Remaining Stock".
+    ======================================================= -->
+
+    <% if (isRemainderUpdate) { %>
+
+        <div class="stock-update-card__remaining-note">
+
+
+            <span aria-hidden="true">
+                🔄
+            </span>
+
+
+            <span>
+                Current remaining stock was reported as
+                <strong>
+                    <%= quantity.toLocaleString() %>
+                    <%= unit %>
+                </strong>.
+            </span>
+
+
+        </div>
+
+    <% } %>
+
+
+
+    <!-- ======================================================
+         ADD STOCK VALUE
+
+         Financial information is displayed only for the
+         Add Stock history event.
+
+         Remaining-stock updates never expose price.
+    ======================================================= -->
+
+    <% if (
+        isAvailableUpdate &&
+        price !== null
+    ) %>
+
+
+        <div class="stock-update-card__value">
+
+
+            <span>
+                Stock Value
+            </span>
+
+
+            <strong>
+
+                KES
+                <%= price.toLocaleString(
+                    undefined,
+                    {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }
+                ) %>
+
+            </strong>
+
+
+        </div>
+
+
+    <% } %>
+
+
+
+    <!-- ======================================================
          MESSAGE
+
+         For Update Remaining Stock this is the worker/admin
+         message.
+
+         For Add Stock this may contain the stock description.
     ======================================================= -->
 
     <% if (message) { %>
 
         <div class="stock-update-card__message">
 
+
+            <span class="stock-update-card__detail-label">
+
+                <% if (isRemainderUpdate) { %>
+
+                    Update Note
+
+                <% } else { %>
+
+                    Note
+
+                <% } %>
+
+            </span>
+
+
             <p>
                 <%= message %>
             </p>
+
 
         </div>
 
@@ -517,11 +840,14 @@ const createdAt =
 
     <!-- ======================================================
          INSTRUCTIONS
+
+         Primarily used by Add Stock.
     ======================================================= -->
 
     <% if (instructions) { %>
 
         <div class="stock-update-card__detail">
+
 
             <span>
                 Instructions
@@ -532,6 +858,7 @@ const createdAt =
                 <%= instructions %>
             </p>
 
+
         </div>
 
     <% } %>
@@ -540,20 +867,24 @@ const createdAt =
 
     <!-- ======================================================
          EXPECTED DURATION
+
+         Primarily used by Add Stock.
     ======================================================= -->
 
     <% if (expectedDuration) { %>
 
         <div class="stock-update-card__detail">
 
+
             <span>
-                Expected duration
+                Expected Duration
             </span>
 
 
             <p>
                 <%= expectedDuration %>
             </p>
+
 
         </div>
 
@@ -563,15 +894,22 @@ const createdAt =
 
     <!-- ======================================================
          IMAGES
+
+         These belong ONLY to this Update document.
     ======================================================= -->
 
     <% if (stockImages.length > 0) { %>
 
         <div class="stock-update-card__images">
 
+
             <% stockImages.forEach(
-                function(image, imageIndex)
+                function(
+                    image,
+                    imageIndex
+                )
             { %>
+
 
                 <img
                     src="<%= image %>"
@@ -580,7 +918,9 @@ const createdAt =
                     data-stock-image-index="<%= imageIndex %>"
                 >
 
+
             <% }); %>
+
 
         </div>
 
@@ -613,7 +953,7 @@ const createdAt =
 
     padding: 16px;
 
-    border: 1px solid #e0e8e3;
+    border: 1px solid #dce7e0;
 
     border-radius: 16px;
 
@@ -625,6 +965,20 @@ const createdAt =
 
 }
 
+
+/* ==========================================================
+   REMAINING UPDATE CARD
+
+   Slightly different border so users can immediately
+   distinguish a remaining-stock report from a restock.
+========================================================== */
+
+.stock-update-card--remainder {
+
+    border-left:
+        4px solid #198754;
+
+}
 
 
 /* ==========================================================
@@ -737,7 +1091,6 @@ const createdAt =
 }
 
 
-
 /* ==========================================================
    HEADING
 ========================================================== */
@@ -777,6 +1130,13 @@ const createdAt =
 }
 
 
+.stock-update-card__heading-content {
+
+    min-width: 0;
+
+}
+
+
 .stock-update-card__action {
 
     display: block;
@@ -796,6 +1156,13 @@ const createdAt =
 }
 
 
+.stock-update-card__action--remainder {
+
+    color: #145c36;
+
+}
+
+
 .stock-update-card__heading h3 {
 
     margin: 0;
@@ -811,7 +1178,6 @@ const createdAt =
 }
 
 
-
 /* ==========================================================
    STOCK DATA
 ========================================================== */
@@ -820,7 +1186,9 @@ const createdAt =
 
     display: grid;
 
-    grid-template-columns: 1fr auto;
+    grid-template-columns:
+        minmax(0, 1fr)
+        auto;
 
     gap: 14px;
 
@@ -871,6 +1239,15 @@ const createdAt =
 }
 
 
+.stock-update-card__item small {
+
+    color: #87928b;
+
+    font-size: 9px;
+
+}
+
+
 .stock-update-card__quantity {
 
     text-align: right;
@@ -900,6 +1277,103 @@ const createdAt =
 }
 
 
+/* ==========================================================
+   REMAINING NOTE
+========================================================== */
+
+.stock-update-card__remaining-note {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 8px;
+
+    margin-top: 12px;
+
+    padding: 10px 12px;
+
+    border-radius: 10px;
+
+    background: #edf7f1;
+
+    color: #4b5d52;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+
+}
+
+
+.stock-update-card__remaining-note > span:first-child {
+
+    flex-shrink: 0;
+
+    font-size: 14px;
+
+}
+
+
+.stock-update-card__remaining-note strong {
+
+    color: #145c36;
+
+    font-weight: 850;
+
+}
+
+
+/* ==========================================================
+   STOCK VALUE
+========================================================== */
+
+.stock-update-card__value {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-top: 12px;
+
+    padding: 10px 12px;
+
+    border-radius: 10px;
+
+    background: #f3f8f5;
+
+}
+
+
+.stock-update-card__value span {
+
+    color: #7b8780;
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: .5px;
+
+    text-transform: uppercase;
+
+}
+
+
+.stock-update-card__value strong {
+
+    color: #145c36;
+
+    font-size: 13px;
+
+    font-weight: 850;
+
+}
+
 
 /* ==========================================================
    MESSAGE
@@ -911,11 +1385,32 @@ const createdAt =
 
     padding: 11px 12px;
 
-    border-left: 3px solid #198754;
+    border-left:
+        3px solid #198754;
 
-    border-radius: 0 9px 9px 0;
+    border-radius:
+        0 9px 9px 0;
 
     background: #f7faf8;
+
+}
+
+
+.stock-update-card__detail-label {
+
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: #748078;
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: .5px;
+
+    text-transform: uppercase;
 
 }
 
@@ -931,7 +1426,6 @@ const createdAt =
     line-height: 1.55;
 
 }
-
 
 
 /* ==========================================================
@@ -977,7 +1471,6 @@ const createdAt =
 }
 
 
-
 /* ==========================================================
    IMAGES
 ========================================================== */
@@ -1018,7 +1511,6 @@ const createdAt =
 }
 
 
-
 /* ==========================================================
    MOBILE
 ========================================================== */
@@ -1043,14 +1535,34 @@ const createdAt =
 
     .stock-update-card__date {
 
+        max-width: 110px;
+
         font-size: 8px;
+
+        text-align: right;
 
     }
 
 
     .stock-update-card__stock {
 
-        grid-template-columns: 1fr auto;
+        grid-template-columns:
+            minmax(0, 1fr)
+            auto;
+
+    }
+
+
+    .stock-update-card__heading h3 {
+
+        font-size: 15px;
+
+    }
+
+
+    .stock-update-card__remaining-note {
+
+        font-size: 10px;
 
     }
 
