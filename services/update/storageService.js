@@ -8,21 +8,50 @@
 //
 // views/update/storage/feed-store.js
 //
-// The service is deliberately written for the NEW schema
-// that we are going to create next.
+// IMPORTANT:
+//
+// quantityRemaining
+//      = quantity currently available in stock
+//
+// unitPrice
+//      = price of ONE unit for the latest stock addition
+//
+// feedsAmount
+//      = actual amount of money used for the stock addition
+//
+// NEW STOCK:
+//
+//      feedsAmount = quantity × unitPrice
+//
+// RESTOCK:
+//
+//      feedsAmount = quantityAdded × unitPrice
+//
+// REDUCTION:
+//
+//      feedsAmount is NOT changed
+//
+// SAME QUANTITY:
+//
+//      feedsAmount is NOT changed
 //
 // ==========================================================
 
-const mongoose = require("mongoose");
+const mongoose =
+    require("mongoose");
 
-const Dairy = require("../../models/dairy");
+const Dairy =
+    require("../../models/dairy");
 
 
 // ==========================================================
 // HELPERS
 // ==========================================================
 
-function createError(message, statusCode = 400) {
+function createError(
+    message,
+    statusCode = 400
+) {
 
     const error =
         new Error(message);
@@ -75,10 +104,14 @@ function toNumber(value) {
 // GET DAIRY
 // ==========================================================
 
-async function getDairy(dairyId) {
+async function getDairy(
+    dairyId
+) {
 
     if (
-        !isValidObjectId(dairyId)
+        !isValidObjectId(
+            dairyId
+        )
     ) {
 
         throw createError(
@@ -114,10 +147,14 @@ async function getDairy(dairyId) {
 // NORMALIZE CATEGORY
 // ==========================================================
 
-function normalizeCategory(category) {
+function normalizeCategory(
+    category
+) {
 
     const value =
-        cleanText(category).toLowerCase();
+        cleanText(
+            category
+        ).toLowerCase();
 
 
     if (
@@ -141,14 +178,20 @@ function normalizeCategory(category) {
 // NORMALIZE QUANTITY
 // ==========================================================
 
-function normalizeQuantity(value) {
+function normalizeQuantity(
+    value
+) {
 
     const quantity =
-        toNumber(value);
+        toNumber(
+            value
+        );
 
 
     if (
-        !Number.isFinite(quantity)
+        !Number.isFinite(
+            quantity
+        )
     ) {
 
         throw createError(
@@ -178,7 +221,9 @@ function normalizeQuantity(value) {
 // NORMALIZE PRICE
 // ==========================================================
 
-function normalizePrice(value) {
+function normalizePrice(
+    value
+) {
 
     if (
         value === undefined ||
@@ -192,11 +237,15 @@ function normalizePrice(value) {
 
 
     const price =
-        toNumber(value);
+        toNumber(
+            value
+        );
 
 
     if (
-        !Number.isFinite(price)
+        !Number.isFinite(
+            price
+        )
     ) {
 
         throw createError(
@@ -223,10 +272,60 @@ function normalizePrice(value) {
 
 
 // ==========================================================
+// CALCULATE STOCK AMOUNT
+// ==========================================================
+//
+// This is the actual monetary amount used for a stock
+// addition.
+//
+// quantityAdded × unitPrice
+//
+// Example:
+//
+// 20 kg × KES 90/kg
+// = KES 1,800
+//
+// ==========================================================
+
+function calculateFeedsAmount(
+    quantityAdded,
+    unitPrice
+) {
+
+    const quantity =
+        toNumber(
+            quantityAdded
+        );
+
+
+    const price =
+        toNumber(
+            unitPrice
+        );
+
+
+    if (
+        !Number.isFinite(quantity) ||
+        !Number.isFinite(price)
+    ) {
+
+        return 0;
+
+    }
+
+
+    return quantity * price;
+
+}
+
+
+// ==========================================================
 // STOCK NAME
 // ==========================================================
 
-function getStockName(stock) {
+function getStockName(
+    stock
+) {
 
     if (
         stock.category === "medicine"
@@ -283,7 +382,9 @@ function findStock(
 // VALIDATE NEW STOCK
 // ==========================================================
 
-function validateNewStock(data) {
+function validateNewStock(
+    data
+) {
 
     const category =
         normalizeCategory(
@@ -355,8 +456,11 @@ function validateNewStock(data) {
 
 
     /*
-     * The view only reveals Unit Price when
-     * new quantity > 0.
+     * The view reveals Unit Price when
+     * quantity > 0.
+     *
+     * Therefore a positive initial quantity
+     * requires a valid unit price.
      */
 
     if (
@@ -414,6 +518,20 @@ function validateNewStock(data) {
 // ==========================================================
 // CREATE STOCK
 // ==========================================================
+//
+// NEW STOCK
+//
+// feedsAmount represents the actual money used to acquire
+// the initial quantity.
+//
+// Example:
+//
+// quantity = 100
+// price    = 80
+//
+// feedsAmount = 100 × 80
+//
+// ==========================================================
 
 async function createStock({
     dairyId,
@@ -430,6 +548,19 @@ async function createStock({
     const input =
         validateNewStock(
             data
+        );
+
+
+    const unitPrice =
+        input.price !== null
+            ? input.price
+            : 0;
+
+
+    const feedsAmount =
+        calculateFeedsAmount(
+            input.quantity,
+            unitPrice
         );
 
 
@@ -451,7 +582,15 @@ async function createStock({
             input.quantity,
 
         unitPrice:
-            input.price || 0,
+            unitPrice,
+
+        /*
+         * Money actually spent on this
+         * initial stock addition.
+         */
+
+        feedsAmount:
+            feedsAmount,
 
         instructions:
             input.instructions,
@@ -501,9 +640,23 @@ async function createStock({
 //
 // Quantity remains editable.
 //
-// Price is only relevant when:
+// PRICE:
 //
-// new quantity > original quantity
+// Only required when:
+//
+// new quantity > old quantity
+//
+// FEEDS AMOUNT:
+//
+// Only changes when stock is increased.
+//
+// quantityAdded:
+//
+//      newQuantity - oldQuantity
+//
+// feedsAmount:
+//
+//      quantityAdded × new unitPrice
 //
 // ==========================================================
 
@@ -550,7 +703,9 @@ async function updateStock({
 
 
     const safeOldQuantity =
-        Number.isFinite(oldQuantity)
+        Number.isFinite(
+            oldQuantity
+        )
             ? oldQuantity
             : 0;
 
@@ -562,7 +717,7 @@ async function updateStock({
 
 
     // ======================================================
-    // INCREASE
+    // INCREASE / RESTOCK
     // ======================================================
 
     if (
@@ -576,8 +731,8 @@ async function updateStock({
 
 
         /*
-         * The view makes price mandatory whenever
-         * existing quantity is increased.
+         * Price is mandatory whenever
+         * existing stock is increased.
          */
 
         if (
@@ -592,8 +747,36 @@ async function updateStock({
 
 
         /*
-         * Current available quantity becomes
-         * the new quantity.
+         * The quantity being purchased/restocked
+         * is ONLY the difference.
+         *
+         * Example:
+         *
+         * old = 100
+         * new = 120
+         *
+         * added = 20
+         */
+
+        const quantityAdded =
+            quantityDifference;
+
+
+        /*
+         * This is the actual money used
+         * for THIS restock.
+         */
+
+        const feedsAmount =
+            calculateFeedsAmount(
+                quantityAdded,
+                price
+            );
+
+
+        /*
+         * Current available stock becomes
+         * the new total quantity.
          */
 
         stock.quantityRemaining =
@@ -601,12 +784,19 @@ async function updateStock({
 
 
         /*
-         * The latest unit price represents the
-         * latest restock price.
+         * Latest restock unit price.
          */
 
         stock.unitPrice =
             price;
+
+
+        /*
+         * Amount spent on THIS restock.
+         */
+
+        stock.feedsAmount =
+            feedsAmount;
 
     }
 
@@ -621,10 +811,13 @@ async function updateStock({
     ) {
 
         /*
-         * Reducing quantity is NOT a restock.
+         * Reducing stock is NOT a purchase.
          *
-         * Therefore the existing unit price remains
-         * untouched.
+         * Therefore:
+         *
+         * - quantityRemaining changes
+         * - unitPrice remains unchanged
+         * - feedsAmount remains unchanged
          */
 
         stock.quantityRemaining =
@@ -639,6 +832,12 @@ async function updateStock({
     // ======================================================
 
     else {
+
+        /*
+         * No stock was added.
+         *
+         * Therefore no financial amount is created.
+         */
 
         stock.quantityRemaining =
             safeOldQuantity;
@@ -721,6 +920,18 @@ async function updateStock({
         quantityAdded:
             quantityDifference > 0
                 ? quantityDifference
+                : 0,
+
+        /*
+         * Amount spent on this particular
+         * stock addition.
+         */
+
+        feedsAmount:
+            quantityDifference > 0
+                ? Number(
+                    stock.feedsAmount || 0
+                )
                 : 0
 
     };
@@ -731,8 +942,6 @@ async function updateStock({
 // ==========================================================
 // SAVE STOCK
 // ==========================================================
-//
-// This matches the view:
 //
 // stockId empty
 //      → NEW STOCK
@@ -780,6 +989,18 @@ async function saveStock({
         });
 
 
+    const quantity =
+        Number(
+            stock.quantityRemaining || 0
+        );
+
+
+    const feedsAmount =
+        Number(
+            stock.feedsAmount || 0
+        );
+
+
     return {
 
         stock,
@@ -788,19 +1009,22 @@ async function saveStock({
             0,
 
         newQuantity:
-            stock.quantityRemaining,
+            quantity,
 
         quantityDifference:
-            stock.quantityRemaining,
+            quantity,
 
         quantityIncreased:
-            stock.quantityRemaining > 0,
+            quantity > 0,
 
         quantityDecreased:
             false,
 
         quantityAdded:
-            stock.quantityRemaining
+            quantity,
+
+        feedsAmount:
+            feedsAmount
 
     };
 
@@ -950,6 +1174,8 @@ module.exports = {
 
     findStock,
 
-    validateNewStock
+    validateNewStock,
+
+    calculateFeedsAmount
 
 };
