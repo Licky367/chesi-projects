@@ -1,157 +1,16 @@
-<% /*
-==============================================================
-STOCK FEED ITEM
-
-FILE:
-    views/update/stock.ejs
-
-PURPOSE:
-    Render stock updates inside:
-
-        1. views/update.ejs
-        2. views/update/feeds-store.ejs
-
-SUPPORTED CALLERS
---------------------------------------------------------------
-
-FROM update.ejs:
-
-    <%- include("update/stock", {
-        item: item,
-        user: user,
-        dairy: dairy
-    }) %>
-
-
-FROM feeds-store.ejs:
-
-    <%- include("stock", {
-        update: update,
-        user: user,
-        dairy: dairy
-    }) %>
-
-
-IMPORTANT:
---------------------------------------------------------------
-    This partial therefore supports BOTH:
-
-        item
-
-    and:
-
-        update
-
-
-STOCK DATA STRUCTURE
---------------------------------------------------------------
-
-    update
-      |
-      +-- type
-      +-- user
-      +-- userName
-      +-- userImage
-      +-- authorRole
-      +-- title
-      |
-      +-- stock
-            |
-            +-- stockType
-            +-- action
-            +-- itemName
-            +-- category
-            +-- quantity
-            +-- unit
-            +-- price
-            +-- instructions
-            +-- expectedDuration
-            +-- message
-            +-- images
-
-
-IMPORTANT:
---------------------------------------------------------------
-    Stock information MUST be read from:
-
-        currentUpdate.stock
-
-    and NOT:
-
-        currentUpdate.quantity
-        currentUpdate.unit
-        currentUpdate.images
-        etc.
-
-
-SYSTEM IDENTITY
---------------------------------------------------------------
-
-    System stock announcements use:
-
-        /images/h1.png
-
-    and:
-
-        System
-
-
-WORKER IDENTITY
---------------------------------------------------------------
-
-    Worker stock updates use:
-
-        currentUpdate.userImage
-        currentUpdate.userName
-
-    with populated user data as fallback.
-==============================================================
-*/ %>
-
-
 <%
 /* ==========================================================
-   RESOLVE CURRENT UPDATE
+   STOCK PARTIAL — SAFE VARIABLE RESOLUTION
 ========================================================== */
-
-/*
- * This partial can be called with either:
- *
- *     item
- *
- * or:
- *
- *     update
- *
- * We MUST use typeof here.
- *
- * Without typeof, JavaScript throws:
- *
- *     ReferenceError:
- *     item is not defined
- *
- * when the caller supplied only "update".
- */
 
 const currentUpdate =
-    (
-        typeof update !== "undefined" &&
-        update
-    )
-        ? update
-
+    (typeof item !== "undefined" && item)
+        ? item
         : (
-            typeof item !== "undefined" &&
-            item
-        )
-            ? item
-            : null;
-
-
-
-/* ==========================================================
-   RESOLVE STOCK
-========================================================== */
+            typeof update !== "undefined" && update
+                ? update
+                : null
+        );
 
 const stock =
     currentUpdate &&
@@ -159,36 +18,30 @@ const stock =
         ? currentUpdate.stock
         : null;
 
+const isValidStock =
+    !!(
+        currentUpdate &&
+        stock
+    );
+
+%>
 
 
+<% if (isValidStock) { %>
+
+<%
 /* ==========================================================
-   DO NOT RENDER INVALID STOCK ITEMS
-========================================================== */
-
-if (
-    currentUpdate &&
-    stock
-) {
-
-
-
-/* ==========================================================
-   SYSTEM DETECTION
+   SYSTEM
 ========================================================== */
 
 const isSystem =
     currentUpdate.authorRole === "system" ||
-
     currentUpdate.userName === "System" ||
-
     (
         currentUpdate.user === null &&
-
         currentUpdate.type === "stock" &&
-
         stock.action === "available"
     );
-
 
 
 /* ==========================================================
@@ -198,33 +51,24 @@ const isSystem =
 const stockType =
     stock.stockType || "feed";
 
-
 const isMedicine =
     stockType === "medicine";
 
 
-const isFeed =
-    stockType === "feed";
-
-
-
 /* ==========================================================
-   STOCK ACTION
+   ACTION
 ========================================================== */
 
 const stockAction =
     stock.action || "";
 
 
-
 /* ==========================================================
-   ITEM NAME
+   ITEM
 ========================================================== */
 
 const itemName =
-    stock.itemName ||
-    "Stock";
-
+    stock.itemName || "Stock";
 
 
 /* ==========================================================
@@ -235,53 +79,41 @@ const category =
     stock.category || "";
 
 
-
 /* ==========================================================
-   SENDER NAME
+   AUTHOR
 ========================================================== */
 
 const senderName =
     isSystem
-
         ? "System"
-
         : (
             currentUpdate.userName ||
-
             (
                 currentUpdate.user &&
                 currentUpdate.user.name
             ) ||
-
             "User"
         );
 
 
-
 /* ==========================================================
-   SENDER IMAGE
+   IMAGE
 ========================================================== */
 
 const senderImage =
     isSystem
-
         ? "/images/h1.png"
-
         : (
             currentUpdate.userImage ||
-
             (
                 currentUpdate.user &&
                 (
                     currentUpdate.user.profileImage ||
-
                     currentUpdate.user.displayImage
                 )
             ) ||
-
             "/images/h1.png"
         );
-
 
 
 /* ==========================================================
@@ -291,25 +123,20 @@ const senderImage =
 let title =
     currentUpdate.title || "";
 
-
 if (!title) {
 
     if (isSystem) {
 
         title =
             isMedicine
-
                 ? "More Veterinary Meds Available"
-
                 : "More Animal Feed Available";
 
     } else {
 
         title =
             isMedicine
-
                 ? "Veterinary Medicine Stock Update"
-
                 : "Animal Feed Stock Update";
 
     }
@@ -317,147 +144,74 @@ if (!title) {
 }
 
 
-
 /* ==========================================================
-   QUANTITY
+   STOCK VALUES
 ========================================================== */
 
 const quantity =
     stock.quantity;
 
-
-
-/* ==========================================================
-   UNIT
-========================================================== */
-
 const unit =
     stock.unit || "";
 
-
-
-/* ==========================================================
-   PRICE
-========================================================== */
-
 const price =
-    Number(
-        stock.price
-    ) || 0;
-
-
-
-/* ==========================================================
-   INSTRUCTIONS
-========================================================== */
+    Number(stock.price) || 0;
 
 const instructions =
     stock.instructions || "";
 
-
-
-/* ==========================================================
-   EXPECTED DURATION
-========================================================== */
-
 const duration =
     stock.expectedDuration || "";
-
-
-
-/* ==========================================================
-   MESSAGE
-========================================================== */
 
 const message =
     stock.message || "";
 
 
-
 /* ==========================================================
-   STOCK IMAGES
+   IMAGES
 ========================================================== */
 
 const images =
-    Array.isArray(
-        stock.images
-    )
-
+    Array.isArray(stock.images)
         ? stock.images.filter(Boolean)
-
         : [];
 
 
-
 /* ==========================================================
-   CREATED DATE
+   DATE
 ========================================================== */
 
 const created =
     currentUpdate.createdAt
-
-        ? new Date(
-            currentUpdate.createdAt
-        )
-
+        ? new Date(currentUpdate.createdAt)
         : new Date();
-
-
-
-/* ==========================================================
-   SAFE DATE
-========================================================== */
 
 const validCreatedDate =
-    !Number.isNaN(
-        created.getTime()
-    )
-
+    !Number.isNaN(created.getTime())
         ? created
-
         : new Date();
 
 
-
 /* ==========================================================
-   ACTION LABEL
+   LABELS
 ========================================================== */
 
 const actionLabel =
     stockAction === "remainder"
-
         ? "reported remaining stock"
-
         : "made stock available";
-
-
-
-/* ==========================================================
-   STOCK TYPE LABEL
-========================================================== */
 
 const stockTypeLabel =
     isMedicine
-
         ? "Veterinary Medicine"
-
         : "Animal Feed";
-
-
-
-/* ==========================================================
-   QUANTITY LABEL
-========================================================== */
 
 const quantityLabel =
     stockAction === "remainder"
-
         ? "Quantity remaining"
-
         : "Added quantity";
 
 %>
-
 
 
 <!-- ==========================================================
@@ -479,10 +233,6 @@ const quantityLabel =
     <header class="stock-feed-header">
 
 
-        <!-- ==================================================
-             PROFILE IMAGE
-        =================================================== -->
-
         <div class="stock-feed-avatar">
 
             <img
@@ -493,11 +243,6 @@ const quantityLabel =
 
         </div>
 
-
-
-        <!-- ==================================================
-             AUTHOR INFORMATION
-        =================================================== -->
 
         <div class="stock-feed-author">
 
@@ -510,11 +255,6 @@ const quantityLabel =
 
             </div>
 
-
-
-            <!-- ==============================================
-                 FEED CONTEXT
-            =============================================== -->
 
             <div class="stock-feed-context">
 
@@ -554,11 +294,6 @@ const quantityLabel =
             </div>
 
 
-
-            <!-- ==============================================
-                 DATE
-            =============================================== -->
-
             <time
                 class="stock-feed-date"
                 datetime="<%= validCreatedDate.toISOString() %>"
@@ -570,7 +305,6 @@ const quantityLabel =
 
 
         </div>
-
 
     </header>
 
@@ -584,7 +318,7 @@ const quantityLabel =
 
 
         <!-- ==================================================
-             STOCK TYPE
+             TYPE
         =================================================== -->
 
         <div class="stock-feed-type">
@@ -627,15 +361,11 @@ const quantityLabel =
         <div class="stock-feed-item-name">
 
             <span class="stock-feed-item-label">
-
                 Item
-
             </span>
 
             <strong>
-
                 <%= itemName %>
-
             </strong>
 
         </div>
@@ -651,15 +381,11 @@ const quantityLabel =
             <div class="stock-feed-category">
 
                 <span class="stock-feed-category-label">
-
                     Category
-
                 </span>
 
                 <span>
-
                     <%= category %>
-
                 </span>
 
             </div>
@@ -669,15 +395,11 @@ const quantityLabel =
 
 
         <!-- ==================================================
-             STOCK DETAILS
+             DETAILS
         =================================================== -->
 
         <div class="stock-feed-details">
 
-
-            <!-- ==============================================
-                 QUANTITY
-            =============================================== -->
 
             <% if (
                 quantity !== undefined &&
@@ -699,7 +421,6 @@ const quantityLabel =
                             quantity
                         ).toLocaleString() %>
 
-
                         <% if (unit) { %>
 
                             <%= unit %>
@@ -713,10 +434,6 @@ const quantityLabel =
             <% } %>
 
 
-
-            <!-- ==============================================
-                 EXPECTED DURATION
-            =============================================== -->
 
             <% if (duration) { %>
 
@@ -739,16 +456,6 @@ const quantityLabel =
             <% } %>
 
 
-
-            <!-- ==============================================
-                 PRICE
-
-                 Only system/admin stock availability
-                 records display financial value.
-
-                 Worker remainder reports do NOT represent
-                 new financial stock value.
-            =============================================== -->
 
             <% if (
                 isSystem &&
@@ -792,20 +499,17 @@ const quantityLabel =
 
             <div class="stock-feed-instructions">
 
-
                 <div class="stock-feed-subheading">
 
                     Instructions of use
 
                 </div>
 
-
                 <p>
 
                     <%= instructions %>
 
                 </p>
-
 
             </div>
 
@@ -814,7 +518,7 @@ const quantityLabel =
 
 
         <!-- ==================================================
-             WORKER / ADDITIONAL MESSAGE
+             MESSAGE
         =================================================== -->
 
         <% if (message) { %>
@@ -826,7 +530,6 @@ const quantityLabel =
                     Additional information
 
                 </div>
-
 
                 <p>
 
@@ -841,34 +544,22 @@ const quantityLabel =
 
 
         <!-- ==================================================
-             STOCK IMAGES
+             IMAGES
         =================================================== -->
 
-        <% if (
-            images.length > 0
-        ) { %>
+        <% if (images.length > 0) { %>
 
             <div class="stock-feed-images">
 
+                <% images.forEach(function(image) { %>
 
-                <% images.forEach(
-                    function(image)
-                { %>
-
-
-                    <% if (image) { %>
-
-                        <img
-                            src="<%= image %>"
-                            alt="<%= itemName %>"
-                            loading="lazy"
-                        >
-
-                    <% } %>
-
+                    <img
+                        src="<%= image %>"
+                        alt="<%= itemName %>"
+                        loading="lazy"
+                    >
 
                 <% }); %>
-
 
             </div>
 
@@ -876,7 +567,6 @@ const quantityLabel =
 
 
     </div>
-
 
 </article>
 
@@ -903,13 +593,12 @@ const quantityLabel =
 
 }
 
-
 .stock-feed-item:last-child {
 
-    border-bottom: none;
+    border-bottom:
+        none;
 
 }
-
 
 
 /* ==========================================================
@@ -918,64 +607,74 @@ const quantityLabel =
 
 .stock-feed-header {
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: flex-start;
+    align-items:
+        flex-start;
 
-    gap: 11px;
+    gap:
+        11px;
 
 }
 
-
 .stock-feed-avatar {
 
-    width: 44px;
+    width:
+        44px;
 
-    height: 44px;
+    height:
+        44px;
 
     flex:
         0 0 44px;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 
-    border-radius: 50%;
+    border-radius:
+        50%;
 
     background:
         #edf5ef;
 
 }
 
-
 .stock-feed-avatar img {
 
-    width: 100%;
+    width:
+        100%;
 
-    height: 100%;
+    height:
+        100%;
 
-    display: block;
+    display:
+        block;
 
-    object-fit: cover;
+    object-fit:
+        cover;
 
 }
-
 
 .stock-feed-author {
 
-    min-width: 0;
+    min-width:
+        0;
 
-    padding-top: 1px;
+    padding-top:
+        1px;
 
 }
-
 
 .stock-feed-author-line {
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
 }
-
 
 .stock-feed-author-line strong {
 
@@ -989,7 +688,6 @@ const quantityLabel =
         850;
 
 }
-
 
 .stock-feed-context {
 
@@ -1007,7 +705,6 @@ const quantityLabel =
 
 }
 
-
 .stock-feed-dairy-link {
 
     color:
@@ -1021,7 +718,6 @@ const quantityLabel =
 
 }
 
-
 .stock-feed-dairy-link:hover {
 
     text-decoration:
@@ -1029,10 +725,10 @@ const quantityLabel =
 
 }
 
-
 .stock-feed-date {
 
-    display: block;
+    display:
+        block;
 
     margin-top:
         3px;
@@ -1044,7 +740,6 @@ const quantityLabel =
         10px;
 
 }
-
 
 
 /* ==========================================================
@@ -1062,18 +757,20 @@ const quantityLabel =
 }
 
 
-
 /* ==========================================================
-   STOCK TYPE
+   TYPE
 ========================================================== */
 
 .stock-feed-type {
 
-    display: inline-flex;
+    display:
+        inline-flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    gap: 6px;
+    gap:
+        6px;
 
     margin-bottom:
         7px;
@@ -1099,14 +796,12 @@ const quantityLabel =
 
 }
 
-
 .stock-feed-type-icon {
 
     font-size:
         12px;
 
 }
-
 
 
 /* ==========================================================
@@ -1135,26 +830,28 @@ const quantityLabel =
 }
 
 
-
 /* ==========================================================
-   ITEM NAME
+   ITEM
 ========================================================== */
 
 .stock-feed-item-name {
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: baseline;
+    align-items:
+        baseline;
 
-    flex-wrap: wrap;
+    flex-wrap:
+        wrap;
 
-    gap: 6px;
+    gap:
+        6px;
 
     margin-bottom:
         8px;
 
 }
-
 
 .stock-feed-item-label {
 
@@ -1175,7 +872,6 @@ const quantityLabel =
 
 }
 
-
 .stock-feed-item-name strong {
 
     color:
@@ -1190,18 +886,20 @@ const quantityLabel =
 }
 
 
-
 /* ==========================================================
    CATEGORY
 ========================================================== */
 
 .stock-feed-category {
 
-    display: inline-flex;
+    display:
+        inline-flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    gap: 5px;
+    gap:
+        5px;
 
     margin-bottom:
         11px;
@@ -1213,7 +911,6 @@ const quantityLabel =
         11px;
 
 }
-
 
 .stock-feed-category-label {
 
@@ -1229,24 +926,25 @@ const quantityLabel =
 }
 
 
-
 /* ==========================================================
    DETAILS
 ========================================================== */
 
 .stock-feed-details {
 
-    display: flex;
+    display:
+        flex;
 
-    flex-wrap: wrap;
+    flex-wrap:
+        wrap;
 
-    gap: 8px;
+    gap:
+        8px;
 
     margin-bottom:
         12px;
 
 }
-
 
 .stock-feed-detail {
 
@@ -1265,10 +963,10 @@ const quantityLabel =
 
 }
 
-
 .stock-feed-detail-label {
 
-    display: block;
+    display:
+        block;
 
     margin-bottom:
         3px;
@@ -1290,7 +988,6 @@ const quantityLabel =
 
 }
 
-
 .stock-feed-detail strong {
 
     color:
@@ -1303,7 +1000,6 @@ const quantityLabel =
         850;
 
 }
-
 
 
 /* ==========================================================
@@ -1334,7 +1030,6 @@ const quantityLabel =
 
 }
 
-
 .stock-feed-subheading {
 
     margin-bottom:
@@ -1357,7 +1052,6 @@ const quantityLabel =
 
 }
 
-
 .stock-feed-instructions p {
 
     margin:
@@ -1376,7 +1070,6 @@ const quantityLabel =
         pre-wrap;
 
 }
-
 
 
 /* ==========================================================
@@ -1403,7 +1096,6 @@ const quantityLabel =
 
 }
 
-
 .stock-feed-message p {
 
     margin:
@@ -1415,14 +1107,14 @@ const quantityLabel =
 }
 
 
-
 /* ==========================================================
    IMAGES
 ========================================================== */
 
 .stock-feed-images {
 
-    display: flex;
+    display:
+        flex;
 
     gap:
         7px;
@@ -1437,7 +1129,6 @@ const quantityLabel =
         3px;
 
 }
-
 
 .stock-feed-images img {
 
@@ -1462,13 +1153,11 @@ const quantityLabel =
 }
 
 
-
 /* ==========================================================
    MOBILE
 ========================================================== */
 
 @media (max-width: 600px) {
-
 
     .stock-feed-body {
 
@@ -1480,14 +1169,12 @@ const quantityLabel =
 
     }
 
-
     .stock-feed-title {
 
         font-size:
             17px;
 
     }
-
 
     .stock-feed-detail {
 
@@ -1498,7 +1185,6 @@ const quantityLabel =
             0;
 
     }
-
 
     .stock-feed-images img {
 
@@ -1518,11 +1204,4 @@ const quantityLabel =
 </style>
 
 
-
-<%
-/* ==========================================================
-   END VALID STOCK BLOCK
-========================================================== */
-
-}
-%>
+<% } %>
