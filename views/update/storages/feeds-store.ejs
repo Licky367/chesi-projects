@@ -9,20 +9,24 @@ const currentUser = user || {};
 const isAdmin =
     currentUser.role === "admin";
 
+
 const feedStoreItems =
     Array.isArray(currentDairy.feedStocks)
         ? currentDairy.feedStocks
         : [];
+
 
 const availableFeedTypes =
     Array.isArray(feedTypes)
         ? feedTypes
         : [];
 
+
 const availableMedicineTypes =
     Array.isArray(medicineTypes)
         ? medicineTypes
         : [];
+
 
 const availableStockUnits =
     Array.isArray(stockUnits)
@@ -32,7 +36,6 @@ const availableStockUnits =
 
 /* ==========================================================
    SAFE NUMBER
-   Prevents NaN from ever reaching the page.
 ========================================================== */
 
 function safeNumber(value) {
@@ -90,10 +93,56 @@ function stockUnit(stock) {
 }
 
 
+/*
+ * IMPORTANT:
+ *
+ * This is UNIT PRICE.
+ *
+ * It is NOT the total value of the stock.
+ *
+ * Example:
+ *
+ * quantity = 100 kg
+ * unitPrice = KES 80/kg
+ *
+ * stock value = 100 × 80 = KES 8,000
+ */
+
 function stockPrice(stock) {
 
     return safeNumber(
         stock.price
+    );
+
+}
+
+
+function stockInstructions(stock) {
+
+    return (
+        stock.instructions ||
+        ""
+    );
+
+}
+
+
+function stockDuration(stock) {
+
+    return (
+        stock.expectedDuration ||
+        ""
+    );
+
+}
+
+
+function stockMessage(stock) {
+
+    return (
+        stock.message ||
+        stock.additionalInformation ||
+        ""
     );
 
 }
@@ -203,9 +252,7 @@ function stockPrice(stock) {
 
         <% if (feedStoreItems.length) { %>
 
-
             <div class="stock-list">
-
 
                 <% feedStoreItems.forEach(
                     function(stock)
@@ -216,7 +263,7 @@ function stockPrice(stock) {
                             stock._id || ""
                         );
 
-                    const category =
+                    const stockCat =
                         stockCategory(stock);
 
                     const name =
@@ -230,6 +277,15 @@ function stockPrice(stock) {
 
                     const price =
                         stockPrice(stock);
+
+                    const instructions =
+                        stockInstructions(stock);
+
+                    const duration =
+                        stockDuration(stock);
+
+                    const message =
+                        stockMessage(stock);
 
                 %>
 
@@ -245,20 +301,22 @@ function stockPrice(stock) {
 
                         data-stock-id="<%= id %>"
                         data-stock-name="<%= name %>"
-                        data-stock-category="<%= category %>"
+                        data-stock-category="<%= stockCat %>"
                         data-stock-quantity="<%= quantity %>"
                         data-stock-unit="<%= unit %>"
                         data-stock-price="<%= price %>"
+                        data-stock-instructions="<%= instructions %>"
+                        data-stock-duration="<%= duration %>"
+                        data-stock-message="<%= message %>"
                     >
 
 
                         <div class="stock-item-left">
 
-
                             <div class="stock-icon">
 
                                 <% if (
-                                    category === "medicine"
+                                    stockCat === "medicine"
                                 ) { %>
 
                                     💊
@@ -280,7 +338,7 @@ function stockPrice(stock) {
 
                                 <span>
 
-                                    <%= category === "medicine"
+                                    <%= stockCat === "medicine"
                                         ? "Veterinary medicine"
                                         : "Animal feed"
                                     %>
@@ -289,13 +347,11 @@ function stockPrice(stock) {
 
                             </div>
 
-
                         </div>
 
 
 
                         <div class="stock-item-right">
-
 
                             <div class="stock-quantity">
 
@@ -309,11 +365,9 @@ function stockPrice(stock) {
 
                             </div>
 
-
                             <span class="stock-arrow">
                                 →
                             </span>
-
 
                         </div>
 
@@ -323,12 +377,10 @@ function stockPrice(stock) {
 
                 <% }); %>
 
-
             </div>
 
 
         <% } else { %>
-
 
             <div class="empty-stock">
 
@@ -341,15 +393,20 @@ function stockPrice(stock) {
                 </strong>
 
                 <span>
+
                     <% if (isAdmin) { %>
+
                         Click "Add stock" above to create the first stock item.
+
                     <% } else { %>
+
                         No stock has been added yet.
+
                     <% } %>
+
                 </span>
 
             </div>
-
 
         <% } %>
 
@@ -357,22 +414,27 @@ function stockPrice(stock) {
     </section>
 
 
-
 </div>
 
 
 
 <!-- ==========================================================
-     MODAL
+     STOCK MODAL
      
-     Used for:
+     IMPORTANT LAYOUT:
      
-         ADMIN:
-             Add stock
+     Header     = 70px
+     Top menu   = 50px
+     Footer     = 50px
      
-         ANY USER:
-             Click existing stock
-             → opens same modal
+     Modal area:
+     
+     top    = 120px
+     bottom = 50px
+     
+     Available height:
+     
+     100vh - 170px
 ========================================================== -->
 
 <div
@@ -381,12 +443,10 @@ function stockPrice(stock) {
     hidden
 >
 
-
     <div
         class="stock-modal-backdrop"
         data-close-modal
     ></div>
-
 
 
     <div
@@ -402,7 +462,6 @@ function stockPrice(stock) {
         =================================================== -->
 
         <div class="stock-modal-header">
-
 
             <div>
 
@@ -432,7 +491,6 @@ function stockPrice(stock) {
             >
                 ×
             </button>
-
 
         </div>
 
@@ -465,7 +523,7 @@ function stockPrice(stock) {
 
 
             <!-- ==================================================
-                 STOCK CATEGORY
+                 CATEGORY
             =================================================== -->
 
             <div class="form-field">
@@ -582,6 +640,12 @@ function stockPrice(stock) {
             <div class="form-grid">
 
 
+                <!-- ==================================================
+                     QUANTITY
+                     
+                     Editable when existing stock is opened.
+                =================================================== -->
+
                 <div class="form-field">
 
                     <label for="quantity">
@@ -604,6 +668,14 @@ function stockPrice(stock) {
                 </div>
 
 
+
+                <!-- ==================================================
+                     UNIT
+                     
+                     IMPORTANT:
+                     Unit becomes read-only when editing
+                     existing stock for EVERYONE.
+                =================================================== -->
 
                 <div class="form-field">
 
@@ -641,9 +713,11 @@ function stockPrice(stock) {
 
 
             <!-- ==================================================
-                 PRICE
+                 UNIT PRICE
                  
-                 ADMIN ONLY
+                 ADMIN ONLY.
+                 
+                 This is ALWAYS the price per unit.
             =================================================== -->
 
             <% if (isAdmin) { %>
@@ -654,7 +728,7 @@ function stockPrice(stock) {
                 >
 
                     <label for="price">
-                        Price / Value
+                        Unit Price
                     </label>
 
                     <div class="money-input">
@@ -673,7 +747,12 @@ function stockPrice(stock) {
 
                     </div>
 
+                    <small>
+                        Price for one <span id="priceUnitLabel">unit</span>.
+                    </small>
+
                 </div>
+
 
 
                 <!-- ==============================================
@@ -795,7 +874,6 @@ function stockPrice(stock) {
 
         </form>
 
-
     </div>
 
 </div>
@@ -811,6 +889,7 @@ function stockPrice(stock) {
 .feedstore {
 
     width: 100%;
+
     max-width: 900px;
 
     margin: 0 auto;
@@ -823,9 +902,7 @@ function stockPrice(stock) {
 
 
 .feedstore * {
-
     box-sizing: border-box;
-
 }
 
 
@@ -834,9 +911,7 @@ function stockPrice(stock) {
 ========================================================== */
 
 .feedstore-header {
-
     margin-bottom: 15px;
-
 }
 
 
@@ -936,7 +1011,9 @@ function stockPrice(stock) {
     height: 42px;
 
     display: flex;
+
     align-items: center;
+
     justify-content: center;
 
     flex-shrink: 0;
@@ -1003,6 +1080,7 @@ function stockPrice(stock) {
     display: flex;
 
     align-items: center;
+
     justify-content: space-between;
 
     margin-bottom: 9px;
@@ -1073,6 +1151,7 @@ function stockPrice(stock) {
     display: flex;
 
     align-items: center;
+
     justify-content: space-between;
 
     gap: 10px;
@@ -1132,6 +1211,7 @@ function stockPrice(stock) {
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
     flex-shrink: 0;
@@ -1261,9 +1341,7 @@ function stockPrice(stock) {
 
 
 .empty-stock div {
-
     font-size: 25px;
-
 }
 
 
@@ -1289,11 +1367,43 @@ function stockPrice(stock) {
    MODAL
 ========================================================== */
 
+/*
+ * LAYOUT HEIGHT:
+ *
+ * Header     = 70px
+ * Top menu   = 50px
+ * Footer     = 50px
+ *
+ * Therefore the usable page area between the top menu
+ * and footer begins at:
+ *
+ * 70px + 50px = 120px
+ *
+ * and ends 50px before the bottom.
+ *
+ * The modal is therefore constrained to:
+ *
+ * top:    120px
+ * bottom: 50px
+ *
+ * giving it:
+ *
+ * 100vh - 170px
+ *
+ * of usable vertical space.
+ */
+
 .stock-modal {
 
     position: fixed;
 
-    inset: 0;
+    top: 120px;
+
+    right: 0;
+
+    bottom: 50px;
+
+    left: 0;
 
     z-index: 9999;
 
@@ -1303,17 +1413,19 @@ function stockPrice(stock) {
 
     justify-content: center;
 
-    padding: 15px;
+    padding: 10px 15px;
 
 }
 
 
 .stock-modal[hidden] {
-
     display: none;
-
 }
 
+
+/* ==========================================================
+   MODAL BACKDROP
+========================================================== */
 
 .stock-modal-backdrop {
 
@@ -1330,6 +1442,10 @@ function stockPrice(stock) {
 }
 
 
+/* ==========================================================
+   MODAL DIALOG
+========================================================== */
+
 .stock-modal-dialog {
 
     position: relative;
@@ -1338,7 +1454,16 @@ function stockPrice(stock) {
 
     max-width: 560px;
 
-    max-height: 92vh;
+    /*
+     * Parent already has the exact available height.
+     *
+     * max-height: 100% means the dialog can never
+     * escape the space between the top menu and footer.
+     */
+
+    max-height: 100%;
+
+    min-width: 0;
 
     overflow-y: auto;
 
@@ -1350,6 +1475,18 @@ function stockPrice(stock) {
         0 20px 60px
         rgba(0,0,0,.25);
 
+    /*
+     * Smooth scrolling on touch devices.
+     */
+
+    -webkit-overflow-scrolling: touch;
+
+    /*
+     * Prevent horizontal overflow.
+     */
+
+    overflow-x: hidden;
+
 }
 
 
@@ -1358,6 +1495,12 @@ function stockPrice(stock) {
 ========================================================== */
 
 .stock-modal-header {
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 2;
 
     display: flex;
 
@@ -1368,6 +1511,8 @@ function stockPrice(stock) {
     padding: 17px;
 
     border-bottom: 1px solid #e5ece7;
+
+    background: #ffffff;
 
 }
 
@@ -1518,6 +1663,25 @@ function stockPrice(stock) {
 }
 
 
+/* ==========================================================
+   READ-ONLY FIELDS
+========================================================== */
+
+.form-field input[readonly],
+.form-field select:disabled,
+.form-field textarea[readonly] {
+
+    background: #f2f5f3;
+
+    color: #68746d;
+
+    border-color: #dce5df;
+
+    cursor: not-allowed;
+
+}
+
+
 .form-grid {
 
     display: grid;
@@ -1528,6 +1692,10 @@ function stockPrice(stock) {
 
 }
 
+
+/* ==========================================================
+   MONEY
+========================================================== */
 
 .money-input {
 
@@ -1540,6 +1708,17 @@ function stockPrice(stock) {
     border-radius: 8px;
 
     overflow: hidden;
+
+}
+
+
+.money-input:focus-within {
+
+    border-color: #198754;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(25,135,84,.08);
 
 }
 
@@ -1561,8 +1740,23 @@ function stockPrice(stock) {
 
     border: none;
 
+    box-shadow: none;
+
 }
 
+
+.money-input input:focus {
+
+    border: none;
+
+    box-shadow: none;
+
+}
+
+
+/* ==========================================================
+   SUBMIT
+========================================================== */
 
 .stock-submit {
 
@@ -1643,21 +1837,151 @@ function stockPrice(stock) {
     }
 
 
+    /* ======================================================
+       MOBILE MODAL
+       
+       IMPORTANT:
+       
+       Do NOT use inset: 0 here.
+       
+       The modal must remain below the
+       70px header + 50px top menu
+       and above the 50px footer.
+    ======================================================= */
+
     .stock-modal {
 
-        align-items: flex-end;
+        top: 120px;
 
-        padding: 0;
+        right: 0;
+
+        bottom: 50px;
+
+        left: 0;
+
+        align-items: center;
+
+        padding: 8px;
 
     }
 
 
     .stock-modal-dialog {
 
-        max-height: 94vh;
+        width: 100%;
 
-        border-radius:
-            16px 16px 0 0;
+        max-width: 560px;
+
+        max-height: 100%;
+
+        border-radius: 14px;
+
+    }
+
+
+    .stock-modal-header {
+
+        padding: 13px;
+
+    }
+
+
+    .stock-modal-header h2 {
+
+        font-size: 17px;
+
+    }
+
+
+    .stock-modal-header p {
+
+        font-size: 9px;
+
+    }
+
+
+    #stockForm {
+
+        padding: 13px;
+
+    }
+
+
+    .form-field {
+
+        margin-bottom: 10px;
+
+    }
+
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+
+        padding: 8px 9px;
+
+        font-size: 11px;
+
+    }
+
+
+    .stock-submit {
+
+        min-height: 42px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SHORT SCREENS
+========================================================== */
+
+@media (max-height: 600px) {
+
+    .stock-modal {
+
+        padding-top: 5px;
+
+        padding-bottom: 5px;
+
+    }
+
+
+    .stock-modal-header {
+
+        padding: 10px 13px;
+
+    }
+
+
+    #stockForm {
+
+        padding: 12px 13px;
+
+    }
+
+
+    .form-field {
+
+        gap: 3px;
+
+        margin-bottom: 8px;
+
+    }
+
+
+    .form-field textarea {
+
+        min-height: 55px;
+
+    }
+
+
+    .stock-submit {
+
+        min-height: 38px;
 
     }
 
@@ -1744,9 +2068,19 @@ document.addEventListener(
             );
 
 
+        /*
+         * PRICE EXISTS ONLY FOR ADMIN.
+         */
+
         const price =
             document.getElementById(
                 "price"
+            );
+
+
+        const priceUnitLabel =
+            document.getElementById(
+                "priceUnitLabel"
             );
 
 
@@ -1821,12 +2155,22 @@ document.addEventListener(
 
 
         /* ======================================================
+           MODE
+        ======================================================= */
+
+        let existingStockMode =
+            false;
+
+
+
+        /* ======================================================
            MODAL OPEN
         ======================================================= */
 
         function openModal() {
 
-            modal.hidden = false;
+            modal.hidden =
+                false;
 
             document.body.style.overflow =
                 "hidden";
@@ -1841,10 +2185,14 @@ document.addEventListener(
 
         function closeModal() {
 
-            modal.hidden = true;
+            modal.hidden =
+                true;
 
             document.body.style.overflow =
                 "";
+
+            existingStockMode =
+                false;
 
         }
 
@@ -1894,7 +2242,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           CATEGORY
+           CATEGORY VISIBILITY
         ======================================================= */
 
         function updateCategory() {
@@ -1918,6 +2266,22 @@ document.addEventListener(
             medicineName.required =
                 value === "medicine";
 
+
+
+            /*
+             * Update unit-price description.
+             */
+
+            if (
+                priceUnitLabel &&
+                unit.value
+            ) {
+
+                priceUnitLabel.textContent =
+                    unit.value;
+
+            }
+
         }
 
 
@@ -1930,7 +2294,368 @@ document.addEventListener(
 
 
         /* ======================================================
-           RESET FOR NEW STOCK
+           UNIT LABEL
+        ======================================================= */
+
+        unit.addEventListener(
+            "change",
+            function() {
+
+                if (
+                    priceUnitLabel &&
+                    unit.value
+                ) {
+
+                    priceUnitLabel.textContent =
+                        unit.value;
+
+                }
+
+            }
+        );
+
+
+
+        /* ======================================================
+           RESET FIELD STATE
+           
+           Used before opening Add Stock.
+        ======================================================= */
+
+        function resetFieldState() {
+
+
+            category.disabled =
+                false;
+
+
+            feedName.disabled =
+                false;
+
+
+            medicineName.disabled =
+                false;
+
+
+            /*
+             * Unit is editable ONLY while creating
+             * a completely new stock item.
+             *
+             * Once an existing item is opened,
+             * it becomes read-only for everyone.
+             */
+
+            unit.disabled =
+                false;
+
+
+            quantity.readOnly =
+                false;
+
+
+            if (price) {
+
+                price.readOnly =
+                    false;
+
+            }
+
+
+            if (instructions) {
+
+                instructions.readOnly =
+                    false;
+
+            }
+
+
+            if (expectedDuration) {
+
+                expectedDuration.readOnly =
+                    false;
+
+            }
+
+
+            message.readOnly =
+                false;
+
+
+            images.disabled =
+                false;
+
+
+            /*
+             * Remove hidden copies.
+             */
+
+            form
+                .querySelectorAll(
+                    ".disabled-value-copy"
+                )
+                .forEach(
+                    function(element) {
+
+                        element.remove();
+
+                    }
+                );
+
+        }
+
+
+
+        /* ======================================================
+           CREATE HIDDEN COPY
+           
+           Disabled fields are not submitted by browsers.
+        ======================================================= */
+
+        function createHiddenCopy(
+            name,
+            value
+        ) {
+
+            let existing =
+                form.querySelector(
+                    '.disabled-value-copy[data-copy-name="' +
+                    name +
+                    '"]'
+                );
+
+
+            if (existing) {
+
+                existing.value =
+                    value;
+
+                return;
+
+            }
+
+
+            const hidden =
+                document.createElement(
+                    "input"
+                );
+
+
+            hidden.type =
+                "hidden";
+
+
+            hidden.name =
+                name;
+
+
+            hidden.value =
+                value;
+
+
+            hidden.className =
+                "disabled-value-copy";
+
+
+            hidden.dataset.copyName =
+                name;
+
+
+            form.appendChild(
+                hidden
+            );
+
+        }
+
+
+
+        /* ======================================================
+           LOCK EXISTING STOCK
+           
+           RULES:
+           
+           CATEGORY:
+               read-only for everyone
+           
+           NAME:
+               read-only for everyone
+           
+           QUANTITY:
+               editable
+           
+           UNIT:
+               read-only for everyone
+           
+           PRICE:
+               admin only + editable
+           
+           INSTRUCTIONS:
+               admin only + editable
+           
+           EXPECTED DURATION:
+               admin only + editable
+           
+           ADDITIONAL INFORMATION:
+               editable
+           
+           PHOTOS:
+               editable
+        ======================================================= */
+
+        function lockExistingStockFields() {
+
+
+            /* ==================================================
+               CATEGORY
+            =================================================== */
+
+            category.disabled =
+                true;
+
+
+            createHiddenCopy(
+                "category",
+                category.value
+            );
+
+
+
+            /* ==================================================
+               STOCK NAME
+            =================================================== */
+
+            feedName.disabled =
+                true;
+
+
+            medicineName.disabled =
+                true;
+
+
+            if (
+                category.value ===
+                "feed"
+            ) {
+
+                createHiddenCopy(
+                    "feedName",
+                    feedName.value
+                );
+
+            } else {
+
+                createHiddenCopy(
+                    "medicineName",
+                    medicineName.value
+                );
+
+            }
+
+
+
+            /* ==================================================
+               QUANTITY
+               
+               ALWAYS EDITABLE.
+            =================================================== */
+
+            quantity.readOnly =
+                false;
+
+
+
+            /* ==================================================
+               UNIT
+               
+               ALWAYS READ-ONLY WHEN EDITING
+               EXISTING STOCK.
+            =================================================== */
+
+            unit.disabled =
+                true;
+
+
+            createHiddenCopy(
+                "unit",
+                unit.value
+            );
+
+
+
+            /* ==================================================
+               PRICE
+               
+               ADMIN ONLY.
+               
+               Still editable.
+               
+               This is UNIT PRICE.
+            =================================================== */
+
+            if (price) {
+
+                price.readOnly =
+                    false;
+
+            }
+
+
+
+            /* ==================================================
+               INSTRUCTIONS
+               
+               ADMIN ONLY.
+            =================================================== */
+
+            if (instructions) {
+
+                instructions.readOnly =
+                    false;
+
+            }
+
+
+
+            /* ==================================================
+               EXPECTED DURATION
+               
+               ADMIN ONLY.
+            =================================================== */
+
+            if (expectedDuration) {
+
+                expectedDuration.readOnly =
+                    false;
+
+            }
+
+
+
+            /* ==================================================
+               ADDITIONAL INFORMATION
+               
+               EVERYONE CAN EDIT.
+            =================================================== */
+
+            message.readOnly =
+                false;
+
+
+
+            /* ==================================================
+               PHOTOS
+               
+               EVERYONE CAN ADD PHOTOS.
+            =================================================== */
+
+            images.disabled =
+                false;
+
+        }
+
+
+
+        /* ======================================================
+           OPEN NEW STOCK
            
            ADMIN ONLY.
         ======================================================= */
@@ -1944,24 +2669,18 @@ document.addEventListener(
             }
 
 
+            existingStockMode =
+                false;
+
+
+            resetFieldState();
+
+
             form.reset();
 
 
             stockId.value =
                 "";
-
-
-            category.disabled =
-                false;
-
-
-            unit.disabled =
-                false;
-
-
-            quantity.removeAttribute(
-                "max"
-            );
 
 
             modalEyebrow.textContent =
@@ -1977,7 +2696,7 @@ document.addEventListener(
 
 
             quantityHelp.textContent =
-                "Enter the quantity being added.";
+                "Enter the initial quantity.";
 
 
             submitIcon.textContent =
@@ -1986,6 +2705,14 @@ document.addEventListener(
 
             submitText.textContent =
                 "Add Stock";
+
+
+            if (priceUnitLabel) {
+
+                priceUnitLabel.textContent =
+                    "unit";
+
+            }
 
 
             updateCategory();
@@ -2013,13 +2740,25 @@ document.addEventListener(
 
 
         /* ======================================================
-           EXISTING STOCK
+           OPEN EXISTING STOCK
         ======================================================= */
 
         function openExistingStock(
             card
         ) {
 
+
+            existingStockMode =
+                true;
+
+
+            resetFieldState();
+
+
+
+            /* ==================================================
+               READ STOCK DATA
+            =================================================== */
 
             const id =
                 card.dataset.stockId;
@@ -2049,17 +2788,70 @@ document.addEventListener(
                 );
 
 
+            const stockInstructions =
+                card.dataset.stockInstructions ||
+                "";
+
+
+            const stockDuration =
+                card.dataset.stockDuration ||
+                "";
+
+
+            const stockMessage =
+                card.dataset.stockMessage ||
+                "";
+
+
+
+            /* ==================================================
+               STOCK ID
+            =================================================== */
+
             stockId.value =
                 id;
 
+
+
+            /* ==================================================
+               CATEGORY
+            =================================================== */
 
             category.value =
                 stockCategory;
 
 
-            category.disabled =
-                true;
 
+            /* ==================================================
+               NAME
+            =================================================== */
+
+            if (
+                stockCategory ===
+                "feed"
+            ) {
+
+                feedName.value =
+                    name;
+
+                medicineName.value =
+                    "";
+
+            } else {
+
+                medicineName.value =
+                    name;
+
+                feedName.value =
+                    "";
+
+            }
+
+
+
+            /* ==================================================
+               QUANTITY
+            =================================================== */
 
             quantity.value =
                 Number.isFinite(
@@ -2069,18 +2861,21 @@ document.addEventListener(
                     : 0;
 
 
+
+            /* ==================================================
+               UNIT
+            =================================================== */
+
             unit.value =
                 stockUnit;
 
 
-            /*
-             * Existing stock is being opened.
-             *
-             * For this first UI stage:
-             *
-             * the form is simply populated with the
-             * actual database values.
-             */
+
+            /* ==================================================
+               UNIT PRICE
+               
+               ADMIN ONLY.
+            =================================================== */
 
             if (price) {
 
@@ -2094,36 +2889,59 @@ document.addEventListener(
             }
 
 
-            /*
-             * Stock name is already identified by stockId.
-             *
-             * Do not ask the user to choose another name.
-             */
 
-            feedName.required =
-                false;
+            /* ==================================================
+               INSTRUCTIONS
+            =================================================== */
 
+            if (instructions) {
 
-            medicineName.required =
-                false;
-
-
-            /*
-             * Existing stock fields.
-             */
-
-            if (stockCategory === "feed") {
-
-                feedName.value =
-                    name;
-
-            } else {
-
-                medicineName.value =
-                    name;
+                instructions.value =
+                    stockInstructions;
 
             }
 
+
+
+            /* ==================================================
+               EXPECTED DURATION
+            =================================================== */
+
+            if (expectedDuration) {
+
+                expectedDuration.value =
+                    stockDuration;
+
+            }
+
+
+
+            /* ==================================================
+               ADDITIONAL INFORMATION
+            =================================================== */
+
+            message.value =
+                stockMessage;
+
+
+
+            /* ==================================================
+               PHOTOS
+            =================================================== */
+
+            /*
+             * File inputs cannot be populated from an
+             * existing file for security reasons.
+             */
+
+            images.value =
+                "";
+
+
+
+            /* ==================================================
+               MODAL HEADER
+            =================================================== */
 
             modalEyebrow.textContent =
                 "EXISTING STOCK";
@@ -2134,7 +2952,9 @@ document.addEventListener(
 
 
             modalDescription.textContent =
-                "Update this stock item.";
+                isAdmin
+                    ? "Update this stock item."
+                    : "Update quantity and stock information.";
 
 
             quantityHelp.textContent =
@@ -2144,6 +2964,26 @@ document.addEventListener(
                 stockUnit;
 
 
+
+            /* ==================================================
+               UNIT PRICE LABEL
+            =================================================== */
+
+            if (
+                priceUnitLabel
+            ) {
+
+                priceUnitLabel.textContent =
+                    stockUnit || "unit";
+
+            }
+
+
+
+            /* ==================================================
+               SUBMIT
+            =================================================== */
+
             submitIcon.textContent =
                 "💾";
 
@@ -2152,7 +2992,21 @@ document.addEventListener(
                 "Save Stock Update";
 
 
+
+            /* ==================================================
+               CATEGORY DISPLAY
+            =================================================== */
+
             updateCategory();
+
+
+
+            /* ==================================================
+               LOCK FIELDS
+            =================================================== */
+
+            lockExistingStockFields();
+
 
 
             openModal();
@@ -2162,7 +3016,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           CLICKABLE STOCK LIST
+           STOCK LIST EVENTS
         ======================================================= */
 
         document
@@ -2188,7 +3042,6 @@ document.addEventListener(
                     card.addEventListener(
                         "keydown",
                         function(event) {
-
 
                             if (
                                 event.key === "Enter" ||
