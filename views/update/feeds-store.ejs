@@ -8,7 +8,7 @@ FILE:
 PURPOSE:
     Dedicated dairy foodstock page.
 
-EXPECTED DATA:
+DATA EXPECTED FROM CONTROLLER:
 --------------------------------------------------------------
     dairy
     user
@@ -52,33 +52,60 @@ ROLES:
         • Cannot add new stock.
         • Cannot restock stock.
         • Can select existing stock only.
-        • Can report current remaining quantity.
-        • Cannot change unit.
-        • Cannot report more than current database remainder.
+        • Can report the current remaining quantity.
+        • Cannot change the unit.
+        • Cannot report more than the current database remainder.
         • Can add additional information.
         • Can add photos.
-        • Cannot provide instructions.
-        • Cannot provide expected duration.
+        • CANNOT provide instructions of use.
+        • CANNOT provide expected duration.
+
+IMPORTANT QUANTITY RULE:
+--------------------------------------------------------------
+    When an existing stock is selected:
+
+        database remainder
+                ↓
+        form quantity
+
+    The form MUST NOT replace the database remainder with 0.
+
+    For dairy workers:
+
+        maximum quantity = current database remainder
+
+    For administrators:
+
+        quantity is editable without that worker limit.
+
+IMPORTANT FEED CONTRACT:
+--------------------------------------------------------------
+    Every history document is rendered independently.
+
+    Each history document is passed to stock.ejs as:
+
+        item: stockItem
 ==============================================================
 */ %>
 
 
 <%
 /* ==========================================================
-   DIRECT PAGE DATA
-
-   No fallback values are introduced here.
+   PAGE DATA
 ========================================================== */
 
-const currentDairy = dairy;
+const currentDairy =
+    dairy;
 
-const currentUser = user;
+
+const currentUser =
+    user;
 
 
 /* ==========================================================
    CURRENT INVENTORY
 
-   DIRECTLY FROM dairy.feedStocks
+   Database-backed inventory only.
 ========================================================== */
 
 const feedStoreItems =
@@ -86,9 +113,7 @@ const feedStoreItems =
 
 
 /* ==========================================================
-   HISTORY
-
-   DIRECTLY FROM controller data
+   STOCK HISTORY
 ========================================================== */
 
 const feedStoreUpdates =
@@ -97,8 +122,6 @@ const feedStoreUpdates =
 
 /* ==========================================================
    FORM OPTIONS
-
-   DIRECTLY FROM CONTROLLER
 ========================================================== */
 
 const availableFeedTypes =
@@ -126,21 +149,22 @@ const isDairyWorker =
 
 
 /* ==========================================================
-   STOCK TYPE
+   STOCK TYPE HELPER
 ========================================================== */
 
 function isMedicineStock(stock) {
 
-    return stock.category === "medicine";
+    return (
+        String(
+            stock.category
+        ).toLowerCase() === "medicine"
+    );
 
 }
 
 
 /* ==========================================================
    STOCK NAME
-
-   ONE EXPECTED DATABASE FIELD:
-       stock.name
 ========================================================== */
 
 function getStockName(stock) {
@@ -153,8 +177,9 @@ function getStockName(stock) {
 /* ==========================================================
    STOCK QUANTITY
 
-   ONE EXPECTED DATABASE FIELD:
-       stock.quantityRemaining
+   EXPECTED DATABASE FIELD:
+
+       quantityRemaining
 ========================================================== */
 
 function getStockQuantity(stock) {
@@ -168,9 +193,6 @@ function getStockQuantity(stock) {
 
 /* ==========================================================
    STOCK UNIT
-
-   ONE EXPECTED DATABASE FIELD:
-       stock.unit
 ========================================================== */
 
 function getStockUnit(stock) {
@@ -182,9 +204,6 @@ function getStockUnit(stock) {
 
 /* ==========================================================
    STOCK PRICE
-
-   ONE EXPECTED DATABASE FIELD:
-       stock.price
 ========================================================== */
 
 function getStockPrice(stock) {
@@ -245,6 +264,18 @@ function getStockPrice(stock) {
 
     <!-- ======================================================
          TAB NAVIGATION
+
+         ADMIN:
+             Available Stock
+             Add / Restock
+             Foodstock Updates
+
+         DAIRY WORKER:
+             Available Stock
+             Update Remaining
+             Foodstock Updates
+
+         The worker is NOT given an Add / Restock operation.
     ======================================================= -->
 
     <nav
@@ -530,6 +561,7 @@ function getStockPrice(stock) {
                                     </div>
 
 
+
                                     <span
                                         class="feedstore-stock-action"
                                         aria-hidden="true"
@@ -638,7 +670,8 @@ function getStockPrice(stock) {
 
 
         <!-- ==================================================
-             ADD / RESTOCK / UPDATE REMAINING
+             ADMIN ADD / RESTOCK
+             WORKER UPDATE REMAINING
         =================================================== -->
 
         <% if (isAdmin || isDairyWorker) { %>
@@ -664,7 +697,7 @@ function getStockPrice(stock) {
                                     ADMIN
                                 </div>
 
-                            <% } else { %>
+                            <% } else if (isDairyWorker) { %>
 
                                 <div class="feedstore-worker-label">
                                     DAIRY WORKER
@@ -757,6 +790,8 @@ function getStockPrice(stock) {
                     >
 
 
+                        <!-- EXISTING STOCK ID -->
+
                         <input
                             id="selectedStockId"
                             type="hidden"
@@ -768,6 +803,13 @@ function getStockPrice(stock) {
 
                         <!-- ==================================================
                              STOCK CATEGORY
+
+                             ADMIN:
+                                 selectable.
+
+                             WORKER:
+                                 selected stock determines category.
+                                 Category is disabled.
                         =================================================== -->
 
                         <div class="feedstore-field">
@@ -1009,8 +1051,18 @@ function getStockPrice(stock) {
 
 
                                     <small>
-                                        Unit comes from the selected
-                                        stock record.
+                                        Unit is taken from the current
+                                        database record and cannot be
+                                        changed.
+                                    </small>
+
+
+                                <% } else { %>
+
+
+                                    <small>
+                                        Administrators may edit the
+                                        stock unit.
                                     </small>
 
 
@@ -1025,7 +1077,7 @@ function getStockPrice(stock) {
 
 
                         <!-- ==================================================
-                             ADMIN PRICE
+                             ADMIN PRICE ONLY
                         =================================================== -->
 
                         <% if (isAdmin) { %>
@@ -1074,7 +1126,8 @@ function getStockPrice(stock) {
 
 
                         <!-- ==================================================
-                             ADMIN INSTRUCTIONS
+                             ADMIN ONLY:
+                             INSTRUCTIONS
                         =================================================== -->
 
                         <% if (isAdmin) { %>
@@ -1100,6 +1153,11 @@ function getStockPrice(stock) {
                             </div>
 
 
+
+                            <!-- ==================================================
+                                 ADMIN ONLY:
+                                 EXPECTED DURATION
+                            =================================================== -->
 
                             <div class="feedstore-field">
 
@@ -1127,6 +1185,8 @@ function getStockPrice(stock) {
 
                         <!-- ==================================================
                              ADDITIONAL INFORMATION
+
+                             BOTH ADMIN AND WORKER CAN PROVIDE THIS.
                         =================================================== -->
 
                         <div class="feedstore-field">
@@ -1152,6 +1212,8 @@ function getStockPrice(stock) {
 
                         <!-- ==================================================
                              PHOTOS
+
+                             BOTH ADMIN AND WORKER CAN PROVIDE PHOTOS.
                         =================================================== -->
 
                         <div class="feedstore-field">
@@ -1237,7 +1299,7 @@ function getStockPrice(stock) {
 
 
         <!-- ==================================================
-             HISTORY
+             FOODSTOCK HISTORY
         =================================================== -->
 
         <section
@@ -1341,6 +1403,10 @@ function getStockPrice(stock) {
 </div>
 
 
+
+<!-- ==========================================================
+     FEED STORE JAVASCRIPT
+========================================================== -->
 
 <script>
 
@@ -1524,7 +1590,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           SELECTED DATABASE QUANTITY
+           CURRENT SELECTED DATABASE QUANTITY
         ======================================================= */
 
         let selectedDatabaseQuantity;
@@ -1587,6 +1653,7 @@ document.addEventListener(
 
             if (shouldScroll) {
 
+
                 window.scrollTo({
 
                     top: 0,
@@ -1594,6 +1661,7 @@ document.addEventListener(
                     behavior: "smooth"
 
                 });
+
 
             }
 
@@ -1626,7 +1694,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           CATEGORY SWITCHER
+           STOCK CATEGORY SWITCHER
         ======================================================= */
 
         function updateStockType() {
@@ -1674,6 +1742,7 @@ document.addEventListener(
                 medicineSelect.required =
                     false;
 
+
             }
 
         }
@@ -1689,12 +1758,17 @@ document.addEventListener(
 
         /* ======================================================
            PREPARE NEW STOCK
+
+           ONLY ADMINISTRATORS CAN USE THIS.
         ======================================================= */
 
         function prepareNewStockForm() {
 
 
-            if (!isAdmin) {
+            if (
+                !isAdmin ||
+                !form
+            ) {
 
                 return;
 
@@ -1792,13 +1866,25 @@ document.addEventListener(
                 );
 
 
+            /* ==================================================
+               SAVE DATABASE REMAINDER
+            ================================================== */
+
             selectedDatabaseQuantity =
                 quantity;
 
 
+            /* ==================================================
+               STOCK ID
+            ================================================== */
+
             selectedStockId.value =
                 stockId;
 
+
+            /* ==================================================
+               SHOW SELECTED STOCK
+            ================================================== */
 
             selectedStockSummary.hidden =
                 false;
@@ -1821,6 +1907,10 @@ document.addEventListener(
                     : "🌾";
 
 
+            /* ==================================================
+               STOCK TYPE
+            ================================================== */
+
             category.value =
                 stockType;
 
@@ -1828,6 +1918,12 @@ document.addEventListener(
             category.disabled =
                 isDairyWorker;
 
+
+            /* ==================================================
+               EXISTING STOCK NAME
+
+               Stock ID identifies the database record.
+            ================================================== */
 
             feedSelect.required =
                 false;
@@ -1837,15 +1933,11 @@ document.addEventListener(
                 false;
 
 
-            /*
-            --------------------------------------------------
-            EXISTING DATABASE QUANTITY
+            /* ==================================================
+               QUANTITY
 
-            Directly loaded into the form.
-
-            No zero fallback.
-            --------------------------------------------------
-            */
+               DIRECT DATABASE REMAINDER.
+            ================================================== */
 
             stockQuantity.value =
                 String(
@@ -1855,19 +1947,27 @@ document.addEventListener(
 
             if (isDairyWorker) {
 
+
                 stockQuantity.max =
                     String(
                         quantity
                     );
 
+
             } else {
+
 
                 stockQuantity.removeAttribute(
                     "max"
                 );
 
+
             }
 
+
+            /* ==================================================
+               UNIT
+            ================================================== */
 
             stockUnit.value =
                 unit;
@@ -1876,6 +1976,10 @@ document.addEventListener(
             stockUnit.disabled =
                 isDairyWorker;
 
+
+            /* ==================================================
+               ADMIN PRICE
+            ================================================== */
 
             if (isAdmin) {
 
@@ -1886,6 +1990,10 @@ document.addEventListener(
 
             }
 
+
+            /* ==================================================
+               CLEAR UPDATE DATA
+            ================================================== */
 
             if (stockInstructions) {
 
@@ -1911,6 +2019,10 @@ document.addEventListener(
                 "";
 
 
+            /* ==================================================
+               WORKER CURRENT QUANTITY
+            ================================================== */
+
             if (workerCurrentQuantity) {
 
                 workerCurrentQuantity.textContent =
@@ -1918,6 +2030,10 @@ document.addEventListener(
 
             }
 
+
+            /* ==================================================
+               HEADING
+            ================================================== */
 
             restockHeading.textContent =
                 isAdmin
@@ -1927,9 +2043,15 @@ document.addEventListener(
 
             restockDescription.textContent =
                 isAdmin
+
                     ? "The selected stock has been loaded from the database. Edit the quantity or unit as required."
+
                     : "The selected stock has been loaded from the database. Enter the quantity currently remaining.";
 
+
+            /* ==================================================
+               BUTTON
+            ================================================== */
 
             submitText.textContent =
                 isAdmin
@@ -1945,6 +2067,10 @@ document.addEventListener(
 
             updateStockType();
 
+
+            /* ==================================================
+               OPEN UPDATE TAB
+            ================================================== */
 
             activateTab(
                 "restock-stock",
@@ -1967,9 +2093,11 @@ document.addEventListener(
                     "click",
                     function() {
 
+
                         openExistingStock(
                             card
                         );
+
 
                     }
                 );
@@ -2006,7 +2134,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           RESTOCK TAB
+           DIRECT ADD / UPDATE TAB
         ======================================================= */
 
         const restockTab =
@@ -2077,15 +2205,22 @@ document.addEventListener(
 
 
         /* ======================================================
-           WORKER QUANTITY LIMIT
+           WORKER QUANTITY VALIDATION
         ======================================================= */
 
-        if (isDairyWorker) {
+        if (stockQuantity) {
 
 
             stockQuantity.addEventListener(
                 "input",
                 function() {
+
+
+                    if (!isDairyWorker) {
+
+                        return;
+
+                    }
 
 
                     const entered =
@@ -2109,6 +2244,7 @@ document.addEventListener(
                         workerCurrentQuantity.textContent =
                             selectedDatabaseQuantity.toLocaleString();
 
+
                     }
 
                 }
@@ -2120,7 +2256,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           FORM SUBMISSION
+           FINAL FORM VALIDATION
         ======================================================= */
 
         form.addEventListener(
@@ -2128,8 +2264,16 @@ document.addEventListener(
             function(event) {
 
 
+                /* ==========================================
+                   WORKER
+                =========================================== */
+
                 if (isDairyWorker) {
 
+
+                    /* --------------------------------------
+                       Worker MUST select existing stock.
+                    -------------------------------------- */
 
                     if (
                         !selectedStockId.value
@@ -2149,6 +2293,10 @@ document.addEventListener(
                     }
 
 
+                    /* --------------------------------------
+                       Worker cannot provide instructions.
+                    -------------------------------------- */
+
                     if (stockInstructions) {
 
                         stockInstructions.value =
@@ -2156,6 +2304,10 @@ document.addEventListener(
 
                     }
 
+
+                    /* --------------------------------------
+                       Worker cannot provide duration.
+                    -------------------------------------- */
 
                     if (expectedDuration) {
 
@@ -2165,9 +2317,25 @@ document.addEventListener(
                     }
 
 
+                    /* --------------------------------------
+                       Worker cannot change unit.
+
+                       Temporarily enable it so its database
+                       value can be submitted.
+                    -------------------------------------- */
+
                     stockUnit.disabled =
                         false;
 
+
+                    /*
+                    ------------------------------------------------
+                    Disabled form controls are not submitted.
+
+                    Therefore copy the database unit into a
+                    hidden field.
+                    ------------------------------------------------
+                    */
 
                     const oldHiddenUnit =
                         form.querySelector(
@@ -2209,6 +2377,11 @@ document.addEventListener(
                     );
 
 
+                    /* --------------------------------------
+                       Worker quantity must not exceed the
+                       database remainder.
+                    -------------------------------------- */
+
                     const entered =
                         Number(
                             stockQuantity.value
@@ -2243,6 +2416,10 @@ document.addEventListener(
                     }
 
 
+                    /* --------------------------------------
+                       Worker cannot submit price.
+                    -------------------------------------- */
+
                     if (stockPrice) {
 
                         stockPrice.value =
@@ -2256,12 +2433,22 @@ document.addEventListener(
                 }
 
 
+
+                /* ==========================================
+                   ADMIN
+                =========================================== */
+
                 if (isAdmin) {
 
                     return;
 
                 }
 
+
+
+                /* ==========================================
+                   UNKNOWN ROLE
+                =========================================== */
 
                 event.preventDefault();
 
@@ -2277,7 +2464,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           INITIAL CATEGORY
+           INITIAL CATEGORY STATE
         ======================================================= */
 
         updateStockType();
@@ -2287,3 +2474,1335 @@ document.addEventListener(
 );
 
 </script>
+
+
+
+<style>
+
+/* ==========================================================
+   FEED STORE PAGE
+========================================================== */
+
+.feedstore-page {
+
+    width: 100%;
+    max-width: 1000px;
+
+    margin: 0 auto;
+
+    padding: 12px 0 45px;
+
+    color: #26352d;
+
+}
+
+
+.feedstore-page *,
+.feedstore-page *::before,
+.feedstore-page *::after {
+
+    box-sizing: border-box;
+
+}
+
+
+/* ==========================================================
+   INTRO
+========================================================== */
+
+.feedstore-intro {
+
+    display: flex;
+    align-items: center;
+
+    gap: 13px;
+
+    margin-bottom: 15px;
+
+}
+
+
+.feedstore-intro-icon {
+
+    width: 50px;
+    height: 50px;
+
+    flex: 0 0 50px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: #e5f2e9;
+
+    font-size: 24px;
+
+}
+
+
+.feedstore-eyebrow {
+
+    margin-bottom: 2px;
+
+    color: #137342;
+
+    font-size: 9px;
+    font-weight: 900;
+
+    letter-spacing: 1.2px;
+
+}
+
+
+.feedstore-intro h1 {
+
+    margin: 0;
+
+    color: #123f29;
+
+    font-size: 25px;
+    line-height: 1.15;
+
+    font-weight: 850;
+
+}
+
+
+.feedstore-intro p {
+
+    margin: 5px 0 0;
+
+    color: #748078;
+
+    font-size: 12px;
+    line-height: 1.4;
+
+}
+
+
+/* ==========================================================
+   TAB BAR
+========================================================== */
+
+.feedstore-tabs {
+
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 4px;
+
+    margin-bottom: 0;
+
+    padding: 5px;
+
+    border: 1px solid #06391f;
+    border-radius: 13px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #073b22 0%,
+            #0a4b2b 50%,
+            #06361e 100%
+        );
+
+    box-shadow:
+        0 5px 16px
+        rgba(3, 48, 27, .18);
+
+}
+
+
+/* ==========================================================
+   TAB BUTTON
+========================================================== */
+
+.feedstore-tab {
+
+    min-width: 0;
+
+    min-height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 6px;
+
+    padding: 7px 8px;
+
+    border: 1px solid transparent;
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #c8ded1;
+
+    font-family: inherit;
+
+    font-size: 10px;
+    font-weight: 850;
+
+    white-space: nowrap;
+
+    cursor: pointer;
+
+    transition:
+        background .18s ease,
+        color .18s ease,
+        box-shadow .18s ease;
+
+}
+
+
+.feedstore-tab:hover {
+
+    background: rgba(255,255,255,.08);
+
+    color: #ffffff;
+
+}
+
+
+.feedstore-tab.active {
+
+    background: #ffffff;
+
+    color: #0b5d35;
+
+    border-color: rgba(255,255,255,.8);
+
+    box-shadow:
+        0 3px 10px
+        rgba(0,0,0,.18);
+
+}
+
+
+.feedstore-tab-icon {
+
+    font-size: 15px;
+
+    line-height: 1;
+
+}
+
+
+.feedstore-tab-text {
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    line-height: 1.2;
+
+}
+
+
+/* ==========================================================
+   TAB CONTENT
+========================================================== */
+
+.feedstore-tab-content {
+
+    width: 100%;
+
+    padding-top: 0;
+
+}
+
+
+.feedstore-tab-panel {
+
+    display: none;
+
+}
+
+
+.feedstore-tab-panel.active {
+
+    display: block;
+
+    animation:
+        feedstorePanelIn .16s ease;
+
+}
+
+
+@keyframes feedstorePanelIn {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateY(3px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateY(0);
+
+    }
+
+}
+
+
+/* ==========================================================
+   SECTION
+========================================================== */
+
+.feedstore-section {
+
+    margin-top: 15px;
+
+}
+
+
+.feedstore-section-header {
+
+    margin-bottom: 12px;
+
+}
+
+
+.feedstore-section-header h2 {
+
+    margin: 0;
+
+    color: #164f31;
+
+    font-size: 19px;
+    font-weight: 850;
+
+}
+
+
+.feedstore-section-header p {
+
+    margin: 4px 0 0;
+
+    color: #7a857e;
+
+    font-size: 11px;
+
+}
+
+
+/* ==========================================================
+   CURRENT STOCK
+========================================================== */
+
+.feedstore-stock-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 6px;
+
+}
+
+
+.feedstore-stock-card {
+
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #dbe7df;
+    border-radius: 11px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 2px 7px
+        rgba(23, 65, 43, .04);
+
+}
+
+
+.feedstore-stock-card--clickable {
+
+    cursor: pointer;
+
+    transition:
+        transform .16s ease,
+        border-color .16s ease,
+        box-shadow .16s ease,
+        background .16s ease;
+
+}
+
+
+.feedstore-stock-card--clickable:hover {
+
+    border-color: #9bc9ad;
+
+    background: #fbfefc;
+
+    box-shadow:
+        0 5px 14px
+        rgba(23, 65, 43, .08);
+
+    transform:
+        translateY(-1px);
+
+}
+
+
+.feedstore-stock-card--clickable:focus {
+
+    outline: none;
+
+    border-color: #198754;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(25,135,84,.10);
+
+}
+
+
+.feedstore-stock-main {
+
+    display: flex;
+
+    align-items: center;
+
+    min-width: 0;
+
+    gap: 10px;
+
+}
+
+
+.feedstore-stock-icon {
+
+    width: 38px;
+    height: 38px;
+
+    flex: 0 0 38px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #eef7f1;
+
+    font-size: 17px;
+
+}
+
+
+.feedstore-stock-info {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+
+    min-width: 0;
+
+}
+
+
+.feedstore-stock-info strong {
+
+    overflow: hidden;
+
+    color: #29362f;
+
+    font-size: 13px;
+    font-weight: 800;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+}
+
+
+.feedstore-stock-info span {
+
+    color: #87918b;
+
+    font-size: 10px;
+
+}
+
+
+.feedstore-stock-right {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    flex-shrink: 0;
+
+}
+
+
+.feedstore-stock-quantity {
+
+    display: flex;
+
+    align-items: baseline;
+
+    gap: 4px;
+
+}
+
+
+.feedstore-stock-quantity strong {
+
+    color: #198754;
+
+    font-size: 17px;
+    font-weight: 850;
+
+}
+
+
+.feedstore-stock-quantity span {
+
+    color: #748078;
+
+    font-size: 10px;
+    font-weight: 700;
+
+}
+
+
+.feedstore-stock-action {
+
+    color: #198754;
+
+    font-size: 9px;
+    font-weight: 900;
+
+    white-space: nowrap;
+
+}
+
+
+/* ==========================================================
+   SELECTED STOCK
+========================================================== */
+
+.feedstore-selected-stock {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    margin-bottom: 10px;
+
+    padding: 12px;
+
+    border: 1px solid #b9d8c5;
+
+    border-radius: 12px;
+
+    background: #edf8f1;
+
+}
+
+
+.feedstore-selected-stock__icon {
+
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background: #ffffff;
+
+    font-size: 20px;
+
+}
+
+
+.feedstore-selected-stock__info {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+
+    min-width: 0;
+
+}
+
+
+.feedstore-selected-stock__info span {
+
+    color: #6e8276;
+
+    font-size: 8px;
+    font-weight: 900;
+
+    letter-spacing: .7px;
+
+}
+
+
+.feedstore-selected-stock__info strong {
+
+    overflow: hidden;
+
+    color: #174f31;
+
+    font-size: 14px;
+    font-weight: 850;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+}
+
+
+.feedstore-selected-stock__info small {
+
+    color: #718078;
+
+    font-size: 9px;
+
+}
+
+
+/* ==========================================================
+   EMPTY
+========================================================== */
+
+.feedstore-empty {
+
+    padding: 28px 18px;
+
+    border: 1px dashed #cbdcd1;
+    border-radius: 13px;
+
+    background: #f8fbf9;
+
+    text-align: center;
+
+}
+
+
+.feedstore-empty-icon {
+
+    font-size: 27px;
+
+}
+
+
+.feedstore-empty h3 {
+
+    margin: 8px 0 4px;
+
+    color: #2b3931;
+
+    font-size: 15px;
+
+}
+
+
+.feedstore-empty p {
+
+    margin: 0;
+
+    color: #7d8881;
+
+    font-size: 11px;
+
+}
+
+
+/* ==========================================================
+   ADMIN VALUE
+========================================================== */
+
+.feedstore-admin-value {
+
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-top: 14px;
+
+    padding: 14px 16px;
+
+    border: 1px solid #b9d8c5;
+    border-radius: 12px;
+
+    background: #edf8f1;
+
+}
+
+
+.feedstore-admin-value div {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+
+}
+
+
+.feedstore-admin-value span {
+
+    color: #718078;
+
+    font-size: 8px;
+    font-weight: 900;
+
+    letter-spacing: .8px;
+
+}
+
+
+.feedstore-admin-value strong {
+
+    color: #145c36;
+
+    font-size: 20px;
+
+    font-weight: 850;
+
+}
+
+
+.feedstore-admin-value small {
+
+    color: #89938d;
+
+    font-size: 9px;
+
+}
+
+
+/* ==========================================================
+   ROLE LABELS
+========================================================== */
+
+.feedstore-admin-label,
+.feedstore-worker-label {
+
+    display: inline-flex;
+
+    margin-bottom: 4px;
+
+    padding: 3px 7px;
+
+    border-radius: 999px;
+
+    font-size: 8px;
+    font-weight: 900;
+
+    letter-spacing: .7px;
+
+}
+
+
+.feedstore-admin-label {
+
+    background: #e5f4ea;
+
+    color: #198754;
+
+}
+
+
+.feedstore-worker-label {
+
+    background: #edf4f0;
+
+    color: #39715a;
+
+}
+
+
+/* ==========================================================
+   FORM
+========================================================== */
+
+.feedstore-form {
+
+    padding: 16px;
+
+    border: 1px solid #dce7e0;
+    border-radius: 13px;
+
+    background: #ffffff;
+
+    box-shadow:
+        0 3px 12px
+        rgba(23, 65, 43, .04);
+
+}
+
+
+.feedstore-field {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+    margin-bottom: 12px;
+
+}
+
+
+.feedstore-field label {
+
+    color: #344139;
+
+    font-size: 11px;
+    font-weight: 800;
+
+}
+
+
+.feedstore-field input,
+.feedstore-field select,
+.feedstore-field textarea {
+
+    width: 100%;
+
+    padding: 9px 10px;
+
+    border: 1px solid #d7e2da;
+    border-radius: 8px;
+
+    outline: none;
+
+    background: #ffffff;
+    color: #26352d;
+
+    font-family: inherit;
+    font-size: 12px;
+
+}
+
+
+.feedstore-field textarea {
+
+    resize: vertical;
+
+    line-height: 1.4;
+
+}
+
+
+.feedstore-field input:focus,
+.feedstore-field select:focus,
+.feedstore-field textarea:focus {
+
+    border-color: #198754;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(25, 135, 84, .08);
+
+}
+
+
+.feedstore-field input:disabled,
+.feedstore-field select:disabled {
+
+    background: #f2f5f3;
+
+    color: #69756e;
+
+    cursor: not-allowed;
+
+}
+
+
+.feedstore-field small {
+
+    color: #89938d;
+
+    font-size: 9px;
+    line-height: 1.3;
+
+}
+
+
+/* ==========================================================
+   TWO COLUMNS
+========================================================== */
+
+.feedstore-two-columns {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 10px;
+
+}
+
+
+/* ==========================================================
+   MONEY
+========================================================== */
+
+.feedstore-money {
+
+    display: flex;
+
+    align-items: center;
+
+    overflow: hidden;
+
+    border: 1px solid #d7e2da;
+    border-radius: 8px;
+
+}
+
+
+.feedstore-money span {
+
+    padding-left: 10px;
+
+    color: #198754;
+
+    font-size: 10px;
+    font-weight: 850;
+
+}
+
+
+.feedstore-money input {
+
+    border: none;
+
+}
+
+
+.feedstore-money:focus-within {
+
+    border-color: #198754;
+
+    box-shadow:
+        0 0 0 3px
+        rgba(25, 135, 84, .08);
+
+}
+
+
+/* ==========================================================
+   HISTORY FEED
+========================================================== */
+
+.feedstore-feed {
+
+    width: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 12px;
+
+}
+
+
+.feedstore-feed > * {
+
+    width: 100%;
+
+}
+
+
+/* ==========================================================
+   BUTTON
+========================================================== */
+
+.feedstore-submit {
+
+    width: 100%;
+
+    min-height: 43px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    margin-top: 5px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    color: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 12px;
+    font-weight: 850;
+
+    cursor: pointer;
+
+}
+
+
+.admin-submit {
+
+    background: #0d5933;
+
+}
+
+
+.worker-submit {
+
+    background: #198754;
+
+}
+
+
+/* ==========================================================
+   DESKTOP
+========================================================== */
+
+@media (min-width: 900px) {
+
+
+    .feedstore-page {
+
+        padding-top: 10px;
+
+    }
+
+
+    .feedstore-intro {
+
+        margin-bottom: 12px;
+
+    }
+
+
+    .feedstore-intro-icon {
+
+        width: 48px;
+        height: 48px;
+
+        flex-basis: 48px;
+
+        font-size: 23px;
+
+    }
+
+
+    .feedstore-intro h1 {
+
+        font-size: 24px;
+
+    }
+
+
+    .feedstore-intro p {
+
+        font-size: 11px;
+
+    }
+
+
+    .feedstore-tabs {
+
+        min-height: 55px;
+
+    }
+
+
+    .feedstore-tab {
+
+        min-height: 45px;
+
+    }
+
+
+}
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media (max-width: 650px) {
+
+
+    .feedstore-page {
+
+        padding:
+            8px 0 35px;
+
+    }
+
+
+    .feedstore-intro {
+
+        align-items: flex-start;
+
+        gap: 10px;
+
+        margin-bottom: 10px;
+
+    }
+
+
+    .feedstore-intro-icon {
+
+        width: 43px;
+        height: 43px;
+
+        flex-basis: 43px;
+
+        border-radius: 12px;
+
+        font-size: 20px;
+
+    }
+
+
+    .feedstore-eyebrow {
+
+        font-size: 8px;
+
+    }
+
+
+    .feedstore-intro h1 {
+
+        font-size: 21px;
+
+    }
+
+
+    .feedstore-intro p {
+
+        font-size: 10px;
+
+    }
+
+
+    .feedstore-tabs {
+
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+
+        gap: 2px;
+
+        padding: 4px;
+
+        border-radius: 11px;
+
+    }
+
+
+    .feedstore-tab {
+
+        min-height: 49px;
+
+        flex-direction: column;
+
+        gap: 3px;
+
+        padding:
+            5px 3px;
+
+        border-radius: 8px;
+
+        font-size: 8px;
+
+    }
+
+
+    .feedstore-tab-icon {
+
+        font-size: 14px;
+
+    }
+
+
+    .feedstore-tab-text {
+
+        width: 100%;
+
+        text-align: center;
+
+        white-space: normal;
+
+    }
+
+
+    .feedstore-section {
+
+        margin-top: 12px;
+
+    }
+
+
+    .feedstore-section-header {
+
+        margin-bottom: 10px;
+
+    }
+
+
+    .feedstore-section-header h2 {
+
+        font-size: 17px;
+
+    }
+
+
+    .feedstore-section-header p {
+
+        font-size: 10px;
+
+    }
+
+
+    .feedstore-two-columns {
+
+        grid-template-columns: 1fr;
+
+        gap: 0;
+
+    }
+
+
+    .feedstore-admin-value {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+    }
+
+
+    .feedstore-stock-card {
+
+        padding: 9px;
+
+    }
+
+
+    .feedstore-stock-main {
+
+        gap: 8px;
+
+    }
+
+
+    .feedstore-stock-icon {
+
+        width: 36px;
+        height: 36px;
+
+        flex-basis: 36px;
+
+        font-size: 16px;
+
+    }
+
+
+    .feedstore-stock-info strong {
+
+        font-size: 12px;
+
+    }
+
+
+    .feedstore-stock-right {
+
+        flex-direction: column;
+
+        align-items: flex-end;
+
+        gap: 2px;
+
+    }
+
+
+    .feedstore-stock-quantity {
+
+        gap: 3px;
+
+    }
+
+
+    .feedstore-stock-quantity strong {
+
+        font-size: 15px;
+
+    }
+
+
+    .feedstore-stock-action {
+
+        font-size: 8px;
+
+    }
+
+
+    .feedstore-form {
+
+        padding: 13px;
+
+    }
+
+
+    .feedstore-selected-stock {
+
+        padding: 10px;
+
+    }
+
+
+}
+
+</style>
