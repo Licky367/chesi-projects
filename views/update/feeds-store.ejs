@@ -77,6 +77,20 @@ IMPORTANT:
 
     If updates contains 10 documents,
     stock.ejs is included 10 times.
+
+TAB STRUCTURE:
+--------------------------------------------------------------
+    1. Available Stock
+    2. Add Available Stock
+    3. Update Remaining Stock
+    4. Foodstock Updates
+
+IMPORTANT:
+--------------------------------------------------------------
+    Tabs only change the page presentation.
+
+    Existing routes, form fields, permissions,
+    stock logic and history logic remain unchanged.
 ==============================================================
 */ %>
 
@@ -358,189 +372,362 @@ function getStockUnit(stock) {
 
 
     <!-- ======================================================
-         CURRENT STOCK
+         TAB NAVIGATION
     ======================================================= -->
 
-    <section class="feedstore-section">
+    <nav
+        class="feedstore-tabs"
+        aria-label="Foodstock sections"
+    >
 
 
-        <div class="feedstore-section-header">
+        <button
+            type="button"
+            class="feedstore-tab active"
+            data-tab="available-stock"
+            aria-selected="true"
+        >
 
-            <div>
+            <span
+                class="feedstore-tab-icon"
+                aria-hidden="true"
+            >
+                📦
+            </span>
 
-                <h2>
-                    Available Stock
-                </h2>
+            <span class="feedstore-tab-text">
+                Available Stock
+            </span>
+
+        </button>
 
 
-                <p>
-                    Current feeds and veterinary medicines
-                    recorded for this dairy.
-                </p>
+
+        <% if (currentUser.role === "admin") { %>
+
+
+            <button
+                type="button"
+                class="feedstore-tab"
+                data-tab="add-stock"
+                aria-selected="false"
+            >
+
+                <span
+                    class="feedstore-tab-icon"
+                    aria-hidden="true"
+                >
+                    ➕
+                </span>
+
+                <span class="feedstore-tab-text">
+                    Add Stock
+                </span>
+
+            </button>
+
+
+        <% } %>
+
+
+
+        <% if (
+            currentUser.role === "dairyWorker" ||
+            currentUser.role === "admin"
+        ) { %>
+
+
+            <button
+                type="button"
+                class="feedstore-tab"
+                data-tab="remaining-stock"
+                aria-selected="false"
+            >
+
+                <span
+                    class="feedstore-tab-icon"
+                    aria-hidden="true"
+                >
+                    🔄
+                </span>
+
+                <span class="feedstore-tab-text">
+                    Update Remaining
+                </span>
+
+            </button>
+
+
+        <% } %>
+
+
+
+        <button
+            type="button"
+            class="feedstore-tab"
+            data-tab="foodstock-updates"
+            aria-selected="false"
+        >
+
+            <span
+                class="feedstore-tab-icon"
+                aria-hidden="true"
+            >
+                📝
+            </span>
+
+            <span class="feedstore-tab-text">
+                Foodstock Updates
+            </span>
+
+        </button>
+
+
+    </nav>
+
+
+
+    <!-- ======================================================
+         TAB 1
+         AVAILABLE STOCK
+    ======================================================= -->
+
+    <section
+        class="feedstore-tab-panel active"
+        data-panel="available-stock"
+    >
+
+
+        <div class="feedstore-section">
+
+
+            <div class="feedstore-section-header">
+
+                <div>
+
+                    <h2>
+                        Available Stock
+                    </h2>
+
+
+                    <p>
+                        Current feeds and veterinary medicines
+                        recorded for this dairy.
+                    </p>
+
+                </div>
 
             </div>
 
-        </div>
 
 
-
-        <% if (feedStoreItems.length > 0) { %>
-
-
-            <div class="feedstore-stock-list">
+            <% if (feedStoreItems.length > 0) { %>
 
 
-                <% feedStoreItems.forEach(
-                    function(stockItem)
-                { %>
+                <div class="feedstore-stock-list">
 
 
-                    <%
-                        const medicine =
-                            isMedicineStock(
-                                stockItem
-                            );
+                    <% feedStoreItems.forEach(
+                        function(stockItem)
+                    { %>
 
 
-                        const stockName =
-                            getStockName(
-                                stockItem
-                            );
+                        <%
+                            const medicine =
+                                isMedicineStock(
+                                    stockItem
+                                );
 
 
-                        const stockQuantity =
-                            getStockQuantity(
-                                stockItem
-                            );
+                            const stockName =
+                                getStockName(
+                                    stockItem
+                                );
 
 
-                        const stockUnit =
-                            getStockUnit(
-                                stockItem
-                            );
-                    %>
+                            const stockQuantity =
+                                getStockQuantity(
+                                    stockItem
+                                );
 
 
-                    <article
-                        class="feedstore-stock-card"
-                        data-stock-id="<%= stockItem._id || "" %>"
-                        data-stock-type="<%= medicine ? "medicine" : "feed" %>"
-                    >
+                            const stockUnit =
+                                getStockUnit(
+                                    stockItem
+                                );
+                        %>
 
 
-                        <!-- ==================================
-                             STOCK INFORMATION
-                        =================================== -->
+                        <article
+                            class="feedstore-stock-card"
+                            data-stock-id="<%= stockItem._id || "" %>"
+                            data-stock-type="<%= medicine ? "medicine" : "feed" %>"
+                        >
 
-                        <div class="feedstore-stock-main">
+
+                            <!-- ==================================
+                                 STOCK INFORMATION
+                            =================================== -->
+
+                            <div class="feedstore-stock-main">
 
 
-                            <div
-                                class="feedstore-stock-icon"
-                                aria-hidden="true"
-                            >
+                                <div
+                                    class="feedstore-stock-icon"
+                                    aria-hidden="true"
+                                >
 
-                                <% if (medicine) { %>
+                                    <% if (medicine) { %>
 
-                                    💊
+                                        💊
 
-                                <% } else { %>
+                                    <% } else { %>
 
-                                    🌾
+                                        🌾
 
-                                <% } %>
+                                    <% } %>
+
+                                </div>
+
+
+                                <div class="feedstore-stock-info">
+
+
+                                    <strong>
+                                        <%= stockName %>
+                                    </strong>
+
+
+                                    <span>
+
+                                        <% if (medicine) { %>
+
+                                            Veterinary medicine
+
+                                        <% } else { %>
+
+                                            Animal feed
+
+                                        <% } %>
+
+                                    </span>
+
+
+                                </div>
+
 
                             </div>
 
 
-                            <div class="feedstore-stock-info">
+
+                            <!-- ==================================
+                                 QUANTITY
+                            =================================== -->
+
+                            <div class="feedstore-stock-quantity">
 
 
                                 <strong>
-                                    <%= stockName %>
+                                    <%= Number(
+                                        stockQuantity
+                                    ).toLocaleString() %>
                                 </strong>
 
 
                                 <span>
-
-                                    <% if (medicine) { %>
-
-                                        Veterinary medicine
-
-                                    <% } else { %>
-
-                                        Animal feed
-
-                                    <% } %>
-
+                                    <%= stockUnit %>
                                 </span>
 
 
                             </div>
 
 
-                        </div>
+                        </article>
 
 
-
-                        <!-- ==================================
-                             QUANTITY
-                        =================================== -->
-
-                        <div class="feedstore-stock-quantity">
+                    <% }); %>
 
 
-                            <strong>
-                                <%= Number(
-                                    stockQuantity
-                                ).toLocaleString() %>
-                            </strong>
-
-
-                            <span>
-                                <%= stockUnit %>
-                            </span>
-
-
-                        </div>
-
-
-                    </article>
-
-
-                <% }); %>
-
-
-            </div>
-
-
-        <% } else { %>
-
-
-            <div class="feedstore-empty">
-
-
-                <div
-                    class="feedstore-empty-icon"
-                    aria-hidden="true"
-                >
-                    🌾
                 </div>
 
 
-                <h3>
-                    No stock recorded yet
-                </h3>
+            <% } else { %>
 
 
-                <p>
-                    Available animal feed and veterinary
-                    medicines will appear here once they
-                    are added.
-                </p>
+                <div class="feedstore-empty">
 
 
-            </div>
+                    <div
+                        class="feedstore-empty-icon"
+                        aria-hidden="true"
+                    >
+                        🌾
+                    </div>
+
+
+                    <h3>
+                        No stock recorded yet
+                    </h3>
+
+
+                    <p>
+                        Available animal feed and veterinary
+                        medicines will appear here once they
+                        are added.
+                    </p>
+
+
+                </div>
+
+
+            <% } %>
+
+
+        </div>
+
+
+
+        <!-- ==================================================
+             ADMIN FINANCIAL SUMMARY
+        =================================================== -->
+
+        <% if (currentUser.role === "admin") { %>
+
+
+            <section class="feedstore-admin-value">
+
+
+                <div>
+
+                    <span>
+                        TOTAL FOODSTOCK &amp; MEDICINE VALUE
+                    </span>
+
+
+                    <strong>
+
+                        KES
+                        <%= Number(
+                            currentDairy.feedsAmount || 0
+                        ).toLocaleString(
+                            undefined,
+                            {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            }
+                        ) %>
+
+                    </strong>
+
+                </div>
+
+
+                <small>
+                    Visible to administrators only.
+                </small>
+
+
+            </section>
 
 
         <% } %>
@@ -551,279 +738,127 @@ function getStockUnit(stock) {
 
 
     <!-- ======================================================
-         ADMIN FINANCIAL SUMMARY
-    ======================================================= -->
-
-    <% if (currentUser.role === "admin") { %>
-
-
-        <section class="feedstore-admin-value">
-
-
-            <div>
-
-                <span>
-                    TOTAL FOODSTOCK &amp; MEDICINE VALUE
-                </span>
-
-
-                <strong>
-
-                    KES
-                    <%= Number(
-                        currentDairy.feedsAmount || 0
-                    ).toLocaleString(
-                        undefined,
-                        {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        }
-                    ) %>
-
-                </strong>
-
-            </div>
-
-
-            <small>
-                Visible to administrators only.
-            </small>
-
-
-        </section>
-
-
-    <% } %>
-
-
-
-    <!-- ======================================================
+         TAB 2
          ADMIN: ADD AVAILABLE STOCK
     ======================================================= -->
 
     <% if (currentUser.role === "admin") { %>
 
 
-        <section class="feedstore-section">
+        <section
+            class="feedstore-tab-panel"
+            data-panel="add-stock"
+        >
 
 
-            <div class="feedstore-section-header">
+            <div class="feedstore-section">
 
 
-                <div>
+                <div class="feedstore-section-header">
 
-                    <div class="feedstore-admin-label">
-                        ADMIN
-                    </div>
 
+                    <div>
 
-                    <h2>
-                        Add Available Stock
-                    </h2>
+                        <div class="feedstore-admin-label">
+                            ADMIN
+                        </div>
 
 
-                    <p>
-                        Record newly available animal feed or
-                        veterinary medicine.
-                    </p>
+                        <h2>
+                            Add Available Stock
+                        </h2>
 
-                </div>
 
-
-            </div>
-
-
-
-            <form
-                class="feedstore-form"
-                action="/dairy/<%= currentDairy._id %>/feedstore/restock"
-                method="POST"
-                enctype="multipart/form-data"
-            >
-
-
-                <!-- STOCK TYPE -->
-
-                <div class="feedstore-field">
-
-
-                    <label for="stockCategory">
-                        Stock type
-                    </label>
-
-
-                    <select
-                        id="stockCategory"
-                        name="category"
-                        required
-                    >
-
-
-                        <option value="">
-                            Select stock type
-                        </option>
-
-
-                        <option value="feed">
-                            Animal Feed
-                        </option>
-
-
-                        <option value="medicine">
-                            Veterinary Medicine
-                        </option>
-
-
-                    </select>
-
-
-                </div>
-
-
-
-                <!-- ANIMAL FEED -->
-
-                <div
-                    class="feedstore-field"
-                    id="feedTypeField"
-                >
-
-
-                    <label for="feedType">
-                        Animal feed
-                    </label>
-
-
-                    <select
-                        id="feedType"
-                        name="feedName"
-                    >
-
-
-                        <option value="">
-                            Select animal feed
-                        </option>
-
-
-                        <% availableFeedTypes.forEach(
-                            function(type)
-                        { %>
-
-
-                            <option value="<%= type %>">
-                                <%= type %>
-                            </option>
-
-
-                        <% }); %>
-
-
-                    </select>
-
-
-                </div>
-
-
-
-                <!-- MEDICINE -->
-
-                <div
-                    class="feedstore-field"
-                    id="medicineTypeField"
-                    hidden
-                >
-
-
-                    <label for="medicineType">
-                        Veterinary medicine
-                    </label>
-
-
-                    <select
-                        id="medicineType"
-                        name="medicineName"
-                    >
-
-
-                        <option value="">
-                            Select veterinary medicine
-                        </option>
-
-
-                        <% availableMedicineTypes.forEach(
-                            function(type)
-                        { %>
-
-
-                            <option value="<%= type %>">
-                                <%= type %>
-                            </option>
-
-
-                        <% }); %>
-
-
-                    </select>
-
-
-                </div>
-
-
-
-                <!-- QUANTITY + UNIT -->
-
-                <div class="feedstore-two-columns">
-
-
-                    <div class="feedstore-field">
-
-
-                        <label for="stockQuantity">
-                            Quantity
-                        </label>
-
-
-                        <input
-                            id="stockQuantity"
-                            type="number"
-                            name="quantity"
-                            min="0"
-                            step="0.01"
-                            placeholder="e.g. 20"
-                            required
-                        >
-
+                        <p>
+                            Record newly available animal feed or
+                            veterinary medicine.
+                        </p>
 
                     </div>
 
 
+                </div>
+
+
+
+                <form
+                    class="feedstore-form"
+                    action="/dairy/<%= currentDairy._id %>/feedstore/restock"
+                    method="POST"
+                    enctype="multipart/form-data"
+                >
+
+
+                    <!-- STOCK TYPE -->
+
                     <div class="feedstore-field">
 
 
-                        <label for="stockUnit">
-                            Unit
+                        <label for="stockCategory">
+                            Stock type
                         </label>
 
 
                         <select
-                            id="stockUnit"
-                            name="unit"
+                            id="stockCategory"
+                            name="category"
                             required
                         >
 
 
                             <option value="">
-                                Select unit
+                                Select stock type
                             </option>
 
 
-                            <% availableStockUnits.forEach(
-                                function(unit)
+                            <option value="feed">
+                                Animal Feed
+                            </option>
+
+
+                            <option value="medicine">
+                                Veterinary Medicine
+                            </option>
+
+
+                        </select>
+
+
+                    </div>
+
+
+
+                    <!-- ANIMAL FEED -->
+
+                    <div
+                        class="feedstore-field"
+                        id="feedTypeField"
+                    >
+
+
+                        <label for="feedType">
+                            Animal feed
+                        </label>
+
+
+                        <select
+                            id="feedType"
+                            name="feedName"
+                        >
+
+
+                            <option value="">
+                                Select animal feed
+                            </option>
+
+
+                            <% availableFeedTypes.forEach(
+                                function(type)
                             { %>
 
 
-                                <option value="<%= unit %>">
-                                    <%= unit %>
+                                <option value="<%= type %>">
+                                    <%= type %>
                                 </option>
 
 
@@ -836,144 +871,259 @@ function getStockUnit(stock) {
                     </div>
 
 
-                </div>
+
+                    <!-- MEDICINE -->
+
+                    <div
+                        class="feedstore-field"
+                        id="medicineTypeField"
+                        hidden
+                    >
+
+
+                        <label for="medicineType">
+                            Veterinary medicine
+                        </label>
+
+
+                        <select
+                            id="medicineType"
+                            name="medicineName"
+                        >
+
+
+                            <option value="">
+                                Select veterinary medicine
+                            </option>
+
+
+                            <% availableMedicineTypes.forEach(
+                                function(type)
+                            { %>
+
+
+                                <option value="<%= type %>">
+                                    <%= type %>
+                                </option>
+
+
+                            <% }); %>
+
+
+                        </select>
+
+
+                    </div>
 
 
 
-                <!-- PRICE -->
+                    <!-- QUANTITY + UNIT -->
 
-                <div class="feedstore-field">
-
-
-                    <label for="stockPrice">
-                        Price / value
-                    </label>
+                    <div class="feedstore-two-columns">
 
 
-                    <div class="feedstore-money">
+                        <div class="feedstore-field">
 
 
-                        <span>
-                            KES
-                        </span>
+                            <label for="stockQuantity">
+                                Quantity
+                            </label>
+
+
+                            <input
+                                id="stockQuantity"
+                                type="number"
+                                name="quantity"
+                                min="0"
+                                step="0.01"
+                                placeholder="e.g. 20"
+                                required
+                            >
+
+
+                        </div>
+
+
+                        <div class="feedstore-field">
+
+
+                            <label for="stockUnit">
+                                Unit
+                            </label>
+
+
+                            <select
+                                id="stockUnit"
+                                name="unit"
+                                required
+                            >
+
+
+                                <option value="">
+                                    Select unit
+                                </option>
+
+
+                                <% availableStockUnits.forEach(
+                                    function(unit)
+                                { %>
+
+
+                                    <option value="<%= unit %>">
+                                        <%= unit %>
+                                    </option>
+
+
+                                <% }); %>
+
+
+                            </select>
+
+
+                        </div>
+
+
+                    </div>
+
+
+
+                    <!-- PRICE -->
+
+                    <div class="feedstore-field">
+
+
+                        <label for="stockPrice">
+                            Price / value
+                        </label>
+
+
+                        <div class="feedstore-money">
+
+
+                            <span>
+                                KES
+                            </span>
+
+
+                            <input
+                                id="stockPrice"
+                                type="number"
+                                name="price"
+                                min="0"
+                                step="0.01"
+                                placeholder="Enter value"
+                                required
+                            >
+
+
+                        </div>
+
+
+                        <small>
+                            Financial information is visible to
+                            administrators only.
+                        </small>
+
+
+                    </div>
+
+
+
+                    <!-- INSTRUCTIONS -->
+
+                    <div class="feedstore-field">
+
+
+                        <label for="stockInstructions">
+                            Instructions of use
+                        </label>
+
+
+                        <textarea
+                            id="stockInstructions"
+                            name="instructions"
+                            rows="4"
+                            maxlength="1500"
+                            placeholder="How should this feed or medicine be used?"
+                        ></textarea>
+
+
+                    </div>
+
+
+
+                    <!-- EXPECTED DURATION -->
+
+                    <div class="feedstore-field">
+
+
+                        <label for="expectedDuration">
+                            Expected duration of consumption
+                        </label>
 
 
                         <input
-                            id="stockPrice"
-                            type="number"
-                            name="price"
-                            min="0"
-                            step="0.01"
-                            placeholder="Enter value"
-                            required
+                            id="expectedDuration"
+                            type="text"
+                            name="expectedDuration"
+                            maxlength="100"
+                            placeholder="e.g. Approximately 14 days"
                         >
 
 
                     </div>
 
 
-                    <small>
-                        Financial information is visible to
-                        administrators only.
-                    </small>
+
+                    <!-- IMAGES -->
+
+                    <div class="feedstore-field">
 
 
-                </div>
+                        <label for="stockImages">
+                            Images
+                        </label>
 
 
-
-                <!-- INSTRUCTIONS -->
-
-                <div class="feedstore-field">
-
-
-                    <label for="stockInstructions">
-                        Instructions of use
-                    </label>
+                        <input
+                            id="stockImages"
+                            type="file"
+                            name="images"
+                            accept="image/*"
+                            multiple
+                        >
 
 
-                    <textarea
-                        id="stockInstructions"
-                        name="instructions"
-                        rows="4"
-                        maxlength="1500"
-                        placeholder="How should this feed or medicine be used?"
-                    ></textarea>
+                        <small>
+                            Add photos of the feed, medicine or
+                            stock being received.
+                        </small>
 
 
-                </div>
+                    </div>
 
 
 
-                <!-- EXPECTED DURATION -->
+                    <!-- SUBMIT -->
 
-                <div class="feedstore-field">
-
-
-                    <label for="expectedDuration">
-                        Expected duration of consumption
-                    </label>
-
-
-                    <input
-                        id="expectedDuration"
-                        type="text"
-                        name="expectedDuration"
-                        maxlength="100"
-                        placeholder="e.g. Approximately 14 days"
+                    <button
+                        type="submit"
+                        class="feedstore-submit admin-submit"
                     >
 
+                        <span aria-hidden="true">
+                            ➕
+                        </span>
 
-                </div>
+                        Add Stock
 
-
-
-                <!-- IMAGES -->
-
-                <div class="feedstore-field">
-
-
-                    <label for="stockImages">
-                        Images
-                    </label>
+                    </button>
 
 
-                    <input
-                        id="stockImages"
-                        type="file"
-                        name="images"
-                        accept="image/*"
-                        multiple
-                    >
+                </form>
 
 
-                    <small>
-                        Add photos of the feed, medicine or
-                        stock being received.
-                    </small>
-
-
-                </div>
-
-
-
-                <!-- SUBMIT -->
-
-                <button
-                    type="submit"
-                    class="feedstore-submit admin-submit"
-                >
-
-                    <span aria-hidden="true">
-                        ➕
-                    </span>
-
-                    Add Stock
-
-                </button>
-
-
-            </form>
+            </div>
 
 
         </section>
@@ -984,6 +1134,7 @@ function getStockUnit(stock) {
 
 
     <!-- ======================================================
+         TAB 3
          UPDATE REMAINING STOCK
     ======================================================= -->
 
@@ -993,146 +1144,85 @@ function getStockUnit(stock) {
     ) { %>
 
 
-        <section class="feedstore-section">
+        <section
+            class="feedstore-tab-panel"
+            data-panel="remaining-stock"
+        >
 
 
-            <div class="feedstore-section-header">
+            <div class="feedstore-section">
 
 
-                <div>
-
-                    <h2>
-                        Update Remaining Stock
-                    </h2>
+                <div class="feedstore-section-header">
 
 
-                    <p>
-                        Record what is currently remaining
-                        in the store.
-                    </p>
+                    <div>
 
-                </div>
-
-
-            </div>
+                        <h2>
+                            Update Remaining Stock
+                        </h2>
 
 
-
-            <form
-                class="feedstore-form worker-form"
-                action="/dairy/<%= currentDairy._id %>/feedstore/update"
-                method="POST"
-                enctype="multipart/form-data"
-            >
-
-
-                <!-- STOCK ITEM -->
-
-                <div class="feedstore-field">
-
-
-                    <label for="remainingStock">
-                        Stock item
-                    </label>
-
-
-                    <select
-                        id="remainingStock"
-                        name="stockId"
-                        required
-                    >
-
-
-                        <option value="">
-                            Select stock
-                        </option>
-
-
-                        <% feedStoreItems.forEach(
-                            function(stockItem)
-                        { %>
-
-
-                            <option
-                                value="<%= stockItem._id || "" %>"
-                            >
-
-                                <%= getStockName(
-                                    stockItem
-                                ) %>
-
-                                —
-                                <%= getStockUnit(
-                                    stockItem
-                                ) %>
-
-                            </option>
-
-
-                        <% }); %>
-
-
-                    </select>
-
-
-                </div>
-
-
-
-                <!-- QUANTITY + UNIT -->
-
-                <div class="feedstore-two-columns">
-
-
-                    <div class="feedstore-field">
-
-
-                        <label for="remainingQuantity">
-                            Quantity remaining
-                        </label>
-
-
-                        <input
-                            id="remainingQuantity"
-                            type="number"
-                            name="quantityRemaining"
-                            min="0"
-                            step="0.01"
-                            placeholder="e.g. 8"
-                            required
-                        >
-
+                        <p>
+                            Record what is currently remaining
+                            in the store.
+                        </p>
 
                     </div>
 
 
+                </div>
+
+
+
+                <form
+                    class="feedstore-form worker-form"
+                    action="/dairy/<%= currentDairy._id %>/feedstore/update"
+                    method="POST"
+                    enctype="multipart/form-data"
+                >
+
+
+                    <!-- STOCK ITEM -->
+
                     <div class="feedstore-field">
 
 
-                        <label for="remainingUnit">
-                            Unit
+                        <label for="remainingStock">
+                            Stock item
                         </label>
 
 
                         <select
-                            id="remainingUnit"
-                            name="unit"
+                            id="remainingStock"
+                            name="stockId"
                             required
                         >
 
 
                             <option value="">
-                                Select unit
+                                Select stock
                             </option>
 
 
-                            <% availableStockUnits.forEach(
-                                function(unit)
+                            <% feedStoreItems.forEach(
+                                function(stockItem)
                             { %>
 
 
-                                <option value="<%= unit %>">
-                                    <%= unit %>
+                                <option
+                                    value="<%= stockItem._id || "" %>"
+                                >
+
+                                    <%= getStockName(
+                                        stockItem
+                                    ) %>
+
+                                    —
+                                    <%= getStockUnit(
+                                        stockItem
+                                    ) %>
+
                                 </option>
 
 
@@ -1145,72 +1235,143 @@ function getStockUnit(stock) {
                     </div>
 
 
-                </div>
+
+                    <!-- QUANTITY + UNIT -->
+
+                    <div class="feedstore-two-columns">
+
+
+                        <div class="feedstore-field">
+
+
+                            <label for="remainingQuantity">
+                                Quantity remaining
+                            </label>
+
+
+                            <input
+                                id="remainingQuantity"
+                                type="number"
+                                name="quantityRemaining"
+                                min="0"
+                                step="0.01"
+                                placeholder="e.g. 8"
+                                required
+                            >
+
+
+                        </div>
+
+
+                        <div class="feedstore-field">
+
+
+                            <label for="remainingUnit">
+                                Unit
+                            </label>
+
+
+                            <select
+                                id="remainingUnit"
+                                name="unit"
+                                required
+                            >
+
+
+                                <option value="">
+                                    Select unit
+                                </option>
+
+
+                                <% availableStockUnits.forEach(
+                                    function(unit)
+                                { %>
+
+
+                                    <option value="<%= unit %>">
+                                        <%= unit %>
+                                    </option>
+
+
+                                <% }); %>
+
+
+                            </select>
+
+
+                        </div>
+
+
+                    </div>
 
 
 
-                <!-- MESSAGE -->
+                    <!-- MESSAGE -->
 
-                <div class="feedstore-field">
-
-
-                    <label for="remainingMessage">
-                        Additional information
-                    </label>
+                    <div class="feedstore-field">
 
 
-                    <textarea
-                        id="remainingMessage"
-                        name="message"
-                        rows="5"
-                        maxlength="1500"
-                        placeholder="Add any useful information about the remaining stock..."
-                    ></textarea>
+                        <label for="remainingMessage">
+                            Additional information
+                        </label>
 
 
-                </div>
+                        <textarea
+                            id="remainingMessage"
+                            name="message"
+                            rows="5"
+                            maxlength="1500"
+                            placeholder="Add any useful information about the remaining stock..."
+                        ></textarea>
+
+
+                    </div>
 
 
 
-                <!-- IMAGES -->
+                    <!-- IMAGES -->
 
-                <div class="feedstore-field">
-
-
-                    <label for="remainingImages">
-                        Images
-                    </label>
+                    <div class="feedstore-field">
 
 
-                    <input
-                        id="remainingImages"
-                        type="file"
-                        name="images"
-                        accept="image/*"
-                        multiple
+                        <label for="remainingImages">
+                            Images
+                        </label>
+
+
+                        <input
+                            id="remainingImages"
+                            type="file"
+                            name="images"
+                            accept="image/*"
+                            multiple
+                        >
+
+
+                    </div>
+
+
+
+                    <!-- SUBMIT -->
+
+                    <button
+                        type="submit"
+                        class="feedstore-submit worker-submit"
                     >
 
-                </div>
+                        <span aria-hidden="true">
+                            📦
+                        </span>
+
+                        Update Remaining Stock
+
+                    </button>
 
 
-
-                <!-- SUBMIT -->
-
-                <button
-                    type="submit"
-                    class="feedstore-submit worker-submit"
-                >
-
-                    <span aria-hidden="true">
-                        📦
-                    </span>
-
-                    Update Remaining Stock
-
-                </button>
+                </form>
 
 
-            </form>
+            </div>
 
 
         </section>
@@ -1221,110 +1382,120 @@ function getStockUnit(stock) {
 
 
     <!-- ======================================================
+         TAB 4
          FOODSTOCK HISTORY
     ======================================================= -->
 
-    <section class="feedstore-section">
+    <section
+        class="feedstore-tab-panel"
+        data-panel="foodstock-updates"
+    >
 
 
-        <div class="feedstore-section-header">
+        <div class="feedstore-section">
 
 
-            <div>
-
-                <h2>
-                    Foodstock Updates
-                </h2>
+            <div class="feedstore-section-header">
 
 
-                <p>
-                    Recent additions and remaining-stock
-                    updates.
-                </p>
+                <div>
 
-            </div>
-
-
-        </div>
+                    <h2>
+                        Foodstock Updates
+                    </h2>
 
 
+                    <p>
+                        Recent additions and remaining-stock
+                        updates.
+                    </p>
 
-        <% if (feedStoreUpdates.length > 0) { %>
-
-
-            <div class="feedstore-feed">
-
-
-                <% feedStoreUpdates.forEach(
-                    function(item)
-                { %>
-
-
-                    <!-- ==========================================
-                         ONE UPDATE DOCUMENT = ONE STOCK CARD
-
-                         IMPORTANT:
-
-                         stock.ejs expects:
-
-                             item
-
-                         Therefore:
-
-                             item: item
-
-                         NOT:
-
-                             update: item
-                             stockUpdate: item
-                    =========================================== -->
-
-
-                    <%- include(
-                        "stock",
-                        {
-                            item: item,
-                            dairy: currentDairy,
-                            user: currentUser
-                        }
-                    ) %>
-
-
-                <% }); %>
-
-
-            </div>
-
-
-        <% } else { %>
-
-
-            <div class="feedstore-empty">
-
-
-                <div
-                    class="feedstore-empty-icon"
-                    aria-hidden="true"
-                >
-                    📦
                 </div>
 
 
-                <h3>
-                    No foodstock updates yet
-                </h3>
-
-
-                <p>
-                    Stock additions and remaining-stock
-                    reports will appear here.
-                </p>
-
-
             </div>
 
 
-        <% } %>
+
+            <% if (feedStoreUpdates.length > 0) { %>
+
+
+                <div class="feedstore-feed">
+
+
+                    <% feedStoreUpdates.forEach(
+                        function(item)
+                    { %>
+
+
+                        <!-- ==========================================
+                             ONE UPDATE DOCUMENT = ONE STOCK CARD
+
+                             IMPORTANT:
+
+                             stock.ejs expects:
+
+                                 item
+
+                             Therefore:
+
+                                 item: item
+
+                             NOT:
+
+                                 update: item
+                                 stockUpdate: item
+                        =========================================== -->
+
+
+                        <%- include(
+                            "stock",
+                            {
+                                item: item,
+                                dairy: currentDairy,
+                                user: currentUser
+                            }
+                        ) %>
+
+
+                    <% }); %>
+
+
+                </div>
+
+
+            <% } else { %>
+
+
+                <div class="feedstore-empty">
+
+
+                    <div
+                        class="feedstore-empty-icon"
+                        aria-hidden="true"
+                    >
+                        📦
+                    </div>
+
+
+                    <h3>
+                        No foodstock updates yet
+                    </h3>
+
+
+                    <p>
+                        Stock additions and remaining-stock
+                        reports will appear here.
+                    </p>
+
+
+                </div>
+
+
+            <% } %>
+
+
+        </div>
 
 
     </section>
@@ -1335,7 +1506,7 @@ function getStockUnit(stock) {
 
 
 <!-- ==========================================================
-     STOCK CATEGORY SWITCHER
+     TAB + STOCK CATEGORY JAVASCRIPT
 ========================================================== -->
 
 <script>
@@ -1344,6 +1515,98 @@ document.addEventListener(
     "DOMContentLoaded",
     function () {
 
+
+        /* ======================================================
+           TABS
+        ======================================================= */
+
+        const tabs =
+            document.querySelectorAll(
+                ".feedstore-tab"
+            );
+
+
+        const panels =
+            document.querySelectorAll(
+                ".feedstore-tab-panel"
+            );
+
+
+        function activateTab(
+            tabName
+        ) {
+
+
+            tabs.forEach(
+                function(tab) {
+
+                    const isActive =
+                        tab.dataset.tab === tabName;
+
+
+                    tab.classList.toggle(
+                        "active",
+                        isActive
+                    );
+
+
+                    tab.setAttribute(
+                        "aria-selected",
+                        isActive
+                            ? "true"
+                            : "false"
+                    );
+
+                }
+            );
+
+
+            panels.forEach(
+                function(panel) {
+
+                    const isActive =
+                        panel.dataset.panel === tabName;
+
+
+                    panel.classList.toggle(
+                        "active",
+                        isActive
+                    );
+
+                }
+            );
+
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+
+        }
+
+
+        tabs.forEach(
+            function(tab) {
+
+                tab.addEventListener(
+                    "click",
+                    function() {
+
+                        activateTab(
+                            tab.dataset.tab
+                        );
+
+                    }
+                );
+
+            }
+        );
+
+
+
+        /* ======================================================
+           STOCK CATEGORY SWITCHER
+        ======================================================= */
 
         const category =
             document.getElementById(
@@ -1376,64 +1639,63 @@ document.addEventListener(
 
 
         if (
-            !category ||
-            !feedField ||
-            !medicineField ||
-            !feedSelect ||
-            !medicineSelect
+            category &&
+            feedField &&
+            medicineField &&
+            feedSelect &&
+            medicineSelect
         ) {
 
-            return;
 
-        }
+            function updateStockType() {
 
-
-        function updateStockType() {
-
-            const value =
-                category.value;
+                const value =
+                    category.value;
 
 
-            if (value === "medicine") {
+                if (value === "medicine") {
 
-                feedField.hidden =
-                    true;
+                    feedField.hidden =
+                        true;
 
-                medicineField.hidden =
-                    false;
+                    medicineField.hidden =
+                        false;
 
-                feedSelect.required =
-                    false;
+                    feedSelect.required =
+                        false;
 
-                medicineSelect.required =
-                    true;
+                    medicineSelect.required =
+                        true;
 
-            } else {
+                } else {
 
-                feedField.hidden =
-                    false;
+                    feedField.hidden =
+                        false;
 
-                medicineField.hidden =
-                    true;
+                    medicineField.hidden =
+                        true;
 
-                feedSelect.required =
-                    value === "feed";
+                    feedSelect.required =
+                        value === "feed";
 
-                medicineSelect.required =
-                    false;
+                    medicineSelect.required =
+                        false;
+
+                }
 
             }
 
+
+            category.addEventListener(
+                "change",
+                updateStockType
+            );
+
+
+            updateStockType();
+
         }
 
-
-        category.addEventListener(
-            "change",
-            updateStockType
-        );
-
-
-        updateStockType();
 
     }
 );
@@ -1482,7 +1744,7 @@ document.addEventListener(
 
     gap: 15px;
 
-    margin-bottom: 28px;
+    margin-bottom: 22px;
 
 }
 
@@ -1548,12 +1810,168 @@ document.addEventListener(
 
 
 /* ==========================================================
+   TABS
+========================================================== */
+
+.feedstore-tabs {
+
+    width: 100%;
+
+    display: flex;
+    align-items: stretch;
+
+    gap: 5px;
+
+    margin-bottom: 5px;
+
+    padding: 5px;
+
+    overflow-x: auto;
+
+    border: 1px solid #dce8e0;
+    border-radius: 14px;
+
+    background: #f5f9f6;
+
+    scrollbar-width: none;
+
+}
+
+
+.feedstore-tabs::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+.feedstore-tab {
+
+    flex: 1 0 auto;
+
+    min-height: 46px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 9px 13px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: #718078;
+
+    font-family: inherit;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    white-space: nowrap;
+
+    cursor: pointer;
+
+    transition:
+        background .18s ease,
+        color .18s ease,
+        box-shadow .18s ease;
+
+}
+
+
+.feedstore-tab:hover {
+
+    background: #eaf4ed;
+
+    color: #145c36;
+
+}
+
+
+.feedstore-tab.active {
+
+    background: #ffffff;
+
+    color: #145c36;
+
+    box-shadow:
+        0 2px 8px
+        rgba(26, 72, 47, .08);
+
+}
+
+
+.feedstore-tab-icon {
+
+    font-size: 16px;
+
+    line-height: 1;
+
+}
+
+
+.feedstore-tab-text {
+
+    line-height: 1.2;
+
+}
+
+
+/* ==========================================================
+   TAB PANELS
+========================================================== */
+
+.feedstore-tab-panel {
+
+    display: none;
+
+}
+
+
+.feedstore-tab-panel.active {
+
+    display: block;
+
+    animation:
+        feedstorePanelIn .18s ease;
+
+}
+
+
+@keyframes feedstorePanelIn {
+
+    from {
+
+        opacity: 0;
+
+        transform:
+            translateY(4px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform:
+            translateY(0);
+
+    }
+
+}
+
+
+/* ==========================================================
    SECTION
 ========================================================== */
 
 .feedstore-section {
 
-    margin-top: 30px;
+    margin-top: 20px;
 
 }
 
@@ -2116,6 +2534,34 @@ document.addEventListener(
     .feedstore-intro h1 {
 
         font-size: 24px;
+
+    }
+
+
+    .feedstore-tabs {
+
+        gap: 3px;
+
+        padding: 4px;
+
+    }
+
+
+    .feedstore-tab {
+
+        min-height: 43px;
+
+        padding:
+            8px 10px;
+
+        font-size: 10px;
+
+    }
+
+
+    .feedstore-tab-icon {
+
+        font-size: 14px;
 
     }
 
