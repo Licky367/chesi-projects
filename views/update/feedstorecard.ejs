@@ -24,23 +24,24 @@ TARGET:
     Current dairy asset.
 
 ROUTE:
-    /dairy/:id/feedstore
+    /dairy/feedstore/:id
+
+EXAMPLE:
+    /dairy/feedstore/6a802fb518fcceb7ac81eef1
 
 SIZE:
-    Same standard as the other update cards:
+    Desktop:
+        112px × 155px
 
-        Desktop:
-            112px × 155px
-
-        Mobile:
-            108px × 150px
+    Mobile:
+        108px × 150px
 
 BEHAVIOUR:
     The entire card is clickable.
 
     Clicking the card navigates to:
 
-        /dairy/<dairy._id>/feedstore
+        /dairy/feedstore/<dairy._id>
 ============================================================
 */ %>
 
@@ -65,8 +66,12 @@ BEHAVIOUR:
 >
 
 
+    <!-- =====================================================
+         ENTIRE CARD IS CLICKABLE
+    ====================================================== -->
+
     <a
-        href="/dairy/<%= dairy._id %>/feedstore"
+        href="/dairy/feedstore/<%= dairy._id %>"
         class="feedstore-card__link"
         aria-label="Open Food Stock for <%= dairy.name %>"
     >
