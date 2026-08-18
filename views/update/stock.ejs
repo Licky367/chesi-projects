@@ -3,122 +3,426 @@
 STOCK FEED ITEM
 
 FILE:
-    views/updates/stock.ejs
+    views/update/stock.ejs
 
 PURPOSE:
-    Render feed-store stock announcements and subsequent
-    stock updates inside the normal Updates feed.
+    Render stock updates inside the chronological dairy feed.
 
-SYSTEM STOCK ANNOUNCEMENT:
-    Uses /images/h1.png
-    Sender = System
+SUPPORTED STOCK UPDATES:
+--------------------------------------------------------------
+    1. SYSTEM STOCK ANNOUNCEMENT
 
-WORKER STOCK UPDATE:
-    Uses the actual user's profile image/name.
+       Created automatically when an admin adds:
 
-EXPECTED:
-    update
-    dairy
+           • Animal feed
+           • Veterinary medicine
+
+       Stored as:
+
+           update.type        = "stock"
+           update.authorRole  = "system"
+           update.user        = null
+           update.userName    = "System"
+           update.userImage   = "/images/h1.png"
+
+       Stock data:
+
+           update.stock
+
+
+    2. DAIRY WORKER STOCK REPORT
+
+       Created when a dairy worker reports remaining stock.
+
+       Stored as:
+
+           update.type        = "stock"
+           update.authorRole  = "dairyWorker"
+           update.user        = worker
+           update.userName    = worker name
+           update.userImage   = worker image
+
+       Stock data:
+
+           update.stock
+
+
+IMPORTANT:
+--------------------------------------------------------------
+    The current Update.js structure is:
+
+        update
+          |
+          +-- type
+          +-- user
+          +-- userName
+          +-- userImage
+          +-- authorRole
+          +-- title
+          |
+          +-- stock
+                |
+                +-- stockType
+                +-- action
+                +-- itemName
+                +-- category
+                +-- quantity
+                +-- unit
+                +-- price
+                +-- instructions
+                +-- expectedDuration
+                +-- message
+                +-- images
+
+    Therefore this partial MUST read stock information from:
+
+        update.stock
+
+    and NOT:
+
+        update.quantity
+        update.unit
+        update.images
+        etc.
+
+
+SYSTEM IDENTITY:
+--------------------------------------------------------------
+    System stock announcements always use:
+
+        /images/h1.png
+
+    and:
+
+        System
+
+
+WORKER IDENTITY:
+--------------------------------------------------------------
+    Worker updates use:
+
+        update.userImage
+        update.userName
+
+    with populated user data used as fallback.
 ==============================================================
 */ %>
 
 
+
 <%
-    const isSystem =
-        update &&
-        (
-            update.authorType === "system" ||
-            update.source === "system" ||
-            update.isSystem === true ||
-            update.userName === "System"
+/* ==========================================================
+   SAFETY
+========================================================== */
+
+const currentUpdate =
+    update || null;
+
+
+const stock =
+    currentUpdate &&
+    currentUpdate.stock
+        ? currentUpdate.stock
+        : null;
+
+
+
+/* ==========================================================
+   DO NOT RENDER INVALID STOCK ITEMS
+========================================================== */
+
+if (
+    currentUpdate &&
+    stock
+) {
+
+
+/* ==========================================================
+   SYSTEM DETECTION
+========================================================== */
+
+const isSystem =
+    currentUpdate.authorRole === "system" ||
+    currentUpdate.userName === "System" ||
+    currentUpdate.user === null &&
+    currentUpdate.type === "stock" &&
+    stock.action === "available";
+
+
+
+/* ==========================================================
+   STOCK TYPE
+========================================================== */
+
+const stockType =
+    stock.stockType || "feed";
+
+
+const isMedicine =
+    stockType === "medicine";
+
+
+const isFeed =
+    stockType === "feed";
+
+
+
+/* ==========================================================
+   STOCK ACTION
+========================================================== */
+
+const stockAction =
+    stock.action || "";
+
+
+
+/* ==========================================================
+   ITEM NAME
+========================================================== */
+
+const itemName =
+    stock.itemName ||
+    "Stock";
+
+
+
+/* ==========================================================
+   CATEGORY
+========================================================== */
+
+const category =
+    stock.category || "";
+
+
+
+/* ==========================================================
+   SENDER NAME
+========================================================== */
+
+const senderName =
+    isSystem
+
+        ? "System"
+
+        : (
+            currentUpdate.userName ||
+
+            (
+                currentUpdate.user &&
+                currentUpdate.user.name
+            ) ||
+
+            "User"
         );
 
-    const isMedicine =
-        update &&
-        (
-            update.category === "medicine" ||
-            update.stockType === "medicine" ||
-            update.type === "medicine"
-        );
 
-    const senderName =
-        isSystem
-            ? "System"
-            : (
-                update.userName ||
+
+/* ==========================================================
+   SENDER IMAGE
+========================================================== */
+
+const senderImage =
+    isSystem
+
+        ? "/images/h1.png"
+
+        : (
+            currentUpdate.userImage ||
+
+            (
+                currentUpdate.user &&
                 (
-                    update.user &&
-                    update.user.name
-                ) ||
-                "User"
-            );
-
-    const senderImage =
-        isSystem
-            ? "/images/h1.png"
-            : (
-                update.userImage ||
-                (
-                    update.user &&
-                    update.user.profileImage
-                ) ||
-                "/images/h1.png"
-            );
-
-    const title =
-        update.title ||
-        (
-            isSystem
-                ? (
-                    isMedicine
-                        ? "More Veterinary Meds Available"
-                        : "More Animal Feed Available"
+                    currentUpdate.user.profileImage ||
+                    currentUpdate.user.displayImage
                 )
-                : "Foodstock Update"
+            ) ||
+
+            "/images/h1.png"
         );
 
-    const quantity =
-        update.quantity ??
-        update.addedQuantity ??
-        update.quantityRemaining ??
-        update.amount;
 
-    const unit =
-        update.unit ||
-        "";
 
-    const instructions =
-        update.instructions ||
-        update.usageInstructions ||
-        "";
+/* ==========================================================
+   TITLE
+========================================================== */
 
-    const duration =
-        update.expectedDuration ||
-        update.duration ||
-        "";
+let title =
+    currentUpdate.title || "";
 
-    const message =
-        update.message ||
-        update.text ||
-        "";
 
-    const images =
-        Array.isArray(update.images)
-            ? update.images
-            : [];
+if (!title) {
 
-    const created =
-        update.createdAt
-            ? new Date(update.createdAt)
-            : new Date();
+    if (isSystem) {
+
+        title =
+            isMedicine
+
+                ? "More Veterinary Meds Available"
+
+                : "More Animal Feed Available";
+
+    } else {
+
+        title =
+            isMedicine
+
+                ? "Veterinary Medicine Stock Update"
+
+                : "Animal Feed Stock Update";
+
+    }
+
+}
+
+
+
+/* ==========================================================
+   QUANTITY
+========================================================== */
+
+const quantity =
+    stock.quantity;
+
+
+
+/* ==========================================================
+   UNIT
+========================================================== */
+
+const unit =
+    stock.unit || "";
+
+
+
+/* ==========================================================
+   PRICE
+========================================================== */
+
+const price =
+    Number(stock.price) || 0;
+
+
+
+/* ==========================================================
+   INSTRUCTIONS
+========================================================== */
+
+const instructions =
+    stock.instructions || "";
+
+
+
+/* ==========================================================
+   EXPECTED DURATION
+========================================================== */
+
+const duration =
+    stock.expectedDuration || "";
+
+
+
+/* ==========================================================
+   MESSAGE
+========================================================== */
+
+const message =
+    stock.message || "";
+
+
+
+/* ==========================================================
+   STOCK IMAGES
+========================================================== */
+
+const images =
+    Array.isArray(stock.images)
+
+        ? stock.images.filter(Boolean)
+
+        : [];
+
+
+
+/* ==========================================================
+   CREATED DATE
+========================================================== */
+
+const created =
+    currentUpdate.createdAt
+
+        ? new Date(currentUpdate.createdAt)
+
+        : new Date();
+
+
+
+/* ==========================================================
+   SAFE DATE
+========================================================== */
+
+const validCreatedDate =
+    !Number.isNaN(
+        created.getTime()
+    )
+
+        ? created
+
+        : new Date();
+
+
+
+/* ==========================================================
+   ACTION LABEL
+========================================================== */
+
+const actionLabel =
+    stockAction === "remainder"
+
+        ? "reported remaining stock"
+
+        : "made stock available";
+
+
+
+/* ==========================================================
+   STOCK TYPE LABEL
+========================================================== */
+
+const stockTypeLabel =
+    isMedicine
+
+        ? "Veterinary Medicine"
+
+        : "Animal Feed";
+
+
+
+/* ==========================================================
+   QUANTITY LABEL
+========================================================== */
+
+const quantityLabel =
+    stockAction === "remainder"
+
+        ? "Quantity remaining"
+
+        : "Added quantity";
+
 %>
 
 
 
+<!-- ==========================================================
+     STOCK FEED ITEM
+========================================================== -->
+
 <article
     class="stock-feed-item"
-    data-update-id="<%= update._id || "" %>"
+    data-update-id="<%= currentUpdate._id || "" %>"
+    data-stock-type="<%= stockType %>"
+    data-stock-action="<%= stockAction %>"
 >
+
 
 
     <!-- ======================================================
@@ -145,10 +449,11 @@ EXPECTED:
 
 
         <!-- ==================================================
-             AUTHOR + DATE
+             AUTHOR INFORMATION
         =================================================== -->
 
         <div class="stock-feed-author">
+
 
             <div class="stock-feed-author-line">
 
@@ -159,41 +464,61 @@ EXPECTED:
             </div>
 
 
+
+            <!-- ==============================================
+                 FEED CONTEXT
+            =============================================== -->
+
             <div class="stock-feed-context">
+
 
                 <% if (isSystem) { %>
 
                     The System updated
 
+                <% } else { %>
+
+                    <%= senderName %> <%= actionLabel %>
+
+                <% } %>
+
+
+
+                <% if (dairy && dairy._id) { %>
+
                     <a
                         href="/dairy/<%= dairy._id %>"
                         class="stock-feed-dairy-link"
                     >
+
                         <%= dairy.name %>'s Foodstock
+
                     </a>
 
                 <% } else { %>
 
-                    updated
-
-                    <a
-                        href="/dairy/<%= dairy._id %>"
-                        class="stock-feed-dairy-link"
-                    >
-                        <%= dairy.name %>'s Foodstock
-                    </a>
+                    the Foodstock
 
                 <% } %>
+
 
             </div>
 
 
+
+            <!-- ==============================================
+                 DATE
+            =============================================== -->
+
             <time
                 class="stock-feed-date"
-                datetime="<%= created.toISOString() %>"
+                datetime="<%= validCreatedDate.toISOString() %>"
             >
-                <%= created.toLocaleString() %>
+
+                <%= validCreatedDate.toLocaleString() %>
+
             </time>
+
 
         </div>
 
@@ -210,6 +535,28 @@ EXPECTED:
 
 
         <!-- ==================================================
+             STOCK TYPE
+        =================================================== -->
+
+        <div class="stock-feed-type">
+
+            <span class="stock-feed-type-icon">
+
+                <%= isMedicine ? "💊" : "🌾" %>
+
+            </span>
+
+            <span>
+
+                <%= stockTypeLabel %>
+
+            </span>
+
+        </div>
+
+
+
+        <!-- ==================================================
              TITLE
         =================================================== -->
 
@@ -222,11 +569,55 @@ EXPECTED:
 
 
         <!-- ==================================================
+             ITEM NAME
+        =================================================== -->
+
+        <div class="stock-feed-item-name">
+
+            <span class="stock-feed-item-label">
+                Item
+            </span>
+
+            <strong>
+                <%= itemName %>
+            </strong>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             CATEGORY
+        =================================================== -->
+
+        <% if (category) { %>
+
+            <div class="stock-feed-category">
+
+                <span class="stock-feed-category-label">
+                    Category
+                </span>
+
+                <span>
+                    <%= category %>
+                </span>
+
+            </div>
+
+        <% } %>
+
+
+
+        <!-- ==================================================
              STOCK DETAILS
         =================================================== -->
 
         <div class="stock-feed-details">
 
+
+            <!-- ==============================================
+                 QUANTITY
+            =============================================== -->
 
             <% if (
                 quantity !== undefined &&
@@ -237,9 +628,9 @@ EXPECTED:
                 <div class="stock-feed-detail">
 
                     <span class="stock-feed-detail-label">
-                        <%= isSystem
-                            ? "Added quantity"
-                            : "Quantity remaining" %>
+
+                        <%= quantityLabel %>
+
                     </span>
 
                     <strong>
@@ -260,6 +651,10 @@ EXPECTED:
 
 
 
+            <!-- ==============================================
+                 EXPECTED DURATION
+            =============================================== -->
+
             <% if (duration) { %>
 
                 <div class="stock-feed-detail">
@@ -270,6 +665,45 @@ EXPECTED:
 
                     <strong>
                         <%= duration %>
+                    </strong>
+
+                </div>
+
+            <% } %>
+
+
+
+            <!-- ==============================================
+                 PRICE
+
+                 Only show price for system/admin availability
+                 records.
+
+                 Worker remainder reports do not represent
+                 new financial stock value.
+            =============================================== -->
+
+            <% if (
+                isSystem &&
+                price > 0
+            ) { %>
+
+                <div class="stock-feed-detail">
+
+                    <span class="stock-feed-detail-label">
+                        Stock value
+                    </span>
+
+                    <strong>
+
+                        <%= price.toLocaleString(
+                            undefined,
+                            {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            }
+                        ) %>
+
                     </strong>
 
                 </div>
@@ -289,12 +723,46 @@ EXPECTED:
 
             <div class="stock-feed-instructions">
 
+
                 <div class="stock-feed-subheading">
+
                     Instructions of use
+
                 </div>
 
+
                 <p>
+
                     <%= instructions %>
+
+                </p>
+
+
+            </div>
+
+        <% } %>
+
+
+
+        <!-- ==================================================
+             WORKER / ADDITIONAL MESSAGE
+        =================================================== -->
+
+        <% if (message) { %>
+
+            <div class="stock-feed-message">
+
+                <div class="stock-feed-subheading">
+
+                    Additional information
+
+                </div>
+
+
+                <p>
+
+                    <%= message %>
+
                 </p>
 
             </div>
@@ -304,42 +772,30 @@ EXPECTED:
 
 
         <!-- ==================================================
-             WORKER MESSAGE
-        =================================================== -->
-
-        <% if (message) { %>
-
-            <div class="stock-feed-message">
-
-                <%= message %>
-
-            </div>
-
-        <% } %>
-
-
-
-        <!-- ==================================================
-             IMAGES
+             STOCK IMAGES
         =================================================== -->
 
         <% if (images.length > 0) { %>
 
             <div class="stock-feed-images">
 
+
                 <% images.forEach(function(image) { %>
+
 
                     <% if (image) { %>
 
                         <img
                             src="<%= image %>"
-                            alt="Foodstock"
+                            alt="<%= itemName %>"
                             loading="lazy"
                         >
 
                     <% } %>
 
+
                 <% }); %>
+
 
             </div>
 
@@ -363,9 +819,14 @@ EXPECTED:
 
     width: 100%;
 
-    padding: 16px 0 19px;
+    padding:
+        16px
+        0
+        19px;
 
-    border-bottom: 1px solid #e5ebe7;
+    border-bottom:
+        1px solid
+        #e5ebe7;
 
 }
 
@@ -396,15 +857,18 @@ EXPECTED:
 .stock-feed-avatar {
 
     width: 44px;
+
     height: 44px;
 
-    flex: 0 0 44px;
+    flex:
+        0 0 44px;
 
     overflow: hidden;
 
     border-radius: 50%;
 
-    background: #edf5ef;
+    background:
+        #edf5ef;
 
 }
 
@@ -412,6 +876,7 @@ EXPECTED:
 .stock-feed-avatar img {
 
     width: 100%;
+
     height: 100%;
 
     display: block;
@@ -433,6 +898,7 @@ EXPECTED:
 .stock-feed-author-line {
 
     display: flex;
+
     align-items: center;
 
 }
@@ -440,10 +906,14 @@ EXPECTED:
 
 .stock-feed-author-line strong {
 
-    color: #26352d;
+    color:
+        #26352d;
 
-    font-size: 13px;
-    font-weight: 850;
+    font-size:
+        13px;
+
+    font-weight:
+        850;
 
 }
 
@@ -452,29 +922,36 @@ EXPECTED:
 
     margin-top: 2px;
 
-    color: #68756e;
+    color:
+        #68756e;
 
-    font-size: 11px;
+    font-size:
+        11px;
 
-    line-height: 1.4;
+    line-height:
+        1.45;
 
 }
 
 
 .stock-feed-dairy-link {
 
-    color: #198754;
+    color:
+        #198754;
 
-    font-weight: 750;
+    font-weight:
+        750;
 
-    text-decoration: none;
+    text-decoration:
+        none;
 
 }
 
 
 .stock-feed-dairy-link:hover {
 
-    text-decoration: underline;
+    text-decoration:
+        underline;
 
 }
 
@@ -485,9 +962,11 @@ EXPECTED:
 
     margin-top: 3px;
 
-    color: #99a19c;
+    color:
+        #99a19c;
 
-    font-size: 10px;
+    font-size:
+        10px;
 
 }
 
@@ -499,23 +978,178 @@ EXPECTED:
 
 .stock-feed-body {
 
-    margin-left: 55px;
+    margin-left:
+        55px;
 
-    margin-top: 13px;
+    margin-top:
+        13px;
 
 }
 
 
+
+/* ==========================================================
+   STOCK TYPE
+========================================================== */
+
+.stock-feed-type {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    margin-bottom:
+        7px;
+
+    padding:
+        5px
+        9px;
+
+    border-radius:
+        999px;
+
+    background:
+        #f0f6f2;
+
+    color:
+        #47705a;
+
+    font-size:
+        10px;
+
+    font-weight:
+        800;
+
+}
+
+
+.stock-feed-type-icon {
+
+    font-size:
+        12px;
+
+}
+
+
+
+/* ==========================================================
+   TITLE
+========================================================== */
+
 .stock-feed-title {
 
-    margin: 0 0 12px;
+    margin:
+        0
+        0
+        12px;
 
-    color: #198754;
+    color:
+        #198754;
 
-    font-size: 18px;
-    line-height: 1.3;
+    font-size:
+        18px;
 
-    font-weight: 900;
+    line-height:
+        1.3;
+
+    font-weight:
+        900;
+
+}
+
+
+
+/* ==========================================================
+   ITEM NAME
+========================================================== */
+
+.stock-feed-item-name {
+
+    display: flex;
+
+    align-items: baseline;
+
+    flex-wrap: wrap;
+
+    gap: 6px;
+
+    margin-bottom:
+        8px;
+
+}
+
+
+.stock-feed-item-label {
+
+    color:
+        #829087;
+
+    font-size:
+        9px;
+
+    font-weight:
+        800;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        .4px;
+
+}
+
+
+.stock-feed-item-name strong {
+
+    color:
+        #263f31;
+
+    font-size:
+        14px;
+
+    font-weight:
+        850;
+
+}
+
+
+
+/* ==========================================================
+   CATEGORY
+========================================================== */
+
+.stock-feed-category {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    margin-bottom:
+        11px;
+
+    color:
+        #66736b;
+
+    font-size:
+        11px;
+
+}
+
+
+.stock-feed-category-label {
+
+    font-weight:
+        800;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        .3px;
 
 }
 
@@ -528,24 +1162,31 @@ EXPECTED:
 .stock-feed-details {
 
     display: flex;
+
     flex-wrap: wrap;
 
     gap: 8px;
 
-    margin-bottom: 12px;
+    margin-bottom:
+        12px;
 
 }
 
 
 .stock-feed-detail {
 
-    min-width: 150px;
+    min-width:
+        150px;
 
-    padding: 9px 11px;
+    padding:
+        9px
+        11px;
 
-    border-radius: 10px;
+    border-radius:
+        10px;
 
-    background: #f3f8f4;
+    background:
+        #f3f8f4;
 
 }
 
@@ -554,26 +1195,37 @@ EXPECTED:
 
     display: block;
 
-    margin-bottom: 3px;
+    margin-bottom:
+        3px;
 
-    color: #829087;
+    color:
+        #829087;
 
-    font-size: 9px;
-    font-weight: 800;
+    font-size:
+        9px;
 
-    text-transform: uppercase;
+    font-weight:
+        800;
 
-    letter-spacing: .4px;
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        .4px;
 
 }
 
 
 .stock-feed-detail strong {
 
-    color: #245a3b;
+    color:
+        #245a3b;
 
-    font-size: 13px;
-    font-weight: 850;
+    font-size:
+        13px;
+
+    font-weight:
+        850;
 
 }
 
@@ -585,46 +1237,68 @@ EXPECTED:
 
 .stock-feed-instructions {
 
-    margin-top: 8px;
+    margin-top:
+        8px;
 
-    padding: 11px 13px;
+    padding:
+        11px
+        13px;
 
-    border-left: 3px solid #198754;
+    border-left:
+        3px solid
+        #198754;
 
-    border-radius: 0 9px 9px 0;
+    border-radius:
+        0
+        9px
+        9px
+        0;
 
-    background: #f7faf8;
+    background:
+        #f7faf8;
 
 }
 
 
 .stock-feed-subheading {
 
-    margin-bottom: 4px;
+    margin-bottom:
+        4px;
 
-    color: #31553f;
+    color:
+        #31553f;
 
-    font-size: 10px;
-    font-weight: 850;
+    font-size:
+        10px;
 
-    text-transform: uppercase;
+    font-weight:
+        850;
 
-    letter-spacing: .5px;
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        .5px;
 
 }
 
 
 .stock-feed-instructions p {
 
-    margin: 0;
+    margin:
+        0;
 
-    color: #4f5d55;
+    color:
+        #4f5d55;
 
-    font-size: 12px;
+    font-size:
+        12px;
 
-    line-height: 1.55;
+    line-height:
+        1.55;
 
-    white-space: pre-wrap;
+    white-space:
+        pre-wrap;
 
 }
 
@@ -636,15 +1310,32 @@ EXPECTED:
 
 .stock-feed-message {
 
-    margin-top: 12px;
+    margin-top:
+        12px;
 
-    color: #4e5b54;
+    padding:
+        10px
+        0;
 
-    font-size: 13px;
+    color:
+        #4e5b54;
 
-    line-height: 1.6;
+    font-size:
+        13px;
 
-    white-space: pre-wrap;
+    line-height:
+        1.6;
+
+}
+
+
+.stock-feed-message p {
+
+    margin:
+        0;
+
+    white-space:
+        pre-wrap;
 
 }
 
@@ -658,29 +1349,40 @@ EXPECTED:
 
     display: flex;
 
-    gap: 7px;
+    gap:
+        7px;
 
-    margin-top: 13px;
+    margin-top:
+        13px;
 
-    overflow-x: auto;
+    overflow-x:
+        auto;
 
-    padding-bottom: 3px;
+    padding-bottom:
+        3px;
 
 }
 
 
 .stock-feed-images img {
 
-    width: 125px;
-    height: 105px;
+    width:
+        125px;
 
-    flex: 0 0 125px;
+    height:
+        105px;
 
-    display: block;
+    flex:
+        0 0 125px;
 
-    object-fit: cover;
+    display:
+        block;
 
-    border-radius: 10px;
+    object-fit:
+        cover;
+
+    border-radius:
+        10px;
 
 }
 
@@ -692,40 +1394,61 @@ EXPECTED:
 
 @media (max-width: 600px) {
 
+
     .stock-feed-body {
 
-        margin-left: 0;
+        margin-left:
+            0;
 
-        margin-top: 12px;
+        margin-top:
+            12px;
 
     }
 
 
     .stock-feed-title {
 
-        font-size: 17px;
+        font-size:
+            17px;
 
     }
 
 
     .stock-feed-detail {
 
-        flex: 1 1 100%;
+        flex:
+            1 1 100%;
 
-        min-width: 0;
+        min-width:
+            0;
 
     }
 
 
     .stock-feed-images img {
 
-        width: 110px;
-        height: 92px;
+        width:
+            110px;
 
-        flex-basis: 110px;
+        height:
+            92px;
+
+        flex-basis:
+            110px;
 
     }
+
 
 }
 
 </style>
+
+
+
+<%
+/* ==========================================================
+   END VALID STOCK BLOCK
+========================================================== */
+
+}
+%>
