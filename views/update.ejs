@@ -19,7 +19,6 @@
 
          post.ejs
          milk.ejs
-         stock.ejs
          medical-marked.ejs
          medical-cleared.ejs
          maintenance-marked.ejs
@@ -40,13 +39,7 @@
 
          item
 
-     Therefore stock.ejs MUST use:
-
-         const stockUpdate = item;
-
-     and NOT:
-
-         const stockUpdate = update;
+     stock.ejs is deliberately NOT rendered here.
 
 ===================================================== -->
 
@@ -327,39 +320,6 @@
 
                     <%- include(
                         "update/milk",
-                        {
-                            item: item,
-                            user: user
-                        }
-                    ) %>
-
-
-                <% } %>
-
-
-
-                <!-- =================================================
-                     STOCK UPDATE
-
-                     CONTRACT:
-                         item: item
-
-                     IMPORTANT:
-                     ------------------------------------------------
-                     stock.ejs MUST read the feed document through:
-
-                         item
-
-                     It must NOT expect:
-
-                         update
-                ================================================== -->
-
-                <% if (item.type === "stock") { %>
-
-
-                    <%- include(
-                        "update/stock",
                         {
                             item: item,
                             user: user
