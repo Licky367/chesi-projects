@@ -18,6 +18,6 @@ module.exports = {
 
     ...require("./maintenanceController"),
 
-    ...require("./feedsController")
+    ...require("./storageController")
 
 };
