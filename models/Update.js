@@ -12,41 +12,33 @@
 //     • Asset-added updates
 //     • Stock/feed-store updates
 //
-// STOCK SYSTEM
+// IMPORTANT STOCK RULE
 // ----------------------------------------------------------
 //
-// Admin:
+// EVERY stock event is an independent Update document.
 //
-//     Adds available animal feed
-//     Adds available veterinary medicine
-//     Records quantity
-//     Records unit
-//     Records price
-//     Adds instructions
-//     Adds expected duration
-//     May add images
+// Example:
 //
-//     The system automatically creates a STOCK update.
+//     Admin adds 20kg Dairy Meal
+//     Admin adds another 30kg Dairy Meal
+//     Worker reports 25kg remaining
 //
-// Dairy Worker:
+// These create THREE separate:
 //
-//     Reports remaining stock
-//     May add quantity remaining
-//     May add additional information
-//     May add images
+//     Update documents
 //
-// IMPORTANT
-// ----------------------------------------------------------
+// They must NEVER overwrite or collapse into one another.
 //
-// Admin stock availability posts are SYSTEM posts.
+// Current inventory belongs to:
 //
-//     user      = null
-//     userName  = "System"
-//     userImage = "/images/h1.png"
+//     Dairy.feedStocks[]
 //
-// Dairy-worker stock reports retain the worker's identity.
+// Historical feed events belong to:
+//
+//     Update.stock
 //
 // ==========================================================
+
 
 const mongoose =
     require("mongoose");
@@ -64,13 +56,6 @@ const MAX_STOCK_IMAGES = 10;
 // ==========================================================
 // STOCK TYPES
 // ==========================================================
-//
-// These distinguish:
-//
-//     feed
-//     veterinary medicine
-//
-// ==========================================================
 
 const STOCK_TYPES = [
 
@@ -83,14 +68,6 @@ const STOCK_TYPES = [
 
 // ==========================================================
 // STOCK ACTIONS
-// ==========================================================
-//
-// available
-//     Admin makes new stock available.
-//
-// remainder
-//     Dairy worker reports stock remaining.
-//
 // ==========================================================
 
 const STOCK_ACTIONS = [
@@ -106,8 +83,9 @@ const STOCK_ACTIONS = [
 // STOCK UNITS
 // ==========================================================
 //
-// The service/controller should normally validate these
-// against the same list used by the Dairy model/service.
+// MUST ALIGN WITH:
+//
+//     services/update/feedsService.js
 //
 // ==========================================================
 
@@ -119,17 +97,13 @@ const STOCK_UNITS = [
 
     "tonnes",
 
-    "bales",
-
     "litres",
 
-    "units",
+    "bottles",
 
-    "containers",
+    "packs",
 
-    "packets",
-
-    "boxes"
+    "units"
 
 ];
 
@@ -138,1176 +112,1130 @@ const STOCK_UNITS = [
 // POST COMMENT SUBDOCUMENT
 // ==========================================================
 
-const postCommentSchema = new mongoose.Schema(
+const postCommentSchema =
+    new mongoose.Schema(
 
-    {
+        {
 
-        userId: {
+            userId: {
 
-            type:
-                mongoose.Schema.Types.ObjectId,
+                type:
+                    mongoose.Schema.Types.ObjectId,
 
-            required: true
+                required: true
+
+            },
+
+
+            userName: {
+
+                type: String,
+
+                default: "",
+
+                trim: true,
+
+                maxlength: 150
+
+            },
+
+
+            userImage: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            text: {
+
+                type: String,
+
+                required: true,
+
+                trim: true,
+
+                maxlength: 2000
+
+            },
+
+
+            createdAt: {
+
+                type: Date,
+
+                default: Date.now
+
+            }
 
         },
 
+        {
 
-        userName: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        userImage: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        text: {
-
-            type: String,
-
-            required: true,
-
-            trim: true
-
-        },
-
-
-        createdAt: {
-
-            type: Date,
-
-            default: Date.now
+            // Comments need their own IDs.
+            _id: true
 
         }
 
-    },
-
-    {
-
-        _id: true
-
-    }
-
-);
+    );
 
 
 // ==========================================================
 // MEDICAL UPDATE SUBDOCUMENT
 // ==========================================================
 
-const medicalSchema = new mongoose.Schema(
+const medicalSchema =
+    new mongoose.Schema(
 
-    {
+        {
 
-        status: {
+            status: {
 
-            type: String,
+                type: String,
 
-            default: "",
+                default: "",
 
-            trim: true
+                trim: true
+
+            },
+
+
+            type: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            details: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            markedAt: {
+
+                type: Date,
+
+                default: null
+
+            },
+
+
+            markedBy: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                default: null
+
+            },
+
+
+            clearedAt: {
+
+                type: Date,
+
+                default: null
+
+            },
+
+
+            clearedBy: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                default: null
+
+            },
+
+
+            charges: {
+
+                type: Number,
+
+                default: 0,
+
+                min: 0
+
+            },
+
+
+            clearDescription: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            }
 
         },
 
+        {
 
-        type: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        details: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        markedAt: {
-
-            type: Date,
-
-            default: null
-
-        },
-
-
-        markedBy: {
-
-            type:
-                mongoose.Schema.Types.ObjectId,
-
-            default: null
-
-        },
-
-
-        clearedAt: {
-
-            type: Date,
-
-            default: null
-
-        },
-
-
-        clearedBy: {
-
-            type:
-                mongoose.Schema.Types.ObjectId,
-
-            default: null
-
-        },
-
-
-        charges: {
-
-            type: Number,
-
-            default: 0,
-
-            min: 0
-
-        },
-
-
-        clearDescription: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
+            _id: false
 
         }
 
-    },
-
-    {
-
-        _id: false
-
-    }
-
-);
+    );
 
 
 // ==========================================================
 // MAINTENANCE UPDATE SUBDOCUMENT
 // ==========================================================
 
-const maintenanceSchema = new mongoose.Schema(
+const maintenanceSchema =
+    new mongoose.Schema(
 
-    {
+        {
 
-        status: {
+            status: {
 
-            type: String,
+                type: String,
 
-            default: "",
+                default: "",
 
-            trim: true
+                trim: true
+
+            },
+
+
+            type: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            description: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            markedAt: {
+
+                type: Date,
+
+                default: null
+
+            },
+
+
+            markedBy: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                default: null
+
+            },
+
+
+            clearedAt: {
+
+                type: Date,
+
+                default: null
+
+            },
+
+
+            clearedBy: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                default: null
+
+            },
+
+
+            charges: {
+
+                type: Number,
+
+                default: 0,
+
+                min: 0
+
+            },
+
+
+            clearDescription: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            }
 
         },
 
+        {
 
-        type: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        description: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        markedAt: {
-
-            type: Date,
-
-            default: null
-
-        },
-
-
-        markedBy: {
-
-            type:
-                mongoose.Schema.Types.ObjectId,
-
-            default: null
-
-        },
-
-
-        clearedAt: {
-
-            type: Date,
-
-            default: null
-
-        },
-
-
-        clearedBy: {
-
-            type:
-                mongoose.Schema.Types.ObjectId,
-
-            default: null
-
-        },
-
-
-        charges: {
-
-            type: Number,
-
-            default: 0,
-
-            min: 0
-
-        },
-
-
-        clearDescription: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
+            _id: false
 
         }
 
-    },
-
-    {
-
-        _id: false
-
-    }
-
-);
+    );
 
 
 // ==========================================================
-// ASSET ADDED UPDATE SUBDOCUMENT
-// ==========================================================
-//
-// Created whenever an asset is added to a dairy.
-//
+// ASSET ADD UPDATE
 // ==========================================================
 
-const assetAddSchema = new mongoose.Schema(
+const assetAddSchema =
+    new mongoose.Schema(
 
-    {
+        {
 
-        assetId: {
+            assetId: {
 
-            type:
-                mongoose.Schema.Types.ObjectId,
+                type:
+                    mongoose.Schema.Types.ObjectId,
 
-            ref: "Dairy",
+                ref: "Dairy",
 
-            default: null
+                default: null
+
+            },
+
+
+            name: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            type: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            buyingPrice: {
+
+                type: Number,
+
+                default: 0,
+
+                min: 0
+
+            },
+
+
+            currentWorth: {
+
+                type: Number,
+
+                default: 0,
+
+                min: 0
+
+            },
+
+
+            description: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            condition: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            location: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            status: {
+
+                type: String,
+
+                default: "active",
+
+                trim: true
+
+            },
+
+
+            assetCode: {
+
+                type: Number,
+
+                default: null
+
+            },
+
+
+            parentDairyId: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                ref: "Dairy",
+
+                default: null
+
+            },
+
+
+            parentDairyName: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            parentDairyCode: {
+
+                type: Number,
+
+                default: null
+
+            }
 
         },
 
+        {
 
-        name: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        type: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        buyingPrice: {
-
-            type: Number,
-
-            default: 0,
-
-            min: 0
-
-        },
-
-
-        currentWorth: {
-
-            type: Number,
-
-            default: 0,
-
-            min: 0
-
-        },
-
-
-        description: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        condition: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        location: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        status: {
-
-            type: String,
-
-            default: "active",
-
-            trim: true
-
-        },
-
-
-        assetCode: {
-
-            type: Number,
-
-            default: null
-
-        },
-
-
-        parentDairyId: {
-
-            type:
-                mongoose.Schema.Types.ObjectId,
-
-            ref: "Dairy",
-
-            default: null
-
-        },
-
-
-        parentDairyName: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        parentDairyCode: {
-
-            type: Number,
-
-            default: null
+            _id: false
 
         }
 
-    },
-
-    {
-
-        _id: false
-
-    }
-
-);
+    );
 
 
 // ==========================================================
 // STOCK UPDATE SUBDOCUMENT
 // ==========================================================
 //
-// This replaces the old feedStoreSchema.
+// CRITICAL:
 //
-// It represents a visible STOCK FEED ITEM.
+//     _id: TRUE
 //
-// There are two possible actions:
+// Every stock event receives its own ID.
 //
-//     available
-//         Created automatically when admin adds stock.
+// This means:
 //
-//     remainder
-//         Created when dairyWorker reports remaining stock.
+//     Update A
+//         stock._id = X
+//
+//     Update B
+//         stock._id = Y
+//
+//     Update C
+//         stock._id = Z
+//
+// Even when all three concern the same feed.
 //
 // ==========================================================
 
-const stockSchema = new mongoose.Schema(
+const stockSchema =
+    new mongoose.Schema(
 
-    {
+        {
 
-        // ==================================================
-        // STOCK TYPE
-        // ==================================================
-        //
-        // feed
-        // medicine
-        //
-        // ==================================================
+            // ==================================================
+            // STOCK TYPE
+            // ==================================================
 
-        stockType: {
+            stockType: {
 
-            type: String,
+                type: String,
 
-            enum: STOCK_TYPES,
+                enum:
+                    STOCK_TYPES,
 
-            required: true,
+                required: true,
 
-            trim: true
+                trim: true
 
-        },
+            },
 
 
-        // ==================================================
-        // ACTION
-        // ==================================================
-        //
-        // available
-        // remainder
-        //
-        // ==================================================
+            // ==================================================
+            // ACTION
+            // ==================================================
 
-        action: {
+            action: {
 
-            type: String,
+                type: String,
 
-            enum: STOCK_ACTIONS,
+                enum:
+                    STOCK_ACTIONS,
 
-            required: true,
+                required: true,
 
-            trim: true
+                trim: true
 
-        },
+            },
 
 
-        // ==================================================
-        // ITEM NAME
-        // ==================================================
-        //
-        // Examples:
-        //
-        // Feed:
-        //
-        //     Fodder
-        //     Silage
-        //     Hay
-        //     Dairy Meal
-        //
-        // Medicine:
-        //
-        //     Multivitamin
-        //     Dewormer
-        //     Antibiotic
-        //
-        // ==================================================
+            // ==================================================
+            // ITEM NAME
+            // ==================================================
 
-        itemName: {
+            itemName: {
 
-            type: String,
+                type: String,
 
-            required: true,
+                required: true,
 
-            trim: true,
+                trim: true,
 
-            maxlength: 150
+                maxlength: 150
 
-        },
+            },
 
 
-        // ==================================================
-        // CATEGORY
-        // ==================================================
-        //
-        // Backend-provided category.
-        //
-        // Examples:
-        //
-        //     fodder
-        //     silage
-        //     hay
-        //
-        // or medicine categories.
-        //
-        // ==================================================
+            // ==================================================
+            // CATEGORY
+            // ==================================================
 
-        category: {
+            category: {
 
-            type: String,
+                type: String,
 
-            default: "",
+                default: "",
 
-            trim: true,
+                trim: true,
 
-            maxlength: 100
+                maxlength: 100
 
-        },
+            },
 
 
-        // ==================================================
-        // QUANTITY
-        // ==================================================
-        //
-        // For ADMIN:
-        //
-        //     quantity made available.
-        //
-        // For WORKER:
-        //
-        //     quantity remaining.
-        //
-        // ==================================================
+            // ==================================================
+            // QUANTITY
+            // ==================================================
 
-        quantity: {
+            quantity: {
 
-            type: Number,
+                type: Number,
 
-            required: true,
+                required: true,
 
-            min: 0
+                min: 0
 
-        },
+            },
 
 
-        // ==================================================
-        // UNIT
-        // ==================================================
+            // ==================================================
+            // UNIT
+            // ==================================================
 
-        unit: {
+            unit: {
 
-            type: String,
+                type: String,
 
-            enum: STOCK_UNITS,
+                enum:
+                    STOCK_UNITS,
 
-            required: true,
+                required: true,
 
-            trim: true
+                trim: true
 
-        },
+            },
 
 
-        // ==================================================
-        // PRICE
-        // ==================================================
-        //
-        // ADMIN ONLY / SYSTEM STOCK AVAILABILITY.
-        //
-        // This represents the financial value of the stock
-        // being added.
-        //
-        // Worker reports do not create financial values.
-        //
-        // ==================================================
+            // ==================================================
+            // PRICE
+            // ==================================================
 
-        price: {
+            price: {
 
-            type: Number,
+                type: Number,
 
-            default: 0,
+                default: 0,
 
-            min: 0
+                min: 0
 
-        },
+            },
 
 
-        // ==================================================
-        // INSTRUCTIONS
-        // ==================================================
-        //
-        // Primarily entered by admin.
-        //
-        // Example:
-        //
-        //     Give 2kg per animal twice daily.
-        //
-        // ==================================================
+            // ==================================================
+            // INSTRUCTIONS
+            // ==================================================
 
-        instructions: {
+            instructions: {
 
-            type: String,
+                type: String,
 
-            default: "",
+                default: "",
 
-            trim: true,
+                trim: true,
 
-            maxlength: 2000
+                maxlength: 2000
 
-        },
+            },
 
 
-        // ==================================================
-        // EXPECTED DURATION
-        // ==================================================
-        //
-        // Example:
-        //
-        //     14 days
-        //     3 weeks
-        //     2 months
-        //
-        // Kept as text because consumption duration does
-        // not necessarily need to be represented numerically.
-        //
-        // ==================================================
+            // ==================================================
+            // EXPECTED DURATION
+            // ==================================================
 
-        expectedDuration: {
+            expectedDuration: {
 
-            type: String,
+                type: String,
 
-            default: "",
+                default: "",
 
-            trim: true,
+                trim: true,
 
-            maxlength: 100
+                maxlength: 100
 
-        },
+            },
 
 
-        // ==================================================
-        // ADDITIONAL INFORMATION
-        // ==================================================
-        //
-        // Particularly useful for dairyWorker reports.
-        //
-        // ==================================================
+            // ==================================================
+            // MESSAGE
+            // ==================================================
 
-        message: {
+            message: {
 
-            type: String,
+                type: String,
 
-            default: "",
+                default: "",
 
-            trim: true,
+                trim: true,
 
-            maxlength: 2000
+                maxlength: 2000
 
-        },
+            },
 
 
-        // ==================================================
-        // IMAGES
-        // ==================================================
+            // ==================================================
+            // IMAGES
+            // ==================================================
 
-        images: {
+            images: {
 
-            type: [
+                type: [
 
-                {
+                    {
 
-                    type: String,
+                        type: String,
 
-                    trim: true
+                        trim: true
+
+                    }
+
+                ],
+
+                default: [],
+
+                validate: {
+
+                    validator:
+                        function(images) {
+
+                            return (
+
+                                Array.isArray(images) &&
+
+                                images.length <=
+                                    MAX_STOCK_IMAGES
+
+                            );
+
+                        },
+
+                    message:
+                        `A maximum of ${MAX_STOCK_IMAGES} stock images is allowed.`
 
                 }
 
-            ],
-
-            default: [],
-
-            validate: {
-
-                validator:
-                    function(images) {
-
-                        return (
-
-                            Array.isArray(images) &&
-
-                            images.length <=
-                                MAX_STOCK_IMAGES
-
-                        );
-
-                    },
-
-                message:
-                    `A maximum of ${MAX_STOCK_IMAGES} stock images is allowed.`
-
             }
+
+        },
+
+        {
+
+            // ==================================================
+            // VERY IMPORTANT
+            // ==================================================
+            //
+            // DO NOT DISABLE THIS.
+            //
+            // Each stock event must have its own identifier.
+            //
+            _id: true
 
         }
 
-    },
-
-    {
-
-        _id: false
-
-    }
-
-);
+    );
 
 
 // ==========================================================
 // UPDATE SCHEMA
 // ==========================================================
 
-const updateSchema = new mongoose.Schema(
+const updateSchema =
+    new mongoose.Schema(
 
-    {
+        {
 
-        // ==================================================
-        // DAIRY
-        // ==================================================
+            // ==================================================
+            // DAIRY
+            // ==================================================
 
-        dairy: {
+            dairy: {
 
-            type:
-                mongoose.Schema.Types.ObjectId,
+                type:
+                    mongoose.Schema.Types.ObjectId,
 
-            ref: "Dairy",
+                ref: "Dairy",
 
-            required: true,
+                required: true,
 
-            index: true
+                index: true
 
-        },
+            },
 
 
-        // ==================================================
-        // USER
-        // ==================================================
-        //
-        // null is VALID for System-generated stock posts.
-        //
-        // ==================================================
+            // ==================================================
+            // USER
+            // ==================================================
 
-        user: {
+            user: {
 
-            type:
-                mongoose.Schema.Types.ObjectId,
+                type:
+                    mongoose.Schema.Types.ObjectId,
 
-            ref: "User",
+                ref: "User",
 
-            default: null
+                default: null
 
-        },
+            },
 
 
-        // ==================================================
-        // USER NAME
-        // ==================================================
-        //
-        // Normal update:
-        //
-        //     actual user name
-        //
-        // System stock:
-        //
-        //     System
-        //
-        // ==================================================
+            // ==================================================
+            // USER NAME
+            // ==================================================
 
-        userName: {
+            userName: {
 
-            type: String,
+                type: String,
 
-            default: "",
+                default: "",
 
-            trim: true,
+                trim: true,
 
-            maxlength: 150
+                maxlength: 150
 
-        },
+            },
 
 
-        // ==================================================
-        // USER IMAGE
-        // ==================================================
-        //
-        // Normal update:
-        //
-        //     actual profile image
-        //
-        // System stock:
-        //
-        //     /images/h1.png
-        //
-        // ==================================================
+            // ==================================================
+            // USER IMAGE
+            // ==================================================
 
-        userImage: {
+            userImage: {
 
-            type: String,
+                type: String,
 
-            default: "",
+                default: "",
 
-            trim: true
+                trim: true
 
-        },
+            },
 
 
-        // ==================================================
-        // AUTHOR ROLE
-        // ==================================================
-        //
-        // Stored explicitly because a System-generated
-        // update does not have a User document.
-        //
-        // Possible values:
-        //
-        //     admin
-        //     dairyWorker
-        //     system
-        //
-        // ==================================================
+            // ==================================================
+            // AUTHOR ROLE
+            // ==================================================
 
-        authorRole: {
+            authorRole: {
 
-            type: String,
+                type: String,
 
-            enum: [
+                enum: [
 
-                "admin",
+                    "admin",
 
-                "dairyWorker",
+                    "dairyWorker",
 
-                "system",
+                    "system",
 
-                ""
+                    ""
 
-            ],
+                ],
 
-            default: "",
+                default: "",
 
-            trim: true
+                trim: true
 
-        },
+            },
 
 
-        // ==================================================
-        // UPDATE TYPE
-        // ==================================================
+            // ==================================================
+            // UPDATE TYPE
+            // ==================================================
 
-        type: {
+            type: {
 
-            type: String,
+                type: String,
 
-            enum: [
+                enum: [
 
-                "post",
+                    "post",
 
-                "comment",
+                    "comment",
 
-                "image",
+                    "image",
 
-                "medical",
+                    "medical",
 
-                "maintenance",
+                    "maintenance",
 
-                "assetAdd",
+                    "assetAdd",
 
-                "stock"
+                    "stock"
 
-            ],
+                ],
 
-            required: true,
+                required: true,
 
-            index: true
+                index: true
 
-        },
+            },
 
 
-        // ==================================================
-        // TITLE
-        // ==================================================
-        //
-        // Used by stock cards.
-        //
-        // Examples:
-        //
-        //     More Animal Feed Available
-        //
-        //     More Veterinary Meds Available
-        //
-        // ==================================================
+            // ==================================================
+            // TITLE
+            // ==================================================
 
-        title: {
+            title: {
 
-            type: String,
+                type: String,
 
-            default: "",
+                default: "",
 
-            trim: true,
+                trim: true,
 
-            maxlength: 200
+                maxlength: 200
 
-        },
+            },
 
 
-        // ==================================================
-        // POST TEXT
-        // ==================================================
+            // ==================================================
+            // POST TEXT
+            // ==================================================
 
-        text: {
+            text: {
 
-            type: String,
+                type: String,
 
-            default: "",
+                default: "",
 
-            trim: true,
+                trim: true,
 
-            maxlength: 1000
+                maxlength: 1000
 
-        },
+            },
 
 
-        // ==================================================
-        // POST IMAGES
-        // ==================================================
+            // ==================================================
+            // POST IMAGES
+            // ==================================================
 
-        images: {
+            images: {
 
-            type: [
+                type: [
 
-                {
+                    {
 
-                    type: String,
+                        type: String,
 
-                    trim: true
+                        trim: true
+
+                    }
+
+                ],
+
+                default: [],
+
+                validate: {
+
+                    validator:
+                        function(images) {
+
+                            return (
+
+                                Array.isArray(images) &&
+
+                                images.length <=
+                                    MAX_POST_IMAGES
+
+                            );
+
+                        },
+
+                    message:
+                        `A maximum of ${MAX_POST_IMAGES} images is allowed per post.`
 
                 }
 
-            ],
+            },
 
-            default: [],
 
-            validate: {
+            // ==================================================
+            // LEGACY SINGLE IMAGE
+            // ==================================================
 
-                validator:
-                    function(images) {
+            image: {
 
-                        return (
+                type: String,
 
-                            Array.isArray(images) &&
+                default: null,
 
-                            images.length <=
-                                MAX_POST_IMAGES
+                trim: true
 
-                        );
+            },
 
-                    },
 
-                message:
-                    `A maximum of ${MAX_POST_IMAGES} images is allowed per post.`
+            // ==================================================
+            // GENERAL COMMENT
+            // ==================================================
+
+            comment: {
+
+                type: String,
+
+                default: "",
+
+                trim: true
+
+            },
+
+
+            // ==================================================
+            // LIKES
+            // ==================================================
+
+            likes: {
+
+                type: [
+
+                    {
+
+                        type:
+                            mongoose.Schema.Types.ObjectId,
+
+                        ref: "User"
+
+                    }
+
+                ],
+
+                default: []
+
+            },
+
+
+            // ==================================================
+            // COMMENTS
+            // ==================================================
+
+            comments: {
+
+                type:
+                    [postCommentSchema],
+
+                default: []
+
+            },
+
+
+            // ==================================================
+            // MEDICAL
+            // ==================================================
+
+            medical: {
+
+                type:
+                    medicalSchema,
+
+                default: undefined
+
+            },
+
+
+            // ==================================================
+            // MAINTENANCE
+            // ==================================================
+
+            maintenance: {
+
+                type:
+                    maintenanceSchema,
+
+                default: undefined
+
+            },
+
+
+            // ==================================================
+            // ASSET
+            // ==================================================
+
+            asset: {
+
+                type:
+                    assetAddSchema,
+
+                default: undefined
+
+            },
+
+
+            // ==================================================
+            // STOCK
+            // ==================================================
+            //
+            // Each Update document contains at most one stock
+            // event.
+            //
+            // BUT every Update document is independent.
+            //
+            // Therefore:
+            //
+            //     Update.stock[0]
+            //
+            // is NOT used.
+            //
+            // Instead:
+            //
+            //     update.stock
+            //
+            // represents that particular historical event.
+            //
+            // ==================================================
+
+            stock: {
+
+                type:
+                    stockSchema,
+
+                default: undefined
 
             }
 
         },
 
+        {
 
-        // ==================================================
-        // LEGACY SINGLE IMAGE
-        // ==================================================
-
-        image: {
-
-            type: String,
-
-            default: null,
-
-            trim: true
-
-        },
-
-
-        // ==================================================
-        // GENERAL COMMENT
-        // ==================================================
-
-        comment: {
-
-            type: String,
-
-            default: "",
-
-            trim: true
-
-        },
-
-
-        // ==================================================
-        // POST LIKES
-        // ==================================================
-
-        likes: {
-
-            type: [
-
-                {
-
-                    type:
-                        mongoose.Schema.Types.ObjectId,
-
-                    ref: "User"
-
-                }
-
-            ],
-
-            default: []
-
-        },
-
-
-        // ==================================================
-        // POST COMMENTS
-        // ==================================================
-
-        comments: {
-
-            type:
-                [postCommentSchema],
-
-            default: []
-
-        },
-
-
-        // ==================================================
-        // MEDICAL
-        // ==================================================
-
-        medical: {
-
-            type:
-                medicalSchema,
-
-            default: undefined
-
-        },
-
-
-        // ==================================================
-        // MAINTENANCE
-        // ==================================================
-
-        maintenance: {
-
-            type:
-                maintenanceSchema,
-
-            default: undefined
-
-        },
-
-
-        // ==================================================
-        // ASSET ADDED
-        // ==================================================
-
-        asset: {
-
-            type:
-                assetAddSchema,
-
-            default: undefined
-
-        },
-
-
-        // ==================================================
-        // STOCK
-        // ==================================================
-        //
-        // Used for both:
-        //
-        //     admin availability
-        //     dairy-worker remainder reports
-        //
-        // ==================================================
-
-        stock: {
-
-            type:
-                stockSchema,
-
-            default: undefined
+            timestamps: true
 
         }
 
-    },
+    );
 
-    {
 
-        timestamps: true
+// ==========================================================
+// INDEXES
+// ==========================================================
+//
+// These indexes are intentionally NON-UNIQUE.
+//
+// This is critical.
+//
+// Multiple stock updates for the same dairy are allowed.
+//
+// ==========================================================
 
-    }
+updateSchema.index({
 
-);
+    dairy: 1,
+
+    createdAt: -1
+
+});
+
+
+updateSchema.index({
+
+    dairy: 1,
+
+    type: 1,
+
+    createdAt: -1
+
+});
+
+
+updateSchema.index({
+
+    dairy: 1,
+
+    "stock.action": 1,
+
+    createdAt: -1
+
+});
 
 
 // ==========================================================
@@ -1334,6 +1262,7 @@ updateSchema.pre(
 
 
         this.images =
+
             this.images
 
                 .filter(Boolean)
@@ -1363,13 +1292,21 @@ updateSchema.pre(
 
         ) {
 
-            this.images = [
-
+            const legacyImage =
                 String(
                     this.image
-                ).trim()
+                ).trim();
 
-            ];
+
+            if (legacyImage) {
+
+                this.images = [
+
+                    legacyImage
+
+                ];
+
+            }
 
         }
 
@@ -1393,12 +1330,16 @@ updateSchema.pre(
 
 
         // ==================================================
-        // NORMALIZE STOCK IMAGES
+        // NORMALIZE STOCK
         // ==================================================
 
         if (
             this.stock
         ) {
+
+            // ------------------------------------------------
+            // IMAGES
+            // ------------------------------------------------
 
             if (
                 !Array.isArray(
@@ -1412,6 +1353,7 @@ updateSchema.pre(
 
 
             this.stock.images =
+
                 this.stock.images
 
                     .filter(Boolean)
@@ -1428,39 +1370,119 @@ updateSchema.pre(
                         MAX_STOCK_IMAGES
                     );
 
-        }
 
+            // ------------------------------------------------
+            // QUANTITY
+            // ------------------------------------------------
 
-        // ==================================================
-        // NORMALIZE STOCK FINANCIAL VALUES
-        // ==================================================
-
-        if (
-            this.stock
-        ) {
-
-            this.stock.quantity =
+            const quantity =
                 Number(
                     this.stock.quantity
-                ) || 0;
+                );
+
+
+            this.stock.quantity =
+                Number.isFinite(quantity) &&
+                quantity >= 0
+
+                    ? quantity
+
+                    : 0;
+
+
+            // ------------------------------------------------
+            // PRICE
+            // ------------------------------------------------
+
+            const price =
+                Number(
+                    this.stock.price
+                );
 
 
             this.stock.price =
-                Number(
-                    this.stock.price
-                ) || 0;
+                Number.isFinite(price) &&
+                price >= 0
+
+                    ? price
+
+                    : 0;
+
+
+            // ------------------------------------------------
+            // STRING NORMALIZATION
+            // ------------------------------------------------
+
+            if (
+                this.stock.itemName
+            ) {
+
+                this.stock.itemName =
+                    String(
+                        this.stock.itemName
+                    ).trim();
+
+            }
+
+
+            if (
+                this.stock.category
+            ) {
+
+                this.stock.category =
+                    String(
+                        this.stock.category
+                    ).trim();
+
+            }
+
+
+            if (
+                this.stock.instructions
+            ) {
+
+                this.stock.instructions =
+                    String(
+                        this.stock.instructions
+                    ).trim();
+
+            }
+
+
+            if (
+                this.stock.expectedDuration
+            ) {
+
+                this.stock.expectedDuration =
+                    String(
+                        this.stock.expectedDuration
+                    ).trim();
+
+            }
+
+
+            if (
+                this.stock.message
+            ) {
+
+                this.stock.message =
+                    String(
+                        this.stock.message
+                    ).trim();
+
+            }
 
         }
 
 
         // ==================================================
-        // SYSTEM STOCK NORMALIZATION
+        // SYSTEM STOCK
         // ==================================================
         //
-        // Admin availability updates are system-generated.
+        // "available" means the stock was made available
+        // by the system after an admin restock.
         //
-        // This protects the feed from accidentally displaying
-        // the admin as the author of the automatic stock post.
+        // The feed therefore identifies the author as System.
         //
         // ==================================================
 
@@ -1493,12 +1515,7 @@ updateSchema.pre(
 
 
         // ==================================================
-        // STOCK TITLE NORMALIZATION
-        // ==================================================
-        //
-        // Only generate the title automatically when the
-        // service has not already supplied one.
-        //
+        // STOCK TITLE
         // ==================================================
 
         if (
@@ -1514,7 +1531,9 @@ updateSchema.pre(
             ) {
 
                 this.title =
-                    this.stock.stockType === "medicine"
+
+                    this.stock.stockType ===
+                        "medicine"
 
                         ? "More Veterinary Meds Available"
 
@@ -1613,14 +1632,18 @@ const Update =
 Update.MAX_POST_IMAGES =
     MAX_POST_IMAGES;
 
+
 Update.MAX_STOCK_IMAGES =
     MAX_STOCK_IMAGES;
+
 
 Update.STOCK_TYPES =
     STOCK_TYPES;
 
+
 Update.STOCK_ACTIONS =
     STOCK_ACTIONS;
+
 
 Update.STOCK_UNITS =
     STOCK_UNITS;
