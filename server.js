@@ -1,6 +1,6 @@
-// ============================= =============================
+// ==========================================================
 // server.js
-// =========================================================
+// ==========================================================
 
 const express =
   require("express");
@@ -106,6 +106,33 @@ if (isProduction) {
 
 const connectDB =
   require("./db");
+
+
+// ==========================================================
+// FEED STORE INITIALIZER
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This utility is NOT just imported.
+//
+// It is executed during database bootstrap after MongoDB
+// successfully connects.
+//
+// It will:
+//
+//     • find all dairy farms
+//     • identify farms without a feedStore
+//     • create the missing feedStore
+//     • leave existing feedStores untouched
+//
+// ==========================================================
+
+const {
+
+  ensureFeedStores
+
+} = require("./utils/store");
 
 
 // ==========================================================
@@ -335,22 +362,6 @@ try {
 // Mounted at:
 //
 //     /financials
-//
-// Examples:
-//
-//     GET  /financials
-//
-//     GET  /financials/liability
-//
-//     POST /financials/liability
-//
-//     GET  /financials/history
-//
-//     GET  /financials/dairy/:id
-//
-//     GET  /financials/api/dairy/:id
-//
-//     GET  /financials/api/summary
 //
 // ==========================================================
 
@@ -730,9 +741,6 @@ socketHandler(
 
 // ==========================================================
 // BODY PARSERS
-//
-// IMPORTANT:
-// These must be registered before the routes.
 // ==========================================================
 
 app.use(
@@ -1064,30 +1072,6 @@ if (updateRoutes) {
 
 // ----------------------------------------------------------
 // FEED STOCK
-// ----------------------------------------------------------
-//
-// All feed-stock routes are now handled by:
-//
-//     routes/feedstock.js
-//
-// Mounted at:
-//
-//     /
-//
-// Therefore existing URLs remain unchanged.
-//
-// Examples:
-//
-//     /dairy/feedstore/:dairyId
-//
-//     /dairy/:dairyId/feedstore/add
-//
-//     /dairy/:dairyId/feedstore/:stockId
-//
-//     /dairy/:dairyId/feedstore/:stockId/update
-//
-//     /dairy/:dairyId/feedstore/:stockId/restock
-//
 // ----------------------------------------------------------
 
 if (feedstockRoutes) {
@@ -1635,17 +1619,164 @@ const bootstrap = async () => {
 
   try {
 
+    // ======================================================
+    // CONNECT TO MONGODB
+    // ======================================================
+
     const dbConnected =
       await connectDB();
 
+
+    // ======================================================
+    // DATABASE AVAILABLE
+    // ======================================================
 
     if (
       dbConnected
     ) {
 
-      await seedAdmin();
+      console.log(
+        "✅ MongoDB connected."
+      );
+
+
+      // ====================================================
+      // ADMIN SEED
+      // ====================================================
+
+      try {
+
+        await seedAdmin();
+
+        console.log(
+          "✅ Admin seed completed."
+        );
+
+      } catch (error) {
+
+        console.error(
+          "❌ Admin seed failed:",
+          error
+        );
+
+        // -----------------------------------------------
+        // Do not stop the application merely because the
+        // admin seed failed.
+        // -----------------------------------------------
+
+      }
+
+
+      // ====================================================
+      // FEED STORE INITIALIZATION
+      // ====================================================
+      //
+      // THIS IS THE IMPORTANT PART.
+      //
+      // Every successful database startup executes:
+      //
+      //     ensureFeedStores()
+      //
+      // This guarantees that existing dairy farms receive
+      // their missing feed-store facility automatically.
+      //
+      // ====================================================
+
+      try {
+
+        console.log(
+          "🏪 Checking dairy farms for feed stores..."
+        );
+
+
+        const storeResult =
+          await ensureFeedStores();
+
+
+        console.log(
+
+          "🏪 Feed-store initialization complete:",
+
+          {
+
+            farms:
+              storeResult.totalFarms,
+
+            existing:
+              storeResult.existing,
+
+            created:
+              storeResult.created,
+
+            totalStores:
+              storeResult.totalStores
+
+          }
+
+        );
+
+
+        // -----------------------------------------------
+        // CREATED STORES
+        // -----------------------------------------------
+
+        if (
+          storeResult.created > 0
+        ) {
+
+          console.log(
+
+            `🏪 Created ${storeResult.created} missing feed store(s).`
+
+          );
+
+        } else {
+
+          console.log(
+            "🏪 All dairy farms already have feed stores."
+          );
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          "❌ Feed-store initialization failed:",
+          error
+        );
+
+
+        // -----------------------------------------------
+        // IMPORTANT
+        // -----------------------------------------------
+        //
+        // In production, a feed-store initialization
+        // failure should be visible but should not silently
+        // create a partially initialized application.
+        //
+        // -----------------------------------------------
+
+        if (
+          isProduction
+        ) {
+
+          console.error(
+
+            "❌ Production startup stopped because feed-store initialization failed."
+
+          );
+
+          process.exit(1);
+
+        }
+
+      }
 
     }
+
+    // ======================================================
+    // DATABASE UNAVAILABLE
+    // ======================================================
 
     else if (
       isProduction
@@ -1665,16 +1796,21 @@ const bootstrap = async () => {
 
       console.warn(
 
-        "⚠️ Skipping admin seed because MongoDB is unavailable."
+        "⚠️ Skipping admin seed and feed-store initialization because MongoDB is unavailable."
 
       );
 
     }
 
 
+    // ======================================================
+    // START SERVER
+    // ======================================================
+
     startServer(
       PORT
     );
+
 
   } catch (error) {
 
@@ -1688,11 +1824,14 @@ const bootstrap = async () => {
       isProduction
     ) {
 
-      process.exit(1
-      );
+      process.exit(1);
 
     }
 
+
+    // ------------------------------------------------------
+    // Development mode
+    // ------------------------------------------------------
 
     startServer(
       PORT
@@ -1704,7 +1843,7 @@ const bootstrap = async () => {
 
 
 // ==========================================================
-// START
+// START APPLICATION
 // ==========================================================
 
 bootstrap();
