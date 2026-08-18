@@ -15,7 +15,7 @@
 //
 //     services/update/storageService.js
 //
-// Model:
+// MODEL:
 //
 //     models/dairy.js
 //
@@ -45,15 +45,11 @@
 //         • View stock
 //         • Update stock
 //
-// =========================================================
+// ==========================================================
 
 
 const storageService =
     require("../../services/update/storageService");
-
-
-const Dairy =
-    require("../../models/dairy");
 
 
 // ==========================================================
@@ -100,11 +96,10 @@ function isAdmin(req) {
 
 
 // ==========================================================
-// ALLOWED STORAGE USER
+// STORAGE ACCESS CHECK
 // ==========================================================
 //
-// Both administrators and dairy workers may access the
-// storage area.
+// ADMIN + DAIRY WORKER
 //
 // ==========================================================
 
@@ -122,6 +117,7 @@ function canAccessStorage(req) {
             user.role === "admin" ||
 
             user.role === "dairyWorker"
+
         )
 
     );
@@ -149,7 +145,11 @@ function getDairyId(req) {
 
         req.params.dairyId ||
 
-        req.params.id
+        req.params.id ||
+
+        req.body.dairyId ||
+
+        ""
 
     );
 
@@ -203,7 +203,9 @@ function getStockId(req) {
 
 function getUploadedImages(req) {
 
-    if (!req.files) {
+    if (
+        !req.files
+    ) {
 
         return [];
 
@@ -218,7 +220,9 @@ function getUploadedImages(req) {
     // ======================================================
 
     if (
-        Array.isArray(req.files)
+        Array.isArray(
+            req.files
+        )
     ) {
 
         files =
@@ -232,7 +236,9 @@ function getUploadedImages(req) {
     // ======================================================
 
     else if (
-        Array.isArray(req.files.images)
+        Array.isArray(
+            req.files.images
+        )
     ) {
 
         files =
@@ -289,69 +295,60 @@ function getUploadedImages(req) {
 //
 // IMPORTANT:
 //
-// These options come from the Dairy model's master lists.
+// Options come from:
 //
-// They MUST NOT be generated from existing feedStocks.
+//     storageService.getStorageOptions()
 //
-// This means the Add Stock page still has all dropdown
-// options even when:
+// which in turn gets them from the master lists in
+// models/dairy.js.
 //
-//     dairy.feedStocks = []
+// They are NOT generated from existing feedStocks.
 //
 // ==========================================================
 
 function getStockOptions() {
 
-    const feedTypes =
+    const options =
 
-        typeof Dairy.getFeedTypes ===
+        typeof storageService.getStorageOptions ===
         "function"
 
-            ? Dairy.getFeedTypes()
+            ? storageService.getStorageOptions()
 
-            : [];
-
-
-    const medicineTypes =
-
-        typeof Dairy.getVeterinaryMedicines ===
-        "function"
-
-            ? Dairy.getVeterinaryMedicines()
-
-            : [];
-
-
-    const stockUnits =
-
-        typeof Dairy.getStockUnits ===
-        "function"
-
-            ? Dairy.getStockUnits()
-
-            : [];
+            : {};
 
 
     return {
 
         feedTypes:
-            Array.isArray(feedTypes)
 
-                ? feedTypes
+            Array.isArray(
+                options.feedTypes
+            )
+
+                ? options.feedTypes
 
                 : [],
+
 
         medicineTypes:
-            Array.isArray(medicineTypes)
 
-                ? medicineTypes
+            Array.isArray(
+                options.veterinaryMedicines
+            )
+
+                ? options.veterinaryMedicines
 
                 : [],
 
-        stockUnits:
-            Array.isArray(stockUnits)
 
-                ? stockUnits
+        stockUnits:
+
+            Array.isArray(
+                options.stockUnits
+            )
+
+                ? options.stockUnits
 
                 : []
 
@@ -364,9 +361,13 @@ function getStockOptions() {
 // GET FEED STORE ITEMS
 // ==========================================================
 
-function getFeedStoreItems(dairy) {
+function getFeedStoreItems(
+    dairy
+) {
 
     return (
+
+        dairy &&
 
         Array.isArray(
             dairy.feedStocks
@@ -385,7 +386,14 @@ function getFeedStoreItems(dairy) {
 // BUILD COMMON VIEW DATA
 // ==========================================================
 //
-// All storage EJS pages receive the same basic data.
+// Every storage page receives:
+//
+//     dairy
+//     user
+//     feedStoreItems
+//     feedTypes
+//     medicineTypes
+//     stockUnits
 //
 // ==========================================================
 
@@ -406,7 +414,9 @@ function buildCommonViewData(
             getUser(req),
 
         feedStoreItems:
-            getFeedStoreItems(dairy),
+            getFeedStoreItems(
+                dairy
+            ),
 
         feedTypes:
             options.feedTypes,
@@ -423,22 +433,26 @@ function buildCommonViewData(
 
 
 // ==========================================================
-// GET DAIRY
+// LOAD DAIRY
 // ==========================================================
 
 async function loadDairy(
     dairyId
 ) {
 
-    if (!dairyId) {
+    if (
+        !dairyId
+    ) {
 
         const error =
             new Error(
                 "Dairy ID is required."
             );
 
+
         error.statusCode =
             400;
+
 
         throw error;
 
@@ -460,15 +474,10 @@ async function loadDairy(
 //
 //     views/update/storage/feed-stock.ejs
 //
-// This is the inventory/list page.
-//
-// Clicking a stock item is handled by feed-stock.ejs:
+// ACCESS:
 //
 //     ADMIN
-//         → show Update / Restock choices
-//
 //     DAIRY WORKER
-//         → go directly to Update Stock
 //
 // ==========================================================
 
@@ -550,7 +559,9 @@ async function getFeedStock(
 //
 //     views/update/storage/add-stock.ejs
 //
-// ADMIN ONLY.
+// ACCESS:
+//
+//     ADMIN ONLY
 //
 // ==========================================================
 
@@ -632,7 +643,10 @@ async function getAddStock(
 //
 //     views/update/storage/update-stock.ejs
 //
-// ADMIN + DAIRY WORKER.
+// ACCESS:
+//
+//     ADMIN
+//     DAIRY WORKER
 //
 // ==========================================================
 
@@ -664,7 +678,9 @@ async function getUpdateStock(
             getStockId(req);
 
 
-        if (!stockId) {
+        if (
+            !stockId
+        ) {
 
             return res.status(
                 400
@@ -743,7 +759,9 @@ async function getUpdateStock(
 //
 //     views/update/storage/restock.ejs
 //
-// ADMIN ONLY.
+// ACCESS:
+//
+//     ADMIN ONLY
 //
 // ==========================================================
 
@@ -761,7 +779,7 @@ async function getRestock(
             return res.status(
                 403
             ).send(
-                "Only an administrator can restock."
+                "Only an administrator can restock stock."
             );
 
         }
@@ -775,7 +793,9 @@ async function getRestock(
             getStockId(req);
 
 
-        if (!stockId) {
+        if (
+            !stockId
+        ) {
 
             return res.status(
                 400
@@ -847,16 +867,73 @@ async function getRestock(
 
 
 // ==========================================================
+// BUILD STOCK DATA
+// ==========================================================
+//
+// Shared by:
+//
+//     addStock
+//     updateStock
+//     restockStock
+//
+// ==========================================================
+
+function buildStockData(
+    req
+) {
+
+    return {
+
+        category:
+            req.body.category,
+
+        feedName:
+            req.body.feedName,
+
+        medicineName:
+            req.body.medicineName,
+
+        quantity:
+            req.body.quantity,
+
+        unit:
+            req.body.unit,
+
+        price:
+            req.body.price,
+
+        instructions:
+            req.body.instructions,
+
+        expectedDuration:
+            req.body.expectedDuration,
+
+        message:
+            req.body.message
+
+    };
+
+}
+
+
+// ==========================================================
 // ADD NEW STOCK
 // ==========================================================
 //
-// This handles:
+// SERVICE:
 //
-//     views/update/storage/add-stock.ejs
+//     storageService.saveStock({
+//         dairyId,
+//         stockId: "",
+//         data,
+//         images
+//     })
 //
-// It creates a completely new stock item.
+// Because stockId is absent, saveStock() calls createStock().
 //
-// ADMIN ONLY.
+// ACCESS:
+//
+//     ADMIN ONLY
 //
 // ==========================================================
 
@@ -890,7 +967,9 @@ async function addStock(
             getDairyId(req);
 
 
-        if (!dairyId) {
+        if (
+            !dairyId
+        ) {
 
             return res.status(
                 400
@@ -907,45 +986,24 @@ async function addStock(
         }
 
 
-        const data = {
-
-            category:
-                req.body.category,
-
-            feedName:
-                req.body.feedName,
-
-            medicineName:
-                req.body.medicineName,
-
-            quantity:
-                req.body.quantity,
-
-            unit:
-                req.body.unit,
-
-            price:
-                req.body.price,
-
-            instructions:
-                req.body.instructions,
-
-            expectedDuration:
-                req.body.expectedDuration,
-
-            message:
-                req.body.message
-
-        };
+        const data =
+            buildStockData(
+                req
+            );
 
 
         const images =
-            getUploadedImages(req);
+            getUploadedImages(
+                req
+            );
 
 
-        await storageService.addStock({
+        await storageService.saveStock({
 
             dairyId,
+
+            stockId:
+                "",
 
             data,
 
@@ -997,17 +1055,21 @@ async function addStock(
 // UPDATE EXISTING STOCK
 // ==========================================================
 //
-// This handles:
+// SERVICE:
 //
-//     views/update/storage/update-stock.ejs
+//     storageService.saveStock({
+//         dairyId,
+//         stockId,
+//         data,
+//         images
+//     })
 //
-// ADMIN + DAIRY WORKER.
+// Because stockId exists, saveStock() calls updateStock().
 //
-// IMPORTANT:
+// ACCESS:
 //
-// This is an UPDATE.
-//
-// It does NOT represent a new delivery/restock.
+//     ADMIN
+//     DAIRY WORKER
 //
 // ==========================================================
 
@@ -1045,7 +1107,9 @@ async function updateStock(
             getStockId(req);
 
 
-        if (!dairyId) {
+        if (
+            !dairyId
+        ) {
 
             return res.status(
                 400
@@ -1062,7 +1126,9 @@ async function updateStock(
         }
 
 
-        if (!stockId) {
+        if (
+            !stockId
+        ) {
 
             return res.status(
                 400
@@ -1079,31 +1145,19 @@ async function updateStock(
         }
 
 
-        const data = {
-
-            quantity:
-                req.body.quantity,
-
-            price:
-                req.body.price,
-
-            instructions:
-                req.body.instructions,
-
-            expectedDuration:
-                req.body.expectedDuration,
-
-            message:
-                req.body.message
-
-        };
+        const data =
+            buildStockData(
+                req
+            );
 
 
         const images =
-            getUploadedImages(req);
+            getUploadedImages(
+                req
+            );
 
 
-        await storageService.updateStock({
+        await storageService.saveStock({
 
             dairyId,
 
@@ -1159,14 +1213,36 @@ async function updateStock(
 // RESTOCK EXISTING STOCK
 // ==========================================================
 //
-// This handles:
+// IMPORTANT:
 //
-//     views/update/storage/restock.ejs
+// The current storageService does NOT have a separate:
 //
-// ADMIN ONLY.
+//     restockStock()
 //
-// Restocking should be treated as a separate operation from
-// simply editing the stock record.
+// function.
+//
+// Restocking is therefore correctly passed through:
+//
+//     storageService.saveStock()
+//
+// with an existing stockId.
+//
+// The service's updateStock() detects that the submitted
+// quantity is greater than quantityRemaining and treats the
+// difference as the newly added quantity.
+//
+// Example:
+//
+//     Existing quantity = 100
+//     Submitted quantity = 150
+//
+//     quantityAdded = 50
+//
+//     feedsAmount = 50 × new unit price
+//
+// ACCESS:
+//
+//     ADMIN ONLY
 //
 // ==========================================================
 
@@ -1204,7 +1280,9 @@ async function restockStock(
             getStockId(req);
 
 
-        if (!dairyId) {
+        if (
+            !dairyId
+        ) {
 
             return res.status(
                 400
@@ -1221,7 +1299,9 @@ async function restockStock(
         }
 
 
-        if (!stockId) {
+        if (
+            !stockId
+        ) {
 
             return res.status(
                 400
@@ -1238,31 +1318,19 @@ async function restockStock(
         }
 
 
-        const data = {
-
-            quantity:
-                req.body.quantity,
-
-            price:
-                req.body.price,
-
-            instructions:
-                req.body.instructions,
-
-            expectedDuration:
-                req.body.expectedDuration,
-
-            message:
-                req.body.message
-
-        };
+        const data =
+            buildStockData(
+                req
+            );
 
 
         const images =
-            getUploadedImages(req);
+            getUploadedImages(
+                req
+            );
 
 
-        await storageService.restockStock({
+        await storageService.saveStock({
 
             dairyId,
 
@@ -1318,7 +1386,10 @@ async function restockStock(
 // GET ONE STOCK
 // ==========================================================
 //
-// Useful for AJAX / API requests.
+// ACCESS:
+//
+//     ADMIN
+//     DAIRY WORKER
 //
 // ==========================================================
 
@@ -1356,7 +1427,9 @@ async function getStock(
             getStockId(req);
 
 
-        if (!dairyId) {
+        if (
+            !dairyId
+        ) {
 
             return res.status(
                 400
@@ -1373,7 +1446,9 @@ async function getStock(
         }
 
 
-        if (!stockId) {
+        if (
+            !stockId
+        ) {
 
             return res.status(
                 400
@@ -1442,7 +1517,9 @@ async function getStock(
 // DELETE STOCK
 // ==========================================================
 //
-// ADMIN ONLY.
+// ACCESS:
+//
+//     ADMIN ONLY
 //
 // ==========================================================
 
@@ -1480,7 +1557,9 @@ async function deleteStock(
             getStockId(req);
 
 
-        if (!dairyId) {
+        if (
+            !dairyId
+        ) {
 
             return res.status(
                 400
@@ -1497,7 +1576,9 @@ async function deleteStock(
         }
 
 
-        if (!stockId) {
+        if (
+            !stockId
+        ) {
 
             return res.status(
                 400
@@ -1507,7 +1588,7 @@ async function deleteStock(
                     false,
 
                 message:
-                    "Dairy ID is required."
+                    "Stock ID is required."
 
             });
 
