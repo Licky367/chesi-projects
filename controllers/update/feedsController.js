@@ -9,11 +9,25 @@
 //     • Render feed-store page
 //     • Allow ADMIN to add animal feed
 //     • Allow ADMIN to add veterinary medicine
-//     • Allow ADMIN to update/restock existing stock
-//     • Allow DAIRY WORKER to update remaining stock
-//     • Prevent workers from changing stock units
+//     • Allow ADMIN to restock existing stock
+//     • Allow ADMIN to edit stock quantity
+//     • Allow ADMIN to edit stock unit
+//     • Allow ADMIN to add price/value
+//     • Allow ADMIN to add instructions
+//     • Allow ADMIN to add expected duration
+//     • Allow ADMIN to add additional information
+//     • Allow ADMIN to upload images
+//
+//     • Allow ANY authenticated user to update
+//       the remaining quantity of existing stock
+//
+//     • Prevent non-admin users from changing stock unit
+//     • Prevent non-admin users from changing price
+//     • Prevent non-admin users from adding instructions
+//     • Prevent non-admin users from adding expected duration
+//
 //     • Pass uploaded images to the service
-//     • Keep financial information away from workers
+//     • Keep financial information away from workers/users
 //     • Return consistent success/error redirects
 //     • Provide ONE unified foodstock history containing
 //       BOTH stock additions AND remaining-stock updates
@@ -37,6 +51,11 @@ const feedsService =
 // HELPERS
 // ==========================================================
 
+
+/* ==========================================================
+   GET USER
+========================================================== */
+
 function getUser(req) {
 
     return (
@@ -46,6 +65,10 @@ function getUser(req) {
 
 }
 
+
+/* ==========================================================
+   GET USER ROLE
+========================================================== */
 
 function getUserRole(req) {
 
@@ -60,6 +83,10 @@ function getUserRole(req) {
 }
 
 
+/* ==========================================================
+   GET DAIRY ID
+========================================================== */
+
 function getDairyId(req) {
 
     return (
@@ -70,6 +97,10 @@ function getDairyId(req) {
 
 }
 
+
+/* ==========================================================
+   GET UPLOADED FILES
+========================================================== */
 
 function getFiles(req) {
 
@@ -87,6 +118,119 @@ function getFiles(req) {
 }
 
 
+/* ==========================================================
+   GET REQUIRED TEXT
+========================================================== */
+
+function getRequiredText(value) {
+
+    if (
+        value === undefined ||
+        value === null
+    ) {
+
+        return null;
+
+    }
+
+    const text =
+        String(value).trim();
+
+    return text || null;
+
+}
+
+
+/* ==========================================================
+   PARSE NUMBER SAFELY
+==========================================================
+//
+// IMPORTANT:
+//
+// Never allow:
+//
+//     Number("")
+//     Number(undefined)
+//     Number(null)
+//     Number("abc")
+//
+// to silently become an invalid stock value.
+//
+// This helper returns:
+//
+//     valid number
+//     OR null
+//
+// It NEVER returns NaN.
+//
+
+function parseNumber(value) {
+
+    if (
+        value === undefined ||
+        value === null
+    ) {
+
+        return null;
+
+    }
+
+
+    if (
+        typeof value === "string" &&
+        value.trim() === ""
+    ) {
+
+        return null;
+
+    }
+
+
+    const number =
+        Number(value);
+
+
+    if (
+        !Number.isFinite(number)
+    ) {
+
+        return null;
+
+    }
+
+
+    return number;
+
+}
+
+
+/* ==========================================================
+   ERROR MESSAGE
+========================================================== */
+
+function getErrorMessage(
+    error,
+    fallback
+) {
+
+    if (
+        error &&
+        typeof error.message === "string" &&
+        error.message.trim()
+    ) {
+
+        return error.message.trim();
+
+    }
+
+    return (
+        fallback ||
+        "Unable to process feed-store request."
+    );
+
+}
+
+
 // ==========================================================
 // ERROR REDIRECT
 // ==========================================================
@@ -98,12 +242,14 @@ function redirectWithError(
 ) {
 
     const message =
-        error &&
-        error.message
+        typeof error === "string"
 
-            ? error.message
+            ? error
 
-            : "Unable to process feed-store request.";
+            : getErrorMessage(
+                error,
+                "Unable to process feed-store request."
+            );
 
 
     return res.redirect(
@@ -276,9 +422,13 @@ function buildFoodstockUpdates(data) {
 // PREPARE STOCK DATA FOR THE PAGE
 // ==========================================================
 //
-// This is important for the new clickable-stock workflow.
+// IMPORTANT:
 //
-// The EJS needs the actual current stock values from the DB:
+// The controller does NOT manufacture stock quantities.
+//
+// The service loads the actual database inventory.
+//
+// The EJS receives:
 //
 //     • _id
 //     • name
@@ -288,11 +438,6 @@ function buildFoodstockUpdates(data) {
 //     • price
 //     • instructions
 //     • expectedDuration
-//
-// The controller does not manufacture stock quantities.
-//
-// It simply passes through what the service loaded from
-// MongoDB.
 //
 // ==========================================================
 
@@ -315,12 +460,18 @@ function prepareFeedStocks(
 
             if (!stock) {
 
-                return stock;
+                return null;
 
             }
 
 
             return stock;
+
+        }
+    ).filter(
+        function(stock) {
+
+            return Boolean(stock);
 
         }
     );
@@ -417,16 +568,28 @@ async function viewFeedStore(
 
 
         // ==================================================
+        // DAIRY MUST EXIST
+        // ==================================================
+
+        if (!currentDairy) {
+
+            return res
+                .status(404)
+                .send(
+                    "Dairy profile not found."
+                );
+
+        }
+
+
+        // ==================================================
         // CURRENT STOCK
+        // ==================================================
         //
-        // This is the REAL DB inventory.
+        // This is the REAL inventory loaded from MongoDB.
         //
-        // The EJS uses this to:
-        //
-        //     • display current remainder
-        //     • prefill the update form
-        //     • identify the selected stock
-        //     • enforce the correct unit display
+        // It is used by the EJS to display clickable stock
+        // records and their current quantities.
         //
         // ==================================================
 
@@ -469,7 +632,7 @@ async function viewFeedStore(
 
 
             // ==================================================
-            // KEEP ORIGINAL HISTORY AVAILABLE
+            // ORIGINAL FEED HISTORY
             // ==================================================
 
             feedUpdates:
@@ -515,21 +678,6 @@ async function viewFeedStore(
 
 
         // ==================================================
-        // DAIRY MUST EXIST
-        // ==================================================
-
-        if (!pageData.dairy) {
-
-            return res
-                .status(404)
-                .send(
-                    "Dairy profile not found."
-                );
-
-        }
-
-
-        // ==================================================
         // RENDER
         // ==================================================
 
@@ -560,12 +708,10 @@ async function viewFeedStore(
             .status(500)
             .send(
 
-                error &&
-                error.message
-
-                    ? error.message
-
-                    : "Unable to load the feed store."
+                getErrorMessage(
+                    error,
+                    "Unable to load the feed store."
+                )
 
             );
 
@@ -586,22 +732,18 @@ async function viewFeedStore(
 //
 //     • Adding a completely new stock item
 //     • Adding to an existing stock item
-//     • Changing quantity
-//     • Changing unit
+//     • Quantity
+//     • Unit
 //     • Price/value
 //     • Instructions
 //     • Expected duration
+//     • Additional information
 //     • Images
 //
-// The service decides whether this is:
+// ONLY ADMIN MAY PROVIDE:
 //
-//     NEW STOCK
-//
-// or:
-//
-//     EXISTING STOCK
-//
-// based on the supplied stockId.
+//     • instructions
+//     • expectedDuration
 //
 // ==========================================================
 
@@ -672,10 +814,346 @@ async function restockFeedStore(
         // REQUEST BODY
         // ==================================================
 
-        const body =
-            {
-                ...(req.body || {})
-            };
+        const input =
+            req.body &&
+            typeof req.body === "object"
+
+                ? req.body
+
+                : {};
+
+
+        const body = {
+
+            ...input
+
+        };
+
+
+        // ==================================================
+        // STOCK CATEGORY
+        // ==================================================
+        //
+        // The form uses:
+        //
+        //     category
+        //
+        // Expected values:
+        //
+        //     feed
+        //     medicine
+        //
+        // ==================================================
+
+        const category =
+            getRequiredText(
+                body.category
+            );
+
+
+        if (!category) {
+
+            return redirectWithError(
+
+                res,
+
+                dairyId,
+
+                "Stock type is required."
+
+            );
+
+        }
+
+
+        if (
+            category !== "feed" &&
+            category !== "medicine"
+        ) {
+
+            return redirectWithError(
+
+                res,
+
+                dairyId,
+
+                "Invalid stock type."
+
+            );
+
+        }
+
+
+        body.category =
+            category;
+
+
+        // ==================================================
+        // STOCK NAME
+        // ==================================================
+        //
+        // Feed:
+        //
+        //     feedName
+        //
+        // Medicine:
+        //
+        //     medicineName
+        //
+        // ==================================================
+
+        let stockName;
+
+
+        if (
+            category === "feed"
+        ) {
+
+            stockName =
+                getRequiredText(
+                    body.feedName
+                );
+
+
+            if (!stockName) {
+
+                return redirectWithError(
+
+                    res,
+
+                    dairyId,
+
+                    "Animal feed must be selected."
+
+                );
+
+            }
+
+        }
+
+
+        if (
+            category === "medicine"
+        ) {
+
+            stockName =
+                getRequiredText(
+                    body.medicineName
+                );
+
+
+            if (!stockName) {
+
+                return redirectWithError(
+
+                    res,
+
+                    dairyId,
+
+                    "Veterinary medicine must be selected."
+
+                );
+
+            }
+
+        }
+
+
+        // ==================================================
+        // QUANTITY
+        // ==================================================
+        //
+        // Admin is adding/restocking stock.
+        //
+        // Quantity must therefore be a real number greater
+        // than zero.
+        //
+        // ==================================================
+
+        const quantity =
+            parseNumber(
+                body.quantity
+            );
+
+
+        if (
+            quantity === null
+        ) {
+
+            return redirectWithError(
+
+                res,
+
+                dairyId,
+
+                "Quantity must be a valid number."
+
+            );
+
+        }
+
+
+        if (
+            quantity <= 0
+        ) {
+
+            return redirectWithError(
+
+                res,
+
+                dairyId,
+
+                "Quantity must be greater than zero."
+
+            );
+
+        }
+
+
+        body.quantity =
+            quantity;
+
+
+        // ==================================================
+        // UNIT
+        // ==================================================
+
+        const unit =
+            getRequiredText(
+                body.unit
+            );
+
+
+        if (!unit) {
+
+            return redirectWithError(
+
+                res,
+
+                dairyId,
+
+                "Stock unit is required."
+
+            );
+
+        }
+
+
+        body.unit =
+            unit;
+
+
+        // ==================================================
+        // PRICE / VALUE
+        // ==================================================
+        //
+        // Price is ADMIN ONLY.
+        //
+        // It may be omitted if the service/model allows
+        // optional pricing.
+        //
+        // ==================================================
+
+        if (
+            body.price !== undefined &&
+            body.price !== null &&
+            body.price !== ""
+        ) {
+
+            const price =
+                parseNumber(
+                    body.price
+                );
+
+
+            if (
+                price === null ||
+                price < 0
+            ) {
+
+                return redirectWithError(
+
+                    res,
+
+                    dairyId,
+
+                    "Price must be a valid non-negative number."
+
+                );
+
+            }
+
+
+            body.price =
+                price;
+
+        }
+
+
+        // ==================================================
+        // INSTRUCTIONS
+        // ==================================================
+        //
+        // ADMIN ONLY.
+        //
+        // This controller intentionally allows these fields
+        // only through the admin add/restock endpoint.
+        //
+        // ==================================================
+
+        if (
+            body.instructions !== undefined &&
+            body.instructions !== null
+        ) {
+
+            body.instructions =
+                String(
+                    body.instructions
+                ).trim();
+
+        }
+
+
+        // ==================================================
+        // EXPECTED DURATION
+        // ==================================================
+        //
+        // ADMIN ONLY.
+        //
+        // ==================================================
+
+        if (
+            body.expectedDuration !== undefined &&
+            body.expectedDuration !== null
+        ) {
+
+            body.expectedDuration =
+                String(
+                    body.expectedDuration
+                ).trim();
+
+        }
+
+
+        // ==================================================
+        // ADDITIONAL INFORMATION
+        // ==================================================
+        //
+        // Admin may provide this.
+        //
+        // ==================================================
+
+        if (
+            body.message !== undefined &&
+            body.message !== null
+        ) {
+
+            body.message =
+                String(
+                    body.message
+                ).trim();
+
+        }
 
 
         // ==================================================
@@ -684,17 +1162,6 @@ async function restockFeedStore(
 
         const files =
             getFiles(req);
-
-
-        // ==================================================
-        // ADMIN CAN EDIT UNIT
-        // ==================================================
-        //
-        // Therefore unit is deliberately retained.
-        //
-        // The service must validate that the unit is valid.
-        //
-        // ==================================================
 
 
         // ==================================================
@@ -719,9 +1186,13 @@ async function restockFeedStore(
         // ==================================================
 
         return redirectWithSuccess(
+
             res,
+
             dairyId,
-            "stock-added"
+
+            "Stock added successfully."
+
         );
 
     } catch (error) {
@@ -733,9 +1204,16 @@ async function restockFeedStore(
 
 
         return redirectWithError(
+
             res,
+
             dairyId,
-            error
+
+            getErrorMessage(
+                error,
+                "Unable to add or restock stock."
+            )
+
         );
 
     }
@@ -751,40 +1229,26 @@ async function restockFeedStore(
 //
 // AVAILABLE TO:
 //
-//     dairyWorker
-//     admin
-//
-// NEW WORKFLOW:
-//
-//     User clicks an available stock item.
-//
-//     The EJS opens the update section and pre-fills:
-//
-//         stockId
-//         current quantity
-//         current unit
-//
-//     Then the user submits the update.
-//
-// ADMIN:
-//
-//     • Can change quantity
-//     • Can change unit
-//     • Can add information
-//     • Can upload images
-//
-// DAIRY WORKER:
-//
-//     • Can change remaining quantity
-//     • Cannot change unit
-//     • Cannot increase quantity above the DB quantity
-//     • Can add information
-//     • Can upload images
+//     ANY AUTHENTICATED USER
 //
 // IMPORTANT:
 //
-// The worker restriction is enforced here AND must also be
-// enforced inside the service.
+// This operation is ONLY for reporting the quantity that
+// remains in an existing stock record.
+//
+// It does NOT allow the user to change:
+//
+//     • category
+//     • stock name
+//     • unit
+//     • price
+//     • instructions
+//     • expected duration
+//
+// The service MUST load the current stock from MongoDB and
+// verify:
+//
+//     submitted quantity <= current database quantity
 //
 // ==========================================================
 
@@ -819,28 +1283,6 @@ async function updateFeedStore(
 
 
         // ==================================================
-        // ROLE
-        // ==================================================
-
-        const role =
-            getUserRole(req);
-
-
-        if (
-            role !== "dairyWorker" &&
-            role !== "admin"
-        ) {
-
-            return res
-                .status(403)
-                .send(
-                    "You are not authorized to update feed-store stock."
-                );
-
-        }
-
-
-        // ==================================================
         // DAIRY ID
         // ==================================================
 
@@ -859,96 +1301,159 @@ async function updateFeedStore(
         // REQUEST BODY
         // ==================================================
 
-        const body =
-            {
-                ...(req.body || {})
-            };
+        const input =
+            req.body &&
+            typeof req.body === "object"
+
+                ? req.body
+
+                : {};
 
 
         // ==================================================
-        // STOCK ID REQUIRED
+        // STOCK ID
         // ==================================================
 
-        if (
-            !body.stockId
-        ) {
+        const stockId =
+            getRequiredText(
+                input.stockId
+            );
 
-            return res
-                .status(400)
-                .send(
-                    "Stock item is required."
-                );
+
+        if (!stockId) {
+
+            return redirectWithError(
+
+                res,
+
+                dairyId,
+
+                "Stock item is required."
+
+            );
 
         }
 
 
         // ==================================================
-        // QUANTITY REQUIRED
+        // QUANTITY REMAINING
+        // ==================================================
+        //
+        // IMPORTANT:
+        //
+        // Do NOT do:
+        //
+        //     Number(input.quantityRemaining || 0)
+        //
+        // because an empty/missing field would silently become
+        // zero.
+        //
         // ==================================================
 
-        if (
-            body.quantityRemaining === undefined ||
-            body.quantityRemaining === null ||
-            body.quantityRemaining === ""
-        ) {
-
-            return res
-                .status(400)
-                .send(
-                    "Quantity remaining is required."
-                );
-
-        }
-
-
-        // ==================================================
-        // NORMALIZE QUANTITY
-        // ==================================================
-
-        const submittedQuantity =
-            Number(
-                body.quantityRemaining
+        const quantityRemaining =
+            parseNumber(
+                input.quantityRemaining
             );
 
 
         if (
-            !Number.isFinite(
-                submittedQuantity
-            ) ||
-            submittedQuantity < 0
+            quantityRemaining === null
         ) {
 
-            return res
-                .status(400)
-                .send(
-                    "Quantity remaining must be a valid non-negative number."
-                );
+            return redirectWithError(
+
+                res,
+
+                dairyId,
+
+                "Quantity remaining must be a valid number."
+
+            );
 
         }
 
 
-        body.quantityRemaining =
-            submittedQuantity;
+        // ==================================================
+        // NON-NEGATIVE
+        // ==================================================
+
+        if (
+            quantityRemaining < 0
+        ) {
+
+            return redirectWithError(
+
+                res,
+
+                dairyId,
+
+                "Quantity remaining cannot be negative."
+
+            );
+
+        }
 
 
         // ==================================================
-        // WORKER RESTRICTION
+        // UPDATE BODY
         // ==================================================
         //
-        // A worker must NOT be allowed to submit a new unit.
+        // VERY IMPORTANT:
         //
-        // The current unit belongs to the stock record in the
-        // database and is therefore controlled by the admin.
+        // Only these fields are sent to the update service.
+        //
+        // The user cannot use this endpoint to modify other
+        // stock properties.
+        //
+        // ==================================================
+
+        const body = {
+
+            stockId,
+
+            quantityRemaining
+
+        };
+
+
+        // ==================================================
+        // ADDITIONAL INFORMATION
+        // ==================================================
+        //
+        // Any authenticated user may provide additional
+        // information about the stock update.
         //
         // ==================================================
 
         if (
-            role === "dairyWorker"
+            input.message !== undefined &&
+            input.message !== null
         ) {
 
-            delete body.unit;
+            body.message =
+                String(
+                    input.message
+                ).trim();
 
         }
+
+
+        // ==================================================
+        // IMPORTANT:
+        //
+        // DO NOT ACCEPT THESE FROM THIS OPERATION:
+        //
+        //     category
+        //     feedName
+        //     medicineName
+        //     unit
+        //     price
+        //     instructions
+        //     expectedDuration
+        //
+        // The stock record already owns those values.
+        //
+        // ==========================================================
 
 
         // ==================================================
@@ -965,15 +1470,27 @@ async function updateFeedStore(
         //
         // The service MUST:
         //
-        //     1. Load the stock from MongoDB.
-        //     2. Read its current quantityRemaining.
-        //     3. If worker:
-        //            submitted <= current
-        //     4. Preserve existing unit.
-        //     5. If admin:
-        //            permit unit change.
-        //     6. Save the stock.
-        //     7. Create the history Update document.
+        //     1. Load the dairy.
+        //
+        //     2. Locate stockId.
+        //
+        //     3. Read the CURRENT quantityRemaining.
+        //
+        //     4. Verify:
+        //
+        //            quantityRemaining <= currentQuantity
+        //
+        //     5. Save the new quantityRemaining.
+        //
+        //     6. Preserve the existing unit.
+        //
+        //     7. Preserve the existing stock name/category.
+        //
+        //     8. Preserve the existing price.
+        //
+        //     9. Preserve instructions and duration.
+        //
+        //    10. Create the history record.
         //
         // ==================================================
 
@@ -995,9 +1512,13 @@ async function updateFeedStore(
         // ==================================================
 
         return redirectWithSuccess(
+
             res,
+
             dairyId,
-            "stock-updated"
+
+            "Remaining stock updated successfully."
+
         );
 
     } catch (error) {
@@ -1009,9 +1530,16 @@ async function updateFeedStore(
 
 
         return redirectWithError(
+
             res,
+
             dairyId,
-            error
+
+            getErrorMessage(
+                error,
+                "Unable to update remaining stock."
+            )
+
         );
 
     }
