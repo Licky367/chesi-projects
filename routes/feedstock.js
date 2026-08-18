@@ -15,8 +15,8 @@
 //
 //     /dairy/feedstore/:dairyId
 //     /dairy/:dairyId/feedstore/add
-//     /dairy/:dairyId/feedstore/:stockId/update
-//     /dairy/:dairyId/feedstore/:stockId/restock
+//     /dairy/:dairyId/feedstore/update/:stockId
+//     /dairy/:dairyId/feedstore/restock/:stockId
 //     /dairy/:dairyId/feedstore/:stockId
 //
 // ==========================================================
@@ -144,7 +144,7 @@ router.get(
 //
 // GET:
 //
-//     /dairy/:dairyId/feedstore/:stockId/update
+//     /dairy/:dairyId/feedstore/update/:stockId
 //
 // CONTROLLER:
 //
@@ -158,7 +158,7 @@ router.get(
 // ==========================================================
 
 router.get(
-    "/dairy/:dairyId/feedstore/:stockId/update",
+    "/dairy/:dairyId/feedstore/update/:stockId",
     isAuth,
     storageController.getUpdateStock
 );
@@ -170,7 +170,7 @@ router.get(
 //
 // GET:
 //
-//     /dairy/:dairyId/feedstore/:stockId/restock
+//     /dairy/:dairyId/feedstore/restock/:stockId
 //
 // CONTROLLER:
 //
@@ -183,7 +183,7 @@ router.get(
 // ==========================================================
 
 router.get(
-    "/dairy/:dairyId/feedstore/:stockId/restock",
+    "/dairy/:dairyId/feedstore/restock/:stockId",
     isAuth,
     storageController.getRestock
 );
@@ -205,6 +205,11 @@ router.get(
 //
 //     ADMIN
 //     DAIRY WORKER
+//
+// NOTE:
+//
+// This is deliberately placed AFTER the more specific
+// update/restock routes.
 //
 // ==========================================================
 
@@ -258,7 +263,7 @@ router.post(
 //
 // PUT:
 //
-//     /dairy/:dairyId/feedstore/:stockId/update
+//     /dairy/:dairyId/feedstore/update/:stockId
 //
 // CONTROLLER:
 //
@@ -280,7 +285,7 @@ router.post(
 // ==========================================================
 
 router.put(
-    "/dairy/:dairyId/feedstore/:stockId/update",
+    "/dairy/:dairyId/feedstore/update/:stockId",
     isAuth,
     upload.array(
         "images",
@@ -296,7 +301,7 @@ router.put(
 //
 // POST:
 //
-//     /dairy/:dairyId/feedstore/:stockId/restock
+//     /dairy/:dairyId/feedstore/restock/:stockId
 //
 // CONTROLLER:
 //
@@ -317,7 +322,7 @@ router.put(
 // ==========================================================
 
 router.post(
-    "/dairy/:dairyId/feedstore/:stockId/restock",
+    "/dairy/:dairyId/feedstore/restock/:stockId",
     isAuth,
     upload.array(
         "images",
