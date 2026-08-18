@@ -12,53 +12,51 @@ IMPORTANT:
 --------------------------------------------------------------
 This partial represents exactly ONE Update document.
 
-The parent page must call it once for every update:
+The parent page passes:
 
-    feedStoreUpdates.forEach(function(stockUpdate) {
+    include("stock", {
+        item: item,
+        user: user
+    })
 
-        include("stock", {
-            update: stockUpdate
-        })
+Therefore this file MUST use:
 
-    });
+    item
 
-There must be NO grouping by:
+for the Update document.
 
-    itemName
-    category
-    stockType
-    action
-    user
-    title
+There is NO variable named:
+
+    update
 
 Every Update document gets its own card.
 
 EXPECTED DATA:
 --------------------------------------------------------------
-    update.type
-    update.stock
-    update.user
-    update.userName
-    update.userImage
-    update.authorRole
-    update.title
-    update.text
-    update.images
-    update.createdAt
+    item.type
+    item.stock
+    item.user
+    item.userName
+    item.userImage
+    item.authorRole
+    item.title
+    item.text
+    item.images
+    item.createdAt
 
 STOCK DATA:
 --------------------------------------------------------------
-    update.stock.stockType
-    update.stock.action
-    update.stock.itemName
-    update.stock.category
-    update.stock.quantity
-    update.stock.unit
-    update.stock.price
-    update.stock.instructions
-    update.stock.expectedDuration
-    update.stock.message
-    update.stock.images
+    item.stock.stockType
+    item.stock.action
+    item.stock.itemName
+    item.stock.category
+    item.stock.quantity
+    item.stock.unit
+    item.stock.price
+    item.stock.instructions
+    item.stock.expectedDuration
+    item.stock.message
+    item.stock.images
 ==============================================================
 */ %>
 
@@ -66,10 +64,14 @@ STOCK DATA:
 <%
 /* ==========================================================
    SAFETY
+
+   IMPORTANT:
+   The parent page passes the feed document as "item".
 ========================================================== */
 
 const stockUpdate =
-    update || null;
+    item || null;
+
 
 const stockData =
     stockUpdate &&
@@ -91,7 +93,7 @@ const isStockUpdate =
 
 
 /* ==========================================================
-   BASIC VALUES
+   BASIC STOCK VALUES
 ========================================================== */
 
 const stockType =
@@ -195,15 +197,11 @@ const authorImage =
         stockUpdate.user &&
         stockUpdate.user.profileImage
     ) ||
-    (
-        stockUpdate.authorRole === "system"
-            ? "/images/h1.png"
-            : "/images/h1.png"
-    );
+    "/images/h1.png";
 
 
 /* ==========================================================
-   TEXT
+   MESSAGE
 ========================================================== */
 
 const message =
@@ -240,11 +238,11 @@ const expectedDuration =
 /* ==========================================================
    IMAGES
 
-   Use the stock-specific images first.
+   Stock-specific images first.
 
-   Fall back to update.images.
+   Fall back to the Update document's images.
 
-   NEVER merge unrelated updates here.
+   NEVER merge images from another Update.
 ========================================================== */
 
 let stockImages = [];
@@ -276,18 +274,13 @@ if (
 /* ==========================================================
    UNIQUE CARD ID
 
-   IMPORTANT:
+   Always identify the individual Update document.
 
-   We deliberately use the MongoDB Update _id.
-
-   We DO NOT use:
+   Do NOT use:
 
        itemName
        category
        stockType
-
-   because multiple history updates can legitimately have
-   the same stock name.
 ========================================================== */
 
 const cardId =
@@ -310,7 +303,6 @@ const createdAt =
         ? new Date(stockUpdate.createdAt)
         : null;
 
-
 %>
 
 
@@ -320,7 +312,7 @@ const createdAt =
 <!-- ==========================================================
      ONE STOCK UPDATE CARD
 
-     ONE Update document = ONE card.
+     ONE item / Update document = ONE card.
 ========================================================== -->
 
 <article
@@ -348,7 +340,6 @@ const createdAt =
 
             <div class="stock-update-card__avatar">
 
-
                 <img
                     src="<%= authorImage %>"
                     alt=""
@@ -356,12 +347,10 @@ const createdAt =
                     onerror="this.onerror=null;this.src='/images/h1.png';"
                 >
 
-
             </div>
 
 
             <div class="stock-update-card__author-info">
-
 
                 <strong>
                     <%= authorName %>
@@ -390,7 +379,6 @@ const createdAt =
 
                 </span>
 
-
             </div>
 
 
@@ -404,7 +392,6 @@ const createdAt =
 
         <% if (createdAt) { %>
 
-
             <time
                 class="stock-update-card__date"
                 datetime="<%= createdAt.toISOString() %>"
@@ -413,7 +400,6 @@ const createdAt =
                 <%= createdAt.toLocaleString() %>
 
             </time>
-
 
         <% } %>
 
@@ -449,7 +435,6 @@ const createdAt =
 
         <div>
 
-
             <span class="stock-update-card__action">
                 <%= actionLabel %>
             </span>
@@ -458,7 +443,6 @@ const createdAt =
             <h3>
                 <%= stockUpdate.title || itemName %>
             </h3>
-
 
         </div>
 
@@ -476,7 +460,6 @@ const createdAt =
 
         <div class="stock-update-card__item">
 
-
             <span class="stock-update-card__label">
                 Stock
             </span>
@@ -486,13 +469,11 @@ const createdAt =
                 <%= itemName %>
             </strong>
 
-
         </div>
 
 
 
         <div class="stock-update-card__quantity">
-
 
             <span class="stock-update-card__label">
                 Quantity
@@ -509,7 +490,6 @@ const createdAt =
 
             </strong>
 
-
         </div>
 
 
@@ -523,17 +503,13 @@ const createdAt =
 
     <% if (message) { %>
 
-
         <div class="stock-update-card__message">
-
 
             <p>
                 <%= message %>
             </p>
 
-
         </div>
-
 
     <% } %>
 
@@ -545,9 +521,7 @@ const createdAt =
 
     <% if (instructions) { %>
 
-
         <div class="stock-update-card__detail">
-
 
             <span>
                 Instructions
@@ -558,9 +532,7 @@ const createdAt =
                 <%= instructions %>
             </p>
 
-
         </div>
-
 
     <% } %>
 
@@ -572,9 +544,7 @@ const createdAt =
 
     <% if (expectedDuration) { %>
 
-
         <div class="stock-update-card__detail">
-
 
             <span>
                 Expected duration
@@ -585,9 +555,7 @@ const createdAt =
                 <%= expectedDuration %>
             </p>
 
-
         </div>
-
 
     <% } %>
 
@@ -599,14 +567,11 @@ const createdAt =
 
     <% if (stockImages.length > 0) { %>
 
-
         <div class="stock-update-card__images">
-
 
             <% stockImages.forEach(
                 function(image, imageIndex)
             { %>
-
 
                 <img
                     src="<%= image %>"
@@ -615,12 +580,9 @@ const createdAt =
                     data-stock-image-index="<%= imageIndex %>"
                 >
 
-
             <% }); %>
 
-
         </div>
-
 
     <% } %>
 
@@ -803,6 +765,7 @@ const createdAt =
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
     border-radius: 12px;
