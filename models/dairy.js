@@ -1,25 +1,41 @@
 // ==========================================================
-// services/update/feedsService.js
+// models/dairy.js
 // ==========================================================
 //
-// FEED STORE SERVICE
+// DAIRY / ANIMAL / ASSET MODEL
 //
-// CURRENT INVENTORY:
+// Responsibilities:
 //
-//     Dairy.feeds[]
+//     • Dairy farms
+//     • Dairy animals
+//     • Structures / facilities
+//     • Assets
+//     • Milking status
+//     • Maintenance
+//     • Medical attention
+//     • Profile images
+//     • Current feed-store stock
+//     • Aggregate feed-store financial value
+//
+// IMPORTANT FEED-STORE STRUCTURE
+// ----------------------------------------------------------
+//
+// CURRENT STOCK:
+//
+//     dairy.feedStocks[]
 //
 // HISTORY:
 //
-//     Update.stock
+//     models/Update.js
 //
-// HISTORY ACTIONS:
+// `feedStocks` contains CURRENT inventory only.
 //
-//     available
-//         Created when ADMIN adds/restocks feed or medicine.
+// `Update` contains the history / visible feed-store posts.
 //
-//     remainder
-//         Created when ADMIN or DAIRY WORKER updates
-//         the remaining quantity.
+// Every feedStocks item is an independent subdocument and
+// therefore has its own `_id`.
+//
+// Update.stock.stockId points to this `_id`.
 //
 // ==========================================================
 
@@ -28,16 +44,95 @@ const mongoose =
     require("mongoose");
 
 
-const Dairy =
-    require("../../models/dairy");
-
-
-const Update =
-    require("../../models/Update");
+// ==========================================================
+// CONSTANTS
+// ==========================================================
 
 
 // ==========================================================
-// CONSTANTS
+// DAIRY BREEDS
+// ==========================================================
+
+const DAIRY_BREEDS = [
+
+    "Friesian",
+    "Ayrshire",
+    "Guernsey",
+    "Jersey",
+    "Brown Swiss",
+    "Sahiwal",
+    "Boran",
+    "Ankole",
+    "Fleckvieh",
+    "Simmental",
+    "Holstein",
+    "Crossbreed",
+    "Other"
+
+];
+
+
+// ==========================================================
+// DAIRY FARM TYPES
+// ==========================================================
+
+const DAIRY_FARM_TYPES = [
+
+    "ranch",
+    "zeroGrazing",
+    "semiZeroGrazing",
+    "pastureBased",
+    "mixedFarming",
+    "cooperative",
+    "other"
+
+];
+
+
+// ==========================================================
+// STRUCTURE / FACILITY TYPES
+// ==========================================================
+
+const STRUCTURE_TYPES = [
+
+    "machine",
+    "equipment",
+    "tool",
+    "building",
+    "cowshed",
+    "milkingParlour",
+    "feedStore",
+    "hayShed",
+    "waterSystem",
+    "fencing",
+    "vehicle",
+    "generator",
+    "solarSystem",
+    "other"
+
+];
+
+
+// ==========================================================
+// DAIRY STATUSES
+// ==========================================================
+
+const DAIRY_STATUSES = [
+
+    "active",
+    "sold",
+    "disposed",
+    "inactive"
+
+];
+
+
+// ==========================================================
+// FEED STORE STOCK CATEGORIES
+// ==========================================================
+//
+// These correspond exactly to feedsService.js.
+//
 // ==========================================================
 
 const FEED_TYPES = [
@@ -83,1098 +178,1249 @@ const VETERINARY_MEDICINES = [
 ];
 
 
+// ==========================================================
+// STOCK UNITS
+// ==========================================================
+//
+// MUST remain aligned with feedsService.js.
+//
+// ==========================================================
+
 const STOCK_UNITS = [
 
     "kg",
     "bags",
     "tonnes",
+    "bales",
     "litres",
     "bottles",
     "packs",
-    "units",
-    "bales",
-    "containers",
-    "packets",
-    "boxes"
+    "units"
 
 ];
 
 
 // ==========================================================
-// BASIC HELPERS
+// PROFILE IMAGE LIMIT
 // ==========================================================
 
-function isValidObjectId(id) {
-
-    return mongoose.Types.ObjectId.isValid(id);
-
-}
-
-
-function cleanString(value) {
-
-    if (
-        value === undefined ||
-        value === null
-    ) {
-
-        return "";
-
-    }
-
-
-    return String(value).trim();
-
-}
-
-
-function parseNumber(value) {
-
-    if (
-        value === undefined ||
-        value === null ||
-        value === ""
-    ) {
-
-        return null;
-
-    }
-
-
-    const number =
-        Number(value);
-
-
-    if (
-        !Number.isFinite(number)
-    ) {
-
-        return null;
-
-    }
-
-
-    return number;
-
-}
-
-
-function getFiles(files) {
-
-    if (
-        !Array.isArray(files)
-    ) {
-
-        return [];
-
-    }
-
-
-    return files
-
-        .map(function(file) {
-
-            if (!file) {
-
-                return null;
-
-            }
-
-
-            return (
-
-                file.path ||
-                file.location ||
-                file.url ||
-                null
-
-            );
-
-        })
-
-        .filter(Boolean);
-
-}
+const MAX_PROFILE_IMAGES = 5;
 
 
 // ==========================================================
-// STOCK NAME
-// ==========================================================
-
-function resolveStockName(body) {
-
-    const category =
-        cleanString(
-            body.category
-        ).toLowerCase();
-
-
-    if (
-        category === "medicine"
-    ) {
-
-        return cleanString(
-            body.medicineName
-        );
-
-    }
-
-
-    return cleanString(
-        body.feedName
-    );
-
-}
-
-
-// ==========================================================
-// GET STOCK NAME
-// ==========================================================
-
-function getStockName(stock) {
-
-    if (!stock) {
-
-        return "";
-
-    }
-
-
-    return cleanString(
-
-        stock.name ||
-
-        stock.feedName ||
-
-        stock.medicineName ||
-
-        stock.stockName ||
-
-        stock.productName ||
-
-        stock.itemName
-
-    );
-
-}
-
-
-// ==========================================================
-// GET STOCK CATEGORY
-// ==========================================================
-
-function getStockCategory(stock) {
-
-    if (!stock) {
-
-        return "";
-
-    }
-
-
-    return cleanString(
-
-        stock.category ||
-
-        stock.stockType ||
-
-        stock.type
-
-    ).toLowerCase();
-
-}
-
-
-// ==========================================================
-// GET CURRENT STOCK QUANTITY
+// FEED STORE STOCK SUBDOCUMENT
 // ==========================================================
 //
-// CURRENT INVENTORY FIELD:
+// THIS IS THE CURRENT INVENTORY RECORD.
 //
-//     dairy.feeds[].quantity
+// Historical feed-store activity does NOT belong here.
 //
-// There is intentionally NO feedStocks fallback here.
+// Historical activity is stored in:
 //
-// The new database structure uses `feeds`.
+//     models/Update.js
 //
-// ==========================================================
-
-function getCurrentStockQuantity(stock) {
-
-    if (!stock) {
-
-        return 0;
-
-    }
-
-
-    const quantity =
-        Number(
-            stock.quantity
-        );
-
-
-    if (
-        Number.isFinite(quantity)
-    ) {
-
-        return Math.max(
-            0,
-            quantity
-        );
-
-    }
-
-
-    return 0;
-
-}
-
-
-// ==========================================================
-// GET INITIAL QUANTITY
-// ==========================================================
+// Every stock item contains:
 //
-// The current model does NOT contain initialQuantity.
-//
-// Therefore initial quantity is not fabricated.
-//
-// For the current system:
-//
-//     current quantity = stock.quantity
-//
-// Percentage remaining is therefore based on the quantity
-// supplied during the current stock operation.
-//
-// ==========================================================
-
-function getInitialQuantity(stock) {
-
-    if (!stock) {
-
-        return 0;
-
-    }
-
-
-    const initial =
-        Number(
-            stock.initialQuantity
-        );
-
-
-    if (
-        Number.isFinite(initial) &&
-        initial >= 0
-    ) {
-
-        return initial;
-
-    }
-
-
-    return getCurrentStockQuantity(
-        stock
-    );
-
-}
-
-
-// ==========================================================
-// GET STOCK UNIT
-// ==========================================================
-
-function getStockUnit(stock) {
-
-    if (!stock) {
-
-        return "";
-
-    }
-
-
-    return cleanString(
-
-        stock.unit ||
-
-        stock.stockUnit
-
-    );
-
-}
-
-
-// ==========================================================
-// FINANCIAL VALUE
-// ==========================================================
-//
-// CURRENT INVENTORY:
-//
-//     dairy.feeds[]
-//
-// TOTAL:
-//
-//     feeds[].price
-//
-// ==========================================================
-
-function calculateFeedsAmount(
-    feeds
-) {
-
-    if (
-        !Array.isArray(feeds)
-    ) {
-
-        return 0;
-
-    }
-
-
-    return feeds.reduce(
-
-        function(
-            total,
-            stock
-        ) {
-
-            if (!stock) {
-
-                return total;
-
-            }
-
-
-            const amount =
-                parseNumber(
-                    stock.price
-                );
-
-
-            if (
-                amount === null ||
-                amount < 0
-            ) {
-
-                return total;
-
-            }
-
-
-            return total + amount;
-
-        },
-
-        0
-
-    );
-
-}
-
-
-// ==========================================================
-// RECALCULATE FINANCIAL VALUE
-// ==========================================================
-
-async function recalculateFeedsAmount(
-    dairy
-) {
-
-    if (!dairy) {
-
-        throw new Error(
-            "Dairy record is required."
-        );
-
-    }
-
-
-    const total =
-        calculateFeedsAmount(
-            dairy.feeds
-        );
-
-
-    dairy.feedsAmount =
-        total;
-
-
-    await dairy.save();
-
-
-    return total;
-
-}
-
-
-// ==========================================================
-// REMAINING PERCENTAGE
-// ==========================================================
-
-function calculatePercentageRemaining(
-    quantity,
-    initialQuantity
-) {
-
-    const current =
-        Number(quantity) || 0;
-
-
-    const initial =
-        Number(initialQuantity) || 0;
-
-
-    if (
-        initial <= 0
-    ) {
-
-        return current > 0
-            ? 100
-            : 0;
-
-    }
-
-
-    const percentage =
-        (
-            current /
-            initial
-        ) * 100;
-
-
-    return Math.max(
-
-        0,
-
-        Math.min(
-            100,
-            percentage
-        )
-
-    );
-
-}
-
-
-// ==========================================================
-// FIND DAIRY
-// ==========================================================
-
-async function getDairy(
-    dairyId
-) {
-
-    if (
-        !isValidObjectId(
-            dairyId
-        )
-    ) {
-
-        throw new Error(
-            "Invalid dairy ID."
-        );
-
-    }
-
-
-    const dairy =
-        await Dairy.findById(
-            dairyId
-        );
-
-
-    if (!dairy) {
-
-        throw new Error(
-            "Dairy not found."
-        );
-
-    }
-
-
-    if (
-        !Array.isArray(
-            dairy.feeds
-        )
-    ) {
-
-        dairy.feeds = [];
-
-    }
-
-
-    return dairy;
-
-}
-
-
-// ==========================================================
-// FIND STOCK BY ID
-// ==========================================================
+//     category
+//     name
+//     quantity
+//     initialQuantity
+//     percentageRemaining
+//     unit
+//     price
+//     feedsAmount
+//     instructions
+//     expectedDuration
+//     images
+//     addedAt
+//     updatedAt
 //
 // IMPORTANT:
 //
-//     Uses dairy.feeds
+//     quantity
 //
-// NOT:
+// is always the CURRENT database remainder.
 //
-//     dairy.feedStocks
+//     initialQuantity
+//
+// represents the quantity basis used to calculate the
+// percentage remaining.
+//
+//     feedsAmount
+//
+// is the financial value of this stock item.
 //
 // ==========================================================
 
-function findStock(
-    dairy,
-    stockId
-) {
+const feedStockSchema =
+    new mongoose.Schema(
 
-    if (
-        !dairy ||
-        !stockId
-    ) {
+        {
 
-        return null;
+            // ==================================================
+            // CATEGORY
+            // ==================================================
+            //
+            //     feed
+            //     medicine
+            //
+            // ==================================================
 
-    }
+            category: {
 
+                type: String,
 
-    if (
-        !isValidObjectId(
-            stockId
-        )
-    ) {
+                enum: [
 
-        return null;
+                    "feed",
+                    "medicine"
 
-    }
+                ],
 
+                required: true,
 
-    if (
-        !Array.isArray(
-            dairy.feeds
-        )
-    ) {
+                trim: true
 
-        return null;
+            },
 
-    }
 
+            // ==================================================
+            // STOCK NAME
+            // ==================================================
 
-    return dairy.feeds.id(
-        stockId
-    );
+            name: {
 
-}
+                type: String,
 
+                required: true,
 
-// ==========================================================
-// GET FEED STORE PAGE
-// ==========================================================
+                trim: true,
 
-async function getFeedStorePage({
-    dairyId,
-    user
-}) {
+                maxlength: 150
 
-    if (!user) {
+            },
 
-        throw new Error(
-            "Authentication required."
-        );
 
-    }
+            // ==================================================
+            // CURRENT QUANTITY
+            // ==================================================
+            //
+            // This is the CURRENT remainder.
+            //
+            // feedsService.js uses:
+            //
+            //     stock.quantity
+            //
+            // ==================================================
 
+            quantity: {
 
-    const dairy =
-        await getDairy(
-            dairyId
-        );
+                type: Number,
 
+                min: 0,
 
-    const updates =
-        await getFeedStoreUpdates(
-            dairyId
-        );
+                default: 0
 
+            },
 
-    // ======================================================
-    // ADMIN
-    // ======================================================
 
-    if (
-        user.role === "admin"
-    ) {
+            // ==================================================
+            // INITIAL QUANTITY
+            // ==================================================
+            //
+            // Used for percentageRemaining calculations.
+            //
+            // ==================================================
 
-        return {
+            initialQuantity: {
 
-            dairy,
+                type: Number,
 
-            user,
+                min: 0,
 
-            updates,
+                default: 0
 
-            feedTypes:
-                FEED_TYPES,
+            },
 
-            medicineTypes:
-                VETERINARY_MEDICINES,
 
-            stockUnits:
-                STOCK_UNITS
+            // ==================================================
+            // PERCENTAGE REMAINING
+            // ==================================================
+            //
+            // Calculated from:
+            //
+            //     quantity / initialQuantity
+            //
+            // ==================================================
 
-        };
+            percentageRemaining: {
 
-    }
+                type: Number,
 
+                min: 0,
 
-    // ======================================================
-    // WORKER SAFE DATA
-    // ======================================================
+                max: 100,
 
-    const dairyObject =
-        dairy.toObject
-            ? dairy.toObject()
-            : {
-                ...dairy
-            };
+                default: 0
 
+            },
 
-    if (
-        Array.isArray(
-            dairyObject.feeds
-        )
-    ) {
 
-        dairyObject.feeds =
-            dairyObject.feeds.map(
-                function(stock) {
+            // ==================================================
+            // UNIT
+            // ==================================================
 
-                    const safeStock = {
-                        ...stock
-                    };
+            unit: {
 
+                type: String,
 
-                    // ------------------------------------------------
-                    // Workers must NOT receive financial information.
-                    // ------------------------------------------------
+                enum: STOCK_UNITS,
 
-                    delete safeStock.price;
+                required: true,
 
+                trim: true
 
-                    return safeStock;
+            },
 
-                }
-            );
 
-    }
+            // ==================================================
+            // PRICE
+            // ==================================================
+            //
+            // Financial information.
+            //
+            // Admin can see/edit this.
+            //
+            // Dairy workers must not receive it from the
+            // service.
+            //
+            // ==================================================
 
+            price: {
 
-    delete dairyObject.feedsAmount;
+                type: Number,
 
+                min: 0,
 
-    return {
+                default: 0
 
-        dairy:
-            dairyObject,
+            },
 
-        user,
 
-        updates,
+            // ==================================================
+            // FEEDS AMOUNT
+            // ==================================================
+            //
+            // Financial value used by feedsService.js:
+            //
+            //     calculateFeedsAmount(feedStocks)
+            //
+            // which sums:
+            //
+            //     feedStocks[].feedsAmount
+            //
+            // ==================================================
 
-        feedTypes:
-            FEED_TYPES,
+            feedsAmount: {
 
-        medicineTypes:
-            VETERINARY_MEDICINES,
+                type: Number,
 
-        stockUnits:
-            STOCK_UNITS
+                min: 0,
 
-    };
+                default: 0
 
-}
+            },
 
 
-// ==========================================================
-// GET FEED STORE HISTORY
-// ==========================================================
+            // ==================================================
+            // INSTRUCTIONS
+            // ==================================================
 
-async function getFeedStoreUpdates(
-    dairyId
-) {
+            instructions: {
 
-    if (
-        !isValidObjectId(
-            dairyId
-        )
-    ) {
+                type: String,
 
-        throw new Error(
-            "Invalid dairy ID."
-        );
+                trim: true,
 
-    }
+                default: "",
 
+                maxlength: 2000
 
-    const updates =
-        await Update.find({
+            },
 
-            dairy:
-                dairyId,
 
-            type:
-                "stock",
+            // ==================================================
+            // EXPECTED DURATION
+            // ==================================================
 
-            stock: {
-                $exists:
-                    true
-            }
+            expectedDuration: {
 
-        })
+                type: String,
 
-        .sort({
+                trim: true,
 
-            createdAt:
-                -1
+                default: "",
 
-        })
+                maxlength: 100
 
-        .limit(100)
+            },
 
-        .populate(
 
-            "user",
+            // ==================================================
+            // STOCK IMAGES
+            // ==================================================
 
-            "name profileImage role"
+            images: {
 
-        )
+                type: [
 
-        .lean();
+                    {
 
+                        type: String,
 
-    return updates.map(
-        function(update) {
+                        trim: true
 
-            if (
-                update.user &&
-                typeof update.user ===
-                    "object"
-            ) {
+                    }
 
-                update.userName =
-                    update.user.name ||
-                    update.userName;
+                ],
 
+                default: [],
 
-                update.userImage =
-                    update.user.profileImage ||
-                    update.userImage;
+                validate: {
 
+                    validator:
+                        function (images) {
 
-                update.authorRole =
-                    update.user.role ||
-                    update.authorRole;
+                            return (
 
-            }
+                                Array.isArray(images) &&
 
+                                images.length <= 10
 
-            if (
-                update.stock &&
-                typeof update.stock ===
-                    "object"
-            ) {
+                            );
 
-                update.stock.action =
-                    cleanString(
-                        update.stock.action
-                    );
+                        },
 
-
-                update.stock.itemName =
-                    cleanString(
-                        update.stock.itemName
-                    );
-
-
-                update.stock.category =
-                    cleanString(
-                        update.stock.category ||
-                        update.stock.stockType
-                    ).toLowerCase();
-
-
-                update.stock.unit =
-                    cleanString(
-                        update.stock.unit
-                    );
-
-
-                if (
-                    update.stock.stockId
-                ) {
-
-                    update.stock.stockId =
-                        String(
-                            update.stock.stockId
-                        );
+                    message:
+                        "A maximum of 10 stock images is allowed."
 
                 }
 
+            },
+
+
+            // ==================================================
+            // DATE STOCK WAS ADDED
+            // ==================================================
+
+            addedAt: {
+
+                type: Date,
+
+                default: Date.now
+
+            },
+
+
+            // ==================================================
+            // LAST STOCK UPDATE
+            // ==================================================
+
+            updatedAt: {
+
+                type: Date,
+
+                default: Date.now
+
             }
 
+        },
 
-            return update;
+        {
+
+            _id: true
 
         }
+
     );
 
-}
+
+// ==========================================================
+// SCHEMA
+// ==========================================================
+
+const dairySchema =
+    new mongoose.Schema(
+
+        {
+
+            // ==================================================
+            // PROFILE IMAGES
+            // ==================================================
+
+            profileImages: {
+
+                type: [
+
+                    {
+
+                        type: String,
+
+                        trim: true
+
+                    }
+
+                ],
+
+                default: [],
+
+                validate: {
+
+                    validator:
+                        function (images) {
+
+                            return (
+
+                                Array.isArray(images) &&
+
+                                images.length <=
+                                    MAX_PROFILE_IMAGES
+
+                            );
+
+                        },
+
+                    message:
+                        `A maximum of ${MAX_PROFILE_IMAGES} profile images is allowed.`
+
+                }
+
+            },
+
+
+            // ==================================================
+            // LEGACY / PRIMARY PROFILE IMAGE
+            // ==================================================
+
+            profileImage: {
+
+                type: String,
+
+                trim: true,
+
+                default: ""
+
+            },
+
+
+            // ==================================================
+            // CODE
+            // ==========================================================
+            //
+            // NEGATIVE = DAIRY FARM
+            // POSITIVE = ANIMAL
+            // NULL     = STRUCTURE / FACILITY
+            //
+            // ==========================================================
+
+            code: {
+
+                type: Number,
+
+                default: null,
+
+                validate: {
+
+                    validator:
+                        function (value) {
+
+                            if (
+
+                                value === null ||
+
+                                value === undefined
+
+                            ) {
+
+                                return true;
+
+                            }
+
+                            return Number.isInteger(
+                                value
+                            );
+
+                        },
+
+                    message:
+                        "Code must be a whole number or null."
+
+                }
+
+            },
+
+
+            // ==================================================
+            // NAME
+            // ==================================================
+
+            name: {
+
+                type: String,
+
+                required: true,
+
+                trim: true
+
+            },
+
+
+            // ==================================================
+            // DATE OF BIRTH
+            // ==================================================
+
+            dateOfBirth: {
+
+                type: Date,
+
+                default: null
+
+            },
+
+
+            // ==================================================
+            // MASS
+            // ==================================================
+
+            mass: {
+
+                type: Number,
+
+                min: 0,
+
+                default: 0
+
+            },
+
+
+            // ==================================================
+            // MILKING STATUS
+            // ==================================================
+
+            isMilking: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            // ==================================================
+            // ASSET CODE
+            // ==================================================
+
+            assetCode: {
+
+                type: Number,
+
+                default: null,
+
+                validate: {
+
+                    validator:
+                        function (value) {
+
+                            if (
+
+                                value === null ||
+
+                                value === undefined
+
+                            ) {
+
+                                return true;
+
+                            }
+
+                            return (
+
+                                Number.isInteger(value) &&
+
+                                value < 0
+
+                            );
+
+                        },
+
+                    message:
+                        "assetCode must be a negative Dairy Farm code or null."
+
+                }
+
+            },
+
+
+            // ==================================================
+            // MAINTENANCE
+            // ==================================================
+
+            needsMaintenance: {
+
+                type: Boolean,
+
+                default: false
+
+            },
+
+
+            maintenance: {
+
+                type: {
+
+                    type: String,
+
+                    trim: true,
+
+                    default: ""
+
+                },
+
+                description: {
+
+                    type: String,
+
+                    trim: true,
+
+                    default: ""
+
+                },
+
+                charges: {
+
+                    type: Number,
+
+                    min: 0,
+
+                    default: 0
+
+                },
+
+                completionDescription: {
+
+                    type: String,
+
+                    trim: true,
+
+                    default: ""
+
+                },
+
+                markedBy: {
+
+                    type:
+                        mongoose.Schema.Types.ObjectId,
+
+                    ref: "User",
+
+                    default: null
+
+                },
+
+                markedAt: {
+
+                    type: Date,
+
+                    default: null
+
+                },
+
+                clearedBy: {
+
+                    type:
+                        mongoose.Schema.Types.ObjectId,
+
+                    ref: "User",
+
+                    default: null
+
+                },
+
+                clearedAt: {
+
+                    type: Date,
+
+                    default: null
+
+                }
+
+            },
+
+
+            // ==================================================
+            // MEDICAL ATTENTION
+            // ==================================================
+
+            medicalAttention: {
+
+                isMarked: {
+
+                    type: Boolean,
+
+                    default: false
+
+                },
+
+                type: {
+
+                    type: String,
+
+                    trim: true,
+
+                    default: ""
+
+                },
+
+                details: {
+
+                    type: String,
+
+                    trim: true,
+
+                    default: ""
+
+                },
+
+                charges: {
+
+                    type: Number,
+
+                    min: 0,
+
+                    default: 0
+
+                },
+
+                description: {
+
+                    type: String,
+
+                    trim: true,
+
+                    default: ""
+
+                },
+
+                markedBy: {
+
+                    type:
+                        mongoose.Schema.Types.ObjectId,
+
+                    ref: "User",
+
+                    default: null
+
+                },
+
+                markedAt: {
+
+                    type: Date,
+
+                    default: null
+
+                },
+
+                clearedBy: {
+
+                    type:
+                        mongoose.Schema.Types.ObjectId,
+
+                    ref: "User",
+
+                    default: null
+
+                },
+
+                clearedAt: {
+
+                    type: Date,
+
+                    default: null
+
+                },
+
+                updatedAt: {
+
+                    type: Date,
+
+                    default: null
+
+                }
+
+            },
+
+
+            // ==================================================
+            // TYPE
+            // ==================================================
+            //
+            // Structures:
+            //
+            //     feedStore
+            //     hayShed
+            //     cowshed
+            //
+            // Animals:
+            //
+            //     Friesian
+            //     Jersey
+            //
+            // ==================================================
+
+            type: {
+
+                type: String,
+
+                trim: true,
+
+                default: ""
+
+            },
+
+
+            // ==================================================
+            // CURRENT FEED STORE STOCK
+            // ==================================================
+            //
+            // THIS is the current inventory used by
+            // feedsService.js.
+            //
+            //     dairy.feedStocks
+            //
+            // ==================================================
+
+            feedStocks: {
+
+                type: [
+
+                    feedStockSchema
+
+                ],
+
+                default: []
+
+            },
+
+
+            // ==================================================
+            // TOTAL FEEDS AMOUNT
+            // ==================================================
+            //
+            // Aggregate financial value.
+            //
+            // Derived from:
+            //
+            //     feedStocks[].feedsAmount
+            //
+            // ==================================================
+
+            feedsAmount: {
+
+                type: Number,
+
+                min: 0,
+
+                default: 0
+
+            },
+
+
+            // ==================================================
+            // BUYING PRICE
+            // ==================================================
+
+            buyingPrice: {
+
+                type: Number,
+
+                min: 0,
+
+                default: 0
+
+            },
+
+
+            // ==================================================
+            // SELLING PRICE
+            // ==================================================
+
+            sellingPrice: {
+
+                type: Number,
+
+                min: 0,
+
+                default: 0
+
+            },
+
+
+            // ==================================================
+            // REVENUE
+            // ==================================================
+
+            revenue: {
+
+                type: Number,
+
+                min: 0,
+
+                default: 0
+
+            },
+
+
+            // ==================================================
+            // CURRENT WORTH
+            // ==================================================
+
+            currentWorth: {
+
+                type: Number,
+
+                min: 0,
+
+                default: 0
+
+            },
+
+
+            // ==================================================
+            // DESCRIPTION
+            // ==================================================
+
+            description: {
+
+                type: String,
+
+                trim: true,
+
+                default: ""
+
+            },
+
+
+            // ==================================================
+            // CONDITION
+            // ==================================================
+
+            condition: {
+
+                type: String,
+
+                trim: true,
+
+                default: ""
+
+            },
+
+
+            // ==================================================
+            // LOCATION
+            // ==================================================
+
+            location: {
+
+                type: String,
+
+                trim: true,
+
+                default: ""
+
+            },
+
+
+            // ==================================================
+            // ACQUISITION DATE
+            // ==================================================
+
+            acquisitionDate: {
+
+                type: Date,
+
+                default: null
+
+            },
+
+
+            // ==================================================
+            // VALUATION DATE
+            // ==================================================
+
+            valuationDate: {
+
+                type: Date,
+
+                default: null
+
+            },
+
+
+            // ==================================================
+            // STATUS
+            // ==================================================
+
+            status: {
+
+                type: String,
+
+                enum: DAIRY_STATUSES,
+
+                default: "active",
+
+                index: true
+
+            }
+
+        },
+
+        {
+
+            timestamps: true,
+
+            minimize: false,
+
+            toJSON: {
+
+                virtuals: true
+
+            },
+
+            toObject: {
+
+                virtuals: true
+
+            }
+
+        }
+
+    );
 
 
 // ==========================================================
-// ADMIN: ADD / RESTOCK / EDIT STOCK
+// VIRTUAL: IS DAIRY FARM
 // ==========================================================
 
-async function addStock({
-    dairyId,
-    user,
-    body,
-    files
-}) {
+dairySchema.virtual(
+    "isDairyFarm"
+).get(function () {
 
-    if (
-        !user ||
-        user.role !== "admin"
-    ) {
+    return (
 
-        throw new Error(
-            "Only administrators can add or edit stock."
-        );
+        this.code !== null &&
 
-    }
+        this.code !== undefined &&
+
+        Number(this.code) < 0
+
+    );
+
+});
 
 
-    const dairy =
-        await getDairy(
-            dairyId
-        );
+// ==========================================================
+// VIRTUAL: IS ANIMAL
+// ==========================================================
+
+dairySchema.virtual(
+    "isAnimal"
+).get(function () {
+
+    return (
+
+        this.code !== null &&
+
+        this.code !== undefined &&
+
+        Number(this.code) > 0
+
+    );
+
+});
 
 
-    body =
-        body || {};
+// ==========================================================
+// VIRTUAL: IS STRUCTURE
+// ==========================================================
+
+dairySchema.virtual(
+    "isStructure"
+).get(function () {
+
+    return (
+
+        this.code === null ||
+
+        this.code === undefined
+
+    );
+
+});
 
 
-    // ======================================================
-    // EXISTING STOCK
-    // ======================================================
+// ==========================================================
+// VIRTUAL: IS MANUAL ASSET
+// ==========================================================
 
-    const stockId =
-        cleanString(
-            body.stockId
-        );
+dairySchema.virtual(
+    "isManualAsset"
+).get(function () {
 
+    return this.isStructure;
 
-    // ======================================================
-    // CATEGORY
-    // ======================================================
-
-    const category =
-        cleanString(
-            body.category
-        ).toLowerCase();
+});
 
 
-    if (
-        category !== "feed" &&
-        category !== "medicine"
-    ) {
+// ==========================================================
+// VIRTUAL: IS ASSIGNED ASSET
+// ==========================================================
 
-        throw new Error(
-            "Select either animal feed or veterinary medicine."
-        );
+dairySchema.virtual(
+    "isAssignedAsset"
+).get(function () {
 
-    }
+    return (
 
+        this.assetCode !== null &&
 
-    // ======================================================
-    // STOCK NAME
-    // ======================================================
+        this.assetCode !== undefined
 
-    let stockName =
-        resolveStockName(
-            body
-        );
+    );
+
+});
 
 
-    let stock =
-        null;
+// ==========================================================
+// VIRTUAL: IS STANDALONE ASSET
+// ==========================================================
 
+dairySchema.virtual(
+    "isStandaloneAsset"
+).get(function () {
 
-    if (stockId) {
+    return (
 
-        stock =
-            findStock(
-                dairy,
-                stockId
-            );
+        this.isStructure &&
 
+        (
 
-        if (!stock) {
+            this.assetCode === null ||
 
-            throw new Error(
-                "The selected stock item could not be found."
-            );
+            this.assetCode === undefined
 
-        }
-
-
-        if (!stockName) {
-
-            stockName =
-                getStockName(
-                    stock
-                );
-
-        }
-
-    }
-
-
-    if (!stockName) {
-
-        throw new Error(
-            "Select a feed or veterinary medicine."
-        );
-
-    }
-
-
-    // ======================================================
-    // VALIDATE STOCK NAME
-    // ======================================================
-
-    if (
-        category === "feed"
-    ) {
-
-        if (
-            !FEED_TYPES.includes(
-                stockName
-            )
-        ) {
-
-            throw new Error(
-                "Invalid animal feed type."
-            );
-
-        }
-
-    } else {
-
-        if (
-            !VETERINARY_MEDICINES.includes(
-                stockName
-            )
-        ) {
-
-            throw new Error(
-                "Invalid veterinary medicine type."
-            );
-
-        }
-
-    }
-
-
-    // ======================================================
-    // QUANTITY
-    // ======================================================
-
-    const quantity =
-        parseNumber(
-            body.quantity
-        );
-
-
-    if (
-        quantity === null ||
-        quantity < 0
-    ) {
-
-        throw new Error(
-            "Enter a valid stock quantity."
-        );
-
-    }
-
-
-    // ======================================================
-    // UNIT
-    // ======================================================
-
-    const unit =
-        cleanString(
-            body.unit
-        );
-
-
-    if (
-        !STOCK_UNITS.includes(
-            unit
         )
-    ) {
 
-        throw new Error(
-            "Select a valid stock unit."
-        );
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS FEED STORE
+// ==========================================================
+
+dairySchema.virtual(
+    "isFeedStore"
+).get(function () {
+
+    return (
+
+        this.isStructure &&
+
+        this.type === "feedStore"
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: GENDER
+// ==========================================================
+
+dairySchema.virtual(
+    "gender"
+).get(function () {
+
+    if (!this.isAnimal) {
+
+        return null;
+
+    }
+
+    return (
+
+        Number(this.code) % 2 === 0
+
+            ? "Female"
+
+            : "Male"
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS FEMALE
+// ==========================================================
+
+dairySchema.virtual(
+    "isFemale"
+).get(function () {
+
+    return (
+
+        this.isAnimal &&
+
+        Number(this.code) % 2 === 0
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: HAS IDENTITY
+// ==========================================================
+
+dairySchema.virtual(
+    "hasIdentity"
+).get(function () {
+
+    return this.isAnimal;
+
+});
+
+
+// ==========================================================
+// VIRTUAL: AGE TEXT
+// ==========================================================
+
+dairySchema.virtual(
+    "ageText"
+).get(function () {
+
+    if (!this.dateOfBirth) {
+
+        return "";
 
     }
 
 
-    // ======================================================
-    // PRICE
-    // ======================================================
-
-    const price =
-        parseNumber(
-            body.price
-        );
-
-
-    if (
-        price === null ||
-        price < 0
-    ) {
-
-        throw new Error(
-            "Enter a valid stock value."
-        );
-
-    }
-
-
-    // ======================================================
-    // INSTRUCTIONS
-    // ======================================================
-
-    const instructions =
-        cleanString(
-            body.instructions
-        );
-
-
-    // ======================================================
-    // EXPECTED DURATION
-    // ======================================================
-
-    const expectedDuration =
-        cleanString(
-            body.expectedDuration
-        );
-
-
-    const images =
-        getFiles(
-            files
+    const dob =
+        new Date(
+            this.dateOfBirth
         );
 
 
@@ -1182,813 +1428,1729 @@ async function addStock({
         new Date();
 
 
-    // ======================================================
-    // EDIT EXISTING STOCK
-    // ======================================================
-
-    if (stock) {
-
-        // --------------------------------------------------
-        // IMPORTANT:
-        //
-        // The actual current quantity is read from:
-        //
-        //     dairy.feeds[].quantity
-        //
-        // --------------------------------------------------
-
-        stock.quantity =
-            quantity;
-
-
-        stock.unit =
-            unit;
-
-
-        stock.price =
-            price;
-
-
-        stock.instructions =
-            instructions;
-
-
-        stock.expectedDuration =
-            expectedDuration;
-
-
-        if (
-            images.length > 0
-        ) {
-
-            stock.images =
-                images;
-
-        }
-
-
-        stock.updatedAt =
-            now;
-
-    }
-
-
-    // ======================================================
-    // CREATE NEW STOCK
-    // ======================================================
-
-    else {
-
-        stock = {
-
-            category,
-
-            name:
-                stockName,
-
-            quantity,
-
-            unit,
-
-            price,
-
-            instructions,
-
-            expectedDuration,
-
-            images,
-
-            addedAt:
-                now,
-
-            updatedAt:
-                now
-
-        };
-
-
-        dairy.feeds.push(
-            stock
-        );
-
-    }
-
-
-    // ======================================================
-    // FINANCIAL TOTAL
-    // ======================================================
-
-    dairy.feedsAmount =
-        calculateFeedsAmount(
-            dairy.feeds
-        );
-
-
-    // ======================================================
-    // SAVE
-    // ======================================================
-
-    await dairy.save();
-
-
-    // ======================================================
-    // GET ACTUAL SAVED STOCK
-    // ======================================================
-
-    let savedStock =
-        stock;
-
-
     if (
-        stock._id
+
+        Number.isNaN(
+            dob.getTime()
+        ) ||
+
+        dob > now
+
     ) {
 
-        savedStock =
-            dairy.feeds.id(
-                stock._id
-            ) || stock;
+        return "";
 
     }
 
 
-    // ======================================================
-    // HISTORY
-    // ======================================================
+    let years =
+        now.getFullYear() -
+        dob.getFullYear();
 
-    const update =
-        await createSystemStockUpdate({
 
-            dairy,
+    let months =
+        now.getMonth() -
+        dob.getMonth();
 
-            stock:
-                savedStock,
 
-            category:
-                getStockCategory(
-                    savedStock
-                ),
+    let days =
+        now.getDate() -
+        dob.getDate();
 
-            stockName:
-                getStockName(
-                    savedStock
-                ),
 
-            quantity:
-                getCurrentStockQuantity(
-                    savedStock
-                ),
+    if (days < 0) {
 
-            unit:
-                getStockUnit(
-                    savedStock
-                ),
+        months--;
 
-            price:
-                Number(
-                    savedStock.price
-                ) || 0,
 
-            instructions:
-                savedStock.instructions ||
-                "",
+        const previousMonth =
+            new Date(
 
-            expectedDuration:
-                savedStock.expectedDuration ||
-                "",
+                now.getFullYear(),
 
-            images:
-                savedStock.images ||
-                [],
+                now.getMonth(),
 
-            action:
-                "available"
+                0
 
-        });
-
-
-    return {
-
-        dairy,
-
-        stock:
-            savedStock,
-
-        update,
-
-        feedsAmount:
-            dairy.feedsAmount
-
-    };
-
-}
-
-
-// ==========================================================
-// WORKER / ADMIN: UPDATE REMAINING STOCK
-// ==========================================================
-
-async function updateRemainingStock({
-    dairyId,
-    user,
-    body,
-    files
-}) {
-
-    if (!user) {
-
-        throw new Error(
-            "Authentication required."
-        );
-
-    }
-
-
-    const role =
-        user.role;
-
-
-    if (
-        role !== "dairyWorker" &&
-        role !== "admin"
-    ) {
-
-        throw new Error(
-            "You are not authorized to update stock."
-        );
-
-    }
-
-
-    const dairy =
-        await getDairy(
-            dairyId
-        );
-
-
-    body =
-        body || {};
-
-
-    // ======================================================
-    // STOCK ID
-    // ======================================================
-
-    const stockId =
-        cleanString(
-            body.stockId
-        );
-
-
-    if (!stockId) {
-
-        throw new Error(
-            "Select the stock item being updated."
-        );
-
-    }
-
-
-    // ======================================================
-    // FIND EXACT STOCK
-    // ======================================================
-
-    const stock =
-        findStock(
-            dairy,
-            stockId
-        );
-
-
-    if (!stock) {
-
-        throw new Error(
-            "The selected stock item could not be found."
-        );
-
-    }
-
-
-    // ======================================================
-    // CURRENT DATABASE QUANTITY
-    // ======================================================
-
-    const currentQuantity =
-        getCurrentStockQuantity(
-            stock
-        );
-
-
-    // ======================================================
-    // SUBMITTED REMAINING QUANTITY
-    // ======================================================
-
-    const quantityRemaining =
-        parseNumber(
-            body.quantityRemaining
-        );
-
-
-    if (
-        quantityRemaining === null ||
-        quantityRemaining < 0
-    ) {
-
-        throw new Error(
-            "Enter a valid remaining quantity."
-        );
-
-    }
-
-
-    // ======================================================
-    // WORKER CANNOT INCREASE STOCK
-    // ======================================================
-
-    if (
-        role === "dairyWorker" &&
-        quantityRemaining >
-            currentQuantity
-    ) {
-
-        throw new Error(
-
-            `A dairy worker cannot update ` +
-            `the remaining quantity above the ` +
-            `current stock quantity of ` +
-            `${currentQuantity}.`
-
-        );
-
-    }
-
-
-    // ======================================================
-    // ADMIN UNIT
-    // ======================================================
-
-    if (
-        role === "admin" &&
-        cleanString(body.unit)
-    ) {
-
-        const requestedUnit =
-            cleanString(
-                body.unit
             );
 
 
-        if (
-            !STOCK_UNITS.includes(
-                requestedUnit
-            )
-        ) {
-
-            throw new Error(
-                "Select a valid stock unit."
-            );
-
-        }
-
-
-        stock.unit =
-            requestedUnit;
+        days +=
+            previousMonth.getDate();
 
     }
 
 
-    // ======================================================
-    // MESSAGE
-    // ======================================================
+    if (months < 0) {
 
-    const message =
-        cleanString(
-            body.message
+        years--;
+
+        months += 12;
+
+    }
+
+
+    return (
+
+        `${years} years, ` +
+
+        `${months} months, ` +
+
+        `${days} days`
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: AGE YEARS
+// ==========================================================
+
+dairySchema.virtual(
+    "ageYears"
+).get(function () {
+
+    if (!this.dateOfBirth) {
+
+        return null;
+
+    }
+
+
+    const dob =
+        new Date(
+            this.dateOfBirth
         );
 
 
-    // ======================================================
-    // IMAGES
-    // ======================================================
-
-    const images =
-        getFiles(
-            files
-        );
-
-
-    // ======================================================
-    // UPDATE ACTUAL INVENTORY
-    // ======================================================
-
-    stock.quantity =
-        quantityRemaining;
-
-
-    stock.updatedAt =
+    const now =
         new Date();
 
 
-    // ======================================================
-    // SAVE
-    // ======================================================
+    if (
+        Number.isNaN(
+            dob.getTime()
+        )
+    ) {
 
-    await dairy.save();
+        return null;
 
-
-    // ======================================================
-    // CREATE HISTORY
-    // ======================================================
-
-    const update =
-        await createWorkerStockUpdate({
-
-            dairy,
-
-            user,
-
-            stock,
-
-            quantityRemaining,
-
-            unit:
-                getStockUnit(
-                    stock
-                ),
-
-            message,
-
-            images
-
-        });
+    }
 
 
-    return {
-
-        dairy,
-
-        stock,
-
-        update
-
-    };
-
-}
+    let age =
+        now.getFullYear() -
+        dob.getFullYear();
 
 
-// ==========================================================
-// CREATE ADMIN STOCK UPDATE
-// ==========================================================
-
-async function createSystemStockUpdate({
-    dairy,
-    stock,
-    category,
-    stockName,
-    quantity,
-    unit,
-    price,
-    instructions,
-    expectedDuration,
-    images,
-    action
-}) {
-
-    const isMedicine =
-        category === "medicine";
+    const monthDifference =
+        now.getMonth() -
+        dob.getMonth();
 
 
-    const title =
-        isMedicine
+    if (
 
-            ? "Veterinary Medicine Stock Updated"
+        monthDifference < 0 ||
 
-            : "Animal Feed Stock Updated";
+        (
+
+            monthDifference === 0 &&
+
+            now.getDate() <
+                dob.getDate()
+
+        )
+
+    ) {
+
+        age--;
+
+    }
 
 
-    const stockId =
-        stock &&
-        stock._id
-            ? stock._id
-            : null;
+    return Math.max(
 
+        0,
 
-    return Update.create({
+        age
 
-        dairy:
-            dairy._id,
+    );
 
-        user:
-            null,
-
-        userName:
-            "System",
-
-        userImage:
-            "/images/h1.png",
-
-        authorRole:
-            "system",
-
-        type:
-            "stock",
-
-        title,
-
-        text:
-            instructions || "",
-
-        images:
-            images || [],
-
-        stock: {
-
-            stockId,
-
-            stockType:
-                category,
-
-            action:
-                action ||
-                "available",
-
-            itemName:
-                stockName,
-
-            category,
-
-            quantity,
-
-            unit,
-
-            price,
-
-            instructions,
-
-            expectedDuration,
-
-            message:
-                "",
-
-            images:
-                images || []
-
-        }
-
-    });
-
-}
+});
 
 
 // ==========================================================
-// CREATE REMAINING STOCK UPDATE
+// VIRTUAL: MILKING TEXT
 // ==========================================================
 
-async function createWorkerStockUpdate({
-    dairy,
-    user,
-    stock,
-    quantityRemaining,
-    unit,
-    message,
-    images
-}) {
+dairySchema.virtual(
+    "isMilkingText"
+).get(function () {
 
-    if (!user) {
+    return this.isMilking
 
-        throw new Error(
-            "User is required to create a stock update."
+        ? "Yes"
+
+        : "No";
+
+});
+
+
+// ==========================================================
+// HELPER: NORMALIZE PROFILE IMAGE
+// ==========================================================
+
+function normalizeProfileImage(
+    image,
+    name
+) {
+
+    if (!image) {
+
+        return (
+
+            `https://ui-avatars.com/api/?name=` +
+
+            `${encodeURIComponent(
+                name || "Dairy"
+            )}`
+
         );
 
     }
 
 
-    const stockCategory =
-        getStockCategory(
-            stock
+    if (
+
+        /^https?:\/\//i.test(
+            String(image)
+        )
+
+    ) {
+
+        return String(image);
+
+    }
+
+
+    if (
+
+        String(image).startsWith("/")
+
+    ) {
+
+        return String(image);
+
+    }
+
+
+    return `/uploads/${String(image)}`;
+
+}
+
+
+// ==========================================================
+// VIRTUAL: DISPLAY IMAGES
+// ==========================================================
+
+dairySchema.virtual(
+    "displayImages"
+).get(function () {
+
+    let images = [];
+
+
+    if (
+
+        Array.isArray(
+            this.profileImages
+        )
+
+    ) {
+
+        images =
+            this.profileImages
+
+                .filter(Boolean)
+
+                .map(
+
+                    image =>
+
+                        normalizeProfileImage(
+
+                            image,
+
+                            this.name
+
+                        )
+
+                );
+
+    }
+
+
+    if (
+
+        images.length === 0 &&
+
+        this.profileImage
+
+    ) {
+
+        images.push(
+
+            normalizeProfileImage(
+
+                this.profileImage,
+
+                this.name
+
+            )
+
         );
 
+    }
 
-    const stockName =
-        getStockName(
-            stock
+
+    if (images.length === 0) {
+
+        images.push(
+
+            normalizeProfileImage(
+
+                "",
+
+                this.name
+
+            )
+
         );
 
-
-    const stockId =
-        stock &&
-        stock._id
-            ? stock._id
-            : null;
+    }
 
 
-    return Update.create({
+    return images.slice(
 
-        dairy:
-            dairy._id,
+        0,
 
-        user:
-            user._id,
+        MAX_PROFILE_IMAGES
 
-        userName:
-            user.name ||
-            "User",
+    );
 
-        userImage:
-            user.profileImage ||
+});
+
+
+// ==========================================================
+// VIRTUAL: DISPLAY IMAGE
+// ==========================================================
+
+dairySchema.virtual(
+    "displayImage"
+).get(function () {
+
+    const images =
+        this.displayImages;
+
+
+    return images.length
+
+        ? images[0]
+
+        : normalizeProfileImage(
+
             "",
 
-        authorRole:
-            user.role ||
-            "dairyWorker",
+            this.name
 
-        type:
-            "stock",
+        );
 
-        title:
-            "Foodstock Remaining Updated",
+});
 
-        text:
-            message || "",
 
-        images:
-            images || [],
+// ==========================================================
+// VIRTUAL: REQUIRES MAINTENANCE
+// ==========================================================
 
-        stock: {
+dairySchema.virtual(
+    "requiresMaintenance"
+).get(function () {
 
-            stockId,
+    return !!this.needsMaintenance;
 
-            stockType:
-                stockCategory,
+});
 
-            action:
-                "remainder",
 
-            itemName:
-                stockName,
+// ==========================================================
+// VIRTUAL: NEEDS MEDICAL ATTENTION
+// ==========================================================
 
-            category:
-                stockCategory,
+dairySchema.virtual(
+    "needsMedicalAttention"
+).get(function () {
 
-            quantity:
-                quantityRemaining,
+    return !!(
 
-            unit,
+        this.medicalAttention &&
 
-            price:
-                0,
+        this.medicalAttention.isMarked
 
-            instructions:
-                "",
+    );
 
-            expectedDuration:
-                "",
+});
 
-            message:
-                message || "",
 
-            images:
-                images || []
+// ==========================================================
+// VIRTUAL: ASSET VALUE
+// ==========================================================
+
+dairySchema.virtual(
+    "assetValue"
+).get(function () {
+
+    return Number(
+        this.currentWorth
+    ) || 0;
+
+});
+
+
+// ==========================================================
+// VIRTUAL: ACTIVE ASSET
+// ==========================================================
+
+dairySchema.virtual(
+    "isActiveAsset"
+).get(function () {
+
+    return this.status === "active";
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IDENTIFIED DAIRY
+// ==========================================================
+
+dairySchema.virtual(
+    "isIdentifiedDairy"
+).get(function () {
+
+    return this.isAnimal;
+
+});
+
+
+// ==========================================================
+// PRE VALIDATE
+// ==========================================================
+//
+// NORMALIZATION AND VALIDATION.
+//
+// IMPORTANT:
+//
+//     feedStocks[]
+//
+// is the ONLY current feed-store inventory collection.
+//
+// ==========================================================
+
+dairySchema.pre(
+    "validate",
+    function (next) {
+
+        // ==================================================
+        // PROFILE IMAGES
+        // ==================================================
+
+        if (
+            !Array.isArray(
+                this.profileImages
+            )
+        ) {
+
+            this.profileImages = [];
 
         }
 
-    });
 
-}
+        this.profileImages =
 
+            this.profileImages
 
-// ==========================================================
-// GET UPDATES FOR ONE STOCK
-// ==========================================================
+                .filter(Boolean)
 
-async function getStockUpdates({
-    dairyId,
-    stockId
-}) {
+                .map(
 
-    if (
-        !isValidObjectId(
-            dairyId
-        )
-    ) {
+                    image =>
+                        String(
+                            image
+                        ).trim()
 
-        throw new Error(
-            "Invalid dairy ID."
-        );
+                )
 
-    }
+                .filter(Boolean)
 
+                .slice(
 
-    if (
-        !isValidObjectId(
-            stockId
-        )
-    ) {
+                    0,
 
-        throw new Error(
-            "Invalid stock ID."
-        );
+                    MAX_PROFILE_IMAGES
 
-    }
+                );
 
 
-    const updates =
-        await Update.find({
+        // ==================================================
+        // LEGACY PROFILE IMAGE MIGRATION
+        // ==================================================
 
-            dairy:
-                dairyId,
+        if (
 
-            type:
-                "stock",
+            this.profileImages.length === 0 &&
 
-            "stock.stockId":
-                stockId
+            this.profileImage
 
-        })
+        ) {
 
-        .sort({
+            this.profileImages = [
 
-            createdAt:
-                -1
+                String(
+                    this.profileImage
+                ).trim()
 
-        })
+            ];
 
-        .limit(100)
-
-        .populate(
-
-            "user",
-
-            "name profileImage role"
-
-        )
-
-        .lean();
+        }
 
 
-    return updates.map(
-        function(update) {
+        // ==================================================
+        // SYNCHRONIZE PRIMARY IMAGE
+        // ==================================================
+
+        if (
+            this.profileImages.length > 0
+        ) {
+
+            this.profileImage =
+                this.profileImages[0];
+
+        } else {
+
+            this.profileImage = "";
+
+        }
+
+
+        // ==================================================
+        // NORMALIZE CODE
+        // ==================================================
+
+        if (
+            this.code === undefined
+        ) {
+
+            this.code = null;
+
+        }
+
+
+        // ==================================================
+        // NORMALIZE ASSET CODE
+        // ==================================================
+
+        if (
+            this.assetCode === undefined
+        ) {
+
+            this.assetCode = null;
+
+        }
+
+
+        // ==================================================
+        // NORMALIZE FEED STOCKS
+        // ==================================================
+
+        if (
+            !Array.isArray(
+                this.feedStocks
+            )
+        ) {
+
+            this.feedStocks = [];
+
+        }
+
+
+        this.feedStocks =
+
+            this.feedStocks
+
+                .filter(Boolean)
+
+                .map(
+
+                    stock => {
+
+                        // ==================================
+                        // NAME
+                        // ==================================
+
+                        stock.name =
+                            String(
+                                stock.name || ""
+                            ).trim();
+
+
+                        // ==================================
+                        // CATEGORY
+                        // ==================================
+
+                        stock.category =
+                            String(
+                                stock.category ||
+                                "feed"
+                            )
+                            .trim()
+                            .toLowerCase();
+
+
+                        // ==================================
+                        // QUANTITY
+                        // ==================================
+
+                        stock.quantity =
+                            Number(
+                                stock.quantity
+                            ) || 0;
+
+
+                        if (
+                            stock.quantity < 0
+                        ) {
+
+                            stock.quantity = 0;
+
+                        }
+
+
+                        // ==================================
+                        // INITIAL QUANTITY
+                        // ==================================
+
+                        stock.initialQuantity =
+                            Number(
+                                stock.initialQuantity
+                            );
+
+
+                        if (
+                            !Number.isFinite(
+                                stock.initialQuantity
+                            ) ||
+
+                            stock.initialQuantity < 0
+
+                        ) {
+
+                            stock.initialQuantity =
+                                stock.quantity;
+
+                        }
+
+
+                        // ==================================
+                        // PERCENTAGE REMAINING
+                        // ==================================
+
+                        if (
+                            stock.initialQuantity <= 0
+                        ) {
+
+                            stock.percentageRemaining =
+
+                                stock.quantity > 0
+
+                                    ? 100
+
+                                    : 0;
+
+                        } else {
+
+                            stock.percentageRemaining =
+
+                                (
+
+                                    stock.quantity /
+
+                                    stock.initialQuantity
+
+                                ) * 100;
+
+                        }
+
+
+                        stock.percentageRemaining =
+
+                            Math.max(
+
+                                0,
+
+                                Math.min(
+
+                                    100,
+
+                                    Number(
+                                        stock.percentageRemaining
+                                    ) || 0
+
+                                )
+
+                            );
+
+
+                        // ==================================
+                        // PRICE
+                        // ==================================
+
+                        stock.price =
+                            Number(
+                                stock.price
+                            ) || 0;
+
+
+                        if (
+                            stock.price < 0
+                        ) {
+
+                            stock.price = 0;
+
+                        }
+
+
+                        // ==================================
+                        // FEEDS AMOUNT
+                        // ==================================
+                        //
+                        // The latest service uses:
+                        //
+                        //     stock.feedsAmount
+                        //
+                        // for aggregate financial value.
+                        //
+                        // If absent, use price as the current
+                        // stock value.
+                        //
+                        // ==================================
+
+                        stock.feedsAmount =
+                            Number(
+                                stock.feedsAmount
+                            );
+
+
+                        if (
+                            !Number.isFinite(
+                                stock.feedsAmount
+                            ) ||
+
+                            stock.feedsAmount < 0
+
+                        ) {
+
+                            stock.feedsAmount =
+                                stock.price;
+
+                        }
+
+
+                        // ==================================
+                        // INSTRUCTIONS
+                        // ==================================
+
+                        stock.instructions =
+                            String(
+                                stock.instructions || ""
+                            ).trim();
+
+
+                        // ==================================
+                        // EXPECTED DURATION
+                        // ==================================
+
+                        stock.expectedDuration =
+                            String(
+                                stock.expectedDuration || ""
+                            ).trim();
+
+
+                        // ==================================
+                        // IMAGES
+                        // ==================================
+
+                        if (
+                            !Array.isArray(
+                                stock.images
+                            )
+                        ) {
+
+                            stock.images = [];
+
+                        }
+
+
+                        stock.images =
+
+                            stock.images
+
+                                .filter(Boolean)
+
+                                .map(
+
+                                    image =>
+
+                                        String(
+                                            image
+                                        ).trim()
+
+                                )
+
+                                .filter(Boolean)
+
+                                .slice(
+
+                                    0,
+
+                                    10
+
+                                );
+
+
+                        // ==================================
+                        // DATES
+                        // ==================================
+
+                        if (
+                            !stock.addedAt
+                        ) {
+
+                            stock.addedAt =
+                                new Date();
+
+                        }
+
+
+                        if (
+                            !stock.updatedAt
+                        ) {
+
+                            stock.updatedAt =
+                                new Date();
+
+                        }
+
+
+                        return stock;
+
+                    }
+
+                )
+
+                .filter(
+
+                    stock =>
+                        stock.name.length > 0
+
+                );
+
+
+        // ==================================================
+        // CALCULATE TOTAL FEEDS AMOUNT
+        // ==================================================
+        //
+        // EXACTLY MATCHES:
+        //
+        //     calculateFeedsAmount(
+        //         dairy.feedStocks
+        //     )
+        //
+        // which sums:
+        //
+        //     feedStocks[].feedsAmount
+        //
+        // ==================================================
+
+        this.feedsAmount =
+
+            this.feedStocks.reduce(
+
+                (
+
+                    total,
+
+                    stock
+
+                ) => {
+
+                    const amount =
+                        Number(
+                            stock.feedsAmount
+                        ) || 0;
+
+
+                    return (
+
+                        total +
+
+                        Math.max(
+
+                            0,
+
+                            amount
+
+                        )
+
+                    );
+
+                },
+
+                0
+
+            );
+
+
+        // ==================================================
+        // DAIRY FARM
+        // ==================================================
+
+        if (
+            this.isDairyFarm
+        ) {
+
+            this.assetCode = null;
+
+            this.dateOfBirth = null;
+
+            this.mass = 0;
+
+            this.isMilking = false;
+
 
             if (
-                update.user &&
-                typeof update.user ===
-                    "object"
+
+                this.type &&
+
+                !DAIRY_FARM_TYPES.includes(
+                    this.type
+                )
+
             ) {
 
-                update.userName =
-                    update.user.name ||
-                    update.userName;
+                const error =
+                    new Error(
+
+                        `Invalid dairy farm type: ${this.type}.`
+
+                    );
 
 
-                update.userImage =
-                    update.user.profileImage ||
-                    update.userImage;
+                error.status = 400;
 
 
-                update.authorRole =
-                    update.user.role ||
-                    update.authorRole;
+                return next(error);
+
+            }
+
+        }
+
+
+        // ==================================================
+        // ANIMAL
+        // ==================================================
+
+        if (
+            this.isAnimal
+        ) {
+
+            if (
+                !this.isFemale
+            ) {
+
+                this.isMilking = false;
 
             }
 
 
-            return update;
+            if (
+
+                this.assetCode === null ||
+
+                this.assetCode === undefined
+
+            ) {
+
+                const error =
+                    new Error(
+
+                        "Animal must belong to a Dairy Farm. assetCode is required."
+
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
+
+            if (
+                Number(this.assetCode) >= 0
+            ) {
+
+                const error =
+                    new Error(
+
+                        "Animal assetCode must be the negative code of its parent Dairy Farm."
+
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
+
+            if (
+
+                this.type &&
+
+                !DAIRY_BREEDS.includes(
+                    this.type
+                )
+
+            ) {
+
+                const error =
+                    new Error(
+
+                        `Invalid dairy breed: ${this.type}.`
+
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
 
         }
+
+
+        // ==================================================
+        // STRUCTURE / FACILITY
+        // ==================================================
+
+        if (
+            this.isStructure
+        ) {
+
+            this.dateOfBirth = null;
+
+            this.mass = 0;
+
+            this.isMilking = false;
+
+
+            if (
+
+                this.assetCode !== null &&
+
+                this.assetCode !== undefined &&
+
+                Number(this.assetCode) >= 0
+
+            ) {
+
+                const error =
+                    new Error(
+
+                        "Structure assetCode must be the negative code of its parent Dairy Farm."
+
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
+
+            if (
+
+                this.type &&
+
+                !STRUCTURE_TYPES.includes(
+                    this.type
+                )
+
+            ) {
+
+                const error =
+                    new Error(
+
+                        `Invalid structure type: ${this.type}.`
+
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
+        }
+
+
+        // ==================================================
+        // MEDICAL OBJECT
+        // ==================================================
+
+        if (
+            !this.medicalAttention
+        ) {
+
+            this.medicalAttention = {};
+
+        }
+
+
+        this.medicalAttention.isMarked =
+
+            !!this.medicalAttention.isMarked;
+
+
+        this.medicalAttention.type =
+
+            this.medicalAttention.type || "";
+
+
+        this.medicalAttention.details =
+
+            this.medicalAttention.details || "";
+
+
+        this.medicalAttention.charges =
+
+            Number(
+                this.medicalAttention.charges
+            ) || 0;
+
+
+        this.medicalAttention.description =
+
+            this.medicalAttention.description || "";
+
+
+        this.medicalAttention.markedBy =
+
+            this.medicalAttention.markedBy || null;
+
+
+        this.medicalAttention.markedAt =
+
+            this.medicalAttention.markedAt || null;
+
+
+        this.medicalAttention.updatedAt =
+
+            this.medicalAttention.updatedAt || null;
+
+
+        this.medicalAttention.clearedBy =
+
+            this.medicalAttention.clearedBy || null;
+
+
+        this.medicalAttention.clearedAt =
+
+            this.medicalAttention.clearedAt || null;
+
+
+        // ==================================================
+        // CLEAR MEDICAL DATA WHEN NOT MARKED
+        // ==================================================
+
+        if (
+            !this.medicalAttention.isMarked
+        ) {
+
+            this.medicalAttention.type = "";
+
+            this.medicalAttention.details = "";
+
+            this.medicalAttention.charges = 0;
+
+            this.medicalAttention.description = "";
+
+            this.medicalAttention.markedBy = null;
+
+            this.medicalAttention.markedAt = null;
+
+            this.medicalAttention.clearedBy = null;
+
+            this.medicalAttention.clearedAt = null;
+
+        }
+
+
+        next();
+
+    }
+);
+
+
+// ==========================================================
+// PRE SAVE
+// ==========================================================
+
+dairySchema.pre(
+    "save",
+    function (next) {
+
+        // ==================================================
+        // MEDICAL UPDATED DATE
+        // ==================================================
+
+        if (
+            this.isModified(
+                "medicalAttention"
+            )
+        ) {
+
+            this.medicalAttention.updatedAt =
+                new Date();
+
+        }
+
+
+        // ==================================================
+        // ACQUISITION DATE
+        // ==================================================
+
+        if (!this.acquisitionDate) {
+
+            this.acquisitionDate =
+
+                this.createdAt ||
+
+                new Date();
+
+        }
+
+
+        // ==================================================
+        // DAIRY FARM
+        // ==================================================
+
+        if (
+            this.isDairyFarm
+        ) {
+
+            this.assetCode = null;
+
+            this.dateOfBirth = null;
+
+            this.mass = 0;
+
+            this.isMilking = false;
+
+        }
+
+
+        // ==================================================
+        // STRUCTURE
+        // ==================================================
+
+        if (
+            this.isStructure
+        ) {
+
+            this.dateOfBirth = null;
+
+            this.mass = 0;
+
+            this.isMilking = false;
+
+        }
+
+
+        // ==================================================
+        // UPDATE STOCK DATES
+        // ==================================================
+
+        if (
+            Array.isArray(
+                this.feedStocks
+            )
+        ) {
+
+            this.feedStocks.forEach(
+
+                stock => {
+
+                    if (
+                        !stock.addedAt
+                    ) {
+
+                        stock.addedAt =
+                            new Date();
+
+                    }
+
+
+                    stock.updatedAt =
+                        new Date();
+
+                }
+
+            );
+
+        }
+
+
+        // ==================================================
+        // FINAL FEED AMOUNT SYNCHRONIZATION
+        // ==================================================
+        //
+        // EXACT CURRENT INVENTORY:
+        //
+        //     dairy.feedStocks[]
+        //
+        // EXACT FINANCIAL FIELD:
+        //
+        //     feedStocks[].feedsAmount
+        //
+        // ==================================================
+
+        this.feedsAmount =
+
+            Array.isArray(
+                this.feedStocks
+            )
+
+                ? this.feedStocks.reduce(
+
+                    (
+
+                        total,
+
+                        stock
+
+                    ) => {
+
+                        return (
+
+                            total +
+
+                            Math.max(
+
+                                0,
+
+                                Number(
+                                    stock.feedsAmount
+                                ) || 0
+
+                            )
+
+                        );
+
+                    },
+
+                    0
+
+                )
+
+                : 0;
+
+
+        next();
+
+    }
+);
+
+
+// ==========================================================
+// INDEXES
+// ==========================================================
+
+
+// ==========================================================
+// MILKING
+// ==========================================================
+
+dairySchema.index({
+
+    isMilking: 1
+
+});
+
+
+// ==========================================================
+// MAINTENANCE
+// ==========================================================
+
+dairySchema.index({
+
+    needsMaintenance: 1
+
+});
+
+
+// ==========================================================
+// MEDICAL
+// ==========================================================
+
+dairySchema.index({
+
+    "medicalAttention.isMarked": 1
+
+});
+
+
+// ==========================================================
+// ASSET ASSIGNMENT
+// ==========================================================
+
+dairySchema.index({
+
+    assetCode: 1,
+
+    status: 1
+
+});
+
+
+// ==========================================================
+// FEED STORE
+// ==========================================================
+
+dairySchema.index({
+
+    type: 1,
+
+    status: 1
+
+});
+
+
+// ==========================================================
+// FEED STOCK
+// ==========================================================
+
+dairySchema.index({
+
+    "feedStocks.category": 1
+
+});
+
+
+dairySchema.index({
+
+    "feedStocks.name": 1
+
+});
+
+
+// ==========================================================
+// CODE
+// ==========================================================
+
+dairySchema.index(
+
+    {
+
+        code: 1
+
+    },
+
+    {
+
+        unique: true,
+
+        partialFilterExpression: {
+
+            code: {
+
+                $type: "number"
+
+            }
+
+        }
+
+    }
+
+);
+
+
+// ==========================================================
+// STATIC: GET BREEDS
+// ==========================================================
+
+dairySchema.statics.getDairyBreeds =
+    function () {
+
+        return [
+
+            ...DAIRY_BREEDS
+
+        ];
+
+    };
+
+
+// ==========================================================
+// STATIC: GET DAIRY FARM TYPES
+// ==========================================================
+
+dairySchema.statics.getDairyFarmTypes =
+    function () {
+
+        return [
+
+            ...DAIRY_FARM_TYPES
+
+        ];
+
+    };
+
+
+// ==========================================================
+// STATIC: GET STRUCTURE TYPES
+// ==========================================================
+
+dairySchema.statics.getStructureTypes =
+    function () {
+
+        return [
+
+            ...STRUCTURE_TYPES
+
+        ];
+
+    };
+
+
+// ==========================================================
+// STATIC: GET STATUSES
+// ==========================================================
+
+dairySchema.statics.getDairyStatuses =
+    function () {
+
+        return [
+
+            ...DAIRY_STATUSES
+
+        ];
+
+    };
+
+
+// ==========================================================
+// STATIC: GET MAX PROFILE IMAGES
+// ==========================================================
+
+dairySchema.statics.getMaxProfileImages =
+    function () {
+
+        return MAX_PROFILE_IMAGES;
+
+    };
+
+
+// ==========================================================
+// STATIC: GET FEED TYPES
+// ==========================================================
+
+dairySchema.statics.getFeedTypes =
+    function () {
+
+        return [
+
+            ...FEED_TYPES
+
+        ];
+
+    };
+
+
+// ==========================================================
+// STATIC: GET VETERINARY MEDICINES
+// ==========================================================
+
+dairySchema.statics.getVeterinaryMedicines =
+    function () {
+
+        return [
+
+            ...VETERINARY_MEDICINES
+
+        ];
+
+    };
+
+
+// ==========================================================
+// STATIC: GET STOCK UNITS
+// ==========================================================
+
+dairySchema.statics.getStockUnits =
+    function () {
+
+        return [
+
+            ...STOCK_UNITS
+
+        ];
+
+    };
+
+
+// ==========================================================
+// STATIC: CALCULATE NET WORTH
+// ==========================================================
+
+dairySchema.statics.calculateNetWorth =
+    async function () {
+
+        const result =
+
+            await this.aggregate([
+
+                {
+
+                    $match: {
+
+                        status:
+                            "active"
+
+                    }
+
+                },
+
+                {
+
+                    $group: {
+
+                        _id:
+                            null,
+
+                        totalNetWorth: {
+
+                            $sum:
+                                "$currentWorth"
+
+                        }
+
+                    }
+
+                }
+
+            ]);
+
+
+        return result.length
+
+            ? Number(
+
+                result[0].totalNetWorth || 0
+
+            )
+
+            : 0;
+
+    };
+
+
+// ==========================================================
+// STATIC: TOTAL CURRENT WORTH
+// ==========================================================
+
+dairySchema.statics.getTotalCurrentWorth =
+    async function () {
+
+        return this.calculateNetWorth();
+
+    };
+
+
+// ==========================================================
+// MODEL
+// ==========================================================
+
+const Dairy =
+
+    mongoose.models.Dairy ||
+
+    mongoose.model(
+
+        "Dairy",
+
+        dairySchema
+
     );
 
-}
+
+// ==========================================================
+// CONSTANT EXPORTS
+// ==========================================================
+
+Dairy.DAIRY_BREEDS =
+    DAIRY_BREEDS;
+
+
+Dairy.DAIRY_FARM_TYPES =
+    DAIRY_FARM_TYPES;
+
+
+Dairy.STRUCTURE_TYPES =
+    STRUCTURE_TYPES;
+
+
+Dairy.DAIRY_STATUSES =
+    DAIRY_STATUSES;
+
+
+Dairy.FEED_TYPES =
+    FEED_TYPES;
+
+
+Dairy.VETERINARY_MEDICINES =
+    VETERINARY_MEDICINES;
+
+
+Dairy.STOCK_UNITS =
+    STOCK_UNITS;
+
+
+Dairy.MAX_PROFILE_IMAGES =
+    MAX_PROFILE_IMAGES;
 
 
 // ==========================================================
-// EXPORTS
+// EXPORT
 // ==========================================================
 
-module.exports = {
-
-    getFeedStorePage,
-
-    getFeedStoreUpdates,
-
-    getStockUpdates,
-
-    addStock,
-
-    updateRemainingStock,
-
-    calculateFeedsAmount,
-
-    recalculateFeedsAmount,
-
-    calculatePercentageRemaining,
-
-    createSystemStockUpdate,
-
-    createWorkerStockUpdate,
-
-    FEED_TYPES,
-
-    VETERINARY_MEDICINES,
-
-    STOCK_UNITS
-
-};
+module.exports = Dairy;
