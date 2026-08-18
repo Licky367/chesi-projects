@@ -6,7 +6,7 @@
 //
 // ROUTES:
 //
-//     GET    /dairy/:dairyId/feedstore
+//     GET    /dairy/feedstore/:dairyId
 //     GET    /dairy/:dairyId/feedstore/add
 //     GET    /dairy/:dairyId/feedstore/:stockId/update
 //     GET    /dairy/:dairyId/feedstore/:stockId/restock
@@ -90,7 +90,6 @@ function canAccessStorage(req) {
 //     :dairyId
 //     :stockId
 //
-// Do not fall back to unrelated parameter names.
 // ==========================================================
 
 function getDairyId(req) {
@@ -118,7 +117,9 @@ function getStockId(req) {
 function getUploadedImages(req) {
 
     if (!req.files) {
+
         return [];
+
     }
 
 
@@ -126,7 +127,7 @@ function getUploadedImages(req) {
 
 
     // ------------------------------------------------------
-    // upload.array("images", 10)
+    // multer.array("images", 10)
     // ------------------------------------------------------
 
     if (Array.isArray(req.files)) {
@@ -138,7 +139,7 @@ function getUploadedImages(req) {
 
 
     // ------------------------------------------------------
-    // upload.fields(...)
+    // multer.fields(...)
     // ------------------------------------------------------
 
     else if (
@@ -222,7 +223,9 @@ function getStockOptions() {
             Array.isArray(
                 options.feedTypes
             )
+
                 ? options.feedTypes
+
                 : [],
 
 
@@ -231,7 +234,9 @@ function getStockOptions() {
             Array.isArray(
                 options.veterinaryMedicines
             )
+
                 ? options.veterinaryMedicines
+
                 : [],
 
 
@@ -240,7 +245,9 @@ function getStockOptions() {
             Array.isArray(
                 options.stockUnits
             )
+
                 ? options.stockUnits
+
                 : []
 
     };
@@ -260,7 +267,9 @@ function getFeedStoreItems(dairy) {
         Array.isArray(dairy.feedStocks)
 
     )
+
         ? dairy.feedStocks
+
         : [];
 
 }
@@ -378,7 +387,7 @@ async function loadDairy(
 //
 // GET:
 //
-//     /dairy/:dairyId/feedstore
+//     /dairy/feedstore/:dairyId
 //
 // ==========================================================
 
@@ -790,6 +799,12 @@ function buildStockData(req) {
 //
 //     /dairy/:dairyId/feedstore/add
 //
+// AFTER SUCCESS:
+//
+//     REDIRECT TO:
+//
+//     /dairy/feedstore/:dairyId
+//
 // ==========================================================
 
 async function addStock(
@@ -855,8 +870,16 @@ async function addStock(
         });
 
 
+        // ==================================================
+        // CORRECT SUCCESS REDIRECT
+        //
+        // Router:
+        //
+        // GET /dairy/feedstore/:dairyId
+        // ==================================================
+
         return res.redirect(
-            `/dairy/${encodeURIComponent(dairyId)}/feedstore`
+            `/dairy/feedstore/${encodeURIComponent(dairyId)}`
         );
 
     }
@@ -876,8 +899,12 @@ async function addStock(
             );
 
 
+        // ==================================================
+        // CORRECT ERROR REDIRECT
+        // ==================================================
+
         return res.redirect(
-            `/dairy/${encodeURIComponent(dairyId)}/feedstore?feedStoreError=${message}`
+            `/dairy/feedstore/${encodeURIComponent(dairyId)}?feedStoreError=${message}`
         );
 
     }
@@ -892,6 +919,12 @@ async function addStock(
 // PUT:
 //
 //     /dairy/:dairyId/feedstore/:stockId/update
+//
+// AFTER SUCCESS:
+//
+//     REDIRECT TO:
+//
+//     /dairy/feedstore/:dairyId
 //
 // ==========================================================
 
@@ -976,7 +1009,7 @@ async function updateStock(
 
 
         return res.redirect(
-            `/dairy/${encodeURIComponent(dairyId)}/feedstore`
+            `/dairy/feedstore/${encodeURIComponent(dairyId)}`
         );
 
     }
@@ -997,7 +1030,7 @@ async function updateStock(
 
 
         return res.redirect(
-            `/dairy/${encodeURIComponent(dairyId)}/feedstore?feedStoreError=${message}`
+            `/dairy/feedstore/${encodeURIComponent(dairyId)}?feedStoreError=${message}`
         );
 
     }
@@ -1012,6 +1045,12 @@ async function updateStock(
 // POST:
 //
 //     /dairy/:dairyId/feedstore/:stockId/restock
+//
+// AFTER SUCCESS:
+//
+//     REDIRECT TO:
+//
+//     /dairy/feedstore/:dairyId
 //
 // ==========================================================
 
@@ -1096,7 +1135,7 @@ async function restockStock(
 
 
         return res.redirect(
-            `/dairy/${encodeURIComponent(dairyId)}/feedstore`
+            `/dairy/feedstore/${encodeURIComponent(dairyId)}`
         );
 
     }
@@ -1117,7 +1156,7 @@ async function restockStock(
 
 
         return res.redirect(
-            `/dairy/${encodeURIComponent(dairyId)}/feedstore?feedStoreError=${message}`
+            `/dairy/feedstore/${encodeURIComponent(dairyId)}?feedStoreError=${message}`
         );
 
     }
