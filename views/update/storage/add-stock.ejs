@@ -68,22 +68,10 @@ const availableStockUnits =
     <form
         id="addStockForm"
         class="storage-form"
-        action="/dairy/<%= currentDairy._id %>/feedstore/restock"
+        action="/dairy/<%= currentDairy._id %>/feedstore/add"
         method="POST"
         enctype="multipart/form-data"
     >
-
-
-        <!-- ==================================================
-             ACTION
-        =================================================== -->
-
-        <input
-            type="hidden"
-            name="action"
-            value="add"
-        >
-
 
 
         <!-- ==================================================
@@ -700,6 +688,20 @@ const availableStockUnits =
 }
 
 
+.storage-submit:hover {
+
+    background: #0a4729;
+
+}
+
+
+.storage-submit:active {
+
+    transform: translateY(1px);
+
+}
+
+
 /* ==========================================================
    MOBILE
 ========================================================== */
@@ -772,8 +774,16 @@ document.addEventListener(
             );
 
 
-        if (!category) {
+        if (
+            !category ||
+            !feedField ||
+            !medicineField ||
+            !feedName ||
+            !medicineName
+        ) {
+
             return;
+
         }
 
 
