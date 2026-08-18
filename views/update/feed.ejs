@@ -20,22 +20,20 @@
      ------------------------------------------------------
          Every item already contained in `feed` is rendered.
 
-         Stock items are NOT filtered out.
+         ALL feed partials receive the current feed document
+         using the same variable name:
 
-         stock.ejs receives:
+             item: item
 
-             update: item
-
-         because stock.ejs expects the variable name
-         `update`.
+         There is NO `update: item` anywhere in this file.
 
      RECURRING CARDS:
      ------------------------------------------------------
          Create-post and asset-cards are inserted between
          actual feed items.
 
-         They do NOT modify the chronological order of
-         the actual feed.
+         They do NOT modify the chronological order of the
+         actual feed.
 ====================================================== -->
 
 
@@ -45,22 +43,18 @@
 ========================================================= */
 
 
-/*
- * ---------------------------------------------------------
- * CREATE POST
- * ---------------------------------------------------------
- */
+/* =========================================================
+   CREATE POST
+========================================================= */
 
 const CREATE_POST_MIN_GAP = 8;
 
 const CREATE_POST_MAX_GAP = 20;
 
 
-/*
- * ---------------------------------------------------------
- * ASSET CARDS
- * ---------------------------------------------------------
- */
+/* =========================================================
+   ASSET CARDS
+========================================================= */
 
 const ASSET_CARD_MIN_GAP = 5;
 
@@ -156,11 +150,9 @@ const hasAssetCards =
             ================================================== -->
 
             <%
-            /*
-             * =================================================
-             * CHECK WHICH INSERTION IS READY
-             * =================================================
-             */
+            /* =================================================
+               CHECK WHICH INSERTION IS READY
+            ================================================= */
 
             const createPostReady =
                 feedItemNumber >=
@@ -174,11 +166,9 @@ const hasAssetCards =
 
 
 
-            /*
-             * =================================================
-             * SELECT INSERTION TYPE
-             * =================================================
-             */
+            /* =================================================
+               SELECT INSERTION TYPE
+            ================================================= */
 
             let insertionType = null;
 
@@ -189,8 +179,8 @@ const hasAssetCards =
             ) {
 
                 /*
-                 * Never place the same recurring card twice
-                 * consecutively.
+                 * Never place the same recurring card
+                 * twice consecutively.
                  */
 
                 if (
@@ -236,11 +226,9 @@ const hasAssetCards =
 
 
 
-            /*
-             * =================================================
-             * CREATE POST
-             * =================================================
-             */
+            /* =================================================
+               CREATE POST
+            ================================================= */
 
             if (
                 insertionType ===
@@ -301,11 +289,9 @@ const hasAssetCards =
 
 
 
-            /*
-             * =================================================
-             * ASSET CARDS
-             * =================================================
-             */
+            /* =================================================
+               ASSET CARDS
+            ================================================= */
 
             if (
                 insertionType ===
@@ -546,31 +532,24 @@ const hasAssetCards =
 
                  IMPORTANT:
 
-                 stock.ejs expects:
-
-                     update
-
-                 NOT:
+                 stock.ejs uses the SAME feed-item variable
+                 convention as every other feed partial:
 
                      item
 
-                 Therefore the feed item is passed as:
+                 Therefore:
+
+                     item: item
+
+                 is passed here.
+
+                 NEVER:
 
                      update: item
 
                  ALL stock items are rendered.
 
-                 This includes:
-
-                     • System stock announcements
-                     • Dairy-worker stock reports
-
-                 There is deliberately NO author-role filter
-                 here.
-
-                 stock.ejs itself determines whether the
-                 update is a System announcement or a worker
-                 update.
+                 There is deliberately NO author-role filter.
             ================================================== -->
 
             <% if (
@@ -580,7 +559,7 @@ const hasAssetCards =
 
                 <%- include("stock", {
 
-                    update: item,
+                    item: item,
 
                     user: user,
 
@@ -604,13 +583,18 @@ const hasAssetCards =
     <!-- =====================================================
          END OF FEED
 
-         Nothing is manufactured here.
-
          Every actual feed card comes from `feed`.
 
-         This includes stock updates.
+         This includes:
 
-         Chronological order is therefore preserved.
+             post
+             milk
+             medical
+             maintenance
+             assetAdd
+             stock
+
+         Chronological order is preserved.
     ===================================================== -->
 
 </section>
