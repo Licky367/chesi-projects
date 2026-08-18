@@ -13,16 +13,12 @@ PAGE:
 
     GET /dairy/feedstore/:id
 
-WHERE:
-
     :id = dairy._id
 
 
 ADMIN RESTOCK:
 
     POST /dairy/:id/feedstore/restock
-
-WHERE:
 
     :id = dairy._id
 
@@ -31,51 +27,98 @@ WORKER / ADMIN STOCK UPDATE:
 
     POST /dairy/:id/feedstore/update
 
-WHERE:
-
     :id = dairy._id
 
 
 ==============================================================
-EXPECTED BACKEND DATA
+BACKEND DATA
 ==============================================================
 
-dairy
-user
-updates
+Expected:
 
-OPTIONAL ARRAYS:
+    dairy
+    user
+    updates
 
-feedTypes
-medicineTypes
-stockUnits
+Stock is normally expected at:
+
+    dairy.feeds
+
+The template also safely supports:
+
+    dairy.feedStore
+    dairy.feedStock
+
+Updates are normally expected at:
+
+    updates
+
+The template also safely supports:
+
+    feedUpdates
+
 
 ==============================================================
 IMPORTANT
 ==============================================================
 
-The page route is intentionally different from the POST
-routes.
+PAGE ROUTE AND FORM ROUTES ARE DIFFERENT.
 
 PAGE:
 
     /dairy/feedstore/:id
 
-POST ACTIONS:
+ADMIN:
 
     /dairy/:id/feedstore/restock
+
+WORKER:
+
     /dairy/:id/feedstore/update
 
-In ALL THREE cases, the ID represents the SAME Dairy
-document:
+In every case:
 
-    dairy._id
+    :id === dairy._id
 
 ==============================================================
 */ %>
 
 
 <% if (dairy && user) { %>
+
+
+<%
+/*
+==============================================================
+NORMALISE FEED STORE DATA
+==============================================================
+*/
+
+const feedStoreItems =
+    Array.isArray(dairy.feeds)
+        ? dairy.feeds
+        : (
+            Array.isArray(dairy.feedStore)
+                ? dairy.feedStore
+                : (
+                    Array.isArray(dairy.feedStock)
+                        ? dairy.feedStock
+                        : []
+                )
+        );
+
+
+const feedStoreUpdates =
+    Array.isArray(updates)
+        ? updates
+        : (
+            Array.isArray(feedUpdates)
+                ? feedUpdates
+                : []
+        );
+%>
+
+
 
 <div
     class="feedstore-page"
@@ -134,6 +177,7 @@ document:
                     Available Stock
                 </h2>
 
+
                 <p>
                     Current feeds and veterinary medicines
                     recorded for this dairy.
@@ -145,16 +189,14 @@ document:
 
 
 
-        <% if (
-            Array.isArray(dairy.feeds) &&
-            dairy.feeds.length > 0
-        ) { %>
+        <% if (feedStoreItems.length > 0) { %>
 
 
             <div class="feedstore-stock-list">
 
 
-                <% dairy.feeds.forEach(function(feed) { %>
+                <% feedStoreItems.forEach(function(feed) { %>
+
 
                     <article
                         class="feedstore-stock-card"
@@ -171,9 +213,11 @@ document:
 
                             <div class="feedstore-stock-icon">
 
+
                                 <% if (
                                     feed.category === "medicine" ||
-                                    feed.type === "medicine"
+                                    feed.type === "medicine" ||
+                                    feed.stockType === "medicine"
                                 ) { %>
 
                                     💊
@@ -184,25 +228,33 @@ document:
 
                                 <% } %>
 
+
                             </div>
 
 
+
                             <div class="feedstore-stock-info">
+
 
                                 <strong>
 
                                     <%= feed.name ||
                                         feed.feedName ||
+                                        feed.medicineName ||
+                                        feed.stockName ||
+                                        feed.productName ||
                                         "Unnamed Stock" %>
 
                                 </strong>
+
 
 
                                 <span>
 
                                     <% if (
                                         feed.category === "medicine" ||
-                                        feed.type === "medicine"
+                                        feed.type === "medicine" ||
+                                        feed.stockType === "medicine"
                                     ) { %>
 
                                         Veterinary medicine
@@ -215,7 +267,9 @@ document:
 
                                 </span>
 
+
                             </div>
+
 
                         </div>
 
@@ -227,10 +281,13 @@ document:
 
                         <div class="feedstore-stock-quantity">
 
+
                             <strong>
 
                                 <%= feed.quantity ??
+                                    feed.quantityRemaining ??
                                     feed.amount ??
+                                    feed.remaining ??
                                     0 %>
 
                             </strong>
@@ -239,14 +296,17 @@ document:
                             <span>
 
                                 <%= feed.unit ||
+                                    feed.stockUnit ||
                                     "units" %>
 
                             </span>
+
 
                         </div>
 
 
                     </article>
+
 
                 <% }); %>
 
@@ -258,6 +318,7 @@ document:
 
 
             <div class="feedstore-empty">
+
 
                 <div class="feedstore-empty-icon">
                     🌾
@@ -274,6 +335,7 @@ document:
                     medicines will appear here once they
                     are added.
                 </p>
+
 
             </div>
 
@@ -297,6 +359,7 @@ document:
 
             <div>
 
+
                 <span>
                     TOTAL FOODSTOCK & MEDICINE VALUE
                 </span>
@@ -310,6 +373,7 @@ document:
                     ).toLocaleString() %>
 
                 </strong>
+
 
             </div>
 
@@ -341,6 +405,7 @@ document:
 
                 <div>
 
+
                     <div class="feedstore-admin-label">
                         ADMIN
                     </div>
@@ -356,6 +421,7 @@ document:
                         veterinary medicine.
                     </p>
 
+
                 </div>
 
 
@@ -364,19 +430,15 @@ document:
 
 
             <!-- ==================================================
-                 IMPORTANT ROUTE MAPPING
-                 ==================================================
+                 ADMIN RESTOCK FORM
 
-                 PAGE:
-
-                     /dairy/feedstore/:id
-
-                 FORM:
+                 POST:
 
                      /dairy/:id/feedstore/restock
 
-                 :id = dairy._id
+                 ID:
 
+                     dairy._id
             =================================================== -->
 
             <form
@@ -393,6 +455,7 @@ document:
 
                 <div class="feedstore-field">
 
+
                     <label for="stockCategory">
                         Stock type
                     </label>
@@ -403,6 +466,7 @@ document:
                         name="category"
                         required
                     >
+
 
                         <option value="">
                             Select stock type
@@ -418,7 +482,9 @@ document:
                             Veterinary Medicine
                         </option>
 
+
                     </select>
+
 
                 </div>
 
@@ -433,6 +499,7 @@ document:
                     id="feedTypeField"
                 >
 
+
                     <label for="feedType">
                         Animal feed
                     </label>
@@ -443,6 +510,7 @@ document:
                         name="feedName"
                     >
 
+
                         <option value="">
                             Select animal feed
                         </option>
@@ -450,18 +518,25 @@ document:
 
                         <% if (Array.isArray(feedTypes)) { %>
 
-                            <% feedTypes.forEach(function(type) { %>
+
+                            <% feedTypes.forEach(
+                                function(type)
+                            { %>
+
 
                                 <option value="<%= type %>">
                                     <%= type %>
                                 </option>
 
+
                             <% }); %>
+
 
                         <% } %>
 
 
                     </select>
+
 
                 </div>
 
@@ -477,6 +552,7 @@ document:
                     hidden
                 >
 
+
                     <label for="medicineType">
                         Veterinary medicine
                     </label>
@@ -486,6 +562,7 @@ document:
                         id="medicineType"
                         name="medicineName"
                     >
+
 
                         <option value="">
                             Select veterinary medicine
@@ -501,9 +578,11 @@ document:
                                 function(type)
                             { %>
 
+
                                 <option value="<%= type %>">
                                     <%= type %>
                                 </option>
+
 
                             <% }); %>
 
@@ -512,6 +591,7 @@ document:
 
 
                     </select>
+
 
                 </div>
 
@@ -525,6 +605,7 @@ document:
 
 
                     <div class="feedstore-field">
+
 
                         <label for="stockQuantity">
                             Quantity
@@ -541,11 +622,13 @@ document:
                             required
                         >
 
+
                     </div>
 
 
 
                     <div class="feedstore-field">
+
 
                         <label for="stockUnit">
                             Unit
@@ -557,6 +640,7 @@ document:
                             name="unit"
                             required
                         >
+
 
                             <option value="">
                                 Select unit
@@ -572,9 +656,11 @@ document:
                                     function(unit)
                                 { %>
 
+
                                     <option value="<%= unit %>">
                                         <%= unit %>
                                     </option>
+
 
                                 <% }); %>
 
@@ -586,29 +672,36 @@ document:
                                     kg
                                 </option>
 
+
                                 <option value="bags">
                                     bags
                                 </option>
+
 
                                 <option value="tonnes">
                                     tonnes
                                 </option>
 
+
                                 <option value="bales">
                                     bales
                                 </option>
+
 
                                 <option value="litres">
                                     litres
                                 </option>
 
+
                                 <option value="bottles">
                                     bottles
                                 </option>
 
+
                                 <option value="packs">
                                     packs
                                 </option>
+
 
                                 <option value="units">
                                     units
@@ -619,6 +712,7 @@ document:
 
 
                         </select>
+
 
                     </div>
 
@@ -641,6 +735,7 @@ document:
 
                     <div class="feedstore-money">
 
+
                         <span>
                             KES
                         </span>
@@ -655,6 +750,7 @@ document:
                             placeholder="Enter value"
                             required
                         >
+
 
                     </div>
 
@@ -759,11 +855,14 @@ document:
                     class="feedstore-submit admin-submit"
                 >
 
+
                     <span>
                         ➕
                     </span>
 
+
                     Add Stock
+
 
                 </button>
 
@@ -779,7 +878,7 @@ document:
 
 
     <!-- ======================================================
-         DAIRY WORKER STOCK UPDATE
+         WORKER / ADMIN STOCK UPDATE
     ======================================================= -->
 
     <section class="feedstore-section">
@@ -789,6 +888,7 @@ document:
 
 
             <div>
+
 
                 <h2>
                     Update Remaining Stock
@@ -800,6 +900,7 @@ document:
                     store.
                 </p>
 
+
             </div>
 
 
@@ -808,18 +909,15 @@ document:
 
 
         <!-- ==================================================
-             IMPORTANT ROUTE MAPPING
+             STOCK UPDATE FORM
 
-             PAGE:
-
-                 /dairy/feedstore/:id
-
-             FORM:
+             POST:
 
                  /dairy/:id/feedstore/update
 
-             :id = dairy._id
+             ID:
 
+                 dairy._id
         =================================================== -->
 
         <form
@@ -848,44 +946,48 @@ document:
                     required
                 >
 
+
                     <option value="">
                         Select stock
                     </option>
 
 
-                    <% if (
-                        Array.isArray(dairy.feeds)
-                    ) { %>
+                    <% feedStoreItems.forEach(
+                        function(feed)
+                    { %>
 
 
-                        <% dairy.feeds.forEach(
-                            function(feed)
-                        { %>
+                        <option
+                            value="<%= feed._id %>"
+                        >
 
 
-                            <option
-                                value="<%= feed._id %>"
-                            >
-
-                                <%= feed.name ||
-                                    feed.feedName ||
-                                    "Unnamed Stock" %>
-
-
-                                <% if (feed.unit) { %>
-
-                                    — <%= feed.unit %>
-
-                                <% } %>
+                            <%= feed.name ||
+                                feed.feedName ||
+                                feed.medicineName ||
+                                feed.stockName ||
+                                feed.productName ||
+                                "Unnamed Stock" %>
 
 
-                            </option>
+                            <% if (
+                                feed.unit ||
+                                feed.stockUnit
+                            ) { %>
 
 
-                        <% }); %>
+                                —
+                                <%= feed.unit ||
+                                    feed.stockUnit %>
 
 
-                    <% } %>
+                            <% } %>
+
+
+                        </option>
+
+
+                    <% }); %>
 
 
                 </select>
@@ -939,6 +1041,7 @@ document:
                         required
                     >
 
+
                         <option value="">
                             Select unit
                         </option>
@@ -953,9 +1056,11 @@ document:
                                 function(unit)
                             { %>
 
+
                                 <option value="<%= unit %>">
                                     <%= unit %>
                                 </option>
+
 
                             <% }); %>
 
@@ -967,29 +1072,36 @@ document:
                                 kg
                             </option>
 
+
                             <option value="bags">
                                 bags
                             </option>
+
 
                             <option value="tonnes">
                                 tonnes
                             </option>
 
+
                             <option value="bales">
                                 bales
                             </option>
+
 
                             <option value="litres">
                                 litres
                             </option>
 
+
                             <option value="bottles">
                                 bottles
                             </option>
 
+
                             <option value="packs">
                                 packs
                             </option>
+
 
                             <option value="units">
                                 units
@@ -1010,7 +1122,7 @@ document:
 
 
             <!-- ==========================================
-                 WORKER MESSAGE
+                 MESSAGE
             =========================================== -->
 
             <div class="feedstore-field">
@@ -1035,7 +1147,7 @@ document:
 
 
             <!-- ==========================================
-                 WORKER IMAGES
+                 IMAGES
             =========================================== -->
 
             <div class="feedstore-field">
@@ -1068,11 +1180,14 @@ document:
                 class="feedstore-submit worker-submit"
             >
 
+
                 <span>
                     📦
                 </span>
 
+
                 Update Remaining Stock
+
 
             </button>
 
@@ -1088,10 +1203,7 @@ document:
          STOCK UPDATE FEED
     ======================================================= -->
 
-    <% if (
-        Array.isArray(updates) &&
-        updates.length > 0
-    ) { %>
+    <% if (feedStoreUpdates.length > 0) { %>
 
 
         <section class="feedstore-section">
@@ -1102,6 +1214,7 @@ document:
 
                 <div>
 
+
                     <h2>
                         Foodstock Updates
                     </h2>
@@ -1110,6 +1223,7 @@ document:
                     <p>
                         Recent additions and stock updates.
                     </p>
+
 
                 </div>
 
@@ -1121,7 +1235,9 @@ document:
             <div class="feedstore-feed">
 
 
-                <% updates.forEach(function(update) { %>
+                <% feedStoreUpdates.forEach(
+                    function(update)
+                { %>
 
 
                     <%- include(
@@ -1157,7 +1273,7 @@ document:
 
 document.addEventListener(
     "DOMContentLoaded",
-    function() {
+    function () {
 
 
         const category =
@@ -1190,7 +1306,13 @@ document.addEventListener(
             );
 
 
-        if (!category) {
+        if (
+            !category ||
+            !feedField ||
+            !medicineField ||
+            !feedSelect ||
+            !medicineSelect
+        ) {
 
             return;
 
@@ -1235,12 +1357,11 @@ document.addEventListener(
 
 
                 feedSelect.required =
-                    true;
+                    value === "feed";
 
 
                 medicineSelect.required =
                     false;
-
 
             }
 
@@ -1273,6 +1394,7 @@ document.addEventListener(
 
     width: 100%;
     max-width: 1000px;
+
     margin: 0 auto;
 
     padding: 18px 0 60px;
