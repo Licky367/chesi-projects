@@ -5,12 +5,15 @@
 // FEED STORE / STORAGE CONTROLLER
 //
 // View:
-//      views/update/storage/feed-store.js
+//      views/update/storage/feed-store.ejs
 //
 // Service:
 //      services/update/storageService.js
 //
 // ==========================================================
+
+const Dairy =
+    require("../../models/dairy");
 
 const storageService =
     require("../../services/update/storageService");
@@ -140,6 +143,15 @@ function getUploadedImages(req) {
 // Optional endpoint if the storage page is rendered
 // independently.
 //
+// The feed-store.ejs view expects:
+//
+//     dairy
+//     user
+//     feedStoreItems
+//     feedTypes
+//     medicineTypes
+//     stockUnits
+//
 // ==========================================================
 
 async function getFeedStore(
@@ -150,10 +162,64 @@ async function getFeedStore(
     try {
 
         const dairyId =
-            getDairyId(
-                req
-            );
+            getDairyId(req);
 
+
+        if (
+            !dairyId
+        ) {
+
+            return res.status(
+                400
+            ).json({
+
+                success:
+                    false,
+
+                message:
+                    "Dairy ID is required."
+
+            });
+
+        }
+
+
+
+        // ==================================================
+        // DAIRY
+        // ==================================================
+
+        const dairy =
+            await Dairy
+                .findById(
+                    dairyId
+                )
+                .lean();
+
+
+        if (
+            !dairy
+        ) {
+
+            return res.status(
+                404
+            ).json({
+
+                success:
+                    false,
+
+                message:
+                    "Dairy not found."
+
+            });
+
+        }
+
+
+
+        // ==================================================
+        // STOCK
+        // ==================================================
 
         const stocks =
             await storageService.getStocks(
@@ -161,12 +227,55 @@ async function getFeedStore(
             );
 
 
+
+        // ==================================================
+        // USER
+        // ==================================================
+
+        const user =
+            getUser(req);
+
+
+
+        // ==================================================
+        // STOCK TYPE OPTIONS
+        //
+        // These are supplied to the view so the EJS
+        // template never references an undefined variable.
+        //
+        // They can be replaced with the application's
+        // configured lists when those are defined in the
+        // storage service/model.
+        // ==================================================
+
+        const feedTypes = [];
+
+        const medicineTypes = [];
+
+        const stockUnits = [];
+
+
+
+        // ==================================================
+        // RENDER
+        // ==================================================
+
         return res.render(
             "update/storage/feed-store",
             {
 
+                dairy,
+
+                user,
+
                 feedStoreItems:
-                    stocks
+                    stocks,
+
+                feedTypes,
+
+                medicineTypes,
+
+                stockUnits
 
             }
         );
@@ -258,9 +367,7 @@ async function saveStock(
         // ==================================================
 
         const dairyId =
-            getDairyId(
-                req
-            );
+            getDairyId(req);
 
 
         if (
@@ -347,18 +454,17 @@ async function saveStock(
         // SAVE
         // ==================================================
 
-        const result =
-            await storageService.saveStock({
+        await storageService.saveStock({
 
-                dairyId,
+            dairyId,
 
-                stockId,
+            stockId,
 
-                data,
+            data,
 
-                images
+            images
 
-            });
+        });
 
 
 
@@ -386,9 +492,7 @@ async function saveStock(
 
 
         const dairyId =
-            getDairyId(
-                req
-            );
+            getDairyId(req);
 
 
         /*
@@ -423,9 +527,7 @@ async function getStock(
     try {
 
         const dairyId =
-            getDairyId(
-                req
-            );
+            getDairyId(req);
 
 
         const stockId =
@@ -508,9 +610,7 @@ async function deleteStock(
 
 
         const dairyId =
-            getDairyId(
-                req
-            );
+            getDairyId(req);
 
 
         const stockId =
