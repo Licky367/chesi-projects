@@ -152,6 +152,10 @@ const FEED_TYPES = [
 ];
 
 
+// ==========================================================
+// VETERINARY MEDICINES
+// ==========================================================
+
 const VETERINARY_MEDICINES = [
 
     "Antibiotics",
@@ -210,13 +214,15 @@ const MAX_STOCK_IMAGES = 10;
 //
 // CURRENT INVENTORY RECORD.
 //
-// The NEW storageService.js uses:
+// CANONICAL STORAGE FIELDS:
 //
 //     category
 //     feedName
 //     medicineName
-//     unit
 //     quantityRemaining
+//     initialQuantity
+//     percentageRemaining
+//     unit
 //     unitPrice
 //     feedsAmount
 //     instructions
@@ -224,14 +230,26 @@ const MAX_STOCK_IMAGES = 10;
 //     message
 //     images
 //
-// Legacy fields are retained:
+// IMPORTANT:
 //
-//     name
-//     quantity
-//     price
+// `feedsAmount` represents the ACTUAL MONEY SPENT on the
+// latest stock addition.
 //
-// They are synchronized in pre-validation so older
-// feed-store code can continue working.
+// It is NOT recalculated from current remaining quantity.
+//
+// Therefore:
+//
+// NEW STOCK:
+//
+//     feedsAmount = quantity × unitPrice
+//
+// RESTOCK:
+//
+//     feedsAmount = quantityAdded × unitPrice
+//
+// REDUCTION:
+//
+//     feedsAmount remains unchanged
 //
 // ==========================================================
 
@@ -305,40 +323,14 @@ const feedStockSchema =
 
 
             // ==================================================
-            // LEGACY / DISPLAY NAME
-            // ==================================================
-            //
-            // Kept for compatibility with older feedsService
-            // and views that use:
-            //
-            //     stock.name
-            //
-            // It is synchronized from feedName or medicineName.
-            //
-            // ==================================================
-
-            name: {
-
-                type: String,
-
-                default: "",
-
-                trim: true,
-
-                maxlength: 150
-
-            },
-
-
-            // ==================================================
             // CURRENT QUANTITY
             // ==================================================
             //
-            // NEW SERVICE FIELD:
+            // This is the CURRENT quantity available in stock.
             //
-            //     quantityRemaining
+            // Example:
             //
-            // This is the CURRENT available quantity.
+            //     35 kg currently available
             //
             // ==================================================
 
@@ -354,41 +346,14 @@ const feedStockSchema =
 
 
             // ==================================================
-            // LEGACY QUANTITY
-            // ==================================================
-            //
-            // Kept synchronized with quantityRemaining.
-            //
-            // Older code may use:
-            //
-            //     stock.quantity
-            //
-            // ==================================================
-
-            quantity: {
-
-                type: Number,
-
-                min: 0,
-
-                default: 0
-
-            },
-
-
-            // ==================================================
             // INITIAL QUANTITY
             // ==================================================
             //
-            // Used as the basis for percentageRemaining.
+            // This is the quantity used as the basis for
+            // percentageRemaining.
             //
-            // IMPORTANT:
-            //
-            // This is NOT changed when stock is reduced.
-            //
-            // When stock is restocked, the service changes the
-            // current quantity and this model preserves the
-            // existing initial quantity basis.
+            // It is NOT automatically reduced when stock is
+            // consumed.
             //
             // ==================================================
 
@@ -439,45 +404,19 @@ const feedStockSchema =
 
             // ==================================================
             // UNIT PRICE
-            // ==================================================
+            // ==========================================================
             //
-            // NEW SERVICE FIELD.
-            //
-            // Represents the price of ONE unit for the
-            // latest stock addition.
+            // Price of ONE unit for the latest stock addition.
             //
             // Example:
             //
-            // 20 kg × KES 90/kg
+            //     20 kg × KES 90/kg
             //
-            // unitPrice = 90
+            //     unitPrice = 90
             //
-            // ==================================================
+            // ==========================================================
 
             unitPrice: {
-
-                type: Number,
-
-                min: 0,
-
-                default: 0
-
-            },
-
-
-            // ==================================================
-            // LEGACY PRICE
-            // ==================================================
-            //
-            // Kept synchronized with unitPrice.
-            //
-            // Older code may use:
-            //
-            //     stock.price
-            //
-            // ==================================================
-
-            price: {
 
                 type: Number,
 
@@ -506,11 +445,7 @@ const feedStockSchema =
             //
             //     unchanged
             //
-            // SAME QUANTITY:
-            //
-            //     unchanged
-            //
-            // ==================================================
+            // ==========================================================
 
             feedsAmount: {
 
@@ -559,10 +494,6 @@ const feedStockSchema =
 
             // ==================================================
             // MESSAGE
-            // ==================================================
-            //
-            // NEW storageService.js field.
-            //
             // ==================================================
 
             message: {
@@ -659,7 +590,7 @@ const feedStockSchema =
 
 
 // ==========================================================
-// SCHEMA
+// MAIN DAIRY SCHEMA
 // ==========================================================
 
 const dairySchema =
@@ -1108,6 +1039,15 @@ const dairySchema =
             // ==================================================
             // TOTAL FEEDS AMOUNT
             // ==================================================
+            //
+            // Aggregate of the feedsAmount of all current stock
+            // records.
+            //
+            // This is NOT:
+            //
+            //     quantity × unitPrice
+            //
+            // ==========================================================
 
             feedsAmount: {
 
@@ -1959,6 +1899,7 @@ dairySchema.pre(
                 .map(
 
                     image =>
+
                         String(
                             image
                         ).trim()
@@ -2073,6 +2014,7 @@ dairySchema.pre(
                         // ==================================
 
                         stock.category =
+
                             String(
                                 stock.category ||
                                 "feed"
@@ -2086,9 +2028,11 @@ dairySchema.pre(
                         // ==================================
 
                         stock.feedName =
+
                             String(
                                 stock.feedName || ""
-                            ).trim();
+                            )
+                            .trim();
 
 
                         // ==================================
@@ -2096,94 +2040,22 @@ dairySchema.pre(
                         // ==================================
 
                         stock.medicineName =
+
                             String(
                                 stock.medicineName || ""
-                            ).trim();
-
-
-                        // ==================================
-                        // LEGACY NAME
-                        // ==================================
-                        //
-                        // If the new service supplied
-                        // feedName / medicineName, create
-                        // the legacy display name from it.
-                        //
-                        // ==================================
-
-                        if (
-                            stock.category === "medicine"
-                        ) {
-
-                            if (
-                                !stock.medicineName &&
-                                stock.name
-                            ) {
-
-                                stock.medicineName =
-                                    String(
-                                        stock.name
-                                    ).trim();
-
-                            }
-
-
-                            stock.name =
-                                stock.medicineName;
-
-                        } else {
-
-                            if (
-                                !stock.feedName &&
-                                stock.name
-                            ) {
-
-                                stock.feedName =
-                                    String(
-                                        stock.name
-                                    ).trim();
-
-                            }
-
-
-                            stock.name =
-                                stock.feedName;
-
-                        }
+                            )
+                            .trim();
 
 
                         // ==================================
                         // CURRENT QUANTITY
                         // ==================================
-                        //
-                        // New field:
-                        //
-                        //     quantityRemaining
-                        //
-                        // Legacy:
-                        //
-                        //     quantity
-                        //
-                        // ==================================
 
                         let quantityRemaining =
+
                             Number(
                                 stock.quantityRemaining
                             );
-
-
-                        if (
-                            !Number.isFinite(
-                                quantityRemaining
-                            )
-                        ) {
-
-                            quantityRemaining =
-                                Number(
-                                    stock.quantity
-                                );
-
-                        }
 
 
                         if (
@@ -2202,17 +2074,12 @@ dairySchema.pre(
                             quantityRemaining;
 
 
-                        // Legacy synchronization
-
-                        stock.quantity =
-                            quantityRemaining;
-
-
                         // ==================================
                         // INITIAL QUANTITY
                         // ==================================
 
                         let initialQuantity =
+
                             Number(
                                 stock.initialQuantity
                             );
@@ -2235,6 +2102,12 @@ dairySchema.pre(
                          * A newly created stock must have an
                          * initial quantity at least equal to
                          * its current quantity.
+                         *
+                         * IMPORTANT:
+                         *
+                         * Existing initialQuantity is not
+                         * reduced merely because current
+                         * stock is consumed.
                          */
 
                         if (
@@ -2305,35 +2178,12 @@ dairySchema.pre(
                         // ==================================
                         // UNIT PRICE
                         // ==================================
-                        //
-                        // New field:
-                        //
-                        //     unitPrice
-                        //
-                        // Legacy:
-                        //
-                        //     price
-                        //
-                        // ==================================
 
                         let unitPrice =
+
                             Number(
                                 stock.unitPrice
                             );
-
-
-                        if (
-                            !Number.isFinite(
-                                unitPrice
-                            )
-                        ) {
-
-                            unitPrice =
-                                Number(
-                                    stock.price
-                                );
-
-                        }
 
 
                         if (
@@ -2352,31 +2202,20 @@ dairySchema.pre(
                             unitPrice;
 
 
-                        // Legacy synchronization
-
-                        stock.price =
-                            unitPrice;
-
-
                         // ==================================
                         // FEEDS AMOUNT
                         // ==================================
                         //
-                        // IMPORTANT:
+                        // DO NOT calculate this from the
+                        // current remaining quantity.
                         //
-                        // We DO NOT calculate this from the
-                        // current quantity here.
-                        //
-                        // storageService.js controls when
-                        // feedsAmount changes.
-                        //
-                        // This prevents a stock reduction from
-                        // accidentally changing the financial
-                        // amount.
+                        // storageService.js determines when
+                        // this value changes.
                         //
                         // ==================================
 
                         let feedsAmount =
+
                             Number(
                                 stock.feedsAmount
                             );
@@ -2403,9 +2242,11 @@ dairySchema.pre(
                         // ==================================
 
                         stock.instructions =
+
                             String(
                                 stock.instructions || ""
-                            ).trim();
+                            )
+                            .trim();
 
 
                         // ==================================
@@ -2413,9 +2254,11 @@ dairySchema.pre(
                         // ==================================
 
                         stock.expectedDuration =
+
                             String(
                                 stock.expectedDuration || ""
-                            ).trim();
+                            )
+                            .trim();
 
 
                         // ==================================
@@ -2423,9 +2266,11 @@ dairySchema.pre(
                         // ==================================
 
                         stock.message =
+
                             String(
                                 stock.message || ""
-                            ).trim();
+                            )
+                            .trim();
 
 
                         // ==================================
@@ -2502,7 +2347,7 @@ dairySchema.pre(
 
 
         // ==================================================
-        // VALIDATE STOCK NAMES
+        // VALIDATE STOCK CATEGORIES
         // ==================================================
 
         for (
@@ -2510,8 +2355,35 @@ dairySchema.pre(
         ) {
 
             if (
+
+                stock.category !== "feed" &&
+
+                stock.category !== "medicine"
+
+            ) {
+
+                const error =
+                    new Error(
+                        "Stock category must be either feed or medicine."
+                    );
+
+                error.status = 400;
+
+                return next(error);
+
+            }
+
+
+            // ==============================================
+            // FEED NAME
+            // ==============================================
+
+            if (
+
                 stock.category === "feed" &&
+
                 !stock.feedName
+
             ) {
 
                 const error =
@@ -2526,9 +2398,16 @@ dairySchema.pre(
             }
 
 
+            // ==============================================
+            // MEDICINE NAME
+            // ==============================================
+
             if (
+
                 stock.category === "medicine" &&
+
                 !stock.medicineName
+
             ) {
 
                 const error =
@@ -2549,17 +2428,12 @@ dairySchema.pre(
         // CALCULATE TOTAL FEEDS AMOUNT
         // ==================================================
         //
-        // IMPORTANT:
+        // Aggregate of the individual stock financial
+        // amounts.
         //
-        // This is the aggregate of the individual stock
-        // financial amounts.
+        // NOT:
         //
-        // It does NOT calculate:
-        //
-        //     quantity × unitPrice
-        //
-        // because feedsAmount represents the actual amount
-        // spent on the latest stock addition.
+        //     quantityRemaining × unitPrice
         //
         // ==================================================
 
@@ -2576,6 +2450,7 @@ dairySchema.pre(
                 ) => {
 
                     const amount =
+
                         Number(
                             stock.feedsAmount
                         ) || 0;
@@ -3140,17 +3015,6 @@ dairySchema.index({
 
 // ==========================================================
 // FEED STOCK NAME
-// ==========================================================
-
-dairySchema.index({
-
-    "feedStocks.name": 1
-
-});
-
-
-// ==========================================================
-// NEW FEED STOCK NAME INDEXES
 // ==========================================================
 
 dairySchema.index({
