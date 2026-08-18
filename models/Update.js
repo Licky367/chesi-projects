@@ -2,65 +2,40 @@
 // models/Update.js
 // ==========================================================
 //
-// DAIRY UPDATE / FEED STORE HISTORY MODEL
+// DAIRY UPDATE MODEL
 //
 // RESPONSIBILITIES:
 //
 //     • General dairy posts
+//     • Comments
 //     • Medical updates
 //     • Maintenance updates
 //     • Asset-added updates
-//     • Feed-store stock additions
-//     • Feed-store remaining-stock updates
+//     • Post images
+//     • Likes
 //
-// ==========================================================
+// IMPORTANT:
 //
-// IMPORTANT FOODSTOCK ARCHITECTURE
+// FEED STORE / ANIMAL FEED / VETERINARY MEDICINE
 // ----------------------------------------------------------
 //
-// CURRENT INVENTORY:
+// Feed-stock is NOT handled by this model.
+//
+// Feed-stock belongs entirely to:
 //
 //     Dairy.feedStocks[]
 //
-// HISTORICAL EVENTS:
+// The feed-store service/controller should handle:
 //
-//     Update.stock
+//     • Adding stock
+//     • Restocking
+//     • Reducing stock
+//     • Current quantity
+//     • Unit price
+//     • Stock expenditure
+//     • Feed / medicine options
 //
-// EVERY STOCK EVENT IS A SEPARATE Update DOCUMENT.
-//
-// Example:
-//
-//     Admin adds 20kg Dairy Meal
-//         -> Update #1
-//
-//     Admin adds another 30kg Dairy Meal
-//         -> Update #2
-//
-//     Worker reports 40kg remaining
-//         -> Update #3
-//
-// These documents MUST NEVER overwrite one another.
-//
-// ==========================================================
-//
-// IMPORTANT STOCK IDENTIFICATION
-// ----------------------------------------------------------
-//
-// Every stock history record stores:
-//
-//     stock.stockId
-//
-// This is the _id of the corresponding:
-//
-//     Dairy.feedStocks[] subdocument
-//
-// Therefore the application can:
-//
-//     1. Display available stock.
-//     2. User clicks one stock item.
-//     3. Open that stock's update/remainder section.
-//     4. Display its current backend quantity.
-//     5. Display only history belonging to that stock.
+// This model must NEVER be used for feed-stock operations.
 //
 // ==========================================================
 
@@ -75,83 +50,6 @@ const mongoose =
 
 const MAX_POST_IMAGES = 10;
 
-const MAX_STOCK_IMAGES = 10;
-
-
-// ==========================================================
-// STOCK TYPES
-// ==========================================================
-
-const STOCK_TYPES = [
-
-    "feed",
-
-    "medicine"
-
-];
-
-
-// ==========================================================
-// STOCK ACTIONS
-// ==========================================================
-//
-// available
-//     Admin makes stock available / restocks.
-//
-// remainder
-//     Admin or dairyWorker records remaining stock.
-//
-// ==========================================================
-
-const STOCK_ACTIONS = [
-
-    "available",
-
-    "remainder"
-
-];
-
-
-// ==========================================================
-// STOCK UNITS
-// ==========================================================
-//
-// These are the units allowed when ADMIN adds/restocks stock.
-//
-// IMPORTANT:
-//
-// During a remainder update:
-//
-//     dairyWorker does NOT change the unit.
-//
-// The remainder event uses the unit already stored on:
-//
-//     Dairy.feedStocks[]
-//
-// Admin may change the unit when using the restock form.
-//
-// ==========================================================
-
-const STOCK_UNITS = [
-
-    "kg",
-
-    "bags",
-
-    "tonnes",
-
-    "bales",
-
-    "litres",
-
-    "bottles",
-
-    "packs",
-
-    "units"
-
-];
-
 
 // ==========================================================
 // POST COMMENT SUBDOCUMENT
@@ -161,6 +59,10 @@ const postCommentSchema =
     new mongoose.Schema(
 
         {
+
+            // ==================================================
+            // USER
+            // ==================================================
 
             userId: {
 
@@ -173,6 +75,10 @@ const postCommentSchema =
 
             },
 
+
+            // ==================================================
+            // USER NAME
+            // ==================================================
 
             userName: {
 
@@ -187,6 +93,10 @@ const postCommentSchema =
             },
 
 
+            // ==================================================
+            // USER IMAGE
+            // ==================================================
+
             userImage: {
 
                 type: String,
@@ -197,6 +107,10 @@ const postCommentSchema =
 
             },
 
+
+            // ==================================================
+            // COMMENT TEXT
+            // ==================================================
 
             text: {
 
@@ -210,6 +124,10 @@ const postCommentSchema =
 
             },
 
+
+            // ==================================================
+            // CREATED AT
+            // ==================================================
 
             createdAt: {
 
@@ -239,6 +157,10 @@ const medicalSchema =
 
         {
 
+            // ==================================================
+            // STATUS
+            // ==================================================
+
             status: {
 
                 type: String,
@@ -249,6 +171,10 @@ const medicalSchema =
 
             },
 
+
+            // ==================================================
+            // MEDICAL TYPE
+            // ==================================================
 
             type: {
 
@@ -261,6 +187,10 @@ const medicalSchema =
             },
 
 
+            // ==================================================
+            // DETAILS
+            // ==================================================
+
             details: {
 
                 type: String,
@@ -272,6 +202,10 @@ const medicalSchema =
             },
 
 
+            // ==================================================
+            // MARKED AT
+            // ==================================================
+
             markedAt: {
 
                 type: Date,
@@ -280,6 +214,10 @@ const medicalSchema =
 
             },
 
+
+            // ==================================================
+            // MARKED BY
+            // ==================================================
 
             markedBy: {
 
@@ -293,6 +231,10 @@ const medicalSchema =
             },
 
 
+            // ==================================================
+            // CLEARED AT
+            // ==================================================
+
             clearedAt: {
 
                 type: Date,
@@ -301,6 +243,10 @@ const medicalSchema =
 
             },
 
+
+            // ==================================================
+            // CLEARED BY
+            // ==================================================
 
             clearedBy: {
 
@@ -314,6 +260,10 @@ const medicalSchema =
             },
 
 
+            // ==================================================
+            // CHARGES
+            // ==================================================
+
             charges: {
 
                 type: Number,
@@ -324,6 +274,10 @@ const medicalSchema =
 
             },
 
+
+            // ==================================================
+            // CLEAR DESCRIPTION
+            // ==================================================
 
             clearDescription: {
 
@@ -355,6 +309,10 @@ const maintenanceSchema =
 
         {
 
+            // ==================================================
+            // STATUS
+            // ==================================================
+
             status: {
 
                 type: String,
@@ -365,6 +323,10 @@ const maintenanceSchema =
 
             },
 
+
+            // ==================================================
+            // MAINTENANCE TYPE
+            // ==================================================
 
             type: {
 
@@ -377,6 +339,10 @@ const maintenanceSchema =
             },
 
 
+            // ==================================================
+            // DESCRIPTION
+            // ==================================================
+
             description: {
 
                 type: String,
@@ -388,6 +354,10 @@ const maintenanceSchema =
             },
 
 
+            // ==================================================
+            // MARKED AT
+            // ==================================================
+
             markedAt: {
 
                 type: Date,
@@ -396,6 +366,10 @@ const maintenanceSchema =
 
             },
 
+
+            // ==================================================
+            // MARKED BY
+            // ==================================================
 
             markedBy: {
 
@@ -409,6 +383,10 @@ const maintenanceSchema =
             },
 
 
+            // ==================================================
+            // CLEARED AT
+            // ==================================================
+
             clearedAt: {
 
                 type: Date,
@@ -417,6 +395,10 @@ const maintenanceSchema =
 
             },
 
+
+            // ==================================================
+            // CLEARED BY
+            // ==================================================
 
             clearedBy: {
 
@@ -430,6 +412,10 @@ const maintenanceSchema =
             },
 
 
+            // ==================================================
+            // CHARGES
+            // ==================================================
+
             charges: {
 
                 type: Number,
@@ -440,6 +426,10 @@ const maintenanceSchema =
 
             },
 
+
+            // ==================================================
+            // CLEAR DESCRIPTION
+            // ==================================================
 
             clearDescription: {
 
@@ -463,13 +453,17 @@ const maintenanceSchema =
 
 
 // ==========================================================
-// ASSET ADD UPDATE
+// ASSET ADD UPDATE SUBDOCUMENT
 // ==========================================================
 
 const assetAddSchema =
     new mongoose.Schema(
 
         {
+
+            // ==================================================
+            // ASSET ID
+            // ==================================================
 
             assetId: {
 
@@ -482,6 +476,10 @@ const assetAddSchema =
 
             },
 
+
+            // ==================================================
+            // ASSET NAME
+            // ==================================================
 
             name: {
 
@@ -496,6 +494,10 @@ const assetAddSchema =
             },
 
 
+            // ==================================================
+            // ASSET TYPE
+            // ==================================================
+
             type: {
 
                 type: String,
@@ -509,6 +511,10 @@ const assetAddSchema =
             },
 
 
+            // ==================================================
+            // BUYING PRICE
+            // ==================================================
+
             buyingPrice: {
 
                 type: Number,
@@ -520,6 +526,10 @@ const assetAddSchema =
             },
 
 
+            // ==================================================
+            // CURRENT WORTH
+            // ==================================================
+
             currentWorth: {
 
                 type: Number,
@@ -530,6 +540,10 @@ const assetAddSchema =
 
             },
 
+
+            // ==================================================
+            // DESCRIPTION
+            // ==================================================
 
             description: {
 
@@ -544,6 +558,10 @@ const assetAddSchema =
             },
 
 
+            // ==================================================
+            // CONDITION
+            // ==================================================
+
             condition: {
 
                 type: String,
@@ -556,6 +574,10 @@ const assetAddSchema =
 
             },
 
+
+            // ==================================================
+            // LOCATION
+            // ==================================================
 
             location: {
 
@@ -570,6 +592,10 @@ const assetAddSchema =
             },
 
 
+            // ==================================================
+            // STATUS
+            // ==================================================
+
             status: {
 
                 type: String,
@@ -581,6 +607,10 @@ const assetAddSchema =
             },
 
 
+            // ==================================================
+            // ASSET CODE
+            // ==================================================
+
             assetCode: {
 
                 type: Number,
@@ -589,6 +619,10 @@ const assetAddSchema =
 
             },
 
+
+            // ==================================================
+            // PARENT DAIRY ID
+            // ==================================================
 
             parentDairyId: {
 
@@ -602,6 +636,10 @@ const assetAddSchema =
             },
 
 
+            // ==================================================
+            // PARENT DAIRY NAME
+            // ==================================================
+
             parentDairyName: {
 
                 type: String,
@@ -612,6 +650,10 @@ const assetAddSchema =
 
             },
 
+
+            // ==================================================
+            // PARENT DAIRY CODE
+            // ==================================================
 
             parentDairyCode: {
 
@@ -626,337 +668,6 @@ const assetAddSchema =
         {
 
             _id: false
-
-        }
-
-    );
-
-
-// ==========================================================
-// STOCK UPDATE SUBDOCUMENT
-// ==========================================================
-//
-// IMPORTANT:
-//
-// This is ONE historical stock event.
-//
-// Each Update document has ONE stock subdocument.
-//
-// stock._id is intentionally enabled.
-//
-// Additionally:
-//
-//     stock.stockId
-//
-// identifies the CURRENT inventory item inside:
-//
-//     Dairy.feedStocks[]
-//
-// Example:
-//
-//     Dairy.feedStocks:
-//
-//         {
-//             _id: A,
-//             name: "Dairy Meal"
-//         }
-//
-// History:
-//
-//     Update #1
-//         stock.stockId = A
-//         stock.action = "available"
-//         stock.quantity = 20
-//
-//     Update #2
-//         stock.stockId = A
-//         stock.action = "available"
-//         stock.quantity = 30
-//
-//     Update #3
-//         stock.stockId = A
-//         stock.action = "remainder"
-//         stock.quantity = 40
-//
-// This makes it possible to query:
-//
-//     {
-//         dairy: dairyId,
-//         type: "stock",
-//         "stock.stockId": stockId
-//     }
-//
-// and obtain ONLY the history for that stock item.
-//
-// ==========================================================
-
-const stockSchema =
-    new mongoose.Schema(
-
-        {
-
-            // ==================================================
-            // CURRENT INVENTORY STOCK ID
-            // ==================================================
-
-            stockId: {
-
-                type:
-                    mongoose.Schema.Types.ObjectId,
-
-                default: null
-
-            },
-
-
-            // ==================================================
-            // STOCK TYPE
-            // ==================================================
-
-            stockType: {
-
-                type: String,
-
-                enum:
-                    STOCK_TYPES,
-
-                required: true,
-
-                trim: true
-
-            },
-
-
-            // ==================================================
-            // ACTION
-            // ==================================================
-
-            action: {
-
-                type: String,
-
-                enum:
-                    STOCK_ACTIONS,
-
-                required: true,
-
-                trim: true
-
-            },
-
-
-            // ==================================================
-            // ITEM NAME
-            // ==================================================
-
-            itemName: {
-
-                type: String,
-
-                required: true,
-
-                trim: true,
-
-                maxlength: 150
-
-            },
-
-
-            // ==================================================
-            // CATEGORY
-            // ==================================================
-
-            category: {
-
-                type: String,
-
-                default: "",
-
-                trim: true,
-
-                maxlength: 100
-
-            },
-
-
-            // ==================================================
-            // QUANTITY
-            // ==================================================
-            //
-            // For "available":
-            //
-            //     quantity = quantity being added
-            //
-            // For "remainder":
-            //
-            //     quantity = new quantity remaining
-            //
-            // ==================================================
-
-            quantity: {
-
-                type: Number,
-
-                required: true,
-
-                min: 0
-
-            },
-
-
-            // ==================================================
-            // UNIT
-            // ==================================================
-            //
-            // This records the unit used by the stock event.
-            //
-            // Remainder events should receive the unit already
-            // stored in Dairy.feedStocks[].
-            //
-            // ==================================================
-
-            unit: {
-
-                type: String,
-
-                enum:
-                    STOCK_UNITS,
-
-                required: true,
-
-                trim: true
-
-            },
-
-
-            // ==================================================
-            // PRICE
-            // ==================================================
-            //
-            // Financial information belongs to ADMIN stock
-            // events.
-            //
-            // Worker remainder events should use 0.
-            //
-            // ==================================================
-
-            price: {
-
-                type: Number,
-
-                default: 0,
-
-                min: 0
-
-            },
-
-
-            // ==================================================
-            // INSTRUCTIONS
-            // ==================================================
-
-            instructions: {
-
-                type: String,
-
-                default: "",
-
-                trim: true,
-
-                maxlength: 2000
-
-            },
-
-
-            // ==================================================
-            // EXPECTED DURATION
-            // ==================================================
-
-            expectedDuration: {
-
-                type: String,
-
-                default: "",
-
-                trim: true,
-
-                maxlength: 100
-
-            },
-
-
-            // ==================================================
-            // ADDITIONAL INFORMATION
-            // ==================================================
-
-            message: {
-
-                type: String,
-
-                default: "",
-
-                trim: true,
-
-                maxlength: 2000
-
-            },
-
-
-            // ==================================================
-            // IMAGES
-            // ==================================================
-
-            images: {
-
-                type: [
-
-                    {
-
-                        type: String,
-
-                        trim: true
-
-                    }
-
-                ],
-
-                default: [],
-
-                validate: {
-
-                    validator:
-                        function(images) {
-
-                            return (
-
-                                Array.isArray(images) &&
-
-                                images.length <=
-                                    MAX_STOCK_IMAGES
-
-                            );
-
-                        },
-
-                    message:
-                        `A maximum of ${MAX_STOCK_IMAGES} stock images is allowed.`
-
-                }
-
-            }
-
-        },
-
-        {
-
-            // ==================================================
-            // IMPORTANT
-            // ==================================================
-            //
-            // Every historical stock event receives its own
-            // subdocument ID.
-            //
-            _id: true
 
         }
 
@@ -1085,9 +796,7 @@ const updateSchema =
 
                     "maintenance",
 
-                    "assetAdd",
-
-                    "stock"
+                    "assetAdd"
 
                 ],
 
@@ -1245,7 +954,7 @@ const updateSchema =
 
 
             // ==================================================
-            // MEDICAL
+            // MEDICAL UPDATE
             // ==================================================
 
             medical: {
@@ -1259,7 +968,7 @@ const updateSchema =
 
 
             // ==================================================
-            // MAINTENANCE
+            // MAINTENANCE UPDATE
             // ==================================================
 
             maintenance: {
@@ -1273,27 +982,13 @@ const updateSchema =
 
 
             // ==================================================
-            // ASSET
+            // ASSET ADD UPDATE
             // ==================================================
 
             asset: {
 
                 type:
                     assetAddSchema,
-
-                default: undefined
-
-            },
-
-
-            // ==================================================
-            // STOCK
-            // ==================================================
-
-            stock: {
-
-                type:
-                    stockSchema,
 
                 default: undefined
 
@@ -1314,9 +1009,9 @@ const updateSchema =
 // INDEXES
 // ==========================================================
 //
-// NONE OF THESE ARE UNIQUE.
+// These indexes are only for the actual Update model.
 //
-// Multiple events for the same stock are REQUIRED.
+// There are NO feed-stock indexes.
 //
 // ==========================================================
 
@@ -1334,40 +1029,6 @@ updateSchema.index({
     dairy: 1,
 
     type: 1,
-
-    createdAt: -1
-
-});
-
-
-updateSchema.index({
-
-    dairy: 1,
-
-    "stock.action": 1,
-
-    createdAt: -1
-
-});
-
-
-// ==========================================================
-// STOCK-SPECIFIC HISTORY INDEX
-// ==========================================================
-//
-// This is important for:
-//
-//     "show only updates for the clicked stock"
-//
-// ==========================================================
-
-updateSchema.index({
-
-    dairy: 1,
-
-    type: 1,
-
-    "stock.stockId": 1,
 
     createdAt: -1
 
@@ -1436,7 +1097,9 @@ updateSchema.pre(
                 ).trim();
 
 
-            if (legacyImage) {
+            if (
+                legacyImage
+            ) {
 
                 this.images = [
 
@@ -1468,161 +1131,96 @@ updateSchema.pre(
 
 
         // ==================================================
-        // NORMALIZE STOCK
+        // NORMALIZE GENERAL TEXT
         // ==================================================
 
         if (
-            this.stock
+            this.title
         ) {
 
-            // ------------------------------------------------
-            // STOCK ID
-            // ------------------------------------------------
+            this.title =
+                String(
+                    this.title
+                ).trim();
+
+        }
+
+
+        if (
+            this.text
+        ) {
+
+            this.text =
+                String(
+                    this.text
+                ).trim();
+
+        }
+
+
+        if (
+            this.comment
+        ) {
+
+            this.comment =
+                String(
+                    this.comment
+                ).trim();
+
+        }
+
+
+        // ==================================================
+        // NORMALIZE MEDICAL
+        // ==================================================
+
+        if (
+            this.medical
+        ) {
 
             if (
-                this.stock.stockId
+                this.medical.status
             ) {
 
-                this.stock.stockId =
-                    new mongoose.Types.ObjectId(
-                        this.stock.stockId
-                    );
-
-            }
-
-
-            // ------------------------------------------------
-            // IMAGES
-            // ------------------------------------------------
-
-            if (
-                !Array.isArray(
-                    this.stock.images
-                )
-            ) {
-
-                this.stock.images = [];
-
-            }
-
-
-            this.stock.images =
-
-                this.stock.images
-
-                    .filter(Boolean)
-
-                    .map(
-                        image =>
-                            String(image).trim()
-                    )
-
-                    .filter(Boolean)
-
-                    .slice(
-                        0,
-                        MAX_STOCK_IMAGES
-                    );
-
-
-            // ------------------------------------------------
-            // QUANTITY
-            // ------------------------------------------------
-
-            const quantity =
-                Number(
-                    this.stock.quantity
-                );
-
-
-            this.stock.quantity =
-                Number.isFinite(quantity) &&
-                quantity >= 0
-
-                    ? quantity
-
-                    : 0;
-
-
-            // ------------------------------------------------
-            // PRICE
-            // ------------------------------------------------
-
-            const price =
-                Number(
-                    this.stock.price
-                );
-
-
-            this.stock.price =
-                Number.isFinite(price) &&
-                price >= 0
-
-                    ? price
-
-                    : 0;
-
-
-            // ------------------------------------------------
-            // STRING NORMALIZATION
-            // ------------------------------------------------
-
-            if (
-                this.stock.itemName
-            ) {
-
-                this.stock.itemName =
+                this.medical.status =
                     String(
-                        this.stock.itemName
+                        this.medical.status
                     ).trim();
 
             }
 
 
             if (
-                this.stock.category
+                this.medical.type
             ) {
 
-                this.stock.category =
+                this.medical.type =
                     String(
-                        this.stock.category
-                    ).trim()
-                    .toLowerCase();
-
-            }
-
-
-            if (
-                this.stock.instructions
-            ) {
-
-                this.stock.instructions =
-                    String(
-                        this.stock.instructions
+                        this.medical.type
                     ).trim();
 
             }
 
 
             if (
-                this.stock.expectedDuration
+                this.medical.details
             ) {
 
-                this.stock.expectedDuration =
+                this.medical.details =
                     String(
-                        this.stock.expectedDuration
+                        this.medical.details
                     ).trim();
 
             }
 
 
             if (
-                this.stock.message
+                this.medical.clearDescription
             ) {
 
-                this.stock.message =
+                this.medical.clearDescription =
                     String(
-                        this.stock.message
+                        this.medical.clearDescription
                     ).trim();
 
             }
@@ -1631,79 +1229,57 @@ updateSchema.pre(
 
 
         // ==================================================
-        // SYSTEM STOCK EVENT
-        // ==================================================
-        //
-        // AVAILABLE STOCK events are generated by the admin
-        // restock operation but represented in the history as
-        // a system stock event.
-        //
+        // NORMALIZE MAINTENANCE
         // ==================================================
 
         if (
-
-            this.type === "stock" &&
-
-            this.stock &&
-
-            this.stock.action === "available"
-
-        ) {
-
-            this.authorRole =
-                "system";
-
-
-            this.userName =
-                "System";
-
-
-            this.userImage =
-                "/images/h1.png";
-
-
-            this.user =
-                null;
-
-        }
-
-
-        // ==================================================
-        // STOCK TITLE
-        // ==================================================
-
-        if (
-
-            this.type === "stock" &&
-
-            this.stock
-
+            this.maintenance
         ) {
 
             if (
-                !this.title
+                this.maintenance.status
             ) {
 
-                if (
-                    this.stock.action ===
-                    "remainder"
-                ) {
+                this.maintenance.status =
+                    String(
+                        this.maintenance.status
+                    ).trim();
 
-                    this.title =
-                        "Foodstock Remaining Updated";
+            }
 
-                } else {
 
-                    this.title =
+            if (
+                this.maintenance.type
+            ) {
 
-                        this.stock.stockType ===
-                            "medicine"
+                this.maintenance.type =
+                    String(
+                        this.maintenance.type
+                    ).trim();
 
-                            ? "More Veterinary Meds Available"
+            }
 
-                            : "More Animal Feed Available";
 
-                }
+            if (
+                this.maintenance.description
+            ) {
+
+                this.maintenance.description =
+                    String(
+                        this.maintenance.description
+                    ).trim();
+
+            }
+
+
+            if (
+                this.maintenance.clearDescription
+            ) {
+
+                this.maintenance.clearDescription =
+                    String(
+                        this.maintenance.clearDescription
+                    ).trim();
 
             }
 
@@ -1711,25 +1287,81 @@ updateSchema.pre(
 
 
         // ==================================================
-        // STOCK TEXT
+        // NORMALIZE ASSET
         // ==================================================
 
         if (
-
-            this.type === "stock" &&
-
-            this.stock
-
+            this.asset
         ) {
 
             if (
-                !this.text
+                this.asset.name
             ) {
 
-                this.text =
-                    this.stock.message ||
-                    this.stock.instructions ||
-                    "";
+                this.asset.name =
+                    String(
+                        this.asset.name
+                    ).trim();
+
+            }
+
+
+            if (
+                this.asset.type
+            ) {
+
+                this.asset.type =
+                    String(
+                        this.asset.type
+                    ).trim();
+
+            }
+
+
+            if (
+                this.asset.description
+            ) {
+
+                this.asset.description =
+                    String(
+                        this.asset.description
+                    ).trim();
+
+            }
+
+
+            if (
+                this.asset.condition
+            ) {
+
+                this.asset.condition =
+                    String(
+                        this.asset.condition
+                    ).trim();
+
+            }
+
+
+            if (
+                this.asset.location
+            ) {
+
+                this.asset.location =
+                    String(
+                        this.asset.location
+                    ).trim();
+
+            }
+
+
+            if (
+                this.asset.parentDairyName
+            ) {
+
+                this.asset.parentDairyName =
+                    String(
+                        this.asset.parentDairyName
+                    ).trim();
 
             }
 
@@ -1756,54 +1388,6 @@ function() {
 
 
 // ==========================================================
-// STATIC: MAX STOCK IMAGES
-// ==========================================================
-
-updateSchema.statics.getMaxStockImages =
-function() {
-
-    return MAX_STOCK_IMAGES;
-
-};
-
-
-// ==========================================================
-// STATIC: STOCK TYPES
-// ==========================================================
-
-updateSchema.statics.getStockTypes =
-function() {
-
-    return STOCK_TYPES;
-
-};
-
-
-// ==========================================================
-// STATIC: STOCK ACTIONS
-// ==========================================================
-
-updateSchema.statics.getStockActions =
-function() {
-
-    return STOCK_ACTIONS;
-
-};
-
-
-// ==========================================================
-// STATIC: STOCK UNITS
-// ==========================================================
-
-updateSchema.statics.getStockUnits =
-function() {
-
-    return STOCK_UNITS;
-
-};
-
-
-// ==========================================================
 // MODEL
 // ==========================================================
 
@@ -1818,27 +1402,11 @@ const Update =
 
 
 // ==========================================================
-// CONSTANT EXPORTS
+// CONSTANT EXPORT
 // ==========================================================
 
 Update.MAX_POST_IMAGES =
     MAX_POST_IMAGES;
-
-
-Update.MAX_STOCK_IMAGES =
-    MAX_STOCK_IMAGES;
-
-
-Update.STOCK_TYPES =
-    STOCK_TYPES;
-
-
-Update.STOCK_ACTIONS =
-    STOCK_ACTIONS;
-
-
-Update.STOCK_UNITS =
-    STOCK_UNITS;
 
 
 // ==========================================================
