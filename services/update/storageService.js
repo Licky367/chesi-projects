@@ -1,14 +1,20 @@
 // ==========================================================
 // services/update/storageService.js
-// =========================================================
+// ==========================================================
 //
 // FEED STORE / STORAGE SERVICE
 //
-// BUSINESS RULES ARE DERIVED FROM:
+// RESPONSIBILITIES:
 //
-// views/update/storage/feed-store.js
+//     • Create feed / veterinary medicine stock
+//     • Update existing stock
+//     • Restock
+//     • Reduce stock
+//     • Delete stock
+//     • Retrieve current stock
+//     • Provide feed-store dropdown options
 //
-// IMPORTANT:
+// BUSINESS RULES:
 //
 // quantityRemaining
 //      = quantity currently available in stock
@@ -17,7 +23,7 @@
 //      = price of ONE unit for the latest stock addition
 //
 // feedsAmount
-//      = actual amount of money used for the stock addition
+//      = actual money spent on the latest stock addition
 //
 // NEW STOCK:
 //
@@ -29,13 +35,32 @@
 //
 // REDUCTION:
 //
-//      feedsAmount is NOT changed
+//      feedsAmount does NOT change
 //
 // SAME QUANTITY:
 //
-//      feedsAmount is NOT changed
+//      feedsAmount does NOT change
+//
+// IMPORTANT:
+//
+// The service uses the canonical feed-store fields:
+//
+//      category
+//      feedName
+//      medicineName
+//      unit
+//      quantityRemaining
+//      initialQuantity
+//      percentageRemaining
+//      unitPrice
+//      feedsAmount
+//      instructions
+//      expectedDuration
+//      message
+//      images
 //
 // ==========================================================
+
 
 const mongoose =
     require("mongoose");
@@ -60,10 +85,13 @@ function createError(
         statusCode;
 
     return error;
+
 }
 
 
-function isValidObjectId(value) {
+function isValidObjectId(
+    value
+) {
 
     return mongoose.Types.ObjectId.isValid(
         String(value || "")
@@ -72,7 +100,9 @@ function isValidObjectId(value) {
 }
 
 
-function cleanText(value) {
+function cleanText(
+    value
+) {
 
     if (
         value === undefined ||
@@ -88,7 +118,9 @@ function cleanText(value) {
 }
 
 
-function toNumber(value) {
+function toNumber(
+    value
+) {
 
     const number =
         Number(value);
@@ -139,6 +171,80 @@ async function getDairy(
 
 
     return dairy;
+
+}
+
+
+// ==========================================================
+// GET FEED STORE OPTIONS
+// ==========================================================
+//
+// These options come directly from models/dairy.js.
+//
+// This keeps the service and the model synchronized.
+//
+// Available:
+//
+//     feeds
+//     veterinary medicines
+//     stock units
+//
+// ==========================================================
+
+function getFeedTypes() {
+
+    return Dairy.getFeedTypes();
+
+}
+
+
+function getVeterinaryMedicines() {
+
+    return Dairy.getVeterinaryMedicines();
+
+}
+
+
+function getStockUnits() {
+
+    return Dairy.getStockUnits();
+
+}
+
+
+// ==========================================================
+// GET ALL STORAGE OPTIONS
+// ==========================================================
+//
+// Convenient single object for the controller.
+//
+// Example:
+//
+// const options =
+//     storageService.getStorageOptions();
+//
+// Then:
+//
+// options.feedTypes
+// options.veterinaryMedicines
+// options.stockUnits
+//
+// ==========================================================
+
+function getStorageOptions() {
+
+    return {
+
+        feedTypes:
+            getFeedTypes(),
+
+        veterinaryMedicines:
+            getVeterinaryMedicines(),
+
+        stockUnits:
+            getStockUnits()
+
+    };
 
 }
 
@@ -272,18 +378,57 @@ function normalizePrice(
 
 
 // ==========================================================
+// NORMALIZE UNIT
+// ==========================================================
+
+function normalizeUnit(
+    unit
+) {
+
+    const value =
+        cleanText(
+            unit
+        );
+
+
+    if (!value) {
+
+        throw createError(
+            "Unit is required."
+        );
+
+    }
+
+
+    const units =
+        getStockUnits();
+
+
+    if (
+        !units.includes(
+            value
+        )
+    ) {
+
+        throw createError(
+            `Invalid stock unit: ${value}.`
+        );
+
+    }
+
+
+    return value;
+
+}
+
+
+// ==========================================================
 // CALCULATE STOCK AMOUNT
 // ==========================================================
 //
-// This is the actual monetary amount used for a stock
-// addition.
+// Actual money spent on a stock addition.
 //
 // quantityAdded × unitPrice
-//
-// Example:
-//
-// 20 kg × KES 90/kg
-// = KES 1,800
 //
 // ==========================================================
 
@@ -320,27 +465,91 @@ function calculateFeedsAmount(
 
 
 // ==========================================================
-// STOCK NAME
+// VALIDATE FEED NAME
 // ==========================================================
 
-function getStockName(
-    stock
+function validateFeedName(
+    feedName
 ) {
 
-    if (
-        stock.category === "medicine"
-    ) {
+    const value =
+        cleanText(
+            feedName
+        );
 
-        return cleanText(
-            stock.medicineName
+
+    if (!value) {
+
+        throw createError(
+            "Animal feed is required."
         );
 
     }
 
 
-    return cleanText(
-        stock.feedName
-    );
+    const feedTypes =
+        getFeedTypes();
+
+
+    if (
+        !feedTypes.includes(
+            value
+        )
+    ) {
+
+        throw createError(
+            `Invalid animal feed: ${value}.`
+        );
+
+    }
+
+
+    return value;
+
+}
+
+
+// ==========================================================
+// VALIDATE VETERINARY MEDICINE
+// ==========================================================
+
+function validateVeterinaryMedicine(
+    medicineName
+) {
+
+    const value =
+        cleanText(
+            medicineName
+        );
+
+
+    if (!value) {
+
+        throw createError(
+            "Veterinary medicine is required."
+        );
+
+    }
+
+
+    const medicines =
+        getVeterinaryMedicines();
+
+
+    if (
+        !medicines.includes(
+            value
+        )
+    ) {
+
+        throw createError(
+            `Invalid veterinary medicine: ${value}.`
+        );
+
+    }
+
+
+    return value;
 
 }
 
@@ -363,17 +572,63 @@ function findStock(
     }
 
 
-    return dairy.feedStocks.find(
-        function(stock) {
+    return (
 
-            return String(
-                stock._id
-            ) === String(
-                stockId
-            );
+        dairy.feedStocks.find(
 
-        }
-    ) || null;
+            function(stock) {
+
+                return (
+
+                    String(
+                        stock._id
+                    ) ===
+                    String(
+                        stockId
+                    )
+
+                );
+
+            }
+
+        ) || null
+
+    );
+
+}
+
+
+// ==========================================================
+// NORMALIZE IMAGES
+// ==========================================================
+
+function normalizeImages(
+    images
+) {
+
+    if (
+        !Array.isArray(
+            images
+        )
+    ) {
+
+        return [];
+
+    }
+
+
+    return images
+
+        .filter(Boolean)
+
+        .map(
+            image =>
+                String(
+                    image
+                ).trim()
+        )
+
+        .filter(Boolean);
 
 }
 
@@ -383,7 +638,7 @@ function findStock(
 // ==========================================================
 
 function validateNewStock(
-    data
+    data = {}
 ) {
 
     const category =
@@ -399,52 +654,46 @@ function validateNewStock(
 
 
     const unit =
-        cleanText(
+        normalizeUnit(
             data.unit
         );
 
 
-    if (!unit) {
+    let feedName =
+        "";
 
-        throw createError(
-            "Unit is required."
-        );
+    let medicineName =
+        "";
+
+
+    // ======================================================
+    // FEED
+    // ======================================================
+
+    if (
+        category === "feed"
+    ) {
+
+        feedName =
+            validateFeedName(
+                data.feedName
+            );
 
     }
 
 
-    const feedName =
-        cleanText(
-            data.feedName
-        );
-
-
-    const medicineName =
-        cleanText(
-            data.medicineName
-        );
-
+    // ======================================================
+    // MEDICINE
+    // ======================================================
 
     if (
-        category === "feed" &&
-        !feedName
+        category === "medicine"
     ) {
 
-        throw createError(
-            "Animal feed is required."
-        );
-
-    }
-
-
-    if (
-        category === "medicine" &&
-        !medicineName
-    ) {
-
-        throw createError(
-            "Veterinary medicine is required."
-        );
+        medicineName =
+            validateVeterinaryMedicine(
+                data.medicineName
+            );
 
     }
 
@@ -456,11 +705,8 @@ function validateNewStock(
 
 
     /*
-     * The view reveals Unit Price when
-     * quantity > 0.
-     *
-     * Therefore a positive initial quantity
-     * requires a valid unit price.
+     * Positive initial stock requires
+     * a unit price.
      */
 
     if (
@@ -479,15 +725,9 @@ function validateNewStock(
 
         category,
 
-        feedName:
-            category === "feed"
-                ? feedName
-                : "",
+        feedName,
 
-        medicineName:
-            category === "medicine"
-                ? medicineName
-                : "",
+        medicineName,
 
         quantity,
 
@@ -519,17 +759,7 @@ function validateNewStock(
 // CREATE STOCK
 // ==========================================================
 //
-// NEW STOCK
-//
-// feedsAmount represents the actual money used to acquire
-// the initial quantity.
-//
-// Example:
-//
-// quantity = 100
-// price    = 80
-//
-// feedsAmount = 100 × 80
+// Creates a completely new feed-store item.
 //
 // ==========================================================
 
@@ -581,13 +811,11 @@ async function createStock({
         quantityRemaining:
             input.quantity,
 
+        initialQuantity:
+            input.quantity,
+
         unitPrice:
             unitPrice,
-
-        /*
-         * Money actually spent on this
-         * initial stock addition.
-         */
 
         feedsAmount:
             feedsAmount,
@@ -602,9 +830,9 @@ async function createStock({
             input.message,
 
         images:
-            Array.isArray(images)
-                ? images
-                : []
+            normalizeImages(
+                images
+            )
 
     };
 
@@ -617,13 +845,9 @@ async function createStock({
     await dairy.save();
 
 
-    const createdStock =
-        dairy.feedStocks[
-            dairy.feedStocks.length - 1
-        ];
-
-
-    return createdStock;
+    return dairy.feedStocks[
+        dairy.feedStocks.length - 1
+    ];
 
 }
 
@@ -632,38 +856,24 @@ async function createStock({
 // UPDATE EXISTING STOCK
 // ==========================================================
 //
-// The view locks:
+// CATEGORY / NAME / UNIT:
 //
-// - category
-// - feed / medicine name
-// - unit
+// These identify the stock item and are not changed.
 //
-// Quantity remains editable.
+// QUANTITY:
+//
+// Can increase, decrease, or remain unchanged.
 //
 // PRICE:
 //
-// Only required when:
-//
-// new quantity > old quantity
-//
-// FEEDS AMOUNT:
-//
-// Only changes when stock is increased.
-//
-// quantityAdded:
-//
-//      newQuantity - oldQuantity
-//
-// feedsAmount:
-//
-//      quantityAdded × new unitPrice
+// Required only when quantity increases.
 //
 // ==========================================================
 
 async function updateStock({
     dairyId,
     stockId,
-    data,
+    data = {},
     images = []
 }) {
 
@@ -715,7 +925,6 @@ async function updateStock({
         safeOldQuantity;
 
 
-
     // ======================================================
     // INCREASE / RESTOCK
     // ======================================================
@@ -730,11 +939,6 @@ async function updateStock({
             );
 
 
-        /*
-         * Price is mandatory whenever
-         * existing stock is increased.
-         */
-
         if (
             price === null
         ) {
@@ -746,26 +950,9 @@ async function updateStock({
         }
 
 
-        /*
-         * The quantity being purchased/restocked
-         * is ONLY the difference.
-         *
-         * Example:
-         *
-         * old = 100
-         * new = 120
-         *
-         * added = 20
-         */
-
         const quantityAdded =
             quantityDifference;
 
-
-        /*
-         * This is the actual money used
-         * for THIS restock.
-         */
 
         const feedsAmount =
             calculateFeedsAmount(
@@ -774,17 +961,13 @@ async function updateStock({
             );
 
 
-        /*
-         * Current available stock becomes
-         * the new total quantity.
-         */
-
         stock.quantityRemaining =
             newQuantity;
 
 
         /*
-         * Latest restock unit price.
+         * The latest stock addition determines
+         * the current unit price.
          */
 
         stock.unitPrice =
@@ -792,14 +975,14 @@ async function updateStock({
 
 
         /*
-         * Amount spent on THIS restock.
+         * Financial amount belongs to
+         * THIS stock addition.
          */
 
         stock.feedsAmount =
             feedsAmount;
 
     }
-
 
 
     // ======================================================
@@ -811,20 +994,21 @@ async function updateStock({
     ) {
 
         /*
-         * Reducing stock is NOT a purchase.
+         * Reduction is not a purchase.
          *
          * Therefore:
          *
-         * - quantityRemaining changes
-         * - unitPrice remains unchanged
-         * - feedsAmount remains unchanged
+         * quantityRemaining changes
+         *
+         * unitPrice stays unchanged
+         *
+         * feedsAmount stays unchanged
          */
 
         stock.quantityRemaining =
             newQuantity;
 
     }
-
 
 
     // ======================================================
@@ -834,16 +1018,15 @@ async function updateStock({
     else {
 
         /*
-         * No stock was added.
+         * Nothing was added.
          *
-         * Therefore no financial amount is created.
+         * Nothing financial changes.
          */
 
         stock.quantityRemaining =
             safeOldQuantity;
 
     }
-
 
 
     // ======================================================
@@ -868,14 +1051,18 @@ async function updateStock({
         );
 
 
-
     // ======================================================
     // IMAGES
     // ======================================================
 
+    const newImages =
+        normalizeImages(
+            images
+        );
+
+
     if (
-        Array.isArray(images) &&
-        images.length
+        newImages.length
     ) {
 
         if (
@@ -890,11 +1077,10 @@ async function updateStock({
 
 
         stock.images.push(
-            ...images
+            ...newImages
         );
 
     }
-
 
 
     await dairy.save();
@@ -922,11 +1108,6 @@ async function updateStock({
                 ? quantityDifference
                 : 0,
 
-        /*
-         * Amount spent on this particular
-         * stock addition.
-         */
-
         feedsAmount:
             quantityDifference > 0
                 ? Number(
@@ -943,11 +1124,13 @@ async function updateStock({
 // SAVE STOCK
 // ==========================================================
 //
-// stockId empty
-//      → NEW STOCK
+// stockId supplied:
 //
-// stockId supplied
-//      → EXISTING STOCK
+//      UPDATE EXISTING STOCK
+//
+// stockId absent:
+//
+//      CREATE NEW STOCK
 //
 // ==========================================================
 
@@ -1023,8 +1206,7 @@ async function saveStock({
         quantityAdded:
             quantity,
 
-        feedsAmount:
-            feedsAmount
+        feedsAmount
 
     };
 
@@ -1032,7 +1214,7 @@ async function saveStock({
 
 
 // ==========================================================
-// GET STOCKS
+// GET CURRENT STOCKS
 // ==========================================================
 
 async function getStocks(
@@ -1108,15 +1290,22 @@ async function deleteStock({
 
     const index =
         dairy.feedStocks.findIndex(
+
             function(stock) {
 
-                return String(
-                    stock._id
-                ) === String(
-                    stockId
+                return (
+
+                    String(
+                        stock._id
+                    ) ===
+                    String(
+                        stockId
+                    )
+
                 );
 
             }
+
         );
 
 
@@ -1153,12 +1342,121 @@ async function deleteStock({
 
 
 // ==========================================================
+// GET STOCK SUMMARY
+// ==========================================================
+//
+// Useful for the controller / page.
+//
+// ==========================================================
+
+async function getStockSummary(
+    dairyId
+) {
+
+    const stocks =
+        await getStocks(
+            dairyId
+        );
+
+
+    const feedStocks =
+        stocks.filter(
+            stock =>
+                stock.category === "feed"
+        );
+
+
+    const medicineStocks =
+        stocks.filter(
+            stock =>
+                stock.category === "medicine"
+        );
+
+
+    const totalFeedsAmount =
+        stocks.reduce(
+
+            (
+                total,
+                stock
+            ) => {
+
+                return (
+
+                    total +
+
+                    Math.max(
+
+                        0,
+
+                        Number(
+                            stock.feedsAmount
+                        ) || 0
+
+                    )
+
+                );
+
+            },
+
+            0
+
+        );
+
+
+    return {
+
+        stocks,
+
+        feedStocks,
+
+        medicineStocks,
+
+        totalStocks:
+            stocks.length,
+
+        totalFeedStocks:
+            feedStocks.length,
+
+        totalMedicineStocks:
+            medicineStocks.length,
+
+        totalFeedsAmount
+
+    };
+
+}
+
+
+// ==========================================================
 // EXPORTS
 // ==========================================================
 
 module.exports = {
 
+    // ======================================================
+    // DAIRY
+    // ======================================================
+
     getDairy,
+
+
+    // ======================================================
+    // DROPDOWN / SELECT OPTIONS
+    // ======================================================
+
+    getFeedTypes,
+
+    getVeterinaryMedicines,
+
+    getStockUnits,
+
+    getStorageOptions,
+
+
+    // ======================================================
+    // STOCK
+    // ======================================================
 
     getStocks,
 
@@ -1172,10 +1470,22 @@ module.exports = {
 
     deleteStock,
 
+
+    // ======================================================
+    // HELPERS
+    // ======================================================
+
     findStock,
 
     validateNewStock,
 
-    calculateFeedsAmount
+    calculateFeedsAmount,
+
+
+    // ======================================================
+    // SUMMARY
+    // ======================================================
+
+    getStockSummary
 
 };
