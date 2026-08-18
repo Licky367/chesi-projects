@@ -1,78 +1,14 @@
-<% /*
-==============================================================
-STOCK UPDATE FEED CARD
-
-FILE:
-    views/update/stock.ejs
-
-PURPOSE:
-    Render ONE foodstock history Update document.
-
-IMPORTANT:
---------------------------------------------------------------
-The parent page passes:
-
-    include("stock", {
-        item: item,
-        dairy: currentDairy,
-        user: currentUser
-    })
-
-Therefore this file MUST use:
-
-    item
-
-as the Update document.
-
-Every Update document is rendered independently.
-
-This partial supports BOTH:
-
-    1. Add Stock
-       stock.action = "available"
-
-    2. Update Remaining Stock
-       stock.action = "remainder"
-
-IMPORTANT:
---------------------------------------------------------------
-Do NOT merge history records.
-
-If there are:
-
-    3 Add Stock updates
-    4 Remaining Stock updates
-
-then this partial renders:
-
-    7 separate cards.
-==============================================================
-*/ %>
-
-
 <%
-/* ==========================================================
-   SAFE UPDATE DOCUMENT
-========================================================== */
+// ==========================================================
+// STOCK UPDATE FEED CARD
+// ==========================================================
 
-const stockUpdate =
-    item || null;
-
-
-/* ==========================================================
-   SAFE STOCK DATA
-========================================================== */
+const stockUpdate = item || null;
 
 const stockData =
-    stockUpdate &&
-    stockUpdate.stock
+    stockUpdate && stockUpdate.stock
         ? stockUpdate.stock
         : null;
-
-
-/* ==========================================================
-   VALID STOCK UPDATE
-========================================================== */
 
 const isStockUpdate =
     !!(
@@ -81,434 +17,123 @@ const isStockUpdate =
         stockData
     );
 
-
-/* ==========================================================
-   STOCK TYPE
-========================================================== */
-
-const stockType =
-    stockData
-        ? String(
-            stockData.stockType ||
-            stockData.category ||
-            "feed"
-        ).toLowerCase()
-        : "feed";
-
-
-/* ==========================================================
-   STOCK ACTION
-========================================================== */
-
-const stockAction =
-    stockData
-        ? String(
-            stockData.action ||
-            ""
-        ).toLowerCase()
-        : "";
-
-
-/* ==========================================================
-   STOCK NAME
-========================================================== */
-
-const itemName =
-    stockData
-        ? (
-            stockData.itemName ||
-            stockData.name ||
-            stockData.feedName ||
-            stockData.medicineName ||
-            "Unnamed Stock"
-        )
-        : "Unnamed Stock";
-
-
-/* ==========================================================
-   QUANTITY
-
-   For BOTH history types this represents the quantity
-   associated with THIS specific history event.
-
-   available:
-       quantity added
-
-   remainder:
-       quantity remaining
-========================================================== */
-
-let quantity = 0;
-
-
-if (
-    stockData &&
-    stockData.quantity !== undefined &&
-    stockData.quantity !== null &&
-    stockData.quantity !== ""
-) {
-
-    quantity =
-        Number(stockData.quantity);
-
-}
-
-
-if (!Number.isFinite(quantity)) {
-
-    quantity = 0;
-
-}
-
-
-/* ==========================================================
-   UNIT
-========================================================== */
-
-const unit =
-    stockData
-        ? (
-            stockData.unit ||
-            "units"
-        )
-        : "units";
-
-
-/* ==========================================================
-   MEDICINE
-========================================================== */
-
-const isMedicine =
-    stockType === "medicine";
-
-
-/* ==========================================================
-   ACTION CLASSIFICATION
-========================================================== */
-
-const isAvailableUpdate =
-    stockAction === "available";
-
-
-const isRemainderUpdate =
-    stockAction === "remainder";
-
-
-/* ==========================================================
-   ACTION LABEL
-========================================================== */
-
-let actionLabel =
-    "Stock Update";
-
-
-if (isAvailableUpdate) {
-
-    actionLabel =
-        "Stock Added";
-
-}
-
-
-if (isRemainderUpdate) {
-
-    actionLabel =
-        "Remaining Stock Updated";
-
-}
-
-
-/* ==========================================================
-   CARD TITLE
-========================================================== */
-
-let cardTitle =
-    stockUpdate &&
-    stockUpdate.title
-        ? stockUpdate.title
-        : itemName;
-
-
-if (isRemainderUpdate) {
-
-    cardTitle =
-        "Remaining " + itemName;
-
-}
-
-
-/* ==========================================================
-   AUTHOR
-========================================================== */
-
-const authorName =
-    stockUpdate.userName ||
-    (
-        stockUpdate.user &&
-        stockUpdate.user.name
-    ) ||
-    (
-        stockUpdate.authorRole === "system"
-            ? "System"
-            : "User"
-    );
-
-
-const authorImage =
-    stockUpdate.userImage ||
-    (
-        stockUpdate.user &&
-        stockUpdate.user.profileImage
-    ) ||
-    "/images/h1.png";
-
-
-/* ==========================================================
-   AUTHOR ROLE
-========================================================== */
-
-let authorRole =
-    "User";
-
-
-if (
-    stockUpdate.authorRole === "system"
-) {
-
-    authorRole =
-        "System";
-
-} else if (
-    stockUpdate.authorRole === "admin"
-) {
-
-    authorRole =
-        "Administrator";
-
-} else if (
-    stockUpdate.authorRole === "dairyWorker"
-) {
-
-    authorRole =
-        "Dairy Worker";
-
-}
-
-
-/* ==========================================================
-   MESSAGE
-========================================================== */
-
-let message = "";
-
-
-if (
-    stockData &&
-    stockData.message
-) {
-
-    message =
-        String(
-            stockData.message
-        ).trim();
-
-}
-
-
-if (
-    !message &&
-    stockUpdate.text
-) {
-
-    message =
-        String(
-            stockUpdate.text
-        ).trim();
-
-}
-
-
-/* ==========================================================
-   INSTRUCTIONS
-
-   Normally associated with Add Stock events.
-========================================================== */
-
-const instructions =
-    stockData &&
-    stockData.instructions
-        ? String(
-            stockData.instructions
-        ).trim()
-        : "";
-
-
-/* ==========================================================
-   EXPECTED DURATION
-========================================================== */
-
-const expectedDuration =
-    stockData &&
-    stockData.expectedDuration
-        ? String(
-            stockData.expectedDuration
-        ).trim()
-        : "";
-
-
-/* ==========================================================
-   PRICE
-
-   Only Add Stock events should display financial value.
-
-   Remaining-stock history NEVER displays price.
-========================================================== */
-
-let price = null;
-
-
-if (
-    isAvailableUpdate &&
-    stockData &&
-    stockData.price !== undefined &&
-    stockData.price !== null
-) {
-
-    const parsedPrice =
-        Number(
-            stockData.price
+if (isStockUpdate) {
+
+    const stockType =
+        stockData.stockType ||
+        stockData.category ||
+        "feed";
+
+    const stockAction =
+        stockData.action || "";
+
+    const itemName =
+        stockData.itemName ||
+        stockData.name ||
+        "Unnamed Stock";
+
+    const quantity =
+        stockData.quantity !== undefined &&
+        stockData.quantity !== null
+            ? Number(stockData.quantity)
+            : 0;
+
+    const unit =
+        stockData.unit ||
+        "units";
+
+    const isMedicine =
+        stockType === "medicine";
+
+    let actionLabel = "Stock Update";
+
+    if (stockAction === "available") {
+        actionLabel = "Stock Added";
+    }
+
+    if (stockAction === "remainder") {
+        actionLabel = "Remaining Stock Updated";
+    }
+
+    const authorName =
+        stockUpdate.userName ||
+        (
+            stockUpdate.user &&
+            stockUpdate.user.name
+        ) ||
+        (
+            stockUpdate.authorRole === "system"
+                ? "System"
+                : "User"
         );
 
+    const authorImage =
+        stockUpdate.userImage ||
+        (
+            stockUpdate.user &&
+            stockUpdate.user.profileImage
+        ) ||
+        "/images/h1.png";
+
+    const message =
+        (
+            stockData.message
+        ) ||
+        stockUpdate.text ||
+        "";
+
+    const instructions =
+        stockData.instructions ||
+        "";
+
+    const expectedDuration =
+        stockData.expectedDuration ||
+        "";
+
+    let stockImages = [];
 
     if (
-        Number.isFinite(parsedPrice) &&
-        parsedPrice >= 0
+        Array.isArray(stockData.images)
     ) {
 
-        price =
-            parsedPrice;
+        stockImages =
+            stockData.images.filter(Boolean);
 
     }
 
-}
+    if (
+        stockImages.length === 0 &&
+        Array.isArray(stockUpdate.images)
+    ) {
 
+        stockImages =
+            stockUpdate.images.filter(Boolean);
 
-/* ==========================================================
-   IMAGES
+    }
 
-   First use stock-specific images.
+    const cardId =
+        stockUpdate._id
+            ? String(stockUpdate._id)
+            : (
+                "stock-" +
+                Math.random()
+                    .toString(36)
+                    .substring(2)
+            );
 
-   If none exist, use the images belonging to THIS
-   Update document only.
-
-   Never obtain images from another history item.
-========================================================== */
-
-let stockImages = [];
-
-
-if (
-    stockData &&
-    Array.isArray(stockData.images)
-) {
-
-    stockImages =
-        stockData.images
-            .filter(Boolean);
-
-}
-
-
-if (
-    stockImages.length === 0 &&
-    stockUpdate &&
-    Array.isArray(stockUpdate.images)
-) {
-
-    stockImages =
-        stockUpdate.images
-            .filter(Boolean);
-
-}
-
-
-/* ==========================================================
-   UNIQUE UPDATE ID
-
-   The ID belongs to the individual Update document.
-
-   Do NOT use:
-
-       itemName
-       category
-       stockType
-========================================================== */
-
-const cardId =
-    stockUpdate &&
-    stockUpdate._id
-        ? String(
-            stockUpdate._id
-        )
-        : (
-            "stock-" +
-            Math.random()
-        );
-
-
-/* ==========================================================
-   DATE
-========================================================== */
-
-const createdAt =
-    stockUpdate &&
-    stockUpdate.createdAt
-        ? new Date(
-            stockUpdate.createdAt
-        )
-        : null;
-
-
-/* ==========================================================
-   VALID DATE
-========================================================== */
-
-const hasValidDate =
-    createdAt &&
-    !Number.isNaN(
-        createdAt.getTime()
-    );
-
+    const createdAt =
+        stockUpdate.createdAt
+            ? new Date(stockUpdate.createdAt)
+            : null;
 %>
 
 
-<% if (isStockUpdate) { %>
-
-
 <!-- ==========================================================
-     ONE STOCK HISTORY CARD
-
-     IMPORTANT:
-
-     This card represents ONE Update document.
-
-     Both:
-
-         available
-
-     and:
-
-         remainder
-
-     arrive here.
+     STOCK UPDATE CARD
 ========================================================== -->
 
 <article
-    class="stock-update-card
-        <%= isRemainderUpdate
-            ? "stock-update-card--remainder"
-            : "stock-update-card--available"
-        %>"
+    class="stock-update-card"
     id="stock-update-<%= cardId %>"
     data-stock-update-id="<%= cardId %>"
     data-stock-type="<%= stockType %>"
@@ -522,13 +147,7 @@ const hasValidDate =
 
     <header class="stock-update-card__header">
 
-
-        <!-- ==================================================
-             AUTHOR
-        =================================================== -->
-
         <div class="stock-update-card__author">
-
 
             <div class="stock-update-card__avatar">
 
@@ -544,52 +163,58 @@ const hasValidDate =
 
             <div class="stock-update-card__author-info">
 
-
                 <strong>
                     <%= authorName %>
                 </strong>
 
 
                 <span>
-                    <%= authorRole %>
+
+                    <% if (
+                        stockUpdate.authorRole === "system"
+                    ) { %>
+
+                        System
+
+                    <% } else if (
+                        stockUpdate.authorRole === "admin"
+                    ) { %>
+
+                        Administrator
+
+                    <% } else { %>
+
+                        Dairy Worker
+
+                    <% } %>
+
                 </span>
 
-
             </div>
-
 
         </div>
 
 
-
-        <!-- ==================================================
-             DATE
-        =================================================== -->
-
-        <% if (hasValidDate) { %>
+        <% if (createdAt) { %>
 
             <time
                 class="stock-update-card__date"
                 datetime="<%= createdAt.toISOString() %>"
             >
-
                 <%= createdAt.toLocaleString() %>
-
             </time>
 
         <% } %>
-
 
     </header>
 
 
 
     <!-- ======================================================
-         UPDATE HEADING
+         HEADING
     ======================================================= -->
 
     <div class="stock-update-card__heading">
-
 
         <div
             class="stock-update-card__icon"
@@ -597,43 +222,26 @@ const hasValidDate =
         >
 
             <% if (isMedicine) { %>
-
                 💊
-
             <% } else { %>
-
                 🌾
-
             <% } %>
 
         </div>
 
 
-        <div class="stock-update-card__heading-content">
+        <div>
 
-
-            <span
-                class="
-                    stock-update-card__action
-                    <%= isRemainderUpdate
-                        ? "stock-update-card__action--remainder"
-                        : ""
-                    %>
-                "
-            >
-
+            <span class="stock-update-card__action">
                 <%= actionLabel %>
-
             </span>
 
 
             <h3>
-                <%= cardTitle %>
+                <%= stockUpdate.title || itemName %>
             </h3>
 
-
         </div>
-
 
     </div>
 
@@ -645,68 +253,31 @@ const hasValidDate =
 
     <div class="stock-update-card__stock">
 
-
-        <!-- ==================================================
-             STOCK ITEM
-        =================================================== -->
-
         <div class="stock-update-card__item">
-
 
             <span class="stock-update-card__label">
                 Stock
             </span>
 
-
             <strong>
                 <%= itemName %>
             </strong>
 
-
-            <small>
-
-                <% if (isMedicine) { %>
-
-                    Veterinary medicine
-
-                <% } else { %>
-
-                    Animal feed
-
-                <% } %>
-
-            </small>
-
-
         </div>
 
 
-
-        <!-- ==================================================
-             QUANTITY
-        =================================================== -->
-
         <div class="stock-update-card__quantity">
 
-
             <span class="stock-update-card__label">
-
-                <% if (isRemainderUpdate) { %>
-
-                    Remaining
-
-                <% } else { %>
-
-                    Added
-
-                <% } %>
-
+                Quantity
             </span>
-
 
             <strong>
 
-                <%= quantity.toLocaleString() %>
+                <%= Number.isFinite(quantity)
+                    ? quantity.toLocaleString()
+                    : "0"
+                %>
 
                 <small>
                     <%= unit %>
@@ -714,123 +285,23 @@ const hasValidDate =
 
             </strong>
 
-
         </div>
-
 
     </div>
 
 
 
     <!-- ======================================================
-         REMAINING STOCK NOTICE
-
-         Makes it visually obvious that this history item
-         came from "Update Remaining Stock".
-    ======================================================= -->
-
-    <% if (isRemainderUpdate) { %>
-
-        <div class="stock-update-card__remaining-note">
-
-
-            <span aria-hidden="true">
-                🔄
-            </span>
-
-
-            <span>
-                Current remaining stock was reported as
-                <strong>
-                    <%= quantity.toLocaleString() %>
-                    <%= unit %>
-                </strong>.
-            </span>
-
-
-        </div>
-
-    <% } %>
-
-
-
-    <!-- ======================================================
-         ADD STOCK VALUE
-
-         Financial information is displayed only for the
-         Add Stock history event.
-
-         Remaining-stock updates never expose price.
-    ======================================================= -->
-
-    <% if (
-        isAvailableUpdate &&
-        price !== null
-    ) %>
-
-
-        <div class="stock-update-card__value">
-
-
-            <span>
-                Stock Value
-            </span>
-
-
-            <strong>
-
-                KES
-                <%= price.toLocaleString(
-                    undefined,
-                    {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }
-                ) %>
-
-            </strong>
-
-
-        </div>
-
-
-    <% } %>
-
-
-
-    <!-- ======================================================
          MESSAGE
-
-         For Update Remaining Stock this is the worker/admin
-         message.
-
-         For Add Stock this may contain the stock description.
     ======================================================= -->
 
     <% if (message) { %>
 
         <div class="stock-update-card__message">
 
-
-            <span class="stock-update-card__detail-label">
-
-                <% if (isRemainderUpdate) { %>
-
-                    Update Note
-
-                <% } else { %>
-
-                    Note
-
-                <% } %>
-
-            </span>
-
-
             <p>
                 <%= message %>
             </p>
-
 
         </div>
 
@@ -840,24 +311,19 @@ const hasValidDate =
 
     <!-- ======================================================
          INSTRUCTIONS
-
-         Primarily used by Add Stock.
     ======================================================= -->
 
     <% if (instructions) { %>
 
         <div class="stock-update-card__detail">
 
-
             <span>
                 Instructions
             </span>
 
-
             <p>
                 <%= instructions %>
             </p>
-
 
         </div>
 
@@ -867,24 +333,19 @@ const hasValidDate =
 
     <!-- ======================================================
          EXPECTED DURATION
-
-         Primarily used by Add Stock.
     ======================================================= -->
 
     <% if (expectedDuration) { %>
 
         <div class="stock-update-card__detail">
 
-
             <span>
-                Expected Duration
+                Expected duration
             </span>
-
 
             <p>
                 <%= expectedDuration %>
             </p>
-
 
         </div>
 
@@ -894,22 +355,13 @@ const hasValidDate =
 
     <!-- ======================================================
          IMAGES
-
-         These belong ONLY to this Update document.
     ======================================================= -->
 
     <% if (stockImages.length > 0) { %>
 
         <div class="stock-update-card__images">
 
-
-            <% stockImages.forEach(
-                function(
-                    image,
-                    imageIndex
-                )
-            { %>
-
+            <% stockImages.forEach(function(image, imageIndex) { %>
 
                 <img
                     src="<%= image %>"
@@ -918,9 +370,7 @@ const hasValidDate =
                     data-stock-image-index="<%= imageIndex %>"
                 >
 
-
             <% }); %>
-
 
         </div>
 
@@ -929,6 +379,10 @@ const hasValidDate =
 
 </article>
 
+
+<%
+}
+%>
 
 
 <style>
@@ -939,22 +393,16 @@ const hasValidDate =
 
 .stock-update-card,
 .stock-update-card * {
-
     box-sizing: border-box;
-
 }
 
 
 .stock-update-card {
-
     width: 100%;
-
     margin: 0 0 14px;
-
     padding: 16px;
 
-    border: 1px solid #dce7e0;
-
+    border: 1px solid #e0e8e3;
     border-radius: 16px;
 
     background: #ffffff;
@@ -962,22 +410,6 @@ const hasValidDate =
     box-shadow:
         0 2px 8px
         rgba(25, 60, 40, .05);
-
-}
-
-
-/* ==========================================================
-   REMAINING UPDATE CARD
-
-   Slightly different border so users can immediately
-   distinguish a remaining-stock report from a restock.
-========================================================== */
-
-.stock-update-card--remainder {
-
-    border-left:
-        4px solid #198754;
-
 }
 
 
@@ -986,109 +418,82 @@ const hasValidDate =
 ========================================================== */
 
 .stock-update-card__header {
-
     display: flex;
-
     align-items: center;
-
     justify-content: space-between;
 
     gap: 12px;
-
     margin-bottom: 14px;
-
 }
 
 
 .stock-update-card__author {
-
     display: flex;
-
     align-items: center;
 
     gap: 10px;
-
     min-width: 0;
-
 }
 
 
 .stock-update-card__avatar {
-
     width: 40px;
     height: 40px;
 
     flex: 0 0 40px;
 
     overflow: hidden;
-
     border-radius: 50%;
 
     background: #edf5ef;
-
 }
 
 
 .stock-update-card__avatar img {
-
     width: 100%;
     height: 100%;
 
     display: block;
 
     object-fit: cover;
-
 }
 
 
 .stock-update-card__author-info {
-
     display: flex;
-
     flex-direction: column;
 
     min-width: 0;
-
     gap: 2px;
-
 }
 
 
 .stock-update-card__author-info strong {
-
     overflow: hidden;
 
     color: #27342d;
 
     font-size: 13px;
-
     font-weight: 800;
 
     white-space: nowrap;
-
     text-overflow: ellipsis;
-
 }
 
 
 .stock-update-card__author-info span {
-
     color: #8a938e;
-
     font-size: 10px;
-
 }
 
 
 .stock-update-card__date {
-
     flex-shrink: 0;
 
     color: #929a95;
-
     font-size: 9px;
-
 }
+
 
 
 /* ==========================================================
@@ -1096,29 +501,22 @@ const hasValidDate =
 ========================================================== */
 
 .stock-update-card__heading {
-
     display: flex;
-
     align-items: center;
 
     gap: 11px;
-
     margin-bottom: 14px;
-
 }
 
 
 .stock-update-card__icon {
-
     width: 42px;
     height: 42px;
 
     flex: 0 0 42px;
 
     display: flex;
-
     align-items: center;
-
     justify-content: center;
 
     border-radius: 12px;
@@ -1126,19 +524,10 @@ const hasValidDate =
     background: #eef7f1;
 
     font-size: 20px;
-
-}
-
-
-.stock-update-card__heading-content {
-
-    min-width: 0;
-
 }
 
 
 .stock-update-card__action {
-
     display: block;
 
     margin-bottom: 2px;
@@ -1146,36 +535,24 @@ const hasValidDate =
     color: #198754;
 
     font-size: 9px;
-
     font-weight: 900;
 
     letter-spacing: .6px;
-
     text-transform: uppercase;
-
-}
-
-
-.stock-update-card__action--remainder {
-
-    color: #145c36;
-
 }
 
 
 .stock-update-card__heading h3 {
-
     margin: 0;
 
     color: #26352d;
 
     font-size: 16px;
-
     font-weight: 850;
 
     line-height: 1.25;
-
 }
+
 
 
 /* ==========================================================
@@ -1183,12 +560,9 @@ const hasValidDate =
 ========================================================== */
 
 .stock-update-card__stock {
-
     display: grid;
 
-    grid-template-columns:
-        minmax(0, 1fr)
-        auto;
+    grid-template-columns: 1fr auto;
 
     gap: 14px;
 
@@ -1197,182 +571,57 @@ const hasValidDate =
     border-radius: 11px;
 
     background: #f6faf7;
-
 }
 
 
 .stock-update-card__item,
 .stock-update-card__quantity {
-
     display: flex;
-
     flex-direction: column;
 
     gap: 4px;
-
 }
 
 
 .stock-update-card__label {
-
     color: #8a948e;
 
     font-size: 9px;
-
     font-weight: 800;
 
     text-transform: uppercase;
-
     letter-spacing: .5px;
-
 }
 
 
 .stock-update-card__item strong {
-
     color: #29372f;
 
     font-size: 13px;
-
     font-weight: 800;
-
-}
-
-
-.stock-update-card__item small {
-
-    color: #87928b;
-
-    font-size: 9px;
-
 }
 
 
 .stock-update-card__quantity {
-
     text-align: right;
-
 }
 
 
 .stock-update-card__quantity strong {
-
     color: #198754;
 
     font-size: 18px;
-
     font-weight: 900;
-
 }
 
 
 .stock-update-card__quantity small {
-
     color: #748078;
 
     font-size: 10px;
-
     font-weight: 700;
-
 }
 
-
-/* ==========================================================
-   REMAINING NOTE
-========================================================== */
-
-.stock-update-card__remaining-note {
-
-    display: flex;
-
-    align-items: flex-start;
-
-    gap: 8px;
-
-    margin-top: 12px;
-
-    padding: 10px 12px;
-
-    border-radius: 10px;
-
-    background: #edf7f1;
-
-    color: #4b5d52;
-
-    font-size: 11px;
-
-    line-height: 1.5;
-
-}
-
-
-.stock-update-card__remaining-note > span:first-child {
-
-    flex-shrink: 0;
-
-    font-size: 14px;
-
-}
-
-
-.stock-update-card__remaining-note strong {
-
-    color: #145c36;
-
-    font-weight: 850;
-
-}
-
-
-/* ==========================================================
-   STOCK VALUE
-========================================================== */
-
-.stock-update-card__value {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 12px;
-
-    margin-top: 12px;
-
-    padding: 10px 12px;
-
-    border-radius: 10px;
-
-    background: #f3f8f5;
-
-}
-
-
-.stock-update-card__value span {
-
-    color: #7b8780;
-
-    font-size: 9px;
-
-    font-weight: 900;
-
-    letter-spacing: .5px;
-
-    text-transform: uppercase;
-
-}
-
-
-.stock-update-card__value strong {
-
-    color: #145c36;
-
-    font-size: 13px;
-
-    font-weight: 850;
-
-}
 
 
 /* ==========================================================
@@ -1380,43 +629,19 @@ const hasValidDate =
 ========================================================== */
 
 .stock-update-card__message {
-
     margin-top: 13px;
 
     padding: 11px 12px;
 
-    border-left:
-        3px solid #198754;
+    border-left: 3px solid #198754;
 
-    border-radius:
-        0 9px 9px 0;
+    border-radius: 0 9px 9px 0;
 
     background: #f7faf8;
-
-}
-
-
-.stock-update-card__detail-label {
-
-    display: block;
-
-    margin-bottom: 5px;
-
-    color: #748078;
-
-    font-size: 9px;
-
-    font-weight: 900;
-
-    letter-spacing: .5px;
-
-    text-transform: uppercase;
-
 }
 
 
 .stock-update-card__message p {
-
     margin: 0;
 
     color: #4f5c54;
@@ -1424,8 +649,8 @@ const hasValidDate =
     font-size: 12px;
 
     line-height: 1.55;
-
 }
+
 
 
 /* ==========================================================
@@ -1433,14 +658,11 @@ const hasValidDate =
 ========================================================== */
 
 .stock-update-card__detail {
-
     margin-top: 12px;
-
 }
 
 
 .stock-update-card__detail > span {
-
     display: block;
 
     margin-bottom: 4px;
@@ -1448,18 +670,14 @@ const hasValidDate =
     color: #748078;
 
     font-size: 9px;
-
     font-weight: 900;
 
     letter-spacing: .5px;
-
     text-transform: uppercase;
-
 }
 
 
 .stock-update-card__detail p {
-
     margin: 0;
 
     color: #4e5b53;
@@ -1467,8 +685,8 @@ const hasValidDate =
     font-size: 11px;
 
     line-height: 1.5;
-
 }
+
 
 
 /* ==========================================================
@@ -1476,7 +694,6 @@ const hasValidDate =
 ========================================================== */
 
 .stock-update-card__images {
-
     display: grid;
 
     grid-template-columns:
@@ -1488,12 +705,10 @@ const hasValidDate =
     gap: 7px;
 
     margin-top: 13px;
-
 }
 
 
 .stock-update-card__images img {
-
     width: 100%;
 
     aspect-ratio: 1 / 1;
@@ -1507,8 +722,8 @@ const hasValidDate =
     object-fit: cover;
 
     background: #f1f4f2;
-
 }
+
 
 
 /* ==========================================================
@@ -1518,57 +733,25 @@ const hasValidDate =
 @media (max-width: 600px) {
 
     .stock-update-card {
-
         padding: 13px;
-
         border-radius: 14px;
-
     }
 
 
     .stock-update-card__header {
-
         align-items: flex-start;
-
     }
 
 
     .stock-update-card__date {
-
-        max-width: 110px;
-
         font-size: 8px;
-
-        text-align: right;
-
     }
 
 
     .stock-update-card__stock {
-
-        grid-template-columns:
-            minmax(0, 1fr)
-            auto;
-
-    }
-
-
-    .stock-update-card__heading h3 {
-
-        font-size: 15px;
-
-    }
-
-
-    .stock-update-card__remaining-note {
-
-        font-size: 10px;
-
+        grid-template-columns: 1fr auto;
     }
 
 }
 
 </style>
-
-
-<% } %>
