@@ -8,27 +8,27 @@
 //
 //     Dairy.feedStocks[]
 //
-// HISTORY / FEED:
+// HISTORY:
 //
 //     Update.stock
 //
-// ADMIN:
+// HISTORY ACTIONS:
 //
-//     Add animal feed
-//     Add veterinary medicine
-//     Add/increase current stock
-//     Set stock financial value
+//     available
+//         Created when ADMIN adds/restocks feed or medicine.
 //
-// DAIRY WORKER:
+//     remainder
+//         Created when ADMIN or DAIRY WORKER updates
+//         the remaining quantity.
 //
-//     Update remaining quantity
-//     Update unit
-//     Add message
-//     Add images
+// IMPORTANT:
 //
-// ADMIN / WORKER HISTORY:
+//     Foodstock Updates must display BOTH:
 //
-//     Every stock action creates Update.stock
+//         • Add Stock history
+//         • Update Remaining Stock history
+//
+//     Every stock action creates its own Update document.
 //
 // ==========================================================
 
@@ -291,12 +291,6 @@ function getStockCategory(stock) {
 // ==========================================================
 // FINANCIAL VALUE
 // ==========================================================
-//
-// feedsAmount is the financial value of current inventory.
-//
-// Worker updates NEVER modify it.
-//
-// ==========================================================
 
 function calculateFeedsAmount(
     feedStocks
@@ -492,9 +486,18 @@ async function getDairy(
 // GET FEED STORE PAGE
 // ==========================================================
 //
-// Returns exactly the variables expected by:
+// IMPORTANT:
 //
-//     views/update/feeds-store.ejs
+//     updates contains BOTH:
+//
+//         1. Add Stock events
+//         2. Update Remaining Stock events
+//
+// The EJS uses:
+//
+//     updates
+//
+// for the Foodstock Updates tab.
 //
 // ==========================================================
 
@@ -517,6 +520,10 @@ async function getFeedStorePage({
             dairyId
         );
 
+
+    // ======================================================
+    // GET ALL FOODSTOCK HISTORY
+    // ======================================================
 
     const updates =
         await getFeedStoreUpdates(
@@ -555,7 +562,7 @@ async function getFeedStorePage({
 
 
     // ======================================================
-    // WORKER
+    // WORKER SAFE DATA
     // ======================================================
 
     const dairyObject =
@@ -565,10 +572,6 @@ async function getFeedStorePage({
                 ...dairy
             };
 
-
-    // ------------------------------------------------------
-    // Remove financial information from worker stock data.
-    // ------------------------------------------------------
 
     if (
         Array.isArray(
@@ -598,10 +601,6 @@ async function getFeedStorePage({
     }
 
 
-    // ------------------------------------------------------
-    // Remove total financial value.
-    // ------------------------------------------------------
-
     delete dairyObject.feedsAmount;
 
 
@@ -629,15 +628,30 @@ async function getFeedStorePage({
 
 
 // ==========================================================
-// GET STOCK HISTORY
+// GET FOODSTOCK HISTORY
 // ==========================================================
 //
-// Only Update documents containing:
+// THIS IS THE IMPORTANT PART.
+//
+// We intentionally retrieve:
 //
 //     type: "stock"
-//     stock: {...}
+//
+// and require:
+//
+//     stock: { $exists: true }
+//
+// This means BOTH:
+//
+//     stock.action = "available"
+//
+// and:
+//
+//     stock.action = "remainder"
 //
 // are returned.
+//
+// We DO NOT filter only for "available".
 //
 // ==========================================================
 
@@ -694,8 +708,16 @@ async function getFeedStoreUpdates(
         .lean();
 
 
+    // ======================================================
+    // NORMALIZE HISTORY
+    // ======================================================
+
     return updates.map(
         function (update) {
+
+            // ------------------------------------------------
+            // USER INFORMATION
+            // ------------------------------------------------
 
             if (
                 update.user &&
@@ -712,6 +734,49 @@ async function getFeedStoreUpdates(
                     update.user.profileImage ||
                     update.userImage;
 
+
+                update.authorRole =
+                    update.user.role ||
+                    update.authorRole;
+
+            }
+
+
+            // ------------------------------------------------
+            // NORMALIZE STOCK OBJECT
+            // ------------------------------------------------
+
+            if (
+                update.stock &&
+                typeof update.stock ===
+                    "object"
+            ) {
+
+                // Ensure action always exists
+                // for the EJS/history card.
+
+                update.stock.action =
+                    cleanString(
+                        update.stock.action
+                    );
+
+
+                // Ensure item name exists.
+
+                update.stock.itemName =
+                    cleanString(
+                        update.stock.itemName
+                    );
+
+
+                // Ensure category exists.
+
+                update.stock.category =
+                    cleanString(
+                        update.stock.category ||
+                        update.stock.stockType
+                    ).toLowerCase();
+
             }
 
 
@@ -725,16 +790,6 @@ async function getFeedStoreUpdates(
 
 // ==========================================================
 // ADMIN: ADD STOCK
-// ==========================================================
-//
-// Creates:
-//
-//     dairy.feedStocks[]
-//
-// AND:
-//
-//     Update.stock
-//
 // ==========================================================
 
 async function addStock({
@@ -994,10 +1049,6 @@ async function addStock({
             quantity;
 
 
-        // --------------------------------------------------
-        // ADMIN FINANCIAL VALUE
-        // --------------------------------------------------
-
         stock.price =
             price;
 
@@ -1005,10 +1056,6 @@ async function addStock({
         stock.feedsAmount =
             price;
 
-
-        // --------------------------------------------------
-        // Additional stock information
-        // --------------------------------------------------
 
         stock.instructions =
             instructions;
@@ -1139,7 +1186,12 @@ async function addStock({
 
 
     // ======================================================
-    // CREATE HISTORY EVENT
+    // CREATE HISTORY
+    //
+    // ACTION:
+    //
+    //     available
+    //
     // ======================================================
 
     const update =
@@ -1187,10 +1239,24 @@ async function addStock({
 // WORKER / ADMIN: UPDATE REMAINING STOCK
 // ==========================================================
 //
-// The following values are deliberately NOT accepted:
+// IMPORTANT:
 //
-//     body.price
-//     body.feedsAmount
+// This function creates a NEW Update document.
+//
+// It does NOT modify or replace the previous Add Stock
+// history document.
+//
+// Therefore:
+//
+//     Add Stock
+//         ↓
+//     Update document #1
+//
+//     Update Remaining
+//         ↓
+//     Update document #2
+//
+// Both appear independently in Foodstock Updates.
 //
 // ==========================================================
 
@@ -1320,11 +1386,7 @@ async function updateRemainingStock({
 
 
     // ======================================================
-    // UPDATE INVENTORY
-    // ======================================================
-    //
-    // FINANCIAL DATA IS LEFT UNTOUCHED.
-    //
+    // UPDATE CURRENT INVENTORY
     // ======================================================
 
     stock.quantity =
@@ -1350,7 +1412,14 @@ async function updateRemainingStock({
 
 
     // ======================================================
-    // SAVE INVENTORY
+    // IMPORTANT
+    //
+    // DO NOT TOUCH:
+    //
+    //     stock.price
+    //     stock.feedsAmount
+    //     dairy.feedsAmount
+    //
     // ======================================================
 
     await dairy.save();
@@ -1377,7 +1446,12 @@ async function updateRemainingStock({
 
 
     // ======================================================
-    // HISTORY EVENT
+    // CREATE A NEW HISTORY EVENT
+    //
+    // ACTION:
+    //
+    //     remainder
+    //
     // ======================================================
 
     const update =
@@ -1417,15 +1491,13 @@ async function updateRemainingStock({
 // CREATE SYSTEM STOCK UPDATE
 // ==========================================================
 //
-// ADMIN RESTOCK EVENT.
+// ADMIN ADD STOCK HISTORY
 //
-// Update:
+//     type:
+//         "stock"
 //
-//     type = "stock"
-//
-//     authorRole = "system"
-//
-//     stock.action = "available"
+//     stock.action:
+//         "available"
 //
 // ==========================================================
 
@@ -1523,14 +1595,16 @@ async function createSystemStockUpdate({
 
 
 // ==========================================================
-// CREATE WORKER / ADMIN REMAINING STOCK UPDATE
+// CREATE REMAINING STOCK UPDATE
 // ==========================================================
 //
-// Update:
+// ADMIN / WORKER HISTORY
 //
-//     type = "stock"
+//     type:
+//         "stock"
 //
-//     stock.action = "remainder"
+//     stock.action:
+//         "remainder"
 //
 // ==========================================================
 
@@ -1590,7 +1664,7 @@ async function createWorkerStockUpdate({
                 "stock",
 
             title:
-                "Foodstock Update",
+                "Foodstock Remaining Updated",
 
             text:
                 message || "",
@@ -1618,7 +1692,7 @@ async function createWorkerStockUpdate({
                 unit,
 
                 // ------------------------------------------------
-                // No financial value is exposed in worker event.
+                // Workers do not write financial information.
                 // ------------------------------------------------
 
                 price:
