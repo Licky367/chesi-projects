@@ -2,40 +2,65 @@
 // models/Update.js
 // ==========================================================
 //
-// DAIRY UPDATE / FEED MODEL
+// DAIRY UPDATE / FEED STORE HISTORY MODEL
 //
-// Responsibilities:
+// RESPONSIBILITIES:
 //
 //     • General dairy posts
 //     • Medical updates
 //     • Maintenance updates
 //     • Asset-added updates
-//     • Stock/feed-store updates
+//     • Feed-store stock additions
+//     • Feed-store remaining-stock updates
 //
-// IMPORTANT STOCK RULE
+// ==========================================================
+//
+// IMPORTANT FOODSTOCK ARCHITECTURE
 // ----------------------------------------------------------
 //
-// EVERY stock event is an independent Update document.
+// CURRENT INVENTORY:
+//
+//     Dairy.feedStocks[]
+//
+// HISTORICAL EVENTS:
+//
+//     Update.stock
+//
+// EVERY STOCK EVENT IS A SEPARATE Update DOCUMENT.
 //
 // Example:
 //
 //     Admin adds 20kg Dairy Meal
+//         -> Update #1
+//
 //     Admin adds another 30kg Dairy Meal
-//     Worker reports 25kg remaining
+//         -> Update #2
 //
-// These create THREE separate:
+//     Worker reports 40kg remaining
+//         -> Update #3
 //
-//     Update documents
+// These documents MUST NEVER overwrite one another.
 //
-// They must NEVER overwrite or collapse into one another.
+// ==========================================================
 //
-// Current inventory belongs to:
+// IMPORTANT STOCK IDENTIFICATION
+// ----------------------------------------------------------
 //
-//     Dairy.feedStocks[]
+// Every stock history record stores:
 //
-// Historical feed events belong to:
+//     stock.stockId
 //
-//     Update.stock
+// This is the _id of the corresponding:
+//
+//     Dairy.feedStocks[] subdocument
+//
+// Therefore the application can:
+//
+//     1. Display available stock.
+//     2. User clicks one stock item.
+//     3. Open that stock's update/remainder section.
+//     4. Display its current backend quantity.
+//     5. Display only history belonging to that stock.
 //
 // ==========================================================
 
@@ -69,6 +94,14 @@ const STOCK_TYPES = [
 // ==========================================================
 // STOCK ACTIONS
 // ==========================================================
+//
+// available
+//     Admin makes stock available / restocks.
+//
+// remainder
+//     Admin or dairyWorker records remaining stock.
+//
+// ==========================================================
 
 const STOCK_ACTIONS = [
 
@@ -83,9 +116,19 @@ const STOCK_ACTIONS = [
 // STOCK UNITS
 // ==========================================================
 //
-// MUST ALIGN WITH:
+// These are the units allowed when ADMIN adds/restocks stock.
 //
-//     services/update/feedsService.js
+// IMPORTANT:
+//
+// During a remainder update:
+//
+//     dairyWorker does NOT change the unit.
+//
+// The remainder event uses the unit already stored on:
+//
+//     Dairy.feedStocks[]
+//
+// Admin may change the unit when using the restock form.
 //
 // ==========================================================
 
@@ -96,6 +139,8 @@ const STOCK_UNITS = [
     "bags",
 
     "tonnes",
+
+    "bales",
 
     "litres",
 
@@ -121,6 +166,8 @@ const postCommentSchema =
 
                 type:
                     mongoose.Schema.Types.ObjectId,
+
+                ref: "User",
 
                 required: true
 
@@ -176,7 +223,6 @@ const postCommentSchema =
 
         {
 
-            // Comments need their own IDs.
             _id: true
 
         }
@@ -240,6 +286,8 @@ const medicalSchema =
                 type:
                     mongoose.Schema.Types.ObjectId,
 
+                ref: "User",
+
                 default: null
 
             },
@@ -258,6 +306,8 @@ const medicalSchema =
 
                 type:
                     mongoose.Schema.Types.ObjectId,
+
+                ref: "User",
 
                 default: null
 
@@ -352,6 +402,8 @@ const maintenanceSchema =
                 type:
                     mongoose.Schema.Types.ObjectId,
 
+                ref: "User",
+
                 default: null
 
             },
@@ -370,6 +422,8 @@ const maintenanceSchema =
 
                 type:
                     mongoose.Schema.Types.ObjectId,
+
+                ref: "User",
 
                 default: null
 
@@ -435,7 +489,9 @@ const assetAddSchema =
 
                 default: "",
 
-                trim: true
+                trim: true,
+
+                maxlength: 150
 
             },
 
@@ -446,7 +502,9 @@ const assetAddSchema =
 
                 default: "",
 
-                trim: true
+                trim: true,
+
+                maxlength: 100
 
             },
 
@@ -479,7 +537,9 @@ const assetAddSchema =
 
                 default: "",
 
-                trim: true
+                trim: true,
+
+                maxlength: 2000
 
             },
 
@@ -490,7 +550,9 @@ const assetAddSchema =
 
                 default: "",
 
-                trim: true
+                trim: true,
+
+                maxlength: 100
 
             },
 
@@ -501,7 +563,9 @@ const assetAddSchema =
 
                 default: "",
 
-                trim: true
+                trim: true,
+
+                maxlength: 150
 
             },
 
@@ -572,24 +636,57 @@ const assetAddSchema =
 // STOCK UPDATE SUBDOCUMENT
 // ==========================================================
 //
-// CRITICAL:
+// IMPORTANT:
 //
-//     _id: TRUE
+// This is ONE historical stock event.
 //
-// Every stock event receives its own ID.
+// Each Update document has ONE stock subdocument.
 //
-// This means:
+// stock._id is intentionally enabled.
 //
-//     Update A
-//         stock._id = X
+// Additionally:
 //
-//     Update B
-//         stock._id = Y
+//     stock.stockId
 //
-//     Update C
-//         stock._id = Z
+// identifies the CURRENT inventory item inside:
 //
-// Even when all three concern the same feed.
+//     Dairy.feedStocks[]
+//
+// Example:
+//
+//     Dairy.feedStocks:
+//
+//         {
+//             _id: A,
+//             name: "Dairy Meal"
+//         }
+//
+// History:
+//
+//     Update #1
+//         stock.stockId = A
+//         stock.action = "available"
+//         stock.quantity = 20
+//
+//     Update #2
+//         stock.stockId = A
+//         stock.action = "available"
+//         stock.quantity = 30
+//
+//     Update #3
+//         stock.stockId = A
+//         stock.action = "remainder"
+//         stock.quantity = 40
+//
+// This makes it possible to query:
+//
+//     {
+//         dairy: dairyId,
+//         type: "stock",
+//         "stock.stockId": stockId
+//     }
+//
+// and obtain ONLY the history for that stock item.
 //
 // ==========================================================
 
@@ -597,6 +694,20 @@ const stockSchema =
     new mongoose.Schema(
 
         {
+
+            // ==================================================
+            // CURRENT INVENTORY STOCK ID
+            // ==================================================
+
+            stockId: {
+
+                type:
+                    mongoose.Schema.Types.ObjectId,
+
+                default: null
+
+            },
+
 
             // ==================================================
             // STOCK TYPE
@@ -671,6 +782,16 @@ const stockSchema =
             // ==================================================
             // QUANTITY
             // ==================================================
+            //
+            // For "available":
+            //
+            //     quantity = quantity being added
+            //
+            // For "remainder":
+            //
+            //     quantity = new quantity remaining
+            //
+            // ==================================================
 
             quantity: {
 
@@ -685,6 +806,13 @@ const stockSchema =
 
             // ==================================================
             // UNIT
+            // ==================================================
+            //
+            // This records the unit used by the stock event.
+            //
+            // Remainder events should receive the unit already
+            // stored in Dairy.feedStocks[].
+            //
             // ==================================================
 
             unit: {
@@ -703,6 +831,13 @@ const stockSchema =
 
             // ==================================================
             // PRICE
+            // ==================================================
+            //
+            // Financial information belongs to ADMIN stock
+            // events.
+            //
+            // Worker remainder events should use 0.
+            //
             // ==================================================
 
             price: {
@@ -751,7 +886,7 @@ const stockSchema =
 
 
             // ==================================================
-            // MESSAGE
+            // ADDITIONAL INFORMATION
             // ==================================================
 
             message: {
@@ -815,12 +950,11 @@ const stockSchema =
         {
 
             // ==================================================
-            // VERY IMPORTANT
+            // IMPORTANT
             // ==================================================
             //
-            // DO NOT DISABLE THIS.
-            //
-            // Each stock event must have its own identifier.
+            // Every historical stock event receives its own
+            // subdocument ID.
             //
             _id: true
 
@@ -1155,25 +1289,6 @@ const updateSchema =
             // ==================================================
             // STOCK
             // ==================================================
-            //
-            // Each Update document contains at most one stock
-            // event.
-            //
-            // BUT every Update document is independent.
-            //
-            // Therefore:
-            //
-            //     Update.stock[0]
-            //
-            // is NOT used.
-            //
-            // Instead:
-            //
-            //     update.stock
-            //
-            // represents that particular historical event.
-            //
-            // ==================================================
 
             stock: {
 
@@ -1199,11 +1314,9 @@ const updateSchema =
 // INDEXES
 // ==========================================================
 //
-// These indexes are intentionally NON-UNIQUE.
+// NONE OF THESE ARE UNIQUE.
 //
-// This is critical.
-//
-// Multiple stock updates for the same dairy are allowed.
+// Multiple events for the same stock are REQUIRED.
 //
 // ==========================================================
 
@@ -1239,6 +1352,29 @@ updateSchema.index({
 
 
 // ==========================================================
+// STOCK-SPECIFIC HISTORY INDEX
+// ==========================================================
+//
+// This is important for:
+//
+//     "show only updates for the clicked stock"
+//
+// ==========================================================
+
+updateSchema.index({
+
+    dairy: 1,
+
+    type: 1,
+
+    "stock.stockId": 1,
+
+    createdAt: -1
+
+});
+
+
+// ==========================================================
 // PRE VALIDATE
 // ==========================================================
 
@@ -1253,7 +1389,9 @@ updateSchema.pre(
         // ==================================================
 
         if (
-            !Array.isArray(this.images)
+            !Array.isArray(
+                this.images
+            )
         ) {
 
             this.images = [];
@@ -1336,6 +1474,22 @@ updateSchema.pre(
         if (
             this.stock
         ) {
+
+            // ------------------------------------------------
+            // STOCK ID
+            // ------------------------------------------------
+
+            if (
+                this.stock.stockId
+            ) {
+
+                this.stock.stockId =
+                    new mongoose.Types.ObjectId(
+                        this.stock.stockId
+                    );
+
+            }
+
 
             // ------------------------------------------------
             // IMAGES
@@ -1432,7 +1586,8 @@ updateSchema.pre(
                 this.stock.category =
                     String(
                         this.stock.category
-                    ).trim();
+                    ).trim()
+                    .toLowerCase();
 
             }
 
@@ -1476,13 +1631,12 @@ updateSchema.pre(
 
 
         // ==================================================
-        // SYSTEM STOCK
+        // SYSTEM STOCK EVENT
         // ==================================================
         //
-        // "available" means the stock was made available
-        // by the system after an admin restock.
-        //
-        // The feed therefore identifies the author as System.
+        // AVAILABLE STOCK events are generated by the admin
+        // restock operation but represented in the history as
+        // a system stock event.
         //
         // ==================================================
 
@@ -1530,14 +1684,52 @@ updateSchema.pre(
                 !this.title
             ) {
 
-                this.title =
+                if (
+                    this.stock.action ===
+                    "remainder"
+                ) {
 
-                    this.stock.stockType ===
-                        "medicine"
+                    this.title =
+                        "Foodstock Remaining Updated";
 
-                        ? "More Veterinary Meds Available"
+                } else {
 
-                        : "More Animal Feed Available";
+                    this.title =
+
+                        this.stock.stockType ===
+                            "medicine"
+
+                            ? "More Veterinary Meds Available"
+
+                            : "More Animal Feed Available";
+
+                }
+
+            }
+
+        }
+
+
+        // ==================================================
+        // STOCK TEXT
+        // ==================================================
+
+        if (
+
+            this.type === "stock" &&
+
+            this.stock
+
+        ) {
+
+            if (
+                !this.text
+            ) {
+
+                this.text =
+                    this.stock.message ||
+                    this.stock.instructions ||
+                    "";
 
             }
 
