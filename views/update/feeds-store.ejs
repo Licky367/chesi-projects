@@ -17,36 +17,15 @@ DATA EXPECTED FROM CONTROLLER:
     medicineTypes
     stockUnits
 
-OPTIONAL BACKWARD-COMPATIBLE DATA:
+CURRENT INVENTORY:
 --------------------------------------------------------------
-    feedUpdates
+    dairy.feedStocks[]
 
-CURRENT STOCK:
+HISTORY:
 --------------------------------------------------------------
-    dairy.feeds
+    updates[]
 
-The template also safely supports:
-
-    dairy.feedStore
-    dairy.feedStock
-
-STOCK FEED:
---------------------------------------------------------------
-    updates
-
-Each stock update is passed to:
-
-    views/update/stock.ejs
-
-using:
-
-    update
-
-NOT:
-
-    item
-
-This is important because stock.ejs reads:
+Each history item is an Update document:
 
     update.type
     update.stock
@@ -57,6 +36,24 @@ This is important because stock.ejs reads:
     update.title
     update.createdAt
 
+Each history item is independently passed to:
+
+    views/update/stock.ejs
+
+as:
+
+    update
+
+IMPORTANT:
+--------------------------------------------------------------
+    DO NOT use:
+        item
+        feed
+        stockUpdate
+
+    inside stock.ejs.
+
+    Every Update document remains a separate feed card.
 ==============================================================
 */ %>
 
@@ -74,42 +71,20 @@ const currentUser =
 
 
 /* ==========================================================
-   CURRENT STOCK
+   CURRENT INVENTORY
 ========================================================== */
 
 const feedStoreItems =
     currentDairy &&
-    Array.isArray(currentDairy.feeds)
+    Array.isArray(currentDairy.feedStocks)
 
-        ? currentDairy.feeds
+        ? currentDairy.feedStocks
 
-        : (
-            currentDairy &&
-            Array.isArray(currentDairy.feedStore)
-
-                ? currentDairy.feedStore
-
-                : (
-                    currentDairy &&
-                    Array.isArray(currentDairy.feedStock)
-
-                        ? currentDairy.feedStock
-
-                        : []
-                )
-        );
+        : [];
 
 
 /* ==========================================================
-   STOCK FEED UPDATES
-
-   PRIMARY:
-
-       updates
-
-   FALLBACK:
-
-       feedUpdates
+   STOCK HISTORY
 ========================================================== */
 
 const feedStoreUpdates =
@@ -117,17 +92,11 @@ const feedStoreUpdates =
 
         ? updates
 
-        : (
-            Array.isArray(feedUpdates)
-
-                ? feedUpdates
-
-                : []
-        );
+        : [];
 
 
 /* ==========================================================
-   FORM OPTION ARRAYS
+   FORM OPTIONS
 ========================================================== */
 
 const availableFeedTypes =
@@ -164,9 +133,7 @@ const availableStockUnits =
 
 
 /* ==========================================================
-   HELPER
-
-   Determine whether a stock item is medicine.
+   STOCK TYPE HELPER
 ========================================================== */
 
 function isMedicineStock(stock) {
@@ -175,19 +142,23 @@ function isMedicineStock(stock) {
         return false;
     }
 
+
     return (
-        stock.category === "medicine" ||
-        stock.type === "medicine" ||
-        stock.stockType === "medicine"
+
+        String(
+            stock.category ||
+            stock.stockType ||
+            stock.type ||
+            ""
+        ).toLowerCase() === "medicine"
+
     );
 
 }
 
 
 /* ==========================================================
-   HELPER
-
-   Determine stock display name.
+   STOCK NAME
 ========================================================== */
 
 function getStockName(stock) {
@@ -196,23 +167,30 @@ function getStockName(stock) {
         return "Unnamed Stock";
     }
 
+
     return (
+
         stock.name ||
+
         stock.feedName ||
+
         stock.medicineName ||
+
         stock.stockName ||
+
         stock.productName ||
+
         stock.itemName ||
+
         "Unnamed Stock"
+
     );
 
 }
 
 
 /* ==========================================================
-   HELPER
-
-   Determine quantity remaining.
+   STOCK QUANTITY
 ========================================================== */
 
 function getStockQuantity(stock) {
@@ -220,6 +198,7 @@ function getStockQuantity(stock) {
     if (!stock) {
         return 0;
     }
+
 
     if (
         stock.quantityRemaining !== undefined &&
@@ -231,6 +210,7 @@ function getStockQuantity(stock) {
 
     }
 
+
     if (
         stock.quantity !== undefined &&
         stock.quantity !== null &&
@@ -240,6 +220,7 @@ function getStockQuantity(stock) {
         return stock.quantity;
 
     }
+
 
     if (
         stock.remaining !== undefined &&
@@ -251,6 +232,7 @@ function getStockQuantity(stock) {
 
     }
 
+
     if (
         stock.amount !== undefined &&
         stock.amount !== null &&
@@ -261,15 +243,14 @@ function getStockQuantity(stock) {
 
     }
 
+
     return 0;
 
 }
 
 
 /* ==========================================================
-   HELPER
-
-   Determine stock unit.
+   STOCK UNIT
 ========================================================== */
 
 function getStockUnit(stock) {
@@ -278,10 +259,15 @@ function getStockUnit(stock) {
         return "units";
     }
 
+
     return (
+
         stock.unit ||
+
         stock.stockUnit ||
+
         "units"
+
     );
 
 }
@@ -296,7 +282,6 @@ function getStockUnit(stock) {
 <div
     class="feedstore-page"
     data-dairy-id="<%= currentDairy._id %>"
-    data-feedstore-url="/dairy/feedstore/<%= currentDairy._id %>"
 >
 
 
@@ -439,7 +424,6 @@ function getStockUnit(stock) {
                             </div>
 
 
-
                             <div class="feedstore-stock-info">
 
 
@@ -539,9 +523,6 @@ function getStockUnit(stock) {
 
     <!-- ======================================================
          ADMIN FINANCIAL SUMMARY
-
-         FINANCIAL INFORMATION MUST NEVER BE SHOWN TO
-         DAIRY WORKERS.
     ======================================================= -->
 
     <% if (currentUser.role === "admin") { %>
@@ -628,18 +609,6 @@ function getStockUnit(stock) {
 
 
 
-            <!-- ==================================================
-                 ADMIN RESTOCK FORM
-
-                 POST:
-
-                     /dairy/:id/feedstore/restock
-
-                 ID:
-
-                     currentDairy._id
-            =================================================== -->
-
             <form
                 class="feedstore-form"
                 action="/dairy/<%= currentDairy._id %>/feedstore/restock"
@@ -648,9 +617,7 @@ function getStockUnit(stock) {
             >
 
 
-                <!-- ==========================================
-                     STOCK TYPE
-                =========================================== -->
+                <!-- STOCK TYPE -->
 
                 <div class="feedstore-field">
 
@@ -689,9 +656,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     ANIMAL FEED
-                =========================================== -->
+                <!-- ANIMAL FEED -->
 
                 <div
                     class="feedstore-field"
@@ -735,9 +700,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     VETERINARY MEDICINE
-                =========================================== -->
+                <!-- MEDICINE -->
 
                 <div
                     class="feedstore-field"
@@ -782,9 +745,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     QUANTITY + UNIT
-                =========================================== -->
+                <!-- QUANTITY + UNIT -->
 
                 <div class="feedstore-two-columns">
 
@@ -809,7 +770,6 @@ function getStockUnit(stock) {
 
 
                     </div>
-
 
 
                     <div class="feedstore-field">
@@ -855,9 +815,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     PRICE
-                =========================================== -->
+                <!-- PRICE -->
 
                 <div class="feedstore-field">
 
@@ -899,9 +857,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     INSTRUCTIONS
-                =========================================== -->
+                <!-- INSTRUCTIONS -->
 
                 <div class="feedstore-field">
 
@@ -924,9 +880,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     EXPECTED DURATION
-                =========================================== -->
+                <!-- EXPECTED DURATION -->
 
                 <div class="feedstore-field">
 
@@ -949,9 +903,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     IMAGES
-                =========================================== -->
+                <!-- IMAGES -->
 
                 <div class="feedstore-field">
 
@@ -980,9 +932,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     SUBMIT
-                =========================================== -->
+                <!-- SUBMIT -->
 
                 <button
                     type="submit"
@@ -1009,7 +959,7 @@ function getStockUnit(stock) {
 
 
     <!-- ======================================================
-         WORKER / ADMIN REMAINING STOCK UPDATE
+         UPDATE REMAINING STOCK
     ======================================================= -->
 
     <% if (
@@ -1045,10 +995,6 @@ function getStockUnit(stock) {
 
 
 
-            <!-- ==================================================
-                 STOCK UPDATE FORM
-            =================================================== -->
-
             <form
                 class="feedstore-form worker-form"
                 action="/dairy/<%= currentDairy._id %>/feedstore/update"
@@ -1057,9 +1003,7 @@ function getStockUnit(stock) {
             >
 
 
-                <!-- ==========================================
-                     STOCK ITEM
-                =========================================== -->
+                <!-- STOCK ITEM -->
 
                 <div class="feedstore-field">
 
@@ -1112,9 +1056,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     REMAINING QUANTITY + UNIT
-                =========================================== -->
+                <!-- QUANTITY + UNIT -->
 
                 <div class="feedstore-two-columns">
 
@@ -1139,7 +1081,6 @@ function getStockUnit(stock) {
 
 
                     </div>
-
 
 
                     <div class="feedstore-field">
@@ -1185,9 +1126,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     MESSAGE
-                =========================================== -->
+                <!-- MESSAGE -->
 
                 <div class="feedstore-field">
 
@@ -1210,9 +1149,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     IMAGES
-                =========================================== -->
+                <!-- IMAGES -->
 
                 <div class="feedstore-field">
 
@@ -1235,9 +1172,7 @@ function getStockUnit(stock) {
 
 
 
-                <!-- ==========================================
-                     SUBMIT
-                =========================================== -->
+                <!-- SUBMIT -->
 
                 <button
                     type="submit"
@@ -1264,37 +1199,50 @@ function getStockUnit(stock) {
 
 
     <!-- ======================================================
-         STOCK UPDATE FEED
+         FOODSTOCK HISTORY
+
+         IMPORTANT:
+         ------------------------------------------------------
+         EVERY Update document is rendered separately.
+
+         There is NO grouping by:
+             feed name
+             medicine name
+             stock type
+             action
+
+         If updates contains 10 documents,
+         stock.ejs is included 10 times.
     ======================================================= -->
 
-    <% if (feedStoreUpdates.length > 0) { %>
+    <section class="feedstore-section">
 
 
-        <section class="feedstore-section">
+        <div class="feedstore-section-header">
 
 
-            <div class="feedstore-section-header">
+            <div>
 
 
-                <div>
+                <h2>
+                    Foodstock Updates
+                </h2>
 
 
-                    <h2>
-                        Foodstock Updates
-                    </h2>
-
-
-                    <p>
-                        Recent additions and remaining-stock
-                        updates.
-                    </p>
-
-
-                </div>
+                <p>
+                    Recent additions and remaining-stock
+                    updates.
+                </p>
 
 
             </div>
 
+
+        </div>
+
+
+
+        <% if (feedStoreUpdates.length > 0) { %>
 
 
             <div class="feedstore-feed">
@@ -1303,25 +1251,6 @@ function getStockUnit(stock) {
                 <% feedStoreUpdates.forEach(
                     function(stockUpdate)
                 { %>
-
-
-                    <%
-                        /*
-                         * IMPORTANT:
-                         *
-                         * stock.ejs expects:
-                         *
-                         *     update
-                         *
-                         * Therefore we explicitly pass:
-                         *
-                         *     update: stockUpdate
-                         *
-                         * Do NOT change this to:
-                         *
-                         *     item: stockUpdate
-                         */
-                    %>
 
 
                     <%- include(
@@ -1340,10 +1269,38 @@ function getStockUnit(stock) {
             </div>
 
 
-        </section>
+        <% } else { %>
 
 
-    <% } %>
+            <div class="feedstore-empty">
+
+
+                <div
+                    class="feedstore-empty-icon"
+                    aria-hidden="true"
+                >
+                    📦
+                </div>
+
+
+                <h3>
+                    No foodstock updates yet
+                </h3>
+
+
+                <p>
+                    Stock additions and remaining-stock
+                    reports will appear here.
+                </p>
+
+
+            </div>
+
+
+        <% } %>
+
+
+    </section>
 
 
 </div>
@@ -1487,7 +1444,6 @@ document.addEventListener(
 }
 
 
-
 /* ==========================================================
    INTRO
 ========================================================== */
@@ -1564,7 +1520,6 @@ document.addEventListener(
 }
 
 
-
 /* ==========================================================
    SECTION
 ========================================================== */
@@ -1606,9 +1561,8 @@ document.addEventListener(
 }
 
 
-
 /* ==========================================================
-   STOCK LIST
+   CURRENT STOCK
 ========================================================== */
 
 .feedstore-stock-list {
@@ -1734,7 +1688,6 @@ document.addEventListener(
 }
 
 
-
 /* ==========================================================
    EMPTY
 ========================================================== */
@@ -1780,7 +1733,6 @@ document.addEventListener(
     font-size: 12px;
 
 }
-
 
 
 /* ==========================================================
@@ -1848,7 +1800,6 @@ document.addEventListener(
 }
 
 
-
 /* ==========================================================
    ADMIN LABEL
 ========================================================== */
@@ -1873,7 +1824,6 @@ document.addEventListener(
     letter-spacing: .7px;
 
 }
-
 
 
 /* ==========================================================
@@ -1968,7 +1918,6 @@ document.addEventListener(
 }
 
 
-
 /* ==========================================================
    TWO COLUMNS
 ========================================================== */
@@ -1983,7 +1932,6 @@ document.addEventListener(
     gap: 12px;
 
 }
-
 
 
 /* ==========================================================
@@ -2033,6 +1981,45 @@ document.addEventListener(
 }
 
 
+/* ==========================================================
+   HISTORY FEED
+========================================================== */
+
+.feedstore-feed {
+
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 16px;
+
+}
+
+
+/*
+IMPORTANT:
+
+Each child generated by:
+
+    include("stock", ...)
+
+remains an independent card.
+
+No selector here hides:
+    :nth-child(n+2)
+    :first-child
+    duplicates
+    repeated stock names
+*/
+
+
+.feedstore-feed > * {
+
+    width: 100%;
+
+}
+
 
 /* ==========================================================
    BUTTON
@@ -2079,7 +2066,6 @@ document.addEventListener(
     background: #198754;
 
 }
-
 
 
 /* ==========================================================
@@ -2206,9 +2192,7 @@ document.addEventListener(
 
 <div
     class="feedstore-empty"
-    style="
-        margin:20px;
-    "
+    style="margin:20px;"
 >
 
     <div
