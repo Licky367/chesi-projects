@@ -4,14 +4,20 @@
 //
 // FEED STORE / STORAGE CONTROLLER
 //
-// Views:
+// ROUTES:
 //
-//     views/update/storage/feed-stock.ejs
-//     views/update/storage/add-stock.ejs
-//     views/update/storage/update-stock.ejs
-//     views/update/storage/restock.ejs
+//     GET    /dairy/:dairyId/feedstore
+//     GET    /dairy/:dairyId/feedstore/add
+//     GET    /dairy/:dairyId/feedstore/:stockId/update
+//     GET    /dairy/:dairyId/feedstore/:stockId/restock
+//     GET    /dairy/:dairyId/feedstore/:stockId
 //
-// Service:
+//     POST   /dairy/:dairyId/feedstore/add
+//     PUT    /dairy/:dairyId/feedstore/:stockId/update
+//     POST   /dairy/:dairyId/feedstore/:stockId/restock
+//     DELETE /dairy/:dairyId/feedstore/:stockId
+//
+// SERVICE:
 //
 //     services/update/storageService.js
 //
@@ -19,63 +25,28 @@
 //
 //     models/dairy.js
 //
-// RESPONSIBILITIES:
-//
-//     • Display feed-store inventory
-//     • Display add-stock page
-//     • Display update-stock page
-//     • Display restock page
-//     • Save new stock
-//     • Update existing stock
-//     • Restock existing stock
-//     • Provide master dropdown options
-//     • Return individual stock
-//     • Delete stock
-//
-// ROLE RULES:
-//
-//     ADMIN
-//         • View stock
-//         • Add stock
-//         • Update stock
-//         • Restock stock
-//         • Delete stock
-//
-//     DAIRY WORKER
-//         • View stock
-//         • Update stock
-//
 // ==========================================================
-
 
 const storageService =
     require("../../services/update/storageService");
 
 
 // ==========================================================
-// HELPERS
-// ==========================================================
-
-
-// ==========================================================
-// GET USER
+// USER
 // ==========================================================
 
 function getUser(req) {
 
     return (
-
         req.session &&
-
         req.session.user
-
     ) || null;
 
 }
 
 
 // ==========================================================
-// ADMIN CHECK
+// ROLE CHECKS
 // ==========================================================
 
 function isAdmin(req) {
@@ -83,31 +54,18 @@ function isAdmin(req) {
     const user =
         getUser(req);
 
-
     return Boolean(
-
         user &&
-
         user.role === "admin"
-
     );
 
 }
 
 
-// ==========================================================
-// STORAGE ACCESS CHECK
-// ==========================================================
-//
-// ADMIN + DAIRY WORKER
-//
-// ==========================================================
-
 function canAccessStorage(req) {
 
     const user =
         getUser(req);
-
 
     return Boolean(
 
@@ -115,9 +73,7 @@ function canAccessStorage(req) {
 
         (
             user.role === "admin" ||
-
             user.role === "dairyWorker"
-
         )
 
     );
@@ -126,104 +82,54 @@ function canAccessStorage(req) {
 
 
 // ==========================================================
-// GET DAIRY ID
+// ROUTE PARAMETERS
 // ==========================================================
 //
-// Supports:
+// Router mapping:
 //
-//     req.params.dairyId
+//     :dairyId
+//     :stockId
 //
-// and:
-//
-//     req.params.id
-//
+// Do not fall back to unrelated parameter names.
 // ==========================================================
 
 function getDairyId(req) {
 
-    return (
-
-        req.params.dairyId ||
-
-        req.params.id ||
-
-        req.body.dairyId ||
-
-        ""
-
-    );
+    return String(
+        req.params.dairyId || ""
+    ).trim();
 
 }
 
-
-// ==========================================================
-// GET STOCK ID
-// ==========================================================
-//
-// Supports:
-//
-//     req.params.stockId
-//
-// and:
-//
-//     req.body.stockId
-//
-// ==========================================================
 
 function getStockId(req) {
 
-    return (
-
-        req.params.stockId ||
-
-        req.body.stockId ||
-
-        ""
-
-    );
+    return String(
+        req.params.stockId || ""
+    ).trim();
 
 }
 
 
 // ==========================================================
-// GET UPLOADED IMAGES
-// ==========================================================
-//
-// Supports:
-//
-//     multer.array("images")
-//
-// and:
-//
-//     multer.fields({
-//         images: ...
-//     })
-//
+// UPLOADED IMAGES
 // ==========================================================
 
 function getUploadedImages(req) {
 
-    if (
-        !req.files
-    ) {
-
+    if (!req.files) {
         return [];
-
     }
 
 
     let files = [];
 
 
-    // ======================================================
-    // multer.array("images")
-    // ======================================================
+    // ------------------------------------------------------
+    // upload.array("images", 10)
+    // ------------------------------------------------------
 
-    if (
-        Array.isArray(
-            req.files
-        )
-    ) {
+    if (Array.isArray(req.files)) {
 
         files =
             req.files;
@@ -231,14 +137,12 @@ function getUploadedImages(req) {
     }
 
 
-    // ======================================================
-    // multer.fields(...)
-    // ======================================================
+    // ------------------------------------------------------
+    // upload.fields(...)
+    // ------------------------------------------------------
 
     else if (
-        Array.isArray(
-            req.files.images
-        )
+        Array.isArray(req.files.images)
     ) {
 
         files =
@@ -263,13 +167,9 @@ function getUploadedImages(req) {
             return (
 
                 file.secure_url ||
-
                 file.url ||
-
                 file.path ||
-
                 file.location ||
-
                 ""
 
             );
@@ -290,32 +190,29 @@ function getUploadedImages(req) {
 
 
 // ==========================================================
-// GET STOCK OPTIONS
-// ==========================================================
-//
-// IMPORTANT:
-//
-// Options come from:
-//
-//     storageService.getStorageOptions()
-//
-// which in turn gets them from the master lists in
-// models/dairy.js.
-//
-// They are NOT generated from existing feedStocks.
-//
+// STORAGE OPTIONS
 // ==========================================================
 
 function getStockOptions() {
 
+    if (
+        !storageService ||
+        typeof storageService.getStorageOptions !== "function"
+    ) {
+
+        return {
+
+            feedTypes: [],
+            medicineTypes: [],
+            stockUnits: []
+
+        };
+
+    }
+
+
     const options =
-
-        typeof storageService.getStorageOptions ===
-        "function"
-
-            ? storageService.getStorageOptions()
-
-            : {};
+        storageService.getStorageOptions() || {};
 
 
     return {
@@ -325,9 +222,7 @@ function getStockOptions() {
             Array.isArray(
                 options.feedTypes
             )
-
                 ? options.feedTypes
-
                 : [],
 
 
@@ -336,9 +231,7 @@ function getStockOptions() {
             Array.isArray(
                 options.veterinaryMedicines
             )
-
                 ? options.veterinaryMedicines
-
                 : [],
 
 
@@ -347,9 +240,7 @@ function getStockOptions() {
             Array.isArray(
                 options.stockUnits
             )
-
                 ? options.stockUnits
-
                 : []
 
     };
@@ -358,43 +249,25 @@ function getStockOptions() {
 
 
 // ==========================================================
-// GET FEED STORE ITEMS
+// FEED STORE ITEMS
 // ==========================================================
 
-function getFeedStoreItems(
-    dairy
-) {
+function getFeedStoreItems(dairy) {
 
     return (
 
         dairy &&
+        Array.isArray(dairy.feedStocks)
 
-        Array.isArray(
-            dairy.feedStocks
-        )
-
-            ? dairy.feedStocks
-
-            : []
-
-    );
+    )
+        ? dairy.feedStocks
+        : [];
 
 }
 
 
 // ==========================================================
-// BUILD COMMON VIEW DATA
-// ==========================================================
-//
-// Every storage page receives:
-//
-//     dairy
-//     user
-//     feedStoreItems
-//     feedTypes
-//     medicineTypes
-//     stockUnits
-//
+// COMMON VIEW DATA
 // ==========================================================
 
 function buildCommonViewData(
@@ -440,44 +313,72 @@ async function loadDairy(
     dairyId
 ) {
 
-    if (
-        !dairyId
-    ) {
+    if (!dairyId) {
 
         const error =
             new Error(
                 "Dairy ID is required."
             );
 
-
         error.statusCode =
             400;
-
 
         throw error;
 
     }
 
 
-    return storageService.getDairy(
-        dairyId
-    );
+    if (
+        !storageService ||
+        typeof storageService.getDairy !== "function"
+    ) {
+
+        const error =
+            new Error(
+                "Storage service cannot load the dairy."
+            );
+
+        error.statusCode =
+            500;
+
+        throw error;
+
+    }
+
+
+    const dairy =
+        await storageService.getDairy(
+            dairyId
+        );
+
+
+    if (!dairy) {
+
+        const error =
+            new Error(
+                "Dairy not found."
+            );
+
+        error.statusCode =
+            404;
+
+        throw error;
+
+    }
+
+
+    return dairy;
 
 }
 
 
 // ==========================================================
-// GET FEED STOCK PAGE
+// GET FEED STOCK
 // ==========================================================
 //
-// VIEW:
+// GET:
 //
-//     views/update/storage/feed-stock.ejs
-//
-// ACCESS:
-//
-//     ADMIN
-//     DAIRY WORKER
+//     /dairy/:dairyId/feedstore
 //
 // ==========================================================
 
@@ -488,13 +389,9 @@ async function getFeedStock(
 
     try {
 
-        if (
-            !canAccessStorage(req)
-        ) {
+        if (!canAccessStorage(req)) {
 
-            return res.status(
-                403
-            ).send(
+            return res.status(403).send(
                 "Access denied."
             );
 
@@ -519,14 +416,13 @@ async function getFeedStock(
 
 
         return res.render(
-
             "update/storage/feed-stock",
-
             viewData
-
         );
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
             "STORAGE FEED STOCK PAGE ERROR:",
@@ -535,15 +431,10 @@ async function getFeedStock(
 
 
         return res.status(
-
             error.statusCode || 500
-
         ).send(
-
             error.message ||
-
             "Unable to load feed stock."
-
         );
 
     }
@@ -555,13 +446,9 @@ async function getFeedStock(
 // GET ADD STOCK PAGE
 // ==========================================================
 //
-// VIEW:
+// GET:
 //
-//     views/update/storage/add-stock.ejs
-//
-// ACCESS:
-//
-//     ADMIN ONLY
+//     /dairy/:dairyId/feedstore/add
 //
 // ==========================================================
 
@@ -572,13 +459,9 @@ async function getAddStock(
 
     try {
 
-        if (
-            !isAdmin(req)
-        ) {
+        if (!isAdmin(req)) {
 
-            return res.status(
-                403
-            ).send(
+            return res.status(403).send(
                 "Only an administrator can add stock."
             );
 
@@ -603,14 +486,13 @@ async function getAddStock(
 
 
         return res.render(
-
             "update/storage/add-stock",
-
             viewData
-
         );
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
             "STORAGE ADD PAGE ERROR:",
@@ -619,15 +501,10 @@ async function getAddStock(
 
 
         return res.status(
-
             error.statusCode || 500
-
         ).send(
-
             error.message ||
-
             "Unable to load Add Stock page."
-
         );
 
     }
@@ -639,14 +516,9 @@ async function getAddStock(
 // GET UPDATE STOCK PAGE
 // ==========================================================
 //
-// VIEW:
+// GET:
 //
-//     views/update/storage/update-stock.ejs
-//
-// ACCESS:
-//
-//     ADMIN
-//     DAIRY WORKER
+//     /dairy/:dairyId/feedstore/:stockId/update
 //
 // ==========================================================
 
@@ -657,13 +529,9 @@ async function getUpdateStock(
 
     try {
 
-        if (
-            !canAccessStorage(req)
-        ) {
+        if (!canAccessStorage(req)) {
 
-            return res.status(
-                403
-            ).send(
+            return res.status(403).send(
                 "Access denied."
             );
 
@@ -678,13 +546,18 @@ async function getUpdateStock(
             getStockId(req);
 
 
-        if (
-            !stockId
-        ) {
+        if (!dairyId) {
 
-            return res.status(
-                400
-            ).send(
+            return res.status(400).send(
+                "Dairy ID is required."
+            );
+
+        }
+
+
+        if (!stockId) {
+
+            return res.status(400).send(
                 "Stock ID is required."
             );
 
@@ -707,6 +580,15 @@ async function getUpdateStock(
             });
 
 
+        if (!stock) {
+
+            return res.status(404).send(
+                "Stock not found."
+            );
+
+        }
+
+
         const viewData =
             buildCommonViewData(
                 dairy,
@@ -719,14 +601,13 @@ async function getUpdateStock(
 
 
         return res.render(
-
             "update/storage/update-stock",
-
             viewData
-
         );
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
             "STORAGE UPDATE PAGE ERROR:",
@@ -735,15 +616,10 @@ async function getUpdateStock(
 
 
         return res.status(
-
             error.statusCode || 500
-
         ).send(
-
             error.message ||
-
             "Unable to load Update Stock page."
-
         );
 
     }
@@ -755,13 +631,9 @@ async function getUpdateStock(
 // GET RESTOCK PAGE
 // ==========================================================
 //
-// VIEW:
+// GET:
 //
-//     views/update/storage/restock.ejs
-//
-// ACCESS:
-//
-//     ADMIN ONLY
+//     /dairy/:dairyId/feedstore/:stockId/restock
 //
 // ==========================================================
 
@@ -772,13 +644,9 @@ async function getRestock(
 
     try {
 
-        if (
-            !isAdmin(req)
-        ) {
+        if (!isAdmin(req)) {
 
-            return res.status(
-                403
-            ).send(
+            return res.status(403).send(
                 "Only an administrator can restock stock."
             );
 
@@ -793,13 +661,18 @@ async function getRestock(
             getStockId(req);
 
 
-        if (
-            !stockId
-        ) {
+        if (!dairyId) {
 
-            return res.status(
-                400
-            ).send(
+            return res.status(400).send(
+                "Dairy ID is required."
+            );
+
+        }
+
+
+        if (!stockId) {
+
+            return res.status(400).send(
                 "Stock ID is required."
             );
 
@@ -822,6 +695,15 @@ async function getRestock(
             });
 
 
+        if (!stock) {
+
+            return res.status(404).send(
+                "Stock not found."
+            );
+
+        }
+
+
         const viewData =
             buildCommonViewData(
                 dairy,
@@ -834,14 +716,13 @@ async function getRestock(
 
 
         return res.render(
-
             "update/storage/restock",
-
             viewData
-
         );
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
             "STORAGE RESTOCK PAGE ERROR:",
@@ -850,15 +731,10 @@ async function getRestock(
 
 
         return res.status(
-
             error.statusCode || 500
-
         ).send(
-
             error.message ||
-
             "Unable to load Restock page."
-
         );
 
     }
@@ -869,18 +745,8 @@ async function getRestock(
 // ==========================================================
 // BUILD STOCK DATA
 // ==========================================================
-//
-// Shared by:
-//
-//     addStock
-//     updateStock
-//     restockStock
-//
-// ==========================================================
 
-function buildStockData(
-    req
-) {
+function buildStockData(req) {
 
     return {
 
@@ -917,23 +783,12 @@ function buildStockData(
 
 
 // ==========================================================
-// ADD NEW STOCK
+// ADD STOCK
 // ==========================================================
 //
-// SERVICE:
+// POST:
 //
-//     storageService.saveStock({
-//         dairyId,
-//         stockId: "",
-//         data,
-//         images
-//     })
-//
-// Because stockId is absent, saveStock() calls createStock().
-//
-// ACCESS:
-//
-//     ADMIN ONLY
+//     /dairy/:dairyId/feedstore/add
 //
 // ==========================================================
 
@@ -942,15 +797,15 @@ async function addStock(
     res
 ) {
 
+    const dairyId =
+        getDairyId(req);
+
+
     try {
 
-        if (
-            !isAdmin(req)
-        ) {
+        if (!isAdmin(req)) {
 
-            return res.status(
-                403
-            ).json({
+            return res.status(403).json({
 
                 success:
                     false,
@@ -963,17 +818,9 @@ async function addStock(
         }
 
 
-        const dairyId =
-            getDairyId(req);
+        if (!dairyId) {
 
-
-        if (
-            !dairyId
-        ) {
-
-            return res.status(
-                400
-            ).json({
+            return res.status(400).json({
 
                 success:
                     false,
@@ -987,15 +834,11 @@ async function addStock(
 
 
         const data =
-            buildStockData(
-                req
-            );
+            buildStockData(req);
 
 
         const images =
-            getUploadedImages(
-                req
-            );
+            getUploadedImages(req);
 
 
         await storageService.saveStock({
@@ -1013,12 +856,12 @@ async function addStock(
 
 
         return res.redirect(
-
-            `/dairy/${dairyId}/feedstore`
-
+            `/dairy/${encodeURIComponent(dairyId)}/feedstore`
         );
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
             "STORAGE ADD STOCK ERROR:",
@@ -1026,24 +869,15 @@ async function addStock(
         );
 
 
-        const dairyId =
-            getDairyId(req);
-
-
         const message =
             encodeURIComponent(
-
                 error.message ||
-
                 "Unable to add stock."
-
             );
 
 
         return res.redirect(
-
-            `/dairy/${dairyId}/feedstore?feedStoreError=${message}`
-
+            `/dairy/${encodeURIComponent(dairyId)}/feedstore?feedStoreError=${message}`
         );
 
     }
@@ -1052,24 +886,12 @@ async function addStock(
 
 
 // ==========================================================
-// UPDATE EXISTING STOCK
+// UPDATE STOCK
 // ==========================================================
 //
-// SERVICE:
+// PUT:
 //
-//     storageService.saveStock({
-//         dairyId,
-//         stockId,
-//         data,
-//         images
-//     })
-//
-// Because stockId exists, saveStock() calls updateStock().
-//
-// ACCESS:
-//
-//     ADMIN
-//     DAIRY WORKER
+//     /dairy/:dairyId/feedstore/:stockId/update
 //
 // ==========================================================
 
@@ -1078,15 +900,18 @@ async function updateStock(
     res
 ) {
 
+    const dairyId =
+        getDairyId(req);
+
+    const stockId =
+        getStockId(req);
+
+
     try {
 
-        if (
-            !canAccessStorage(req)
-        ) {
+        if (!canAccessStorage(req)) {
 
-            return res.status(
-                403
-            ).json({
+            return res.status(403).json({
 
                 success:
                     false,
@@ -1099,21 +924,9 @@ async function updateStock(
         }
 
 
-        const dairyId =
-            getDairyId(req);
+        if (!dairyId) {
 
-
-        const stockId =
-            getStockId(req);
-
-
-        if (
-            !dairyId
-        ) {
-
-            return res.status(
-                400
-            ).json({
+            return res.status(400).json({
 
                 success:
                     false,
@@ -1126,13 +939,9 @@ async function updateStock(
         }
 
 
-        if (
-            !stockId
-        ) {
+        if (!stockId) {
 
-            return res.status(
-                400
-            ).json({
+            return res.status(400).json({
 
                 success:
                     false,
@@ -1146,15 +955,11 @@ async function updateStock(
 
 
         const data =
-            buildStockData(
-                req
-            );
+            buildStockData(req);
 
 
         const images =
-            getUploadedImages(
-                req
-            );
+            getUploadedImages(req);
 
 
         await storageService.saveStock({
@@ -1171,12 +976,12 @@ async function updateStock(
 
 
         return res.redirect(
-
-            `/dairy/${dairyId}/feedstore`
-
+            `/dairy/${encodeURIComponent(dairyId)}/feedstore`
         );
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
             "STORAGE UPDATE STOCK ERROR:",
@@ -1184,24 +989,15 @@ async function updateStock(
         );
 
 
-        const dairyId =
-            getDairyId(req);
-
-
         const message =
             encodeURIComponent(
-
                 error.message ||
-
                 "Unable to update stock."
-
             );
 
 
         return res.redirect(
-
-            `/dairy/${dairyId}/feedstore?feedStoreError=${message}`
-
+            `/dairy/${encodeURIComponent(dairyId)}/feedstore?feedStoreError=${message}`
         );
 
     }
@@ -1210,39 +1006,12 @@ async function updateStock(
 
 
 // ==========================================================
-// RESTOCK EXISTING STOCK
+// RESTOCK STOCK
 // ==========================================================
 //
-// IMPORTANT:
+// POST:
 //
-// The current storageService does NOT have a separate:
-//
-//     restockStock()
-//
-// function.
-//
-// Restocking is therefore correctly passed through:
-//
-//     storageService.saveStock()
-//
-// with an existing stockId.
-//
-// The service's updateStock() detects that the submitted
-// quantity is greater than quantityRemaining and treats the
-// difference as the newly added quantity.
-//
-// Example:
-//
-//     Existing quantity = 100
-//     Submitted quantity = 150
-//
-//     quantityAdded = 50
-//
-//     feedsAmount = 50 × new unit price
-//
-// ACCESS:
-//
-//     ADMIN ONLY
+//     /dairy/:dairyId/feedstore/:stockId/restock
 //
 // ==========================================================
 
@@ -1251,15 +1020,18 @@ async function restockStock(
     res
 ) {
 
+    const dairyId =
+        getDairyId(req);
+
+    const stockId =
+        getStockId(req);
+
+
     try {
 
-        if (
-            !isAdmin(req)
-        ) {
+        if (!isAdmin(req)) {
 
-            return res.status(
-                403
-            ).json({
+            return res.status(403).json({
 
                 success:
                     false,
@@ -1272,21 +1044,9 @@ async function restockStock(
         }
 
 
-        const dairyId =
-            getDairyId(req);
+        if (!dairyId) {
 
-
-        const stockId =
-            getStockId(req);
-
-
-        if (
-            !dairyId
-        ) {
-
-            return res.status(
-                400
-            ).json({
+            return res.status(400).json({
 
                 success:
                     false,
@@ -1299,13 +1059,9 @@ async function restockStock(
         }
 
 
-        if (
-            !stockId
-        ) {
+        if (!stockId) {
 
-            return res.status(
-                400
-            ).json({
+            return res.status(400).json({
 
                 success:
                     false,
@@ -1319,15 +1075,11 @@ async function restockStock(
 
 
         const data =
-            buildStockData(
-                req
-            );
+            buildStockData(req);
 
 
         const images =
-            getUploadedImages(
-                req
-            );
+            getUploadedImages(req);
 
 
         await storageService.saveStock({
@@ -1344,12 +1096,12 @@ async function restockStock(
 
 
         return res.redirect(
-
-            `/dairy/${dairyId}/feedstore`
-
+            `/dairy/${encodeURIComponent(dairyId)}/feedstore`
         );
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
             "STORAGE RESTOCK ERROR:",
@@ -1357,24 +1109,15 @@ async function restockStock(
         );
 
 
-        const dairyId =
-            getDairyId(req);
-
-
         const message =
             encodeURIComponent(
-
                 error.message ||
-
                 "Unable to restock stock."
-
             );
 
 
         return res.redirect(
-
-            `/dairy/${dairyId}/feedstore?feedStoreError=${message}`
-
+            `/dairy/${encodeURIComponent(dairyId)}/feedstore?feedStoreError=${message}`
         );
 
     }
@@ -1386,10 +1129,9 @@ async function restockStock(
 // GET ONE STOCK
 // ==========================================================
 //
-// ACCESS:
+// GET:
 //
-//     ADMIN
-//     DAIRY WORKER
+//     /dairy/:dairyId/feedstore/:stockId
 //
 // ==========================================================
 
@@ -1400,13 +1142,9 @@ async function getStock(
 
     try {
 
-        if (
-            !canAccessStorage(req)
-        ) {
+        if (!canAccessStorage(req)) {
 
-            return res.status(
-                403
-            ).json({
+            return res.status(403).json({
 
                 success:
                     false,
@@ -1422,18 +1160,13 @@ async function getStock(
         const dairyId =
             getDairyId(req);
 
-
         const stockId =
             getStockId(req);
 
 
-        if (
-            !dairyId
-        ) {
+        if (!dairyId) {
 
-            return res.status(
-                400
-            ).json({
+            return res.status(400).json({
 
                 success:
                     false,
@@ -1446,13 +1179,9 @@ async function getStock(
         }
 
 
-        if (
-            !stockId
-        ) {
+        if (!stockId) {
 
-            return res.status(
-                400
-            ).json({
+            return res.status(400).json({
 
                 success:
                     false,
@@ -1475,6 +1204,21 @@ async function getStock(
             });
 
 
+        if (!stock) {
+
+            return res.status(404).json({
+
+                success:
+                    false,
+
+                message:
+                    "Stock not found."
+
+            });
+
+        }
+
+
         return res.json({
 
             success:
@@ -1484,7 +1228,9 @@ async function getStock(
 
         });
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
             "STORAGE GET STOCK ERROR:",
@@ -1493,9 +1239,7 @@ async function getStock(
 
 
         return res.status(
-
             error.statusCode || 500
-
         ).json({
 
             success:
@@ -1503,7 +1247,6 @@ async function getStock(
 
             message:
                 error.message ||
-
                 "Unable to load stock."
 
         });
@@ -1517,9 +1260,9 @@ async function getStock(
 // DELETE STOCK
 // ==========================================================
 //
-// ACCESS:
+// DELETE:
 //
-//     ADMIN ONLY
+//     /dairy/:dairyId/feedstore/:stockId
 //
 // ==========================================================
 
@@ -1530,13 +1273,9 @@ async function deleteStock(
 
     try {
 
-        if (
-            !isAdmin(req)
-        ) {
+        if (!isAdmin(req)) {
 
-            return res.status(
-                403
-            ).json({
+            return res.status(403).json({
 
                 success:
                     false,
@@ -1552,18 +1291,13 @@ async function deleteStock(
         const dairyId =
             getDairyId(req);
 
-
         const stockId =
             getStockId(req);
 
 
-        if (
-            !dairyId
-        ) {
+        if (!dairyId) {
 
-            return res.status(
-                400
-            ).json({
+            return res.status(400).json({
 
                 success:
                     false,
@@ -1576,13 +1310,9 @@ async function deleteStock(
         }
 
 
-        if (
-            !stockId
-        ) {
+        if (!stockId) {
 
-            return res.status(
-                400
-            ).json({
+            return res.status(400).json({
 
                 success:
                     false,
@@ -1614,7 +1344,9 @@ async function deleteStock(
 
         });
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
             "STORAGE DELETE ERROR:",
@@ -1623,9 +1355,7 @@ async function deleteStock(
 
 
         return res.status(
-
             error.statusCode || 500
-
         ).json({
 
             success:
@@ -1633,7 +1363,6 @@ async function deleteStock(
 
             message:
                 error.message ||
-
                 "Unable to delete stock."
 
         });
@@ -1644,14 +1373,12 @@ async function deleteStock(
 
 
 // ==========================================================
-// EXPORTS
+// EXPORT
 // ==========================================================
 
 module.exports = {
 
-    // ======================================================
     // PAGES
-    // ======================================================
 
     getFeedStock,
 
@@ -1662,9 +1389,7 @@ module.exports = {
     getRestock,
 
 
-    // ======================================================
     // ACTIONS
-    // ======================================================
 
     addStock,
 
@@ -1673,9 +1398,7 @@ module.exports = {
     restockStock,
 
 
-    // ======================================================
     // API / MANAGEMENT
-    // ======================================================
 
     getStock,
 
