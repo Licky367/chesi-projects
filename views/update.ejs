@@ -7,41 +7,46 @@
      PURPOSE:
          Dairy update/feed page.
 
-     FEED ITEMS:
-         • Normal Posts
-         • Weekly Milk Reports
-         • Stock Updates
-         • Medical Updates
-         • Maintenance Updates
-         • Asset Added Updates
-
-     IMPORTANT FEED CONTRACT:
+     FEED CONTRACT:
      -----------------------------------------------------
-     Every item coming from `feed` is passed to its
-     corresponding card as:
+     Every document inside `feed` is called `item`.
+
+     Every feed-card partial receives:
+
+         item: item
+
+     This applies to:
+
+         post.ejs
+         milk.ejs
+         stock.ejs
+         medical-marked.ejs
+         medical-cleared.ejs
+         maintenance-marked.ejs
+         maintenance-cleared.ejs
+         addAsset.ejs
+
+     IMPORTANT:
+     -----------------------------------------------------
+     No feed card receives:
+
+         update: item
+
+     No feed card expects a variable named:
+
+         update
+
+     The single naming convention is:
 
          item
 
-     Therefore:
+     Therefore stock.ejs MUST use:
 
-         post.ejs       → item
-         milk.ejs       → item
-         stock.ejs      → item
-         medical*.ejs   → item
-         maintenance*.ejs → item
-         addAsset.ejs   → item
+         const stockUpdate = item;
 
-     This prevents naming collisions such as:
+     and NOT:
 
-         update is not defined
-
-     STOCK UPDATE:
-         item.type === "stock"
-
-         The stock card receives:
-
-             item: item
-             user: user
+         const stockUpdate = update;
 
 ===================================================== -->
 
@@ -86,11 +91,12 @@
 
         <!-- =============================================
              ADD ASSETS
-
+             
              ADMIN ONLY
         ============================================== -->
 
         <% if (user && user.role === "admin") { %>
+
 
             <a
                 href="/networth/structure/<%= dairy._id %>/add"
@@ -116,9 +122,12 @@
 
             </a>
 
+
         <% } else { %>
 
+
             <span aria-hidden="true"></span>
+
 
         <% } %>
 
@@ -148,6 +157,7 @@
             </span>
 
         </button>
+
 
     </div>
 
@@ -214,15 +224,13 @@
                 RECURRING INSERTION POSITIONS
                 ==================================================
 
-                These positions are unrelated to the actual
-                feed item type.
+                These positions only control where the
+                recurring UI cards appear.
 
-                The actual feed is still rendered strictly from:
+                They NEVER alter the actual feed array.
 
-                    feed[]
-
-                Therefore a stock update does NOT replace a
-                normal post.
+                Every real feed document is still rendered
+                exactly once.
 
                 ==================================================
                 */
@@ -286,6 +294,9 @@
 
                 <!-- =================================================
                      NORMAL POST
+
+                     CONTRACT:
+                         item: item
                 ================================================== -->
 
                 <% if (item.type === "post") { %>
@@ -306,6 +317,9 @@
 
                 <!-- =================================================
                      WEEKLY MILK REPORT
+
+                     CONTRACT:
+                         item: item
                 ================================================== -->
 
                 <% if (item.type === "milk") { %>
@@ -327,17 +341,16 @@
                 <!-- =================================================
                      STOCK UPDATE
 
+                     CONTRACT:
+                         item: item
+
                      IMPORTANT:
-
-                     feedsService creates:
-
-                         type: "stock"
-
-                     stock.ejs receives:
+                     ------------------------------------------------
+                     stock.ejs MUST read the feed document through:
 
                          item
 
-                     NOT:
+                     It must NOT expect:
 
                          update
                 ================================================== -->
@@ -360,6 +373,9 @@
 
                 <!-- =================================================
                      MEDICAL — MARKED
+
+                     CONTRACT:
+                         item: item
                 ================================================== -->
 
                 <% if (
@@ -383,6 +399,9 @@
 
                 <!-- =================================================
                      MEDICAL — CLEARED
+
+                     CONTRACT:
+                         item: item
                 ================================================== -->
 
                 <% if (
@@ -406,6 +425,9 @@
 
                 <!-- =================================================
                      MAINTENANCE — MARKED
+
+                     CONTRACT:
+                         item: item
                 ================================================== -->
 
                 <% if (
@@ -429,6 +451,9 @@
 
                 <!-- =================================================
                      MAINTENANCE — CLEARED
+
+                     CONTRACT:
+                         item: item
                 ================================================== -->
 
                 <% if (
@@ -452,6 +477,9 @@
 
                 <!-- =================================================
                      ASSET ADDED
+
+                     CONTRACT:
+                         item: item
                 ================================================== -->
 
                 <% if (item.type === "assetAdd") { %>
@@ -472,6 +500,10 @@
 
                 <!-- =================================================
                      RECURRING INSERTION
+
+                     These are NOT feed documents.
+
+                     They do not use item.
                 ================================================== -->
 
                 <% if (shouldInsertHere) { %>
