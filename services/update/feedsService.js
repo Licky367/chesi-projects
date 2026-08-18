@@ -12,39 +12,23 @@
 //
 //     Update.stock
 //
-// PIPELINE:
+// ADMIN:
 //
-//     ADMIN RESTOCK
+//     Add animal feed
+//     Add veterinary medicine
+//     Add/increase current stock
+//     Set stock financial value
 //
-//         ↓
+// DAIRY WORKER:
 //
-//     Dairy.feedStocks[]
+//     Update remaining quantity
+//     Update unit
+//     Add message
+//     Add images
 //
-//         +
+// ADMIN / WORKER HISTORY:
 //
-//
-//     Update.stock
-//
-//         ↓
-//
-//     Dairy feed
-//
-//
-//
-// WORKER STOCK UPDATE
-//
-//         ↓
-//
-//     Dairy.feedStocks[]
-//
-//         +
-//
-//
-//     Update.stock
-//
-//         ↓
-//
-//     Dairy feed
+//     Every stock action creates Update.stock
 //
 // ==========================================================
 
@@ -62,7 +46,7 @@ const Update =
 
 
 // ==========================================================
-// ENUMS
+// CONSTANTS
 // ==========================================================
 
 const FEED_TYPES = [
@@ -193,7 +177,7 @@ function getFiles(files) {
 
     return files
 
-        .map(file => {
+        .map(function (file) {
 
             if (!file) {
 
@@ -205,11 +189,8 @@ function getFiles(files) {
             return (
 
                 file.path ||
-
                 file.location ||
-
                 file.url ||
-
                 null
 
             );
@@ -252,13 +233,68 @@ function resolveStockName(body) {
 
 
 // ==========================================================
+// STOCK NAME FROM CURRENT STOCK
+// ==========================================================
+
+function getStockName(stock) {
+
+    if (!stock) {
+
+        return "";
+
+    }
+
+
+    return cleanString(
+
+        stock.name ||
+
+        stock.feedName ||
+
+        stock.medicineName ||
+
+        stock.stockName ||
+
+        stock.productName
+
+    );
+
+}
+
+
+// ==========================================================
+// STOCK CATEGORY
+// ==========================================================
+
+function getStockCategory(stock) {
+
+    if (!stock) {
+
+        return "";
+
+    }
+
+
+    return cleanString(
+
+        stock.category ||
+
+        stock.stockType ||
+
+        stock.type
+
+    ).toLowerCase();
+
+}
+
+
+// ==========================================================
 // FINANCIAL VALUE
 // ==========================================================
 //
-// feedsAmount represents the financial value of the current
-// stock entry.
+// feedsAmount is the financial value of current inventory.
 //
-// It is intentionally never calculated from worker input.
+// Worker updates NEVER modify it.
 //
 // ==========================================================
 
@@ -267,9 +303,7 @@ function calculateFeedsAmount(
 ) {
 
     if (
-        !Array.isArray(
-            feedStocks
-        )
+        !Array.isArray(feedStocks)
     ) {
 
         return 0;
@@ -279,10 +313,17 @@ function calculateFeedsAmount(
 
     return feedStocks.reduce(
 
-        (
+        function (
             total,
             stock
-        ) => {
+        ) {
+
+            if (!stock) {
+
+                return total;
+
+            }
+
 
             const amount =
                 parseNumber(
@@ -312,7 +353,7 @@ function calculateFeedsAmount(
 
 
 // ==========================================================
-// RECALCULATE DAIRY FINANCIAL VALUE
+// RECALCULATE FINANCIAL VALUE
 // ==========================================================
 
 async function recalculateFeedsAmount(
@@ -450,6 +491,12 @@ async function getDairy(
 // ==========================================================
 // GET FEED STORE PAGE
 // ==========================================================
+//
+// Returns exactly the variables expected by:
+//
+//     views/update/feeds-store.ejs
+//
+// ==========================================================
 
 async function getFeedStorePage({
     dairyId,
@@ -471,21 +518,15 @@ async function getFeedStorePage({
         );
 
 
-    // ------------------------------------------------------
-    // HISTORY
-    // ------------------------------------------------------
-
     const updates =
         await getFeedStoreUpdates(
             dairyId
         );
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // ADMIN
-    //
-    // Admin receives complete financial data.
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
         user.role === "admin"
@@ -513,11 +554,9 @@ async function getFeedStorePage({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // WORKER
-    //
-    // Create a safe copy.
-    // ------------------------------------------------------
+    // ======================================================
 
     const dairyObject =
         dairy.toObject
@@ -528,7 +567,7 @@ async function getFeedStorePage({
 
 
     // ------------------------------------------------------
-    // REMOVE FINANCIAL DATA FROM STOCK
+    // Remove financial information from worker stock data.
     // ------------------------------------------------------
 
     if (
@@ -539,7 +578,7 @@ async function getFeedStorePage({
 
         dairyObject.feedStocks =
             dairyObject.feedStocks.map(
-                stock => {
+                function (stock) {
 
                     const safeStock = {
                         ...stock
@@ -560,15 +599,11 @@ async function getFeedStorePage({
 
 
     // ------------------------------------------------------
-    // REMOVE FARM TOTAL
+    // Remove total financial value.
     // ------------------------------------------------------
 
     delete dairyObject.feedsAmount;
 
-
-    // ------------------------------------------------------
-    // RETURN WORKER DATA
-    // ------------------------------------------------------
 
     return {
 
@@ -594,12 +629,15 @@ async function getFeedStorePage({
 
 
 // ==========================================================
-// GET FEED STORE HISTORY
+// GET STOCK HISTORY
 // ==========================================================
 //
-// ONLY Update.stock is returned.
+// Only Update documents containing:
 //
-// Current inventory remains dairy.feedStocks[].
+//     type: "stock"
+//     stock: {...}
+//
+// are returned.
 //
 // ==========================================================
 
@@ -657,7 +695,7 @@ async function getFeedStoreUpdates(
 
 
     return updates.map(
-        update => {
+        function (update) {
 
             if (
                 update.user &&
@@ -691,8 +729,11 @@ async function getFeedStoreUpdates(
 //
 // Creates:
 //
-//     1. Current inventory
-//     2. Historical Update.stock
+//     dairy.feedStocks[]
+//
+// AND:
+//
+//     Update.stock
 //
 // ==========================================================
 
@@ -703,9 +744,9 @@ async function addStock({
     files
 }) {
 
-    // ------------------------------------------------------
+    // ======================================================
     // SECURITY
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
         !user ||
@@ -729,9 +770,9 @@ async function addStock({
         body || {};
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // CATEGORY
-    // ------------------------------------------------------
+    // ======================================================
 
     const category =
         cleanString(
@@ -751,9 +792,9 @@ async function addStock({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // NAME
-    // ------------------------------------------------------
+    // ======================================================
 
     const stockName =
         resolveStockName(
@@ -770,9 +811,9 @@ async function addStock({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // VALIDATE NAME
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
         category === "feed"
@@ -807,9 +848,9 @@ async function addStock({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // QUANTITY
-    // ------------------------------------------------------
+    // ======================================================
 
     const quantity =
         parseNumber(
@@ -829,9 +870,9 @@ async function addStock({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // UNIT
-    // ------------------------------------------------------
+    // ======================================================
 
     const unit =
         cleanString(
@@ -852,9 +893,9 @@ async function addStock({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // PRICE
-    // ------------------------------------------------------
+    // ======================================================
 
     const price =
         parseNumber(
@@ -874,9 +915,9 @@ async function addStock({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // OTHER DATA
-    // ------------------------------------------------------
+    // ======================================================
 
     const instructions =
         cleanString(
@@ -900,34 +941,28 @@ async function addStock({
         new Date();
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // FIND EXISTING STOCK
-    // ------------------------------------------------------
-    //
-    // Same:
-    //
-    //     category
-    //     name
-    //     unit
-    //
-    // = same current inventory item.
-    //
-    // ------------------------------------------------------
+    // ======================================================
 
     let stock =
         dairy.feedStocks.find(
+            function (item) {
 
-            item =>
+                return (
 
-                item.category ===
-                    category &&
+                    getStockCategory(item) ===
+                        category &&
 
-                item.name ===
-                    stockName &&
+                    getStockName(item) ===
+                        stockName &&
 
-                item.unit ===
-                    unit
+                    cleanString(item.unit) ===
+                        unit
 
+                );
+
+            }
         );
 
 
@@ -960,7 +995,7 @@ async function addStock({
 
 
         // --------------------------------------------------
-        // ADMIN'S LATEST FINANCIAL VALUE
+        // ADMIN FINANCIAL VALUE
         // --------------------------------------------------
 
         stock.price =
@@ -971,6 +1006,10 @@ async function addStock({
             price;
 
 
+        // --------------------------------------------------
+        // Additional stock information
+        // --------------------------------------------------
+
         stock.instructions =
             instructions;
 
@@ -978,10 +1017,6 @@ async function addStock({
         stock.expectedDuration =
             expectedDuration;
 
-
-        // --------------------------------------------------
-        // Replace images only when new images were supplied.
-        // --------------------------------------------------
 
         if (
             images.length > 0
@@ -1062,7 +1097,7 @@ async function addStock({
 
 
     // ======================================================
-    // RECALCULATE FINANCIAL TOTAL
+    // FINANCIAL TOTAL
     // ======================================================
 
     dairy.feedsAmount =
@@ -1072,7 +1107,7 @@ async function addStock({
 
 
     // ======================================================
-    // SAVE CURRENT INVENTORY
+    // SAVE INVENTORY
     // ======================================================
 
     await dairy.save();
@@ -1084,23 +1119,27 @@ async function addStock({
 
     const savedStock =
         dairy.feedStocks.find(
+            function (item) {
 
-            item =>
+                return (
 
-                item.category ===
-                    category &&
+                    getStockCategory(item) ===
+                        category &&
 
-                item.name ===
-                    stockName &&
+                    getStockName(item) ===
+                        stockName &&
 
-                item.unit ===
-                    unit
+                    cleanString(item.unit) ===
+                        unit
 
+                );
+
+            }
         );
 
 
     // ======================================================
-    // CREATE HISTORY / FEED UPDATE
+    // CREATE HISTORY EVENT
     // ======================================================
 
     const update =
@@ -1148,16 +1187,10 @@ async function addStock({
 // WORKER / ADMIN: UPDATE REMAINING STOCK
 // ==========================================================
 //
-// IMPORTANT:
+// The following values are deliberately NOT accepted:
 //
-// This function NEVER accepts:
-//
-//     price
-//     feedsAmount
-//
-// from req.body.
-//
-// Those values remain untouched.
+//     body.price
+//     body.feedsAmount
 //
 // ==========================================================
 
@@ -1168,9 +1201,9 @@ async function updateRemainingStock({
     files
 }) {
 
-    // ------------------------------------------------------
+    // ======================================================
     // AUTH
-    // ------------------------------------------------------
+    // ======================================================
 
     if (!user) {
 
@@ -1203,9 +1236,9 @@ async function updateRemainingStock({
         body || {};
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // STOCK ID
-    // ------------------------------------------------------
+    // ======================================================
 
     const stockId =
         cleanString(
@@ -1222,9 +1255,9 @@ async function updateRemainingStock({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // FIND STOCK
-    // ------------------------------------------------------
+    // ======================================================
 
     const stock =
         dairy.feedStocks.id(
@@ -1241,9 +1274,9 @@ async function updateRemainingStock({
     }
 
 
-    // ------------------------------------------------------
-    // REMAINING QUANTITY
-    // ------------------------------------------------------
+    // ======================================================
+    // QUANTITY
+    // ======================================================
 
     const quantityRemaining =
         parseNumber(
@@ -1263,9 +1296,9 @@ async function updateRemainingStock({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // UNIT
-    // ------------------------------------------------------
+    // ======================================================
 
     const unit =
         cleanString(
@@ -1286,24 +1319,13 @@ async function updateRemainingStock({
     }
 
 
-    // ------------------------------------------------------
-    // PROTECT FINANCIAL FIELDS
-    // ------------------------------------------------------
+    // ======================================================
+    // UPDATE INVENTORY
+    // ======================================================
     //
-    // Deliberately DO NOT do:
+    // FINANCIAL DATA IS LEFT UNTOUCHED.
     //
-    //     stock.price = body.price
-    //
-    // or:
-    //
-    //     stock.feedsAmount = body.feedsAmount
-    //
-    // ------------------------------------------------------
-
-
-    // ------------------------------------------------------
-    // UPDATE CURRENT QUANTITY
-    // ------------------------------------------------------
+    // ======================================================
 
     stock.quantity =
         quantityRemaining;
@@ -1327,16 +1349,16 @@ async function updateRemainingStock({
         new Date();
 
 
-    // ------------------------------------------------------
-    // SAVE CURRENT INVENTORY
-    // ------------------------------------------------------
+    // ======================================================
+    // SAVE INVENTORY
+    // ======================================================
 
     await dairy.save();
 
 
-    // ------------------------------------------------------
-    // WORKER MESSAGE
-    // ------------------------------------------------------
+    // ======================================================
+    // MESSAGE
+    // ======================================================
 
     const message =
         cleanString(
@@ -1344,9 +1366,9 @@ async function updateRemainingStock({
         );
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // IMAGES
-    // ------------------------------------------------------
+    // ======================================================
 
     const images =
         getFiles(
@@ -1354,9 +1376,9 @@ async function updateRemainingStock({
         );
 
 
-    // ------------------------------------------------------
-    // CREATE HISTORY ENTRY
-    // ------------------------------------------------------
+    // ======================================================
+    // HISTORY EVENT
+    // ======================================================
 
     const update =
         await createWorkerStockUpdate({
@@ -1392,17 +1414,18 @@ async function updateRemainingStock({
 
 
 // ==========================================================
-// SYSTEM STOCK UPDATE
+// CREATE SYSTEM STOCK UPDATE
 // ==========================================================
 //
-// Created when ADMIN adds stock.
+// ADMIN RESTOCK EVENT.
 //
-// This is what puts the event into:
+// Update:
 //
-//     Update.stock
+//     type = "stock"
 //
-// which is subsequently loaded by pageService and becomes
-// part of the normal Dairy feed.
+//     authorRole = "system"
+//
+//     stock.action = "available"
 //
 // ==========================================================
 
@@ -1500,16 +1523,14 @@ async function createSystemStockUpdate({
 
 
 // ==========================================================
-// WORKER STOCK UPDATE
+// CREATE WORKER / ADMIN REMAINING STOCK UPDATE
 // ==========================================================
 //
-// Created when a worker/admin records remaining stock.
+// Update:
 //
-// This is also:
+//     type = "stock"
 //
-//     Update.stock
-//
-// Therefore it enters the normal feed pipeline.
+//     stock.action = "remainder"
 //
 // ==========================================================
 
@@ -1522,6 +1543,27 @@ async function createWorkerStockUpdate({
     message,
     images
 }) {
+
+    if (!user) {
+
+        throw new Error(
+            "User is required to create a stock update."
+        );
+
+    }
+
+
+    const stockCategory =
+        getStockCategory(
+            stock
+        );
+
+
+    const stockName =
+        getStockName(
+            stock
+        );
+
 
     const update =
         await Update.create({
@@ -1559,16 +1601,16 @@ async function createWorkerStockUpdate({
             stock: {
 
                 stockType:
-                    stock.category,
+                    stockCategory,
 
                 action:
                     "remainder",
 
                 itemName:
-                    stock.name,
+                    stockName,
 
                 category:
-                    stock.category,
+                    stockCategory,
 
                 quantity:
                     quantityRemaining,
@@ -1576,7 +1618,7 @@ async function createWorkerStockUpdate({
                 unit,
 
                 // ------------------------------------------------
-                // Workers NEVER get a financial value here.
+                // No financial value is exposed in worker event.
                 // ------------------------------------------------
 
                 price:
