@@ -14,7 +14,6 @@
          medical
          maintenance
          assetAdd
-         stock
 
      IMPORTANT:
      ------------------------------------------------------
@@ -34,6 +33,10 @@
 
          They do NOT modify the chronological order of the
          actual feed.
+
+     STOCK:
+     ------------------------------------------------------
+         Stock items are deliberately NOT rendered here.
 ====================================================== -->
 
 
@@ -525,54 +528,6 @@ const hasAssetCards =
             <% } %>
 
 
-
-            <!-- =================================================
-                 STOCK
-            ==================================================
-
-                 IMPORTANT:
-
-                 stock.ejs uses the SAME feed-item variable
-                 convention as every other feed partial:
-
-                     item
-
-                 Therefore:
-
-                     item: item
-
-                 is passed here.
-
-                 NEVER:
-
-                     update: item
-
-                 ALL stock items are rendered.
-
-                 There is deliberately NO author-role filter.
-            ================================================== -->
-
-            <% if (
-                item.type === "stock"
-            ) { %>
-
-
-                <%- include("stock", {
-
-                    item: item,
-
-                    user: user,
-
-                    type: "stock",
-
-                    dairy: dairy
-
-                }) %>
-
-
-            <% } %>
-
-
         <% }); %>
 
 
@@ -583,7 +538,7 @@ const hasAssetCards =
     <!-- =====================================================
          END OF FEED
 
-         Every actual feed card comes from `feed`.
+         Every rendered feed card comes from `feed`.
 
          This includes:
 
@@ -592,7 +547,8 @@ const hasAssetCards =
              medical
              maintenance
              assetAdd
-             stock
+
+         Stock items are deliberately omitted.
 
          Chronological order is preserved.
     ===================================================== -->
