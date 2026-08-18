@@ -1,6 +1,6 @@
 <!-- =====================================================
      UPDATE PAGE
-     
+
      FILE:
          views/update.ejs
 
@@ -11,17 +11,20 @@
          1. Create Post
          2. H1
 
+     FEED ITEMS:
+         • Normal Posts
+         • Weekly Milk Reports
+         • Stock Updates
+         • Medical Updates
+         • Maintenance Updates
+         • Asset Added Updates
+
      RECURRING FEED INSERTIONS:
          • Asset Cards
          • Create Post
 
-     H1:
-         • Appears ONLY once
-         • Always immediately after Create Post
-
      IMPORTANT:
-         Feed items themselves remain in their existing
-         chronological order.
+         Feed items remain in chronological order.
 ===================================================== -->
 
 
@@ -74,7 +77,6 @@
             user.role === "admin"
         ) { %>
 
-
             <a
                 href="/networth/structure/<%= dairy._id %>/add"
                 class="asset-bar-trigger"
@@ -93,21 +95,17 @@
                     +
                 </span>
 
-
                 <span class="asset-bar-trigger-text">
                     Add Assets
                 </span>
 
             </a>
 
-
         <% } else { %>
-
 
             <span
                 aria-hidden="true"
             ></span>
-
 
         <% } %>
 
@@ -132,13 +130,11 @@
                 ◉
             </span>
 
-
             <span class="asset-bar-trigger-text">
                 View Assets
             </span>
 
         </button>
-
 
     </div>
 
@@ -146,7 +142,7 @@
 
     <!-- =================================================
          FIXED CREATE POST
-         
+
          ALWAYS FIRST
     ================================================== -->
 
@@ -160,9 +156,9 @@
 
     <!-- =================================================
          FIXED H1
-         
+
          ALWAYS SECOND
-         
+
          NEVER REPEATED
     ================================================== -->
 
@@ -175,9 +171,8 @@
 
     <!-- =================================================
          ASSET SIDEBAR
-         
-         The sidebar remains independent from the
-         recurring asset cards.
+
+         Independent from feed cards.
     ================================================== -->
 
     <%- include("dairy/assetBar", {
@@ -189,16 +184,6 @@
 
     <!-- =================================================
          FEED
-         
-         The feed is rendered manually here rather than
-         simply including feed.ejs.
-
-         This allows the parent page to insert:
-         
-             • asset-card
-             • create-post
-         
-         at intervals between feed records.
     ================================================== -->
 
     <section
@@ -213,30 +198,23 @@
              * RECURRING INSERTION SETTINGS
              * =================================================
              *
-             * These numbers control when the special cards
-             * appear.
-             *
-             * They can be changed easily later.
+             * These numbers refer to FEED ITEMS.
              *
              * Example:
              *
-             *     after 5 posts
-             *     after 12 posts
-             *     after 20 posts
+             *     after item 5
+             *     after item 12
+             *     after item 20
              *
-             * The sequence then repeats.
+             * The inserted component alternates:
              *
-             * -------------------------------------------------
-             *
-             * IMPORTANT:
-             * The number refers to FEED ITEMS, not only posts.
-             *
-             * So milk, medical, maintenance, assetAdd, etc.
-             * all count as one feed item.
+             *     Asset Cards
+             *     Create Post
+             *     Asset Cards
+             *     Create Post
              *
              * =================================================
              */
-
 
             const insertionPattern = [
                 5,
@@ -248,54 +226,14 @@
 
 
             /*
-             * -------------------------------------------------
-             * Counter
-             * -------------------------------------------------
-             */
-
-            let feedPosition = 0;
-
-
-            /*
-             * -------------------------------------------------
-             * Pattern position
-             * -------------------------------------------------
-             */
-
-            let insertionIndex = 0;
-
-
-            /*
-             * -------------------------------------------------
-             * Determine whether asset cards exist.
-             * -------------------------------------------------
+             * =================================================
+             * DETERMINE WHETHER ASSET CARDS EXIST
+             * =================================================
              */
 
             const hasAssetCards =
                 Array.isArray(assetDairies) &&
                 assetDairies.length > 0;
-
-
-            /*
-             * -------------------------------------------------
-             * Alternate recurring component.
-             *
-             * true  = asset card
-             * false = create post
-             *
-             * This means the recurring sequence becomes:
-             *
-             *     Asset Cards
-             *     Create Post
-             *     Asset Cards
-             *     Create Post
-             *
-             * regardless of the spacing.
-             * -------------------------------------------------
-             */
-
-            let nextRecurringComponent = "asset";
-
 
         %>
 
@@ -307,28 +245,88 @@
 
         <% if (
             Array.isArray(feed) &&
-            feed.length
+            feed.length > 0
         ) { %>
 
 
-            <% feed.forEach(function (item) { %>
+            <% feed.forEach(function (item, index) { %>
 
 
                 <%
                     /*
-                     * =========================================
-                     * ADVANCE FEED POSITION
-                     * =========================================
+                     * =================================================
+                     * FEED POSITION
+                     *
+                     * Starts at 1 rather than 0.
+                     * =================================================
                      */
 
-                    feedPosition++;
-                %>
+                    const feedPosition =
+                        index + 1;
+
+
+                    /*
+                     * =================================================
+                     * CHECK RECURRING INSERTION
+                     * =================================================
+                     */
+
+                    const shouldInsertHere =
+                        insertionPattern.includes(
+                            feedPosition
+                        );
+
+
+                    /*
+                     * =================================================
+                     * FIND INSERTION INDEX
+                     *
+                     * 0 = first insertion
+                     * 1 = second insertion
+                     * 2 = third insertion
+                     * =================================================
+                     */
+
+                    const insertionNumber =
+                        insertionPattern.indexOf(
+                            feedPosition
+                        );
+
+
+                    /*
+                     * =================================================
+                     * DETERMINE INSERTED COMPONENT
+                     *
+                     * Even:
+                     *
+                     *     Asset Cards
+                     *
+                     * Odd:
+                     *
+                     *     Create Post
+                     *
+                     * If there are no assets, always use
+                     * Create Post.
+                     * =================================================
+                     */
+
+                    let insertAsset =
+                        insertionNumber % 2 === 0;
+
+
+                    if (!hasAssetCards) {
+
+                        insertAsset = false;
+
+                    }
+
+                %}
 
 
 
-                <!-- =========================================
+                <!-- =================================================
                      NORMAL POST
-                ========================================== -->
+                ================================================== -->
 
                 <% if (item.type === "post") { %>
 
@@ -341,9 +339,9 @@
 
 
 
-                <!-- =========================================
+                <!-- =================================================
                      WEEKLY MILK REPORT
-                ========================================== -->
+                ================================================== -->
 
                 <% if (item.type === "milk") { %>
 
@@ -356,9 +354,37 @@
 
 
 
-                <!-- =========================================
+                <!-- =================================================
+                     STOCK UPDATE
+                     
+                     IMPORTANT:
+                     This was previously missing.
+
+                     feedsService creates:
+                     
+                         type: "stock"
+
+                     pageService passes the update into feed.
+
+                     This condition finally sends that item to:
+
+                         views/update/stock.ejs
+                ================================================== -->
+
+                <% if (item.type === "stock") { %>
+
+                    <%- include("update/stock", {
+                        item: item,
+                        user: user
+                    }) %>
+
+                <% } %>
+
+
+
+                <!-- =================================================
                      MEDICAL — MARKED
-                ========================================== -->
+                ================================================== -->
 
                 <% if (
                     item.type === "medical" &&
@@ -374,9 +400,9 @@
 
 
 
-                <!-- =========================================
+                <!-- =================================================
                      MEDICAL — CLEARED
-                ========================================== -->
+                ================================================== -->
 
                 <% if (
                     item.type === "medical" &&
@@ -392,9 +418,9 @@
 
 
 
-                <!-- =========================================
+                <!-- =================================================
                      MAINTENANCE — MARKED
-                ========================================== -->
+                ================================================== -->
 
                 <% if (
                     item.type === "maintenance" &&
@@ -410,9 +436,9 @@
 
 
 
-                <!-- =========================================
+                <!-- =================================================
                      MAINTENANCE — CLEARED
-                ========================================== -->
+                ================================================== -->
 
                 <% if (
                     item.type === "maintenance" &&
@@ -428,9 +454,9 @@
 
 
 
-                <!-- =========================================
+                <!-- =================================================
                      ASSET ADDED
-                ========================================== -->
+                ================================================== -->
 
                 <% if (item.type === "assetAdd") { %>
 
@@ -443,136 +469,20 @@
 
 
 
-                <!-- =========================================
+                <!-- =================================================
                      RECURRING INSERTION
                      
-                     Happens AFTER the feed item.
-                ========================================== -->
-
-                <%
-                    /*
-                     * =========================================
-                     * CHECK INSERTION POINT
-                     * =========================================
-                     */
-
-                    const nextInsertion =
-                        insertionPattern[insertionIndex];
-
-
-                    if (
-                        nextInsertion &&
-                        feedPosition === nextInsertion
-                    ) {
-
-
-                        /*
-                         * =====================================
-                         * ASSET CARD
-                         * =====================================
-                         */
-
-                        if (
-                            nextRecurringComponent === "asset" &&
-                            hasAssetCards
-                        ) {
-
-                            insertionIndex++;
-
-                            nextRecurringComponent =
-                                "create";
-                        }
-
-
-                        /*
-                         * =====================================
-                         * CREATE POST
-                         * =====================================
-                         */
-
-                        else if (
-                            nextRecurringComponent === "create"
-                        ) {
-
-                            insertionIndex++;
-
-                            nextRecurringComponent =
-                                "asset";
-                        }
-
-                    }
-
-                %>
-
-
-
-                <!-- =========================================
-                     RECURRING ASSET CARD
-                ========================================== -->
-
-                <%
-                    /*
-                     * We need a separate check here because
-                     * EJS variables above cannot directly
-                     * render content during the same logical
-                     * block without making the flow harder
-                     * to read.
-                     *
-                     * Determine whether this position is
-                     * an insertion point.
-                     */
-
-                    const shouldInsertHere =
-                        insertionPattern
-                            .includes(feedPosition);
-
-
-                    /*
-                     * Find which insertion point this is.
-                     */
-
-                    const insertionNumber =
-                        insertionPattern.indexOf(
-                            feedPosition
-                        );
-                %>
-
+                     Happens AFTER the current feed item.
+                ================================================== -->
 
                 <% if (shouldInsertHere) { %>
 
 
-                    <%
-                        /*
-                         * Because the insertion component was
-                         * selected above, derive the component
-                         * from the insertion number.
-                         *
-                         * Odd/even alternation:
-                         *
-                         * 0 = asset
-                         * 1 = create
-                         * 2 = asset
-                         * 3 = create
-                         *
-                         * If no assets exist, create-post is
-                         * used instead.
-                         */
-
-                        let insertAsset =
-                            insertionNumber % 2 === 0;
-
-                        if (!hasAssetCards) {
-                            insertAsset = false;
-                        }
-                    %>
-
-
+                    <!-- =============================================
+                         RECURRING ASSET CARDS
+                    ============================================== -->
 
                     <% if (insertAsset) { %>
-
-                        <!-- ===============================
-                             RECURRING ASSET CARDS
-                        ================================ -->
 
                         <%- include("update/asset-cards", {
                             dairy: dairy,
@@ -580,11 +490,11 @@
                         }) %>
 
 
-                    <% } else { %>
+                    <!-- =============================================
+                         RECURRING CREATE POST
+                    ============================================== -->
 
-                        <!-- ===============================
-                             RECURRING CREATE POST
-                        ================================ -->
+                    <% } else { %>
 
                         <%- include("update/create-post", {
                             dairy: dairy,
@@ -622,7 +532,6 @@
                     class="bi bi-journal-text"
                     aria-hidden="true"
                 ></i>
-
 
                 <p>
                     No updates have been recorded yet.
