@@ -24,7 +24,7 @@ TARGET:
     Current dairy asset.
 
 ROUTE:
-    /dairy/feedstore/:id
+    /dairy/feedstore/:dairyId
 
 EXAMPLE:
     /dairy/feedstore/6a802fb518fcceb7ac81eef1
@@ -71,7 +71,7 @@ BEHAVIOUR:
     ====================================================== -->
 
     <a
-        href="/dairy/feedstore/<%= dairy._id %>"
+        href="/dairy/feedstore/:dairyId"
         class="feedstore-card__link"
         aria-label="Open Food Stock for <%= dairy.name %>"
     >
