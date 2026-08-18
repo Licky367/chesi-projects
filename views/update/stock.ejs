@@ -6,53 +6,170 @@ FILE:
     views/update/stock.ejs
 
 PURPOSE:
-    Render stock updates inside the chronological dairy feed.
+    Render stock updates inside:
+
+        1. views/update.ejs
+        2. views/update/feeds-store.ejs
+
+SUPPORTED CALLERS
+--------------------------------------------------------------
+
+FROM update.ejs:
+
+    <%- include("update/stock", {
+        item: item,
+        user: user,
+        dairy: dairy
+    }) %>
+
+
+FROM feeds-store.ejs:
+
+    <%- include("stock", {
+        update: update,
+        user: user,
+        dairy: dairy
+    }) %>
+
 
 IMPORTANT:
-    The parent feed passes:
+--------------------------------------------------------------
+    This partial therefore supports BOTH:
 
         item
-        user
-        dairy
 
-    Stock information is stored inside:
+    and:
 
-        item.stock
+        update
+
+
+STOCK DATA STRUCTURE
+--------------------------------------------------------------
+
+    update
+      |
+      +-- type
+      +-- user
+      +-- userName
+      +-- userImage
+      +-- authorRole
+      +-- title
+      |
+      +-- stock
+            |
+            +-- stockType
+            +-- action
+            +-- itemName
+            +-- category
+            +-- quantity
+            +-- unit
+            +-- price
+            +-- instructions
+            +-- expectedDuration
+            +-- message
+            +-- images
+
+
+IMPORTANT:
+--------------------------------------------------------------
+    Stock information MUST be read from:
+
+        currentUpdate.stock
+
+    and NOT:
+
+        currentUpdate.quantity
+        currentUpdate.unit
+        currentUpdate.images
+        etc.
+
+
+SYSTEM IDENTITY
+--------------------------------------------------------------
+
+    System stock announcements use:
+
+        /images/h1.png
+
+    and:
+
+        System
+
+
+WORKER IDENTITY
+--------------------------------------------------------------
+
+    Worker stock updates use:
+
+        currentUpdate.userImage
+        currentUpdate.userName
+
+    with populated user data as fallback.
 ==============================================================
 */ %>
 
 
 <%
 /* ==========================================================
-   SAFETY
+   RESOLVE CURRENT UPDATE
 ========================================================== */
 
-const currentItem =
-    item || null;
+/*
+ * This partial can be called with either:
+ *
+ *     item
+ *
+ * or:
+ *
+ *     update
+ *
+ * We MUST use typeof here.
+ *
+ * Without typeof, JavaScript throws:
+ *
+ *     ReferenceError:
+ *     item is not defined
+ *
+ * when the caller supplied only "update".
+ */
 
+const currentUpdate =
+    (
+        typeof update !== "undefined" &&
+        update
+    )
+        ? update
+
+        : (
+            typeof item !== "undefined" &&
+            item
+        )
+            ? item
+            : null;
+
+
+
+/* ==========================================================
+   RESOLVE STOCK
+========================================================== */
 
 const stock =
-    currentItem &&
-    currentItem.stock
-        ? currentItem.stock
+    currentUpdate &&
+    currentUpdate.stock
+        ? currentUpdate.stock
         : null;
 
 
-/*
- * ----------------------------------------------------------
- * INVALID STOCK ITEM
- * ----------------------------------------------------------
- *
- * Do not render anything if the feed item does not actually
- * contain stock information.
- *
- * ----------------------------------------------------------
- */
+
+/* ==========================================================
+   DO NOT RENDER INVALID STOCK ITEMS
+========================================================== */
 
 if (
-    currentItem &&
+    currentUpdate &&
     stock
 ) {
+
 
 
 /* ==========================================================
@@ -60,11 +177,15 @@ if (
 ========================================================== */
 
 const isSystem =
-    currentItem.authorRole === "system" ||
-    currentItem.userName === "System" ||
+    currentUpdate.authorRole === "system" ||
+
+    currentUpdate.userName === "System" ||
+
     (
-        currentItem.user === null &&
-        currentItem.type === "stock" &&
+        currentUpdate.user === null &&
+
+        currentUpdate.type === "stock" &&
+
         stock.action === "available"
     );
 
@@ -125,11 +246,11 @@ const senderName =
         ? "System"
 
         : (
-            currentItem.userName ||
+            currentUpdate.userName ||
 
             (
-                currentItem.user &&
-                currentItem.user.name
+                currentUpdate.user &&
+                currentUpdate.user.name
             ) ||
 
             "User"
@@ -147,13 +268,14 @@ const senderImage =
         ? "/images/h1.png"
 
         : (
-            currentItem.userImage ||
+            currentUpdate.userImage ||
 
             (
-                currentItem.user &&
+                currentUpdate.user &&
                 (
-                    currentItem.user.profileImage ||
-                    currentItem.user.displayImage
+                    currentUpdate.user.profileImage ||
+
+                    currentUpdate.user.displayImage
                 )
             ) ||
 
@@ -167,7 +289,7 @@ const senderImage =
 ========================================================== */
 
 let title =
-    currentItem.title || "";
+    currentUpdate.title || "";
 
 
 if (!title) {
@@ -219,7 +341,9 @@ const unit =
 ========================================================== */
 
 const price =
-    Number(stock.price) || 0;
+    Number(
+        stock.price
+    ) || 0;
 
 
 
@@ -255,7 +379,9 @@ const message =
 ========================================================== */
 
 const images =
-    Array.isArray(stock.images)
+    Array.isArray(
+        stock.images
+    )
 
         ? stock.images.filter(Boolean)
 
@@ -268,10 +394,19 @@ const images =
 ========================================================== */
 
 const created =
-    currentItem.createdAt
-        ? new Date(currentItem.createdAt)
+    currentUpdate.createdAt
+
+        ? new Date(
+            currentUpdate.createdAt
+        )
+
         : new Date();
 
+
+
+/* ==========================================================
+   SAFE DATE
+========================================================== */
 
 const validCreatedDate =
     !Number.isNaN(
@@ -324,13 +459,14 @@ const quantityLabel =
 %>
 
 
+
 <!-- ==========================================================
      STOCK FEED ITEM
 ========================================================== -->
 
 <article
     class="stock-feed-item"
-    data-update-id="<%= currentItem._id || "" %>"
+    data-update-id="<%= currentUpdate._id || "" %>"
     data-stock-type="<%= stockType %>"
     data-stock-action="<%= stockAction %>"
 >
@@ -405,7 +541,7 @@ const quantityLabel =
                         class="stock-feed-dairy-link"
                     >
 
-                        <%= dairy.name || "Dairy" %>'s Foodstock
+                        <%= dairy.name %>'s Foodstock
 
                     </a>
 
@@ -463,7 +599,9 @@ const quantityLabel =
             </span>
 
             <span>
+
                 <%= stockTypeLabel %>
+
             </span>
 
         </div>
@@ -489,11 +627,15 @@ const quantityLabel =
         <div class="stock-feed-item-name">
 
             <span class="stock-feed-item-label">
+
                 Item
+
             </span>
 
             <strong>
+
                 <%= itemName %>
+
             </strong>
 
         </div>
@@ -509,11 +651,15 @@ const quantityLabel =
             <div class="stock-feed-category">
 
                 <span class="stock-feed-category-label">
+
                     Category
+
                 </span>
 
                 <span>
+
                     <%= category %>
+
                 </span>
 
             </div>
@@ -549,7 +695,10 @@ const quantityLabel =
 
                     <strong>
 
-                        <%= Number(quantity).toLocaleString() %>
+                        <%= Number(
+                            quantity
+                        ).toLocaleString() %>
+
 
                         <% if (unit) { %>
 
@@ -574,11 +723,15 @@ const quantityLabel =
                 <div class="stock-feed-detail">
 
                     <span class="stock-feed-detail-label">
+
                         Expected duration
+
                     </span>
 
                     <strong>
+
                         <%= duration %>
+
                     </strong>
 
                 </div>
@@ -589,6 +742,12 @@ const quantityLabel =
 
             <!-- ==============================================
                  PRICE
+
+                 Only system/admin stock availability
+                 records display financial value.
+
+                 Worker remainder reports do NOT represent
+                 new financial stock value.
             =============================================== -->
 
             <% if (
@@ -599,7 +758,9 @@ const quantityLabel =
                 <div class="stock-feed-detail">
 
                     <span class="stock-feed-detail-label">
+
                         Stock value
+
                     </span>
 
                     <strong>
@@ -631,13 +792,20 @@ const quantityLabel =
 
             <div class="stock-feed-instructions">
 
+
                 <div class="stock-feed-subheading">
+
                     Instructions of use
+
                 </div>
 
+
                 <p>
+
                     <%= instructions %>
+
                 </p>
+
 
             </div>
 
@@ -654,11 +822,16 @@ const quantityLabel =
             <div class="stock-feed-message">
 
                 <div class="stock-feed-subheading">
+
                     Additional information
+
                 </div>
 
+
                 <p>
+
                     <%= message %>
+
                 </p>
 
             </div>
@@ -671,11 +844,17 @@ const quantityLabel =
              STOCK IMAGES
         =================================================== -->
 
-        <% if (images.length > 0) { %>
+        <% if (
+            images.length > 0
+        ) { %>
 
             <div class="stock-feed-images">
 
-                <% images.forEach(function(image) { %>
+
+                <% images.forEach(
+                    function(image)
+                { %>
+
 
                     <% if (image) { %>
 
@@ -687,7 +866,9 @@ const quantityLabel =
 
                     <% } %>
 
+
                 <% }); %>
+
 
             </div>
 
@@ -812,7 +993,8 @@ const quantityLabel =
 
 .stock-feed-context {
 
-    margin-top: 2px;
+    margin-top:
+        2px;
 
     color:
         #68756e;
@@ -852,7 +1034,8 @@ const quantityLabel =
 
     display: block;
 
-    margin-top: 3px;
+    margin-top:
+        3px;
 
     color:
         #99a19c;
@@ -1286,6 +1469,7 @@ const quantityLabel =
 
 @media (max-width: 600px) {
 
+
     .stock-feed-body {
 
         margin-left:
@@ -1332,6 +1516,7 @@ const quantityLabel =
 }
 
 </style>
+
 
 
 <%
