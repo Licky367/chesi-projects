@@ -4,6 +4,18 @@
 //
 // FEED STOCK / FEED STORE ROUTES
 //
+// RESPONSIBILITIES:
+//
+//     • View feed store
+//     • View individual stock
+//     • Open add-stock page
+//     • Add new stock
+//     • Open update-stock page
+//     • Update existing stock
+//     • Open restock page
+//     • Restock existing stock
+//     • Delete stock
+//
 // ROUTER MOUNT
 // ----------------------------------------------------------
 //
@@ -11,18 +23,24 @@
 //
 //     /
 //
-// Therefore the routes below remain:
+// Therefore:
 //
-//     /dairy/feedstore/:dairyId
-//     /dairy/:dairyId/feedstore/add
-//     /dairy/:dairyId/feedstore/update/:stockId
-//     /dairy/:dairyId/feedstore/restock/:stockId
-//     /dairy/:dairyId/feedstore/:stockId
+//     GET  /dairy/feedstore/:dairyId
+//     GET  /dairy/:dairyId/feedstore/add
+//     POST /dairy/:dairyId/feedstore/add
+//     GET  /dairy/:dairyId/feedstore/update/:stockId
+//     PUT  /dairy/:dairyId/feedstore/update/:stockId
+//     GET  /dairy/:dairyId/feedstore/restock/:stockId
+//     POST /dairy/:dairyId/feedstore/restock/:stockId
+//     GET  /dairy/:dairyId/feedstore/:stockId
+//     DELETE /dairy/:dairyId/feedstore/:stockId
 //
 // ==========================================================
 
+
 const express =
     require("express");
+
 
 const router =
     express.Router();
@@ -39,13 +57,35 @@ const storageController =
 // ==========================================================
 // UPLOAD MIDDLEWARE
 // ==========================================================
+//
+// The Dairy model allows a maximum of:
+//
+//     10 stock images
+//
+// The service also normalizes uploaded image paths.
+//
+// ==========================================================
 
 const upload =
     require("../middleware/uploadMiddleware");
 
 
 // ==========================================================
-// AUTH MIDDLEWARE
+// AUTHENTICATION
+// ==========================================================
+//
+// The application uses:
+//
+//     req.session.user
+//
+// as the authenticated user.
+//
+// The authenticated user is also exposed as:
+//
+//     req.user
+//
+// so controllers/services can consistently access it.
+//
 // ==========================================================
 
 function isAuth(
@@ -59,23 +99,51 @@ function isAuth(
         !req.session.user
     ) {
 
-        return res.status(
-            401
-        ).json({
+        // --------------------------------------------------
+        // Browser requests are redirected to login.
+        // API-style requests receive JSON.
+        // --------------------------------------------------
 
-            success:
-                false,
+        const acceptsJson =
 
-            message:
-                "Unauthorized"
+            req.xhr ||
 
-        });
+            (
+                req.headers.accept &&
+                req.headers.accept.includes(
+                    "application/json"
+                )
+            );
+
+
+        if (
+            acceptsJson
+        ) {
+
+            return res.status(
+                401
+            ).json({
+
+                success:
+                    false,
+
+                message:
+                    "Unauthorized"
+
+            });
+
+        }
+
+
+        return res.redirect(
+            "/login"
+        );
 
     }
 
 
     // ------------------------------------------------------
-    // Make logged-in user available to controllers.
+    // Expose authenticated session user.
     // ------------------------------------------------------
 
     req.user =
@@ -88,7 +156,26 @@ function isAuth(
 
 
 // ==========================================================
-// VIEW FEED STOCK
+// ROLE HELPERS
+// ==========================================================
+//
+// Roles:
+//
+//     admin
+//     dairyWorker
+//
+// The service itself handles stock/data validation.
+//
+// The router only establishes authentication.
+//
+// Controllers should enforce operation-specific
+// authorization.
+//
+// ==========================================================
+
+
+// ==========================================================
+// VIEW FEED STORE
 // ==========================================================
 //
 // GET:
@@ -99,17 +186,24 @@ function isAuth(
 //
 //     storageController.getFeedStock
 //
+// PURPOSE:
+//
+//     Display the feed store and its current inventory.
+//
 // ACCESS:
 //
-//     ADMIN
-//     DAIRY WORKER
+//     Authenticated users.
 //
 // ==========================================================
 
 router.get(
+
     "/dairy/feedstore/:dairyId",
+
     isAuth,
+
     storageController.getFeedStock
+
 );
 
 
@@ -125,98 +219,26 @@ router.get(
 //
 //     storageController.getAddStock
 //
+// PURPOSE:
+//
+//     Display the form for creating a new stock record.
+//
 // ACCESS:
 //
-//     ADMIN ONLY
+//     Authenticated.
+//
+// Authorization should be enforced by the controller.
 //
 // ==========================================================
 
 router.get(
+
     "/dairy/:dairyId/feedstore/add",
+
     isAuth,
+
     storageController.getAddStock
-);
 
-
-// ==========================================================
-// UPDATE STOCK PAGE
-// ==========================================================
-//
-// GET:
-//
-//     /dairy/:dairyId/feedstore/update/:stockId
-//
-// CONTROLLER:
-//
-//     storageController.getUpdateStock
-//
-// ACCESS:
-//
-//     ADMIN
-//     DAIRY WORKER
-//
-// ==========================================================
-
-router.get(
-    "/dairy/:dairyId/feedstore/update/:stockId",
-    isAuth,
-    storageController.getUpdateStock
-);
-
-
-// ==========================================================
-// RESTOCK PAGE
-// ==========================================================
-//
-// GET:
-//
-//     /dairy/:dairyId/feedstore/restock/:stockId
-//
-// CONTROLLER:
-//
-//     storageController.getRestock
-//
-// ACCESS:
-//
-//     ADMIN ONLY
-//
-// ==========================================================
-
-router.get(
-    "/dairy/:dairyId/feedstore/restock/:stockId",
-    isAuth,
-    storageController.getRestock
-);
-
-
-// ==========================================================
-// GET ONE STOCK
-// ==========================================================
-//
-// GET:
-//
-//     /dairy/:dairyId/feedstore/:stockId
-//
-// CONTROLLER:
-//
-//     storageController.getStock
-//
-// ACCESS:
-//
-//     ADMIN
-//     DAIRY WORKER
-//
-// NOTE:
-//
-// This is deliberately placed AFTER the more specific
-// update/restock routes.
-//
-// ==========================================================
-
-router.get(
-    "/dairy/:dairyId/feedstore/:stockId",
-    isAuth,
-    storageController.getStock
 );
 
 
@@ -232,9 +254,13 @@ router.get(
 //
 //     storageController.addStock
 //
+// SERVICE:
+//
+//     storageService.createStock()
+//
 // ACCESS:
 //
-//     ADMIN ONLY
+//     Authenticated.
 //
 // UPLOAD FIELD:
 //
@@ -242,18 +268,55 @@ router.get(
 //
 // MAXIMUM:
 //
-//     10 images
+//     10
 //
 // ==========================================================
 
 router.post(
+
     "/dairy/:dairyId/feedstore/add",
+
     isAuth,
+
     upload.array(
+
         "images",
+
         10
+
     ),
+
     storageController.addStock
+
+);
+
+
+// ==========================================================
+// UPDATE STOCK PAGE
+// ==========================================================
+//
+// GET:
+//
+//     /dairy/:dairyId/feedstore/update/:stockId
+//
+// CONTROLLER:
+//
+//     storageController.getUpdateStock
+//
+// PURPOSE:
+//
+//     Display the existing stock update form.
+//
+// ==========================================================
+
+router.get(
+
+    "/dairy/:dairyId/feedstore/update/:stockId",
+
+    isAuth,
+
+    storageController.getUpdateStock
+
 );
 
 
@@ -269,10 +332,25 @@ router.post(
 //
 //     storageController.updateStock
 //
-// ACCESS:
+// SERVICE:
 //
-//     ADMIN
-//     DAIRY WORKER
+//     storageService.updateStock()
+//
+// BEHAVIOUR:
+//
+//     Quantity increased
+//         → new purchase
+//         → price required
+//         → feedsAmount updated
+//
+//     Quantity decreased
+//         → consumption/reduction
+//         → price unchanged
+//         → feedsAmount unchanged
+//
+//     Quantity unchanged
+//         → informational update
+//         → financial information unchanged
 //
 // UPLOAD FIELD:
 //
@@ -280,18 +358,55 @@ router.post(
 //
 // MAXIMUM:
 //
-//     10 images
+//     10
 //
 // ==========================================================
 
 router.put(
+
     "/dairy/:dairyId/feedstore/update/:stockId",
+
     isAuth,
+
     upload.array(
+
         "images",
+
         10
+
     ),
+
     storageController.updateStock
+
+);
+
+
+// ==========================================================
+// RESTOCK PAGE
+// ==========================================================
+//
+// GET:
+//
+//     /dairy/:dairyId/feedstore/restock/:stockId
+//
+// CONTROLLER:
+//
+//     storageController.getRestock
+//
+// PURPOSE:
+//
+//     Display the restock form.
+//
+// ==========================================================
+
+router.get(
+
+    "/dairy/:dairyId/feedstore/restock/:stockId",
+
+    isAuth,
+
+    storageController.getRestock
+
 );
 
 
@@ -307,9 +422,26 @@ router.put(
 //
 //     storageController.restockStock
 //
-// ACCESS:
+// SERVICE:
 //
-//     ADMIN ONLY
+//     storageService.restockStock()
+//
+// BEHAVIOUR:
+//
+//     old quantity
+//         +
+//     quantityAdded
+//         =
+//     new quantity
+//
+// PURCHASE:
+//
+//     quantityAdded × unitPrice
+//
+// The latest purchase amount replaces the previous
+// feedsAmount value for that stock record.
+//
+// initialQuantity is NOT changed.
 //
 // UPLOAD FIELD:
 //
@@ -317,18 +449,61 @@ router.put(
 //
 // MAXIMUM:
 //
-//     10 images
+//     10
 //
 // ==========================================================
 
 router.post(
+
     "/dairy/:dairyId/feedstore/restock/:stockId",
+
     isAuth,
+
     upload.array(
+
         "images",
+
         10
+
     ),
+
     storageController.restockStock
+
+);
+
+
+// ==========================================================
+// GET ONE STOCK
+// ==========================================================
+//
+// GET:
+//
+//     /dairy/:dairyId/feedstore/:stockId
+//
+// CONTROLLER:
+//
+//     storageController.getStock
+//
+// IMPORTANT:
+//
+// This route is deliberately declared AFTER:
+//
+//     /update/:stockId
+//     /restock/:stockId
+//
+// so those routes are not accidentally interpreted as
+// stock IDs.
+//
+// ==========================================================
+
+router.get(
+
+    "/dairy/:dairyId/feedstore/:stockId",
+
+    isAuth,
+
+    storageController.getStock
+
 );
 
 
@@ -344,16 +519,21 @@ router.post(
 //
 //     storageController.deleteStock
 //
-// ACCESS:
+// PURPOSE:
 //
-//     ADMIN ONLY
+//     Permanently remove the stock subdocument from
+//     dairy.feedStocks[].
 //
 // ==========================================================
 
 router.delete(
+
     "/dairy/:dairyId/feedstore/:stockId",
+
     isAuth,
+
     storageController.deleteStock
+
 );
 
 
