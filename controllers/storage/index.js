@@ -2,9 +2,74 @@
 // controllers/storage/index.js
 // STORAGE CONTROLLER
 // ==========================================================
+//
+// ROUTE:
+//
+//     GET /storage/:id
+//
+// IMPORTANT ID CONTRACT
+// ----------------------------------------------------------
+//
+//     req.params.id
+//
+// IS:
+//
+//     Dairy._id
+//
+// It is NOT:
+//
+//     farmCode
+//
+// It is NOT:
+//
+//     storage._id
+//
+// It is NOT:
+//
+//     roomNumber
+//
+// It is the MongoDB _id of the PARENT DAIRY FARM.
+//
+// Example:
+//
+//     /storage/68a123456789abcdef123456
+//
+// means:
+//
+//     Dairy._id = 68a123456789abcdef123456
+//
+// The controller then resolves:
+//
+//     Dairy._id
+//          ↓
+//     Dairy.code
+//          ↓
+//     DairyStorage.farmCode
+//
+// Example:
+//
+//     Dairy:
+//
+//         _id  = 68a123456789abcdef123456
+//         code = -1
+//
+//     DairyStorage:
+//
+//         farmCode = -1
+//
+// Therefore:
+//
+//     /storage/68a123456789abcdef123456
+//
+// correctly loads storage belonging to farm code -1.
+//
+// ==========================================================
 
 const mongoose =
     require("mongoose");
+
+const Dairy =
+    require("../../models/dairy");
 
 const storageService =
     require("../../services/storage");
@@ -17,37 +82,6 @@ const storageService =
 // GET:
 //
 //     /storage/:id
-//
-// Where:
-//
-//     :id = parent Dairy Farm._id
-//
-// Example:
-//
-//     /storage/64f123456789abcdef123456
-//
-// The service uses this Dairy Farm _id to:
-//
-//     1. Find the parent Dairy Farm.
-//     2. Read its `code`.
-//     3. Find storage facilities whose `farmCode`
-//        matches that Dairy Farm `code`.
-//
-// ==========================================================
-//
-// Optional filter:
-//
-//     /storage/:id
-//
-//     /storage/:id?type=all
-//
-//     /storage/:id?type=room
-//
-//     /storage/:id?type=agroStore
-//
-// Default:
-//
-//     all active storage facilities.
 //
 // ==========================================================
 
@@ -70,32 +104,39 @@ exports.index = async function (
 
 
         // ==================================================
-        // VALIDATE ID EXISTS
+        // REQUIRE DAIRY ID
         // ==================================================
 
         if (!dairyId) {
 
-            return res.status(400).render(
-                "400",
-                {
+            return res
+                .status(400)
+                .render(
+                    "400",
+                    {
 
-                    title:
-                        "Invalid Dairy ID",
+                        title:
+                            "Invalid Dairy ID",
 
-                    error:
-                        "A Dairy Farm ID is required.",
+                        error:
+                            "Dairy Farm ID is required.",
 
-                    user:
-                        req.session?.user || null
+                        user:
+                            req.session?.user || null
 
-                }
-            );
+                    }
+                );
 
         }
 
 
         // ==================================================
         // VALIDATE MONGODB OBJECT ID
+        // ==================================================
+        //
+        // This confirms that :id is intended to be a
+        // MongoDB Dairy._id.
+        //
         // ==================================================
 
         if (
@@ -104,33 +145,151 @@ exports.index = async function (
             )
         ) {
 
-            return res.status(400).render(
-                "400",
-                {
+            return res
+                .status(400)
+                .render(
+                    "400",
+                    {
 
-                    title:
-                        "Invalid Dairy ID",
+                        title:
+                            "Invalid Dairy ID",
 
-                    error:
-                        "The supplied Dairy Farm ID is not valid.",
+                        error:
+                            "Invalid Dairy ID.",
 
-                    user:
-                        req.session?.user || null
+                        user:
+                            req.session?.user || null
 
-                }
-            );
+                    }
+                );
 
         }
 
 
         // ==================================================
-        // READ STORAGE TYPE FILTER
+        // FIND THE PARENT DAIRY FARM
+        // ==================================================
+        //
+        // THIS IS THE CRITICAL PART.
+        //
+        // :id is used against Dairy._id.
+        //
+        // We do NOT do:
+        //
+        //     Dairy.findOne({ code: dairyId })
+        //
+        // because dairyId is the MongoDB _id.
+        //
+        // ==================================================
+
+        const dairy =
+            await Dairy
+                .findById(dairyId)
+                .lean();
+
+
+        // ==================================================
+        // DAIRY FARM NOT FOUND
+        // ==================================================
+
+        if (!dairy) {
+
+            return res
+                .status(404)
+                .render(
+                    "404",
+                    {
+
+                        title:
+                            "Dairy Farm Not Found",
+
+                        error:
+                            "The requested Dairy Farm could not be found.",
+
+                        user:
+                            req.session?.user || null
+
+                    }
+                );
+
+        }
+
+
+        // ==================================================
+        // VERIFY THAT THE ID BELONGS TO A PARENT
+        // DAIRY FARM
+        // ==================================================
+        //
+        // According to models/dairy.js:
+        //
+        //     code < 0 = Dairy Farm
+        //
+        //     code > 0 = Animal
+        //
+        //     code === null = Structure / Asset
+        //
+        // Therefore the storage page must only accept
+        // a Dairy Farm.
+        //
+        // ==================================================
+
+        if (
+            dairy.code === null ||
+            dairy.code === undefined ||
+            Number(dairy.code) >= 0
+        ) {
+
+            return res
+                .status(400)
+                .render(
+                    "400",
+                    {
+
+                        title:
+                            "Invalid Dairy Farm",
+
+                        error:
+                            "The supplied ID does not belong to a parent Dairy Farm.",
+
+                        user:
+                            req.session?.user || null
+
+                    }
+                );
+
+        }
+
+
+        // ==================================================
+        // PARENT FARM CODE
+        // ==================================================
+        //
+        // Example:
+        //
+        //     dairy._id = 68abc...
+        //     dairy.code = -1
+        //
+        // Storage records belonging to this farm must have:
+        //
+        //     farmCode = -1
+        //
+        // ==================================================
+
+        const farmCode =
+            Number(
+                dairy.code
+            );
+
+
+        // ==================================================
+        // READ STORAGE TYPE
         // ==================================================
 
         let type =
             String(
                 req.query.type || "all"
-            ).trim();
+            )
+            .trim();
 
 
         // ==================================================
@@ -140,17 +299,11 @@ exports.index = async function (
         const allowedTypes = [
 
             "all",
-
             "room",
-
             "agroStore"
 
         ];
 
-
-        // ==================================================
-        // NORMALIZE INVALID FILTER
-        // ==================================================
 
         if (
             !allowedTypes.includes(type)
@@ -167,22 +320,26 @@ exports.index = async function (
         //
         // IMPORTANT:
         //
-        // `dairyId` is the parent Dairy Farm's `_id`.
+        // We pass BOTH:
         //
-        // The service is responsible for resolving:
+        //     dairyId
         //
-        //     Dairy._id
-        //          ↓
-        //     Dairy.code
-        //          ↓
+        // and
+        //
+        //     farmCode
+        //
+        // The service must use farmCode to query:
+        //
         //     DairyStorage.farmCode
         //
         // ==================================================
 
-        const result =
+        const storage =
             await storageService.getStorage({
 
                 dairyId,
+
+                farmCode,
 
                 type
 
@@ -190,52 +347,17 @@ exports.index = async function (
 
 
         // ==================================================
-        // SERVICE RESULT
-        // ==================================================
-
-        const dairy =
-            result?.dairy || null;
-
-
-        const storage =
-            result?.storage || [];
-
-
-        // ==================================================
-        // PARENT DAIRY FARM NOT FOUND
-        // ==================================================
-
-        if (!dairy) {
-
-            return res.status(404).render(
-                "404",
-                {
-
-                    title:
-                        "Dairy Farm Not Found",
-
-                    error:
-                        "The requested Dairy Farm could not be found.",
-
-                    user:
-                        req.session?.user || null
-
-                }
-            );
-
-        }
-
-
-        // ==================================================
         // RENDER STORAGE PAGE
         // ==================================================
 
         return res.render(
+
             "storage/index",
+
             {
 
                 title:
-                    "Storage",
+                    "Feed Store",
 
                 // ------------------------------------------
                 // PARENT DAIRY FARM
@@ -244,20 +366,23 @@ exports.index = async function (
                 dairy,
 
                 // ------------------------------------------
-                // STORAGE FACILITIES
+                // STORAGE BELONGING TO THIS FARM
                 // ------------------------------------------
 
-                storage,
+                storage:
+                    storage || [],
 
                 // ------------------------------------------
-                // CURRENT FILTER
+                // SELECTED FILTER
                 // ------------------------------------------
 
                 selectedType:
                     type,
 
                 // ------------------------------------------
-                // PARENT DAIRY FARM ID
+                // ACTUAL DAIRY._id
+                //
+                // This is what /storage/:id represents.
                 // ------------------------------------------
 
                 dairyId:
@@ -265,10 +390,11 @@ exports.index = async function (
 
                 // ------------------------------------------
                 // PARENT FARM CODE
+                //
+                // This is what DairyStorage.farmCode uses.
                 // ------------------------------------------
 
-                farmCode:
-                    dairy.code,
+                farmCode,
 
                 // ------------------------------------------
                 // LOGGED-IN USER
@@ -278,17 +404,18 @@ exports.index = async function (
                     req.session?.user || null
 
             }
+
         );
 
 
     } catch (error) {
 
         // ==================================================
-        // ERROR
+        // LOG ERROR
         // ==================================================
 
         console.error(
-            "Storage index error:",
+            "STORAGE INDEX ERROR:",
             error
         );
 
@@ -302,10 +429,3 @@ exports.index = async function (
     }
 
 };
-
-
-// ==========================================================
-// EXPORT
-// ==========================================================
-
-module.exports = exports;
