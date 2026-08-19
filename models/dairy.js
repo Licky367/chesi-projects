@@ -172,7 +172,7 @@ const DAIRY_FARM_TYPES = [
 //
 // IMPORTANT:
 //
-// feedStore has been removed.
+// 
 //
 // Storage facilities are identified by
 // storageNumber instead.
@@ -193,6 +193,7 @@ const STRUCTURE_TYPES = [
     "vehicle",
     "generator",
     "solarSystem",
+    "feedStore",
     "other"
 
 ];
