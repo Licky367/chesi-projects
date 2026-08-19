@@ -7,6 +7,24 @@
      PURPOSE:
          Dairy update/feed page.
 
+     STORAGE:
+     -----------------------------------------------------
+     Feed Store opens the storage facilities belonging
+     to the current dairy.
+
+     Route:
+
+         /storage/:id
+
+     where:
+
+         :id = dairy._id
+
+     The storage service/controller will use the Dairy
+     document to resolve:
+
+         dairy.code === storage.farmCode
+
      FEED CONTRACT:
      -----------------------------------------------------
      Every document inside `feed` is called `item`.
@@ -68,7 +86,7 @@
 
     <!-- =================================================
          TOP PAGE ACTIONS
-         
+
          THREE EQUAL BUTTON SPACES
     ================================================== -->
 
@@ -77,12 +95,11 @@
 
         <!-- =============================================
              ADD ASSETS
-             
+
              ADMIN ONLY
         ============================================== -->
 
         <% if (user && user.role === "admin") { %>
-
 
             <a
                 href="/networth/structure/<%= dairy._id %>/add"
@@ -102,15 +119,12 @@
 
             </a>
 
-
         <% } else { %>
-
 
             <span
                 class="top-page-action-placeholder"
                 aria-hidden="true"
             ></span>
-
 
         <% } %>
 
@@ -144,39 +158,37 @@
 
 
         <!-- =============================================
-            STORAGE FACILITIES
-                   ============================================== -->
+             FEED STORE
 
+             CURRENT DAIRY STORAGE
+             ---------------------------------------------
+             Route:
 
-            <a
-                href="/storage/<%= dairy._id %>"
-                class="asset-bar-trigger top-page-action"
-            >
+                 /storage/:id
 
-                <span
-                    class="asset-bar-trigger-icon"
-                    aria-hidden="true"
-                >
-                    📦
-                </span>
+             ID:
 
-                <span class="asset-bar-trigger-text">
-                    Feed Store
-                </span>
+                 dairy._id
+        ============================================== -->
 
-            </a>
-
-
-        <% } else { %>
-
+        <a
+            href="/storage/<%= dairy._id %>"
+            class="asset-bar-trigger top-page-action"
+            title="View Feed Store"
+        >
 
             <span
-                class="top-page-action-placeholder"
+                class="asset-bar-trigger-icon"
                 aria-hidden="true"
-            ></span>
+            >
+                📦
+            </span>
 
+            <span class="asset-bar-trigger-text">
+                Feed Store
+            </span>
 
-        <% } %>
+        </a>
 
 
     </div>
@@ -185,7 +197,7 @@
 
     <!-- =================================================
          TOP ACTION LAYOUT
-         
+
          Keeps all three spaces equal without changing
          the surrounding page layout.
     ================================================== -->
@@ -249,6 +261,10 @@
 
             overflow: hidden;
 
+            text-decoration: none;
+
+            box-sizing: border-box;
+
         }
 
 
@@ -285,6 +301,10 @@
         }
 
 
+        /* =================================================
+           MOBILE
+        ================================================== */
+
         @media (max-width: 600px) {
 
             .dairy-page-actions {
@@ -302,8 +322,7 @@
 
                 min-height: 40px;
 
-                padding:
-                    6px 4px;
+                padding: 6px 4px;
 
                 gap: 3px;
 
@@ -330,6 +349,10 @@
         }
 
 
+        /* =================================================
+           VERY SMALL SCREENS
+        ================================================== */
+
         @media (max-width: 380px) {
 
             .dairy-page-actions {
@@ -342,8 +365,7 @@
             .dairy-page-actions
             .top-page-action {
 
-                padding:
-                    6px 2px;
+                padding: 6px 2px;
 
             }
 
@@ -507,7 +529,6 @@
 
                 <% if (item.type === "post") { %>
 
-
                     <%- include(
                         "update/post",
                         {
@@ -515,7 +536,6 @@
                             user: user
                         }
                     ) %>
-
 
                 <% } %>
 
@@ -530,7 +550,6 @@
 
                 <% if (item.type === "milk") { %>
 
-
                     <%- include(
                         "update/milk",
                         {
@@ -538,7 +557,6 @@
                             user: user
                         }
                     ) %>
-
 
                 <% } %>
 
@@ -556,7 +574,6 @@
                     item.status === "marked"
                 ) { %>
 
-
                     <%- include(
                         "update/medical-marked",
                         {
@@ -564,7 +581,6 @@
                             user: user
                         }
                     ) %>
-
 
                 <% } %>
 
@@ -582,7 +598,6 @@
                     item.status === "cleared"
                 ) { %>
 
-
                     <%- include(
                         "update/medical-cleared",
                         {
@@ -590,7 +605,6 @@
                             user: user
                         }
                     ) %>
-
 
                 <% } %>
 
@@ -608,7 +622,6 @@
                     item.status === "marked"
                 ) { %>
 
-
                     <%- include(
                         "update/maintenance-marked",
                         {
@@ -616,7 +629,6 @@
                             user: user
                         }
                     ) %>
-
 
                 <% } %>
 
@@ -634,7 +646,6 @@
                     item.status === "cleared"
                 ) { %>
 
-
                     <%- include(
                         "update/maintenance-cleared",
                         {
@@ -642,7 +653,6 @@
                             user: user
                         }
                     ) %>
-
 
                 <% } %>
 
@@ -657,7 +667,6 @@
 
                 <% if (item.type === "assetAdd") { %>
 
-
                     <%- include(
                         "update/addAsset",
                         {
@@ -665,7 +674,6 @@
                             user: user
                         }
                     ) %>
-
 
                 <% } %>
 
@@ -688,7 +696,6 @@
 
                     <% if (insertAsset) { %>
 
-
                         <%- include(
                             "update/asset-cards",
                             {
@@ -705,7 +712,6 @@
 
                     <% } else { %>
 
-
                         <%- include(
                             "update/create-post",
                             {
@@ -715,7 +721,6 @@
                                     assetDairies || []
                             }
                         ) %>
-
 
                     <% } %>
 
