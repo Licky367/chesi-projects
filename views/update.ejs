@@ -68,18 +68,11 @@
 
     <!-- =================================================
          TOP PAGE ACTIONS
+         
+         THREE EQUAL BUTTON SPACES
     ================================================== -->
 
-    <div
-        class="dairy-page-actions"
-        style="
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:10px;
-            width:100%;
-        "
-    >
+    <div class="dairy-page-actions">
 
 
         <!-- =============================================
@@ -93,13 +86,7 @@
 
             <a
                 href="/networth/structure/<%= dairy._id %>/add"
-                class="asset-bar-trigger"
-                style="
-                    text-decoration:none;
-                    display:inline-flex;
-                    align-items:center;
-                    justify-content:center;
-                "
+                class="asset-bar-trigger top-page-action"
             >
 
                 <span
@@ -119,7 +106,10 @@
         <% } else { %>
 
 
-            <span aria-hidden="true"></span>
+            <span
+                class="top-page-action-placeholder"
+                aria-hidden="true"
+            ></span>
 
 
         <% } %>
@@ -133,7 +123,7 @@
         <button
             type="button"
             id="viewPropertyButton"
-            class="asset-bar-trigger"
+            class="asset-bar-trigger top-page-action"
             aria-controls="assetBar"
             aria-expanded="false"
         >
@@ -164,13 +154,7 @@
 
             <a
                 href="/dairy/feedstore/<%= dairy._id %>"
-                class="asset-bar-trigger"
-                style="
-                    text-decoration:none;
-                    display:inline-flex;
-                    align-items:center;
-                    justify-content:center;
-                "
+                class="asset-bar-trigger top-page-action"
             >
 
                 <span
@@ -187,10 +171,205 @@
             </a>
 
 
+        <% } else { %>
+
+
+            <span
+                class="top-page-action-placeholder"
+                aria-hidden="true"
+            ></span>
+
+
         <% } %>
 
 
     </div>
+
+
+
+    <!-- =================================================
+         TOP ACTION LAYOUT
+         
+         Keeps all three spaces equal without changing
+         the surrounding page layout.
+    ================================================== -->
+
+    <style>
+
+        .dairy-page-actions {
+
+            width: 100%;
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
+
+            align-items: stretch;
+
+            gap: 8px;
+
+            margin-bottom: 12px;
+
+            box-sizing: border-box;
+
+        }
+
+
+        .dairy-page-actions > .top-page-action,
+        .dairy-page-actions > .top-page-action-placeholder {
+
+            width: 100%;
+
+            min-width: 0;
+
+            max-width: 100%;
+
+            box-sizing: border-box;
+
+        }
+
+
+        .dairy-page-actions
+        .top-page-action {
+
+            min-height: 42px;
+
+            margin: 0;
+
+            padding: 7px 8px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 5px;
+
+            text-align: center;
+
+            white-space: nowrap;
+
+            overflow: hidden;
+
+        }
+
+
+        .dairy-page-actions
+        .top-page-action
+        .asset-bar-trigger-text {
+
+            min-width: 0;
+
+            overflow: hidden;
+
+            text-overflow: ellipsis;
+
+            white-space: nowrap;
+
+        }
+
+
+        .dairy-page-actions
+        .top-page-action
+        .asset-bar-trigger-icon {
+
+            flex: 0 0 auto;
+
+        }
+
+
+        .top-page-action-placeholder {
+
+            min-height: 42px;
+
+            visibility: hidden;
+
+        }
+
+
+        @media (max-width: 600px) {
+
+            .dairy-page-actions {
+
+                grid-template-columns:
+                    repeat(3, minmax(0, 1fr));
+
+                gap: 5px;
+
+            }
+
+
+            .dairy-page-actions
+            .top-page-action {
+
+                min-height: 40px;
+
+                padding:
+                    6px 4px;
+
+                gap: 3px;
+
+                font-size: 10px;
+
+            }
+
+
+            .dairy-page-actions
+            .asset-bar-trigger-icon {
+
+                font-size: 13px;
+
+            }
+
+
+            .dairy-page-actions
+            .asset-bar-trigger-text {
+
+                font-size: 9px;
+
+            }
+
+        }
+
+
+        @media (max-width: 380px) {
+
+            .dairy-page-actions {
+
+                gap: 4px;
+
+            }
+
+
+            .dairy-page-actions
+            .top-page-action {
+
+                padding:
+                    6px 2px;
+
+            }
+
+
+            .dairy-page-actions
+            .asset-bar-trigger-icon {
+
+                font-size: 12px;
+
+            }
+
+
+            .dairy-page-actions
+            .asset-bar-trigger-text {
+
+                font-size: 8px;
+
+            }
+
+        }
+
+    </style>
 
 
 
