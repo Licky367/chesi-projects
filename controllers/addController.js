@@ -6,9 +6,6 @@
 const addService =
     require("../services/addService");
 
-const Dairy =
-    require("../models/dairy");
-
 
 // ==========================================================
 // ADMIN ACCESS
@@ -133,206 +130,6 @@ async function getAddPage(
 
 
 // ==========================================================
-// CREATE STORAGE FACILITY FOR DAIRY FARM
-// ==========================================================
-//
-// Every Dairy Farm must have exactly ONE storage facility.
-//
-// FARM:
-//
-//     code = negative farm code
-//
-// STORAGE:
-//
-//     code          = null
-//     assetCode     = null
-//     storageNumber = negative farm code
-//
-// Example:
-//
-//     Farm:
-//
-//         code = -1
-//
-//     Storage:
-//
-//         code = null
-//         assetCode = null
-//         storageNumber = -1
-//
-// FeedStock documents will later reference the STORAGE
-// FACILITY _id through:
-//
-//     FeedStock.dairy
-//
-// ==========================================================
-
-async function createStorageForFarm(
-    farm
-) {
-
-    // ======================================================
-    // SAFETY CHECK
-    // ======================================================
-
-    if (
-        !farm
-    ) {
-
-        throw new Error(
-            "Dairy Farm was created but the created record could not be identified."
-        );
-
-    }
-
-
-    // ======================================================
-    // CONFIRM THIS IS A DAIRY FARM
-    // ======================================================
-
-    const farmCode =
-        Number(
-            farm.code
-        );
-
-
-    if (
-
-        !Number.isInteger(
-            farmCode
-        ) ||
-
-        farmCode >= 0
-
-    ) {
-
-        return null;
-
-    }
-
-
-    // ======================================================
-    // CHECK WHETHER STORAGE ALREADY EXISTS
-    // ======================================================
-    //
-    // This makes the operation safe if the controller is
-    // ever called again for an already-created farm.
-    //
-    // ======================================================
-
-    const existingStorage =
-        await Dairy.findOne({
-
-            storageNumber:
-                farmCode
-
-        });
-
-
-    if (
-        existingStorage
-    ) {
-
-        return existingStorage;
-
-    }
-
-
-    // ======================================================
-    // CREATE STORAGE FACILITY
-    // ======================================================
-
-    const storage =
-        new Dairy({
-
-            // ------------------------------------------------
-            // Storage has NO identity code.
-            // ------------------------------------------------
-
-            code:
-                null,
-
-            // ------------------------------------------------
-            // Storage does not use assetCode.
-            // ------------------------------------------------
-
-            assetCode:
-                null,
-
-            // ------------------------------------------------
-            // This connects the storage to the parent farm.
-            // ------------------------------------------------
-
-            storageNumber:
-                farmCode,
-
-            // ------------------------------------------------
-            // Human-readable name.
-            // ------------------------------------------------
-
-            name:
-                `${farm.name || "Dairy Farm"} Storage`,
-
-            // ------------------------------------------------
-            // Storage facilities do not require a structure
-            // type according to the Dairy model.
-            // ------------------------------------------------
-
-            type:
-                "",
-
-            // ------------------------------------------------
-            // Storage is not an animal.
-            // ------------------------------------------------
-
-            dateOfBirth:
-                null,
-
-            mass:
-                0,
-
-            isMilking:
-                false,
-
-            // ------------------------------------------------
-            // Initial financial values.
-            // ------------------------------------------------
-
-            buyingPrice:
-                0,
-
-            sellingPrice:
-                0,
-
-            revenue:
-                0,
-
-            currentWorth:
-                0,
-
-            // ------------------------------------------------
-            // Description.
-            // ------------------------------------------------
-
-            description:
-                `Feed and veterinary medicine storage facility for ${farm.name || "Dairy Farm"} (Farm ${farmCode}).`,
-
-            // ------------------------------------------------
-            // Storage starts active.
-            // ------------------------------------------------
-
-            status:
-                "active"
-
-        });
-
-
-    return storage.save();
-
-}
-
-
-// ==========================================================
 // POST /add
 // ==========================================================
 //
@@ -341,26 +138,21 @@ async function createStorageForFarm(
 // Creates:
 //
 //     Dairy Farm
+//     + automatic Storage Facility
+//
+// OR:
+//
 //     Animal
+//
+// OR:
+//
 //     Structure / Facility
 //
-// ADDITIONAL DAIRY FARM LOGIC:
+// All creation logic remains inside addService.
 //
-// Whenever a new Dairy Farm is created:
+// When a Dairy Farm is created, the service automatically
+// creates its corresponding Storage Facility.
 //
-//     1. The farm is created.
-//     2. A corresponding storage facility is created.
-//
-// The storage facility:
-//
-//     code          = null
-//     assetCode     = null
-//     storageNumber = farm.code
-//
-// FeedStock remains in the independent FeedStock collection
-// and will reference the storage facility's _id.
-//
-// ==========================================================
 
 async function createRecord(
     req,
@@ -385,10 +177,6 @@ async function createRecord(
 
     try {
 
-        // ==================================================
-        // CREATE THE REQUESTED RECORD
-        // ==================================================
-
         const result =
             await addService.createRecord({
 
@@ -402,60 +190,6 @@ async function createRecord(
                     req.user
 
             });
-
-
-        // ==================================================
-        // IDENTIFY THE CREATED RECORD
-        // ==================================================
-        //
-        // addService.createRecord() should return the
-        // created Dairy document.
-        //
-        // The first option is result itself.
-        //
-        // If the service wraps the record, these common
-        // properties are also supported.
-        //
-        // ==================================================
-
-        const createdRecord =
-
-            result &&
-            (
-                result.record ||
-                result.dairy ||
-                result.created ||
-                result
-            );
-
-
-        // ==================================================
-        // DAIRY FARM -> CREATE STORAGE
-        // ==================================================
-        //
-        // A Dairy Farm is identified by:
-        //
-        //     code < 0
-        //
-        // We deliberately do NOT use req.body here to
-        // determine whether the record is a farm.
-        //
-        // The actual saved Dairy record is the authority.
-        //
-        // ==================================================
-
-        if (
-            createdRecord &&
-            createdRecord.code !== null &&
-            createdRecord.code !== undefined &&
-            Number(createdRecord.code) < 0
-        ) {
-
-            await createStorageForFarm(
-                createdRecord
-            );
-
-        }
 
 
         // ==================================================
