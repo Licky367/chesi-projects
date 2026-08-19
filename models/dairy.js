@@ -16,27 +16,45 @@
 // code === null
 //     = STRUCTURE / FACILITY / ASSET
 //
-// STRUCTURE / FACILITY OWNERSHIP
+// ==========================================================
+//
+// ASSET OWNERSHIP
 // ----------------------------------------------------------
 //
 // assetCode
 //     = negative code of the parent Dairy Farm
 //
+// Dairy Farms:
+//     assetCode = null
+//
+// Animals:
+//     assetCode = negative Dairy Farm code
+//
+// Structures / Facilities:
+//     assetCode = negative Dairy Farm code
+//     OR null for standalone structures/assets
+//
+// ==========================================================
+//
 // FEED STORE
 // ----------------------------------------------------------
 //
-// A feedStore is a FACILITY FOR STORING FOOD / SUPPLIES.
+// A feedStore is a FACILITY used for storing:
+//
+//     • animal feed
+//     • veterinary medicine
+//     • farm supplies
 //
 // It is NOT an animal dwelling.
 //
-// A dairy farm may have:
+// A Dairy Farm may have:
 //
-//     ZERO feed stores before initialization
-//     ONE feed store after initialization
+//     ZERO feed stores
+//     ONE feed store
 //
 // MongoDB enforces:
 //
-//     maximum ONE feedStore per Dairy Farm.
+//     maximum ONE feedStore per Dairy Farm
 //
 // Feed-store inventory:
 //
@@ -44,23 +62,54 @@
 //
 // Every feedStocks item has its own MongoDB `_id`.
 //
-// Update.stock.stockId points to:
+// storageService uses:
 //
 //     dairy.feedStocks._id
 //
+// ==========================================================
+//
+// FEED STOCK FINANCIAL SEMANTICS
+// ----------------------------------------------------------
+//
+// quantityRemaining
+//     = current physical stock
+//
+// initialQuantity
+//     = original quantity when the stock record was created
+//
+// percentageRemaining
+//     = quantityRemaining / initialQuantity × 100
+//
 // IMPORTANT:
 //
-// feedStocks represents CURRENT inventory.
+// Restocking does NOT replace initialQuantity.
 //
-// feedsAmount represents money associated with the
-// latest stock addition represented by that stock record.
+// Therefore percentageRemaining MAY exceed 100.
 //
-// It is NOT calculated from quantityRemaining.
+// Example:
+//
+//     initialQuantity   = 100
+//     quantityRemaining = 150
+//
+//     percentageRemaining = 150%
+//
+// ==========================================================
+//
+// unitPrice
+//     = latest purchase unit price
+//
+// feedsAmount
+//     = money associated with the LATEST stock addition
+//
+// It is NOT:
+//
+//     quantityRemaining × unitPrice
 //
 // ==========================================================
 
 
-const mongoose = require("mongoose");
+const mongoose =
+    require("mongoose");
 
 
 // ==========================================================
@@ -110,14 +159,6 @@ const DAIRY_FARM_TYPES = [
 
 // ==========================================================
 // STRUCTURE / FACILITY TYPES
-// ==========================================================
-//
-// These are farm facilities/assets.
-//
-// feedStore is a storage facility.
-//
-// It is NOT an animal dwelling.
-//
 // ==========================================================
 
 const STRUCTURE_TYPES = [
@@ -241,9 +282,13 @@ const MAX_STOCK_IMAGES = 10;
 // FEED-STORE STOCK SUBDOCUMENT
 // ==========================================================
 //
-// One CURRENT stock record.
+// Represents ONE CURRENT inventory item.
 //
-// Every stock record gets its own `_id`.
+// MongoDB automatically creates:
+//
+//     _id
+//
+// for every stock item.
 //
 // ==========================================================
 
@@ -268,7 +313,9 @@ const feedStockSchema = new mongoose.Schema(
 
             required: true,
 
-            trim: true
+            trim: true,
+
+            lowercase: true
 
         },
 
@@ -323,7 +370,16 @@ const feedStockSchema = new mongoose.Schema(
 
 
         // ==================================================
-        // INITIAL QUANTITY
+        // ORIGINAL QUANTITY
+        // ==================================================
+        //
+        // This is the baseline used to calculate
+        // percentageRemaining.
+        //
+        // IMPORTANT:
+        //
+        // Restocking does NOT increase this value.
+        //
         // ==================================================
 
         initialQuantity: {
@@ -340,14 +396,23 @@ const feedStockSchema = new mongoose.Schema(
         // ==================================================
         // PERCENTAGE REMAINING
         // ==================================================
+        //
+        // May exceed 100 after restocking.
+        //
+        // Example:
+        //
+        // initialQuantity   = 100
+        // quantityRemaining = 150
+        //
+        // percentageRemaining = 150
+        //
+        // ==================================================
 
         percentageRemaining: {
 
             type: Number,
 
             min: 0,
-
-            max: 100,
 
             default: 0
 
@@ -372,7 +437,7 @@ const feedStockSchema = new mongoose.Schema(
 
 
         // ==================================================
-        // UNIT PRICE
+        // LATEST UNIT PRICE
         // ==================================================
 
         unitPrice: {
@@ -387,12 +452,18 @@ const feedStockSchema = new mongoose.Schema(
 
 
         // ==================================================
-        // FEEDS AMOUNT
+        // LATEST STOCK ADDITION AMOUNT
         // ==================================================
         //
-        // Actual money associated with the latest addition.
+        // This represents:
         //
-        // This MUST NOT be recalculated from the current
+        //     quantityAdded × unitPrice
+        //
+        // for the latest stock addition.
+        //
+        // It is NOT current inventory value.
+        //
+        // It must NOT be recalculated from
         // quantityRemaining.
         //
         // ==================================================
@@ -503,7 +574,7 @@ const feedStockSchema = new mongoose.Schema(
 
 
         // ==================================================
-        // STOCK CREATED / ADDED DATE
+        // STOCK CREATION / FIRST ADDITION
         // ==================================================
 
         addedAt: {
@@ -531,7 +602,9 @@ const feedStockSchema = new mongoose.Schema(
 
     {
 
-        _id: true
+        _id: true,
+
+        id: true
 
     }
 
@@ -606,15 +679,15 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // CODE
-        // ==========================================================
+        // ==================================================
         //
         // NEGATIVE = DAIRY FARM
         //
         // POSITIVE = ANIMAL
         //
-        // NULL     = STRUCTURE / FACILITY
+        // NULL     = STRUCTURE / FACILITY / ASSET
         //
-        // ==========================================================
+        // ==================================================
 
         code: {
 
@@ -638,7 +711,9 @@ const dairySchema = new mongoose.Schema(
 
                     }
 
-                    return Number.isInteger(value);
+                    return Number.isInteger(
+                        value
+                    );
 
                 },
 
@@ -660,7 +735,9 @@ const dairySchema = new mongoose.Schema(
 
             required: true,
 
-            trim: true
+            trim: true,
+
+            maxlength: 200
 
         },
 
@@ -708,21 +785,25 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // ASSET CODE
-        // ==========================================================
+        // ==================================================
         //
-        // For animals:
+        // Animals:
         //
-        //     Negative code of parent Dairy Farm.
+        //     negative Dairy Farm code
         //
-        // For facilities:
+        // Structures:
         //
-        //     Negative code of parent Dairy Farm.
+        //     negative Dairy Farm code
         //
-        // For Dairy Farms:
+        // Standalone structures/assets:
         //
-        //     Always null.
+        //     null
         //
-        // ==========================================================
+        // Dairy Farms:
+        //
+        //     null
+        //
+        // ==================================================
 
         assetCode: {
 
@@ -971,7 +1052,7 @@ const dairySchema = new mongoose.Schema(
         // TYPE
         // ==================================================
         //
-        // Farm:
+        // Dairy Farm:
         //
         //     DAIRY_FARM_TYPES
         //
@@ -979,7 +1060,7 @@ const dairySchema = new mongoose.Schema(
         //
         //     DAIRY_BREEDS
         //
-        // Facility:
+        // Structure:
         //
         //     STRUCTURE_TYPES
         //
@@ -997,13 +1078,12 @@ const dairySchema = new mongoose.Schema(
 
 
         // ==================================================
-        // CURRENT FEED STORE STOCK
-        // ==========================================================
+        // FEED STORE STOCK
+        // ==================================================
         //
-        // This array is meaningful ONLY for feedStore
-        // facilities.
+        // Only feedStore facilities may contain this array.
         //
-        // ==========================================================
+        // ==================================================
 
         feedStocks: {
 
@@ -1019,8 +1099,18 @@ const dairySchema = new mongoose.Schema(
 
 
         // ==================================================
-        // TOTAL CURRENT FEED-STORE AMOUNT
-        // ==========================================================
+        // FEED STORE FINANCIAL TOTAL
+        // ==================================================
+        //
+        // This is the sum of feedsAmount from feedStocks.
+        //
+        // Since each stock's feedsAmount represents its
+        // latest addition, this parent value represents
+        // the aggregate of those latest addition amounts.
+        //
+        // It is NOT current inventory valuation.
+        //
+        // ==================================================
 
         feedsAmount: {
 
@@ -1035,7 +1125,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // BUYING PRICE
-        // ==========================================================
+        // ==================================================
 
         buyingPrice: {
 
@@ -1050,7 +1140,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // SELLING PRICE
-        // ==========================================================
+        // ==================================================
 
         sellingPrice: {
 
@@ -1065,7 +1155,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // REVENUE
-        // ==========================================================
+        // ==================================================
 
         revenue: {
 
@@ -1080,7 +1170,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // CURRENT WORTH
-        // ==========================================================
+        // ==================================================
 
         currentWorth: {
 
@@ -1095,7 +1185,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // DESCRIPTION
-        // ==========================================================
+        // ==================================================
 
         description: {
 
@@ -1103,14 +1193,16 @@ const dairySchema = new mongoose.Schema(
 
             trim: true,
 
-            default: ""
+            default: "",
+
+            maxlength: 5000
 
         },
 
 
         // ==================================================
         // CONDITION
-        // ==========================================================
+        // ==================================================
 
         condition: {
 
@@ -1118,14 +1210,16 @@ const dairySchema = new mongoose.Schema(
 
             trim: true,
 
-            default: ""
+            default: "",
+
+            maxlength: 500
 
         },
 
 
         // ==================================================
         // LOCATION
-        // ==========================================================
+        // ==================================================
 
         location: {
 
@@ -1133,14 +1227,16 @@ const dairySchema = new mongoose.Schema(
 
             trim: true,
 
-            default: ""
+            default: "",
+
+            maxlength: 500
 
         },
 
 
         // ==================================================
         // ACQUISITION DATE
-        // ==========================================================
+        // ==================================================
 
         acquisitionDate: {
 
@@ -1153,7 +1249,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // VALUATION DATE
-        // ==========================================================
+        // ==================================================
 
         valuationDate: {
 
@@ -1166,7 +1262,7 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // STATUS
-        // ==========================================================
+        // ==================================================
 
         status: {
 
@@ -1269,6 +1365,10 @@ dairySchema.virtual(
 // ==========================================================
 // VIRTUAL: IS MANUAL ASSET
 // ==========================================================
+//
+// A structure is treated as a manual asset entity.
+//
+// ==========================================================
 
 dairySchema.virtual(
     "isManualAsset"
@@ -1343,31 +1443,14 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// VIRTUAL: HAS FEED STORE
-// ==========================================================
-//
-// This virtual is useful on a Dairy Farm document.
-//
-// A farm itself does not own the feedStore object directly;
-// the feedStore is a separate Dairy document whose:
-//
-//     type = feedStore
-//     assetCode = farm.code
-//
-// ==========================================================
-//
-// NOTE:
-// This virtual is intentionally false for normal documents
-// because checking the database from a synchronous virtual
-// is not appropriate.
-//
-// Use Dairy.hasFeedStore(farmCode) for database checks.
-//
-// ==========================================================
-
-
-// ==========================================================
 // VIRTUAL: GENDER
+// ==========================================================
+//
+// Existing identity convention:
+//
+//     even positive code = Female
+//     odd positive code  = Male
+//
 // ==========================================================
 
 dairySchema.virtual(
@@ -1379,7 +1462,6 @@ dairySchema.virtual(
         return null;
 
     }
-
 
     return (
 
@@ -1440,17 +1522,19 @@ dairySchema.virtual(
 
     }
 
-
     const dob =
-        new Date(this.dateOfBirth);
+        new Date(
+            this.dateOfBirth
+        );
 
     const now =
         new Date();
 
-
     if (
 
-        Number.isNaN(dob.getTime()) ||
+        Number.isNaN(
+            dob.getTime()
+        ) ||
 
         dob > now
 
@@ -1459,7 +1543,6 @@ dairySchema.virtual(
         return "";
 
     }
-
 
     let years =
         now.getFullYear() -
@@ -1473,11 +1556,9 @@ dairySchema.virtual(
         now.getDate() -
         dob.getDate();
 
-
     if (days < 0) {
 
         months--;
-
 
         const previousMonth =
             new Date(
@@ -1490,12 +1571,10 @@ dairySchema.virtual(
 
             );
 
-
         days +=
             previousMonth.getDate();
 
     }
-
 
     if (months < 0) {
 
@@ -1504,7 +1583,6 @@ dairySchema.virtual(
         months += 12;
 
     }
-
 
     return (
 
@@ -1531,32 +1609,31 @@ dairySchema.virtual(
 
     }
 
-
     const dob =
-        new Date(this.dateOfBirth);
+        new Date(
+            this.dateOfBirth
+        );
 
     const now =
         new Date();
 
-
     if (
-        Number.isNaN(dob.getTime())
+        Number.isNaN(
+            dob.getTime()
+        )
     ) {
 
         return null;
 
     }
 
-
     let age =
         now.getFullYear() -
         dob.getFullYear();
 
-
     const monthDifference =
         now.getMonth() -
         dob.getMonth();
-
 
     if (
 
@@ -1577,13 +1654,9 @@ dairySchema.virtual(
 
     }
 
-
     return Math.max(
-
         0,
-
         age
-
     );
 
 });
@@ -1598,9 +1671,7 @@ dairySchema.virtual(
 ).get(function () {
 
     return this.isMilking
-
         ? "Yes"
-
         : "No";
 
 });
@@ -1629,7 +1700,6 @@ function normalizeProfileImage(
 
     }
 
-
     if (
 
         /^https?:\/\//i.test(
@@ -1642,7 +1712,6 @@ function normalizeProfileImage(
 
     }
 
-
     if (
 
         String(image).startsWith("/")
@@ -1652,7 +1721,6 @@ function normalizeProfileImage(
         return String(image);
 
     }
-
 
     return String(image);
 
@@ -1671,7 +1739,9 @@ dairySchema.virtual(
 
 
     if (
-        Array.isArray(this.profileImages)
+        Array.isArray(
+            this.profileImages
+        )
     ) {
 
         images =
@@ -1758,7 +1828,6 @@ dairySchema.virtual(
 
     const images =
         this.displayImages;
-
 
     return images.length
 
@@ -1861,7 +1930,9 @@ dairySchema.pre(
         // ==================================================
 
         if (
-            !Array.isArray(this.profileImages)
+            !Array.isArray(
+                this.profileImages
+            )
         ) {
 
             this.profileImages = [];
@@ -1879,7 +1950,9 @@ dairySchema.pre(
 
                     image =>
 
-                        String(image).trim()
+                        String(
+                            image
+                        ).trim()
 
                 )
 
@@ -1918,7 +1991,7 @@ dairySchema.pre(
 
 
         // ==================================================
-        // PRIMARY IMAGE
+        // PRIMARY PROFILE IMAGE
         // ==================================================
 
         if (
@@ -1962,11 +2035,13 @@ dairySchema.pre(
 
 
         // ==================================================
-        // NORMALIZE FEED STOCKS
+        // NORMALIZE FEED STOCK ARRAY
         // ==================================================
 
         if (
-            !Array.isArray(this.feedStocks)
+            !Array.isArray(
+                this.feedStocks
+            )
         ) {
 
             this.feedStocks = [];
@@ -2005,7 +2080,8 @@ dairySchema.pre(
                         stock.feedName =
 
                             String(
-                                stock.feedName || ""
+                                stock.feedName ||
+                                ""
                             )
                             .trim();
 
@@ -2017,7 +2093,8 @@ dairySchema.pre(
                         stock.medicineName =
 
                             String(
-                                stock.medicineName || ""
+                                stock.medicineName ||
+                                ""
                             )
                             .trim();
 
@@ -2049,11 +2126,28 @@ dairySchema.pre(
 
 
                         stock.quantityRemaining =
-                            quantityRemaining;
+
+                            Math.round(
+
+                                quantityRemaining *
+                                100
+
+                            ) / 100;
 
 
                         // ==================================
-                        // INITIAL QUANTITY
+                        // ORIGINAL QUANTITY
+                        // ==================================
+                        //
+                        // IMPORTANT:
+                        //
+                        // Do NOT replace an existing
+                        // initialQuantity with the current
+                        // quantity.
+                        //
+                        // This preserves the original
+                        // baseline during restocking.
+                        //
                         // ==================================
 
                         let initialQuantity =
@@ -2074,51 +2168,57 @@ dairySchema.pre(
                         ) {
 
                             initialQuantity =
-                                quantityRemaining;
-
-                        }
-
-
-                        if (
-
-                            initialQuantity <
-                            quantityRemaining
-
-                        ) {
-
-                            initialQuantity =
-                                quantityRemaining;
+                                stock.quantityRemaining;
 
                         }
 
 
                         stock.initialQuantity =
-                            initialQuantity;
+
+                            Math.round(
+
+                                initialQuantity *
+                                100
+
+                            ) / 100;
 
 
                         // ==================================
-                        // PERCENTAGE
+                        // PERCENTAGE REMAINING
+                        // ==================================
+                        //
+                        // Unlike the previous model,
+                        // this is NOT capped at 100.
+                        //
+                        // Restocking can therefore produce:
+                        //
+                        //     125%
+                        //     150%
+                        //     etc.
+                        //
                         // ==================================
 
                         let percentage = 0;
 
 
                         if (
-                            initialQuantity > 0
+                            stock.initialQuantity > 0
                         ) {
 
                             percentage =
 
                                 (
 
-                                    quantityRemaining /
+                                    stock.quantityRemaining /
 
-                                    initialQuantity
+                                    stock.initialQuantity
 
                                 ) * 100;
 
                         } else if (
-                            quantityRemaining > 0
+
+                            stock.quantityRemaining > 0
+
                         ) {
 
                             percentage = 100;
@@ -2126,23 +2226,27 @@ dairySchema.pre(
                         }
 
 
+                        if (
+                            !Number.isFinite(
+                                percentage
+                            )
+                        ) {
+
+                            percentage = 0;
+
+                        }
+
+
                         stock.percentageRemaining =
 
-                            Math.max(
+                            Math.round(
 
-                                0,
+                                Math.max(
+                                    0,
+                                    percentage
+                                ) * 100
 
-                                Math.min(
-
-                                    100,
-
-                                    Number(
-                                        percentage
-                                    ) || 0
-
-                                )
-
-                            );
+                            ) / 100;
 
 
                         // ==================================
@@ -2172,11 +2276,25 @@ dairySchema.pre(
 
 
                         stock.unitPrice =
-                            unitPrice;
+
+                            Math.round(
+
+                                unitPrice *
+                                100
+
+                            ) / 100;
 
 
                         // ==================================
                         // FEEDS AMOUNT
+                        // ==================================
+                        //
+                        // NEVER calculate this from
+                        // quantityRemaining.
+                        //
+                        // It represents the latest
+                        // stock addition amount.
+                        //
                         // ==================================
 
                         let feedsAmount =
@@ -2202,7 +2320,13 @@ dairySchema.pre(
 
 
                         stock.feedsAmount =
-                            feedsAmount;
+
+                            Math.round(
+
+                                feedsAmount *
+                                100
+
+                            ) / 100;
 
 
                         // ==================================
@@ -2212,7 +2336,8 @@ dairySchema.pre(
                         stock.instructions =
 
                             String(
-                                stock.instructions || ""
+                                stock.instructions ||
+                                ""
                             )
                             .trim();
 
@@ -2224,7 +2349,8 @@ dairySchema.pre(
                         stock.expectedDuration =
 
                             String(
-                                stock.expectedDuration || ""
+                                stock.expectedDuration ||
+                                ""
                             )
                             .trim();
 
@@ -2236,7 +2362,8 @@ dairySchema.pre(
                         stock.message =
 
                             String(
-                                stock.message || ""
+                                stock.message ||
+                                ""
                             )
                             .trim();
 
@@ -2284,7 +2411,7 @@ dairySchema.pre(
 
 
                         // ==================================
-                        // DATES
+                        // ADDED DATE
                         // ==================================
 
                         if (
@@ -2297,12 +2424,38 @@ dairySchema.pre(
                         }
 
 
+                        // ==================================
+                        // UPDATED DATE
+                        // ==================================
+
                         if (
                             !stock.updatedAt
                         ) {
 
                             stock.updatedAt =
                                 new Date();
+
+                        }
+
+
+                        // ==================================
+                        // CATEGORY-SPECIFIC NAME CLEANUP
+                        // ==================================
+
+                        if (
+                            stock.category === "feed"
+                        ) {
+
+                            stock.medicineName = "";
+
+                        }
+
+
+                        if (
+                            stock.category === "medicine"
+                        ) {
+
+                            stock.feedName = "";
 
                         }
 
@@ -2315,7 +2468,7 @@ dairySchema.pre(
 
 
         // ==================================================
-        // VALIDATE STOCK
+        // VALIDATE STOCK ITEMS
         // ==================================================
 
         for (
@@ -2402,11 +2555,143 @@ dairySchema.pre(
 
             }
 
+
+            // ==============================================
+            // QUANTITY
+            // ==============================================
+
+            if (
+
+                !Number.isFinite(
+                    Number(
+                        stock.quantityRemaining
+                    )
+                ) ||
+
+                Number(
+                    stock.quantityRemaining
+                ) < 0
+
+            ) {
+
+                const error =
+
+                    new Error(
+                        "Stock quantity cannot be negative."
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
+
+            // ==============================================
+            // INITIAL QUANTITY
+            // ==============================================
+
+            if (
+
+                !Number.isFinite(
+                    Number(
+                        stock.initialQuantity
+                    )
+                ) ||
+
+                Number(
+                    stock.initialQuantity
+                ) < 0
+
+            ) {
+
+                const error =
+
+                    new Error(
+                        "Initial stock quantity cannot be negative."
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
+
+            // ==============================================
+            // PRICE
+            // ==============================================
+
+            if (
+
+                !Number.isFinite(
+                    Number(
+                        stock.unitPrice
+                    )
+                ) ||
+
+                Number(
+                    stock.unitPrice
+                ) < 0
+
+            ) {
+
+                const error =
+
+                    new Error(
+                        "Stock unit price cannot be negative."
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
+
+            // ==============================================
+            // FEEDS AMOUNT
+            // ==============================================
+
+            if (
+
+                !Number.isFinite(
+                    Number(
+                        stock.feedsAmount
+                    )
+                ) ||
+
+                Number(
+                    stock.feedsAmount
+                ) < 0
+
+            ) {
+
+                const error =
+
+                    new Error(
+                        "Stock feeds amount cannot be negative."
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
         }
 
 
         // ==================================================
-        // FEED STOCK IS ONLY ALLOWED ON FEED STORE
+        // FEED STOCK ONLY ON FEED STORE
         // ==================================================
 
         if (
@@ -2443,7 +2728,7 @@ dairySchema.pre(
         ) {
 
             // ----------------------------------------------
-            // A feed store MUST belong to a Dairy Farm.
+            // Must belong to a Dairy Farm.
             // ----------------------------------------------
 
             if (
@@ -2471,6 +2756,10 @@ dairySchema.pre(
             }
 
 
+            // ----------------------------------------------
+            // Parent must be a negative Dairy Farm code.
+            // ----------------------------------------------
+
             if (
                 Number(this.assetCode) >= 0
             ) {
@@ -2495,7 +2784,14 @@ dairySchema.pre(
 
 
         // ==================================================
-        // TOTAL CURRENT FEED-STORE VALUE
+        // PARENT FEED AMOUNT
+        // ==================================================
+        //
+        // This is the aggregate of stock-level
+        // feedsAmount values.
+        //
+        // It is NOT inventory valuation.
+        //
         // ==================================================
 
         this.feedsAmount =
@@ -2533,6 +2829,16 @@ dairySchema.pre(
             );
 
 
+        this.feedsAmount =
+
+            Math.round(
+
+                this.feedsAmount *
+                100
+
+            ) / 100;
+
+
         // ==================================================
         // DAIRY FARM
         // ==================================================
@@ -2541,7 +2847,16 @@ dairySchema.pre(
             this.isDairyFarm
         ) {
 
+            // ----------------------------------------------
+            // Farms cannot belong to another farm.
+            // ----------------------------------------------
+
             this.assetCode = null;
+
+
+            // ----------------------------------------------
+            // Farm-specific animal fields.
+            // ----------------------------------------------
 
             this.dateOfBirth = null;
 
@@ -2550,7 +2865,9 @@ dairySchema.pre(
             this.isMilking = false;
 
 
-            // A Dairy Farm cannot itself be a feed store.
+            // ----------------------------------------------
+            // Farm cannot be feed store.
+            // ----------------------------------------------
 
             if (
                 this.type === "feedStore"
@@ -2572,6 +2889,10 @@ dairySchema.pre(
 
             }
 
+
+            // ----------------------------------------------
+            // Validate farm type.
+            // ----------------------------------------------
 
             if (
 
@@ -2611,7 +2932,7 @@ dairySchema.pre(
         ) {
 
             // ----------------------------------------------
-            // Animals cannot be feed stores.
+            // Animal cannot be feed store.
             // ----------------------------------------------
 
             if (
@@ -2636,7 +2957,7 @@ dairySchema.pre(
 
 
             // ----------------------------------------------
-            // Male animals cannot be milking.
+            // Male animals cannot milk.
             // ----------------------------------------------
 
             if (
@@ -2649,7 +2970,7 @@ dairySchema.pre(
 
 
             // ----------------------------------------------
-            // Animal must belong to a Dairy Farm.
+            // Animal must belong to a farm.
             // ----------------------------------------------
 
             if (
@@ -2677,6 +2998,10 @@ dairySchema.pre(
             }
 
 
+            // ----------------------------------------------
+            // Animal parent must be negative.
+            // ----------------------------------------------
+
             if (
                 Number(this.assetCode) >= 0
             ) {
@@ -2697,6 +3022,10 @@ dairySchema.pre(
 
             }
 
+
+            // ----------------------------------------------
+            // Validate breed.
+            // ----------------------------------------------
 
             if (
 
@@ -2735,12 +3064,20 @@ dairySchema.pre(
             this.isStructure
         ) {
 
+            // ----------------------------------------------
+            // Structures do not have animal fields.
+            // ----------------------------------------------
+
             this.dateOfBirth = null;
 
             this.mass = 0;
 
             this.isMilking = false;
 
+
+            // ----------------------------------------------
+            // Validate assigned structure parent.
+            // ----------------------------------------------
 
             if (
 
@@ -2768,6 +3105,10 @@ dairySchema.pre(
 
             }
 
+
+            // ----------------------------------------------
+            // Validate structure type.
+            // ----------------------------------------------
 
             if (
 
@@ -2819,15 +3160,19 @@ dairySchema.pre(
         this.medicalAttention.type =
 
             String(
-                this.medicalAttention.type || ""
-            ).trim();
+                this.medicalAttention.type ||
+                ""
+            )
+            .trim();
 
 
         this.medicalAttention.details =
 
             String(
-                this.medicalAttention.details || ""
-            ).trim();
+                this.medicalAttention.details ||
+                ""
+            )
+            .trim();
 
 
         this.medicalAttention.charges =
@@ -2846,8 +3191,10 @@ dairySchema.pre(
         this.medicalAttention.description =
 
             String(
-                this.medicalAttention.description || ""
-            ).trim();
+                this.medicalAttention.description ||
+                ""
+            )
+            .trim();
 
 
         this.medicalAttention.markedBy =
@@ -2932,7 +3279,9 @@ dairySchema.pre(
             )
         ) {
 
-            if (this.medicalAttention) {
+            if (
+                this.medicalAttention
+            ) {
 
                 this.medicalAttention.updatedAt =
                     new Date();
@@ -2958,7 +3307,7 @@ dairySchema.pre(
 
 
         // ==================================================
-        // DAIRY FARM
+        // DAIRY FARM NORMALIZATION
         // ==================================================
 
         if (
@@ -2977,7 +3326,7 @@ dairySchema.pre(
 
 
         // ==================================================
-        // STRUCTURE
+        // STRUCTURE NORMALIZATION
         // ==================================================
 
         if (
@@ -2994,7 +3343,19 @@ dairySchema.pre(
 
 
         // ==================================================
-        // STOCK DATES
+        // STOCK ADDED DATES
+        // ==================================================
+        //
+        // IMPORTANT:
+        //
+        // We intentionally DO NOT overwrite updatedAt here.
+        //
+        // storageService.touchStock() controls the stock's
+        // actual last-update timestamp.
+        //
+        // Otherwise saving unrelated Dairy fields would make
+        // every stock item appear newly updated.
+        //
         // ==================================================
 
         if (
@@ -3017,8 +3378,14 @@ dairySchema.pre(
                     }
 
 
-                    stock.updatedAt =
-                        new Date();
+                    if (
+                        !stock.updatedAt
+                    ) {
+
+                        stock.updatedAt =
+                            new Date();
+
+                    }
 
                 }
 
@@ -3070,6 +3437,16 @@ dairySchema.pre(
                 )
 
                 : 0;
+
+
+        this.feedsAmount =
+
+            Math.round(
+
+                this.feedsAmount *
+                100
+
+            ) / 100;
 
 
         next();
@@ -3147,19 +3524,16 @@ dairySchema.index({
 // FEED STORE UNIQUENESS
 // ==========================================================
 //
-// CRITICAL:
-//
-// Only ONE feedStore may belong to each Dairy Farm.
+// Only ONE feedStore may belong to a given Dairy Farm.
 //
 // Example:
 //
 //     assetCode = -1
 //     type      = feedStore
 //
-// may occur only once.
+// can occur only once.
 //
-// The partial index prevents other structures from being
-// affected by this uniqueness rule.
+// Other structures are unaffected.
 //
 // ==========================================================
 
@@ -3228,13 +3602,12 @@ dairySchema.index({
 
 
 // ==========================================================
-// CODE
+// CODE UNIQUENESS
 // ==========================================================
 //
-// Only numeric codes are unique.
+// Numeric codes must be unique.
 //
-// Structures use code = null and therefore are excluded
-// from this unique constraint.
+// Structures use code = null and are therefore excluded.
 //
 // ==========================================================
 
@@ -3266,15 +3639,18 @@ dairySchema.index(
 
 
 // ==========================================================
-// STATIC: CHECK FEED STORE
+// STATIC: GET FEED STORE
 // ==========================================================
 //
-// Returns the feed store belonging to a Dairy Farm.
+// Finds the feed store belonging to a Dairy Farm.
 //
 // ==========================================================
 
 dairySchema.statics.getFeedStore =
-    async function (farmCode) {
+
+    async function (
+        farmCode
+    ) {
 
         const code =
             Number(farmCode);
@@ -3305,11 +3681,31 @@ dairySchema.statics.getFeedStore =
 
 
 // ==========================================================
-// STATIC: CHECK WHETHER FARM HAS FEED STORE
+// STATIC: HAS FEED STORE
 // ==========================================================
 
 dairySchema.statics.hasFeedStore =
-    async function (farmCode) {
+
+    async function (
+        farmCode
+    ) {
+
+        const code =
+            Number(farmCode);
+
+
+        if (
+
+            !Number.isInteger(code) ||
+
+            code >= 0
+
+        ) {
+
+            return false;
+
+        }
+
 
         const feedStore =
 
@@ -3317,7 +3713,7 @@ dairySchema.statics.hasFeedStore =
 
                 type: "feedStore",
 
-                assetCode: Number(farmCode)
+                assetCode: code
 
             })
 
@@ -3332,10 +3728,11 @@ dairySchema.statics.hasFeedStore =
 
 
 // ==========================================================
-// STATIC: GET BREEDS
+// STATIC: GET DAIRY BREEDS
 // ==========================================================
 
 dairySchema.statics.getDairyBreeds =
+
     function () {
 
         return [
@@ -3352,6 +3749,7 @@ dairySchema.statics.getDairyBreeds =
 // ==========================================================
 
 dairySchema.statics.getDairyFarmTypes =
+
     function () {
 
         return [
@@ -3368,6 +3766,7 @@ dairySchema.statics.getDairyFarmTypes =
 // ==========================================================
 
 dairySchema.statics.getStructureTypes =
+
     function () {
 
         return [
@@ -3384,6 +3783,7 @@ dairySchema.statics.getStructureTypes =
 // ==========================================================
 
 dairySchema.statics.getDairyStatuses =
+
     function () {
 
         return [
@@ -3400,6 +3800,7 @@ dairySchema.statics.getDairyStatuses =
 // ==========================================================
 
 dairySchema.statics.getMaxProfileImages =
+
     function () {
 
         return MAX_PROFILE_IMAGES;
@@ -3412,6 +3813,7 @@ dairySchema.statics.getMaxProfileImages =
 // ==========================================================
 
 dairySchema.statics.getMaxStockImages =
+
     function () {
 
         return MAX_STOCK_IMAGES;
@@ -3424,6 +3826,7 @@ dairySchema.statics.getMaxStockImages =
 // ==========================================================
 
 dairySchema.statics.getFeedTypes =
+
     function () {
 
         return [
@@ -3440,6 +3843,7 @@ dairySchema.statics.getFeedTypes =
 // ==========================================================
 
 dairySchema.statics.getVeterinaryMedicines =
+
     function () {
 
         return [
@@ -3456,6 +3860,7 @@ dairySchema.statics.getVeterinaryMedicines =
 // ==========================================================
 
 dairySchema.statics.getStockUnits =
+
     function () {
 
         return [
@@ -3472,6 +3877,7 @@ dairySchema.statics.getStockUnits =
 // ==========================================================
 
 dairySchema.statics.calculateNetWorth =
+
     async function () {
 
         const result =
@@ -3514,7 +3920,8 @@ dairySchema.statics.calculateNetWorth =
 
             ? Number(
 
-                result[0].totalNetWorth || 0
+                result[0].totalNetWorth ||
+                0
 
             )
 
@@ -3528,6 +3935,7 @@ dairySchema.statics.calculateNetWorth =
 // ==========================================================
 
 dairySchema.statics.getTotalCurrentWorth =
+
     async function () {
 
         return this.calculateNetWorth();
