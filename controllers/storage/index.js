@@ -20,25 +20,22 @@ const storageService =
 //
 // Where:
 //
-//     :id = Dairy._id
+//     :id = parent Dairy Farm._id
 //
-// The controller does NOT treat :id as farmCode.
+// Example:
 //
-// It represents the MongoDB _id of the Dairy.
+//     /storage/64f123456789abcdef123456
 //
-// The service will:
+// The service uses this Dairy Farm _id to:
 //
-//     1. Find the Dairy using _id.
-//     2. Read dairy.code.
-//     3. Find DairyStorage records where:
-//
-//            farmCode === dairy.code
-//
-//     4. Apply the optional storage type filter.
+//     1. Find the parent Dairy Farm.
+//     2. Read its `code`.
+//     3. Find storage facilities whose `farmCode`
+//        matches that Dairy Farm `code`.
 //
 // ==========================================================
 //
-// Optional query:
+// Optional filter:
 //
 //     /storage/:id
 //
@@ -50,7 +47,7 @@ const storageService =
 //
 // Default:
 //
-//     all active storage.
+//     all active storage facilities.
 //
 // ==========================================================
 
@@ -63,7 +60,7 @@ exports.index = async function (
     try {
 
         // ==================================================
-        // READ DAIRY ID
+        // READ PARENT DAIRY FARM ID
         // ==================================================
 
         const dairyId =
@@ -73,37 +70,32 @@ exports.index = async function (
 
 
         // ==================================================
-        // VALIDATE DAIRY ID
+        // VALIDATE ID EXISTS
         // ==================================================
 
-        if (
-            !dairyId
-        ) {
+        if (!dairyId) {
 
             return res.status(400).render(
-
                 "400",
-
                 {
 
                     title:
-                        "Invalid Dairy",
+                        "Invalid Dairy ID",
 
                     error:
-                        "A Dairy ID is required.",
+                        "A Dairy Farm ID is required.",
 
                     user:
                         req.session?.user || null
 
                 }
-
             );
 
         }
 
 
         // ==================================================
-        // MONGODB OBJECT ID VALIDATION
+        // VALIDATE MONGODB OBJECT ID
         // ==================================================
 
         if (
@@ -113,40 +105,36 @@ exports.index = async function (
         ) {
 
             return res.status(400).render(
-
                 "400",
-
                 {
 
                     title:
                         "Invalid Dairy ID",
 
                     error:
-                        "The supplied Dairy ID is not valid.",
+                        "The supplied Dairy Farm ID is not valid.",
 
                     user:
                         req.session?.user || null
 
                 }
-
             );
 
         }
 
 
         // ==================================================
-        // READ FILTER
+        // READ STORAGE TYPE FILTER
         // ==================================================
 
         let type =
             String(
                 req.query.type || "all"
-            )
-            .trim();
+            ).trim();
 
 
         // ==================================================
-        // NORMALIZE FILTER
+        // ALLOWED STORAGE TYPES
         // ==================================================
 
         const allowedTypes = [
@@ -160,6 +148,10 @@ exports.index = async function (
         ];
 
 
+        // ==================================================
+        // NORMALIZE INVALID FILTER
+        // ==================================================
+
         if (
             !allowedTypes.includes(type)
         ) {
@@ -170,12 +162,14 @@ exports.index = async function (
 
 
         // ==================================================
-        // GET STORAGE FOR DAIRY
+        // GET STORAGE
         // ==================================================
         //
-        // The service receives the Dairy _id.
+        // IMPORTANT:
         //
-        // It is responsible for resolving:
+        // `dairyId` is the parent Dairy Farm's `_id`.
+        //
+        // The service is responsible for resolving:
         //
         //     Dairy._id
         //          ↓
@@ -196,22 +190,7 @@ exports.index = async function (
 
 
         // ==================================================
-        // GET VALUES FROM SERVICE
-        // ==================================================
-        //
-        // The service should return:
-        //
-        // {
-        //
-        //     dairy,
-        //
-        //     storage
-        //
-        // }
-        //
-        // This keeps the controller independent from the
-        // actual DairyStorage lookup implementation.
-        //
+        // SERVICE RESULT
         // ==================================================
 
         const dairy =
@@ -223,30 +202,25 @@ exports.index = async function (
 
 
         // ==================================================
-        // DAIRY NOT FOUND
+        // PARENT DAIRY FARM NOT FOUND
         // ==================================================
 
-        if (
-            !dairy
-        ) {
+        if (!dairy) {
 
             return res.status(404).render(
-
                 "404",
-
                 {
 
                     title:
-                        "Dairy Not Found",
+                        "Dairy Farm Not Found",
 
                     error:
-                        "The requested Dairy farm could not be found.",
+                        "The requested Dairy Farm could not be found.",
 
                     user:
                         req.session?.user || null
 
                 }
-
             );
 
         }
@@ -257,39 +231,60 @@ exports.index = async function (
         // ==================================================
 
         return res.render(
-
             "storage/index",
-
             {
 
                 title:
                     "Storage",
 
+                // ------------------------------------------
+                // PARENT DAIRY FARM
+                // ------------------------------------------
+
                 dairy,
 
+                // ------------------------------------------
+                // STORAGE FACILITIES
+                // ------------------------------------------
+
                 storage,
+
+                // ------------------------------------------
+                // CURRENT FILTER
+                // ------------------------------------------
 
                 selectedType:
                     type,
 
+                // ------------------------------------------
+                // PARENT DAIRY FARM ID
+                // ------------------------------------------
+
                 dairyId:
                     dairy._id,
 
+                // ------------------------------------------
+                // PARENT FARM CODE
+                // ------------------------------------------
+
                 farmCode:
                     dairy.code,
+
+                // ------------------------------------------
+                // LOGGED-IN USER
+                // ------------------------------------------
 
                 user:
                     req.session?.user || null
 
             }
-
         );
 
 
     } catch (error) {
 
         // ==================================================
-        // LOG ERROR
+        // ERROR
         // ==================================================
 
         console.error(
@@ -299,13 +294,7 @@ exports.index = async function (
 
 
         // ==================================================
-        // PASS TO GLOBAL ERROR HANDLER
-        // ==================================================
-        //
-        // Your server.js already has a global error
-        // handler, so there is no need to duplicate the
-        // entire error rendering logic here.
-        //
+        // GLOBAL ERROR HANDLER
         // ==================================================
 
         return next(error);
@@ -313,3 +302,10 @@ exports.index = async function (
     }
 
 };
+
+
+// ==========================================================
+// EXPORT
+// ==========================================================
+
+module.exports = exports;
