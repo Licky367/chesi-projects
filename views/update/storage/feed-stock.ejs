@@ -1,58 +1,23 @@
 <%
-/* ==========================================================
-   FEED STORE
-========================================================== */
+// ==========================================================
+// FEED STORE
+// ==========================================================
 
 const currentDairy = dairy || {};
-const currentUser = user || {};
 
-const isAdmin =
-    currentUser.role === "admin";
-
-
-/* ==========================================================
-   VALID STOCK ITEMS
-==========================================================
-
-   Rules:
-
-   1. Stock MUST have an _id.
-   2. Stock MUST have stock.name.
-   3. No fallback to feedName or medicineName.
-   4. Invalid records are not displayed.
-========================================================== */
-
-const feedStoreItems =
+const feedStocks =
     Array.isArray(currentDairy.feedStocks)
-        ? currentDairy.feedStocks.filter(function(stock) {
-
-            if (!stock) {
-                return false;
-            }
-
-            const id =
-                String(stock._id || "").trim();
-
-            const name =
-                String(stock.name || "").trim();
-
-            return (
-                id.length > 0 &&
-                name.length > 0
-            );
-
-        })
+        ? currentDairy.feedStocks
         : [];
 
 
-/* ==========================================================
-   SAFE NUMBER
-========================================================== */
+// ==========================================================
+// SAFE HELPERS
+// ==========================================================
 
 function safeNumber(value) {
 
-    const number =
-        Number(value);
+    const number = Number(value);
 
     return Number.isFinite(number)
         ? number
@@ -61,567 +26,424 @@ function safeNumber(value) {
 }
 
 
-/* ==========================================================
-   STOCK NAME
-==========================================================
+function formatNumber(value) {
 
-   IMPORTANT:
-
-   stock.name is the ONLY name used here.
-
-   No feedName.
-   No medicineName.
-   No fallback.
-========================================================== */
-
-function stockName(stock) {
-
-    return String(
-        stock.name
-    ).trim();
-
-}
-
-
-/* ==========================================================
-   STOCK QUANTITY
-========================================================== */
-
-function stockQuantity(stock) {
-
-    return safeNumber(
-        stock.quantityRemaining
-    );
-
-}
-
-
-/* ==========================================================
-   STOCK UNIT
-========================================================== */
-
-function stockUnit(stock) {
-
-    return String(
-        stock.unit || ""
-    ).trim();
-
-}
-
-
-/* ==========================================================
-   LAST UPDATED
-========================================================== */
-
-function stockLastUpdated(stock) {
-
-    return (
-        stock.updatedAt ||
-        stock.lastUpdated ||
-        stock.dateUpdated ||
-        stock.createdAt ||
-        null
-    );
-
-}
-
-
-/* ==========================================================
-   FORMAT DATE
-========================================================== */
-
-function formatStockDate(value) {
-
-    if (!value) {
-
-        return "Date unavailable";
-
-    }
-
-
-    const date =
-        new Date(value);
-
-
-    if (
-        Number.isNaN(
-            date.getTime()
-        )
-    ) {
-
-        return "Date unavailable";
-
-    }
-
-
-    return date.toLocaleDateString(
-        "en-KE",
+    return safeNumber(value).toLocaleString(
+        undefined,
         {
-            day: "2-digit",
-            month: "short",
-            year: "numeric"
+            maximumFractionDigits: 2
         }
     );
+
+}
+
+
+function formatDate(value) {
+
+    if (!value) {
+        return "";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    return date.toLocaleString();
+
+}
+
+
+function stockCategory(stock) {
+
+    return stock.category === "medicine"
+        ? "Medicine"
+        : "Feed";
 
 }
 
 %>
 
 
-<div
-    class="feedstore"
-    data-dairy-id="<%= currentDairy._id || "" %>"
->
+<!-- ========================================================
+     FEED STORE PAGE
+========================================================= -->
+
+<div class="feedstore-page">
 
 
-    <!-- ======================================================
+    <!-- ====================================================
          HEADER
-    ======================================================= -->
+    ===================================================== -->
 
     <div class="feedstore-header">
 
         <div>
 
-            <span class="feedstore-eyebrow">
-                DAIRY FOODSTOCK
-            </span>
+            <div class="feedstore-eyebrow">
+                FEED STORE
+            </div>
 
             <h1>
-                Foodstock
+                <%= currentDairy.name || "Feed Store" %>
             </h1>
 
             <p>
-                Manage available animal feed and veterinary medicine.
+                Inventory
             </p>
 
         </div>
 
+        <div class="feedstore-count">
+
+            <strong>
+                <%= feedStocks.length %>
+            </strong>
+
+            <span>
+                Stock Items
+            </span>
+
+        </div>
+
     </div>
 
 
+    <!-- ====================================================
+         EMPTY STATE
+    ===================================================== -->
 
-    <!-- ======================================================
-         ADD STOCK
-    ======================================================= -->
+    <% if (feedStocks.length === 0) { %>
 
-    <% if (isAdmin && currentDairy._id) { %>
+        <div class="feedstore-empty">
 
-        <button
-            type="button"
-            id="openAddStock"
-            class="feedstore-composer"
-            data-add-url="/dairy/<%= currentDairy._id %>/feedstore/add"
-        >
-
-            <div class="composer-icon">
-                ➕
+            <div class="empty-icon">
+                📦
             </div>
 
-            <div class="composer-content">
+            <h2>
+                No Stock
+            </h2>
 
-                <strong>
-                    Add stock
-                </strong>
+            <p>
+                There are currently no stock items in this
+                feed store.
+            </p>
 
-                <span>
-                    Add animal feed or AgroVets stock
-                </span>
+        </div>
 
-            </div>
 
-            <div class="composer-arrow">
-                →
-            </div>
+    <% } else { %>
 
-        </button>
+
+        <!-- ================================================
+             STOCK LIST
+        ================================================= -->
+
+        <div class="feedstock-list">
+
+
+            <% feedStocks.forEach(function(stock) { %>
+
+
+                <div
+                    class="feedstock-item"
+                    data-stock-id="<%= stock._id %>"
+                >
+
+
+                    <!-- ====================================
+                         STOCK NAME
+                    ===================================== -->
+
+                    <div class="feedstock-main">
+
+                        <h2 class="feedstock-name">
+
+                            <%= stock.name || "Unnamed Stock" %>
+
+                        </h2>
+
+
+                        <div class="feedstock-category">
+
+                            <%= stockCategory(stock) %>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ====================================
+                         CURRENT STOCK
+                    ===================================== -->
+
+                    <div class="feedstock-field">
+
+                        <span class="field-label">
+                            Remaining
+                        </span>
+
+                        <strong>
+
+                            <%= formatNumber(
+                                stock.quantityRemaining
+                            ) %>
+
+                            <%= stock.unit || "" %>
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- ====================================
+                         INITIAL QUANTITY
+                    ===================================== -->
+
+                    <div class="feedstock-field">
+
+                        <span class="field-label">
+                            Initial Quantity
+                        </span>
+
+                        <strong>
+
+                            <%= formatNumber(
+                                stock.initialQuantity
+                            ) %>
+
+                            <%= stock.unit || "" %>
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- ====================================
+                         PERCENTAGE
+                    ===================================== -->
+
+                    <div class="feedstock-field">
+
+                        <span class="field-label">
+                            Remaining
+                        </span>
+
+                        <strong>
+
+                            <%= formatNumber(
+                                stock.percentageRemaining
+                            ) %>%
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- ====================================
+                         UNIT PRICE
+                    ===================================== -->
+
+                    <div class="feedstock-field">
+
+                        <span class="field-label">
+                            Unit Price
+                        </span>
+
+                        <strong>
+
+                            <%= formatNumber(
+                                stock.unitPrice
+                            ) %>
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- ====================================
+                         LATEST ADDITION
+                    ===================================== -->
+
+                    <div class="feedstock-field">
+
+                        <span class="field-label">
+                            Latest Addition
+                        </span>
+
+                        <strong>
+
+                            <%= formatNumber(
+                                stock.feedsAmount
+                            ) %>
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- ====================================
+                         EXPECTED DURATION
+                    ===================================== -->
+
+                    <% if (stock.expectedDuration) { %>
+
+                        <div class="feedstock-field">
+
+                            <span class="field-label">
+                                Expected Duration
+                            </span>
+
+                            <strong>
+
+                                <%= stock.expectedDuration %>
+
+                            </strong>
+
+                        </div>
+
+                    <% } %>
+
+
+                    <!-- ====================================
+                         INSTRUCTIONS
+                    ===================================== -->
+
+                    <% if (stock.instructions) { %>
+
+                        <div class="feedstock-description">
+
+                            <span class="field-label">
+                                Instructions
+                            </span>
+
+                            <p>
+                                <%= stock.instructions %>
+                            </p>
+
+                        </div>
+
+                    <% } %>
+
+
+                    <!-- ====================================
+                         MESSAGE
+                    ===================================== -->
+
+                    <% if (stock.message) { %>
+
+                        <div class="feedstock-description">
+
+                            <span class="field-label">
+                                Message
+                            </span>
+
+                            <p>
+                                <%= stock.message %>
+                            </p>
+
+                        </div>
+
+                    <% } %>
+
+
+                    <!-- ====================================
+                         DATES
+                    ===================================== -->
+
+                    <div class="feedstock-dates">
+
+                        <% if (stock.addedAt) { %>
+
+                            <span>
+
+                                Added:
+                                <%= formatDate(
+                                    stock.addedAt
+                                ) %>
+
+                            </span>
+
+                        <% } %>
+
+
+                        <% if (stock.updatedAt) { %>
+
+                            <span>
+
+                                Updated:
+                                <%= formatDate(
+                                    stock.updatedAt
+                                ) %>
+
+                            </span>
+
+                        <% } %>
+
+                    </div>
+
+
+                    <!-- ====================================
+                         IMAGES
+                    ===================================== -->
+
+                    <% if (
+                        Array.isArray(stock.images) &&
+                        stock.images.length
+                    ) { %>
+
+                        <div class="feedstock-images">
+
+                            <% stock.images.forEach(
+                                function(image) {
+                            { %>
+
+                                <img
+                                    src="<%= image %>"
+                                    alt="<%= stock.name || 'Stock' %>"
+                                    loading="lazy"
+                                >
+
+                            <% }); %>
+
+                        </div>
+
+                    <% } %>
+
+
+                </div>
+
+
+            <% }); %>
+
+
+        </div>
+
 
     <% } %>
 
 
-
-    <!-- ======================================================
-         AVAILABLE STOCK
-    ======================================================= -->
-
-    <section class="feedstore-stock-section">
-
-        <div class="section-heading">
-
-            <div>
-
-                <span>
-                    CURRENT INVENTORY
-                </span>
-
-                <h2>
-                    Available Stock
-                </h2>
-
-            </div>
-
-            <strong>
-                <%= feedStoreItems.length %>
-            </strong>
-
-        </div>
-
-
-
-        <% if (feedStoreItems.length) { %>
-
-
-            <div class="stock-list">
-
-
-                <% feedStoreItems.forEach(
-                    function(stock)
-                {
-
-                    const id =
-                        String(
-                            stock._id
-                        ).trim();
-
-
-                    const name =
-                        stockName(stock);
-
-
-                    const quantity =
-                        stockQuantity(stock);
-
-
-                    const unit =
-                        stockUnit(stock);
-
-
-                    const lastUpdated =
-                        stockLastUpdated(stock);
-
-
-                    const formattedDate =
-                        formatStockDate(
-                            lastUpdated
-                        );
-
-                %>
-
-
-                    <!-- ==================================================
-                         STOCK ITEM
-                    =================================================== -->
-
-                    <article
-                        class="stock-item"
-                        tabindex="0"
-                        role="button"
-
-                        data-stock-id="<%= id %>"
-
-                        data-stock-name="<%= name %>"
-
-                        data-stock-update-url="/dairy/<%= currentDairy._id %>/feedstore/update/<%= id %>"
-
-                        data-stock-restock-url="/dairy/<%= currentDairy._id %>/feedstore/restock/<%= id %>"
-                    >
-
-
-                        <!-- ==============================================
-                             STOCK INFORMATION
-                        =============================================== -->
-
-                        <div class="stock-info">
-
-
-                            <strong class="stock-name">
-                                <%= name %>
-                            </strong>
-
-
-                            <span class="stock-updated">
-
-                                Last updated:
-                                <%= formattedDate %>
-
-                            </span>
-
-
-                        </div>
-
-
-
-                        <!-- ==============================================
-                             QUANTITY
-                        =============================================== -->
-
-                        <div class="stock-item-right">
-
-
-                            <div class="stock-quantity">
-
-                                <strong>
-                                    <%= quantity.toLocaleString() %>
-                                </strong>
-
-
-                                <% if (unit) { %>
-
-                                    <span>
-                                        <%= unit %>
-                                    </span>
-
-                                <% } %>
-
-                            </div>
-
-
-                            <span class="stock-arrow">
-                                →
-                            </span>
-
-
-                        </div>
-
-
-                    </article>
-
-
-                <% }); %>
-
-
-            </div>
-
-
-        <% } else { %>
-
-
-            <!-- ======================================================
-                 EMPTY STOCK
-            ======================================================= -->
-
-            <div class="empty-stock">
-
-                <div>
-                    📦
-                </div>
-
-
-                <strong>
-                    No stock available
-                </strong>
-
-
-                <span>
-
-                    <% if (isAdmin) { %>
-
-                        Click "Add stock" above to create the first stock item.
-
-                    <% } else { %>
-
-                        No stock has been added yet.
-
-                    <% } %>
-
-                </span>
-
-
-            </div>
-
-
-        <% } %>
-
-
-    </section>
-
-
 </div>
-
-
-
-<!-- ==========================================================
-     ADMIN STOCK ACTION MODAL
-========================================================== -->
-
-<% if (isAdmin) { %>
-
-
-<div
-    id="stockActionModal"
-    class="stock-action-modal"
-    hidden
->
-
-
-    <!-- ======================================================
-         BACKDROP
-    ======================================================= -->
-
-    <div
-        class="stock-action-backdrop"
-        data-close-stock-action
-    ></div>
-
-
-
-    <!-- ======================================================
-         DIALOG
-    ======================================================= -->
-
-    <div
-        class="stock-action-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="stockActionTitle"
-    >
-
-
-        <!-- ==================================================
-             HEADER
-        =================================================== -->
-
-        <div class="stock-action-header">
-
-            <div>
-
-                <span class="stock-action-eyebrow">
-                    STOCK MANAGEMENT
-                </span>
-
-                <h2 id="stockActionTitle">
-                    Manage Stock
-                </h2>
-
-                <p id="stockActionDescription">
-                    Choose what you want to do with this stock.
-                </p>
-
-            </div>
-
-
-            <button
-                type="button"
-                class="stock-action-close"
-                data-close-stock-action
-                aria-label="Close"
-            >
-                ×
-            </button>
-
-        </div>
-
-
-
-        <!-- ==================================================
-             OPTIONS
-        =================================================== -->
-
-        <div class="stock-action-options">
-
-
-            <!-- ==================================================
-                 UPDATE
-            =================================================== -->
-
-            <button
-                type="button"
-                id="updateStockAction"
-                class="stock-action-option"
-            >
-
-                <span class="stock-action-icon update-icon">
-                    ✏️
-                </span>
-
-                <span class="stock-action-text">
-
-                    <strong>
-                        Update existing stock
-                    </strong>
-
-                    <small>
-                        Change stock information or quantity.
-                    </small>
-
-                </span>
-
-                <span class="stock-action-arrow">
-                    →
-                </span>
-
-            </button>
-
-
-
-            <!-- ==================================================
-                 RESTOCK
-            =================================================== -->
-
-            <button
-                type="button"
-                id="restockStockAction"
-                class="stock-action-option"
-            >
-
-                <span class="stock-action-icon restock-icon">
-                    📦
-                </span>
-
-                <span class="stock-action-text">
-
-                    <strong>
-                        Restock
-                    </strong>
-
-                    <small>
-                        Add more quantity to the existing stock.
-                    </small>
-
-                </span>
-
-                <span class="stock-action-arrow">
-                    →
-                </span>
-
-            </button>
-
-
-        </div>
-
-
-    </div>
-
-
-</div>
-
-
-<% } %>
-
 
 
 <style>
 
 /* ==========================================================
-   PAGE
+   FEED STORE PAGE
 ========================================================== */
 
-.feedstore {
+.feedstore-page {
 
-    width: 100%;
-
-    max-width: 900px;
+    max-width: 1100px;
 
     margin: 0 auto;
 
-    padding: 15px 12px 50px;
+    padding: 25px 18px 55px;
 
-    color: #26352d;
-
-}
-
-
-.feedstore * {
     box-sizing: border-box;
+
 }
 
 
@@ -631,229 +453,85 @@ function formatStockDate(value) {
 
 .feedstore-header {
 
-    margin-bottom: 15px;
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 20px;
+
+    margin-bottom: 25px;
 
 }
 
 
 .feedstore-eyebrow {
 
-    color: #198754;
+    font-size: 12px;
 
-    font-size: 9px;
+    font-weight: 700;
 
-    font-weight: 900;
+    letter-spacing: 1.5px;
 
-    letter-spacing: 1px;
+    opacity: .65;
+
+    margin-bottom: 5px;
 
 }
 
 
 .feedstore-header h1 {
 
-    margin: 3px 0;
+    margin: 0;
 
-    color: #123f29;
-
-    font-size: 25px;
+    font-size: 28px;
 
 }
 
 
 .feedstore-header p {
 
-    margin: 0;
+    margin: 5px 0 0;
 
-    color: #7a857e;
-
-    font-size: 11px;
+    opacity: .65;
 
 }
 
 
-/* ==========================================================
-   ADD STOCK
-========================================================== */
-
-.feedstore-composer {
-
-    width: 100%;
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 12px;
-
-    padding: 13px;
-
-    margin-bottom: 18px;
-
-    border: 1px solid #cfe3d6;
-
-    border-radius: 13px;
-
-    background: #ffffff;
-
-    color: inherit;
-
-    text-align: left;
-
-    cursor: pointer;
-
-    box-shadow:
-        0 3px 12px
-        rgba(23,65,43,.05);
-
-    transition:
-        transform .15s ease,
-        border-color .15s ease,
-        box-shadow .15s ease;
-
-}
-
-
-.feedstore-composer:hover,
-.feedstore-composer:focus {
-
-    transform: translateY(-1px);
-
-    border-color: #8fc5a4;
-
-    box-shadow:
-        0 6px 18px
-        rgba(23,65,43,.09);
-
-}
-
-
-.feedstore-composer:focus {
-    outline: none;
-}
-
-
-.composer-icon {
-
-    width: 42px;
-    height: 42px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex-shrink: 0;
-
-    border-radius: 11px;
-
-    background: #e7f5ec;
-
-    color: #198754;
-
-    font-size: 20px;
-
-}
-
-
-.composer-content {
-
-    min-width: 0;
+.feedstore-count {
 
     display: flex;
 
     flex-direction: column;
 
-    gap: 2px;
-
-}
-
-
-.composer-content strong {
-
-    color: #164f31;
-
-    font-size: 13px;
-
-}
-
-
-.composer-content span {
-
-    color: #7d8982;
-
-    font-size: 10px;
-
-}
-
-
-.composer-arrow {
-
-    margin-left: auto;
-
-    color: #198754;
-
-    font-size: 18px;
-
-}
-
-
-/* ==========================================================
-   SECTION HEADING
-========================================================== */
-
-.section-heading {
-
-    display: flex;
-
     align-items: center;
 
-    justify-content: space-between;
+    justify-content: center;
 
-    margin-bottom: 9px;
+    min-width: 90px;
 
-}
+    padding: 12px 16px;
 
+    border-radius: 12px;
 
-.section-heading span {
-
-    color: #7d8982;
-
-    font-size: 8px;
-
-    font-weight: 900;
-
-    letter-spacing: .8px;
+    background: #f3f4f6;
 
 }
 
 
-.section-heading h2 {
+.feedstore-count strong {
 
-    margin: 2px 0 0;
-
-    color: #164f31;
-
-    font-size: 18px;
+    font-size: 22px;
 
 }
 
 
-.section-heading > strong {
+.feedstore-count span {
 
-    min-width: 28px;
+    font-size: 12px;
 
-    padding: 5px 8px;
-
-    border-radius: 999px;
-
-    background: #e8f5ed;
-
-    color: #198754;
-
-    font-size: 10px;
-
-    text-align: center;
+    opacity: .65;
 
 }
 
@@ -862,506 +540,230 @@ function formatStockDate(value) {
    STOCK LIST
 ========================================================== */
 
-.stock-list {
+.feedstock-list {
 
     display: flex;
 
     flex-direction: column;
 
-    gap: 6px;
-
-}
-
-
-.stock-item {
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: space-between;
-
-    gap: 12px;
-
-    padding: 11px;
-
-    border: 1px solid #dce7e0;
-
-    border-radius: 11px;
-
-    background: #ffffff;
-
-    cursor: pointer;
-
-    outline: none;
-
-    transition:
-        transform .15s ease,
-        border-color .15s ease,
-        box-shadow .15s ease;
-
-}
-
-
-.stock-item:hover,
-.stock-item:focus {
-
-    transform: translateY(-1px);
-
-    border-color: #94caaa;
-
-    box-shadow:
-        0 5px 14px
-        rgba(23,65,43,.07);
+    gap: 14px;
 
 }
 
 
 /* ==========================================================
-   STOCK INFORMATION
+   STOCK ITEM
 ========================================================== */
 
-.stock-info {
+.feedstock-item {
 
-    min-width: 0;
+    padding: 20px;
 
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 3px;
-
-}
-
-
-.stock-name {
-
-    overflow: hidden;
-
-    color: #29362f;
-
-    font-size: 13px;
-
-    font-weight: 700;
-
-    white-space: nowrap;
-
-    text-overflow: ellipsis;
-
-}
-
-
-.stock-updated {
-
-    color: #9aa49e;
-
-    font-size: 8px;
-
-}
-
-
-/* ==========================================================
-   RIGHT SIDE / QUANTITY
-========================================================== */
-
-.stock-item-right {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
-
-    flex-shrink: 0;
-
-}
-
-
-.stock-quantity {
-
-    display: flex;
-
-    align-items: baseline;
-
-    gap: 4px;
-
-}
-
-
-.stock-quantity strong {
-
-    color: #198754;
-
-    font-size: 16px;
-
-}
-
-
-.stock-quantity span {
-
-    color: #7a857e;
-
-    font-size: 9px;
-
-}
-
-
-.stock-arrow {
-
-    color: #198754;
-
-    font-size: 16px;
-
-}
-
-
-/* ==========================================================
-   EMPTY
-========================================================== */
-
-.empty-stock {
-
-    display: flex;
-
-    align-items: center;
-
-    flex-direction: column;
-
-    gap: 5px;
-
-    padding: 30px 15px;
-
-    border: 1px dashed #cbdcd1;
-
-    border-radius: 12px;
-
-    background: #f8fbf9;
-
-    text-align: center;
-
-}
-
-
-.empty-stock div {
-
-    font-size: 25px;
-
-}
-
-
-.empty-stock strong {
-
-    color: #334039;
-
-    font-size: 14px;
-
-}
-
-
-.empty-stock span {
-
-    color: #818c85;
-
-    font-size: 10px;
-
-}
-
-
-/* ==========================================================
-   ADMIN ACTION MODAL
-========================================================== */
-
-.stock-action-modal {
-
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 9999;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    padding: 15px;
-
-}
-
-
-.stock-action-modal[hidden] {
-
-    display: none;
-
-}
-
-
-/* ==========================================================
-   BACKDROP
-========================================================== */
-
-.stock-action-backdrop {
-
-    position: absolute;
-
-    inset: 0;
-
-    background:
-        rgba(8, 30, 18, .55);
-
-    backdrop-filter:
-        blur(3px);
-
-}
-
-
-/* ==========================================================
-   DIALOG
-========================================================== */
-
-.stock-action-dialog {
-
-    position: relative;
-
-    width: 100%;
-
-    max-width: 470px;
-
-    overflow: hidden;
+    border: 1px solid #e5e7eb;
 
     border-radius: 16px;
 
     background: #ffffff;
 
+    box-sizing: border-box;
+
     box-shadow:
-        0 20px 60px
-        rgba(0,0,0,.25);
+        0 2px 8px rgba(0, 0, 0, .04);
 
 }
 
 
 /* ==========================================================
-   ACTION HEADER
+   STOCK MAIN
 ========================================================== */
 
-.stock-action-header {
+.feedstock-main {
+
+    margin-bottom: 18px;
+
+}
+
+
+.feedstock-name {
+
+    margin: 0;
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+}
+
+
+.feedstock-category {
+
+    display: inline-block;
+
+    margin-top: 6px;
+
+    padding: 4px 9px;
+
+    border-radius: 999px;
+
+    background: #f3f4f6;
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+}
+
+
+/* ==========================================================
+   STOCK FIELDS
+========================================================== */
+
+.feedstock-field {
 
     display: flex;
 
     justify-content: space-between;
 
-    gap: 15px;
-
-    padding: 17px;
-
-    border-bottom: 1px solid #e5ece7;
-
-}
-
-
-.stock-action-eyebrow {
-
-    color: #198754;
-
-    font-size: 8px;
-
-    font-weight: 900;
-
-    letter-spacing: .8px;
-
-}
-
-
-.stock-action-header h2 {
-
-    margin: 3px 0;
-
-    color: #164f31;
-
-    font-size: 19px;
-
-}
-
-
-.stock-action-header p {
-
-    margin: 0;
-
-    color: #7b867f;
-
-    font-size: 10px;
-
-}
-
-
-.stock-action-close {
-
-    width: 32px;
-    height: 32px;
-
-    flex-shrink: 0;
-
-    border: none;
-
-    border-radius: 50%;
-
-    background: #f1f5f2;
-
-    color: #536159;
-
-    font-size: 22px;
-
-    cursor: pointer;
-
-}
-
-
-/* ==========================================================
-   OPTIONS
-========================================================== */
-
-.stock-action-options {
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 8px;
-
-    padding: 14px;
-
-}
-
-
-/* ==========================================================
-   ACTION OPTION
-========================================================== */
-
-.stock-action-option {
-
-    width: 100%;
-
-    display: flex;
-
     align-items: center;
 
-    gap: 11px;
+    gap: 20px;
 
-    padding: 12px;
+    padding: 9px 0;
 
-    border: 1px solid #dce7e0;
-
-    border-radius: 11px;
-
-    background: #ffffff;
-
-    text-align: left;
-
-    cursor: pointer;
-
-    transition:
-        transform .15s ease,
-        border-color .15s ease,
-        background .15s ease;
+    border-top: 1px solid #f0f0f0;
 
 }
 
 
-.stock-action-option:hover,
-.stock-action-option:focus {
-
-    transform: translateY(-1px);
-
-    border-color: #91c5a3;
-
-    background: #f8fcf9;
-
-    outline: none;
-
-}
-
-
-/* ==========================================================
-   OPTION ICON
-========================================================== */
-
-.stock-action-icon {
-
-    width: 40px;
-    height: 40px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex-shrink: 0;
-
-    border-radius: 10px;
-
-    font-size: 17px;
-
-}
-
-
-.update-icon {
-
-    background: #eef6ff;
-
-}
-
-
-.restock-icon {
-
-    background: #eaf7ee;
-
-}
-
-
-/* ==========================================================
-   OPTION TEXT
-========================================================== */
-
-.stock-action-text {
-
-    min-width: 0;
-
-    display: flex;
-
-    flex-direction: column;
-
-    gap: 3px;
-
-}
-
-
-.stock-action-text strong {
-
-    color: #29362f;
+.field-label {
 
     font-size: 12px;
 
-}
-
-
-.stock-action-text small {
-
-    color: #7d8982;
-
-    font-size: 9px;
+    opacity: .6;
 
 }
 
 
-.stock-action-arrow {
+.feedstock-field strong {
 
-    margin-left: auto;
+    text-align: right;
 
-    color: #198754;
+}
 
-    font-size: 17px;
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.feedstock-description {
+
+    margin-top: 14px;
+
+    padding-top: 14px;
+
+    border-top: 1px solid #f0f0f0;
+
+}
+
+
+.feedstock-description p {
+
+    margin: 5px 0 0;
+
+    line-height: 1.5;
+
+}
+
+
+/* ==========================================================
+   DATES
+========================================================== */
+
+.feedstock-dates {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+    margin-top: 15px;
+
+    font-size: 11px;
+
+    opacity: .55;
+
+}
+
+
+/* ==========================================================
+   IMAGES
+========================================================== */
+
+.feedstock-images {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    margin-top: 16px;
+
+}
+
+
+.feedstock-images img {
+
+    width: 80px;
+
+    height: 80px;
+
+    object-fit: cover;
+
+    border-radius: 10px;
+
+}
+
+
+/* ==========================================================
+   EMPTY STATE
+========================================================== */
+
+.feedstore-empty {
+
+    text-align: center;
+
+    padding: 60px 20px;
+
+    border: 1px dashed #d1d5db;
+
+    border-radius: 16px;
+
+}
+
+
+.empty-icon {
+
+    font-size: 42px;
+
+    margin-bottom: 12px;
+
+}
+
+
+.feedstore-empty h2 {
+
+    margin: 0 0 6px;
+
+}
+
+
+.feedstore-empty p {
+
+    margin: 0;
+
+    opacity: .65;
 
 }
 
@@ -1372,421 +774,35 @@ function formatStockDate(value) {
 
 @media (max-width: 600px) {
 
-    .feedstore {
+    .feedstore-page {
 
-        padding:
-            10px 8px 40px;
+        padding-left: 14px;
 
-    }
-
-
-    .stock-item {
-
-        padding: 9px;
+        padding-right: 14px;
 
     }
 
 
-    .stock-item-right {
+    .feedstore-header {
 
-        gap: 6px;
-
-    }
-
-
-    .stock-arrow {
-
-        display: none;
+        align-items: center;
 
     }
 
 
-    .stock-updated {
+    .feedstore-header h1 {
 
-        font-size: 7px;
-
-    }
-
-
-    .stock-action-modal {
-
-        padding: 8px;
+        font-size: 23px;
 
     }
 
 
-    .stock-action-dialog {
+    .feedstock-item {
 
-        max-width: 100%;
-
-        border-radius: 14px;
-
-    }
-
-
-    .stock-action-header {
-
-        padding: 13px;
-
-    }
-
-
-    .stock-action-header h2 {
-
-        font-size: 17px;
-
-    }
-
-
-    .stock-action-header p {
-
-        font-size: 9px;
-
-    }
-
-
-    .stock-action-options {
-
-        padding: 11px;
-
-    }
-
-
-    .stock-action-option {
-
-        padding: 10px;
+        padding: 16px;
 
     }
 
 }
 
 </style>
-
-
-
-<script>
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function () {
-
-
-        /* ======================================================
-           ADD STOCK
-        ======================================================= */
-
-        const addStockButton =
-            document.getElementById(
-                "openAddStock"
-            );
-
-
-        if (addStockButton) {
-
-            addStockButton.addEventListener(
-                "click",
-                function () {
-
-                    const url =
-                        addStockButton.dataset.addUrl;
-
-
-                    if (url) {
-
-                        window.location.href =
-                            url;
-
-                    }
-
-                }
-            );
-
-        }
-
-
-
-        /* ======================================================
-           ADMIN MODAL
-        ======================================================= */
-
-        const actionModal =
-            document.getElementById(
-                "stockActionModal"
-            );
-
-
-        const updateButton =
-            document.getElementById(
-                "updateStockAction"
-            );
-
-
-        const restockButton =
-            document.getElementById(
-                "restockStockAction"
-            );
-
-
-        const actionDescription =
-            document.getElementById(
-                "stockActionDescription"
-            );
-
-
-        let selectedUpdateUrl =
-            "";
-
-
-        let selectedRestockUrl =
-            "";
-
-
-
-        /* ======================================================
-           OPEN ADMIN ACTION MODAL
-        ======================================================= */
-
-        function openActionModal(card) {
-
-            if (!actionModal) {
-
-                return;
-
-            }
-
-
-            selectedUpdateUrl =
-                card.dataset.stockUpdateUrl || "";
-
-
-            selectedRestockUrl =
-                card.dataset.stockRestockUrl || "";
-
-
-            const name =
-                card.dataset.stockName ||
-                "Stock";
-
-
-            if (actionDescription) {
-
-                actionDescription.textContent =
-                    "Choose what you want to do with " +
-                    name +
-                    ".";
-
-            }
-
-
-            actionModal.hidden =
-                false;
-
-
-            document.body.style.overflow =
-                "hidden";
-
-        }
-
-
-
-        /* ======================================================
-           CLOSE ADMIN ACTION MODAL
-        ======================================================= */
-
-        function closeActionModal() {
-
-            if (!actionModal) {
-
-                return;
-
-            }
-
-
-            actionModal.hidden =
-                true;
-
-
-            document.body.style.overflow =
-                "";
-
-
-            selectedUpdateUrl =
-                "";
-
-
-            selectedRestockUrl =
-                "";
-
-        }
-
-
-
-        /* ======================================================
-           CLOSE BUTTONS
-        ======================================================= */
-
-        if (actionModal) {
-
-            actionModal
-                .querySelectorAll(
-                    "[data-close-stock-action]"
-                )
-                .forEach(
-                    function(element) {
-
-                        element.addEventListener(
-                            "click",
-                            closeActionModal
-                        );
-
-                    }
-                );
-
-        }
-
-
-
-        /* ======================================================
-           ESCAPE
-        ======================================================= */
-
-        document.addEventListener(
-            "keydown",
-            function(event) {
-
-                if (
-                    event.key === "Escape" &&
-                    actionModal &&
-                    !actionModal.hidden
-                ) {
-
-                    closeActionModal();
-
-                }
-
-            }
-        );
-
-
-
-        /* ======================================================
-           UPDATE
-        ======================================================= */
-
-        if (updateButton) {
-
-            updateButton.addEventListener(
-                "click",
-                function () {
-
-                    if (selectedUpdateUrl) {
-
-                        window.location.href =
-                            selectedUpdateUrl;
-
-                    }
-
-                }
-            );
-
-        }
-
-
-
-        /* ======================================================
-           RESTOCK
-        ======================================================= */
-
-        if (restockButton) {
-
-            restockButton.addEventListener(
-                "click",
-                function () {
-
-                    if (selectedRestockUrl) {
-
-                        window.location.href =
-                            selectedRestockUrl;
-
-                    }
-
-                }
-            );
-
-        }
-
-
-
-        /* ======================================================
-           STOCK ITEMS
-        ======================================================= */
-
-        document
-            .querySelectorAll(
-                ".stock-item"
-            )
-            .forEach(
-                function(card) {
-
-
-                    card.addEventListener(
-                        "click",
-                        function() {
-
-
-                            <% if (isAdmin) { %>
-
-                                openActionModal(
-                                    card
-                                );
-
-                            <% } else { %>
-
-                                const url =
-                                    card.dataset.stockUpdateUrl;
-
-
-                                if (url) {
-
-                                    window.location.href =
-                                        url;
-
-                                }
-
-                            <% } %>
-
-                        }
-                    );
-
-
-
-                    /* ==================================================
-                       KEYBOARD ACCESS
-                    =================================================== */
-
-                    card.addEventListener(
-                        "keydown",
-                        function(event) {
-
-                            if (
-                                event.key === "Enter" ||
-                                event.key === " "
-                            ) {
-
-                                event.preventDefault();
-
-                                card.click();
-
-                            }
-
-                        }
-                    );
-
-                }
-            );
-
-
-    }
-);
-
-</script>
