@@ -307,10 +307,6 @@ body{
 
 /* =========================================================
    MENU BUTTON
-   ---------------------------------------------------------
-   Used by:
-   - Admin
-   - Poultry Worker
 ========================================================= */
 
 .menu-btn{
@@ -480,10 +476,6 @@ body{
 
 /* =========================================================
    ADMIN SIDEBAR
-   ---------------------------------------------------------
-   White sidebar.
-   Green theme.
-   Hidden by default.
 ========================================================= */
 
 .admin-dashboard-sidebar{
@@ -514,13 +506,8 @@ body{
 
     transition:
         left .28s ease;
-
 }
 
-
-/* =========================================================
-   OPEN ADMIN SIDEBAR
-========================================================= */
 
 .admin-dashboard-sidebar.open{
 
@@ -545,10 +532,6 @@ body{
 }
 
 
-/* =========================================================
-   SIDEBAR ITEM
-========================================================= */
-
 .admin-sidebar-item{
 
     width:100%;
@@ -558,10 +541,6 @@ body{
     padding:0;
 }
 
-
-/* =========================================================
-   SIDEBAR MENU BUTTON
-========================================================= */
 
 .admin-sidebar-menu-button{
 
@@ -607,10 +586,6 @@ body{
 }
 
 
-/* =========================================================
-   SIDEBAR MENU ICON
-========================================================= */
-
 .admin-sidebar-menu-icon{
 
     width:34px;
@@ -636,10 +611,6 @@ body{
     pointer-events:none;
 }
 
-
-/* =========================================================
-   SIDEBAR LINKS
-========================================================= */
 
 .admin-sidebar-link{
 
@@ -679,10 +650,6 @@ body{
 }
 
 
-/* =========================================================
-   ACTIVE SIDEBAR LINK
-========================================================= */
-
 .admin-sidebar-link.active{
 
     background:var(--primary-light);
@@ -698,10 +665,6 @@ body{
     color:var(--primary);
 }
 
-
-/* =========================================================
-   SIDEBAR ICON
-========================================================= */
 
 .admin-sidebar-icon{
 
@@ -729,10 +692,6 @@ body{
 }
 
 
-/* =========================================================
-   SIDEBAR LABEL
-========================================================= */
-
 .admin-sidebar-label{
 
     display:block;
@@ -744,10 +703,6 @@ body{
     color:inherit;
 }
 
-
-/* =========================================================
-   DAIRY ACTIVITIES BUTTON
-========================================================= */
 
 .admin-sidebar-section-button{
 
@@ -795,10 +750,6 @@ body{
 }
 
 
-/* =========================================================
-   EXPANDED DAIRY ACTIVITIES BUTTON
-========================================================= */
-
 .admin-sidebar-section-button.expanded{
 
     background:var(--primary-light);
@@ -806,10 +757,6 @@ body{
     color:var(--primary);
 }
 
-
-/* =========================================================
-   DAIRY ACTIVITIES ARROW
-========================================================= */
 
 .admin-sidebar-section-arrow{
 
@@ -834,10 +781,6 @@ body{
 }
 
 
-/* =========================================================
-   DAIRY ACTIVITIES SUBMENU
-========================================================= */
-
 .admin-sidebar-submenu{
 
     display:none;
@@ -861,10 +804,6 @@ body{
 }
 
 
-/* =========================================================
-   SUBMENU LINKS
-========================================================= */
-
 .admin-sidebar-submenu
 .admin-sidebar-link{
 
@@ -885,10 +824,6 @@ body{
 }
 
 
-/* =========================================================
-   SUBMENU ICON
-========================================================= */
-
 .admin-sidebar-submenu
 .admin-sidebar-icon{
 
@@ -902,10 +837,6 @@ body{
 }
 
 
-/* =========================================================
-   SUBMENU LABEL
-========================================================= */
-
 .admin-sidebar-submenu
 .admin-sidebar-label{
 
@@ -914,10 +845,6 @@ body{
     font-weight:600;
 }
 
-
-/* =========================================================
-   SIDEBAR FOOTER
-========================================================= */
 
 .admin-sidebar-footer{
 
@@ -935,7 +862,7 @@ body{
 
 
 /* =========================================================
-   SIDEBAR OVERLAY
+   ADMIN SIDEBAR OVERLAY
 ========================================================= */
 
 .admin-sidebar-overlay{
@@ -1058,7 +985,7 @@ body{
 
 
 /* =========================================================
-   MAIN
+   MAIN — NORMAL PAGES
 ========================================================= */
 
 .main{
@@ -1070,7 +997,29 @@ body{
 
 
 /* =========================================================
+   MAIN — AUTH PAGES
+   ---------------------------------------------------------
+   IMPORTANT:
+   Auth pages do NOT receive the 140px top padding.
+   
+   They still receive bottom space for the fixed footer.
+========================================================= */
+
+.auth-page .main{
+
+    padding:
+        0 18px 70px;
+
+    min-height:100vh;
+}
+
+
+/* =========================================================
    FOOTER
+   ---------------------------------------------------------
+   Footer is shown on BOTH:
+       - Normal pages
+       - Authentication pages
 ========================================================= */
 
 .footer{
@@ -1216,6 +1165,22 @@ body{
         padding-right:12px;
     }
 
+
+    /* =============================================
+       AUTH MOBILE
+    ============================================== */
+
+    .auth-page .main{
+
+        padding-left:12px;
+
+        padding-right:12px;
+
+        padding-top:0;
+
+        padding-bottom:70px;
+    }
+
 }
 
 
@@ -1285,9 +1250,6 @@ body{
 </head>
 
 
-<body>
-
-
 <%
 
 /* =========================================================
@@ -1301,11 +1263,23 @@ const authPages = [
     "/reset-password"
 ];
 
+const currentPagePath =
+    currentPath ||
+    (typeof req !== "undefined" && req.path) ||
+    "";
+
 const isAuthPage =
     authPages.includes(
-        currentPath || req?.path || ""
+        currentPagePath
     );
 
+%>
+
+
+<body class="<%= isAuthPage ? 'auth-page' : 'app-page' %>">
+
+
+<%
 
 /* =========================================================
    HOME DESTINATION
@@ -1323,7 +1297,8 @@ if(
     user.role === "admin"
 ){
 
-    homeLink = "/dashboard/dairy";
+    homeLink =
+        "/dashboard/dairy";
 
 }
 
@@ -1352,7 +1327,8 @@ else if(
    HEADER TITLE
 ========================================================= */
 
-let headerTitle = "CHESI PROJECTS";
+let headerTitle =
+    "CHESI PROJECTS";
 
 if(user){
 
@@ -1471,8 +1447,6 @@ const isPoultryWorker =
     <div class="dairy-worker-nav">
 
 
-        <!-- HOME -->
-
         <a href="<%= homeLink %>">
 
             <span
@@ -1489,8 +1463,6 @@ const isPoultryWorker =
         </a>
 
 
-        <!-- PRODUCTION -->
-
         <a href="/milk">
 
             <span
@@ -1506,8 +1478,6 @@ const isPoultryWorker =
 
         </a>
 
-
-        <!-- SALES -->
 
         <a href="/sales">
 
@@ -1533,21 +1503,6 @@ const isPoultryWorker =
 
     <!-- =====================================================
        ADMIN TOP NAVIGATION
-
-       MENU ICON:
-           Opens admin sidebar.
-
-       PRODUCTION:
-           /milk
-
-       SALES:
-           /sales
-
-       STATS:
-           /stats
-
-       PROFILE:
-           Remains on the right.
     ====================================================== -->
 
     <button
@@ -1572,10 +1527,6 @@ const isPoultryWorker =
     <div class="dairy-worker-nav">
 
 
-        <!-- =================================================
-           PRODUCTION
-        ================================================== -->
-
         <a href="/milk">
 
             <span
@@ -1592,10 +1543,6 @@ const isPoultryWorker =
         </a>
 
 
-        <!-- =================================================
-           SALES
-        ================================================== -->
-
         <a href="/sales">
 
             <span
@@ -1611,10 +1558,6 @@ const isPoultryWorker =
 
         </a>
 
-
-        <!-- =================================================
-           STATS
-        ================================================== -->
 
         <a href="/stats">
 
@@ -1664,10 +1607,6 @@ const isPoultryWorker =
 
 <!-- =========================================================
    PROFILE
-   ---------------------------------------------------------
-   IMPORTANT:
-   Profile remains in the top menu for ALL authenticated
-   users, including ADMIN.
 ========================================================= -->
 
 <div
@@ -1739,11 +1678,6 @@ const isPoultryWorker =
 
 <!-- =========================================================
    ADMIN SIDEBAR
-   ---------------------------------------------------------
-   Only rendered for ADMIN.
-   
-   It is completely hidden until the top-menu ☰ button
-   is tapped.
 ========================================================= -->
 
 <% if(isAdmin){ %>
@@ -1760,16 +1694,8 @@ const isPoultryWorker =
 >
 
 
-    <!-- =====================================================
-       ADMIN SIDEBAR NAVIGATION
-    ====================================================== -->
-
     <ul class="admin-sidebar-menu">
 
-
-        <!-- =================================================
-           MENU BUTTON — FIRST ITEM
-        ================================================== -->
 
         <li class="admin-sidebar-item">
 
@@ -1802,10 +1728,6 @@ const isPoultryWorker =
         </li>
 
 
-        <!-- =================================================
-           DASHBOARD
-        ================================================== -->
-
         <li class="admin-sidebar-item">
 
             <a
@@ -1832,10 +1754,6 @@ const isPoultryWorker =
 
         </li>
 
-
-        <!-- =================================================
-           DAIRY ACTIVITIES
-        ================================================== -->
 
         <li class="admin-sidebar-item">
 
@@ -1874,20 +1792,12 @@ const isPoultryWorker =
             </button>
 
 
-            <!-- =============================================
-                 DAIRY ACTIVITIES SUBMENU
-            ============================================== -->
-
             <ul
                 id="dairyActivitiesSubmenu"
 
                 class="admin-sidebar-submenu"
             >
 
-
-                <!-- =========================================
-                     ADD AN ASSET
-                ========================================== -->
 
                 <li class="admin-sidebar-item">
 
@@ -1916,10 +1826,6 @@ const isPoultryWorker =
                 </li>
 
 
-                <!-- =========================================
-                     RECORD MILK PRODUCTION
-                ========================================== -->
-
                 <li class="admin-sidebar-item">
 
                     <a
@@ -1947,10 +1853,6 @@ const isPoultryWorker =
                 </li>
 
 
-                <!-- =========================================
-                     RECORD MILK SALES
-                ========================================== -->
-
                 <li class="admin-sidebar-item">
 
                     <a
@@ -1977,10 +1879,6 @@ const isPoultryWorker =
 
                 </li>
 
-
-                <!-- =========================================
-                     MILK STATISTICS
-                ========================================== -->
 
                 <li class="admin-sidebar-item">
 
@@ -2014,10 +1912,6 @@ const isPoultryWorker =
         </li>
 
 
-        <!-- =================================================
-           VIEW ASSETS
-        ================================================== -->
-
         <li class="admin-sidebar-item">
 
             <a
@@ -2044,10 +1938,6 @@ const isPoultryWorker =
 
         </li>
 
-
-        <!-- =================================================
-           FINANCIALS
-        ================================================== -->
 
         <li class="admin-sidebar-item">
 
@@ -2079,10 +1969,6 @@ const isPoultryWorker =
     </ul>
 
 
-    <!-- =====================================================
-       SIDEBAR FOOTER
-    ====================================================== -->
-
     <div class="admin-sidebar-footer">
 
         Chesi Project Management System
@@ -2092,10 +1978,6 @@ const isPoultryWorker =
 
 </aside>
 
-
-<!-- =========================================================
-   ADMIN SIDEBAR OVERLAY
-========================================================= -->
 
 <div
     id="adminSidebarOverlay"
@@ -2168,7 +2050,7 @@ const isPoultryWorker =
 
 
 <!-- =========================================================
-   MAIN
+   MAIN CONTENT
 ========================================================= -->
 
 <div class="main">
@@ -2178,11 +2060,11 @@ const isPoultryWorker =
 </div>
 
 
-<% if(!isAuthPage){ %>
-
-
 <!-- =========================================================
    FOOTER
+   ---------------------------------------------------------
+   IMPORTANT:
+   Footer is rendered for BOTH auth and normal pages.
 ========================================================= -->
 
 <div class="footer">
@@ -2191,6 +2073,9 @@ const isPoultryWorker =
     Dr. Chessy Edwin
 
 </div>
+
+
+<% if(!isAuthPage){ %>
 
 
 <script>
@@ -2473,14 +2358,10 @@ function closeAdminSidebar(){
     }
 
 
-    if(adminSidebarOverlay){
-
-        adminSidebarOverlay.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-
-    }
+    adminSidebarOverlay.setAttribute(
+        "aria-hidden",
+        "true"
+    );
 
 
     closeDairyActivities();
@@ -2490,8 +2371,6 @@ function closeAdminSidebar(){
 
 /* =========================================================
    ADMIN TOP MENU BUTTON
-   ---------------------------------------------------------
-   THIS is the only control that opens the admin sidebar.
 ========================================================= */
 
 if(adminTopMenuButton){
@@ -2504,6 +2383,7 @@ if(adminTopMenuButton){
 
             event.stopPropagation();
 
+
             if(
                 adminSidebar &&
                 adminSidebar.classList.contains(
@@ -2514,6 +2394,7 @@ if(adminTopMenuButton){
                 closeAdminSidebar();
 
             }
+
             else{
 
                 openAdminSidebar();
@@ -2528,8 +2409,6 @@ if(adminTopMenuButton){
 
 /* =========================================================
    ADMIN SIDEBAR MENU BUTTON
-   ---------------------------------------------------------
-   Tapping Menu inside the sidebar closes it.
 ========================================================= */
 
 if(adminSidebarMenuButton){
@@ -2599,10 +2478,6 @@ if(
 
 /* =========================================================
    ADMIN SIDEBAR LINKS
-   ---------------------------------------------------------
-   When a link is tapped:
-       - navigation proceeds normally
-       - sidebar closes immediately
 ========================================================= */
 
 if(adminSidebar){
@@ -2708,12 +2583,6 @@ document.addEventListener(
 window.addEventListener(
     "resize",
     function(){
-
-        /*
-         * We intentionally close the admin sidebar
-         * on resize rather than keeping an inconsistent
-         * open state.
-         */
 
         closeAdminSidebar();
 
