@@ -8,6 +8,14 @@
        Edit information belonging to an existing stock item.
 
        This is NOT a restock operation.
+
+   STOCK IDENTITY:
+       stock.name      = user-defined stock name
+       feedName        = selected animal feed type
+       medicineName    = selected AgroVets type
+
+       Only one of feedName / medicineName should exist,
+       according to category.
 ========================================================== */
 
 const currentDairy = dairy || {};
@@ -18,24 +26,49 @@ const isAdmin =
     currentUser.role === "admin";
 
 
+/* ==========================================================
+   STOCK ID
+========================================================== */
+
 const stockId =
     String(
         currentStock._id || ""
     );
 
 
+/* ==========================================================
+   STOCK CATEGORY
+========================================================== */
+
 const stockCategory =
     String(
-        currentStock.category || "feed"
+        currentStock.category || ""
     ).toLowerCase();
 
 
-const stockName =
-    currentStock.name ||
-    currentStock.feedName ||
-    currentStock.medicineName ||
-    "Unnamed stock";
+/* ==========================================================
+   STOCK NAME
+========================================================== */
 
+const stockName =
+    currentStock.name || "";
+
+
+/* ==========================================================
+   CATEGORY-SPECIFIC NAME
+========================================================== */
+
+const feedName =
+    currentStock.feedName || "";
+
+
+const medicineName =
+    currentStock.medicineName || "";
+
+
+/* ==========================================================
+   QUANTITY
+========================================================== */
 
 const quantity =
     Number(
@@ -49,10 +82,18 @@ const safeQuantity =
         : 0;
 
 
+/* ==========================================================
+   UNIT
+========================================================== */
+
 const stockUnit =
     currentStock.unit ||
     "";
 
+
+/* ==========================================================
+   PRICE
+========================================================== */
 
 const stockPrice =
     Number(
@@ -66,15 +107,27 @@ const safePrice =
         : "";
 
 
+/* ==========================================================
+   INSTRUCTIONS
+========================================================== */
+
 const instructions =
     currentStock.instructions ||
     "";
 
 
+/* ==========================================================
+   EXPECTED DURATION
+========================================================== */
+
 const expectedDuration =
     currentStock.expectedDuration ||
     "";
 
+
+/* ==========================================================
+   ADDITIONAL INFORMATION
+========================================================== */
 
 const message =
     currentStock.message ||
@@ -140,8 +193,8 @@ const message =
             <span>
 
                 <%= stockCategory === "medicine"
-                    ? "Veterinary medicine"
-                    : "Animal feed"
+                    ? "AgroVets"
+                    : "Animal Feed"
                 %>
 
             </span>
@@ -173,7 +226,7 @@ const message =
     <form
         id="updateStockForm"
         class="storage-form"
-        action="/dairy/<%= currentDairy._id %>/feedstore/restock"
+        action="/dairy/<%= currentDairy._id %>/feedstore/update/<%= stockId %>"
         method="POST"
         enctype="multipart/form-data"
     >
@@ -181,16 +234,57 @@ const message =
 
         <input
             type="hidden"
-            name="action"
-            value="update"
-        >
-
-
-        <input
-            type="hidden"
             name="stockId"
             value="<%= stockId %>"
         >
+
+
+
+        <!-- ==================================================
+             STOCK NAME
+             
+             ADMIN:
+                 Editable.
+
+             NON-ADMIN:
+                 Read-only.
+        =================================================== -->
+
+        <div class="storage-field">
+
+            <label for="updateStockName">
+                Stock name
+            </label>
+
+
+            <% if (isAdmin) { %>
+
+                <input
+                    id="updateStockName"
+                    type="text"
+                    name="name"
+                    value="<%= stockName %>"
+                    maxlength="150"
+                    placeholder="Enter stock name"
+                    required
+                >
+
+                <small>
+                    The name used to identify this stock item.
+                </small>
+
+            <% } else { %>
+
+                <input
+                    id="updateStockName"
+                    type="text"
+                    value="<%= stockName %>"
+                    readonly
+                >
+
+            <% } %>
+
+        </div>
 
 
 
@@ -207,7 +301,7 @@ const message =
             <input
                 type="text"
                 value="<%= stockCategory === 'medicine'
-                    ? 'Veterinary Medicine'
+                    ? 'AgroVets'
                     : 'Animal Feed' %>"
                 readonly
             >
@@ -223,40 +317,57 @@ const message =
 
 
         <!-- ==================================================
-             STOCK NAME
+             CATEGORY-SPECIFIC TYPE
+             
+             Only the field belonging to the selected
+             category is submitted.
         =================================================== -->
 
-        <div class="storage-field">
+        <% if (stockCategory === "feed") { %>
 
-            <label>
-                Stock item
-            </label>
+            <div class="storage-field">
 
-            <input
-                type="text"
-                value="<%= stockName %>"
-                readonly
-            >
+                <label>
+                    Animal feed
+                </label>
 
-            <% if (stockCategory === "feed") { %>
+                <input
+                    type="text"
+                    value="<%= feedName %>"
+                    readonly
+                >
 
                 <input
                     type="hidden"
                     name="feedName"
-                    value="<%= stockName %>"
+                    value="<%= feedName %>"
                 >
 
-            <% } else { %>
+            </div>
+
+        <% } else if (stockCategory === "medicine") { %>
+
+            <div class="storage-field">
+
+                <label>
+                    AgroVets
+                </label>
+
+                <input
+                    type="text"
+                    value="<%= medicineName %>"
+                    readonly
+                >
 
                 <input
                     type="hidden"
                     name="medicineName"
-                    value="<%= stockName %>"
+                    value="<%= medicineName %>"
                 >
 
-            <% } %>
+            </div>
 
-        </div>
+        <% } %>
 
 
 
@@ -871,6 +982,20 @@ const message =
     font-weight: 850;
 
     cursor: pointer;
+
+}
+
+
+.storage-submit:hover {
+
+    background: #0a4729;
+
+}
+
+
+.storage-submit:active {
+
+    transform: translateY(1px);
 
 }
 
