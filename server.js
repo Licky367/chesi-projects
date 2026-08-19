@@ -109,22 +109,39 @@ const connectDB =
 
 
 // ==========================================================
-// FEED STORE INITIALIZER
+// AGROSTORE INITIALIZER
 // ==========================================================
 //
 // IMPORTANT:
 //
-// This utility is NOT just imported.
+// This utility is executed only after MongoDB successfully
+// connects.
 //
-// It is executed during database bootstrap after MongoDB
-// successfully connects.
+// The initializer now REBUILDS the storage facilities.
 //
 // It will:
 //
-//     • find all dairy farms
-//     • identify farms without a feedStore
-//     • create the missing feedStore
-//     • leave existing feedStores untouched
+//     1. Delete ALL existing documents where:
+//
+//            type === "feedStore"
+//
+//     2. Find all dairy farms:
+//
+//            code < 0
+//
+//     3. Create one new AgroStore for every dairy farm.
+//
+// The new relationship is:
+//
+//     AgroStore.storageNumber === Dairy Farm.code
+//
+// The AgroStore name is:
+//
+//     `${dairy.name}'s AgroStore`
+//
+// The AgroStore profile image is:
+//
+//     /images/h2.png
 //
 // ==========================================================
 
@@ -1668,24 +1685,39 @@ const bootstrap = async () => {
 
 
       // ====================================================
-      // FEED STORE INITIALIZATION
+      // AGROSTORE REBUILD
       // ====================================================
       //
-      // THIS IS THE IMPORTANT PART.
+      // IMPORTANT:
       //
-      // Every successful database startup executes:
+      // ensureFeedStores() now performs a FULL REBUILD.
       //
-      //     ensureFeedStores()
+      // It:
       //
-      // This guarantees that existing dairy farms receive
-      // their missing feed-store facility automatically.
+      //     1. Deletes ALL existing feedStore documents.
+      //
+      //     2. Finds all dairy farms.
+      //
+      //     3. Creates a NEW feedStore for each farm.
+      //
+      //     4. Sets:
+      //
+      //          storageNumber = dairy.code
+      //
+      //     5. Sets:
+      //
+      //          name = `${dairy.name}'s AgroStore`
+      //
+      //     6. Sets:
+      //
+      //          profileImage = "/images/h2.png"
       //
       // ====================================================
 
       try {
 
         console.log(
-          "🏪 Checking dairy farms for feed stores..."
+          "🏪 Rebuilding AgroStores..."
         );
 
 
@@ -1695,15 +1727,15 @@ const bootstrap = async () => {
 
         console.log(
 
-          "🏪 Feed-store initialization complete:",
+          "🏪 AgroStore rebuild complete:",
 
           {
 
+            deleted:
+              storeResult.deleted,
+
             farms:
               storeResult.totalFarms,
-
-            existing:
-              storeResult.existing,
 
             created:
               storeResult.created,
@@ -1716,9 +1748,18 @@ const bootstrap = async () => {
         );
 
 
-        // -----------------------------------------------
-        // CREATED STORES
-        // -----------------------------------------------
+        if (
+          storeResult.deleted > 0
+        ) {
+
+          console.log(
+
+            `🗑️ Deleted ${storeResult.deleted} old feedStore document(s).`
+
+          );
+
+        }
+
 
         if (
           storeResult.created > 0
@@ -1726,14 +1767,22 @@ const bootstrap = async () => {
 
           console.log(
 
-            `🏪 Created ${storeResult.created} missing feed store(s).`
+            `🏪 Created ${storeResult.created} new AgroStore(s).`
 
           );
 
-        } else {
+        }
+
+
+        if (
+          storeResult.totalStores ===
+          storeResult.totalFarms
+        ) {
 
           console.log(
-            "🏪 All dairy farms already have feed stores."
+
+            "✅ Every dairy farm now has a corresponding AgroStore."
+
           );
 
         }
@@ -1741,19 +1790,14 @@ const bootstrap = async () => {
       } catch (error) {
 
         console.error(
-          "❌ Feed-store initialization failed:",
+          "❌ AgroStore rebuild failed:",
           error
         );
 
 
         // -----------------------------------------------
-        // IMPORTANT
-        // -----------------------------------------------
-        //
-        // In production, a feed-store initialization
-        // failure should be visible but should not silently
-        // create a partially initialized application.
-        //
+        // Production startup should not continue when
+        // storage initialization fails.
         // -----------------------------------------------
 
         if (
@@ -1762,7 +1806,7 @@ const bootstrap = async () => {
 
           console.error(
 
-            "❌ Production startup stopped because feed-store initialization failed."
+            "❌ Production startup stopped because AgroStore initialization failed."
 
           );
 
@@ -1796,7 +1840,7 @@ const bootstrap = async () => {
 
       console.warn(
 
-        "⚠️ Skipping admin seed and feed-store initialization because MongoDB is unavailable."
+        "⚠️ Skipping admin seed and AgroStore initialization because MongoDB is unavailable."
 
       );
 
