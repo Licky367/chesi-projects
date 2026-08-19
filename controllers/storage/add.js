@@ -11,10 +11,11 @@ const addService =
 // ADMIN CHECK
 // ==========================================================
 
-function requireAdmin(
-    req,
-    res
-) {
+function requireAdmin(req, res) {
+
+    // ------------------------------------------------------
+    // NOT LOGGED IN
+    // ------------------------------------------------------
 
     if (
         !req.session ||
@@ -23,14 +24,15 @@ function requireAdmin(
 
         res
             .status(401)
-            .send(
-                "Unauthorized"
-            );
+            .send("Unauthorized");
 
         return false;
-
     }
 
+
+    // ------------------------------------------------------
+    // ADMIN ONLY
+    // ------------------------------------------------------
 
     if (
         req.session.user.role !== "admin"
@@ -43,24 +45,21 @@ function requireAdmin(
             );
 
         return false;
-
     }
 
 
     return true;
-
 }
 
 
 // ==========================================================
-// GET ADD STORAGE PAGE
+// SHOW ADD FORM
 //
 // GET:
 //
 //     /storage/:id/add
 //
 // :id = parent Dairy._id
-//
 // ==========================================================
 
 exports.form =
@@ -72,9 +71,9 @@ async function (
 
     try {
 
-        // ==================================================
-        // ADMIN ONLY
-        // ==================================================
+        // --------------------------------------------------
+        // ADMIN CHECK
+        // --------------------------------------------------
 
         if (
             !requireAdmin(
@@ -84,13 +83,12 @@ async function (
         ) {
 
             return;
-
         }
 
 
-        // ==================================================
+        // --------------------------------------------------
         // PARENT DAIRY ID
-        // ==================================================
+        // --------------------------------------------------
 
         const dairyId =
             String(
@@ -98,40 +96,50 @@ async function (
             ).trim();
 
 
-        // ==================================================
-        // GET PAGE DATA
-        // ==================================================
+        // --------------------------------------------------
+        // GET PARENT FARM
+        // --------------------------------------------------
+        //
+        // The service resolves:
+        //
+        //     dairyId
+        //         ↓
+        //     Dairy._id
+        //         ↓
+        //     Dairy.code
+        //
+        // --------------------------------------------------
 
-        const data =
-            await addService.getAddPageData(
+        const dairy =
+            await addService.getParentDairy(
                 dairyId
             );
 
 
-        // ==================================================
+        // --------------------------------------------------
         // RENDER
-        // ==================================================
+        // --------------------------------------------------
 
         return res.render(
-
             "storage/add",
-
             {
 
                 title:
                     "Add Storage",
 
-                dairy:
-                    data.dairy,
+                dairy,
 
-                farmCode:
-                    data.farmCode,
+                dairyId,
 
                 user:
-                    req.session.user
+                    req.session.user,
+
+                // IMPORTANT:
+                // EJS expects this variable to exist.
+                error:
+                    null
 
             }
-
         );
 
     } catch (error) {
@@ -142,43 +150,27 @@ async function (
         );
 
 
-        if (
-            error.status
-        ) {
-
-            return res
-                .status(error.status)
-                .send(
-                    error.message
-                );
-
-        }
-
-
         return next(error);
-
     }
-
 };
 
 
 // ==========================================================
-// POST ADD STORAGE
+// CREATE STORAGE
 //
 // POST:
 //
 //     /storage/:id/add
 //
-// USER:
+// USER PROVIDES:
 //
 //     name
 //     type
 //
-// SERVER:
+// SERVER PROVIDES:
 //
 //     farmCode
 //     roomNumber
-//
 // ==========================================================
 
 exports.create =
@@ -190,9 +182,9 @@ async function (
 
     try {
 
-        // ==================================================
-        // ADMIN ONLY
-        // ==================================================
+        // --------------------------------------------------
+        // ADMIN CHECK
+        // --------------------------------------------------
 
         if (
             !requireAdmin(
@@ -202,13 +194,12 @@ async function (
         ) {
 
             return;
-
         }
 
 
-        // ==================================================
+        // --------------------------------------------------
         // PARENT DAIRY ID
-        // ==================================================
+        // --------------------------------------------------
 
         const dairyId =
             String(
@@ -216,9 +207,9 @@ async function (
             ).trim();
 
 
-        // ==================================================
+        // --------------------------------------------------
         // USER INPUT
-        // ==================================================
+        // --------------------------------------------------
 
         const name =
             String(
@@ -232,9 +223,17 @@ async function (
             ).trim();
 
 
-        // ==================================================
-        // CREATE
-        // ==================================================
+        // --------------------------------------------------
+        // CREATE STORAGE
+        // --------------------------------------------------
+        //
+        // The service determines:
+        //
+        //     Dairy.code
+        //     farmCode
+        //     next roomNumber
+        //
+        // --------------------------------------------------
 
         await addService.createStorage({
 
@@ -247,9 +246,9 @@ async function (
         });
 
 
-        // ==================================================
-        // RETURN TO PARENT FARM STORAGE
-        // ==================================================
+        // --------------------------------------------------
+        // RETURN TO STORAGE INDEX
+        // --------------------------------------------------
 
         return res.redirect(
             `/storage/${dairyId}`
@@ -263,36 +262,96 @@ async function (
         );
 
 
+        // --------------------------------------------------
+        // VALIDATION / EXPECTED ERRORS
+        // --------------------------------------------------
+
         if (
             error.status
         ) {
+
+            // ----------------------------------------------
+            // For validation errors, reload the same form
+            // rather than destroying the page.
+            // ----------------------------------------------
+
+            if (
+                error.status >= 400 &&
+                error.status < 500
+            ) {
+
+                try {
+
+                    const dairy =
+                        await addService.getParentDairy(
+                            req.params.id
+                        );
+
+
+                    return res.status(
+                        error.status
+                    ).render(
+                        "storage/add",
+                        {
+
+                            title:
+                                "Add Storage",
+
+                            dairy,
+
+                            dairyId:
+                                req.params.id,
+
+                            user:
+                                req.session.user,
+
+                            error:
+                                error.message,
+
+                            formData: {
+
+                                name:
+                                    req.body.name || "",
+
+                                type:
+                                    req.body.type || ""
+
+                            }
+
+                        }
+                    );
+
+                } catch (renderError) {
+
+                    console.error(
+                        "STORAGE ADD ERROR PAGE:",
+                        renderError
+                    );
+
+                    return next(
+                        renderError
+                    );
+                }
+            }
+
 
             return res
                 .status(error.status)
                 .send(
                     error.message
                 );
-
         }
 
 
+        // --------------------------------------------------
+        // UNEXPECTED ERROR
+        // --------------------------------------------------
+
         return next(error);
-
     }
-
 };
 
 
 // ==========================================================
-// EXPORTS
+// EXPORT
 // ==========================================================
-
-module.exports = {
-
-    form:
-        exports.form,
-
-    create:
-        exports.create
-
-};
