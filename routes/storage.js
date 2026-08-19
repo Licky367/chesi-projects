@@ -17,7 +17,37 @@ const storageAddController =
 
 
 // ==========================================================
-// STORAGE ADD
+// STORAGE INDEX
+// ==========================================================
+//
+// GET:
+//
+//     /storage/:id
+//
+// :id = MongoDB _id of the PARENT DAIRY FARM.
+//
+// Example:
+//
+//     /storage/67xxxxxxxxxxxxxxxxxxxxxx
+//
+// The controller/service resolves:
+//
+//     Dairy._id
+//          ↓
+//     Dairy.code
+//          ↓
+//     DairyStorage.farmCode
+//
+// ==========================================================
+
+router.get(
+    "/:id",
+    storageController.index
+);
+
+
+// ==========================================================
+// ADD STORAGE FORM
 // ==========================================================
 //
 // GET:
@@ -26,18 +56,10 @@ const storageAddController =
 //
 // :id = MongoDB _id of the PARENT DAIRY FARM.
 //
-// The controller will:
+// ADMIN ONLY.
 //
-//     1. Verify the logged-in user is an admin.
-//     2. Find the parent Dairy using Dairy._id.
-//     3. Read the parent's dairy.code.
-//     4. Pass that farm code to the add service.
-//
-// The user does NOT enter:
-//
-//     farmCode
-//
-// The server determines it automatically.
+// The parent farm is identified by :id.
+// The user does NOT enter farmCode.
 //
 // ==========================================================
 
@@ -48,98 +70,35 @@ router.get(
 
 
 // ==========================================================
-// STORAGE CREATE
+// CREATE STORAGE
 // ==========================================================
 //
 // POST:
 //
 //     /storage/:id/add
 //
-// The user submits:
+// ADMIN ONLY.
+//
+// User submits:
 //
 //     name
 //     type
 //
-// Allowed type:
+// type:
 //
 //     room
 //     agroStore
 //
-// The server determines:
+// Server determines:
 //
 //     farmCode
 //     roomNumber
-//
-// Automatically.
-//
-// Example:
-//
-//     Parent Dairy:
-//
-//         _id  = 67xxxxxxxxxxxxxxxxxxxxxx
-//         code = -1
-//
-//     First room:
-//
-//         farmCode   = -1
-//         roomNumber = 1
-//
-//     First AgroStore:
-//
-//         farmCode   = -1
-//         roomNumber = -1
 //
 // ==========================================================
 
 router.post(
     "/:id/add",
     storageAddController.create
-);
-
-
-// ==========================================================
-// STORAGE INDEX
-// ==========================================================
-//
-// GET:
-//
-//     /storage/:id
-//
-// :id = MongoDB _id of the PARENT DAIRY FARM.
-//
-// The service resolves:
-//
-//     Dairy._id
-//          ↓
-//     Dairy.code
-//          ↓
-//     DairyStorage.farmCode
-//
-// ==========================================================
-//
-// DEFAULT:
-//
-//     /storage/:id
-//
-// ALL ACTIVE STORAGE
-//
-// ----------------------------------------------------------
-//
-// ROOMS ONLY:
-//
-//     /storage/:id?type=room
-//
-// ----------------------------------------------------------
-//
-// AGROSTORES ONLY:
-//
-//     /storage/:id?type=agroStore
-//
-// ==========================================================
-
-router.get(
-    "/:id",
-    storageController.index
 );
 
 
