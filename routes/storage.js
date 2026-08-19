@@ -2,35 +2,9 @@
 // routes/storage.js
 // STORAGE ROUTES
 // ==========================================================
-//
-// CONTROLLER:
-//
-//     controllers/storage/storageController.js
-//
-// ALL ROUTE IDS:
-//
-//     :id = parent Dairy._id
-//
-// IMPORTANT:
-//
-//     :id is NEVER Dairy.code.
-//
-// Relationship:
-//
-//     :id
-//       ↓
-//     Dairy._id
-//       ↓
-//     Dairy.code
-//       ↓
-//     DairyStorage.farmCode
-//
-// ==========================================================
-
 
 const express =
     require("express");
-
 
 const router =
     express.Router();
@@ -38,18 +12,6 @@ const router =
 
 // ==========================================================
 // STORAGE CONTROLLER
-// ==========================================================
-//
-// All storage operations are handled by:
-//
-//     controllers/storage/storageController.js
-//
-// This includes:
-//
-//     storage listing
-//     add storage form
-//     create storage
-//
 // ==========================================================
 
 const storageController =
@@ -59,58 +21,15 @@ const storageController =
 // ==========================================================
 // ADD STORAGE FORM
 // ==========================================================
-//
-// GET:
-//
-//     /storage/:id/add
-//
-// :id:
-//
-//     Parent Dairy._id
-//
-// Example:
-//
-//     /storage/67xxxxxxxxxxxxxxxxxxxxxx/add
-//
-// IMPORTANT:
-//
-// This route MUST come before:
-//
-//     /storage/:id
-//
-// Otherwise "add" could potentially be interpreted
-// as the :id parameter.
-//
-// ==========================================================
 
 router.get(
     "/:id/add",
-    storageController.addForm
+    storageController.form
 );
 
 
 // ==========================================================
 // CREATE STORAGE
-// ==========================================================
-//
-// POST:
-//
-//     /storage/:id/add
-//
-// :id:
-//
-//     Parent Dairy._id
-//
-// User submits:
-//
-//     name
-//     type
-//
-// Server determines:
-//
-//     farmCode
-//     roomNumber
-//
 // ==========================================================
 
 router.post(
@@ -122,23 +41,10 @@ router.post(
 // ==========================================================
 // STORAGE PAGE
 // ==========================================================
-//
-// GET:
-//
-//     /storage/:id
-//
-// :id:
-//
-//     Parent Dairy._id
-//
-// This displays the storage facilities belonging to
-// that specific Dairy Farm.
-//
-// ==========================================================
 
 router.get(
     "/:id",
-    storageController.index
+    storageController.list
 );
 
 
