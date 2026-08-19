@@ -20,6 +20,13 @@
     margin-bottom: 22px;
 }
 
+.storage-header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 15px;
+}
+
 .storage-header h2 {
     margin: 0;
     color: #0b5d1e;
@@ -31,6 +38,31 @@
     margin: 6px 0 0;
     color: #66736a;
     font-size: 14px;
+    line-height: 1.5;
+}
+
+
+/* ==========================================================
+   FARM INFORMATION
+   ========================================================== */
+
+.farm-reference {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 12px;
+    padding: 7px 11px;
+    background: #eaf5ed;
+    border: 1px solid #cfe3d3;
+    border-radius: 8px;
+    color: #0b5d1e;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.farm-reference-label {
+    color: #6b796f;
+    font-weight: 500;
 }
 
 
@@ -78,13 +110,15 @@
     font-size: 14px;
     outline: none;
     cursor: pointer;
-    transition: border-color 0.2s ease,
-                box-shadow 0.2s ease;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .filter-group select:focus {
     border-color: #0b5d1e;
-    box-shadow: 0 0 0 3px rgba(11, 93, 30, 0.10);
+    box-shadow:
+        0 0 0 3px rgba(11, 93, 30, 0.10);
 }
 
 
@@ -102,8 +136,9 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s ease,
-                transform 0.15s ease;
+    transition:
+        background 0.2s ease,
+        transform 0.15s ease;
 }
 
 .filter-button:hover {
@@ -126,7 +161,8 @@
     text-decoration: none;
     font-size: 14px;
     font-weight: 600;
-    transition: background 0.2s ease;
+    transition:
+        background 0.2s ease;
 }
 
 .clear-filter:hover {
@@ -159,10 +195,11 @@
 
 .storage-list {
     display: grid;
-    grid-template-columns: repeat(
-        auto-fit,
-        minmax(320px, 1fr)
-    );
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(320px, 1fr)
+        );
     gap: 16px;
 }
 
@@ -178,16 +215,20 @@
     border: 1px solid #dce9df;
     border-radius: 14px;
     padding: 18px;
-    box-shadow: 0 5px 16px rgba(11, 93, 30, 0.06);
-    transition: transform 0.2s ease,
-                box-shadow 0.2s ease,
-                border-color 0.2s ease;
+    box-shadow:
+        0 5px 16px rgba(11, 93, 30, 0.06);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
 }
 
 .storage-card:hover {
     transform: translateY(-2px);
     border-color: #a9c9b0;
-    box-shadow: 0 8px 22px rgba(11, 93, 30, 0.10);
+    box-shadow:
+        0 8px 22px rgba(11, 93, 30, 0.10);
 }
 
 
@@ -199,12 +240,16 @@
     width: 52px;
     height: 52px;
     min-width: 52px;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     border-radius: 12px;
+
     background: #eaf5ed;
     border: 1px solid #cfe3d3;
+
     font-size: 25px;
 }
 
@@ -227,15 +272,20 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+
     gap: 10px;
+
     margin-bottom: 14px;
 }
 
 .storage-title-row h3 {
     margin: 0;
+
     color: #0b5d1e;
+
     font-size: 18px;
     font-weight: 700;
+
     word-break: break-word;
 }
 
@@ -246,12 +296,17 @@
 
 .storage-type {
     display: inline-flex;
+
     align-items: center;
     justify-content: center;
+
     padding: 5px 9px;
+
     border-radius: 20px;
+
     font-size: 11px;
     font-weight: 700;
+
     white-space: nowrap;
 }
 
@@ -272,37 +327,52 @@
 
 .storage-details {
     display: grid;
-    grid-template-columns: repeat(
-        3,
-        1fr
-    );
+
+    grid-template-columns:
+        repeat(
+            3,
+            1fr
+        );
+
     gap: 10px;
 }
 
 .storage-detail {
     display: flex;
+
     flex-direction: column;
+
     gap: 3px;
+
     padding: 9px;
+
     background: #f7faf8;
+
     border-radius: 8px;
 }
 
 .detail-label {
     color: #7a877e;
+
     font-size: 11px;
     font-weight: 600;
+
     text-transform: uppercase;
 }
 
 .detail-value {
     color: #26332a;
+
     font-size: 14px;
     font-weight: 600;
 }
 
 .status-active {
     color: #0b5d1e;
+}
+
+.status-inactive {
+    color: #9a5b00;
 }
 
 
@@ -312,9 +382,13 @@
 
 .storage-description {
     margin: 13px 0 0;
+
     padding-top: 11px;
+
     border-top: 1px solid #e5eee7;
+
     color: #66736a;
+
     font-size: 13px;
     line-height: 1.5;
 }
@@ -326,34 +400,49 @@
 
 .empty-storage {
     background: #ffffff;
+
     border: 1px dashed #b9cfbd;
+
     border-radius: 14px;
+
     padding: 45px 20px;
+
     text-align: center;
-    box-shadow: 0 4px 14px rgba(11, 93, 30, 0.04);
+
+    box-shadow:
+        0 4px 14px rgba(11, 93, 30, 0.04);
 }
 
 .empty-storage-icon {
     width: 64px;
     height: 64px;
+
     margin: 0 auto 15px;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     border-radius: 50%;
+
     background: #eaf5ed;
+
     font-size: 28px;
 }
 
 .empty-storage h3 {
     margin: 0 0 8px;
+
     color: #0b5d1e;
+
     font-size: 20px;
 }
 
 .empty-storage p {
     margin: 0;
+
     color: #718078;
+
     font-size: 14px;
 }
 
@@ -366,6 +455,10 @@
 
     .storage-page {
         padding: 15px;
+    }
+
+    .storage-header-top {
+        flex-direction: column;
     }
 
     .storage-header h2 {
@@ -443,13 +536,45 @@
 
     <div class="storage-header">
 
-        <h2>
-            Storage
-        </h2>
+        <div class="storage-header-top">
 
-        <p class="storage-subtitle">
-            Manage and view rooms and AgroStores across your dairy farms.
-        </p>
+            <div>
+
+                <h2>
+                    <%= dairy && dairy.name
+                        ? `${dairy.name} Storage`
+                        : "Dairy Storage"
+                    %>
+                </h2>
+
+                <p class="storage-subtitle">
+                    Rooms and AgroStores available for this dairy farm.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- ==================================================
+             FARM REFERENCE
+             ================================================== -->
+
+        <% if (dairy) { %>
+
+            <div class="farm-reference">
+
+                <span class="farm-reference-label">
+                    Farm Code
+                </span>
+
+                <span>
+                    <%= dairy.code %>
+                </span>
+
+            </div>
+
+        <% } %>
 
     </div>
 
@@ -462,7 +587,7 @@
 
         <form
             method="GET"
-            action="/storage"
+            action="/storage/<%= dairy._id %>"
             class="storage-filter-form"
         >
 
@@ -479,21 +604,30 @@
 
                     <option
                         value="all"
-                        <%= selectedType === "all" ? "selected" : "" %>
+                        <%= selectedType === "all"
+                            ? "selected"
+                            : ""
+                        %>
                     >
                         All Storage
                     </option>
 
                     <option
                         value="room"
-                        <%= selectedType === "room" ? "selected" : "" %>
+                        <%= selectedType === "room"
+                            ? "selected"
+                            : ""
+                        %>
                     >
                         Rooms
                     </option>
 
                     <option
                         value="agroStore"
-                        <%= selectedType === "agroStore" ? "selected" : "" %>
+                        <%= selectedType === "agroStore"
+                            ? "selected"
+                            : ""
+                        %>
                     >
                         AgroStores
                     </option>
@@ -514,7 +648,7 @@
             <% if (selectedType !== "all") { %>
 
                 <a
-                    href="/storage"
+                    href="/storage/<%= dairy._id %>"
                     class="clear-filter"
                 >
                     Show All
@@ -597,6 +731,7 @@
                             <h3>
 
                                 <%= item.name ||
+
                                     (
                                         item.type === "agroStore"
 
@@ -606,6 +741,7 @@
 
                                             : `Room ${item.roomNumber}`
                                     )
+
                                 %>
 
                             </h3>
@@ -635,12 +771,14 @@
                         <div class="storage-details">
 
 
-                            <!-- FARM -->
+                            <!-- ==================================
+                                 FARM CODE
+                                 ================================== -->
 
                             <div class="storage-detail">
 
                                 <span class="detail-label">
-                                    Farm
+                                    Farm Code
                                 </span>
 
                                 <span class="detail-value">
@@ -650,7 +788,9 @@
                             </div>
 
 
-                            <!-- ROOM / AGROSTORE NUMBER -->
+                            <!-- ==================================
+                                 NUMBER
+                                 ================================== -->
 
                             <div class="storage-detail">
 
@@ -682,7 +822,9 @@
                             </div>
 
 
-                            <!-- STATUS -->
+                            <!-- ==================================
+                                 STATUS
+                                 ================================== -->
 
                             <div class="storage-detail">
 
@@ -690,8 +832,16 @@
                                     Status
                                 </span>
 
-                                <span class="detail-value status-active">
-                                    Active
+                                <span class="detail-value <%= item.status === "active"
+                                    ? "status-active"
+                                    : "status-inactive"
+                                %>">
+
+                                    <%= item.status === "active"
+                                        ? "Active"
+                                        : "Inactive"
+                                    %>
+
                                 </span>
 
                             </div>
@@ -734,26 +884,45 @@
         <div class="empty-storage">
 
             <div class="empty-storage-icon">
-                🏠
+
+                <% if (selectedType === "room") { %>
+
+                    🏠
+
+                <% } else if (selectedType === "agroStore") { %>
+
+                    🏪
+
+                <% } else { %>
+
+                    🏠
+
+                <% } %>
+
             </div>
+
 
             <h3>
                 No Storage Found
             </h3>
 
+
             <p>
 
                 <% if (selectedType === "room") { %>
 
-                    There are currently no active rooms.
+                    There are currently no active rooms
+                    for this dairy farm.
 
                 <% } else if (selectedType === "agroStore") { %>
 
-                    There are currently no active AgroStores.
+                    There are currently no active AgroStores
+                    for this dairy farm.
 
                 <% } else { %>
 
-                    There are currently no active rooms or AgroStores.
+                    There are currently no active rooms
+                    or AgroStores for this dairy farm.
 
                 <% } %>
 
@@ -762,5 +931,6 @@
         </div>
 
     <% } %>
+
 
 </div>
