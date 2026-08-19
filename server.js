@@ -109,50 +109,6 @@ const connectDB =
 
 
 // ==========================================================
-// AGROSTORE INITIALIZER
-// ==========================================================
-//
-// IMPORTANT:
-//
-// This utility is executed only after MongoDB successfully
-// connects.
-//
-// The initializer now REBUILDS the storage facilities.
-//
-// It will:
-//
-//     1. Delete ALL existing documents where:
-//
-//            type === "feedStore"
-//
-//     2. Find all dairy farms:
-//
-//            code < 0
-//
-//     3. Create one new AgroStore for every dairy farm.
-//
-// The new relationship is:
-//
-//     AgroStore.storageNumber === Dairy Farm.code
-//
-// The AgroStore name is:
-//
-//     `${dairy.name}'s AgroStore`
-//
-// The AgroStore profile image is:
-//
-//     /images/h2.png
-//
-// ==========================================================
-
-const {
-
-  ensureFeedStores
-
-} = require("./utils/store");
-
-
-// ==========================================================
 // ROUTES
 // ==========================================================
 
@@ -578,14 +534,6 @@ try {
 
 const socketHandler =
   require("./socket/socket");
-
-
-// ==========================================================
-// SEED ADMIN
-// ==========================================================
-
-const seedAdmin =
-  require("./utils/seedAdmin");
 
 
 // ==========================================================
@@ -1656,167 +1604,8 @@ const bootstrap = async () => {
         "✅ MongoDB connected."
       );
 
-
-      // ====================================================
-      // ADMIN SEED
-      // ====================================================
-
-      try {
-
-        await seedAdmin();
-
-        console.log(
-          "✅ Admin seed completed."
-        );
-
-      } catch (error) {
-
-        console.error(
-          "❌ Admin seed failed:",
-          error
-        );
-
-        // -----------------------------------------------
-        // Do not stop the application merely because the
-        // admin seed failed.
-        // -----------------------------------------------
-
-      }
-
-
-      // ====================================================
-      // AGROSTORE REBUILD
-      // ====================================================
-      //
-      // IMPORTANT:
-      //
-      // ensureFeedStores() now performs a FULL REBUILD.
-      //
-      // It:
-      //
-      //     1. Deletes ALL existing feedStore documents.
-      //
-      //     2. Finds all dairy farms.
-      //
-      //     3. Creates a NEW feedStore for each farm.
-      //
-      //     4. Sets:
-      //
-      //          storageNumber = dairy.code
-      //
-      //     5. Sets:
-      //
-      //          name = `${dairy.name}'s AgroStore`
-      //
-      //     6. Sets:
-      //
-      //          profileImage = "/images/h2.png"
-      //
-      // ====================================================
-
-      try {
-
-        console.log(
-          "🏪 Rebuilding AgroStores..."
-        );
-
-
-        const storeResult =
-          await ensureFeedStores();
-
-
-        console.log(
-
-          "🏪 AgroStore rebuild complete:",
-
-          {
-
-            deleted:
-              storeResult.deleted,
-
-            farms:
-              storeResult.totalFarms,
-
-            created:
-              storeResult.created,
-
-            totalStores:
-              storeResult.totalStores
-
-          }
-
-        );
-
-
-        if (
-          storeResult.deleted > 0
-        ) {
-
-          console.log(
-
-            `🗑️ Deleted ${storeResult.deleted} old feedStore document(s).`
-
-          );
-
-        }
-
-
-        if (
-          storeResult.created > 0
-        ) {
-
-          console.log(
-
-            `🏪 Created ${storeResult.created} new AgroStore(s).`
-
-          );
-
-        }
-
-
-        if (
-          storeResult.totalStores ===
-          storeResult.totalFarms
-        ) {
-
-          console.log(
-
-            "✅ Every dairy farm now has a corresponding AgroStore."
-
-          );
-
-        }
-
-      } catch (error) {
-
-        console.error(
-          "❌ AgroStore rebuild failed:",
-          error
-        );
-
-
-        // -----------------------------------------------
-        // Production startup should not continue when
-        // storage initialization fails.
-        // -----------------------------------------------
-
-        if (
-          isProduction
-        ) {
-
-          console.error(
-
-            "❌ Production startup stopped because AgroStore initialization failed."
-
-          );
-
-          process.exit(1);
-
-        }
-
-      }
-
     }
+
 
     // ======================================================
     // DATABASE UNAVAILABLE
@@ -1840,7 +1629,7 @@ const bootstrap = async () => {
 
       console.warn(
 
-        "⚠️ Skipping admin seed and AgroStore initialization because MongoDB is unavailable."
+        "⚠️ MongoDB is unavailable. Starting server without database initialization."
 
       );
 
