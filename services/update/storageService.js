@@ -4,30 +4,31 @@
 //
 // FEED STORE / STORAGE SERVICE
 //
-// RESPONSIBILITIES:
+// CANONICAL DATABASE LOCATION:
 //
-//     • Create new feed / veterinary medicine stock
-//     • Update existing stock
-//     • Restock existing stock
-//     • Reduce stock
-//     • Delete stock
-//     • Retrieve current stock
-//     • Provide feed-store dropdown options
-//     • Maintain stock percentage remaining
-//     • Maintain latest stock financial information
+//     Dairy.feedStocks[]
+//
+// IMPORTANT:
+//
+// There is NO separate FeedStock collection.
+//
+// Every stock operation starts by loading the Dairy document
+// and then reading/writing:
+//
+//     dairy.feedStocks[]
 //
 // CANONICAL STOCK IDENTITY:
 //
-//     name
+//     stock._id
 //
-// LEGACY NAME FIELDS:
-//
-//     feedName
-//     medicineName
-//
-// The canonical field is now:
+// CANONICAL STOCK NAME:
 //
 //     stock.name
+//
+// LEGACY / CATEGORY FIELDS:
+//
+//     stock.feedName
+//     stock.medicineName
 //
 // ==========================================================
 
@@ -50,10 +51,14 @@ function createError(
 ) {
 
     const error =
-        new Error(message);
+        new Error(
+            message
+        );
+
 
     error.statusCode =
         statusCode;
+
 
     return error;
 
@@ -69,7 +74,9 @@ function isValidObjectId(
 ) {
 
     return mongoose.Types.ObjectId.isValid(
-        String(value || "")
+        String(
+            value || ""
+        )
     );
 
 }
@@ -109,7 +116,9 @@ function toNumber(
 ) {
 
     const number =
-        Number(value);
+        Number(
+            value
+        );
 
 
     return Number.isFinite(
@@ -122,7 +131,7 @@ function toNumber(
 
 
 // ==========================================================
-// ROUND NUMBER
+// ROUND
 // ==========================================================
 
 function roundNumber(
@@ -131,7 +140,9 @@ function roundNumber(
 ) {
 
     const number =
-        Number(value);
+        Number(
+            value
+        );
 
 
     if (
@@ -176,14 +187,38 @@ function touchStock(
 // ==========================================================
 // GET DAIRY
 // ==========================================================
+//
+// IMPORTANT:
+//
+// This is the ONLY model lookup used by this service.
+//
+// Stocks are NOT loaded from a separate collection.
+//
+// ==========================================================
 
 async function getDairy(
     dairyId
 ) {
 
+    const id =
+        cleanText(
+            dairyId
+        );
+
+
+    if (!id) {
+
+        throw createError(
+            "Dairy ID is required.",
+            400
+        );
+
+    }
+
+
     if (
         !isValidObjectId(
-            dairyId
+            id
         )
     ) {
 
@@ -197,7 +232,7 @@ async function getDairy(
 
     const dairy =
         await Dairy.findById(
-            dairyId
+            id
         );
 
 
@@ -211,13 +246,28 @@ async function getDairy(
     }
 
 
+    // ------------------------------------------------------
+    // Guarantee the array exists.
+    // ------------------------------------------------------
+
+    if (
+        !Array.isArray(
+            dairy.feedStocks
+        )
+    ) {
+
+        dairy.feedStocks = [];
+
+    }
+
+
     return dairy;
 
 }
 
 
 // ==========================================================
-// GET FEED TYPES
+// OPTIONS
 // ==========================================================
 
 function getFeedTypes() {
@@ -227,7 +277,15 @@ function getFeedTypes() {
         "function"
     ) {
 
-        return Dairy.getFeedTypes();
+        const result =
+            Dairy.getFeedTypes();
+
+
+        return Array.isArray(
+            result
+        )
+            ? result
+            : [];
 
     }
 
@@ -236,10 +294,6 @@ function getFeedTypes() {
 
 }
 
-
-// ==========================================================
-// GET VETERINARY MEDICINES
-// ==========================================================
 
 function getVeterinaryMedicines() {
 
@@ -248,7 +302,15 @@ function getVeterinaryMedicines() {
         "function"
     ) {
 
-        return Dairy.getVeterinaryMedicines();
+        const result =
+            Dairy.getVeterinaryMedicines();
+
+
+        return Array.isArray(
+            result
+        )
+            ? result
+            : [];
 
     }
 
@@ -257,10 +319,6 @@ function getVeterinaryMedicines() {
 
 }
 
-
-// ==========================================================
-// GET STOCK UNITS
-// ==========================================================
 
 function getStockUnits() {
 
@@ -269,7 +327,15 @@ function getStockUnits() {
         "function"
     ) {
 
-        return Dairy.getStockUnits();
+        const result =
+            Dairy.getStockUnits();
+
+
+        return Array.isArray(
+            result
+        )
+            ? result
+            : [];
 
     }
 
@@ -278,10 +344,6 @@ function getStockUnits() {
 
 }
 
-
-// ==========================================================
-// GET STORAGE OPTIONS
-// ==========================================================
 
 function getStorageOptions() {
 
@@ -302,7 +364,7 @@ function getStorageOptions() {
 
 
 // ==========================================================
-// NORMALIZE CATEGORY
+// CATEGORY
 // ==========================================================
 
 function normalizeCategory(
@@ -321,7 +383,7 @@ function normalizeCategory(
     ) {
 
         throw createError(
-            "Stock type must be either feed or medicine."
+            "Stock category must be either feed or medicine."
         );
 
     }
@@ -333,17 +395,17 @@ function normalizeCategory(
 
 
 // ==========================================================
-// NORMALIZE STOCK NAME
+// STOCK NAME
 // ==========================================================
 //
-// CANONICAL FIELD:
+// CANONICAL:
 //
-//     name
+//     data.name
 //
-// BACKWARD COMPATIBILITY:
+// Fallback:
 //
-//     feedName
-//     medicineName
+//     data.feedName
+//     data.medicineName
 //
 // ==========================================================
 
@@ -357,10 +419,6 @@ function normalizeStockName(
             data.name
         );
 
-
-    // ------------------------------------------------------
-    // Backward compatibility
-    // ------------------------------------------------------
 
     if (!name) {
 
@@ -396,37 +454,6 @@ function normalizeStockName(
     }
 
 
-    return name;
-
-}
-
-
-// ==========================================================
-// VALIDATE STOCK NAME
-// ==========================================================
-//
-// The name is intentionally not restricted to the dropdown
-// lists.
-//
-// This allows an administrator to edit the stock name while
-// keeping the canonical field:
-//
-//     stock.name
-//
-// ==========================================================
-
-function validateStockName(
-    data = {},
-    category
-) {
-
-    const name =
-        normalizeStockName(
-            data,
-            category
-        );
-
-
     if (
         name.length > 150
     ) {
@@ -444,7 +471,7 @@ function validateStockName(
 
 
 // ==========================================================
-// NORMALIZE QUANTITY
+// QUANTITY
 // ==========================================================
 
 function normalizeQuantity(
@@ -489,10 +516,6 @@ function normalizeQuantity(
 }
 
 
-// ==========================================================
-// NORMALIZE POSITIVE QUANTITY
-// ==========================================================
-
 function normalizePositiveQuantity(
     value,
     fieldName = "Quantity"
@@ -522,7 +545,7 @@ function normalizePositiveQuantity(
 
 
 // ==========================================================
-// NORMALIZE PRICE
+// PRICE
 // ==========================================================
 
 function normalizePrice(
@@ -578,7 +601,7 @@ function normalizePrice(
 
 
 // ==========================================================
-// NORMALIZE UNIT
+// UNIT
 // ==========================================================
 
 function normalizeUnit(
@@ -605,7 +628,7 @@ function normalizeUnit(
 
 
     if (
-        units.length &&
+        units.length > 0 &&
         !units.includes(
             value
         )
@@ -624,54 +647,7 @@ function normalizeUnit(
 
 
 // ==========================================================
-// FIND STOCK
-// ==========================================================
-
-function findStock(
-    dairy,
-    stockId
-) {
-
-    if (
-        !stockId ||
-        !Array.isArray(
-            dairy.feedStocks
-        )
-    ) {
-
-        return null;
-
-    }
-
-
-    return (
-
-        dairy.feedStocks.find(
-
-            function(stock) {
-
-                return (
-
-                    String(
-                        stock._id
-                    ) ===
-                    String(
-                        stockId
-                    )
-
-                );
-
-            }
-
-        ) || null
-
-    );
-
-}
-
-
-// ==========================================================
-// NORMALIZE IMAGES
+// IMAGES
 // ==========================================================
 
 function normalizeImages(
@@ -691,14 +667,38 @@ function normalizeImages(
 
     return images
 
-        .filter(Boolean)
+        .map(function(image) {
 
-        .map(
-            image =>
-                String(
-                    image
-                ).trim()
-        )
+            if (
+                typeof image === "string"
+            ) {
+
+                return image.trim();
+
+            }
+
+
+            if (
+                image &&
+                typeof image === "object"
+            ) {
+
+                return String(
+
+                    image.secure_url ||
+                    image.url ||
+                    image.path ||
+                    image.location ||
+                    ""
+
+                ).trim();
+
+            }
+
+
+            return "";
+
+        })
 
         .filter(Boolean);
 
@@ -706,11 +706,73 @@ function normalizeImages(
 
 
 // ==========================================================
-// CALCULATE FEEDS AMOUNT
+// FIND STOCK
 // ==========================================================
 //
-// quantity × unit price
+// IMPORTANT:
 //
+// Searches ONLY:
+//
+//     dairy.feedStocks[]
+//
+// ==========================================================
+
+function findStock(
+    dairy,
+    stockId
+) {
+
+    if (
+        !dairy ||
+        !Array.isArray(
+            dairy.feedStocks
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    const id =
+        cleanText(
+            stockId
+        );
+
+
+    if (!id) {
+
+        return null;
+
+    }
+
+
+    return (
+
+        dairy.feedStocks.find(
+            function(stock) {
+
+                return (
+
+                    stock &&
+                    String(
+                        stock._id
+                    ) === id
+
+                );
+
+            }
+        )
+
+        || null
+
+    );
+
+}
+
+
+// ==========================================================
+// FEEDS AMOUNT
 // ==========================================================
 
 function calculateFeedsAmount(
@@ -753,7 +815,7 @@ function calculateFeedsAmount(
 
 
 // ==========================================================
-// CALCULATE PERCENTAGE REMAINING
+// PERCENTAGE
 // ==========================================================
 
 function calculatePercentageRemaining(
@@ -779,15 +841,7 @@ function calculatePercentageRemaining(
         ) ||
         !Number.isFinite(
             initial
-        )
-    ) {
-
-        return 0;
-
-    }
-
-
-    if (
+        ) ||
         initial <= 0
     ) {
 
@@ -796,17 +850,13 @@ function calculatePercentageRemaining(
     }
 
 
-    const percentage =
-        (
-            remaining /
-            initial
-        ) * 100;
-
-
     return roundNumber(
         Math.max(
             0,
-            percentage
+            (
+                remaining /
+                initial
+            ) * 100
         )
     );
 
@@ -828,7 +878,7 @@ function validateNewStock(
 
 
     const name =
-        validateStockName(
+        normalizeStockName(
             data,
             category
         );
@@ -852,10 +902,6 @@ function validateNewStock(
             data.price
         );
 
-
-    // ------------------------------------------------------
-    // Positive stock requires a price.
-    // ------------------------------------------------------
 
     if (
         quantity > 0 &&
@@ -905,13 +951,19 @@ function validateNewStock(
 // CREATE STOCK
 // ==========================================================
 //
-// Used by:
+// THIS IS THE IMPORTANT FIX.
 //
-//     add-stock.ejs
+// A new stock is created as a SUBDOCUMENT:
 //
-// Canonical stock identity:
+//     dairy.feedStocks.push(stock)
 //
-//     name
+// It is NOT:
+//
+//     FeedStock.create()
+//
+// It is NOT:
+//
+//     Stock.create()
 //
 // ==========================================================
 
@@ -934,9 +986,9 @@ async function createStock({
 
 
     const unitPrice =
-        input.price !== null
-            ? input.price
-            : 0;
+        input.price === null
+            ? 0
+            : input.price;
 
 
     const feedsAmount =
@@ -946,30 +998,19 @@ async function createStock({
         );
 
 
-    const stock = {
+    // ------------------------------------------------------
+    // Build the actual feedStocks subdocument.
+    // ------------------------------------------------------
 
-        // --------------------------------------------------
-        // CANONICAL IDENTITY
-        // --------------------------------------------------
+    const stock = {
 
         name:
             input.name,
 
 
-        // --------------------------------------------------
-        // CATEGORY
-        // --------------------------------------------------
-
         category:
             input.category,
 
-
-        // --------------------------------------------------
-        // BACKWARD COMPATIBILITY
-        //
-        // These are populated from the canonical name so
-        // older parts of the application can still read them.
-        // --------------------------------------------------
 
         feedName:
             input.category === "feed"
@@ -983,17 +1024,9 @@ async function createStock({
                 : "",
 
 
-        // --------------------------------------------------
-        // UNIT
-        // --------------------------------------------------
-
         unit:
             input.unit,
 
-
-        // --------------------------------------------------
-        // QUANTITY
-        // --------------------------------------------------
 
         quantityRemaining:
             input.quantity,
@@ -1004,38 +1037,30 @@ async function createStock({
 
 
         percentageRemaining:
-            calculatePercentageRemaining(
-                input.quantity,
-                input.quantity
-            ),
+            input.quantity > 0
+                ? 100
+                : 0,
 
 
-        // --------------------------------------------------
-        // FINANCIAL
-        // --------------------------------------------------
-
-        unitPrice,
-
-        feedsAmount,
+        unitPrice:
+            unitPrice,
 
 
-        // --------------------------------------------------
-        // INFORMATION
-        // --------------------------------------------------
+        feedsAmount:
+            feedsAmount,
+
 
         instructions:
             input.instructions,
 
+
         expectedDuration:
             input.expectedDuration,
+
 
         message:
             input.message,
 
-
-        // --------------------------------------------------
-        // IMAGES
-        // --------------------------------------------------
 
         images:
             normalizeImages(
@@ -1043,23 +1068,31 @@ async function createStock({
             ),
 
 
-        // --------------------------------------------------
-        // TIMESTAMP
-        // --------------------------------------------------
-
         updatedAt:
             new Date()
 
     };
 
 
+    // ------------------------------------------------------
+    // THIS IS WHERE THE STOCK IS STORED.
+    // ------------------------------------------------------
+
     dairy.feedStocks.push(
         stock
     );
 
 
+    // ------------------------------------------------------
+    // SAVE THE PARENT DAIRY DOCUMENT.
+    // ------------------------------------------------------
+
     await dairy.save();
 
+
+    // ------------------------------------------------------
+    // Return the ACTUAL saved subdocument.
+    // ------------------------------------------------------
 
     return dairy.feedStocks[
         dairy.feedStocks.length - 1
@@ -1070,36 +1103,6 @@ async function createStock({
 
 // ==========================================================
 // UPDATE EXISTING STOCK
-// ==========================================================
-//
-// Used by:
-//
-//     update-stock.ejs
-//
-// ADMIN:
-//
-//     Can update:
-//         • name
-//         • quantity
-//         • price
-//         • instructions
-//         • expectedDuration
-//         • message
-//         • images
-//
-// DAIRY WORKER:
-//
-//     Can update:
-//         • quantity
-//         • message
-//         • images
-//
-// The controller is responsible for removing unauthorized
-// fields before this service is called.
-//
-// This service also avoids clearing fields merely because
-// they were omitted from the request.
-//
 // ==========================================================
 
 async function updateStock({
@@ -1132,12 +1135,8 @@ async function updateStock({
     }
 
 
-    // ======================================================
-    // EXISTING QUANTITY
-    // ======================================================
-
     const oldQuantity =
-        toNumber(
+        Number(
             stock.quantityRemaining
         );
 
@@ -1150,16 +1149,13 @@ async function updateStock({
             : 0;
 
 
-    // ======================================================
-    // NEW QUANTITY
-    // ======================================================
-
     let newQuantity =
         safeOldQuantity;
 
 
     if (
-        data.quantity !== undefined
+        data.quantity !== undefined &&
+        data.quantity !== ""
     ) {
 
         newQuantity =
@@ -1221,7 +1217,7 @@ async function updateStock({
 
 
     // ======================================================
-    // QUANTITY REDUCTION
+    // QUANTITY DECREASE
     // ======================================================
 
     else if (
@@ -1230,17 +1226,6 @@ async function updateStock({
 
         stock.quantityRemaining =
             newQuantity;
-
-        /*
-         * A reduction is consumption.
-         *
-         * Therefore:
-         *
-         *     unitPrice
-         *     feedsAmount
-         *
-         * remain unchanged.
-         */
 
     }
 
@@ -1258,13 +1243,7 @@ async function updateStock({
 
 
     // ======================================================
-    // ADMIN NAME UPDATE
-    // ======================================================
-    //
-    // The controller removes name for non-admin users.
-    //
-    // Therefore, only a supplied name is changed.
-    //
+    // NAME
     // ======================================================
 
     if (
@@ -1301,10 +1280,6 @@ async function updateStock({
             name;
 
 
-        // --------------------------------------------------
-        // Keep legacy fields synchronized.
-        // --------------------------------------------------
-
         const category =
             cleanText(
                 stock.category
@@ -1318,6 +1293,9 @@ async function updateStock({
             stock.medicineName =
                 name;
 
+            stock.feedName =
+                "";
+
         }
 
         else {
@@ -1325,35 +1303,16 @@ async function updateStock({
             stock.feedName =
                 name;
 
+            stock.medicineName =
+                "";
+
         }
 
     }
 
 
     // ======================================================
-    // UNIT
-    // ======================================================
-    //
-    // Unit is intentionally not changed during update.
-    //
-    // The update page displays it as readonly.
-    //
-    // ======================================================
-
-
-    // ======================================================
-    // PERCENTAGE REMAINING
-    // ======================================================
-
-    stock.percentageRemaining =
-        calculatePercentageRemaining(
-            stock.quantityRemaining,
-            stock.initialQuantity
-        );
-
-
-    // ======================================================
-    // ADMIN / OPTIONAL INFORMATION
+    // INFORMATION
     // ======================================================
 
     if (
@@ -1425,6 +1384,17 @@ async function updateStock({
 
 
     // ======================================================
+    // PERCENTAGE
+    // ======================================================
+
+    stock.percentageRemaining =
+        calculatePercentageRemaining(
+            stock.quantityRemaining,
+            stock.initialQuantity
+        );
+
+
+    // ======================================================
     // TIMESTAMP
     // ======================================================
 
@@ -1432,6 +1402,10 @@ async function updateStock({
         stock
     );
 
+
+    // ======================================================
+    // SAVE PARENT
+    // ======================================================
 
     await dairy.save();
 
@@ -1474,21 +1448,9 @@ async function updateStock({
 // RESTOCK EXISTING STOCK
 // ==========================================================
 //
-// Used by:
+// Restock is ADDITIVE.
 //
-//     restock.ejs
-//
-// IMPORTANT:
-//
-// Restock quantity is ADDITIVE.
-//
-// Example:
-//
-//     Existing stock = 100 kg
-//     Restock        = 50 kg
-//     New total      = 150 kg
-//
-// The submitted quantity is NOT the new total.
+//     old quantity + added quantity = new quantity
 //
 // ==========================================================
 
@@ -1498,40 +1460,6 @@ async function restockStock({
     data = {},
     images = []
 }) {
-
-    // ======================================================
-    // CONTROLLER COMPATIBILITY
-    // ======================================================
-    //
-    // The current addStock controller calls:
-    //
-    //     restockStock({
-    //         dairyId,
-    //         stockId: "",
-    //         data,
-    //         images
-    //     })
-    //
-    // Therefore an empty stockId means CREATE.
-    //
-    // ======================================================
-
-    if (
-        !stockId
-    ) {
-
-        return createStock({
-
-            dairyId,
-
-            data,
-
-            images
-
-        });
-
-    }
-
 
     const dairy =
         await getDairy(
@@ -1556,27 +1484,17 @@ async function restockStock({
     }
 
 
-    // ======================================================
-    // RESTOCK QUANTITY
-    // ======================================================
-
     const quantityAdded =
         normalizePositiveQuantity(
 
             data.quantityAdded !== undefined
-
                 ? data.quantityAdded
-
                 : data.quantity,
 
             "Restock quantity"
 
         );
 
-
-    // ======================================================
-    // PRICE
-    // ======================================================
 
     const price =
         normalizePrice(
@@ -1595,12 +1513,8 @@ async function restockStock({
     }
 
 
-    // ======================================================
-    // OLD QUANTITY
-    // ======================================================
-
     const oldQuantity =
-        toNumber(
+        Number(
             stock.quantityRemaining
         );
 
@@ -1613,20 +1527,12 @@ async function restockStock({
             : 0;
 
 
-    // ======================================================
-    // NEW TOTAL
-    // ======================================================
-
     const newQuantity =
         roundNumber(
             safeOldQuantity +
             quantityAdded
         );
 
-
-    // ======================================================
-    // PURCHASE AMOUNT
-    // ======================================================
 
     const feedsAmount =
         calculateFeedsAmount(
@@ -1635,61 +1541,27 @@ async function restockStock({
         );
 
 
-    // ======================================================
-    // UPDATE QUANTITY
-    // ======================================================
+    // ------------------------------------------------------
+    // UPDATE THE EXISTING SUBDOCUMENT.
+    // ------------------------------------------------------
 
     stock.quantityRemaining =
         newQuantity;
 
 
-    // ======================================================
-    // LATEST UNIT PRICE
-    // ======================================================
-
     stock.unitPrice =
         price;
 
-
-    // ======================================================
-    // LATEST PURCHASE AMOUNT
-    // ======================================================
 
     stock.feedsAmount =
         feedsAmount;
 
 
-    // ======================================================
-    // PERCENTAGE REMAINING
-    // ======================================================
-    //
-    // initialQuantity is deliberately NOT changed.
-    //
-    // Therefore if:
-    //
-    //     initial = 100
-    //     remaining = 150
-    //
-    // percentage = 150%
-    //
-    // ======================================================
-
     stock.percentageRemaining =
         calculatePercentageRemaining(
-            stock.quantityRemaining,
+            newQuantity,
             stock.initialQuantity
         );
-
-
-    // ======================================================
-    // NAME
-    // ======================================================
-    //
-    // Restocking does not rename the stock.
-    //
-    // The name is controlled from update-stock.ejs.
-    //
-    // ======================================================
 
 
     // ======================================================
@@ -1764,14 +1636,14 @@ async function restockStock({
     }
 
 
-    // ======================================================
-    // TIMESTAMP
-    // ======================================================
-
     touchStock(
         stock
     );
 
+
+    // ======================================================
+    // SAVE PARENT DAIRY
+    // ======================================================
 
     await dairy.save();
 
@@ -1804,15 +1676,7 @@ async function restockStock({
 // SAVE STOCK
 // ==========================================================
 //
-// COMPATIBILITY WRAPPER.
-//
-// If stockId is empty:
-//
-//     createStock()
-//
-// If stockId exists:
-//
-//     updateStock()
+// Compatibility wrapper.
 //
 // ==========================================================
 
@@ -1823,67 +1687,20 @@ async function saveStock({
     images = []
 }) {
 
-    // ======================================================
-    // NEW STOCK
-    // ======================================================
+    if (!stockId) {
 
-    if (
-        !stockId
-    ) {
+        return createStock({
 
-        const stock =
-            await createStock({
+            dairyId,
 
-                dairyId,
+            data,
 
-                data,
+            images
 
-                images
-
-            });
-
-
-        const quantity =
-            Number(
-                stock.quantityRemaining || 0
-            );
-
-
-        return {
-
-            stock,
-
-            oldQuantity:
-                0,
-
-            newQuantity:
-                quantity,
-
-            quantityDifference:
-                quantity,
-
-            quantityIncreased:
-                quantity > 0,
-
-            quantityDecreased:
-                false,
-
-            quantityAdded:
-                quantity,
-
-            feedsAmount:
-                Number(
-                    stock.feedsAmount || 0
-                )
-
-        };
+        });
 
     }
 
-
-    // ======================================================
-    // EXISTING STOCK
-    // ======================================================
 
     return updateStock({
 
@@ -1901,7 +1718,7 @@ async function saveStock({
 
 
 // ==========================================================
-// GET ALL STOCKS
+// GET ALL STOCK
 // ==========================================================
 
 async function getStocks(
@@ -1975,11 +1792,14 @@ async function deleteStock({
         );
 
 
-    if (
-        !Array.isArray(
-            dairy.feedStocks
-        )
-    ) {
+    const stock =
+        findStock(
+            dairy,
+            stockId
+        );
+
+
+    if (!stock) {
 
         throw createError(
             "Stock item not found.",
@@ -1991,22 +1811,20 @@ async function deleteStock({
 
     const index =
         dairy.feedStocks.findIndex(
-
-            function(stock) {
+            function(item) {
 
                 return (
 
                     String(
-                        stock._id
+                        item._id
                     ) ===
                     String(
-                        stockId
+                        stock._id
                     )
 
                 );
 
             }
-
         );
 
 
@@ -2043,7 +1861,7 @@ async function deleteStock({
 
 
 // ==========================================================
-// GET STOCK SUMMARY
+// SUMMARY
 // ==========================================================
 
 async function getStockSummary(
@@ -2084,7 +1902,6 @@ async function getStockSummary(
 
     const totalFeedsAmount =
         stocks.reduce(
-
             function(
                 total,
                 stock
@@ -2095,21 +1912,16 @@ async function getStockSummary(
                     total +
 
                     Math.max(
-
                         0,
-
                         Number(
                             stock.feedsAmount
                         ) || 0
-
                     )
 
                 );
 
             },
-
             0
-
         );
 
 
@@ -2146,67 +1958,33 @@ async function getStockSummary(
 
 module.exports = {
 
-    // ======================================================
-    // DAIRY
-    // ======================================================
-
+    // Dairy
     getDairy,
 
-
-    // ======================================================
-    // OPTIONS
-    // ======================================================
-
+    // Options
     getFeedTypes,
-
     getVeterinaryMedicines,
-
     getStockUnits,
-
     getStorageOptions,
 
-
-    // ======================================================
-    // RETRIEVAL
-    // ======================================================
-
+    // Retrieval
     getStocks,
-
     getStock,
 
-
-    // ======================================================
-    // OPERATIONS
-    // ======================================================
-
+    // Operations
     createStock,
-
     updateStock,
-
     restockStock,
-
     saveStock,
-
     deleteStock,
 
-
-    // ======================================================
-    // HELPERS
-    // ======================================================
-
+    // Helpers
     findStock,
-
     validateNewStock,
-
     calculateFeedsAmount,
-
     calculatePercentageRemaining,
 
-
-    // ======================================================
-    // SUMMARY
-    // ======================================================
-
+    // Summary
     getStockSummary
 
 };
