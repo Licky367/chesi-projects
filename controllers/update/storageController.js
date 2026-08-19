@@ -88,13 +88,6 @@ function canAccessStorage(req) {
 // ==========================================================
 // ROUTE PARAMETERS
 // ==========================================================
-//
-// Actual route parameters:
-//
-//     :dairyId
-//     :stockId
-//
-// ==========================================================
 
 function getDairyId(req) {
 
@@ -397,13 +390,9 @@ async function loadDairy(
 // GET FEED STOCK PAGE
 // ==========================================================
 //
-// ACTUAL ROUTE:
+// GET:
 //
-//     GET /dairy/feedstore/:dairyId
-//
-// EXAMPLE:
-//
-//     /dairy/feedstore/6a802fb518fcceb7ac81eef1
+//     /dairy/feedstore/:dairyId
 //
 // ==========================================================
 
@@ -471,13 +460,9 @@ async function getFeedStock(
 // GET ADD STOCK PAGE
 // ==========================================================
 //
-// ACTUAL ROUTE:
+// GET:
 //
-//     GET /dairy/:dairyId/feedstore/add
-//
-// EXAMPLE:
-//
-//     /dairy/6a802fb518fcceb7ac81eef1/feedstore/add
+//     /dairy/:dairyId/feedstore/add
 //
 // ==========================================================
 
@@ -545,17 +530,9 @@ async function getAddStock(
 // GET UPDATE STOCK PAGE
 // ==========================================================
 //
-// ACTUAL ROUTE:
+// GET:
 //
-//     GET /dairy/:dairyId/feedstore/update/:stockId
-//
-// EXAMPLE:
-//
-//     /dairy/6a802fb518fcceb7ac81eef1/feedstore/update/6a83db2375a14286cef7dc9e
-//
-// IMPORTANT:
-//
-//     stockId is AFTER "update".
+//     /dairy/:dairyId/feedstore/update/:stockId
 //
 // ==========================================================
 
@@ -668,17 +645,13 @@ async function getUpdateStock(
 // GET RESTOCK PAGE
 // ==========================================================
 //
-// ACTUAL ROUTE:
+// GET:
 //
-//     GET /dairy/:dairyId/feedstore/restock/:stockId
+//     /dairy/:dairyId/feedstore/restock/:stockId
 //
-// EXAMPLE:
+// VIEW:
 //
-//     /dairy/6a802fb518fcceb7ac81eef1/feedstore/restock/6a83dbae75a14286cef7dca8
-//
-// IMPORTANT:
-//
-//     stockId is AFTER "restock".
+//     views/update/storage/restock.ejs
 //
 // ==========================================================
 
@@ -760,6 +733,18 @@ async function getRestock(
             stock;
 
 
+        // --------------------------------------------------
+        // IMPORTANT:
+        //
+        // The actual file is:
+        //
+        //     views/update/storage/restock.ejs
+        //
+        // NOT:
+        //
+        //     restock-stock.ejs
+        // --------------------------------------------------
+
         return res.render(
             "update/storage/restock",
             viewData
@@ -790,39 +775,166 @@ async function getRestock(
 // ==========================================================
 // BUILD STOCK DATA
 // ==========================================================
+//
+// `name` is now the primary stock-name field.
+//
+// Legacy:
+//
+//     feedName
+//     medicineName
+//
+// are still accepted so older forms do not break.
+//
+// ==========================================================
 
 function buildStockData(
     req
 ) {
 
+    const body =
+        req.body || {};
+
+
+    const category =
+        String(
+            body.category ||
+            "feed"
+        )
+            .trim()
+            .toLowerCase();
+
+
+    const submittedName =
+        String(
+            body.name ||
+            ""
+        ).trim();
+
+
+    const feedName =
+        String(
+            body.feedName ||
+            ""
+        ).trim();
+
+
+    const medicineName =
+        String(
+            body.medicineName ||
+            ""
+        ).trim();
+
+
+    let name =
+        submittedName;
+
+
+    // ------------------------------------------------------
+    // Backwards compatibility
+    // ------------------------------------------------------
+
+    if (!name) {
+
+        if (category === "medicine") {
+
+            name =
+                medicineName;
+
+        }
+
+        else {
+
+            name =
+                feedName;
+
+        }
+
+    }
+
+
     return {
 
-        category:
-            req.body.category,
+        name,
 
-        feedName:
-            req.body.feedName,
+        feedName,
 
-        medicineName:
-            req.body.medicineName,
+        medicineName,
+
+        category,
 
         quantity:
-            req.body.quantity,
+            body.quantity,
 
         unit:
-            req.body.unit,
+            body.unit,
 
         price:
-            req.body.price,
+            body.price,
 
         instructions:
-            req.body.instructions,
+            body.instructions,
 
         expectedDuration:
-            req.body.expectedDuration,
+            body.expectedDuration,
 
         message:
-            req.body.message
+            body.message
+
+    };
+
+}
+
+
+// ==========================================================
+// BUILD RESTOCK DATA
+// ==========================================================
+//
+// Restock is different from Update.
+//
+// It adds quantity to the existing stock.
+//
+// The restock form does not edit:
+//
+//     - stock name
+//     - category
+//     - unit
+//
+// Those belong to the existing stock item.
+//
+// Admin can provide:
+//
+//     - quantity
+//     - price
+//     - instructions
+//     - expected duration
+//     - additional information
+//
+// ==========================================================
+
+function buildRestockData(
+    req
+) {
+
+    const body =
+        req.body || {};
+
+
+    return {
+
+        quantity:
+            body.quantity,
+
+        price:
+            body.price,
+
+        instructions:
+            body.instructions,
+
+        expectedDuration:
+            body.expectedDuration,
+
+        message:
+            body.message
 
     };
 
@@ -833,13 +945,9 @@ function buildStockData(
 // ADD STOCK
 // ==========================================================
 //
-// ACTUAL POST:
+// POST:
 //
-//     POST /dairy/:dairyId/feedstore/add
-//
-// SUCCESS REDIRECT:
-//
-//     /dairy/feedstore/:dairyId
+//     /dairy/:dairyId/feedstore/add
 //
 // ==========================================================
 
@@ -906,10 +1014,6 @@ async function addStock(
         });
 
 
-        // --------------------------------------------------
-        // CORRECT FEED STORE LISTING ROUTE
-        // --------------------------------------------------
-
         return res.redirect(
             `/dairy/feedstore/${encodeURIComponent(dairyId)}`
         );
@@ -944,13 +1048,30 @@ async function addStock(
 // UPDATE STOCK
 // ==========================================================
 //
-// ACTUAL PUT:
+// PUT:
 //
-//     PUT /dairy/:dairyId/feedstore/update/:stockId
+//     /dairy/:dairyId/feedstore/update/:stockId
 //
-// SUCCESS REDIRECT:
+// ADMIN:
 //
-//     /dairy/feedstore/:dairyId
+//     Can update name.
+//     Can update quantity.
+//     Can update price.
+//     Can update instructions.
+//     Can update expected duration.
+//     Can update additional information.
+//
+// DAIRY WORKER:
+//
+//     Can update quantity.
+//     Can update additional information.
+//
+//     Cannot update:
+//
+//         name
+//         price
+//         instructions
+//         expectedDuration
 //
 // ==========================================================
 
@@ -1017,6 +1138,30 @@ async function updateStock(
             buildStockData(req);
 
 
+        // --------------------------------------------------
+        // SECURITY:
+        //
+        // Dairy workers cannot change admin-controlled
+        // fields, even if they manually submit them.
+        // --------------------------------------------------
+
+        if (!isAdmin(req)) {
+
+            delete data.name;
+
+            delete data.feedName;
+
+            delete data.medicineName;
+
+            delete data.price;
+
+            delete data.instructions;
+
+            delete data.expectedDuration;
+
+        }
+
+
         const images =
             getUploadedImages(req);
 
@@ -1068,13 +1213,21 @@ async function updateStock(
 // RESTOCK STOCK
 // ==========================================================
 //
-// ACTUAL POST:
+// POST:
 //
-//     POST /dairy/:dairyId/feedstore/restock/:stockId
+//     /dairy/:dairyId/feedstore/restock/:stockId
 //
-// SUCCESS REDIRECT:
+// IMPORTANT:
 //
-//     /dairy/feedstore/:dairyId
+//     Restock ADDS quantity.
+//
+//     It does NOT replace the existing quantity.
+//
+//     Example:
+//
+//         Existing = 100
+//         Received = 50
+//         Result   = 150
 //
 // ==========================================================
 
@@ -1137,15 +1290,26 @@ async function restockStock(
         }
 
 
+        // --------------------------------------------------
+        // IMPORTANT:
+        //
+        // Restock.ejs only submits the NEW quantity received.
+        //
+        // It does NOT submit the current stock quantity.
+        //
+        // The service is responsible for adding the submitted
+        // quantity to the existing quantity.
+        // --------------------------------------------------
+
         const data =
-            buildStockData(req);
+            buildRestockData(req);
 
 
         const images =
             getUploadedImages(req);
 
 
-        await storageService.saveStock({
+        await storageService.restockStock({
 
             dairyId,
 
