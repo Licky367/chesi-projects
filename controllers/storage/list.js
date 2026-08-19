@@ -1,44 +1,36 @@
 // ==========================================================
-// controllers/storage/index.js
+// controllers/storage/storageController.js
 // STORAGE CONTROLLER
 // ==========================================================
 //
-// ROUTE:
+// HANDLES:
 //
-//     GET /storage/:id
+//     GET  /storage/:id
+//     GET  /storage/:id/add
+//     POST /storage/:id/add
 //
 // IMPORTANT ID CONTRACT
 // ----------------------------------------------------------
 //
 //     req.params.id
 //
-// IS:
+// ALWAYS MEANS:
 //
 //     Dairy._id
 //
-// It is NOT:
+// NEVER:
 //
-//     farmCode
+//     Dairy.code
 //
-// It is NOT:
+// NEVER:
 //
-//     storage._id
+//     DairyStorage._id
 //
-// It is NOT:
+// NEVER:
 //
 //     roomNumber
 //
-// It is the MongoDB _id of the PARENT DAIRY FARM.
-//
-// Example:
-//
-//     /storage/68a123456789abcdef123456
-//
-// means:
-//
-//     Dairy._id = 68a123456789abcdef123456
-//
-// The controller then resolves:
+// RELATION:
 //
 //     Dairy._id
 //          ↓
@@ -46,24 +38,8 @@
 //          ↓
 //     DairyStorage.farmCode
 //
-// Example:
-//
-//     Dairy:
-//
-//         _id  = 68a123456789abcdef123456
-//         code = -1
-//
-//     DairyStorage:
-//
-//         farmCode = -1
-//
-// Therefore:
-//
-//     /storage/68a123456789abcdef123456
-//
-// correctly loads storage belonging to farm code -1.
-//
 // ==========================================================
+
 
 const mongoose =
     require("mongoose");
@@ -72,20 +48,205 @@ const Dairy =
     require("../../models/dairy");
 
 const storageService =
-    require("../../services/storage");
+    require("../../services/storage/storageService");
 
 
 // ==========================================================
-// STORAGE INDEX
+// ADMIN CHECK
+// ==========================================================
+
+function requireAdmin(
+    req,
+    res
+) {
+
+    // ======================================================
+    // NOT LOGGED IN
+    // ======================================================
+
+    if (
+        !req.session ||
+        !req.session.user
+    ) {
+
+        res
+            .status(401)
+            .send("Unauthorized");
+
+        return false;
+    }
+
+
+    // ======================================================
+    // NOT ADMIN
+    // ======================================================
+
+    if (
+        req.session.user.role !== "admin"
+    ) {
+
+        res
+            .status(403)
+            .send(
+                "Only administrators can manage storage facilities."
+            );
+
+        return false;
+    }
+
+
+    return true;
+}
+
+
+// ==========================================================
+// GET PARENT DAIRY
+// ==========================================================
+//
+// req.params.id = Dairy._id
+//
+// This helper is used by both:
+//
+//     storage page
+//     add storage page
+//
+// ==========================================================
+
+async function getParentDairy(
+    dairyId
+) {
+
+    // ======================================================
+    // REQUIRE ID
+    // ======================================================
+
+    if (!dairyId) {
+
+        const error =
+            new Error(
+                "Dairy Farm ID is required."
+            );
+
+        error.status = 400;
+
+        throw error;
+    }
+
+
+    // ======================================================
+    // VALIDATE OBJECT ID
+    // ======================================================
+
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            dairyId
+        )
+    ) {
+
+        const error =
+            new Error(
+                "Invalid Dairy ID."
+            );
+
+        error.status = 400;
+
+        throw error;
+    }
+
+
+    // ======================================================
+    // FIND PARENT DAIRY
+    // ======================================================
+
+    const dairy =
+        await Dairy
+            .findById(dairyId)
+            .lean();
+
+
+    // ======================================================
+    // NOT FOUND
+    // ======================================================
+
+    if (!dairy) {
+
+        const error =
+            new Error(
+                "Dairy Farm not found."
+            );
+
+        error.status = 404;
+
+        throw error;
+    }
+
+
+    // ======================================================
+    // VERIFY PARENT DAIRY FARM
+    // ======================================================
+    //
+    // Dairy Farm:
+    //
+    //     code < 0
+    //
+    // Animals:
+    //
+    //     code > 0
+    //
+    // Structures/assets:
+    //
+    //     code === null
+    //
+    // ======================================================
+
+    const farmCode =
+        Number(
+            dairy.code
+        );
+
+
+    if (
+        dairy.code === null ||
+        dairy.code === undefined ||
+        !Number.isInteger(farmCode) ||
+        farmCode >= 0
+    ) {
+
+        const error =
+            new Error(
+                "The supplied ID does not belong to a parent Dairy Farm."
+            );
+
+        error.status = 422;
+
+        throw error;
+    }
+
+
+    return {
+
+        dairy,
+
+        farmCode
+
+    };
+}
+
+
+// ==========================================================
+// GET STORAGE PAGE
 // ==========================================================
 //
 // GET:
 //
 //     /storage/:id
 //
+// :id = Dairy._id
+//
 // ==========================================================
 
-exports.index = async function (
+exports.index =
+async function (
     req,
     res,
     next
@@ -94,7 +255,7 @@ exports.index = async function (
     try {
 
         // ==================================================
-        // READ PARENT DAIRY FARM ID
+        // PARENT DAIRY ID
         // ==================================================
 
         const dairyId =
@@ -104,197 +265,30 @@ exports.index = async function (
 
 
         // ==================================================
-        // REQUIRE DAIRY ID
+        // GET PARENT FARM
         // ==================================================
 
-        if (!dairyId) {
+        const {
 
-            return res
-                .status(400)
-                .render(
-                    "400",
-                    {
+            dairy,
 
-                        title:
-                            "Invalid Dairy ID",
+            farmCode
 
-                        error:
-                            "Dairy Farm ID is required.",
-
-                        user:
-                            req.session?.user || null
-
-                    }
-                );
-
-        }
-
-
-        // ==================================================
-        // VALIDATE MONGODB OBJECT ID
-        // ==================================================
-        //
-        // This confirms that :id is intended to be a
-        // MongoDB Dairy._id.
-        //
-        // ==================================================
-
-        if (
-            !mongoose.Types.ObjectId.isValid(
+        } =
+            await getParentDairy(
                 dairyId
-            )
-        ) {
-
-            return res
-                .status(400)
-                .render(
-                    "400",
-                    {
-
-                        title:
-                            "Invalid Dairy ID",
-
-                        error:
-                            "Invalid Dairy ID.",
-
-                        user:
-                            req.session?.user || null
-
-                    }
-                );
-
-        }
-
-
-        // ==================================================
-        // FIND THE PARENT DAIRY FARM
-        // ==================================================
-        //
-        // THIS IS THE CRITICAL PART.
-        //
-        // :id is used against Dairy._id.
-        //
-        // We do NOT do:
-        //
-        //     Dairy.findOne({ code: dairyId })
-        //
-        // because dairyId is the MongoDB _id.
-        //
-        // ==================================================
-
-        const dairy =
-            await Dairy
-                .findById(dairyId)
-                .lean();
-
-
-        // ==================================================
-        // DAIRY FARM NOT FOUND
-        // ==================================================
-
-        if (!dairy) {
-
-            return res
-                .status(404)
-                .render(
-                    "404",
-                    {
-
-                        title:
-                            "Dairy Farm Not Found",
-
-                        error:
-                            "The requested Dairy Farm could not be found.",
-
-                        user:
-                            req.session?.user || null
-
-                    }
-                );
-
-        }
-
-
-        // ==================================================
-        // VERIFY THAT THE ID BELONGS TO A PARENT
-        // DAIRY FARM
-        // ==================================================
-        //
-        // According to models/dairy.js:
-        //
-        //     code < 0 = Dairy Farm
-        //
-        //     code > 0 = Animal
-        //
-        //     code === null = Structure / Asset
-        //
-        // Therefore the storage page must only accept
-        // a Dairy Farm.
-        //
-        // ==================================================
-
-        if (
-            dairy.code === null ||
-            dairy.code === undefined ||
-            Number(dairy.code) >= 0
-        ) {
-
-            return res
-                .status(400)
-                .render(
-                    "400",
-                    {
-
-                        title:
-                            "Invalid Dairy Farm",
-
-                        error:
-                            "The supplied ID does not belong to a parent Dairy Farm.",
-
-                        user:
-                            req.session?.user || null
-
-                    }
-                );
-
-        }
-
-
-        // ==================================================
-        // PARENT FARM CODE
-        // ==================================================
-        //
-        // Example:
-        //
-        //     dairy._id = 68abc...
-        //     dairy.code = -1
-        //
-        // Storage records belonging to this farm must have:
-        //
-        //     farmCode = -1
-        //
-        // ==================================================
-
-        const farmCode =
-            Number(
-                dairy.code
             );
 
 
         // ==================================================
-        // READ STORAGE TYPE
+        // STORAGE TYPE FILTER
         // ==================================================
 
         let type =
             String(
                 req.query.type || "all"
-            )
-            .trim();
+            ).trim();
 
-
-        // ==================================================
-        // ALLOWED STORAGE TYPES
-        // ==================================================
 
         const allowedTypes = [
 
@@ -318,17 +312,7 @@ exports.index = async function (
         // GET STORAGE
         // ==================================================
         //
-        // IMPORTANT:
-        //
-        // We pass BOTH:
-        //
-        //     dairyId
-        //
-        // and
-        //
-        //     farmCode
-        //
-        // The service must use farmCode to query:
+        // storageService uses farmCode to query:
         //
         //     DairyStorage.farmCode
         //
@@ -347,7 +331,7 @@ exports.index = async function (
 
 
         // ==================================================
-        // RENDER STORAGE PAGE
+        // RENDER
         // ==================================================
 
         return res.render(
@@ -359,46 +343,24 @@ exports.index = async function (
                 title:
                     "Feed Store",
 
-                // ------------------------------------------
-                // PARENT DAIRY FARM
-                // ------------------------------------------
-
                 dairy,
-
-                // ------------------------------------------
-                // STORAGE BELONGING TO THIS FARM
-                // ------------------------------------------
 
                 storage:
                     storage || [],
 
-                // ------------------------------------------
-                // SELECTED FILTER
-                // ------------------------------------------
-
                 selectedType:
                     type,
 
-                // ------------------------------------------
-                // ACTUAL DAIRY._id
-                //
-                // This is what /storage/:id represents.
-                // ------------------------------------------
-
+                // IMPORTANT:
+                // This is Dairy._id.
                 dairyId:
-                    dairy._id,
+                    String(
+                        dairy._id
+                    ),
 
-                // ------------------------------------------
-                // PARENT FARM CODE
-                //
-                // This is what DairyStorage.farmCode uses.
-                // ------------------------------------------
-
+                // This is only used internally/data-wise
+                // for DairyStorage.farmCode.
                 farmCode,
-
-                // ------------------------------------------
-                // LOGGED-IN USER
-                // ------------------------------------------
 
                 user:
                     req.session?.user || null
@@ -407,25 +369,381 @@ exports.index = async function (
 
         );
 
+    } catch (error) {
+
+        console.error(
+            "STORAGE PAGE ERROR:",
+            error
+        );
+
+        return next(error);
+    }
+};
+
+
+// ==========================================================
+// GET ADD STORAGE FORM
+// ==========================================================
+//
+// GET:
+//
+//     /storage/:id/add
+//
+// :id = Dairy._id
+//
+// ==========================================================
+
+exports.form =
+async function (
+    req,
+    res,
+    next
+) {
+
+    try {
+
+        // ==================================================
+        // ADMIN ONLY
+        // ==================================================
+
+        if (
+            !requireAdmin(
+                req,
+                res
+            )
+        ) {
+
+            return;
+        }
+
+
+        // ==================================================
+        // PARENT DAIRY ID
+        // ==================================================
+
+        const dairyId =
+            String(
+                req.params.id || ""
+            ).trim();
+
+
+        // ==================================================
+        // GET PARENT FARM
+        // ==================================================
+
+        const {
+
+            dairy
+
+        } =
+            await getParentDairy(
+                dairyId
+            );
+
+
+        // ==================================================
+        // RENDER FORM
+        // ==================================================
+
+        return res.render(
+
+            "storage/add",
+
+            {
+
+                title:
+                    "Add Storage",
+
+                dairy,
+
+                // IMPORTANT:
+                // This remains Dairy._id.
+                dairyId,
+
+                user:
+                    req.session.user,
+
+                error:
+                    null,
+
+                formData: {
+
+                    name:
+                        "",
+
+                    type:
+                        ""
+
+                }
+
+            }
+
+        );
 
     } catch (error) {
 
+        console.error(
+            "STORAGE ADD FORM ERROR:",
+            error
+        );
+
+        return next(error);
+    }
+};
+
+
+// ==========================================================
+// CREATE STORAGE
+// ==========================================================
+//
+// POST:
+//
+//     /storage/:id/add
+//
+// :id = Dairy._id
+//
+// USER INPUT:
+//
+//     name
+//     type
+//
+// SERVER DETERMINES:
+//
+//     farmCode
+//     roomNumber
+//
+// ==========================================================
+
+exports.create =
+async function (
+    req,
+    res,
+    next
+) {
+
+    try {
+
         // ==================================================
-        // LOG ERROR
+        // ADMIN ONLY
         // ==================================================
 
+        if (
+            !requireAdmin(
+                req,
+                res
+            )
+        ) {
+
+            return;
+        }
+
+
+        // ==================================================
+        // PARENT DAIRY ID
+        // ==================================================
+
+        const dairyId =
+            String(
+                req.params.id || ""
+            ).trim();
+
+
+        // ==================================================
+        // USER INPUT
+        // ==================================================
+
+        const name =
+            String(
+                req.body.name || ""
+            ).trim();
+
+
+        const type =
+            String(
+                req.body.type || ""
+            ).trim();
+
+
+        // ==================================================
+        // CREATE STORAGE
+        // ==================================================
+        //
+        // Service resolves:
+        //
+        //     Dairy._id
+        //          ↓
+        //     Dairy.code
+        //
+        // Then creates:
+        //
+        //     DairyStorage.farmCode
+        //     DairyStorage.roomNumber
+        //
+        // ==================================================
+
+        await storageService.createStorage({
+
+            dairyId,
+
+            name,
+
+            type
+
+        });
+
+
+        // ==================================================
+        // SUCCESS REDIRECT
+        // ==================================================
+        //
+        // CRITICAL:
+        //
+        // Redirect using Dairy._id.
+        //
+        // ==================================================
+
+        return res.redirect(
+            `/storage/${dairyId}`
+        );
+
+    } catch (error) {
+
         console.error(
-            "STORAGE INDEX ERROR:",
+            "CREATE STORAGE ERROR:",
             error
         );
 
 
         // ==================================================
-        // GLOBAL ERROR HANDLER
+        // VALIDATION / APPLICATION ERROR
+        // ==================================================
+
+        if (
+            error.status
+        ) {
+
+            // =================================================
+            // RE-RENDER FORM FOR CLIENT ERRORS
+            // =================================================
+
+            if (
+                error.status >= 400 &&
+                error.status < 500
+            ) {
+
+                try {
+
+                    const {
+
+                        dairy
+
+                    } =
+                        await getParentDairy(
+                            String(
+                                req.params.id || ""
+                            ).trim()
+                        );
+
+
+                    return res
+                        .status(
+                            error.status
+                        )
+                        .render(
+                            "storage/add",
+                            {
+
+                                title:
+                                    "Add Storage",
+
+                                dairy,
+
+                                // --------------------------------
+                                // ALWAYS Dairy._id
+                                // --------------------------------
+
+                                dairyId:
+                                    String(
+                                        req.params.id || ""
+                                    ).trim(),
+
+                                user:
+                                    req.session.user,
+
+                                error:
+                                    error.message,
+
+                                formData: {
+
+                                    name:
+                                        String(
+                                            req.body.name || ""
+                                        ).trim(),
+
+                                    type:
+                                        String(
+                                            req.body.type || ""
+                                        ).trim()
+
+                                }
+
+                            }
+                        );
+
+                } catch (renderError) {
+
+                    console.error(
+                        "STORAGE ADD ERROR PAGE:",
+                        renderError
+                    );
+
+                    return next(
+                        renderError
+                    );
+                }
+            }
+
+
+            // =================================================
+            // OTHER KNOWN ERROR
+            // =================================================
+
+            return res
+                .status(
+                    error.status
+                )
+                .send(
+                    error.message
+                );
+        }
+
+
+        // ==================================================
+        // UNEXPECTED ERROR
         // ==================================================
 
         return next(error);
-
     }
+};
+
+
+// ==========================================================
+// EXPORTS
+// ==========================================================
+//
+// All storage routes now use this ONE controller.
+//
+// ==========================================================
+
+module.exports = {
+
+    index:
+        exports.index,
+
+    form:
+        exports.form,
+
+    create:
+        exports.create
 
 };
