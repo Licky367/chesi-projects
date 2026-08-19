@@ -75,38 +75,8 @@
 //
 // ==========================================================
 //
-// FEED / MEDICINE STOCK
-// ----------------------------------------------------------
-//
-// FeedStock is NOT embedded in this model.
-//
-// FeedStock remains an independent MongoDB collection.
-//
-// A storage facility can be the physical owner/location
-// of FeedStock.
-//
-// The relationship is exposed through the virtual:
-//
-//     feedStocks
-//
-// and:
-//
-//     feedStockCount
-//
-// IMPORTANT:
-//
-// These are virtual relationships only.
-//
-// No FeedStock documents are duplicated inside Dairy.
-//
-// ==========================================================
-//
 // IMPORTANT
 // ----------------------------------------------------------
-//
-// feedStore is NO LONGER a structure type.
-//
-// feedStock.js remains an independent model.
 //
 // Storage facilities are represented by Dairy documents
 // using:
@@ -170,12 +140,7 @@ const DAIRY_FARM_TYPES = [
 // STRUCTURE / FACILITY TYPES
 // ==========================================================
 //
-// IMPORTANT:
-//
-// 
-//
-// Storage facilities are identified by
-// storageNumber instead.
+// Storage facilities are identified by storageNumber.
 //
 // ==========================================================
 
@@ -218,25 +183,6 @@ const DAIRY_STATUSES = [
 // ==========================================================
 
 const MAX_PROFILE_IMAGES = 5;
-
-
-// ==========================================================
-// STOCK RELATIONSHIP NOTES
-// ==========================================================
-//
-// FeedStock is intentionally NOT required here at schema
-// validation time.
-//
-// This prevents circular model dependency:
-//
-//     Dairy -> FeedStock -> Dairy
-//
-// The relationship is implemented using a Mongoose virtual.
-//
-// FeedStock documents can reference the Dairy document
-// representing the storage facility.
-//
-// ==========================================================
 
 
 // ==========================================================
@@ -1148,49 +1094,6 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// VIRTUAL: HAS FEED STOCK
-// ==========================================================
-//
-// This is a logical helper.
-//
-// The actual stock remains in FeedStock collection.
-//
-// ==========================================================
-
-dairySchema.virtual(
-    "hasFeedStock"
-).get(function () {
-
-    return this.isStorageFacility;
-
-});
-
-
-// ==========================================================
-// VIRTUAL: FEED STOCK OWNER
-// ==========================================================
-//
-// FeedStock records belonging to a storage facility should
-// use this Dairy document's _id as their owner reference.
-//
-// ==========================================================
-
-dairySchema.virtual(
-    "feedStockOwnerId"
-).get(function () {
-
-    if (!this.isStorageFacility) {
-
-        return null;
-
-    }
-
-    return this._id || null;
-
-});
-
-
-// ==========================================================
 // VIRTUAL: PARENT FARM CODE
 // ==========================================================
 //
@@ -1256,7 +1159,6 @@ dairySchema.virtual(
         Number(this.code) % 2 === 0
 
             ? "Female"
-
             : "Male"
 
     );
@@ -1703,70 +1605,6 @@ dairySchema.virtual(
     return this.isAnimal;
 
 });
-
-
-// ==========================================================
-// VIRTUAL: FEED STOCK RELATIONSHIP
-// ==========================================================
-//
-// FeedStock is an independent model.
-//
-// The FeedStock document should contain:
-//
-//     dairy: <storage facility _id>
-//
-// This virtual allows:
-//
-//     storage.feedStocks
-//
-// to populate FeedStock documents.
-//
-// ==========================================================
-
-dairySchema.virtual(
-    "feedStocks",
-    {
-
-        ref: "FeedStock",
-
-        localField: "_id",
-
-        foreignField: "dairy",
-
-        justOne: false
-
-    }
-
-);
-
-
-// ==========================================================
-// VIRTUAL: FEED STOCK COUNT
-// ==========================================================
-//
-// This can be populated using:
-//
-//     {
-//         path: "feedStockCount"
-//     }
-//
-// ==========================================================
-
-dairySchema.virtual(
-    "feedStockCount",
-    {
-
-        ref: "FeedStock",
-
-        localField: "_id",
-
-        foreignField: "dairy",
-
-        count: true
-
-    }
-
-);
 
 
 // ==========================================================
@@ -2859,51 +2697,6 @@ dairySchema.statics.getStandaloneAssets =
             assetCode: null,
 
             storageNumber: null
-
-        });
-
-    };
-
-
-// ==========================================================
-// STATIC: GET STORAGE STOCK OWNER
-// ==========================================================
-//
-// Returns the storage facility that should own stock
-// belonging to a particular Dairy Farm.
-//
-// Example:
-//
-//     Dairy.getStorageStockOwner(-1)
-//
-// ==========================================================
-
-dairySchema.statics.getStorageStockOwner =
-
-    async function (
-        farmCode
-    ) {
-
-        const code =
-            Number(farmCode);
-
-
-        if (
-
-            !Number.isInteger(code) ||
-
-            code >= 0
-
-        ) {
-
-            return null;
-
-        }
-
-
-        return this.findOne({
-
-            storageNumber: code
 
         });
 
