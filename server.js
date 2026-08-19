@@ -198,27 +198,6 @@ try {
 
 
 // ----------------------------------------------------------
-// FEED STOCK
-// ----------------------------------------------------------
-
-let feedstockRoutes;
-
-try {
-
-  feedstockRoutes =
-    require("./routes/feedstock");
-
-} catch (err) {
-
-  console.warn(
-    "Warning: failed to load feedstock routes:",
-    err.message
-  );
-
-}
-
-
-// ----------------------------------------------------------
 // ADD DAIRY / ASSET
 // ----------------------------------------------------------
 
@@ -349,6 +328,43 @@ try {
 
   console.warn(
     "Warning: failed to load financials routes:",
+    err.message
+  );
+
+}
+
+
+// ==========================================================
+// STORAGE
+// ==========================================================
+//
+// Rooms
+// AgroStores
+// Storage filtering
+//
+// Mounted at:
+//
+//     /storage
+//
+// Examples:
+//
+//     GET /storage
+//     GET /storage?type=room
+//     GET /storage?type=agroStore
+//
+// ==========================================================
+
+let storageRoutes;
+
+try {
+
+  storageRoutes =
+    require("./routes/storage");
+
+} catch (err) {
+
+  console.warn(
+    "Warning: failed to load storage routes:",
     err.message
   );
 
@@ -1036,23 +1052,6 @@ if (updateRoutes) {
 
 
 // ----------------------------------------------------------
-// FEED STOCK
-// ----------------------------------------------------------
-
-if (feedstockRoutes) {
-
-  app.use(
-
-    "/",
-
-    feedstockRoutes
-
-  );
-
-}
-
-
-// ----------------------------------------------------------
 // ADD DAIRY / ASSET
 // ----------------------------------------------------------
 
@@ -1148,6 +1147,35 @@ if (financialsRoutes) {
     "/financials",
 
     financialsRoutes
+
+  );
+
+}
+
+
+// ==========================================================
+// STORAGE
+// ==========================================================
+//
+// Storage routes:
+//
+//     /storage
+//
+// Examples:
+//
+//     /storage
+//     /storage?type=room
+//     /storage?type=agroStore
+//
+// ==========================================================
+
+if (storageRoutes) {
+
+  app.use(
+
+    "/storage",
+
+    storageRoutes
 
   );
 
