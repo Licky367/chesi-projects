@@ -1,32 +1,540 @@
 <!-- ==========================================================
      views/storage/add.ejs
      ADD STORAGE FACILITY
-     ==========================================================
+     ========================================================== -->
 
-     ROUTE:
+<style>
 
-         GET  /storage/:id/add
-         POST /storage/:id/add
+    /* ======================================================
+       STORAGE ADD PAGE
+    ====================================================== */
 
-     :id = parent Dairy._id
-
-     USER ENTERS:
-
-         name
-         type
-
-     SERVER DETERMINES:
-
-         farmCode
-         roomNumber
-
-========================================================== -->
+    .storage-add-page {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 25px 18px 50px;
+        color: #183b24;
+    }
 
 
-<link
-    rel="stylesheet"
-    href="/css/storage/add.css"
->
+    /* ======================================================
+       HEADER
+    ====================================================== */
+
+    .storage-add-header {
+        margin-bottom: 24px;
+    }
+
+    .storage-back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        color: #0b5d1e;
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        transition: 0.2s ease;
+    }
+
+    .storage-back-link:hover {
+        color: #084817;
+        transform: translateX(-2px);
+    }
+
+    .storage-header-content {
+        display: flex;
+        align-items: center;
+        gap: 17px;
+        padding: 25px;
+        border-radius: 18px;
+        background:
+            linear-gradient(
+                135deg,
+                #0b5d1e,
+                #168534
+            );
+        color: #ffffff;
+        box-shadow:
+            0 10px 28px rgba(11, 93, 30, 0.18);
+    }
+
+    .storage-header-icon {
+        width: 62px;
+        height: 62px;
+        min-width: 62px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.16);
+        border: 1px solid rgba(255,255,255,0.25);
+        font-size: 30px;
+    }
+
+    .storage-header-content h1 {
+        margin: 0 0 6px;
+        font-size: 26px;
+        line-height: 1.2;
+        font-weight: 800;
+    }
+
+    .storage-header-content p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.6;
+        opacity: 0.92;
+    }
+
+    .storage-header-content strong {
+        color: #ffffff;
+    }
+
+
+    /* ======================================================
+       ALERT
+    ====================================================== */
+
+    .storage-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .storage-alert-error {
+        background: #fff1f1;
+        color: #9f1d1d;
+        border: 1px solid #f3c2c2;
+    }
+
+
+    /* ======================================================
+       FORM CARD
+    ====================================================== */
+
+    .storage-form-card {
+        background: #ffffff;
+        border: 1px solid #dce9df;
+        border-radius: 18px;
+        box-shadow:
+            0 8px 25px rgba(15, 60, 28, 0.07);
+        overflow: hidden;
+    }
+
+    .storage-form-heading {
+        padding: 24px 25px 20px;
+        border-bottom: 1px solid #e5eee8;
+        background: #fbfefb;
+    }
+
+    .storage-form-heading h2 {
+        margin: 0 0 5px;
+        color: #0b5d1e;
+        font-size: 20px;
+        font-weight: 800;
+    }
+
+    .storage-form-heading p {
+        margin: 0;
+        color: #6b7d71;
+        font-size: 14px;
+    }
+
+
+    /* ======================================================
+       FORM
+    ====================================================== */
+
+    .storage-form {
+        padding: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 26px;
+    }
+
+    .form-group > label {
+        display: block;
+        margin-bottom: 9px;
+        color: #234d30;
+        font-size: 14px;
+        font-weight: 750;
+    }
+
+    .required {
+        color: #c62828;
+    }
+
+    .form-group input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 13px 15px;
+        border: 1px solid #cdded2;
+        border-radius: 11px;
+        outline: none;
+        background: #ffffff;
+        color: #183b24;
+        font-size: 15px;
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease,
+            background 0.2s ease;
+    }
+
+    .form-group input[type="text"]:focus {
+        border-color: #0b5d1e;
+        background: #ffffff;
+        box-shadow:
+            0 0 0 4px rgba(11, 93, 30, 0.09);
+    }
+
+    .form-group input::placeholder {
+        color: #9aaa9f;
+    }
+
+    .form-group small {
+        display: block;
+        margin-top: 7px;
+        color: #7a8c80;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+
+    /* ======================================================
+       STORAGE TYPE
+    ====================================================== */
+
+    .storage-type-options {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+    }
+
+    .storage-type-option {
+        position: relative;
+        display: block;
+        cursor: pointer;
+    }
+
+    .storage-type-option input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .storage-type-card {
+        min-height: 95px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 17px;
+        border: 1.5px solid #d4e2d8;
+        border-radius: 14px;
+        background: #ffffff;
+        transition:
+            border-color 0.2s ease,
+            background 0.2s ease,
+            box-shadow 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .storage-type-card:hover {
+        border-color: #76a985;
+        background: #f8fcf9;
+        transform: translateY(-1px);
+    }
+
+    .storage-type-option input:checked
+    + .storage-type-card {
+        border-color: #0b5d1e;
+        background: #f0f9f2;
+        box-shadow:
+            0 5px 16px rgba(11, 93, 30, 0.10);
+    }
+
+    .storage-option-icon {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #e9f5ec;
+        font-size: 24px;
+    }
+
+    .storage-option-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .storage-option-content strong {
+        color: #174b27;
+        font-size: 15px;
+    }
+
+    .storage-option-content small {
+        margin: 0;
+        color: #718177;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+
+    /* ======================================================
+       INFORMATION BOX
+    ====================================================== */
+
+    .storage-info-box {
+        display: flex;
+        align-items: flex-start;
+        gap: 13px;
+        padding: 17px;
+        margin: 5px 0 28px;
+        border: 1px solid #cce4d2;
+        border-left: 4px solid #0b5d1e;
+        border-radius: 12px;
+        background: #f2faf4;
+        color: #31553b;
+    }
+
+    .storage-info-icon {
+        font-size: 20px;
+        line-height: 1;
+        margin-top: 2px;
+    }
+
+    .storage-info-box strong {
+        color: #0b5d1e;
+    }
+
+    .storage-info-box p {
+        margin: 5px 0 0;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .storage-info-box p + p {
+        margin-top: 3px;
+    }
+
+
+    /* ======================================================
+       ACTIONS
+    ====================================================== */
+
+    .storage-form-actions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 11px;
+        padding-top: 21px;
+        border-top: 1px solid #e5eee8;
+    }
+
+    .storage-btn {
+        min-height: 44px;
+        box-sizing: border-box;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 19px;
+        border-radius: 10px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 750;
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            background 0.2s ease;
+    }
+
+    .storage-btn-secondary {
+        color: #496052;
+        background: #edf2ee;
+        border: 1px solid #d8e1da;
+    }
+
+    .storage-btn-secondary:hover {
+        background: #e3eae5;
+        transform: translateY(-1px);
+    }
+
+    .storage-btn-primary {
+        color: #ffffff;
+        background: #0b5d1e;
+        box-shadow:
+            0 5px 14px rgba(11, 93, 30, 0.20);
+    }
+
+    .storage-btn-primary:hover {
+        background: #084817;
+        transform: translateY(-1px);
+        box-shadow:
+            0 7px 18px rgba(11, 93, 30, 0.25);
+    }
+
+    .storage-btn-primary span {
+        font-size: 20px;
+        line-height: 1;
+    }
+
+
+    /* ======================================================
+       FARM INFORMATION
+    ====================================================== */
+
+    .storage-farm-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 18px;
+        padding: 18px 20px;
+        border: 1px solid #dce9df;
+        border-radius: 15px;
+        background: #ffffff;
+        box-shadow:
+            0 5px 18px rgba(15, 60, 28, 0.05);
+    }
+
+    .storage-farm-icon {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #eaf6ed;
+        font-size: 23px;
+    }
+
+    .storage-farm-details {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .storage-farm-label {
+        color: #7a8c80;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .storage-farm-details strong {
+        color: #174b27;
+        font-size: 15px;
+    }
+
+    .storage-farm-code {
+        color: #687a6e;
+        font-size: 12px;
+    }
+
+
+    /* ======================================================
+       MOBILE
+    ====================================================== */
+
+    @media (max-width: 650px) {
+
+        .storage-add-page {
+            padding: 17px 12px 35px;
+        }
+
+        .storage-header-content {
+            padding: 20px 17px;
+            border-radius: 15px;
+        }
+
+        .storage-header-icon {
+            width: 50px;
+            height: 50px;
+            min-width: 50px;
+            font-size: 24px;
+            border-radius: 13px;
+        }
+
+        .storage-header-content h1 {
+            font-size: 21px;
+        }
+
+        .storage-header-content p {
+            font-size: 13px;
+        }
+
+        .storage-form {
+            padding: 19px 16px;
+        }
+
+        .storage-form-heading {
+            padding: 20px 16px 17px;
+        }
+
+        .storage-type-options {
+            grid-template-columns: 1fr;
+        }
+
+        .storage-form-actions {
+            flex-direction: column-reverse;
+            align-items: stretch;
+        }
+
+        .storage-btn {
+            width: 100%;
+        }
+
+        .storage-farm-card {
+            padding: 15px;
+        }
+
+    }
+
+
+    /* ======================================================
+       VERY SMALL SCREENS
+    ====================================================== */
+
+    @media (max-width: 380px) {
+
+        .storage-header-content {
+            align-items: flex-start;
+        }
+
+        .storage-header-icon {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+        }
+
+        .storage-header-content h1 {
+            font-size: 19px;
+        }
+
+        .storage-option-icon {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+        }
+
+    }
+
+</style>
 
 
 <div class="storage-add-page">
@@ -42,8 +550,13 @@
             href="/storage/<%= dairy._id %>"
             class="storage-back-link"
         >
+
             <span>←</span>
-            <span>Back to Storage</span>
+
+            <span>
+                Back to Storage
+            </span>
+
         </a>
 
 
@@ -60,13 +573,10 @@
                 </h1>
 
                 <p>
-
                     Add a new room or AgroStore to
-
                     <strong>
                         <%= dairy.name %>
                     </strong>
-
                 </p>
 
             </div>
@@ -76,21 +586,18 @@
     </div>
 
 
-
     <!-- ======================================================
          ERROR
     ======================================================= -->
 
-    <% if (error) { %>
+    <% if (typeof error !== "undefined" && error) { %>
 
         <div
             class="storage-alert storage-alert-error"
             role="alert"
         >
 
-            <span>
-                ⚠️
-            </span>
+            <span>⚠️</span>
 
             <span>
                 <%= error %>
@@ -99,7 +606,6 @@
         </div>
 
     <% } %>
-
 
 
     <!-- ======================================================
@@ -116,16 +622,12 @@
             </h2>
 
             <p>
-                Enter the storage name and choose its type.
+                Enter the storage name and choose the
+                facility type.
             </p>
 
         </div>
 
-
-
-        <!-- ==================================================
-             FORM
-        =================================================== -->
 
         <form
             action="/storage/<%= dairy._id %>/add"
@@ -134,9 +636,9 @@
         >
 
 
-            <!-- ==============================================
+            <!-- ==================================================
                  NAME
-            =============================================== -->
+            =================================================== -->
 
             <div class="form-group">
 
@@ -144,9 +646,7 @@
 
                     Storage Name
 
-                    <span class="required">
-                        *
-                    </span>
+                    <span class="required">*</span>
 
                 </label>
 
@@ -155,7 +655,7 @@
                     type="text"
                     id="name"
                     name="name"
-                    value="<%= formData?.name || '' %>"
+                    value="<%= typeof formData !== 'undefined' && formData ? (formData.name || '') : '' %>"
                     placeholder="e.g. Main Feed Store"
                     maxlength="200"
                     required
@@ -164,17 +664,16 @@
 
 
                 <small>
-                    Enter the name you want to give this
-                    storage facility.
+                    Give this storage facility a clear and
+                    recognizable name.
                 </small>
 
             </div>
 
 
-
-            <!-- ==============================================
+            <!-- ==================================================
                  TYPE
-            =============================================== -->
+            =================================================== -->
 
             <div class="form-group">
 
@@ -182,9 +681,7 @@
 
                     Storage Type
 
-                    <span class="required">
-                        *
-                    </span>
+                    <span class="required">*</span>
 
                 </label>
 
@@ -192,9 +689,7 @@
                 <div class="storage-type-options">
 
 
-                    <!-- ======================================
-                         ROOM
-                    ======================================= -->
+                    <!-- ROOM -->
 
                     <label
                         class="storage-type-option"
@@ -207,11 +702,11 @@
                             name="type"
                             value="room"
                             <%= (
-                                formData?.type === "room" ||
-                                !formData?.type
-                            )
-                                ? "checked"
-                                : "" %>
+                                typeof formData === 'undefined' ||
+                                !formData ||
+                                !formData.type ||
+                                formData.type === "room"
+                            ) ? "checked" : "" %>
                             required
                         >
 
@@ -239,10 +734,7 @@
                     </label>
 
 
-
-                    <!-- ======================================
-                         AGRO STORE
-                    ======================================= -->
+                    <!-- AGROSTORE -->
 
                     <label
                         class="storage-type-option"
@@ -254,9 +746,11 @@
                             id="type-agroStore"
                             name="type"
                             value="agroStore"
-                            <%= formData?.type === "agroStore"
-                                ? "checked"
-                                : "" %>
+                            <%= (
+                                typeof formData !== 'undefined' &&
+                                formData &&
+                                formData.type === "agroStore"
+                            ) ? "checked" : "" %>
                         >
 
 
@@ -273,7 +767,7 @@
                                 </strong>
 
                                 <small>
-                                    Feed and agricultural storage
+                                    Agricultural and feed storage
                                 </small>
 
                             </span>
@@ -288,10 +782,9 @@
             </div>
 
 
-
-            <!-- =================================================
-                 NUMBERING INFORMATION
-            ================================================== -->
+            <!-- ==================================================
+                 AUTOMATIC NUMBERING
+            =================================================== -->
 
             <div class="storage-info-box">
 
@@ -302,23 +795,23 @@
                 <div>
 
                     <strong>
-                        Storage number is automatic
+                        Storage number is assigned automatically
                     </strong>
 
                     <p>
-                        The server automatically assigns
-                        the next storage number for this
-                        Dairy Farm.
+                        You do not need to enter a farm code or
+                        storage number.
                     </p>
 
                     <p>
-                        First Room:
-                        <strong>1</strong>
+                        The first Room receives
+                        <strong>1</strong>, while the first
+                        AgroStore receives <strong>-1</strong>.
                     </p>
 
                     <p>
-                        First AgroStore:
-                        <strong>-1</strong>
+                        Subsequent facilities are numbered
+                        automatically.
                     </p>
 
                 </div>
@@ -326,10 +819,9 @@
             </div>
 
 
-
-            <!-- =================================================
+            <!-- ==================================================
                  ACTIONS
-            ================================================== -->
+            =================================================== -->
 
             <div class="storage-form-actions">
 
@@ -346,9 +838,7 @@
                     class="storage-btn storage-btn-primary"
                 >
 
-                    <span>
-                        +
-                    </span>
+                    <span>+</span>
 
                     Add Storage
 
@@ -359,13 +849,11 @@
 
         </form>
 
-
     </div>
 
 
-
     <!-- ======================================================
-         PARENT FARM INFORMATION
+         PARENT FARM
     ======================================================= -->
 
     <div class="storage-farm-card">
@@ -386,10 +874,8 @@
             </strong>
 
             <span class="storage-farm-code">
-
                 Farm Code:
                 <%= dairy.code %>
-
             </span>
 
         </div>
