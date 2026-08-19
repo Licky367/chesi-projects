@@ -2,64 +2,60 @@
 // utils/store.js
 // ==========================================================
 //
-// FEED STORE INITIALIZER
+// AGROSTORE / FEED STORE INITIALIZER
 //
-// Responsibilities:
-//
-//     • Find all Dairy Farms
-//     • Check whether each farm has a feedStore facility
-//     • Automatically create the feedStore when missing
-//     • Never create more than one feedStore for a farm
-//
-// FEED STORE SEMANTICS
+// RESPONSIBILITIES
 // ----------------------------------------------------------
 //
-// A feedStore is NOT an animal.
+// 1. Delete ALL existing feedStore Dairy documents.
 //
-// A feedStore is NOT a dwelling place.
+// 2. Find all existing Dairy Farms.
 //
-// A feedStore is a FACILITY used for food/feed storage.
+// 3. Create exactly ONE new feedStore / AgroStore for every
+//    existing Dairy Farm.
 //
-// Therefore:
+// 4. The new AgroStore is a standalone Dairy document.
 //
-//     code      = null
-//     type      = "feedStore"
-//     assetCode = dairy.code
+// 5. The AgroStore is identified by:
 //
-// Example:
+//        type === "feedStore"
+//        storageNumber === dairyFarm.code
 //
-//     Dairy Farm:
-//         code: -10
-//         name: "Green Valley Farm"
-//
-//     Feed Store:
-//         code: null
-//         type: "feedStore"
-//         assetCode: -10
-//         name: "Green Valley Farm's storage Facility"
-//
-// PROFILE IMAGE
+// CANONICAL RELATIONSHIP
 // ----------------------------------------------------------
 //
-//     /images/h2.png
+// Dairy Farm:
 //
-// If the image does not exist or is not desired, the model can
-// still work with a null/empty profile image.
+//     code: -10
+//     name: "Green Valley Farm"
+//
+// AgroStore:
+//
+//     code: null
+//     type: "feedStore"
+//     storageNumber: -10
+//     name: "Green Valley Farm's AgroStore"
 //
 // IMPORTANT
 // ----------------------------------------------------------
 //
-// The Dairy model should have a UNIQUE partial index for:
+// `assetCode` is NO LONGER used to connect the AgroStore
+// to the Dairy Farm.
 //
-//     assetCode + type
+// The canonical relationship is:
 //
-// when:
+//     feedStore.storageNumber === dairyFarm.code
 //
-//     type === "feedStore"
-//     assetCode is a negative number
+// PROFILE IMAGE
+// ----------------------------------------------------------
 //
-// This utility also checks before creating, but the database
-// unique index is the final protection against duplicates.
+// Physical file:
+//
+//     public/images/h2.png
+//
+// Public URL:
+//
+//     /images/h2.png
 //
 // ==========================================================
 
@@ -81,26 +77,17 @@ const FEED_STORE_PROFILE_IMAGE =
 
 
 // ==========================================================
-// CREATE FEED STORE FOR ONE DAIRY FARM
+// CREATE AGROSTORE FOR ONE DAIRY FARM
 // ==========================================================
 //
-// Returns:
+// A new AgroStore is ALWAYS created by this initializer.
 //
-//     {
-//         created: true,
-//         store: ...
-//     }
-//
-// OR:
-//
-//     {
-//         created: false,
-//         store: existingStore
-//     }
+// The caller should normally use this after old feedStore
+// documents have been deleted.
 //
 // ==========================================================
 
-async function ensureFeedStoreForFarm(
+async function createFeedStoreForFarm(
     dairy
 ) {
 
@@ -114,7 +101,10 @@ async function ensureFeedStoreForFarm(
 
             created: false,
 
-            store: null
+            store: null,
+
+            reason:
+                "Dairy farm was not provided."
 
         };
 
@@ -122,26 +112,34 @@ async function ensureFeedStoreForFarm(
 
 
     // ======================================================
-    // ONLY DAIRY FARMS
+    // DAIRY FARM CODE
+    // ======================================================
+    //
+    // Dairy farms are identified by negative integer codes.
+    //
     // ======================================================
 
     const dairyCode =
-        Number(dairy.code);
+        Number(
+            dairy.code
+        );
 
 
     if (
-
-        !Number.isInteger(dairyCode) ||
-
+        !Number.isInteger(
+            dairyCode
+        ) ||
         dairyCode >= 0
-
     ) {
 
         return {
 
             created: false,
 
-            store: null
+            store: null,
+
+            reason:
+                "Document is not a valid dairy farm."
 
         };
 
@@ -149,41 +147,25 @@ async function ensureFeedStoreForFarm(
 
 
     // ======================================================
-    // CHECK EXISTING FEED STORE
-    // ======================================================
-    //
-    // The relationship is:
-    //
-    //     feedStore.assetCode === dairy.code
-    //
+    // FARM NAME
     // ======================================================
 
-    const existingStore =
-
-        await Dairy.findOne({
-
-            type: FEED_STORE_TYPE,
-
-            assetCode: dairyCode
-
-        });
+    const farmName =
+        String(
+            dairy.name || ""
+        ).trim();
 
 
-    // ======================================================
-    // ALREADY EXISTS
-    // ======================================================
-    //
-    // Do NOT create another one.
-    //
-    // ======================================================
-
-    if (existingStore) {
+    if (!farmName) {
 
         return {
 
             created: false,
 
-            store: existingStore
+            store: null,
+
+            reason:
+                "Dairy farm has no name."
 
         };
 
@@ -191,23 +173,35 @@ async function ensureFeedStoreForFarm(
 
 
     // ======================================================
-    // CREATE FEED STORE
+    // AGROSTORE NAME
     // ======================================================
 
     const storeName =
+        `${farmName}'s AgroStore`;
 
-        `${dairy.name}'s storage Facility`;
 
+    // ======================================================
+    // CREATE NEW AGROSTORE
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // This is a completely new Dairy document.
+    //
+    // It is NOT embedded inside the farm.
+    //
+    // It is NOT linked through assetCode.
+    //
+    // ======================================================
 
     const store =
-
         new Dairy({
 
             // ------------------------------------------------
             // STRUCTURE / FACILITY
             // ------------------------------------------------
             //
-            // code === null means this is a structure.
+            // code === null means this is a structure/facility.
             //
             code: null,
 
@@ -216,27 +210,59 @@ async function ensureFeedStoreForFarm(
             // NAME
             // ------------------------------------------------
 
-            name: storeName,
+            name:
+                storeName,
 
 
             // ------------------------------------------------
             // FACILITY TYPE
             // ------------------------------------------------
 
-            type: FEED_STORE_TYPE,
+            type:
+                FEED_STORE_TYPE,
 
 
             // ------------------------------------------------
-            // PARENT DAIRY FARM
+            // STORAGE NUMBER
             // ------------------------------------------------
             //
-            // Negative Dairy Farm code.
+            // THIS IS THE CANONICAL LINK TO THE FARM.
             //
-            assetCode: dairyCode,
+            // Example:
+            //
+            // farm.code = -10
+            //
+            // store.storageNumber = -10
+            //
+            // ------------------------------------------------
+
+            storageNumber:
+                dairyCode,
+
+
+            // ------------------------------------------------
+            // DO NOT USE assetCode
+            // ------------------------------------------------
+            //
+            // The new architecture uses storageNumber.
+            //
+            // Therefore assetCode is deliberately omitted.
+            //
+            // ------------------------------------------------
 
 
             // ------------------------------------------------
             // PROFILE IMAGE
+            // ------------------------------------------------
+            //
+            // Physical file:
+            //
+            //     public/images/h2.png
+            //
+            // Browser URL:
+            //
+            //     /images/h2.png
+            //
             // ------------------------------------------------
 
             profileImage:
@@ -253,38 +279,50 @@ async function ensureFeedStoreForFarm(
             // ANIMAL FIELDS
             // ------------------------------------------------
             //
-            // Explicitly make it clear that this facility
-            // is not an animal.
+            // AgroStore is not an animal.
             //
-            dateOfBirth: null,
+            // ------------------------------------------------
 
-            mass: 0,
+            dateOfBirth:
+                null,
 
-            isMilking: false,
+            mass:
+                0,
+
+            isMilking:
+                false,
 
 
             // ------------------------------------------------
             // FEED STOCK
             // ------------------------------------------------
             //
-            // Start empty.
+            // Every new AgroStore starts empty.
             //
-            feedStocks: [],
+            // ------------------------------------------------
 
-            feedsAmount: 0,
+            feedStocks:
+                [],
+
+            feedsAmount:
+                0,
 
 
             // ------------------------------------------------
-            // ASSET FINANCIAL VALUES
+            // ASSET / FINANCIAL VALUES
             // ------------------------------------------------
 
-            buyingPrice: 0,
+            buyingPrice:
+                0,
 
-            sellingPrice: 0,
+            sellingPrice:
+                0,
 
-            revenue: 0,
+            revenue:
+                0,
 
-            currentWorth: 0,
+            currentWorth:
+                0,
 
 
             // ------------------------------------------------
@@ -292,119 +330,127 @@ async function ensureFeedStoreForFarm(
             // ------------------------------------------------
 
             description:
-                "Facility for storage of animal feed and related farm supplies.",
+                "AgroStore for storage of animal feed, veterinary medicine and related farm supplies.",
 
 
             // ------------------------------------------------
             // STATUS
             // ------------------------------------------------
 
-            status: "active"
+            status:
+                "active"
 
         });
 
 
-    try {
+    // ======================================================
+    // SAVE
+    // ======================================================
 
-        await store.save();
-
-
-        return {
-
-            created: true,
-
-            store
-
-        };
-
-    }
-
-    catch (error) {
-
-        // ==================================================
-        // DUPLICATE KEY
-        // ==================================================
-        //
-        // If another request created the feedStore at the
-        // same time, the unique MongoDB index can reject
-        // this insert.
-        //
-        // Instead of crashing initialization, retrieve the
-        // feedStore that won the race.
-        //
-        // ==================================================
-
-        if (
-            error &&
-            error.code === 11000
-        ) {
-
-            const existingStore =
-
-                await Dairy.findOne({
-
-                    type: FEED_STORE_TYPE,
-
-                    assetCode: dairyCode
-
-                });
+    await store.save();
 
 
-            if (existingStore) {
+    // ======================================================
+    // RETURN
+    // ======================================================
 
-                return {
+    return {
 
-                    created: false,
+        created:
+            true,
 
-                    store: existingStore
+        store
 
-                };
-
-            }
-
-        }
-
-
-        throw error;
-
-    }
+    };
 
 }
 
 
 // ==========================================================
-// ENSURE ALL DAIRY FARMS HAVE A FEED STORE
+// DELETE ALL EXISTING FEED STORES
 // ==========================================================
 //
-// Finds every Dairy Farm:
+// IMPORTANT
+// ----------------------------------------------------------
 //
-//     code < 0
+// This removes ALL existing Dairy documents where:
 //
-// Then:
+//     type === "feedStore"
 //
-//     • checks for feedStore
-//     • creates one if missing
-//     • leaves existing stores untouched
+// This is intentionally done before rebuilding the AgroStores.
 //
-// Returns:
+// ==========================================================
+
+async function deleteExistingFeedStores() {
+
+    const result =
+        await Dairy.deleteMany({
+
+            type:
+                FEED_STORE_TYPE
+
+        });
+
+
+    return {
+
+        deletedCount:
+            Number(
+                result.deletedCount || 0
+            )
+
+    };
+
+}
+
+
+// ==========================================================
+// ENSURE ALL AGROSTORES
+// ==========================================================
 //
-//     {
-//         totalFarms,
-//         existing,
-//         created,
-//         stores
-//     }
+// PROCESS
+// ----------------------------------------------------------
+//
+// STEP 1
+//     Delete every existing feedStore.
+//
+// STEP 2
+//     Find every existing Dairy Farm.
+//
+// STEP 3
+//     Create a fresh AgroStore for every farm.
+//
+// STEP 4
+//     storageNumber = farm.code
+//
+// STEP 5
+//     name = farm.name + "'s AgroStore"
 //
 // ==========================================================
 
 async function ensureFeedStores() {
 
     // ======================================================
+    // STEP 1
+    // DELETE OLD FEED STORES
+    // ======================================================
+
+    const deletion =
+        await deleteExistingFeedStores();
+
+
+    // ======================================================
+    // STEP 2
     // FIND ALL DAIRY FARMS
+    // ======================================================
+    //
+    // Dairy Farm:
+    //
+    //     code < 0
+    //
     // ======================================================
 
     const dairyFarms =
-
         await Dairy.find({
 
             code: {
@@ -414,7 +460,6 @@ async function ensureFeedStores() {
             }
 
         })
-
         .sort({
 
             code: 1
@@ -426,44 +471,119 @@ async function ensureFeedStores() {
     // RESULT TRACKING
     // ======================================================
 
-    let createdCount = 0;
+    let createdCount =
+        0;
 
-    let existingCount = 0;
 
-    const stores = [];
+    let failedCount =
+        0;
+
+
+    const stores =
+        [];
+
+
+    const failures =
+        [];
 
 
     // ======================================================
-    // PROCESS FARMS
+    // STEP 3
+    // CREATE AGROSTORE FOR EACH FARM
     // ======================================================
 
     for (
         const dairy of dairyFarms
     ) {
 
-        const result =
+        try {
 
-            await ensureFeedStoreForFarm(
-                dairy
-            );
+            const result =
+                await createFeedStoreForFarm(
+                    dairy
+                );
 
 
-        if (result.created) {
+            if (
+                result.created &&
+                result.store
+            ) {
 
-            createdCount++;
+                createdCount++;
 
-        } else if (result.store) {
 
-            existingCount++;
+                stores.push(
+                    result.store
+                );
+
+            }
+
+            else {
+
+                failedCount++;
+
+
+                failures.push({
+
+                    dairyId:
+                        dairy._id,
+
+                    dairyCode:
+                        dairy.code,
+
+                    dairyName:
+                        dairy.name,
+
+                    reason:
+                        result.reason ||
+                        "AgroStore was not created."
+
+                });
+
+            }
 
         }
 
+        catch (error) {
 
-        if (result.store) {
+            failedCount++;
 
-            stores.push(
 
-                result.store
+            failures.push({
+
+                dairyId:
+                    dairy._id,
+
+                dairyCode:
+                    dairy.code,
+
+                dairyName:
+                    dairy.name,
+
+                reason:
+                    error.message ||
+                    "Unable to create AgroStore."
+
+            });
+
+
+            console.error(
+
+                "AGROSTORE CREATION ERROR:",
+
+                {
+                    dairyId:
+                        dairy._id,
+
+                    dairyCode:
+                        dairy.code,
+
+                    dairyName:
+                        dairy.name,
+
+                    error
+
+                }
 
             );
 
@@ -478,17 +598,52 @@ async function ensureFeedStores() {
 
     return {
 
+        // --------------------------------------------------
+        // OLD STORES REMOVED
+        // --------------------------------------------------
+
+        deleted:
+            deletion.deletedCount,
+
+
+        deletedFeedStores:
+            deletion.deletedCount,
+
+
+        // --------------------------------------------------
+        // FARMS
+        // --------------------------------------------------
+
         totalFarms:
             dairyFarms.length,
 
-        existing:
-            existingCount,
+
+        // --------------------------------------------------
+        // NEW STORES
+        // --------------------------------------------------
 
         created:
             createdCount,
 
+
         totalStores:
             stores.length,
+
+
+        // --------------------------------------------------
+        // FAILURES
+        // --------------------------------------------------
+
+        failed:
+            failedCount,
+
+
+        failures,
+
+
+        // --------------------------------------------------
+        // CREATED STORES
+        // --------------------------------------------------
 
         stores
 
@@ -498,15 +653,21 @@ async function ensureFeedStores() {
 
 
 // ==========================================================
-// FIND FEED STORE FOR A DAIRY FARM
+// GET AGROSTORE FOR A DAIRY FARM
 // ==========================================================
 //
-// Convenience helper.
+// The supplied value is the Dairy Farm's `code`.
 //
 // Example:
 //
-//     const store =
-//         await getFeedStore(-10);
+//     await getFeedStore(-10);
+//
+// Finds:
+//
+//     {
+//         type: "feedStore",
+//         storageNumber: -10
+//     }
 //
 // ==========================================================
 
@@ -515,15 +676,16 @@ async function getFeedStore(
 ) {
 
     const code =
-        Number(dairyCode);
+        Number(
+            dairyCode
+        );
 
 
     if (
-
-        !Number.isInteger(code) ||
-
+        !Number.isInteger(
+            code
+        ) ||
         code >= 0
-
     ) {
 
         return null;
@@ -533,9 +695,78 @@ async function getFeedStore(
 
     return Dairy.findOne({
 
-        type: FEED_STORE_TYPE,
+        type:
+            FEED_STORE_TYPE,
 
-        assetCode: code
+        storageNumber:
+            code
+
+    });
+
+}
+
+
+// ==========================================================
+// GET AGROSTORE BY STORAGE NUMBER
+// ==========================================================
+//
+// This is an explicit helper for the new architecture.
+//
+// Example:
+//
+//     await getFeedStoreByStorageNumber(-10);
+//
+// ==========================================================
+
+async function getFeedStoreByStorageNumber(
+    storageNumber
+) {
+
+    const number =
+        Number(
+            storageNumber
+        );
+
+
+    if (
+        !Number.isInteger(
+            number
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    return Dairy.findOne({
+
+        type:
+            FEED_STORE_TYPE,
+
+        storageNumber:
+            number
+
+    });
+
+}
+
+
+// ==========================================================
+// GET ALL AGROSTORES
+// ==========================================================
+
+async function getFeedStores() {
+
+    return Dairy.find({
+
+        type:
+            FEED_STORE_TYPE
+
+    })
+    .sort({
+
+        storageNumber: 1
 
     });
 
@@ -548,11 +779,17 @@ async function getFeedStore(
 
 module.exports = {
 
-    ensureFeedStoreForFarm,
+    createFeedStoreForFarm,
+
+    deleteExistingFeedStores,
 
     ensureFeedStores,
 
     getFeedStore,
+
+    getFeedStoreByStorageNumber,
+
+    getFeedStores,
 
     FEED_STORE_TYPE,
 
