@@ -134,13 +134,6 @@ function normalizeStatus(value) {
         .toLowerCase();
 
 
-    /*
-     * Get the allowed statuses from the model.
-     *
-     * This prevents the service from maintaining a
-     * second independent status list.
-     */
-
     const allowed =
         typeof Dairy.getDairyStatuses ===
         "function"
@@ -194,11 +187,6 @@ function getDairyBreeds() {
 
     }
 
-
-    /*
-     * This fallback should normally never be required
-     * because the current Dairy model exposes the static.
-     */
 
     if (
         Array.isArray(
@@ -296,8 +284,6 @@ async function getAddPageData() {
      * ------------------------------------------------------
      * EXISTING DAIRY FARMS
      * ------------------------------------------------------
-     *
-     * Negative codes identify Dairy Farms.
      */
 
     const dairyFarms =
@@ -432,11 +418,6 @@ async function getNextPositiveCode(
         ).toLowerCase();
 
 
-    /*
-     * Female = even
-     * Male   = odd
-     */
-
     const isFemale =
         normalizedGender ===
         "female";
@@ -444,16 +425,9 @@ async function getNextPositiveCode(
 
     const parity =
         isFemale
-
             ? 0
-
             : 1;
 
-
-    /*
-     * Find the highest existing positive animal
-     * code having the required parity.
-     */
 
     const lastAnimal =
         await Dairy.findOne({
@@ -493,10 +467,6 @@ async function getNextPositiveCode(
         .lean();
 
 
-    /*
-     * No existing animal of this gender.
-     */
-
     if (
         !lastAnimal ||
         !Number.isFinite(
@@ -507,17 +477,11 @@ async function getNextPositiveCode(
     ) {
 
         return isFemale
-
             ? 2
-
             : 1;
 
     }
 
-
-    /*
-     * Keep the same parity.
-     */
 
     return (
 
@@ -580,11 +544,6 @@ async function verifyDairyFarm(
     }
 
 
-    /*
-     * Negative code confirms that this is a
-     * Dairy Farm under the current model convention.
-     */
-
     if (
         Number(
             farm.code
@@ -599,6 +558,185 @@ async function verifyDairyFarm(
 
 
     return farm;
+
+}
+
+
+// ==========================================================
+// CREATE STORAGE FOR DAIRY FARM
+// ==========================================================
+//
+// Every Dairy Farm MUST have exactly one Storage Facility.
+//
+// Farm:
+//
+//     code = -1
+//
+// Storage:
+//
+//     code          = null
+//     assetCode     = null
+//     storageNumber = -1
+//
+// The storage facility is deliberately NOT created as a
+// normal structure.
+//
+// It is the special storage entity defined by models/dairy.js.
+//
+// ==========================================================
+
+async function createStorageForFarm(
+    farm
+) {
+
+    if (!farm) {
+
+        throw createError(
+            "Cannot create storage without a Dairy Farm.",
+            500
+        );
+
+    }
+
+
+    const farmCode =
+        Number(
+            farm.code
+        );
+
+
+    if (
+        !Number.isInteger(
+            farmCode
+        ) ||
+        farmCode >= 0
+    ) {
+
+        throw createError(
+            "Invalid Dairy Farm code for storage creation.",
+            500
+        );
+
+    }
+
+
+    /*
+     * ------------------------------------------------------
+     * PROTECT AGAINST DUPLICATE STORAGE
+     * ------------------------------------------------------
+     *
+     * The Dairy model also enforces this through the
+     * unique storageNumber index.
+     *
+     * Checking here gives us a clearer application-level
+     * error before MongoDB has to reject the document.
+     */
+
+    const existingStorage =
+        await Dairy.findOne({
+
+            storageNumber:
+                farmCode
+
+        });
+
+
+    if (
+        existingStorage
+    ) {
+
+        throw createError(
+            "This Dairy Farm already has a Storage Facility.",
+            409
+        );
+
+    }
+
+
+    /*
+     * ------------------------------------------------------
+     * STORAGE DATA
+     * ------------------------------------------------------
+     *
+     * Storage is a special facility.
+     *
+     * According to the Dairy model:
+     *
+     *     code          = null
+     *     assetCode     = null
+     *     storageNumber = negative farm code
+     *
+     * No structure type is required.
+     */
+
+    const storageData = {
+
+        name:
+            `${farm.name} Storage`,
+
+        code:
+            null,
+
+        assetCode:
+            null,
+
+        storageNumber:
+            farmCode,
+
+        type:
+            "",
+
+        buyingPrice:
+            0,
+
+        currentWorth:
+            0,
+
+        revenue:
+            0,
+
+        sellingPrice:
+            0,
+
+        mass:
+            0,
+
+        isMilking:
+            false,
+
+        dateOfBirth:
+            null,
+
+        description:
+            `Storage Facility for ${farm.name}.`,
+
+        condition:
+            "Good",
+
+        location:
+            cleanString(
+                farm.location
+            ),
+
+        status:
+            "active"
+
+    };
+
+
+    /*
+     * ------------------------------------------------------
+     * CREATE STORAGE
+     * ------------------------------------------------------
+     */
+
+    const storage =
+        await Dairy.create(
+            storageData
+        );
+
+
+    return storage;
 
 }
 
@@ -639,10 +777,6 @@ function validateDate(
     }
 
 
-    /*
-     * Do not allow a future date of birth.
-     */
-
     if (
         date > new Date()
     ) {
@@ -661,11 +795,6 @@ function validateDate(
 
 // ==========================================================
 // VALIDATE BREED
-// ==========================================================
-//
-// IMPORTANT:
-//
-// Breed comes directly from the Dairy model.
 // ==========================================================
 
 function validateBreed(
@@ -813,11 +942,9 @@ async function createRecord({
         body || {};
 
 
-    /*
-     * ======================================================
-     * RECORD TYPE
-     * ======================================================
-     */
+    // ======================================================
+    // RECORD TYPE
+    // ======================================================
 
     const recordType =
         cleanString(
@@ -849,11 +976,9 @@ async function createRecord({
     }
 
 
-    /*
-     * ======================================================
-     * NAME
-     * ======================================================
-     */
+    // ======================================================
+    // NAME
+    // ======================================================
 
     const name =
         cleanString(
@@ -870,11 +995,9 @@ async function createRecord({
     }
 
 
-    /*
-     * ======================================================
-     * COMMON FINANCIAL DATA
-     * ======================================================
-     */
+    // ======================================================
+    // COMMON FINANCIAL DATA
+    // ======================================================
 
     const buyingPrice =
         toNumber(
@@ -912,11 +1035,9 @@ async function createRecord({
     }
 
 
-    /*
-     * ======================================================
-     * COMMON TEXT DATA
-     * ======================================================
-     */
+    // ======================================================
+    // COMMON TEXT DATA
+    // ======================================================
 
     const description =
         cleanString(
@@ -942,11 +1063,9 @@ async function createRecord({
         );
 
 
-    /*
-     * ======================================================
-     * PROFILE IMAGE
-     * ======================================================
-     */
+    // ======================================================
+    // PROFILE IMAGE
+    // ======================================================
 
     let profileImage;
 
@@ -966,11 +1085,9 @@ async function createRecord({
     }
 
 
-    /*
-     * ======================================================
-     * BASE RECORD
-     * ======================================================
-     */
+    // ======================================================
+    // BASE RECORD
+    // ======================================================
 
     const recordData = {
 
@@ -991,10 +1108,6 @@ async function createRecord({
     };
 
 
-    /*
-     * Only save profileImage when supplied.
-     */
-
     if (profileImage) {
 
         recordData.profileImage =
@@ -1003,21 +1116,14 @@ async function createRecord({
     }
 
 
-    /*
-     * ======================================================
-     * DAIRY FARM
-     * ======================================================
-     *
-     * Negative automatically generated code.
-     *
-     * Example:
-     *
-     * -1
-     * -2
-     * -3
-     *
-     * ======================================================
-     */
+    // ======================================================
+    // DAIRY FARM
+    // ======================================================
+    //
+    // Creating a Dairy Farm automatically creates its
+    // corresponding Storage Facility.
+    //
+    // ======================================================
 
     if (
         recordType ===
@@ -1042,20 +1148,13 @@ async function createRecord({
             farmType;
 
 
-        /*
-         * Dairy Farms cannot belong to another
-         * Dairy Farm.
-         */
-
         recordData.assetCode =
             null;
 
 
-        /*
-         * Animal-only fields are cleared by the
-         * model as well, but explicitly setting them
-         * here keeps the service intent clear.
-         */
+        recordData.storageNumber =
+            null;
+
 
         recordData.dateOfBirth =
             null;
@@ -1070,25 +1169,99 @@ async function createRecord({
 
 
         /*
-         * Do not save gender.
-         *
-         * Gender is derived from positive animal codes
-         * by the model's virtual.
+         * --------------------------------------------------
+         * CREATE FARM
+         * --------------------------------------------------
          */
 
+        let createdFarm;
 
-        const created =
-            await Dairy.create(
-                recordData
-            );
 
+        try {
+
+            createdFarm =
+                await Dairy.create(
+                    recordData
+                );
+
+        } catch (error) {
+
+            throw error;
+
+        }
+
+
+        /*
+         * --------------------------------------------------
+         * CREATE REQUIRED STORAGE
+         * --------------------------------------------------
+         *
+         * The storage facility uses the newly created farm's
+         * negative code as storageNumber.
+         */
+
+        let storage;
+
+
+        try {
+
+            storage =
+                await createStorageForFarm(
+                    createdFarm
+                );
+
+        } catch (error) {
+
+            /*
+             * ------------------------------------------------
+             * ROLLBACK
+             * ------------------------------------------------
+             *
+             * If storage creation fails, do not leave a farm
+             * in the database without its required storage.
+             */
+
+            try {
+
+                await Dairy.deleteOne({
+
+                    _id:
+                        createdFarm._id
+
+                });
+
+            } catch (rollbackError) {
+
+                console.error(
+                    "Dairy Farm rollback failed:",
+                    rollbackError
+                );
+
+            }
+
+
+            throw error;
+
+        }
+
+
+        /*
+         * --------------------------------------------------
+         * SUCCESS
+         * --------------------------------------------------
+         */
 
         return {
 
             record:
-                created,
+                createdFarm,
+
+            storage,
 
             code,
+
+            storageNumber:
+                code,
 
             recordType
 
@@ -1097,32 +1270,18 @@ async function createRecord({
     }
 
 
-    /*
-     * ======================================================
-     * ANIMAL
-     * ======================================================
-     *
-     * Positive automatically generated code.
-     *
-     * Male:
-     *   1, 3, 5, 7...
-     *
-     * Female:
-     *   2, 4, 6, 8...
-     *
-     * ======================================================
-     */
+    // ======================================================
+    // ANIMAL
+    // ======================================================
 
     if (
         recordType ===
         RECORD_TYPES.ANIMAL
     ) {
 
-        /*
-         * --------------------------------------------------
-         * PARENT DAIRY FARM
-         * --------------------------------------------------
-         */
+        // --------------------------------------------------
+        // PARENT DAIRY FARM
+        // --------------------------------------------------
 
         const assetCode =
             cleanString(
@@ -1144,11 +1303,9 @@ async function createRecord({
         );
 
 
-        /*
-         * --------------------------------------------------
-         * GENDER
-         * --------------------------------------------------
-         */
+        // --------------------------------------------------
+        // GENDER
+        // --------------------------------------------------
 
         const gender =
             cleanString(
@@ -1178,11 +1335,9 @@ async function createRecord({
         }
 
 
-        /*
-         * --------------------------------------------------
-         * DATE OF BIRTH
-         * --------------------------------------------------
-         */
+        // --------------------------------------------------
+        // DATE OF BIRTH
+        // --------------------------------------------------
 
         const dateOfBirth =
             validateDate(
@@ -1190,17 +1345,9 @@ async function createRecord({
             );
 
 
-        /*
-         * --------------------------------------------------
-         * BREED
-         * --------------------------------------------------
-         *
-         * IMPORTANT:
-         *
-         * This is validated against the breed list
-         * defined in models/dairy.js.
-         * --------------------------------------------------
-         */
+        // --------------------------------------------------
+        // BREED
+        // --------------------------------------------------
 
         const breed =
             validateBreed(
@@ -1208,11 +1355,9 @@ async function createRecord({
             );
 
 
-        /*
-         * --------------------------------------------------
-         * MASS
-         * --------------------------------------------------
-         */
+        // --------------------------------------------------
+        // MASS
+        // --------------------------------------------------
 
         let animalMass;
 
@@ -1244,11 +1389,9 @@ async function createRecord({
         }
 
 
-        /*
-         * --------------------------------------------------
-         * GENERATE ANIMAL CODE
-         * --------------------------------------------------
-         */
+        // --------------------------------------------------
+        // GENERATE ANIMAL CODE
+        // --------------------------------------------------
 
         const code =
             await getNextPositiveCode(
@@ -1260,23 +1403,15 @@ async function createRecord({
             code;
 
 
-        /*
-         * --------------------------------------------------
-         * PARENT FARM
-         * --------------------------------------------------
-         */
-
         recordData.assetCode =
             Number(
                 assetCode
             );
 
 
-        /*
-         * --------------------------------------------------
-         * ANIMAL DATA
-         * --------------------------------------------------
-         */
+        recordData.storageNumber =
+            null;
+
 
         recordData.dateOfBirth =
             dateOfBirth;
@@ -1284,16 +1419,6 @@ async function createRecord({
 
         recordData.type =
             breed;
-
-
-        /*
-         * Gender is intentionally NOT stored as
-         * recordData.gender because the current model
-         * derives gender from the animal code.
-         *
-         * Even code = Female
-         * Odd code  = Male
-         */
 
 
         if (
@@ -1306,16 +1431,9 @@ async function createRecord({
         }
 
 
-        /*
-         * --------------------------------------------------
-         * MILKING
-         * --------------------------------------------------
-         *
-         * Only females can be milking.
-         *
-         * The model also enforces this using the
-         * generated code.
-         */
+        // --------------------------------------------------
+        // MILKING
+        // --------------------------------------------------
 
         const isFemale =
             gender === "female";
@@ -1340,11 +1458,9 @@ async function createRecord({
         }
 
 
-        /*
-         * --------------------------------------------------
-         * CREATE ANIMAL
-         * --------------------------------------------------
-         */
+        // --------------------------------------------------
+        // CREATE ANIMAL
+        // --------------------------------------------------
 
         const created =
             await Dairy.create(
@@ -1375,28 +1491,18 @@ async function createRecord({
     }
 
 
-    /*
-     * ======================================================
-     * STRUCTURE / FACILITY
-     * ======================================================
-     *
-     * code = null
-     *
-     * Parent Dairy Farm is optional.
-     *
-     * ======================================================
-     */
+    // ======================================================
+    // STRUCTURE / FACILITY
+    // ======================================================
 
     if (
         recordType ===
         RECORD_TYPES.STRUCTURE
     ) {
 
-        /*
-         * --------------------------------------------------
-         * STRUCTURE TYPE
-         * --------------------------------------------------
-         */
+        // --------------------------------------------------
+        // STRUCTURE TYPE
+        // --------------------------------------------------
 
         const structureType =
             validateStructureType(
@@ -1404,11 +1510,9 @@ async function createRecord({
             );
 
 
-        /*
-         * --------------------------------------------------
-         * OPTIONAL PARENT FARM
-         * --------------------------------------------------
-         */
+        // --------------------------------------------------
+        // OPTIONAL PARENT FARM
+        // --------------------------------------------------
 
         const structureFarmCode =
             cleanString(
@@ -1438,15 +1542,15 @@ async function createRecord({
         }
 
 
-        /*
-         * --------------------------------------------------
-         * STRUCTURE CODE
-         * --------------------------------------------------
-         *
-         * Structures do not receive a Dairy code.
-         */
+        // --------------------------------------------------
+        // STRUCTURE CODE
+        // --------------------------------------------------
 
         recordData.code =
+            null;
+
+
+        recordData.storageNumber =
             null;
 
 
@@ -1454,11 +1558,9 @@ async function createRecord({
             structureType;
 
 
-        /*
-         * --------------------------------------------------
-         * REMOVE ANIMAL-ONLY DATA
-         * --------------------------------------------------
-         */
+        // --------------------------------------------------
+        // REMOVE ANIMAL-ONLY DATA
+        // --------------------------------------------------
 
         recordData.dateOfBirth =
             null;
@@ -1472,11 +1574,9 @@ async function createRecord({
             false;
 
 
-        /*
-         * --------------------------------------------------
-         * CREATE STRUCTURE
-         * --------------------------------------------------
-         */
+        // --------------------------------------------------
+        // CREATE STRUCTURE
+        // --------------------------------------------------
 
         const created =
             await Dairy.create(
@@ -1502,11 +1602,9 @@ async function createRecord({
     }
 
 
-    /*
-     * ======================================================
-     * FALLBACK
-     * ======================================================
-     */
+    // ======================================================
+    // FALLBACK
+    // ======================================================
 
     throw createError(
         "Unable to determine record type.",
@@ -1518,6 +1616,12 @@ async function createRecord({
 
 // ==========================================================
 // EXPORTS
+// ==========================================================
+//
+// createStorageForFarm is intentionally NOT exported.
+//
+// Storage creation is an internal responsibility of
+// Dairy Farm creation.
 // ==========================================================
 
 module.exports = {
