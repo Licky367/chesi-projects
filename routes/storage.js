@@ -3,9 +3,11 @@
 // STORAGE ROUTES
 // ==========================================================
 
-const express = require("express");
+const express =
+    require("express");
 
-const router = express.Router();
+const router =
+    express.Router();
 
 const storageController =
     require("../controllers/storage");
@@ -15,23 +17,72 @@ const storageController =
 // STORAGE INDEX
 // ==========================================================
 //
-// GET /storage
+// Mounted from server.js as:
 //
-// Optional filter:
+//     app.use(
+//         "/storage",
+//         storageRoutes
+//     );
 //
-//     /storage?type=all
-//     /storage?type=room
-//     /storage?type=agroStore
+// Therefore this:
 //
-// Default:
+//     router.get("/:id")
 //
-//     /storage
+// becomes:
 //
-// displays everything.
+//     GET /storage/:id
+//
+// ----------------------------------------------------------
+// :id
+// ----------------------------------------------------------
+//
+// :id is the MongoDB _id of the Dairy.
+//
+// The Dairy document contains:
+//
+//     dairy.code
+//
+// The corresponding DairyStorage documents contain:
+//
+//     farmCode
+//
+// Therefore:
+//
+//     Dairy.code === DairyStorage.farmCode
+//
+// Example:
+//
+//     Dairy
+//         _id  = 67xxxxxxxxxxxxxxxxxxxxxx
+//         code = -1
+//
+//     DairyStorage
+//         farmCode = -1
+//
+// URL:
+//
+//     /storage/67xxxxxxxxxxxxxxxxxxxxxx
+//
+// ----------------------------------------------------------
+// OPTIONAL FILTER
+// ----------------------------------------------------------
+//
+// All storage by default:
+//
+//     GET /storage/:id
+//
+// Rooms only:
+//
+//     GET /storage/:id?type=room
+//
+// AgroStores only:
+//
+//     GET /storage/:id?type=agroStore
+//
 // ==========================================================
 
 router.get(
-    "/storage",
+    "/:id",
     storageController.index
 );
 
@@ -40,4 +91,5 @@ router.get(
 // EXPORT
 // ==========================================================
 
-module.exports = router;
+module.exports =
+    router;
