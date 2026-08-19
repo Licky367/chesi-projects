@@ -6,10 +6,35 @@
 
    PURPOSE:
        Create a completely new feed-store stock item.
+
+   STOCK STRUCTURE:
+
+       stock.name
+           |
+           |-- typed manually by user
+           |-- REQUIRED
+
+       stock.category
+           |
+           |-- "feed"
+           |       |
+           |       └── feedName
+           |
+           └── "medicine"
+                   |
+                   └── medicineName
+
+   IMPORTANT:
+
+       Only ONE of feedName or medicineName is submitted.
+
 ========================================================== */
 
-const currentDairy = dairy || {};
-const currentUser = user || {};
+const currentDairy =
+    dairy || {};
+
+const currentUser =
+    user || {};
 
 const isAdmin =
     currentUser.role === "admin";
@@ -53,7 +78,7 @@ const availableStockUnits =
         </h1>
 
         <p>
-            Add a new animal feed or veterinary medicine
+            Add a new animal feed or AgroVet stock item
             to the feed store.
         </p>
 
@@ -75,13 +100,42 @@ const availableStockUnits =
 
 
         <!-- ==================================================
-             STOCK TYPE
+             STOCK NAME
+        =================================================== -->
+
+        <div class="storage-field">
+
+            <label for="addStockName">
+                Stock name
+            </label>
+
+            <input
+                id="addStockName"
+                type="text"
+                name="name"
+                maxlength="150"
+                placeholder="Enter stock name"
+                autocomplete="off"
+                required
+            >
+
+            <small>
+                Enter the name you want this stock item to be
+                identified by in the feed store.
+            </small>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             STOCK CATEGORY
         =================================================== -->
 
         <div class="storage-field">
 
             <label for="addCategory">
-                Stock type
+                Category
             </label>
 
             <select
@@ -91,15 +145,15 @@ const availableStockUnits =
             >
 
                 <option value="">
-                    Select stock type
+                    Select category
                 </option>
 
                 <option value="feed">
-                    Animal Feed
+                    Animal Feeds
                 </option>
 
                 <option value="medicine">
-                    Veterinary Medicine
+                    AgroVets
                 </option>
 
             </select>
@@ -109,16 +163,21 @@ const availableStockUnits =
 
 
         <!-- ==================================================
-             FEED
+             ANIMAL FEED
+             
+             Submitted only when:
+             
+                 category = feed
         =================================================== -->
 
         <div
             id="addFeedField"
             class="storage-field"
+            hidden
         >
 
             <label for="addFeedName">
-                Animal feed
+                Animal Feed
             </label>
 
             <select
@@ -130,7 +189,9 @@ const availableStockUnits =
                     Select animal feed
                 </option>
 
-                <% availableFeedTypes.forEach(function(type) { %>
+                <% availableFeedTypes.forEach(
+                    function(type)
+                { %>
 
                     <option value="<%= type %>">
                         <%= type %>
@@ -140,12 +201,20 @@ const availableStockUnits =
 
             </select>
 
+            <small>
+                Select the type of animal feed for this stock.
+            </small>
+
         </div>
 
 
 
         <!-- ==================================================
-             MEDICINE
+             AGROVET
+             
+             Submitted only when:
+             
+                 category = medicine
         =================================================== -->
 
         <div
@@ -155,7 +224,7 @@ const availableStockUnits =
         >
 
             <label for="addMedicineName">
-                Veterinary medicine
+                AgroVet
             </label>
 
             <select
@@ -164,10 +233,12 @@ const availableStockUnits =
             >
 
                 <option value="">
-                    Select veterinary medicine
+                    Select AgroVet
                 </option>
 
-                <% availableMedicineTypes.forEach(function(type) { %>
+                <% availableMedicineTypes.forEach(
+                    function(type)
+                { %>
 
                     <option value="<%= type %>">
                         <%= type %>
@@ -176,6 +247,10 @@ const availableStockUnits =
                 <% }); %>
 
             </select>
+
+            <small>
+                Select the veterinary product for this stock.
+            </small>
 
         </div>
 
@@ -187,6 +262,10 @@ const availableStockUnits =
 
         <div class="storage-grid">
 
+
+            <!-- ==================================================
+                 INITIAL QUANTITY
+            =================================================== -->
 
             <div class="storage-field">
 
@@ -208,6 +287,10 @@ const availableStockUnits =
 
 
 
+            <!-- ==================================================
+                 UNIT
+            =================================================== -->
+
             <div class="storage-field">
 
                 <label for="addUnit">
@@ -224,7 +307,9 @@ const availableStockUnits =
                         Select unit
                     </option>
 
-                    <% availableStockUnits.forEach(function(unit) { %>
+                    <% availableStockUnits.forEach(
+                        function(unit)
+                    { %>
 
                         <option value="<%= unit %>">
                             <%= unit %>
@@ -366,7 +451,7 @@ const availableStockUnits =
             >
 
             <small>
-                Add photos of the feed or medicine if needed.
+                Add photos of the feed or AgroVet product if needed.
             </small>
 
         </div>
@@ -744,6 +829,22 @@ document.addEventListener(
     function () {
 
 
+        /* ==================================================
+           ELEMENTS
+        =================================================== */
+
+        const form =
+            document.getElementById(
+                "addStockForm"
+            );
+
+
+        const stockName =
+            document.getElementById(
+                "addStockName"
+            );
+
+
         const category =
             document.getElementById(
                 "addCategory"
@@ -775,6 +876,8 @@ document.addEventListener(
 
 
         if (
+            !form ||
+            !stockName ||
             !category ||
             !feedField ||
             !medicineField ||
@@ -787,47 +890,43 @@ document.addEventListener(
         }
 
 
+
+        /* ==================================================
+           UPDATE CATEGORY UI
+        =================================================== */
+
         function updateCategory() {
 
             const value =
                 category.value;
 
 
+            /*
+             * ANIMAL FEEDS
+             */
+
             feedField.hidden =
                 value !== "feed";
-
-
-            medicineField.hidden =
-                value !== "medicine";
 
 
             feedName.required =
                 value === "feed";
 
 
-            medicineName.required =
-                value === "medicine";
+            feedName.disabled =
+                value !== "feed";
 
 
             /*
-             * IMPORTANT:
-             *
-             * Disable the inactive selector.
-             *
-             * A disabled field is NOT submitted
-             * with the form.
-             *
-             * Therefore, when "feed" is selected,
-             * medicineName is completely excluded
-             * from the POST request.
-             *
-             * When "medicine" is selected,
-             * feedName is completely excluded
-             * from the POST request.
+             * AGROVETS
              */
 
-            feedName.disabled =
-                value !== "feed";
+            medicineField.hidden =
+                value !== "medicine";
+
+
+            medicineName.required =
+                value === "medicine";
 
 
             medicineName.disabled =
@@ -835,10 +934,10 @@ document.addEventListener(
 
 
             /*
-             * Also clear the inactive selector.
+             * Clear the inactive field.
              *
-             * This prevents an old selection from
-             * accidentally remaining in the browser.
+             * This guarantees that only the
+             * category-specific value remains.
              */
 
             if (value === "feed") {
@@ -854,8 +953,26 @@ document.addEventListener(
 
             }
 
+
+            /*
+             * No category selected.
+             */
+
+            if (!value) {
+
+                feedName.value = "";
+
+                medicineName.value = "";
+
+            }
+
         }
 
+
+
+        /* ==================================================
+           CATEGORY CHANGE
+        =================================================== */
 
         category.addEventListener(
             "change",
@@ -863,8 +980,99 @@ document.addEventListener(
         );
 
 
-        updateCategory();
 
+        /* ==================================================
+           FORM VALIDATION
+        =================================================== */
+
+        form.addEventListener(
+            "submit",
+            function(event) {
+
+                /*
+                 * Stock name is mandatory.
+                 */
+
+                if (
+                    !stockName.value.trim()
+                ) {
+
+                    event.preventDefault();
+
+                    stockName.focus();
+
+                    return;
+
+                }
+
+
+                /*
+                 * Category is mandatory.
+                 */
+
+                const categoryValue =
+                    category.value;
+
+
+                if (
+                    categoryValue !== "feed" &&
+                    categoryValue !== "medicine"
+                ) {
+
+                    event.preventDefault();
+
+                    category.focus();
+
+                    return;
+
+                }
+
+
+                /*
+                 * Animal feed requires feedName.
+                 */
+
+                if (
+                    categoryValue === "feed" &&
+                    !feedName.value
+                ) {
+
+                    event.preventDefault();
+
+                    feedName.focus();
+
+                    return;
+
+                }
+
+
+                /*
+                 * AgroVet requires medicineName.
+                 */
+
+                if (
+                    categoryValue === "medicine" &&
+                    !medicineName.value
+                ) {
+
+                    event.preventDefault();
+
+                    medicineName.focus();
+
+                    return;
+
+                }
+
+            }
+        );
+
+
+
+        /* ==================================================
+           INITIAL STATE
+        =================================================== */
+
+        updateCategory();
 
     }
 );
