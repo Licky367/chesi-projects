@@ -1,14 +1,31 @@
 <%
 /* ==========================================================
    FEED STORE
+   FILE:
+       views/update/storage/feedstore.ejs
+
+   PURPOSE:
+       Display feed-store inventory.
+
+   ADMIN:
+       Admin users can access:
+
+           /dairy/:dairyId/feedstore/add
+
+       The Add Stock link is completely hidden from
+       non-admin users.
 ========================================================== */
 
-const currentDairy = dairy || {};
+const currentDairy =
+    dairy || {};
 
-const currentUser = user || {};
+const currentUser =
+    user || {};
 
 const userRole =
-    String(currentUser.role || "").trim();
+    String(
+        currentUser.role || ""
+    ).trim();
 
 
 const feedStocks =
@@ -30,12 +47,23 @@ const isDairyWorker =
 
 
 /* ==========================================================
+   DAIRY ID
+========================================================== */
+
+const dairyId =
+    currentDairy._id
+        ? String(currentDairy._id)
+        : "";
+
+
+/* ==========================================================
    SAFE HELPERS
 ========================================================== */
 
 function safeNumber(value) {
 
-    const number = Number(value);
+    const number =
+        Number(value);
 
     return Number.isFinite(number)
         ? number
@@ -88,17 +116,23 @@ function formatDate(value) {
 function stockCategory(stock) {
 
     return stock.category === "medicine"
-
         ? "Medicine"
-
         : "Feed";
 
 }
 
 
+/* ==========================================================
+   STOCK ACTION URL
+========================================================== */
+
 function getStockActionUrl(stock) {
 
-    if (!stock || !stock._id) {
+    if (
+        !stock ||
+        !stock._id ||
+        !dairyId
+    ) {
 
         return "#";
 
@@ -112,7 +146,7 @@ function getStockActionUrl(stock) {
             "/dairy/" +
 
             encodeURIComponent(
-                currentDairy._id
+                dairyId
             ) +
 
             "/feedstore/restock/" +
@@ -133,7 +167,7 @@ function getStockActionUrl(stock) {
             "/dairy/" +
 
             encodeURIComponent(
-                currentDairy._id
+                dairyId
             ) +
 
             "/feedstore/update/" +
@@ -151,6 +185,10 @@ function getStockActionUrl(stock) {
 
 }
 
+
+/* ==========================================================
+   STOCK ACTION TEXT
+========================================================== */
 
 function getStockActionText() {
 
@@ -189,29 +227,28 @@ function getStockActionText() {
     <div class="feedstore-header">
 
 
+        <!-- ==================================================
+             HEADER CONTENT
+        =================================================== -->
+
         <div class="feedstore-header-content">
 
             <div class="feedstore-eyebrow">
-
                 FEED STORE
-
             </div>
 
 
             <h1>
-
                 <%= currentDairy.name || "Feed Store" %>
-
             </h1>
 
 
             <p>
-
                 Feed store inventory
-
             </p>
 
         </div>
+
 
 
         <!-- ==================================================
@@ -221,22 +258,57 @@ function getStockActionText() {
         <div class="feedstore-count">
 
             <strong>
-
                 <%= feedStocks.length %>
-
             </strong>
 
-
             <span>
-
                 Stock Items
-
             </span>
 
         </div>
 
 
+
+        <!-- ==================================================
+             ADMIN-ONLY ADD STOCK LINK
+        =================================================== -->
+
+        <% if (isAdmin && dairyId) { %>
+
+            <a
+                href="/dairy/<%= encodeURIComponent(dairyId) %>/feedstore/add"
+                class="feedstore-add-stock"
+            >
+
+                <span class="feedstore-add-icon">
+                    ＋
+                </span>
+
+
+                <span class="feedstore-add-content">
+
+                    <strong>
+                        Add Stock
+                    </strong>
+
+                    <small>
+                        Add new feed-store stock
+                    </small>
+
+                </span>
+
+
+                <span class="feedstore-add-arrow">
+                    →
+                </span>
+
+            </a>
+
+        <% } %>
+
+
     </div>
+
 
 
     <!-- ======================================================
@@ -250,25 +322,31 @@ function getStockActionText() {
 
 
             <div class="empty-icon">
-
                 📦
-
             </div>
 
 
             <h2>
-
                 No Stock
-
             </h2>
 
 
             <p>
-
                 There are currently no stock items
                 in this feed store.
-
             </p>
+
+
+            <% if (isAdmin && dairyId) { %>
+
+                <a
+                    href="/dairy/<%= encodeURIComponent(dairyId) %>/feedstore/add"
+                    class="empty-add-stock"
+                >
+                    ＋ Add First Stock
+                </a>
+
+            <% } %>
 
 
         </div>
@@ -289,7 +367,7 @@ function getStockActionText() {
 
                 <div
                     class="feedstock-item"
-                    data-stock-id="<%= stock._id %>"
+                    data-stock-id="<%= stock._id || '' %>"
                 >
 
 
@@ -306,7 +384,6 @@ function getStockActionText() {
 
                         <div class="feedstock-main">
 
-
                             <div class="feedstock-name-row">
 
 
@@ -318,8 +395,7 @@ function getStockActionText() {
 
 
                                 <span
-                                    class="feedstock-category
-                                    <%= stock.category === 'medicine'
+                                    class="feedstock-category <%= stock.category === 'medicine'
                                         ? 'medicine'
                                         : 'feed'
                                     %>"
@@ -332,8 +408,8 @@ function getStockActionText() {
 
                             </div>
 
-
                         </div>
+
 
 
                         <!-- ==================================
@@ -348,16 +424,18 @@ function getStockActionText() {
 
                             <a
                                 href="<%= getStockActionUrl(stock) %>"
-                                class="stock-action-btn
-                                    <%= isAdmin
-                                        ? 'restock-btn'
-                                        : 'update-btn'
-                                    %>"
+                                class="stock-action-btn <%= isAdmin
+                                    ? 'restock-btn'
+                                    : 'update-btn'
+                                %>"
                             >
 
                                 <span class="action-icon">
 
-                                    <%= isAdmin ? "＋" : "↻" %>
+                                    <%= isAdmin
+                                        ? "＋"
+                                        : "↻"
+                                    %>
 
                                 </span>
 
@@ -377,17 +455,15 @@ function getStockActionText() {
                     </div>
 
 
+
                     <!-- ======================================
                          CURRENT QUANTITY
                     ======================================= -->
 
                     <div class="feedstock-field">
 
-
                         <span class="field-label">
-
                             Quantity Remaining
-
                         </span>
 
 
@@ -398,15 +474,13 @@ function getStockActionText() {
                             ) %>
 
                             <span class="field-unit">
-
                                 <%= stock.unit || "" %>
-
                             </span>
 
                         </strong>
 
-
                     </div>
+
 
 
                     <!-- ======================================
@@ -415,11 +489,8 @@ function getStockActionText() {
 
                     <div class="feedstock-field">
 
-
                         <span class="field-label">
-
                             Initial Quantity
-
                         </span>
 
 
@@ -430,15 +501,13 @@ function getStockActionText() {
                             ) %>
 
                             <span class="field-unit">
-
                                 <%= stock.unit || "" %>
-
                             </span>
 
                         </strong>
 
-
                     </div>
+
 
 
                     <!-- ======================================
@@ -447,17 +516,13 @@ function getStockActionText() {
 
                     <div class="feedstock-field">
 
-
                         <span class="field-label">
-
                             Percentage Remaining
-
                         </span>
 
 
                         <strong
-                            class="field-value
-                            <%= safeNumber(stock.percentageRemaining) <= 20
+                            class="field-value <%= safeNumber(stock.percentageRemaining) <= 20
                                 ? 'low-stock'
                                 : ''
                             %>"
@@ -469,8 +534,8 @@ function getStockActionText() {
 
                         </strong>
 
-
                     </div>
+
 
 
                     <!-- ======================================
@@ -479,22 +544,17 @@ function getStockActionText() {
 
                     <div class="feedstock-field">
 
-
                         <span class="field-label">
-
                             Unit
-
                         </span>
 
 
                         <strong class="field-value">
-
                             <%= stock.unit || "-" %>
-
                         </strong>
 
-
                     </div>
+
 
 
                     <!-- ======================================
@@ -503,24 +563,22 @@ function getStockActionText() {
 
                     <div class="feedstock-field">
 
-
                         <span class="field-label">
-
                             Unit Price
-
                         </span>
 
 
                         <strong class="field-value">
 
+                            KES
                             <%= formatNumber(
                                 stock.unitPrice
                             ) %>
 
                         </strong>
 
-
                     </div>
+
 
 
                     <!-- ======================================
@@ -529,11 +587,8 @@ function getStockActionText() {
 
                     <div class="feedstock-field">
 
-
                         <span class="field-label">
-
                             Latest Stock Addition
-
                         </span>
 
 
@@ -543,10 +598,14 @@ function getStockActionText() {
                                 stock.feedsAmount
                             ) %>
 
+                            <span class="field-unit">
+                                <%= stock.unit || "" %>
+                            </span>
+
                         </strong>
 
-
                     </div>
+
 
 
                     <!-- ======================================
@@ -555,14 +614,10 @@ function getStockActionText() {
 
                     <% if (stock.expectedDuration) { %>
 
-
                         <div class="feedstock-field">
 
-
                             <span class="field-label">
-
                                 Expected Duration
-
                             </span>
 
 
@@ -572,11 +627,10 @@ function getStockActionText() {
 
                             </strong>
 
-
                         </div>
 
-
                     <% } %>
+
 
 
                     <!-- ======================================
@@ -585,28 +639,21 @@ function getStockActionText() {
 
                     <% if (stock.instructions) { %>
 
-
                         <div class="feedstock-description">
 
-
                             <span class="field-label">
-
                                 Instructions
-
                             </span>
 
 
                             <p>
-
                                 <%= stock.instructions %>
-
                             </p>
-
 
                         </div>
 
-
                     <% } %>
+
 
 
                     <!-- ======================================
@@ -615,28 +662,21 @@ function getStockActionText() {
 
                     <% if (stock.message) { %>
 
-
                         <div class="feedstock-description">
 
-
                             <span class="field-label">
-
                                 Message
-
                             </span>
 
 
                             <p>
-
                                 <%= stock.message %>
-
                             </p>
-
 
                         </div>
 
-
                     <% } %>
+
 
 
                     <!-- ======================================
@@ -671,6 +711,7 @@ function getStockActionText() {
                     <% } %>
 
 
+
                     <!-- ======================================
                          STOCK DATES
                     ======================================= -->
@@ -679,7 +720,6 @@ function getStockActionText() {
 
 
                         <% if (stock.addedAt) { %>
-
 
                             <span>
 
@@ -690,12 +730,10 @@ function getStockActionText() {
 
                             </span>
 
-
                         <% } %>
 
 
                         <% if (stock.updatedAt) { %>
-
 
                             <span>
 
@@ -705,7 +743,6 @@ function getStockActionText() {
                                 ) %>
 
                             </span>
-
 
                         <% } %>
 
@@ -728,6 +765,7 @@ function getStockActionText() {
 </div>
 
 
+
 <style>
 
 /* ==========================================================
@@ -747,6 +785,13 @@ function getStockActionText() {
 }
 
 
+.feedstore-page * {
+
+    box-sizing: border-box;
+
+}
+
+
 /* ==========================================================
    PAGE HEADER
 ========================================================== */
@@ -755,13 +800,13 @@ function getStockActionText() {
 
     display: flex;
 
-    justify-content: space-between;
-
     align-items: center;
 
-    gap: 20px;
+    gap: 16px;
 
     margin-bottom: 25px;
+
+    flex-wrap: wrap;
 
 }
 
@@ -769,6 +814,8 @@ function getStockActionText() {
 .feedstore-header-content {
 
     min-width: 0;
+
+    flex: 1;
 
 }
 
@@ -838,8 +885,6 @@ function getStockActionText() {
 
     background: #f2f9f3;
 
-    box-sizing: border-box;
-
 }
 
 
@@ -865,6 +910,138 @@ function getStockActionText() {
     font-size: 11px;
 
     font-weight: 600;
+
+}
+
+
+/* ==========================================================
+   ADMIN ADD STOCK
+========================================================== */
+
+.feedstore-add-stock {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    min-width: 205px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #cfe3d3;
+
+    border-radius: 12px;
+
+    background: #f3f9f4;
+
+    color: #12351c;
+
+    text-decoration: none;
+
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        box-shadow .2s ease,
+        transform .15s ease;
+
+}
+
+
+.feedstore-add-stock:hover {
+
+    background: #eaf5ec;
+
+    border-color: #a9c9af;
+
+    box-shadow:
+        0 5px 15px
+        rgba(11, 93, 30, .10);
+
+}
+
+
+.feedstore-add-stock:active {
+
+    transform: scale(.98);
+
+}
+
+
+.feedstore-add-icon {
+
+    width: 32px;
+
+    height: 32px;
+
+    flex: 0 0 32px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: #0b5d1e;
+
+    color: #ffffff;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+    line-height: 1;
+
+}
+
+
+.feedstore-add-content {
+
+    flex: 1;
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 2px;
+
+}
+
+
+.feedstore-add-content strong {
+
+    color: #12351c;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+}
+
+
+.feedstore-add-content small {
+
+    color: #718078;
+
+    font-size: 9px;
+
+    line-height: 1.3;
+
+}
+
+
+.feedstore-add-arrow {
+
+    color: #0b5d1e;
+
+    font-size: 17px;
+
+    font-weight: 900;
 
 }
 
@@ -902,10 +1079,9 @@ function getStockActionText() {
 
     background: #ffffff;
 
-    box-sizing: border-box;
-
     box-shadow:
-        0 5px 18px rgba(11, 93, 30, .06);
+        0 5px 18px
+        rgba(11, 93, 30, .06);
 
     transition:
         box-shadow .2s ease,
@@ -919,7 +1095,8 @@ function getStockActionText() {
     border-color: #b9d7bf;
 
     box-shadow:
-        0 8px 25px rgba(11, 93, 30, .10);
+        0 8px 25px
+        rgba(11, 93, 30, .10);
 
 }
 
@@ -1021,7 +1198,7 @@ function getStockActionText() {
 
 
 /* ==========================================================
-   ACTION BUTTON
+   STOCK ACTION
 ========================================================== */
 
 .stock-action-btn {
@@ -1054,10 +1231,9 @@ function getStockActionText() {
 
     white-space: nowrap;
 
-    box-sizing: border-box;
-
     box-shadow:
-        0 4px 10px rgba(11, 93, 30, .18);
+        0 4px 10px
+        rgba(11, 93, 30, .18);
 
     transition:
         background .2s ease,
@@ -1072,7 +1248,8 @@ function getStockActionText() {
     background: #084916;
 
     box-shadow:
-        0 6px 14px rgba(11, 93, 30, .24);
+        0 6px 14px
+        rgba(11, 93, 30, .24);
 
 }
 
@@ -1112,8 +1289,6 @@ function getStockActionText() {
     padding: 8px 0;
 
     border-top: 1px solid #edf2ee;
-
-    box-sizing: border-box;
 
 }
 
@@ -1318,6 +1493,57 @@ function getStockActionText() {
 
 
 /* ==========================================================
+   EMPTY STATE ADD BUTTON
+========================================================== */
+
+.empty-add-stock {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    margin-top: 18px;
+
+    min-height: 40px;
+
+    padding: 0 16px;
+
+    border-radius: 10px;
+
+    background: #0b5d1e;
+
+    color: #ffffff;
+
+    text-decoration: none;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    transition:
+        background .2s ease,
+        transform .15s ease;
+
+}
+
+
+.empty-add-stock:hover {
+
+    background: #084916;
+
+}
+
+
+.empty-add-stock:active {
+
+    transform: scale(.97);
+
+}
+
+
+/* ==========================================================
    MOBILE
 ========================================================== */
 
@@ -1333,11 +1559,18 @@ function getStockActionText() {
 
     .feedstore-header {
 
-        align-items: center;
+        align-items: flex-start;
 
         gap: 12px;
 
         margin-bottom: 18px;
+
+    }
+
+
+    .feedstore-header-content {
+
+        min-width: 170px;
 
     }
 
@@ -1377,6 +1610,21 @@ function getStockActionText() {
     .feedstore-count span {
 
         font-size: 9px;
+
+    }
+
+
+    /* ----------------------------------------------
+       ADMIN ADD STOCK
+    ---------------------------------------------- */
+
+    .feedstore-add-stock {
+
+        width: 100%;
+
+        min-width: 0;
+
+        order: 3;
 
     }
 
