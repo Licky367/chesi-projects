@@ -9,57 +9,55 @@ const express =
 const router =
     express.Router();
 
+
+// ==========================================================
+// STORAGE INDEX CONTROLLER
+// ==========================================================
+
 const storageController =
     require("../controllers/storage/list");
 
-const storageAddController =
+
+// ==========================================================
+// ADD STORAGE CONTROLLER
+// ==========================================================
+
+const addController =
     require("../controllers/storage/add");
 
 
 // ==========================================================
+// ADD STORAGE
+// ==========================================================
+//
+// IMPORTANT:
+// This MUST come before:
+//
+//     /:id
+//
+// Otherwise "add" can be interpreted as :id.
+//
+// ==========================================================
+
+router.get(
+    "/:id/add",
+    addController.form
+);
+
+
+router.post(
+    "/:id/add",
+    addController.create
+);
+
+
+// ==========================================================
 // STORAGE INDEX
-//
-// GET:
-//
-//     /storage/:id
-//
-// :id = parent Dairy._id
 // ==========================================================
 
 router.get(
     "/:id",
     storageController.index
-);
-
-
-// ==========================================================
-// ADD STORAGE FORM
-//
-// GET:
-//
-//     /storage/:id/add
-//
-// :id = parent Dairy._id
-// ==========================================================
-
-router.get(
-    "/:id/add",
-    storageAddController.form
-);
-
-
-// ==========================================================
-// CREATE STORAGE
-//
-// POST:
-//
-//     /storage/:id/add
-//
-// ==========================================================
-
-router.post(
-    "/:id/add",
-    storageAddController.create
 );
 
 
