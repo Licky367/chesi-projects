@@ -10,7 +10,7 @@ const router =
     express.Router();
 
 const storageController =
-    require("../controllers/storage");
+    require("../controllers/storage/list");
 
 const storageAddController =
     require("../controllers/storage/add");
