@@ -4,46 +4,99 @@
 //
 // FEED STORE / STORAGE CONTROLLER
 //
-// ROUTES:
+// NEW STORAGE ARCHITECTURE
+// =========================================================
 //
-//     GET    /dairy/feedstore/:dairyId
+// The URL dairyId is the MongoDB _id of the DAIRY FARM.
 //
-//     GET    /dairy/:dairyId/feedstore/add
-//     POST   /dairy/:dairyId/feedstore/add
+// Example:
 //
-//     GET    /dairy/:dairyId/feedstore/update/:stockId
-//     PUT    /dairy/:dairyId/feedstore/update/:stockId
+//     /dairy/68xxxxxxxxxxxxxxxxxxxx/feedstore
 //
-//     GET    /dairy/:dairyId/feedstore/restock/:stockId
-//     POST   /dairy/:dairyId/feedstore/restock/:stockId
+// The supplied dairyId identifies the farm.
 //
-//     GET    /dairy/:dairyId/feedstore/:stockId
-//     DELETE /dairy/:dairyId/feedstore/:stockId
+// The farm has:
 //
-// SERVICE:
+//     farm.code
 //
-//     services/update/storageService.js
+// The storage facility has:
 //
-// MODEL:
+//     storageFacility.storageNumber
 //
-//     models/dairy.js
+// The storage facility belonging to that farm is therefore:
+//
+//     storageFacility.storageNumber === farm.code
+//
+// STOCKS are stored on:
+//
+//     storageFacility.feedStocks[]
+//
+// Therefore:
+//
+//     URL dairyId
+//          ↓
+//     Dairy farm
+//          ↓
+//     farm.code
+//          ↓
+//     storageFacility.storageNumber
+//          ↓
+//     storageFacility._id
+//          ↓
+//     storageService
+//          ↓
+//     storageFacility.feedStocks[]
 //
 // IMPORTANT
 // ---------------------------------------------------------
 //
-// dairyId
-//     = MongoDB _id of the FEED STORE document.
+// The controller translates the FARM ID from the URL into
+// the STORAGE FACILITY ID required by storageService.
 //
-// stockId
-//     = MongoDB _id of the embedded dairy.feedStocks item.
-//
-// New stock:
-//     MUST be created as a new feedStocks subdocument.
-//
-// Existing stock:
-//     MUST be located using dairy.feedStocks._id.
+// storageService itself continues to work with the actual
+// storage facility document.
 //
 // =========================================================
+//
+// ROUTES
+// ---------------------------------------------------------
+//
+// GET
+//     /dairy/feedstore/:dairyId
+//
+// GET
+//     /dairy/:dairyId/feedstore/add
+//
+// POST
+//     /dairy/:dairyId/feedstore/add
+//
+// GET
+//     /dairy/:dairyId/feedstore/update/:stockId
+//
+// PUT
+//     /dairy/:dairyId/feedstore/update/:stockId
+//
+// GET
+//     /dairy/:dairyId/feedstore/restock/:stockId
+//
+// POST
+//     /dairy/:dairyId/feedstore/restock/:stockId
+//
+// GET
+//     /dairy/:dairyId/feedstore/:stockId
+//
+// DELETE
+//     /dairy/:dairyId/feedstore/:stockId
+//
+// =========================================================
+
+
+const mongoose =
+    require("mongoose");
+
+
+const Dairy =
+    require("../../models/dairy");
 
 
 const storageService =
@@ -75,6 +128,7 @@ function isAdmin(req) {
     const user =
         getUser(req);
 
+
     return Boolean(
 
         user &&
@@ -89,6 +143,7 @@ function isDairyWorker(req) {
 
     const user =
         getUser(req);
+
 
     return Boolean(
 
@@ -116,7 +171,7 @@ function canAccessStorage(req) {
 // ROUTE PARAMETERS
 // =========================================================
 
-function getDairyId(req) {
+function getFarmId(req) {
 
     return String(
         req.params.dairyId || ""
@@ -135,7 +190,7 @@ function getStockId(req) {
 
 
 // =========================================================
-// ERROR HELPER
+// ERROR
 // =========================================================
 
 function createError(
@@ -144,12 +199,33 @@ function createError(
 ) {
 
     const error =
-        new Error(message);
+        new Error(
+            message
+        );
+
 
     error.statusCode =
         statusCode;
 
+
     return error;
+
+}
+
+
+// =========================================================
+// VALID OBJECT ID
+// =========================================================
+
+function isValidObjectId(
+    value
+) {
+
+    return mongoose.Types.ObjectId.isValid(
+        String(
+            value || ""
+        )
+    );
 
 }
 
@@ -158,19 +234,24 @@ function createError(
 // UPLOADED IMAGES
 // =========================================================
 //
-// Router normally uses:
+// Supports:
 //
 //     upload.array("images", 10)
 //
-// Therefore multer places files in:
+// and:
 //
-//     req.files
+//     upload.fields([
+//         { name: "images" }
+//     ])
 //
 // =========================================================
 
 function getUploadedImages(req) {
 
-    if (!req || !req.files) {
+    if (
+        !req ||
+        !req.files
+    ) {
 
         return [];
 
@@ -184,7 +265,11 @@ function getUploadedImages(req) {
     // upload.array(...)
     // ------------------------------------------------------
 
-    if (Array.isArray(req.files)) {
+    if (
+        Array.isArray(
+            req.files
+        )
+    ) {
 
         files =
             req.files;
@@ -217,6 +302,16 @@ function getUploadedImages(req) {
             ) {
 
                 return file;
+
+            }
+
+
+            if (
+                !file ||
+                typeof file !== "object"
+            ) {
+
+                return "";
 
             }
 
@@ -315,17 +410,17 @@ function getStockOptions() {
 
 
 // =========================================================
-// FEED STORE ITEMS
+// FEED STOCK ITEMS
 // =========================================================
 
 function getFeedStoreItems(
-    dairy
+    storageFacility
 ) {
 
     if (
-        !dairy ||
+        !storageFacility ||
         !Array.isArray(
-            dairy.feedStocks
+            storageFacility.feedStocks
         )
     ) {
 
@@ -334,7 +429,7 @@ function getFeedStoreItems(
     }
 
 
-    return dairy.feedStocks;
+    return storageFacility.feedStocks;
 
 }
 
@@ -342,9 +437,25 @@ function getFeedStoreItems(
 // =========================================================
 // COMMON VIEW DATA
 // =========================================================
+//
+// `dairy` is deliberately the FARM.
+//
+// `storageFacility` is the actual document containing
+// feedStocks[].
+//
+// This allows the EJS to know both:
+//
+//     dairy.code
+//
+// and:
+//
+//     storageFacility.feedStocks
+//
+// =========================================================
 
 function buildCommonViewData(
-    dairy,
+    farm,
+    storageFacility,
     req
 ) {
 
@@ -354,21 +465,50 @@ function buildCommonViewData(
 
     return {
 
-        dairy,
+        // --------------------------------------------------
+        // FARM
+        // --------------------------------------------------
+
+        dairy:
+            farm,
+
+
+        // --------------------------------------------------
+        // ACTUAL STORAGE FACILITY
+        // --------------------------------------------------
+
+        storageFacility,
+
+
+        // --------------------------------------------------
+        // USER
+        // --------------------------------------------------
 
         user:
             getUser(req),
 
+
+        // --------------------------------------------------
+        // STOCKS
+        // --------------------------------------------------
+
         feedStoreItems:
             getFeedStoreItems(
-                dairy
+                storageFacility
             ),
+
+
+        // --------------------------------------------------
+        // OPTIONS
+        // --------------------------------------------------
 
         feedTypes:
             options.feedTypes,
 
+
         medicineTypes:
             options.medicineTypes,
+
 
         stockUnits:
             options.stockUnits
@@ -379,31 +519,27 @@ function buildCommonViewData(
 
 
 // =========================================================
-// LOAD DAIRY / FEED STORE
+// FIND DAIRY FARM
 // =========================================================
 //
-// IMPORTANT:
-//
-// The :dairyId in these routes is the _id of the
-// FEED STORE document.
-//
-// It is NOT:
-//
-//     assetCode
-//     farm code
-//     parent farm code
-//     stock id
+// The URL dairyId is the FARM _id.
 //
 // =========================================================
 
-async function loadDairy(
-    dairyId
+async function getDairyFarm(
+    farmId
 ) {
 
-    if (!dairyId) {
+    const id =
+        String(
+            farmId || ""
+        ).trim();
+
+
+    if (!id) {
 
         throw createError(
-            "Dairy ID is required.",
+            "Dairy farm ID is required.",
             400
         );
 
@@ -411,62 +547,81 @@ async function loadDairy(
 
 
     if (
-        !storageService ||
-        typeof storageService.getDairy !==
-            "function"
+        !isValidObjectId(
+            id
+        )
     ) {
 
         throw createError(
-            "Storage service cannot load the dairy.",
-            500
+            "Invalid dairy farm ID.",
+            400
         );
 
     }
 
 
-    const dairy =
-        await storageService.getDairy(
-            dairyId
+    const farm =
+        await Dairy.findById(
+            id
         );
 
 
-    if (!dairy) {
+    if (!farm) {
 
         throw createError(
-            "Feed store not found.",
+            "Dairy farm not found.",
             404
         );
 
     }
 
 
-    // ------------------------------------------------------
-    // Ensure this document is actually a feed store.
-    // ------------------------------------------------------
+    return farm;
 
-    const isFeedStore =
-        Boolean(
-
-            (
-
-                typeof dairy.isFeedStore ===
-                "boolean"
-
-                    ? dairy.isFeedStore
-
-                    : false
-
-            ) ||
-
-            dairy.type === "feedStore"
-
-        );
+}
 
 
-    if (!isFeedStore) {
+// =========================================================
+// FIND STORAGE FACILITY FOR FARM
+// =========================================================
+//
+// IMPORTANT
+// ---------------------------------------------------------
+//
+// The storage facility is NOT identified by the URL ID.
+//
+// It is identified by:
+//
+//     storageFacility.storageNumber === farm.code
+//
+// =========================================================
+
+async function getStorageFacilityForFarm(
+    farm
+) {
+
+    if (!farm) {
 
         throw createError(
-            "The selected Dairy document is not a feed store.",
+            "Dairy farm is required.",
+            400
+        );
+
+    }
+
+
+    const farmCode =
+        farm.code;
+
+
+    if (
+        farmCode === undefined ||
+        farmCode === null ||
+        String(farmCode).trim() === ""
+    ) {
+
+        throw createError(
+            "The dairy farm does not have a valid farm code.",
             400
         );
 
@@ -474,21 +629,137 @@ async function loadDairy(
 
 
     // ------------------------------------------------------
-    // Guarantee an array for the view.
+    // Match the storage facility using storageNumber.
+    //
+    // Storage facilities are represented by Dairy documents
+    // whose code is null.
     // ------------------------------------------------------
 
-    if (
-        !Array.isArray(
-            dairy.feedStocks
-        )
-    ) {
+    const storageFacility =
+        await Dairy.findOne({
 
-        dairy.feedStocks = [];
+            code: null,
+
+            storageNumber:
+                farmCode
+
+        });
+
+
+    if (!storageFacility) {
+
+        throw createError(
+
+            `No storage facility was found for dairy farm code ${farmCode}.`,
+
+            404
+
+        );
 
     }
 
 
-    return dairy;
+    // ------------------------------------------------------
+    // Guarantee feedStocks exists.
+    // ------------------------------------------------------
+
+    if (
+        !Array.isArray(
+            storageFacility.feedStocks
+        )
+    ) {
+
+        storageFacility.feedStocks = [];
+
+    }
+
+
+    return storageFacility;
+
+}
+
+
+// =========================================================
+// LOAD STORAGE CONTEXT
+// =========================================================
+//
+// This is the central controller resolver.
+//
+// It returns:
+//
+//     farm
+//     storageFacility
+//     storageId
+//
+// The service receives storageId.
+//
+// The views receive both farm and storageFacility.
+//
+// =========================================================
+
+async function loadStorageContext(
+    farmId
+) {
+
+    const farm =
+        await getDairyFarm(
+            farmId
+        );
+
+
+    const storageFacility =
+        await getStorageFacilityForFarm(
+            farm
+        );
+
+
+    return {
+
+        farm,
+
+        storageFacility,
+
+        storageId:
+            String(
+                storageFacility._id
+            )
+
+    };
+
+}
+
+
+// =========================================================
+// LOAD STOCK
+// =========================================================
+//
+// Uses the storage facility ID internally.
+//
+// =========================================================
+
+async function getStorageStock(
+    storageId,
+    stockId
+) {
+
+    if (!stockId) {
+
+        throw createError(
+            "Stock ID is required.",
+            400
+        );
+
+    }
+
+
+    return storageService.getStock({
+
+        dairyId:
+            storageId,
+
+        stockId
+
+    });
 
 }
 
@@ -501,9 +772,17 @@ function validateCategory(
     category
 ) {
 
+    const value =
+        String(
+            category || ""
+        )
+        .trim()
+        .toLowerCase();
+
+
     if (
-        category !== "feed" &&
-        category !== "medicine"
+        value !== "feed" &&
+        value !== "medicine"
     ) {
 
         throw createError(
@@ -513,157 +792,8 @@ function validateCategory(
 
     }
 
-}
 
-
-// =========================================================
-// VALIDATE STOCK DATA
-// =========================================================
-
-function validateStockData(
-    data,
-    options = {}
-) {
-
-    const requireQuantity =
-        options.requireQuantity !== false;
-
-
-    // ------------------------------------------------------
-    // NAME
-    // ------------------------------------------------------
-
-    if (!String(data.name || "").trim()) {
-
-        throw createError(
-            "Stock name is required.",
-            400
-        );
-
-    }
-
-
-    // ------------------------------------------------------
-    // CATEGORY
-    // ------------------------------------------------------
-
-    validateCategory(
-        String(
-            data.category || ""
-        )
-        .trim()
-        .toLowerCase()
-    );
-
-
-    // ------------------------------------------------------
-    // CATEGORY-SPECIFIC NAME
-    // ------------------------------------------------------
-
-    if (
-        data.category === "feed" &&
-        !String(
-            data.feedName || ""
-        ).trim()
-    ) {
-
-        throw createError(
-            "Feed name is required for feed stock.",
-            400
-        );
-
-    }
-
-
-    if (
-        data.category === "medicine" &&
-        !String(
-            data.medicineName || ""
-        ).trim()
-    ) {
-
-        throw createError(
-            "Medicine name is required for medicine stock.",
-            400
-        );
-
-    }
-
-
-    // ------------------------------------------------------
-    // QUANTITY
-    // ------------------------------------------------------
-
-    if (requireQuantity) {
-
-        const quantity =
-            Number(
-                data.quantity
-            );
-
-
-        if (
-            !Number.isFinite(quantity) ||
-            quantity < 0
-        ) {
-
-            throw createError(
-                "Stock quantity must be a valid non-negative number.",
-                400
-            );
-
-        }
-
-    }
-
-
-    // ------------------------------------------------------
-    // UNIT
-    // ------------------------------------------------------
-
-    if (
-        !String(
-            data.unit || ""
-        ).trim()
-    ) {
-
-        throw createError(
-            "Stock unit is required.",
-            400
-        );
-
-    }
-
-
-    // ------------------------------------------------------
-    // PRICE
-    // ------------------------------------------------------
-
-    if (
-        data.price !== undefined &&
-        data.price !== null &&
-        data.price !== ""
-    ) {
-
-        const price =
-            Number(
-                data.price
-            );
-
-
-        if (
-            !Number.isFinite(price) ||
-            price < 0
-        ) {
-
-            throw createError(
-                "Stock price must be a valid non-negative number.",
-                400
-            );
-
-        }
-
-    }
+    return value;
 
 }
 
@@ -672,18 +802,12 @@ function validateStockData(
 // BUILD STOCK DATA
 // =========================================================
 //
-// Matches add/update EJS:
+// Canonical stock identity:
 //
 //     name
-//     category
-//     feedName
-//     medicineName
-//     quantity
-//     unit
-//     price
-//     instructions
-//     expectedDuration
-//     message
+//
+// feedName and medicineName are category-specific legacy
+// source fields and are retained only for compatibility.
 //
 // =========================================================
 
@@ -703,12 +827,6 @@ function buildStockData(
         .toLowerCase();
 
 
-    const submittedName =
-        String(
-            body.name || ""
-        ).trim();
-
-
     const feedName =
         String(
             body.feedName || ""
@@ -722,14 +840,13 @@ function buildStockData(
 
 
     let name =
-        submittedName;
+        String(
+            body.name || ""
+        ).trim();
 
 
     // ------------------------------------------------------
-    // Backwards compatibility.
-    //
-    // If the form does not submit `name`, derive it from
-    // the category-specific field.
+    // Compatibility fallback.
     // ------------------------------------------------------
 
     if (!name) {
@@ -802,8 +919,10 @@ function buildRestockData(
 
     return {
 
-        quantity:
-            body.quantity,
+        quantityAdded:
+            body.quantityAdded !== undefined
+                ? body.quantityAdded
+                : body.quantity,
 
         price:
             body.price,
@@ -823,12 +942,115 @@ function buildRestockData(
 
 
 // =========================================================
-// GET FEED STOCK LIST
+// VALIDATE NEW / ADMIN STOCK DATA
+// =========================================================
+//
+// The service also validates these values.
+//
+// This controller validation provides early and clear
+// request errors.
+//
+// =========================================================
+
+function validateStockData(
+    data,
+    options = {}
+) {
+
+    const requireQuantity =
+        options.requireQuantity !== false;
+
+
+    if (!String(data.name || "").trim()) {
+
+        throw createError(
+            "Stock name is required.",
+            400
+        );
+
+    }
+
+
+    validateCategory(
+        data.category
+    );
+
+
+    if (requireQuantity) {
+
+        const quantity =
+            Number(
+                data.quantity
+            );
+
+
+        if (
+            !Number.isFinite(quantity) ||
+            quantity < 0
+        ) {
+
+            throw createError(
+                "Stock quantity must be a valid non-negative number.",
+                400
+            );
+
+        }
+
+    }
+
+
+    if (
+        !String(
+            data.unit || ""
+        ).trim()
+    ) {
+
+        throw createError(
+            "Stock unit is required.",
+            400
+        );
+
+    }
+
+
+    if (
+        data.price !== undefined &&
+        data.price !== null &&
+        data.price !== ""
+    ) {
+
+        const price =
+            Number(
+                data.price
+            );
+
+
+        if (
+            !Number.isFinite(price) ||
+            price < 0
+        ) {
+
+            throw createError(
+                "Unit price must be a valid non-negative number.",
+                400
+            );
+
+        }
+
+    }
+
+}
+
+
+// =========================================================
+// GET FEED STOCK
 // =========================================================
 //
 // GET:
 //
 //     /dairy/feedstore/:dairyId
+//
+// dairyId = FARM _id
 //
 // =========================================================
 
@@ -848,20 +1070,25 @@ async function getFeedStock(
         }
 
 
-        const dairyId =
-            getDairyId(req);
+        const farmId =
+            getFarmId(req);
 
 
-        const dairy =
-            await loadDairy(
-                dairyId
+        const context =
+            await loadStorageContext(
+                farmId
             );
 
 
         const viewData =
             buildCommonViewData(
-                dairy,
+
+                context.farm,
+
+                context.storageFacility,
+
                 req
+
             );
 
 
@@ -893,7 +1120,7 @@ async function getFeedStock(
 
 
 // =========================================================
-// GET ADD STOCK PAGE
+// GET ADD STOCK
 // =========================================================
 
 async function getAddStock(
@@ -912,20 +1139,25 @@ async function getAddStock(
         }
 
 
-        const dairyId =
-            getDairyId(req);
+        const farmId =
+            getFarmId(req);
 
 
-        const dairy =
-            await loadDairy(
-                dairyId
+        const context =
+            await loadStorageContext(
+                farmId
             );
 
 
         const viewData =
             buildCommonViewData(
-                dairy,
+
+                context.farm,
+
+                context.storageFacility,
+
                 req
+
             );
 
 
@@ -957,7 +1189,7 @@ async function getAddStock(
 
 
 // =========================================================
-// GET UPDATE STOCK PAGE
+// GET UPDATE STOCK
 // =========================================================
 
 async function getUpdateStock(
@@ -976,18 +1208,18 @@ async function getUpdateStock(
         }
 
 
-        const dairyId =
-            getDairyId(req);
+        const farmId =
+            getFarmId(req);
 
 
         const stockId =
             getStockId(req);
 
 
-        if (!dairyId) {
+        if (!farmId) {
 
             return res.status(400).send(
-                "Dairy ID is required."
+                "Dairy farm ID is required."
             );
 
         }
@@ -1002,35 +1234,31 @@ async function getUpdateStock(
         }
 
 
-        const dairy =
-            await loadDairy(
-                dairyId
+        const context =
+            await loadStorageContext(
+                farmId
             );
 
 
         const stock =
-            await storageService.getStock({
+            await getStorageStock(
 
-                dairyId,
+                context.storageId,
 
                 stockId
 
-            });
-
-
-        if (!stock) {
-
-            return res.status(404).send(
-                "Stock not found."
             );
-
-        }
 
 
         const viewData =
             buildCommonViewData(
-                dairy,
+
+                context.farm,
+
+                context.storageFacility,
+
                 req
+
             );
 
 
@@ -1066,7 +1294,7 @@ async function getUpdateStock(
 
 
 // =========================================================
-// GET RESTOCK PAGE
+// GET RESTOCK
 // =========================================================
 
 async function getRestock(
@@ -1085,18 +1313,18 @@ async function getRestock(
         }
 
 
-        const dairyId =
-            getDairyId(req);
+        const farmId =
+            getFarmId(req);
 
 
         const stockId =
             getStockId(req);
 
 
-        if (!dairyId) {
+        if (!farmId) {
 
             return res.status(400).send(
-                "Dairy ID is required."
+                "Dairy farm ID is required."
             );
 
         }
@@ -1111,35 +1339,31 @@ async function getRestock(
         }
 
 
-        const dairy =
-            await loadDairy(
-                dairyId
+        const context =
+            await loadStorageContext(
+                farmId
             );
 
 
         const stock =
-            await storageService.getStock({
+            await getStorageStock(
 
-                dairyId,
+                context.storageId,
 
                 stockId
 
-            });
-
-
-        if (!stock) {
-
-            return res.status(404).send(
-                "Stock not found."
             );
-
-        }
 
 
         const viewData =
             buildCommonViewData(
-                dairy,
+
+                context.farm,
+
+                context.storageFacility,
+
                 req
+
             );
 
 
@@ -1175,20 +1399,14 @@ async function getRestock(
 
 
 // =========================================================
-// ADD NEW STOCK
+// ADD STOCK
 // =========================================================
 //
 // POST:
 //
 //     /dairy/:dairyId/feedstore/add
 //
-// CRITICAL:
-//
-// This creates a NEW embedded feedStocks document.
-//
-// It MUST NOT call restockStock() with:
-//
-//     stockId: ""
+// dairyId = FARM _id
 //
 // =========================================================
 
@@ -1197,8 +1415,8 @@ async function addStock(
     res
 ) {
 
-    const dairyId =
-        getDairyId(req);
+    const farmId =
+        getFarmId(req);
 
 
     try {
@@ -1217,40 +1435,31 @@ async function addStock(
         }
 
 
-        if (!dairyId) {
+        if (!farmId) {
 
             return res.status(400).json({
 
                 success: false,
 
                 message:
-                    "Dairy ID is required."
+                    "Dairy farm ID is required."
 
             });
 
         }
 
 
-        // --------------------------------------------------
-        // Confirm the target is the actual feed store.
-        // --------------------------------------------------
+        const context =
+            await loadStorageContext(
+                farmId
+            );
 
-        await loadDairy(
-            dairyId
-        );
-
-
-        // --------------------------------------------------
-        // Build incoming stock data.
-        // --------------------------------------------------
 
         const data =
-            buildStockData(req);
+            buildStockData(
+                req
+            );
 
-
-        // --------------------------------------------------
-        // Validate before touching the database.
-        // --------------------------------------------------
 
         validateStockData(
             data,
@@ -1261,99 +1470,47 @@ async function addStock(
 
 
         const images =
-            getUploadedImages(req);
-
-
-        // --------------------------------------------------
-        // CREATE NEW STOCK
-        // --------------------------------------------------
-        //
-        // Preferred service method:
-        //
-        //     createStock()
-        //
-        // Some versions of the service may call this:
-        //
-        //     addStock()
-        //
-        // We support either explicitly.
-        //
-        // We NEVER use restockStock() to create a new item.
-        // --------------------------------------------------
-
-        if (
-            storageService &&
-            typeof storageService.createStock ===
-                "function"
-        ) {
-
-            await storageService.createStock({
-
-                dairyId,
-
-                data,
-
-                images
-
-            });
-
-        }
-
-        else if (
-            storageService &&
-            typeof storageService.addStock ===
-                "function"
-        ) {
-
-            await storageService.addStock({
-
-                dairyId,
-
-                data,
-
-                images
-
-            });
-
-        }
-
-        else {
-
-            throw createError(
-
-                "Storage service does not expose a createStock() or addStock() method. New stock cannot be saved safely.",
-
-                500
-
+            getUploadedImages(
+                req
             );
 
-        }
+
+        await storageService.createStock({
+
+            // IMPORTANT:
+            // This is the STORAGE FACILITY _id,
+            // not the farm _id.
+
+            dairyId:
+                context.storageId,
+
+            data,
+
+            images
+
+        });
 
 
         // --------------------------------------------------
-        // IMPORTANT:
-        //
-        // Reload the feed store after saving.
-        //
-        // This confirms that the newly-created stock is
-        // actually persisted inside dairy.feedStocks.
+        // Verify persistence.
         // --------------------------------------------------
 
-        const savedDairy =
-            await loadDairy(
-                dairyId
+        const savedStorage =
+            await storageService.getDairy(
+                context.storageId
             );
 
 
         if (
+            !savedStorage ||
             !Array.isArray(
-                savedDairy.feedStocks
+                savedStorage.feedStocks
             )
         ) {
 
             throw createError(
 
-                "Stock creation returned successfully, but the feed store contains no feedStocks array.",
+                "Stock was not found in the storage facility after saving.",
 
                 500
 
@@ -1362,12 +1519,10 @@ async function addStock(
         }
 
 
-        // --------------------------------------------------
-        // SUCCESS
-        // --------------------------------------------------
-
         return res.redirect(
-            `/dairy/feedstore/${encodeURIComponent(dairyId)}`
+
+            `/dairy/feedstore/${encodeURIComponent(farmId)}`
+
         );
 
     }
@@ -1388,7 +1543,9 @@ async function addStock(
 
 
         return res.redirect(
-            `/dairy/feedstore/${encodeURIComponent(dairyId)}?feedStoreError=${message}`
+
+            `/dairy/feedstore/${encodeURIComponent(farmId)}?feedStoreError=${message}`
+
         );
 
     }
@@ -1397,12 +1554,14 @@ async function addStock(
 
 
 // =========================================================
-// UPDATE EXISTING STOCK
+// UPDATE STOCK
 // =========================================================
 //
 // PUT:
 //
 //     /dairy/:dairyId/feedstore/update/:stockId
+//
+// dairyId = FARM _id
 //
 // =========================================================
 
@@ -1411,8 +1570,9 @@ async function updateStock(
     res
 ) {
 
-    const dairyId =
-        getDairyId(req);
+    const farmId =
+        getFarmId(req);
+
 
     const stockId =
         getStockId(req);
@@ -1434,14 +1594,14 @@ async function updateStock(
         }
 
 
-        if (!dairyId) {
+        if (!farmId) {
 
             return res.status(400).json({
 
                 success: false,
 
                 message:
-                    "Dairy ID is required."
+                    "Dairy farm ID is required."
 
             });
 
@@ -1462,27 +1622,20 @@ async function updateStock(
         }
 
 
-        // --------------------------------------------------
-        // Confirm feed store.
-        // --------------------------------------------------
+        const context =
+            await loadStorageContext(
+                farmId
+            );
 
-        await loadDairy(
-            dairyId
-        );
-
-
-        // --------------------------------------------------
-        // Get existing embedded stock.
-        // --------------------------------------------------
 
         const existingStock =
-            await storageService.getStock({
+            await getStorageStock(
 
-                dairyId,
+                context.storageId,
 
                 stockId
 
-            });
+            );
 
 
         if (!existingStock) {
@@ -1499,17 +1652,15 @@ async function updateStock(
         }
 
 
-        // --------------------------------------------------
-        // Build incoming data.
-        // --------------------------------------------------
-
         const data =
-            buildStockData(req);
+            buildStockData(
+                req
+            );
 
 
-        // --------------------------------------------------
+        // ==================================================
         // ADMIN
-        // --------------------------------------------------
+        // ==================================================
 
         if (isAdmin(req)) {
 
@@ -1522,21 +1673,15 @@ async function updateStock(
 
         }
 
-        // --------------------------------------------------
+
+        // ==================================================
         // DAIRY WORKER
-        // --------------------------------------------------
+        // ==================================================
         //
-        // Worker is allowed to change:
+        // Worker uses the existing stock's immutable
+        // identity/category/unit/price information.
         //
-        //     quantity
-        //     message
-        //
-        // Everything else comes from the existing stock.
-        //
-        // IMPORTANT:
-        //
-        // Stored price is `unitPrice`, NOT `price`.
-        // --------------------------------------------------
+        // ==================================================
 
         else {
 
@@ -1570,11 +1715,6 @@ async function updateStock(
                 existingStock.unit;
 
 
-            // ----------------------------------------------
-            // FORM/service contract uses `price`.
-            // Stored schema uses `unitPrice`.
-            // ----------------------------------------------
-
             data.price =
                 existingStock.unitPrice;
 
@@ -1598,33 +1738,17 @@ async function updateStock(
 
 
         const images =
-            getUploadedImages(req);
-
-
-        // --------------------------------------------------
-        // SAVE EXISTING EMBEDDED STOCK.
-        // --------------------------------------------------
-
-        if (
-            !storageService ||
-            typeof storageService.saveStock !==
-                "function"
-        ) {
-
-            throw createError(
-
-                "Storage service does not expose saveStock().",
-
-                500
-
+            getUploadedImages(
+                req
             );
 
-        }
 
+        await storageService.updateStock({
 
-        await storageService.saveStock({
+            // STORAGE FACILITY ID
 
-            dairyId,
+            dairyId:
+                context.storageId,
 
             stockId,
 
@@ -1636,44 +1760,24 @@ async function updateStock(
 
 
         // --------------------------------------------------
-        // RELOAD AFTER SAVE
+        // Verify updated stock.
         // --------------------------------------------------
 
-        const savedDairy =
-            await loadDairy(
-                dairyId
-            );
-
-
         const savedStock =
-            Array.isArray(
-                savedDairy.feedStocks
-            )
+            await getStorageStock(
 
-                ? savedDairy.feedStocks.id
-                    ? savedDairy.feedStocks.id(
-                        stockId
-                    )
-                    : savedDairy.feedStocks.find(
-                        function(stock) {
+                context.storageId,
 
-                            return String(
-                                stock._id
-                            ) === String(
-                                stockId
-                            );
+                stockId
 
-                        }
-                    )
-
-                : null;
+            );
 
 
         if (!savedStock) {
 
             throw createError(
 
-                "Stock update completed without the updated stock being found in the feed store.",
+                "Stock update completed but the stock could not be found afterward.",
 
                 500
 
@@ -1683,7 +1787,9 @@ async function updateStock(
 
 
         return res.redirect(
-            `/dairy/feedstore/${encodeURIComponent(dairyId)}`
+
+            `/dairy/feedstore/${encodeURIComponent(farmId)}`
+
         );
 
     }
@@ -1704,7 +1810,9 @@ async function updateStock(
 
 
         return res.redirect(
-            `/dairy/feedstore/${encodeURIComponent(dairyId)}?feedStoreError=${message}`
+
+            `/dairy/feedstore/${encodeURIComponent(farmId)}?feedStoreError=${message}`
+
         );
 
     }
@@ -1713,14 +1821,14 @@ async function updateStock(
 
 
 // =========================================================
-// RESTOCK EXISTING STOCK
+// RESTOCK STOCK
 // =========================================================
 //
 // POST:
 //
 //     /dairy/:dairyId/feedstore/restock/:stockId
 //
-// ADMIN ONLY
+// dairyId = FARM _id
 //
 // =========================================================
 
@@ -1729,8 +1837,9 @@ async function restockStock(
     res
 ) {
 
-    const dairyId =
-        getDairyId(req);
+    const farmId =
+        getFarmId(req);
+
 
     const stockId =
         getStockId(req);
@@ -1752,14 +1861,14 @@ async function restockStock(
         }
 
 
-        if (!dairyId) {
+        if (!farmId) {
 
             return res.status(400).json({
 
                 success: false,
 
                 message:
-                    "Dairy ID is required."
+                    "Dairy farm ID is required."
 
             });
 
@@ -1780,27 +1889,20 @@ async function restockStock(
         }
 
 
-        // --------------------------------------------------
-        // Confirm target is feed store.
-        // --------------------------------------------------
+        const context =
+            await loadStorageContext(
+                farmId
+            );
 
-        await loadDairy(
-            dairyId
-        );
-
-
-        // --------------------------------------------------
-        // Confirm embedded stock exists.
-        // --------------------------------------------------
 
         const existingStock =
-            await storageService.getStock({
+            await getStorageStock(
 
-                dairyId,
+                context.storageId,
 
                 stockId
 
-            });
+            );
 
 
         if (!existingStock) {
@@ -1817,26 +1919,22 @@ async function restockStock(
         }
 
 
-        // --------------------------------------------------
-        // Build restock data.
-        // --------------------------------------------------
-
         const data =
-            buildRestockData(req);
+            buildRestockData(
+                req
+            );
 
-
-        // --------------------------------------------------
-        // Restock quantity must be positive.
-        // --------------------------------------------------
 
         const quantity =
             Number(
-                data.quantity
+                data.quantityAdded
             );
 
 
         if (
-            !Number.isFinite(quantity) ||
+            !Number.isFinite(
+                quantity
+            ) ||
             quantity <= 0
         ) {
 
@@ -1851,13 +1949,6 @@ async function restockStock(
         }
 
 
-        // --------------------------------------------------
-        // Price is optional only if the service supports
-        // retaining the previous unit price.
-        //
-        // If supplied, it must be valid.
-        // --------------------------------------------------
-
         if (
             data.price !== undefined &&
             data.price !== null &&
@@ -1871,7 +1962,9 @@ async function restockStock(
 
 
             if (
-                !Number.isFinite(price) ||
+                !Number.isFinite(
+                    price
+                ) ||
                 price < 0
             ) {
 
@@ -1889,36 +1982,17 @@ async function restockStock(
 
 
         const images =
-            getUploadedImages(req);
-
-
-        // --------------------------------------------------
-        // EXISTING STOCK RESTOCK
-        //
-        // This is the ONLY place where restockStock()
-        // should be called.
-        // --------------------------------------------------
-
-        if (
-            !storageService ||
-            typeof storageService.restockStock !==
-                "function"
-        ) {
-
-            throw createError(
-
-                "Storage service does not expose restockStock().",
-
-                500
-
+            getUploadedImages(
+                req
             );
-
-        }
 
 
         await storageService.restockStock({
 
-            dairyId,
+            // STORAGE FACILITY ID
+
+            dairyId:
+                context.storageId,
 
             stockId,
 
@@ -1930,68 +2004,24 @@ async function restockStock(
 
 
         // --------------------------------------------------
-        // RELOAD AFTER RESTOCK
-        //
-        // This is intentional.
-        //
-        // We verify the same embedded stock now exists in
-        // the persisted feed store before redirecting.
+        // Verify persistence.
         // --------------------------------------------------
 
-        const savedDairy =
-            await loadDairy(
-                dairyId
+        const savedStock =
+            await getStorageStock(
+
+                context.storageId,
+
+                stockId
+
             );
-
-
-        let savedStock =
-            null;
-
-
-        if (
-            Array.isArray(
-                savedDairy.feedStocks
-            )
-        ) {
-
-            if (
-                typeof savedDairy.feedStocks.id ===
-                    "function"
-            ) {
-
-                savedStock =
-                    savedDairy.feedStocks.id(
-                        stockId
-                    );
-
-            }
-
-
-            if (!savedStock) {
-
-                savedStock =
-                    savedDairy.feedStocks.find(
-                        function(stock) {
-
-                            return String(
-                                stock._id
-                            ) === String(
-                                stockId
-                            );
-
-                        }
-                    );
-
-            }
-
-        }
 
 
         if (!savedStock) {
 
             throw createError(
 
-                "Restock completed without the stock being found in the persisted feed store.",
+                "Restock completed but the stock could not be found afterward.",
 
                 500
 
@@ -2001,7 +2031,9 @@ async function restockStock(
 
 
         return res.redirect(
-            `/dairy/feedstore/${encodeURIComponent(dairyId)}`
+
+            `/dairy/feedstore/${encodeURIComponent(farmId)}`
+
         );
 
     }
@@ -2022,7 +2054,9 @@ async function restockStock(
 
 
         return res.redirect(
-            `/dairy/feedstore/${encodeURIComponent(dairyId)}?feedStoreError=${message}`
+
+            `/dairy/feedstore/${encodeURIComponent(farmId)}?feedStoreError=${message}`
+
         );
 
     }
@@ -2037,6 +2071,8 @@ async function restockStock(
 // GET:
 //
 //     /dairy/:dairyId/feedstore/:stockId
+//
+// dairyId = FARM _id
 //
 // =========================================================
 
@@ -2061,22 +2097,22 @@ async function getStock(
         }
 
 
-        const dairyId =
-            getDairyId(req);
+        const farmId =
+            getFarmId(req);
 
 
         const stockId =
             getStockId(req);
 
 
-        if (!dairyId) {
+        if (!farmId) {
 
             return res.status(400).json({
 
                 success: false,
 
                 message:
-                    "Dairy ID is required."
+                    "Dairy farm ID is required."
 
             });
 
@@ -2097,23 +2133,20 @@ async function getStock(
         }
 
 
-        // --------------------------------------------------
-        // Ensure dairy is feed store.
-        // --------------------------------------------------
-
-        await loadDairy(
-            dairyId
-        );
+        const context =
+            await loadStorageContext(
+                farmId
+            );
 
 
         const stock =
-            await storageService.getStock({
+            await getStorageStock(
 
-                dairyId,
+                context.storageId,
 
                 stockId
 
-            });
+            );
 
 
         if (!stock) {
@@ -2173,6 +2206,8 @@ async function getStock(
 //
 //     /dairy/:dairyId/feedstore/:stockId
 //
+// dairyId = FARM _id
+//
 // =========================================================
 
 async function deleteStock(
@@ -2196,22 +2231,22 @@ async function deleteStock(
         }
 
 
-        const dairyId =
-            getDairyId(req);
+        const farmId =
+            getFarmId(req);
 
 
         const stockId =
             getStockId(req);
 
 
-        if (!dairyId) {
+        if (!farmId) {
 
             return res.status(400).json({
 
                 success: false,
 
                 message:
-                    "Dairy ID is required."
+                    "Dairy farm ID is required."
 
             });
 
@@ -2232,31 +2267,18 @@ async function deleteStock(
         }
 
 
-        await loadDairy(
-            dairyId
-        );
-
-
-        if (
-            !storageService ||
-            typeof storageService.deleteStock !==
-                "function"
-        ) {
-
-            throw createError(
-
-                "Storage service does not expose deleteStock().",
-
-                500
-
+        const context =
+            await loadStorageContext(
+                farmId
             );
-
-        }
 
 
         await storageService.deleteStock({
 
-            dairyId,
+            // STORAGE FACILITY ID
+
+            dairyId:
+                context.storageId,
 
             stockId
 
@@ -2300,7 +2322,7 @@ async function deleteStock(
 
 
 // =========================================================
-// EXPORT
+// EXPORTS
 // =========================================================
 
 module.exports = {
