@@ -23,7 +23,9 @@ function requireAdmin(
 
         res
             .status(401)
-            .send("Unauthorized");
+            .send(
+                "Unauthorized"
+            );
 
         return false;
 
@@ -51,7 +53,7 @@ function requireAdmin(
 
 
 // ==========================================================
-// SHOW ADD FORM
+// GET ADD STORAGE PAGE
 //
 // GET:
 //
@@ -70,6 +72,10 @@ async function (
 
     try {
 
+        // ==================================================
+        // ADMIN ONLY
+        // ==================================================
+
         if (
             !requireAdmin(
                 req,
@@ -82,21 +88,34 @@ async function (
         }
 
 
+        // ==================================================
+        // PARENT DAIRY ID
+        // ==================================================
+
         const dairyId =
             String(
                 req.params.id || ""
             ).trim();
 
 
-        const data =
-            await addService
-                .getAddPageData(
-                    dairyId
-                );
+        // ==================================================
+        // GET PAGE DATA
+        // ==================================================
 
+        const data =
+            await addService.getAddPageData(
+                dairyId
+            );
+
+
+        // ==================================================
+        // RENDER
+        // ==================================================
 
         return res.render(
+
             "storage/add",
+
             {
 
                 title:
@@ -105,10 +124,14 @@ async function (
                 dairy:
                     data.dairy,
 
+                farmCode:
+                    data.farmCode,
+
                 user:
                     req.session.user
 
             }
+
         );
 
     } catch (error) {
@@ -118,6 +141,20 @@ async function (
             error
         );
 
+
+        if (
+            error.status
+        ) {
+
+            return res
+                .status(error.status)
+                .send(
+                    error.message
+                );
+
+        }
+
+
         return next(error);
 
     }
@@ -126,18 +163,18 @@ async function (
 
 
 // ==========================================================
-// CREATE STORAGE
+// POST ADD STORAGE
 //
 // POST:
 //
 //     /storage/:id/add
 //
-// User supplies:
+// USER:
 //
 //     name
 //     type
 //
-// Server determines:
+// SERVER:
 //
 //     farmCode
 //     roomNumber
@@ -153,6 +190,10 @@ async function (
 
     try {
 
+        // ==================================================
+        // ADMIN ONLY
+        // ==================================================
+
         if (
             !requireAdmin(
                 req,
@@ -165,11 +206,19 @@ async function (
         }
 
 
+        // ==================================================
+        // PARENT DAIRY ID
+        // ==================================================
+
         const dairyId =
             String(
                 req.params.id || ""
             ).trim();
 
+
+        // ==================================================
+        // USER INPUT
+        // ==================================================
 
         const name =
             String(
@@ -183,6 +232,10 @@ async function (
             ).trim();
 
 
+        // ==================================================
+        // CREATE
+        // ==================================================
+
         await addService.createStorage({
 
             dairyId,
@@ -193,6 +246,10 @@ async function (
 
         });
 
+
+        // ==================================================
+        // RETURN TO PARENT FARM STORAGE
+        // ==================================================
 
         return res.redirect(
             `/storage/${dairyId}`
@@ -227,5 +284,15 @@ async function (
 
 
 // ==========================================================
-// EXPORT
+// EXPORTS
 // ==========================================================
+
+module.exports = {
+
+    form:
+        exports.form,
+
+    create:
+        exports.create
+
+};
