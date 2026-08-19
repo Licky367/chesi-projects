@@ -1,7 +1,7 @@
 <%
-// ==========================================================
-// FEED STORE
-// ==========================================================
+/* ==========================================================
+   FEED STORE
+========================================================== */
 
 const currentDairy = dairy || {};
 
@@ -11,9 +11,9 @@ const feedStocks =
         : [];
 
 
-// ==========================================================
-// SAFE HELPERS
-// ==========================================================
+/* ==========================================================
+   SAFE HELPERS
+========================================================== */
 
 function safeNumber(value) {
 
@@ -66,20 +66,20 @@ function stockCategory(stock) {
 %>
 
 
-<!-- ========================================================
+<!-- ==========================================================
      FEED STORE PAGE
-========================================================= -->
+========================================================== -->
 
 <div class="feedstore-page">
 
 
-    <!-- ====================================================
+    <!-- ======================================================
          HEADER
-    ===================================================== -->
+    ======================================================= -->
 
     <div class="feedstore-header">
 
-        <div>
+        <div class="feedstore-header-content">
 
             <div class="feedstore-eyebrow">
                 FEED STORE
@@ -90,10 +90,11 @@ function stockCategory(stock) {
             </h1>
 
             <p>
-                Inventory
+                Feed store inventory
             </p>
 
         </div>
+
 
         <div class="feedstore-count">
 
@@ -110,9 +111,9 @@ function stockCategory(stock) {
     </div>
 
 
-    <!-- ====================================================
+    <!-- ======================================================
          EMPTY STATE
-    ===================================================== -->
+    ======================================================= -->
 
     <% if (feedStocks.length === 0) { %>
 
@@ -137,15 +138,14 @@ function stockCategory(stock) {
     <% } else { %>
 
 
-        <!-- ================================================
+        <!-- ==================================================
              STOCK LIST
-        ================================================= -->
+        =================================================== -->
 
         <div class="feedstock-list">
 
 
             <% feedStocks.forEach(function(stock) { %>
-
 
                 <div
                     class="feedstock-item"
@@ -153,9 +153,9 @@ function stockCategory(stock) {
                 >
 
 
-                    <!-- ====================================
+                    <!-- ======================================
                          STOCK NAME
-                    ===================================== -->
+                    ======================================= -->
 
                     <div class="feedstock-main">
 
@@ -175,14 +175,14 @@ function stockCategory(stock) {
                     </div>
 
 
-                    <!-- ====================================
-                         CURRENT STOCK
-                    ===================================== -->
+                    <!-- ======================================
+                         CURRENT QUANTITY
+                    ======================================= -->
 
                     <div class="feedstock-field">
 
                         <span class="field-label">
-                            Remaining
+                            Quantity Remaining
                         </span>
 
                         <strong>
@@ -198,9 +198,9 @@ function stockCategory(stock) {
                     </div>
 
 
-                    <!-- ====================================
+                    <!-- ======================================
                          INITIAL QUANTITY
-                    ===================================== -->
+                    ======================================= -->
 
                     <div class="feedstock-field">
 
@@ -221,14 +221,14 @@ function stockCategory(stock) {
                     </div>
 
 
-                    <!-- ====================================
-                         PERCENTAGE
-                    ===================================== -->
+                    <!-- ======================================
+                         PERCENTAGE REMAINING
+                    ======================================= -->
 
                     <div class="feedstock-field">
 
                         <span class="field-label">
-                            Remaining
+                            Percentage Remaining
                         </span>
 
                         <strong>
@@ -242,9 +242,28 @@ function stockCategory(stock) {
                     </div>
 
 
-                    <!-- ====================================
+                    <!-- ======================================
+                         UNIT
+                    ======================================= -->
+
+                    <div class="feedstock-field">
+
+                        <span class="field-label">
+                            Unit
+                        </span>
+
+                        <strong>
+
+                            <%= stock.unit || "-" %>
+
+                        </strong>
+
+                    </div>
+
+
+                    <!-- ======================================
                          UNIT PRICE
-                    ===================================== -->
+                    ======================================= -->
 
                     <div class="feedstock-field">
 
@@ -263,14 +282,14 @@ function stockCategory(stock) {
                     </div>
 
 
-                    <!-- ====================================
-                         LATEST ADDITION
-                    ===================================== -->
+                    <!-- ======================================
+                         LATEST STOCK ADDITION
+                    ======================================= -->
 
                     <div class="feedstock-field">
 
                         <span class="field-label">
-                            Latest Addition
+                            Latest Stock Addition
                         </span>
 
                         <strong>
@@ -284,9 +303,9 @@ function stockCategory(stock) {
                     </div>
 
 
-                    <!-- ====================================
+                    <!-- ======================================
                          EXPECTED DURATION
-                    ===================================== -->
+                    ======================================= -->
 
                     <% if (stock.expectedDuration) { %>
 
@@ -307,9 +326,9 @@ function stockCategory(stock) {
                     <% } %>
 
 
-                    <!-- ====================================
+                    <!-- ======================================
                          INSTRUCTIONS
-                    ===================================== -->
+                    ======================================= -->
 
                     <% if (stock.instructions) { %>
 
@@ -328,9 +347,9 @@ function stockCategory(stock) {
                     <% } %>
 
 
-                    <!-- ====================================
+                    <!-- ======================================
                          MESSAGE
-                    ===================================== -->
+                    ======================================= -->
 
                     <% if (stock.message) { %>
 
@@ -349,9 +368,35 @@ function stockCategory(stock) {
                     <% } %>
 
 
-                    <!-- ====================================
+                    <!-- ======================================
+                         IMAGES
+                    ======================================= -->
+
+                    <% if (
+                        Array.isArray(stock.images) &&
+                        stock.images.length > 0
+                    ) { %>
+
+                        <div class="feedstock-images">
+
+                            <% stock.images.forEach(function(image) { %>
+
+                                <img
+                                    src="<%= image %>"
+                                    alt="<%= stock.name || "Stock" %>"
+                                    loading="lazy"
+                                >
+
+                            <% }); %>
+
+                        </div>
+
+                    <% } %>
+
+
+                    <!-- ======================================
                          DATES
-                    ===================================== -->
+                    ======================================= -->
 
                     <div class="feedstock-dates">
 
@@ -385,36 +430,7 @@ function stockCategory(stock) {
                     </div>
 
 
-                    <!-- ====================================
-                         IMAGES
-                    ===================================== -->
-
-                    <% if (
-                        Array.isArray(stock.images) &&
-                        stock.images.length
-                    ) { %>
-
-                        <div class="feedstock-images">
-
-                            <% stock.images.forEach(
-                                function(image) {
-                            { %>
-
-                                <img
-                                    src="<%= image %>"
-                                    alt="<%= stock.name || 'Stock' %>"
-                                    loading="lazy"
-                                >
-
-                            <% }); %>
-
-                        </div>
-
-                    <% } %>
-
-
                 </div>
-
 
             <% }); %>
 
@@ -466,6 +482,13 @@ function stockCategory(stock) {
 }
 
 
+.feedstore-header-content {
+
+    min-width: 0;
+
+}
+
+
 .feedstore-eyebrow {
 
     font-size: 12px;
@@ -487,17 +510,23 @@ function stockCategory(stock) {
 
     font-size: 28px;
 
+    line-height: 1.2;
+
 }
 
 
 .feedstore-header p {
 
-    margin: 5px 0 0;
+    margin: 6px 0 0;
 
     opacity: .65;
 
 }
 
+
+/* ==========================================================
+   STOCK COUNT
+========================================================== */
 
 .feedstore-count {
 
@@ -517,6 +546,8 @@ function stockCategory(stock) {
 
     background: #f3f4f6;
 
+    box-sizing: border-box;
+
 }
 
 
@@ -524,10 +555,14 @@ function stockCategory(stock) {
 
     font-size: 22px;
 
+    line-height: 1;
+
 }
 
 
 .feedstore-count span {
+
+    margin-top: 5px;
 
     font-size: 12px;
 
@@ -592,6 +627,8 @@ function stockCategory(stock) {
 
     font-weight: 700;
 
+    line-height: 1.3;
+
 }
 
 
@@ -599,7 +636,7 @@ function stockCategory(stock) {
 
     display: inline-block;
 
-    margin-top: 6px;
+    margin-top: 7px;
 
     padding: 4px 9px;
 
@@ -628,7 +665,7 @@ function stockCategory(stock) {
 
     gap: 20px;
 
-    padding: 9px 0;
+    padding: 10px 0;
 
     border-top: 1px solid #f0f0f0;
 
@@ -647,6 +684,8 @@ function stockCategory(stock) {
 .feedstock-field strong {
 
     text-align: right;
+
+    font-size: 14px;
 
 }
 
@@ -668,30 +707,11 @@ function stockCategory(stock) {
 
 .feedstock-description p {
 
-    margin: 5px 0 0;
+    margin: 6px 0 0;
 
     line-height: 1.5;
 
-}
-
-
-/* ==========================================================
-   DATES
-========================================================== */
-
-.feedstock-dates {
-
-    display: flex;
-
-    flex-wrap: wrap;
-
-    gap: 12px;
-
-    margin-top: 15px;
-
-    font-size: 11px;
-
-    opacity: .55;
+    white-space: pre-wrap;
 
 }
 
@@ -722,6 +742,33 @@ function stockCategory(stock) {
     object-fit: cover;
 
     border-radius: 10px;
+
+    display: block;
+
+}
+
+
+/* ==========================================================
+   DATES
+========================================================== */
+
+.feedstock-dates {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+    margin-top: 16px;
+
+    padding-top: 12px;
+
+    border-top: 1px solid #f0f0f0;
+
+    font-size: 11px;
+
+    opacity: .55;
 
 }
 
@@ -754,7 +801,7 @@ function stockCategory(stock) {
 
 .feedstore-empty h2 {
 
-    margin: 0 0 6px;
+    margin: 0 0 7px;
 
 }
 
@@ -793,6 +840,15 @@ function stockCategory(stock) {
     .feedstore-header h1 {
 
         font-size: 23px;
+
+    }
+
+
+    .feedstore-count {
+
+        min-width: 75px;
+
+        padding: 10px 12px;
 
     }
 
