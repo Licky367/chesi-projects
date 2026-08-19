@@ -3,19 +3,6 @@
    UPDATE EXISTING STOCK
    FILE:
        views/update/storage/update-stock.ejs
-
-   PURPOSE:
-       Edit information belonging to an existing stock item.
-
-       This is NOT a restock operation.
-
-   STOCK IDENTITY:
-       stock.name      = user-defined stock name
-       feedName        = selected animal feed type
-       medicineName    = selected AgroVets type
-
-       Only one of feedName / medicineName should exist,
-       according to category.
 ========================================================== */
 
 const currentDairy = dairy || {};
@@ -61,7 +48,6 @@ const stockName =
 const feedName =
     currentStock.feedName || "";
 
-
 const medicineName =
     currentStock.medicineName || "";
 
@@ -75,7 +61,6 @@ const quantity =
         currentStock.quantityRemaining
     );
 
-
 const safeQuantity =
     Number.isFinite(quantity)
         ? quantity
@@ -87,8 +72,7 @@ const safeQuantity =
 ========================================================== */
 
 const stockUnit =
-    currentStock.unit ||
-    "";
+    currentStock.unit || "";
 
 
 /* ==========================================================
@@ -99,7 +83,6 @@ const stockPrice =
     Number(
         currentStock.price
     );
-
 
 const safePrice =
     Number.isFinite(stockPrice)
@@ -112,8 +95,7 @@ const safePrice =
 ========================================================== */
 
 const instructions =
-    currentStock.instructions ||
-    "";
+    currentStock.instructions || "";
 
 
 /* ==========================================================
@@ -121,8 +103,7 @@ const instructions =
 ========================================================== */
 
 const expectedDuration =
-    currentStock.expectedDuration ||
-    "";
+    currentStock.expectedDuration || "";
 
 
 /* ==========================================================
@@ -168,7 +149,6 @@ const message =
 
     <div class="stock-summary">
 
-
         <div class="stock-summary-icon">
 
             <% if (stockCategory === "medicine") { %>
@@ -191,12 +171,10 @@ const message =
             </strong>
 
             <span>
-
                 <%= stockCategory === "medicine"
                     ? "AgroVets"
                     : "Animal Feed"
                 %>
-
             </span>
 
         </div>
@@ -214,13 +192,18 @@ const message =
 
         </div>
 
-
     </div>
 
 
 
     <!-- ======================================================
-         FORM
+         UPDATE FORM
+         
+         IMPORTANT:
+         Browser forms only support GET and POST.
+
+         The hidden _method field tells method-override
+         middleware to process this request as PUT.
     ======================================================= -->
 
     <form
@@ -231,7 +214,15 @@ const message =
         enctype="multipart/form-data"
     >
 
+        <!-- Convert POST into PUT -->
+        <input
+            type="hidden"
+            name="_method"
+            value="PUT"
+        >
 
+
+        <!-- Stock ID -->
         <input
             type="hidden"
             name="stockId"
@@ -242,12 +233,6 @@ const message =
 
         <!-- ==================================================
              STOCK NAME
-             
-             ADMIN:
-                 Editable.
-
-             NON-ADMIN:
-                 Read-only.
         =================================================== -->
 
         <div class="storage-field">
@@ -318,9 +303,6 @@ const message =
 
         <!-- ==================================================
              CATEGORY-SPECIFIC TYPE
-             
-             Only the field belonging to the selected
-             category is submitted.
         =================================================== -->
 
         <% if (stockCategory === "feed") { %>
@@ -372,11 +354,10 @@ const message =
 
 
         <!-- ==================================================
-             CURRENT QUANTITY
+             QUANTITY / UNIT
         =================================================== -->
 
         <div class="storage-grid">
-
 
             <div class="storage-field">
 
@@ -401,7 +382,6 @@ const message =
             </div>
 
 
-
             <div class="storage-field">
 
                 <label>
@@ -422,13 +402,11 @@ const message =
 
             </div>
 
-
         </div>
 
 
 
         <% if (isAdmin) { %>
-
 
             <!-- ==============================================
                  UNIT PRICE
@@ -573,7 +551,6 @@ const message =
 
         </button>
 
-
     </form>
 
 </div>
@@ -602,7 +579,9 @@ const message =
 
 
 .storage-page * {
+
     box-sizing: border-box;
+
 }
 
 
@@ -682,6 +661,7 @@ const message =
 .stock-summary-icon {
 
     width: 40px;
+
     height: 40px;
 
     display: flex;
