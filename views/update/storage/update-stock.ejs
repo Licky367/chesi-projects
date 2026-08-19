@@ -3,19 +3,54 @@
    UPDATE EXISTING STOCK
    FILE:
        views/update/storage/update-stock.ejs
+
+   PURPOSE:
+       Edit information belonging to an existing stock item.
+
+   IMPORTANT:
+       The form uploads multipart/form-data.
+
+       Therefore the PUT override is supplied through the
+       query string:
+
+           ?_method=PUT
+
+       instead of a hidden multipart field.
+
+       server.js already contains:
+
+           app.use(methodOverride("_method"));
+
+       so the POST request will be converted to PUT before
+       reaching the feedstock router.
 ========================================================== */
 
-const currentDairy = dairy || {};
-const currentUser = user || {};
-const currentStock = stock || {};
+
+const currentDairy =
+    dairy || {};
+
+
+const currentUser =
+    user || {};
+
+
+const currentStock =
+    stock || {};
+
 
 const isAdmin =
     currentUser.role === "admin";
 
 
 /* ==========================================================
-   STOCK ID
+   SAFE ENCODE HELPERS
 ========================================================== */
+
+const dairyId =
+    String(
+        currentDairy._id || ""
+    );
+
 
 const stockId =
     String(
@@ -30,7 +65,9 @@ const stockId =
 const stockCategory =
     String(
         currentStock.category || ""
-    ).toLowerCase();
+    )
+        .trim()
+        .toLowerCase();
 
 
 /* ==========================================================
@@ -48,6 +85,7 @@ const stockName =
 const feedName =
     currentStock.feedName || "";
 
+
 const medicineName =
     currentStock.medicineName || "";
 
@@ -60,6 +98,7 @@ const quantity =
     Number(
         currentStock.quantityRemaining
     );
+
 
 const safeQuantity =
     Number.isFinite(quantity)
@@ -83,6 +122,7 @@ const stockPrice =
     Number(
         currentStock.price
     );
+
 
 const safePrice =
     Number.isFinite(stockPrice)
@@ -131,9 +171,11 @@ const message =
             FEED STORE
         </span>
 
+
         <h1>
             Update Stock
         </h1>
+
 
         <p>
             Edit the information attached to this stock item.
@@ -144,10 +186,11 @@ const message =
 
 
     <!-- ======================================================
-         CURRENT STOCK
+         CURRENT STOCK SUMMARY
     ======================================================= -->
 
     <div class="stock-summary">
+
 
         <div class="stock-summary-icon">
 
@@ -170,11 +213,14 @@ const message =
                 <%= stockName %>
             </strong>
 
+
             <span>
+
                 <%= stockCategory === "medicine"
                     ? "AgroVets"
                     : "Animal Feed"
                 %>
+
             </span>
 
         </div>
@@ -185,6 +231,7 @@ const message =
             <strong>
                 <%= safeQuantity.toLocaleString() %>
             </strong>
+
 
             <span>
                 <%= stockUnit %>
@@ -198,31 +245,50 @@ const message =
 
     <!-- ======================================================
          UPDATE FORM
-         
-         IMPORTANT:
-         Browser forms only support GET and POST.
-
-         The hidden _method field tells method-override
-         middleware to process this request as PUT.
     ======================================================= -->
+    <!--
+        IMPORTANT:
+
+        HTML forms do not support PUT directly.
+
+        Because this form also uploads images using
+        multipart/form-data, _method is supplied through
+        the query string instead of a hidden form field.
+
+        Browser sends:
+
+            POST
+            /dairy/:dairyId/feedstore/update/:stockId?_method=PUT
+
+        method-override in server.js converts it to:
+
+            PUT
+            /dairy/:dairyId/feedstore/update/:stockId
+
+        which matches:
+
+            router.put(
+                "/dairy/:dairyId/feedstore/update/:stockId",
+                ...
+            )
+    -->
 
     <form
         id="updateStockForm"
         class="storage-form"
-        action="/dairy/<%= currentDairy._id %>/feedstore/update/<%= stockId %>"
+
+        action="/dairy/<%= encodeURIComponent(dairyId) %>/feedstore/update/<%= encodeURIComponent(stockId) %>?_method=PUT"
+
         method="POST"
+
         enctype="multipart/form-data"
     >
 
-        <!-- Convert POST into PUT -->
-        <input
-            type="hidden"
-            name="_method"
-            value="PUT"
-        >
 
+        <!-- ==================================================
+             STOCK ID
+        =================================================== -->
 
-        <!-- Stock ID -->
         <input
             type="hidden"
             name="stockId"
@@ -254,6 +320,7 @@ const message =
                     required
                 >
 
+
                 <small>
                     The name used to identify this stock item.
                 </small>
@@ -283,13 +350,17 @@ const message =
                 Stock type
             </label>
 
+
             <input
                 type="text"
+
                 value="<%= stockCategory === 'medicine'
                     ? 'AgroVets'
                     : 'Animal Feed' %>"
+
                 readonly
             >
+
 
             <input
                 type="hidden"
@@ -307,17 +378,20 @@ const message =
 
         <% if (stockCategory === "feed") { %>
 
+
             <div class="storage-field">
 
                 <label>
                     Animal feed
                 </label>
 
+
                 <input
                     type="text"
                     value="<%= feedName %>"
                     readonly
                 >
+
 
                 <input
                     type="hidden"
@@ -327,7 +401,9 @@ const message =
 
             </div>
 
+
         <% } else if (stockCategory === "medicine") { %>
+
 
             <div class="storage-field">
 
@@ -335,11 +411,13 @@ const message =
                     AgroVets
                 </label>
 
+
                 <input
                     type="text"
                     value="<%= medicineName %>"
                     readonly
                 >
+
 
                 <input
                     type="hidden"
@@ -348,6 +426,7 @@ const message =
                 >
 
             </div>
+
 
         <% } %>
 
@@ -359,11 +438,13 @@ const message =
 
         <div class="storage-grid">
 
+
             <div class="storage-field">
 
                 <label for="updateQuantity">
                     Quantity
                 </label>
+
 
                 <input
                     id="updateQuantity"
@@ -375,11 +456,13 @@ const message =
                     required
                 >
 
+
                 <small>
                     Current stored quantity.
                 </small>
 
             </div>
+
 
 
             <div class="storage-field">
@@ -388,11 +471,13 @@ const message =
                     Unit
                 </label>
 
+
                 <input
                     type="text"
                     value="<%= stockUnit %>"
                     readonly
                 >
+
 
                 <input
                     type="hidden"
@@ -408,6 +493,7 @@ const message =
 
         <% if (isAdmin) { %>
 
+
             <!-- ==============================================
                  UNIT PRICE
             =============================================== -->
@@ -418,11 +504,13 @@ const message =
                     Unit price
                 </label>
 
+
                 <div class="money-input">
 
                     <span>
                         KES
                     </span>
+
 
                     <input
                         id="updatePrice"
@@ -434,6 +522,7 @@ const message =
                     >
 
                 </div>
+
 
                 <small>
                     Current price for one unit.
@@ -452,6 +541,7 @@ const message =
                 <label for="updateInstructions">
                     Instructions of use
                 </label>
+
 
                 <textarea
                     id="updateInstructions"
@@ -474,6 +564,7 @@ const message =
                     Expected duration
                 </label>
 
+
                 <input
                     id="updateDuration"
                     type="text"
@@ -484,6 +575,7 @@ const message =
                 >
 
             </div>
+
 
         <% } %>
 
@@ -498,6 +590,7 @@ const message =
             <label for="updateMessage">
                 Additional information
             </label>
+
 
             <textarea
                 id="updateMessage"
@@ -520,6 +613,7 @@ const message =
                 Add photos
             </label>
 
+
             <input
                 id="updateImages"
                 type="file"
@@ -527,6 +621,11 @@ const message =
                 accept="image/*"
                 multiple
             >
+
+
+            <small>
+                You can select multiple images.
+            </small>
 
         </div>
 
@@ -545,11 +644,13 @@ const message =
                 💾
             </span>
 
+
             <span>
                 Save Changes
             </span>
 
         </button>
+
 
     </form>
 
