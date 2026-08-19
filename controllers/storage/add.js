@@ -13,10 +13,6 @@ const addService =
 
 function requireAdmin(req, res) {
 
-    // ------------------------------------------------------
-    // NOT LOGGED IN
-    // ------------------------------------------------------
-
     if (
         !req.session ||
         !req.session.user
@@ -29,10 +25,6 @@ function requireAdmin(req, res) {
         return false;
     }
 
-
-    // ------------------------------------------------------
-    // ADMIN ONLY
-    // ------------------------------------------------------
 
     if (
         req.session.user.role !== "admin"
@@ -59,7 +51,7 @@ function requireAdmin(req, res) {
 //
 //     /storage/:id/add
 //
-// :id = parent Dairy._id
+// :id = Dairy._id of the parent farm
 // ==========================================================
 
 exports.form =
@@ -71,9 +63,9 @@ async function (
 
     try {
 
-        // --------------------------------------------------
-        // ADMIN CHECK
-        // --------------------------------------------------
+        // ==================================================
+        // ADMIN ONLY
+        // ==================================================
 
         if (
             !requireAdmin(
@@ -86,9 +78,9 @@ async function (
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // PARENT DAIRY ID
-        // --------------------------------------------------
+        // ==================================================
 
         const dairyId =
             String(
@@ -96,19 +88,17 @@ async function (
             ).trim();
 
 
-        // --------------------------------------------------
+        // ==================================================
         // GET PARENT FARM
-        // --------------------------------------------------
         //
-        // The service resolves:
+        // dairyId = Dairy._id
         //
-        //     dairyId
-        //         ↓
+        // Service resolves:
+        //
         //     Dairy._id
-        //         ↓
+        //          ↓
         //     Dairy.code
-        //
-        // --------------------------------------------------
+        // ==================================================
 
         const dairy =
             await addService.getParentDairy(
@@ -116,9 +106,9 @@ async function (
             );
 
 
-        // --------------------------------------------------
+        // ==================================================
         // RENDER
-        // --------------------------------------------------
+        // ==================================================
 
         return res.render(
             "storage/add",
@@ -135,9 +125,20 @@ async function (
                     req.session.user,
 
                 // IMPORTANT:
-                // EJS expects this variable to exist.
+                // Always define these because add.ejs
+                // expects them.
                 error:
-                    null
+                    null,
+
+                formData: {
+
+                    name:
+                        "",
+
+                    type:
+                        ""
+
+                }
 
             }
         );
@@ -162,12 +163,12 @@ async function (
 //
 //     /storage/:id/add
 //
-// USER PROVIDES:
+// User provides:
 //
 //     name
 //     type
 //
-// SERVER PROVIDES:
+// Server generates:
 //
 //     farmCode
 //     roomNumber
@@ -182,9 +183,9 @@ async function (
 
     try {
 
-        // --------------------------------------------------
-        // ADMIN CHECK
-        // --------------------------------------------------
+        // ==================================================
+        // ADMIN ONLY
+        // ==================================================
 
         if (
             !requireAdmin(
@@ -197,9 +198,9 @@ async function (
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // PARENT DAIRY ID
-        // --------------------------------------------------
+        // ==================================================
 
         const dairyId =
             String(
@@ -207,9 +208,9 @@ async function (
             ).trim();
 
 
-        // --------------------------------------------------
+        // ==================================================
         // USER INPUT
-        // --------------------------------------------------
+        // ==================================================
 
         const name =
             String(
@@ -223,17 +224,15 @@ async function (
             ).trim();
 
 
-        // --------------------------------------------------
+        // ==================================================
         // CREATE STORAGE
-        // --------------------------------------------------
         //
-        // The service determines:
+        // Service determines:
         //
-        //     Dairy.code
+        //     dairy.code
         //     farmCode
-        //     next roomNumber
-        //
-        // --------------------------------------------------
+        //     roomNumber
+        // ==================================================
 
         await addService.createStorage({
 
@@ -246,9 +245,9 @@ async function (
         });
 
 
-        // --------------------------------------------------
-        // RETURN TO STORAGE INDEX
-        // --------------------------------------------------
+        // ==================================================
+        // SUCCESS
+        // ==================================================
 
         return res.redirect(
             `/storage/${dairyId}`
@@ -262,18 +261,17 @@ async function (
         );
 
 
-        // --------------------------------------------------
-        // VALIDATION / EXPECTED ERRORS
-        // --------------------------------------------------
+        // ==================================================
+        // EXPECTED APPLICATION ERROR
+        // ==================================================
 
         if (
             error.status
         ) {
 
-            // ----------------------------------------------
-            // For validation errors, reload the same form
-            // rather than destroying the page.
-            // ----------------------------------------------
+            // ------------------------------------------------
+            // Reload form for validation/conflict errors.
+            // ------------------------------------------------
 
             if (
                 error.status >= 400 &&
@@ -288,38 +286,48 @@ async function (
                         );
 
 
-                    return res.status(
-                        error.status
-                    ).render(
-                        "storage/add",
-                        {
+                    return res
+                        .status(
+                            error.status
+                        )
+                        .render(
+                            "storage/add",
+                            {
 
-                            title:
-                                "Add Storage",
+                                title:
+                                    "Add Storage",
 
-                            dairy,
+                                dairy,
 
-                            dairyId:
-                                req.params.id,
+                                dairyId:
+                                    req.params.id,
 
-                            user:
-                                req.session.user,
+                                user:
+                                    req.session.user,
 
-                            error:
-                                error.message,
+                                // --------------------------
+                                // ERROR MESSAGE
+                                // --------------------------
 
-                            formData: {
+                                error:
+                                    error.message,
 
-                                name:
-                                    req.body.name || "",
+                                // --------------------------
+                                // PRESERVE FORM VALUES
+                                // --------------------------
 
-                                type:
-                                    req.body.type || ""
+                                formData: {
+
+                                    name:
+                                        req.body.name || "",
+
+                                    type:
+                                        req.body.type || ""
+
+                                }
 
                             }
-
-                        }
-                    );
+                        );
 
                 } catch (renderError) {
 
@@ -336,16 +344,18 @@ async function (
 
 
             return res
-                .status(error.status)
+                .status(
+                    error.status
+                )
                 .send(
                     error.message
                 );
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // UNEXPECTED ERROR
-        // --------------------------------------------------
+        // ==================================================
 
         return next(error);
     }
