@@ -6,23 +6,55 @@
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Handles storage belonging to ONE specific Dairy.
+// Handles storage belonging to ONE specific Dairy Farm.
 //
 // Route:
 //
 //     /storage/:id
 //
-// Where:
+// IMPORTANT ID CONTRACT
+// ----------------------------------------------------------
 //
 //     :id = Dairy._id
 //
-// The Dairy's:
+// NOT:
 //
-//     Dairy.code
+//     :id = farmCode
 //
-// corresponds to:
+// NOT:
 //
+//     :id = DairyStorage._id
+//
+// The relationship is:
+//
+//     /storage/:id
+//            |
+//            | id = Dairy._id
+//            ↓
+//        Dairy document
+//            |
+//            | dairy.code
+//            ↓
 //     DairyStorage.farmCode
+//
+// Example:
+//
+//     Dairy:
+//
+//         _id  = 68abc123...
+//         code = -1
+//
+//     DairyStorage:
+//
+//         farmCode = -1
+//
+// Therefore:
+//
+//     /storage/68abc123...
+//
+// loads storage where:
+//
+//     DairyStorage.farmCode === -1
 //
 // ==========================================================
 
@@ -91,6 +123,10 @@ function normalizeType(
 // ==========================================================
 // VALIDATE DAIRY ID
 // ==========================================================
+//
+// This ID MUST be a MongoDB Dairy._id.
+//
+// ==========================================================
 
 function isValidDairyId(
     id
@@ -104,29 +140,239 @@ function isValidDairyId(
 
 
 // ==========================================================
+// GET PARENT DAIRY FARM
+// ==========================================================
+//
+// Receives:
+//
+//     Dairy._id
+//
+// Returns:
+//
+//     {
+//         dairy,
+//         farmCode
+//     }
+//
+// Where:
+//
+//     dairy   = parent Dairy Farm document
+//     farmCode = dairy.code
+//
+// ==========================================================
+
+async function getDairyById(
+    dairyId
+) {
+
+    // ======================================================
+    // REQUIRE ID
+    // ======================================================
+
+    if (
+        !dairyId
+    ) {
+
+        const error =
+            new Error(
+                "Dairy ID is required."
+            );
+
+
+        error.status =
+            400;
+
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // VALIDATE OBJECT ID
+    // ======================================================
+
+    if (
+        !isValidDairyId(
+            dairyId
+        )
+    ) {
+
+        const error =
+            new Error(
+                "Invalid dairy ID."
+            );
+
+
+        error.status =
+            400;
+
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // FIND DAIRY USING _id
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // This is where the URL ID is resolved.
+    //
+    //     /storage/:id
+    //
+    //     :id
+    //       ↓
+    //     Dairy._id
+    //
+    // ======================================================
+
+    const dairy =
+
+        await Dairy
+            .findById(
+                dairyId
+            )
+            .lean();
+
+
+    // ======================================================
+    // DAIRY NOT FOUND
+    // ======================================================
+
+    if (
+        !dairy
+    ) {
+
+        const error =
+            new Error(
+                "Dairy farm not found."
+            );
+
+
+        error.status =
+            404;
+
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // VERIFY PARENT IS A DAIRY FARM
+    // ======================================================
+    //
+    // According to models/dairy.js:
+    //
+    //     code < 0
+    //         = Dairy Farm
+    //
+    //     code > 0
+    //         = Animal
+    //
+    //     code === null
+    //         = Structure / Asset
+    //
+    // Storage belongs to a Dairy Farm.
+    //
+    // ======================================================
+
+    if (
+        dairy.code === null ||
+        dairy.code === undefined
+    ) {
+
+        const error =
+            new Error(
+                "The supplied Dairy does not have a farm code."
+            );
+
+
+        error.status =
+            422;
+
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // CONVERT FARM CODE TO NUMBER
+    // ======================================================
+
+    const farmCode =
+        Number(
+            dairy.code
+        );
+
+
+    // ======================================================
+    // FARM CODE MUST BE NEGATIVE INTEGER
+    // ======================================================
+
+    if (
+        !Number.isInteger(
+            farmCode
+        ) ||
+        farmCode >= 0
+    ) {
+
+        const error =
+            new Error(
+                "The supplied Dairy is not a valid parent Dairy Farm."
+            );
+
+
+        error.status =
+            422;
+
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // RETURN PARENT FARM + CODE
+    // ======================================================
+
+    return {
+
+        dairy,
+
+        farmCode
+
+    };
+
+}
+
+
+// ==========================================================
 // SORT STORAGE
 // ==========================================================
 //
-// Storage belongs to ONE dairy, therefore farmCode is no
-// longer needed as the primary sorting criterion.
+// Storage belongs to ONE parent farm.
 //
-// Sorting:
+// Sorting is by roomNumber.
 //
-//     Normal Rooms:
-//         0
-//         1
-//         2
-//         3
+// Normal rooms:
 //
-//     AgroStores:
-//         -1
-//         -2
-//         -3
+//     0
+//     1
+//     2
+//     3
 //
-// Since AgroStores use negative roomNumber values, numeric
-// sorting naturally places them before normal rooms.
+// AgroStores:
 //
-// Example:
+//     -1
+//     -2
+//     -3
+//
+// Numeric sorting gives:
 //
 //     -3
 //     -2
@@ -147,8 +393,13 @@ function sortStorage(
 
             return (
 
-                Number(a.roomNumber) -
-                Number(b.roomNumber)
+                Number(
+                    a.roomNumber
+                ) -
+
+                Number(
+                    b.roomNumber
+                )
 
             );
 
@@ -160,152 +411,29 @@ function sortStorage(
 
 
 // ==========================================================
-// GET DAIRY
+// GET STORAGE FOR ONE DAIRY FARM
 // ==========================================================
 //
-// Finds the Dairy using:
+// Receives:
+//
+//     {
+//         dairyId,
+//         type
+//     }
+//
+// Where:
+//
+//     dairyId = Dairy._id
+//
+// The service resolves:
 //
 //     Dairy._id
+//          ↓
+//     Dairy.code
+//          ↓
+//     DairyStorage.farmCode
 //
-// The Dairy code is then used to locate its storage.
-//
-// ==========================================================
-
-async function getDairyById(
-    id
-) {
-
-    if (
-        !isValidDairyId(id)
-    ) {
-
-        const error =
-            new Error(
-                "Invalid dairy ID."
-            );
-
-
-        error.status =
-            400;
-
-
-        throw error;
-
-    }
-
-
-    const dairy =
-
-        await Dairy
-            .findById(id)
-            .lean();
-
-
-    if (!dairy) {
-
-        const error =
-            new Error(
-                "Dairy farm not found."
-            );
-
-
-        error.status =
-            404;
-
-
-        throw error;
-
-    }
-
-
-    // ======================================================
-    // DAIRY CODE VALIDATION
-    // ======================================================
-
-    if (
-        dairy.code === undefined ||
-        dairy.code === null
-    ) {
-
-        const error =
-            new Error(
-                "The dairy does not have a valid farm code."
-            );
-
-
-        error.status =
-            422;
-
-
-        throw error;
-
-    }
-
-
-    const farmCode =
-        Number(
-            dairy.code
-        );
-
-
-    if (
-        !Number.isInteger(farmCode) ||
-        farmCode >= 0
-    ) {
-
-        const error =
-            new Error(
-                "The dairy farm code must be a negative integer."
-            );
-
-
-        error.status =
-            422;
-
-
-        throw error;
-
-    }
-
-
-    return {
-
-        dairy,
-
-        farmCode
-
-    };
-
-}
-
-
-// ==========================================================
-// GET STORAGE
-// ==========================================================
-//
-// Returns active storage belonging ONLY to the Dairy
-// represented by :id.
-//
-// options:
-//
-//     {
-//         id: dairy._id,
-//         type: "all"
-//     }
-//
-// or:
-//
-//     {
-//         id: dairy._id,
-//         type: "room"
-//     }
-//
-// or:
-//
-//     {
-//         id: dairy._id,
-//         type: "agroStore"
-//     }
+// Returns ONLY storage belonging to that farm.
 //
 // ==========================================================
 
@@ -313,12 +441,21 @@ async function getStorage(
     options = {}
 ) {
 
-    const id =
-        options.id;
+    // ======================================================
+    // READ DAIRY ID
+    // ======================================================
+
+    const dairyId =
+        String(
+            options.dairyId ||
+            options.id ||
+            ""
+        )
+        .trim();
 
 
     // ======================================================
-    // FIND DAIRY
+    // RESOLVE PARENT FARM
     // ======================================================
 
     const {
@@ -330,7 +467,7 @@ async function getStorage(
     } =
 
         await getDairyById(
-            id
+            dairyId
         );
 
 
@@ -347,21 +484,17 @@ async function getStorage(
     // ======================================================
     // BASE QUERY
     // ======================================================
-//
-// IMPORTANT:
-//
-// We filter by:
-//
-//     farmCode
-//
-// obtained from:
-//
-//     Dairy.code
-//
-// This prevents storage belonging to other farms from
-// appearing on this dairy's storage page.
-//
-// ======================================================
+    //
+    // THIS IS THE CRITICAL QUERY.
+    //
+    // Storage is identified by:
+    //
+    //     farmCode = dairy.code
+    //
+    // Therefore storage from another farm can NEVER
+    // appear here.
+    //
+    // ======================================================
 
     const query = {
 
@@ -374,7 +507,7 @@ async function getStorage(
 
 
     // ======================================================
-    // TYPE FILTER
+    // ROOM FILTER
     // ======================================================
 
     if (
@@ -386,6 +519,10 @@ async function getStorage(
 
     }
 
+
+    // ======================================================
+    // AGROSTORE FILTER
+    // ======================================================
 
     if (
         type === "agroStore"
@@ -418,35 +555,34 @@ async function getStorage(
 
 
     // ======================================================
-    // RETURN
+    // RETURN STORAGE ARRAY
+    // ======================================================
+    //
+    // The controller expects:
+    //
+    //     const storage =
+    //         await storageService.getStorage(...);
+    //
+    // Therefore this function returns the array itself.
+    //
     // ======================================================
 
-    return {
-
-        dairy,
-
-        farmCode,
-
-        storage,
-
-        type
-
-    };
+    return storage;
 
 }
 
 
 // ==========================================================
-// GET ALL STORAGE FOR DAIRY
+// GET ALL STORAGE FOR DAIRY FARM
 // ==========================================================
 
 async function getAllStorage(
-    id
+    dairyId
 ) {
 
     return getStorage({
 
-        id,
+        dairyId,
 
         type:
             "all"
@@ -457,16 +593,16 @@ async function getAllStorage(
 
 
 // ==========================================================
-// GET ROOMS FOR DAIRY
+// GET ROOMS FOR DAIRY FARM
 // ==========================================================
 
 async function getRooms(
-    id
+    dairyId
 ) {
 
     return getStorage({
 
-        id,
+        dairyId,
 
         type:
             "room"
@@ -477,16 +613,16 @@ async function getRooms(
 
 
 // ==========================================================
-// GET AGROSTORES FOR DAIRY
+// GET AGROSTORES FOR DAIRY FARM
 // ==========================================================
 
 async function getAgroStores(
-    id
+    dairyId
 ) {
 
     return getStorage({
 
-        id,
+        dairyId,
 
         type:
             "agroStore"
@@ -500,20 +636,33 @@ async function getAgroStores(
 // GET ONE STORAGE FACILITY
 // ==========================================================
 //
-// Useful later for:
+// Receives:
 //
-//     /storage/:id/room/:roomNumber
+//     dairyId
+//     roomNumber
 //
-// or:
+// Where:
 //
-//     /storage/:id/agrostore/:storageNumber
+//     dairyId = parent Dairy Farm._id
+//
+// Then:
+//
+//     Dairy._id
+//          ↓
+//     Dairy.code
+//          ↓
+//     DairyStorage.farmCode
 //
 // ==========================================================
 
 async function getStorageFacility(
-    id,
+    dairyId,
     roomNumber
 ) {
+
+    // ======================================================
+    // RESOLVE PARENT FARM
+    // ======================================================
 
     const {
 
@@ -524,9 +673,13 @@ async function getStorageFacility(
     } =
 
         await getDairyById(
-            id
+            dairyId
         );
 
+
+    // ======================================================
+    // NORMALIZE STORAGE NUMBER
+    // ======================================================
 
     const number =
         Number(
@@ -534,8 +687,14 @@ async function getStorageFacility(
         );
 
 
+    // ======================================================
+    // VALIDATE STORAGE NUMBER
+    // ======================================================
+
     if (
-        !Number.isInteger(number)
+        !Number.isInteger(
+            number
+        )
     ) {
 
         const error =
@@ -552,6 +711,23 @@ async function getStorageFacility(
 
     }
 
+
+    // ======================================================
+    // FIND STORAGE
+    // ======================================================
+    //
+    // BOTH IDENTIFIERS ARE REQUIRED:
+    //
+    //     farmCode
+    //
+    // and
+    //
+    //     roomNumber
+    //
+    // This guarantees that the facility belongs to the
+    // requested parent Dairy Farm.
+    //
+    // ======================================================
 
     const storage =
 
@@ -570,7 +746,13 @@ async function getStorageFacility(
             .lean();
 
 
-    if (!storage) {
+    // ======================================================
+    // STORAGE NOT FOUND
+    // ======================================================
+
+    if (
+        !storage
+    ) {
 
         const error =
             new Error(
@@ -586,6 +768,10 @@ async function getStorageFacility(
 
     }
 
+
+    // ======================================================
+    // RETURN
+    // ======================================================
 
     return {
 
