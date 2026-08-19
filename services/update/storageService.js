@@ -2,30 +2,54 @@
 // services/update/storageService.js
 // ==========================================================
 //
-// FEED STORE / STORAGE SERVICE
+// FEED STOCK / STORAGE SERVICE
 //
-// CANONICAL DATABASE LOCATION:
+// CANONICAL DATABASE STRUCTURE
+// ----------------------------------------------------------
 //
-//     Dairy.feedStocks[]
+// Dairy
+//     = farm / animal / facility / asset model
 //
-// IMPORTANT:
+// Storage Facility
+//     = Dairy document where:
 //
-// There is NO separate FeedStock collection.
+//         code          = null
+//         assetCode     = null
+//         storageNumber = negative Dairy Farm code
 //
-// Every stock operation starts by loading the Dairy document
-// and then reading/writing:
+// FeedStock
+//     = INDEPENDENT MongoDB COLLECTION
 //
-//     dairy.feedStocks[]
+// FeedStock.dairy
+//     = ObjectId of the storage facility Dairy document
 //
-// CANONICAL STOCK IDENTITY:
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// FeedStock is NOT embedded inside Dairy.
+//
+// Therefore:
+//
+//     dairy.feedStocks.push(...)
+//
+// is NEVER used.
+//
+// Stock operations use the FeedStock model directly.
+//
+// ==========================================================
+//
+// CANONICAL STOCK IDENTITY
+// ----------------------------------------------------------
 //
 //     stock._id
 //
-// CANONICAL STOCK NAME:
+// CANONICAL STOCK NAME
+// ----------------------------------------------------------
 //
 //     stock.name
 //
-// LEGACY / CATEGORY FIELDS:
+// LEGACY / CATEGORY FIELDS
+// ----------------------------------------------------------
 //
 //     stock.feedName
 //     stock.medicineName
@@ -39,6 +63,10 @@ const mongoose =
 
 const Dairy =
     require("../../models/dairy");
+
+
+const FeedStock =
+    require("../../models/feedStock");
 
 
 // ==========================================================
@@ -73,10 +101,19 @@ function isValidObjectId(
     value
 ) {
 
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
+
+        return false;
+
+    }
+
+
     return mongoose.Types.ObjectId.isValid(
-        String(
-            value || ""
-        )
+        String(value)
     );
 
 }
@@ -173,10 +210,26 @@ function roundNumber(
 // ==========================================================
 // TOUCH STOCK
 // ==========================================================
+//
+// FeedStock is a standalone MongoDB document.
+//
+// If the FeedStock schema has timestamps enabled,
+// saving the document will also update updatedAt.
+//
+// This helper is retained for compatibility with the
+// existing service logic.
+//
 
 function touchStock(
     stock
 ) {
+
+    if (!stock) {
+
+        return;
+
+    }
+
 
     stock.updatedAt =
         new Date();
@@ -185,14 +238,25 @@ function touchStock(
 
 
 // ==========================================================
-// GET DAIRY
+// GET STORAGE FACILITY
 // ==========================================================
 //
-// IMPORTANT:
+// IMPORTANT
+// ----------------------------------------------------------
 //
-// This is the ONLY model lookup used by this service.
+// The supplied dairyId identifies the Dairy document that
+// represents the STORAGE FACILITY.
 //
-// Stocks are NOT loaded from a separate collection.
+// A valid storage facility must have:
+//
+//     code          = null
+//     assetCode     = null
+//     storageNumber = negative number
+//
+// FeedStock documents are attached to this Dairy document
+// through:
+//
+//     FeedStock.dairy = storage._id
 //
 // ==========================================================
 
@@ -209,7 +273,7 @@ async function getDairy(
     if (!id) {
 
         throw createError(
-            "Dairy ID is required.",
+            "Storage facility ID is required.",
             400
         );
 
@@ -223,7 +287,7 @@ async function getDairy(
     ) {
 
         throw createError(
-            "Invalid dairy ID.",
+            "Invalid storage facility ID.",
             400
         );
 
@@ -239,7 +303,7 @@ async function getDairy(
     if (!dairy) {
 
         throw createError(
-            "Dairy not found.",
+            "Storage facility not found.",
             404
         );
 
@@ -247,16 +311,30 @@ async function getDairy(
 
 
     // ------------------------------------------------------
-    // Guarantee the array exists.
+    // The supplied Dairy document MUST be storage.
     // ------------------------------------------------------
 
-    if (
-        !Array.isArray(
-            dairy.feedStocks
-        )
-    ) {
+    const isStorage =
 
-        dairy.feedStocks = [];
+        dairy.code === null &&
+
+        dairy.assetCode === null &&
+
+        dairy.storageNumber !== null &&
+
+        dairy.storageNumber !== undefined &&
+
+        Number(
+            dairy.storageNumber
+        ) < 0;
+
+
+    if (!isStorage) {
+
+        throw createError(
+            "The selected Dairy record is not a valid storage facility.",
+            400
+        );
 
     }
 
@@ -269,81 +347,234 @@ async function getDairy(
 // ==========================================================
 // OPTIONS
 // ==========================================================
+//
+// The current dairy.js no longer contains feed-stock option
+// methods because FeedStock is a separate model.
+//
+// Therefore these helpers first attempt to obtain enums from
+// the FeedStock schema.
+//
+// If the schema does not expose enums, the service provides
+// the standard fallback values.
+//
+// ==========================================================
+
+
+// ==========================================================
+// DEFAULT FEED TYPES
+// ==========================================================
+
+const DEFAULT_FEED_TYPES = [
+
+    "hay",
+    "silage",
+    "grass",
+    "maize",
+    "maizeBran",
+    "wheatBran",
+    "dairyMeal",
+    "calfStarter",
+    "mineralSupplement",
+    "other"
+
+];
+
+
+// ==========================================================
+// DEFAULT VETERINARY MEDICINES
+// ==========================================================
+
+const DEFAULT_VETERINARY_MEDICINES = [
+
+    "antibiotic",
+    "dewormer",
+    "vaccine",
+    "vitamin",
+    "mineral",
+    "anti-inflammatory",
+    "other"
+
+];
+
+
+// ==========================================================
+// DEFAULT STOCK UNITS
+// ==========================================================
+
+const DEFAULT_STOCK_UNITS = [
+
+    "kg",
+    "g",
+    "litre",
+    "ml",
+    "bag",
+    "bale",
+    "packet",
+    "bottle",
+    "container",
+    "piece",
+    "unit"
+
+];
+
+
+// ==========================================================
+// GET ENUM VALUES FROM FEEDSTOCK SCHEMA
+// ==========================================================
+
+function getSchemaEnumValues(
+    fieldName
+) {
+
+    try {
+
+        if (
+            !FeedStock ||
+            !FeedStock.schema
+        ) {
+
+            return [];
+
+        }
+
+
+        const path =
+            FeedStock.schema.path(
+                fieldName
+            );
+
+
+        if (
+            !path
+        ) {
+
+            return [];
+
+        }
+
+
+        if (
+            Array.isArray(
+                path.enumValues
+            )
+        ) {
+
+            return path.enumValues
+                .filter(Boolean)
+                .map(
+                    value =>
+                        String(value)
+                );
+
+        }
+
+    }
+
+    catch (error) {
+
+        return [];
+
+    }
+
+
+    return [];
+
+}
+
+
+// ==========================================================
+// FEED TYPES
+// ==========================================================
 
 function getFeedTypes() {
 
+    const values =
+        getSchemaEnumValues(
+            "feedType"
+        );
+
+
     if (
-        typeof Dairy.getFeedTypes ===
-        "function"
+        values.length > 0
     ) {
 
-        const result =
-            Dairy.getFeedTypes();
-
-
-        return Array.isArray(
-            result
-        )
-            ? result
-            : [];
+        return values;
 
     }
 
 
-    return [];
+    return [
+
+        ...DEFAULT_FEED_TYPES
+
+    ];
 
 }
 
+
+// ==========================================================
+// VETERINARY MEDICINES
+// ==========================================================
 
 function getVeterinaryMedicines() {
 
+    const values =
+        getSchemaEnumValues(
+            "medicineType"
+        );
+
+
     if (
-        typeof Dairy.getVeterinaryMedicines ===
-        "function"
+        values.length > 0
     ) {
 
-        const result =
-            Dairy.getVeterinaryMedicines();
-
-
-        return Array.isArray(
-            result
-        )
-            ? result
-            : [];
+        return values;
 
     }
 
 
-    return [];
+    return [
+
+        ...DEFAULT_VETERINARY_MEDICINES
+
+    ];
 
 }
 
+
+// ==========================================================
+// STOCK UNITS
+// ==========================================================
 
 function getStockUnits() {
 
+    const values =
+        getSchemaEnumValues(
+            "unit"
+        );
+
+
     if (
-        typeof Dairy.getStockUnits ===
-        "function"
+        values.length > 0
     ) {
 
-        const result =
-            Dairy.getStockUnits();
-
-
-        return Array.isArray(
-            result
-        )
-            ? result
-            : [];
+        return values;
 
     }
 
 
-    return [];
+    return [
+
+        ...DEFAULT_STOCK_UNITS
+
+    ];
 
 }
 
+
+// ==========================================================
+// STORAGE OPTIONS
+// ==========================================================
 
 function getStorageOptions() {
 
@@ -374,7 +605,8 @@ function normalizeCategory(
     const value =
         cleanText(
             category
-        ).toLowerCase();
+        )
+        .toLowerCase();
 
 
     if (
@@ -402,7 +634,7 @@ function normalizeCategory(
 //
 //     data.name
 //
-// Fallback:
+// FALLBACK:
 //
 //     data.feedName
 //     data.medicineName
@@ -516,6 +748,10 @@ function normalizeQuantity(
 }
 
 
+// ==========================================================
+// POSITIVE QUANTITY
+// ==========================================================
+
 function normalizePositiveQuantity(
     value,
     fieldName = "Quantity"
@@ -628,10 +864,13 @@ function normalizeUnit(
 
 
     if (
+
         units.length > 0 &&
+
         !units.includes(
             value
         )
+
     ) {
 
         throw createError(
@@ -667,38 +906,42 @@ function normalizeImages(
 
     return images
 
-        .map(function(image) {
+        .map(
+            function(image) {
 
-            if (
-                typeof image === "string"
-            ) {
+                if (
+                    typeof image ===
+                    "string"
+                ) {
 
-                return image.trim();
+                    return image.trim();
+
+                }
+
+
+                if (
+                    image &&
+                    typeof image ===
+                    "object"
+                ) {
+
+                    return String(
+
+                        image.secure_url ||
+                        image.url ||
+                        image.path ||
+                        image.location ||
+                        ""
+
+                    ).trim();
+
+                }
+
+
+                return "";
 
             }
-
-
-            if (
-                image &&
-                typeof image === "object"
-            ) {
-
-                return String(
-
-                    image.secure_url ||
-                    image.url ||
-                    image.path ||
-                    image.location ||
-                    ""
-
-                ).trim();
-
-            }
-
-
-            return "";
-
-        })
+        )
 
         .filter(Boolean);
 
@@ -709,24 +952,19 @@ function normalizeImages(
 // FIND STOCK
 // ==========================================================
 //
-// IMPORTANT:
+// FeedStock is a separate collection.
 //
-// Searches ONLY:
-//
-//     dairy.feedStocks[]
+// Therefore this helper performs a database query.
 //
 // ==========================================================
 
-function findStock(
+async function findStock(
     dairy,
     stockId
 ) {
 
     if (
-        !dairy ||
-        !Array.isArray(
-            dairy.feedStocks
-        )
+        !dairy
     ) {
 
         return null;
@@ -747,26 +985,51 @@ function findStock(
     }
 
 
-    return (
-
-        dairy.feedStocks.find(
-            function(stock) {
-
-                return (
-
-                    stock &&
-                    String(
-                        stock._id
-                    ) === id
-
-                );
-
-            }
+    if (
+        !isValidObjectId(
+            id
         )
+    ) {
 
-        || null
+        return null;
 
-    );
+    }
+
+
+    const stock =
+        await FeedStock.findOne({
+
+            _id: id,
+
+            dairy:
+                dairy._id
+
+        });
+
+
+    return stock || null;
+
+}
+
+
+// ==========================================================
+// GET STOCK QUERY
+// ==========================================================
+//
+// This is useful for callers that need a Mongoose query.
+//
+// ==========================================================
+
+function stockQuery(
+    dairy
+) {
+
+    return FeedStock.find({
+
+        dairy:
+            dairy._id
+
+    });
 
 }
 
@@ -807,15 +1070,17 @@ function calculateFeedsAmount(
 
 
     return roundNumber(
+
         safeQuantity *
         safePrice
+
     );
 
 }
 
 
 // ==========================================================
-// PERCENTAGE
+// PERCENTAGE REMAINING
 // ==========================================================
 
 function calculatePercentageRemaining(
@@ -836,13 +1101,17 @@ function calculatePercentageRemaining(
 
 
     if (
+
         !Number.isFinite(
             remaining
         ) ||
+
         !Number.isFinite(
             initial
         ) ||
+
         initial <= 0
+
     ) {
 
         return 0;
@@ -851,13 +1120,18 @@ function calculatePercentageRemaining(
 
 
     return roundNumber(
+
         Math.max(
+
             0,
+
             (
                 remaining /
                 initial
             ) * 100
+
         )
+
     );
 
 }
@@ -904,8 +1178,11 @@ function validateNewStock(
 
 
     if (
+
         quantity > 0 &&
+
         price === null
+
     ) {
 
         throw createError(
@@ -951,19 +1228,18 @@ function validateNewStock(
 // CREATE STOCK
 // ==========================================================
 //
-// THIS IS THE IMPORTANT FIX.
+// Creates a NEW FeedStock document.
 //
-// A new stock is created as a SUBDOCUMENT:
-//
-//     dairy.feedStocks.push(stock)
-//
-// It is NOT:
+// IMPORTANT:
 //
 //     FeedStock.create()
 //
-// It is NOT:
+// is correct here because FeedStock is now an independent
+// MongoDB collection.
 //
-//     Stock.create()
+// The document receives:
+//
+//     dairy: storageFacility._id
 //
 // ==========================================================
 
@@ -987,22 +1263,27 @@ async function createStock({
 
     const unitPrice =
         input.price === null
+
             ? 0
+
             : input.price;
 
 
     const feedsAmount =
         calculateFeedsAmount(
+
             input.quantity,
+
             unitPrice
+
         );
 
 
-    // ------------------------------------------------------
-    // Build the actual feedStocks subdocument.
-    // ------------------------------------------------------
+    const stockData = {
 
-    const stock = {
+        dairy:
+            dairy._id,
+
 
         name:
             input.name,
@@ -1013,14 +1294,20 @@ async function createStock({
 
 
         feedName:
+
             input.category === "feed"
+
                 ? input.name
+
                 : "",
 
 
         medicineName:
+
             input.category === "medicine"
+
                 ? input.name
+
                 : "",
 
 
@@ -1037,8 +1324,11 @@ async function createStock({
 
 
         percentageRemaining:
+
             input.quantity > 0
+
                 ? 100
+
                 : 0,
 
 
@@ -1065,38 +1355,22 @@ async function createStock({
         images:
             normalizeImages(
                 images
-            ),
-
-
-        updatedAt:
-            new Date()
+            )
 
     };
 
 
     // ------------------------------------------------------
-    // THIS IS WHERE THE STOCK IS STORED.
+    // CREATE IN THE INDEPENDENT FeedStock COLLECTION.
     // ------------------------------------------------------
 
-    dairy.feedStocks.push(
-        stock
-    );
+    const stock =
+        await FeedStock.create(
+            stockData
+        );
 
 
-    // ------------------------------------------------------
-    // SAVE THE PARENT DAIRY DOCUMENT.
-    // ------------------------------------------------------
-
-    await dairy.save();
-
-
-    // ------------------------------------------------------
-    // Return the ACTUAL saved subdocument.
-    // ------------------------------------------------------
-
-    return dairy.feedStocks[
-        dairy.feedStocks.length - 1
-    ];
+    return stock;
 
 }
 
@@ -1119,7 +1393,7 @@ async function updateStock({
 
 
     const stock =
-        findStock(
+        await findStock(
             dairy,
             stockId
         );
@@ -1145,7 +1419,9 @@ async function updateStock({
         Number.isFinite(
             oldQuantity
         )
+
             ? oldQuantity
+
             : 0;
 
 
@@ -1154,14 +1430,20 @@ async function updateStock({
 
 
     if (
+
         data.quantity !== undefined &&
+
         data.quantity !== ""
+
     ) {
 
         newQuantity =
             normalizeQuantity(
+
                 data.quantity,
+
                 "Quantity"
+
             );
 
     }
@@ -1169,8 +1451,10 @@ async function updateStock({
 
     const quantityDifference =
         roundNumber(
+
             newQuantity -
             safeOldQuantity
+
         );
 
 
@@ -1209,8 +1493,11 @@ async function updateStock({
 
         stock.feedsAmount =
             calculateFeedsAmount(
+
                 quantityDifference,
+
                 price
+
             );
 
     }
@@ -1283,7 +1570,8 @@ async function updateStock({
         const category =
             cleanText(
                 stock.category
-            ).toLowerCase();
+            )
+            .toLowerCase();
 
 
         if (
@@ -1292,6 +1580,7 @@ async function updateStock({
 
             stock.medicineName =
                 name;
+
 
             stock.feedName =
                 "";
@@ -1303,8 +1592,100 @@ async function updateStock({
             stock.feedName =
                 name;
 
+
             stock.medicineName =
                 "";
+
+        }
+
+    }
+
+
+    // ======================================================
+    // CATEGORY
+    // ======================================================
+
+    if (
+        data.category !== undefined
+    ) {
+
+        const category =
+            normalizeCategory(
+                data.category
+            );
+
+
+        stock.category =
+            category;
+
+
+        if (
+            category === "medicine"
+        ) {
+
+            stock.medicineName =
+                stock.name;
+
+
+            stock.feedName =
+                "";
+
+        }
+
+        else {
+
+            stock.feedName =
+                stock.name;
+
+
+            stock.medicineName =
+                "";
+
+        }
+
+    }
+
+
+    // ======================================================
+    // UNIT
+    // ======================================================
+
+    if (
+        data.unit !== undefined
+    ) {
+
+        stock.unit =
+            normalizeUnit(
+                data.unit
+            );
+
+    }
+
+
+    // ======================================================
+    // PRICE WITHOUT QUANTITY CHANGE
+    // ======================================================
+
+    if (
+
+        quantityDifference === 0 &&
+
+        data.price !== undefined
+
+    ) {
+
+        const price =
+            normalizePrice(
+                data.price
+            );
+
+
+        if (
+            price !== null
+        ) {
+
+            stock.unitPrice =
+                price;
 
         }
 
@@ -1389,8 +1770,11 @@ async function updateStock({
 
     stock.percentageRemaining =
         calculatePercentageRemaining(
+
             stock.quantityRemaining,
+
             stock.initialQuantity
+
         );
 
 
@@ -1404,10 +1788,10 @@ async function updateStock({
 
 
     // ======================================================
-    // SAVE PARENT
+    // SAVE FeedStock DOCUMENT
     // ======================================================
 
-    await dairy.save();
+    await stock.save();
 
 
     return {
@@ -1428,15 +1812,21 @@ async function updateStock({
             quantityDifference < 0,
 
         quantityAdded:
+
             quantityDifference > 0
+
                 ? quantityDifference
+
                 : 0,
 
         feedsAmount:
+
             quantityDifference > 0
+
                 ? Number(
                     stock.feedsAmount || 0
                 )
+
                 : 0
 
     };
@@ -1448,9 +1838,13 @@ async function updateStock({
 // RESTOCK EXISTING STOCK
 // ==========================================================
 //
-// Restock is ADDITIVE.
+// Restock is ADDITIVE:
 //
-//     old quantity + added quantity = new quantity
+//     old quantity
+//          +
+//     quantity added
+//          =
+//     new quantity
 //
 // ==========================================================
 
@@ -1468,7 +1862,7 @@ async function restockStock({
 
 
     const stock =
-        findStock(
+        await findStock(
             dairy,
             stockId
         );
@@ -1488,7 +1882,9 @@ async function restockStock({
         normalizePositiveQuantity(
 
             data.quantityAdded !== undefined
+
                 ? data.quantityAdded
+
                 : data.quantity,
 
             "Restock quantity"
@@ -1523,27 +1919,34 @@ async function restockStock({
         Number.isFinite(
             oldQuantity
         )
+
             ? oldQuantity
+
             : 0;
 
 
     const newQuantity =
         roundNumber(
+
             safeOldQuantity +
             quantityAdded
+
         );
 
 
     const feedsAmount =
         calculateFeedsAmount(
+
             quantityAdded,
+
             price
+
         );
 
 
-    // ------------------------------------------------------
-    // UPDATE THE EXISTING SUBDOCUMENT.
-    // ------------------------------------------------------
+    // ======================================================
+    // UPDATE STOCK DOCUMENT
+    // ======================================================
 
     stock.quantityRemaining =
         newQuantity;
@@ -1559,8 +1962,11 @@ async function restockStock({
 
     stock.percentageRemaining =
         calculatePercentageRemaining(
+
             newQuantity,
+
             stock.initialQuantity
+
         );
 
 
@@ -1636,16 +2042,20 @@ async function restockStock({
     }
 
 
+    // ======================================================
+    // TIMESTAMP
+    // ======================================================
+
     touchStock(
         stock
     );
 
 
     // ======================================================
-    // SAVE PARENT DAIRY
+    // SAVE FeedStock
     // ======================================================
 
-    await dairy.save();
+    await stock.save();
 
 
     return {
@@ -1677,6 +2087,12 @@ async function restockStock({
 // ==========================================================
 //
 // Compatibility wrapper.
+//
+// No stockId:
+//     create new FeedStock document.
+//
+// stockId:
+//     update existing FeedStock document.
 //
 // ==========================================================
 
@@ -1720,6 +2136,11 @@ async function saveStock({
 // ==========================================================
 // GET ALL STOCK
 // ==========================================================
+//
+// Retrieves FeedStock documents belonging to the selected
+// storage facility.
+//
+// ==========================================================
 
 async function getStocks(
     dairyId
@@ -1731,11 +2152,18 @@ async function getStocks(
         );
 
 
-    return Array.isArray(
-        dairy.feedStocks
-    )
-        ? dairy.feedStocks
-        : [];
+    const stocks =
+        await stockQuery(
+            dairy
+        )
+        .sort({
+
+            createdAt: -1
+
+        });
+
+
+    return stocks;
 
 }
 
@@ -1756,7 +2184,7 @@ async function getStock({
 
 
     const stock =
-        findStock(
+        await findStock(
             dairy,
             stockId
         );
@@ -1780,6 +2208,11 @@ async function getStock({
 // ==========================================================
 // DELETE STOCK
 // ==========================================================
+//
+// Deletes the FeedStock document from the independent
+// FeedStock collection.
+//
+// ==========================================================
 
 async function deleteStock({
     dairyId,
@@ -1793,7 +2226,7 @@ async function deleteStock({
 
 
     const stock =
-        findStock(
+        await findStock(
             dairy,
             stockId
         );
@@ -1809,50 +2242,27 @@ async function deleteStock({
     }
 
 
-    const index =
-        dairy.feedStocks.findIndex(
-            function(item) {
-
-                return (
-
-                    String(
-                        item._id
-                    ) ===
-                    String(
-                        stock._id
-                    )
-
-                );
-
-            }
-        );
-
-
-    if (
-        index === -1
-    ) {
-
-        throw createError(
-            "Stock item not found.",
-            404
-        );
-
-    }
-
+    // ------------------------------------------------------
+    // Keep the actual deleted document available to return.
+    // ------------------------------------------------------
 
     const deletedStock =
-        dairy.feedStocks[
-            index
-        ];
+        stock;
 
 
-    dairy.feedStocks.splice(
-        index,
-        1
-    );
+    // ------------------------------------------------------
+    // Delete ONLY when the stock belongs to this storage.
+    // ------------------------------------------------------
 
+    await FeedStock.deleteOne({
 
-    await dairy.save();
+        _id:
+            stock._id,
+
+        dairy:
+            dairy._id
+
+    });
 
 
     return deletedStock;
@@ -1879,8 +2289,13 @@ async function getStockSummary(
             function(stock) {
 
                 return (
-                    stock.category ===
+
+                    cleanText(
+                        stock.category
+                    )
+                    .toLowerCase() ===
                     "feed"
+
                 );
 
             }
@@ -1892,8 +2307,13 @@ async function getStockSummary(
             function(stock) {
 
                 return (
-                    stock.category ===
+
+                    cleanText(
+                        stock.category
+                    )
+                    .toLowerCase() ===
                     "medicine"
+
                 );
 
             }
@@ -1902,6 +2322,7 @@ async function getStockSummary(
 
     const totalFeedsAmount =
         stocks.reduce(
+
             function(
                 total,
                 stock
@@ -1912,16 +2333,21 @@ async function getStockSummary(
                     total +
 
                     Math.max(
+
                         0,
+
                         Number(
                             stock.feedsAmount
                         ) || 0
+
                     )
 
                 );
 
             },
+
             0
+
         );
 
 
@@ -1953,38 +2379,242 @@ async function getStockSummary(
 
 
 // ==========================================================
+// GET STORAGE STOCK OWNER
+// ==========================================================
+//
+// Given a Dairy Farm code, find its storage facility.
+//
+// Example:
+//
+//     getStorageStockOwner(-1)
+//
+// returns:
+//
+//     Dairy {
+//         code: null,
+//         assetCode: null,
+//         storageNumber: -1
+//     }
+//
+// ==========================================================
+
+async function getStorageStockOwner(
+    farmCode
+) {
+
+    const code =
+        Number(
+            farmCode
+        );
+
+
+    if (
+
+        !Number.isInteger(
+            code
+        ) ||
+
+        code >= 0
+
+    ) {
+
+        return null;
+
+    }
+
+
+    return Dairy.findOne({
+
+        storageNumber:
+            code
+
+    });
+
+}
+
+
+// ==========================================================
+// GET STOCK BY FARM CODE
+// ==========================================================
+//
+// Convenience method.
+//
+// Finds the farm's storage facility first, then retrieves
+// all FeedStock documents belonging to that storage facility.
+//
+// ==========================================================
+
+async function getStocksByFarmCode(
+    farmCode
+) {
+
+    const storage =
+        await getStorageStockOwner(
+            farmCode
+        );
+
+
+    if (!storage) {
+
+        return [];
+
+    }
+
+
+    return FeedStock.find({
+
+        dairy:
+            storage._id
+
+    })
+    .sort({
+
+        createdAt: -1
+
+    });
+
+}
+
+
+// ==========================================================
+// GET ONE STOCK BY FARM CODE
+// ==========================================================
+
+async function getStockByFarmCode({
+    farmCode,
+    stockId
+}) {
+
+    const storage =
+        await getStorageStockOwner(
+            farmCode
+        );
+
+
+    if (!storage) {
+
+        throw createError(
+            "Storage facility not found.",
+            404
+        );
+
+    }
+
+
+    if (
+        !isValidObjectId(
+            stockId
+        )
+    ) {
+
+        throw createError(
+            "Invalid stock ID.",
+            400
+        );
+
+    }
+
+
+    const stock =
+        await FeedStock.findOne({
+
+            _id:
+                stockId,
+
+            dairy:
+                storage._id
+
+        });
+
+
+    if (!stock) {
+
+        throw createError(
+            "Stock item not found.",
+            404
+        );
+
+    }
+
+
+    return stock;
+
+}
+
+
+// ==========================================================
 // EXPORTS
 // ==========================================================
 
 module.exports = {
 
-    // Dairy
+    // ------------------------------------------------------
+    // Dairy / Storage
+    // ------------------------------------------------------
+
     getDairy,
 
+    getStorageStockOwner,
+
+
+    // ------------------------------------------------------
     // Options
+    // ------------------------------------------------------
+
     getFeedTypes,
+
     getVeterinaryMedicines,
+
     getStockUnits,
+
     getStorageOptions,
 
+
+    // ------------------------------------------------------
     // Retrieval
+    // ------------------------------------------------------
+
     getStocks,
+
     getStock,
 
+    getStocksByFarmCode,
+
+    getStockByFarmCode,
+
+
+    // ------------------------------------------------------
     // Operations
+    // ------------------------------------------------------
+
     createStock,
+
     updateStock,
+
     restockStock,
+
     saveStock,
+
     deleteStock,
 
+
+    // ------------------------------------------------------
     // Helpers
+    // ------------------------------------------------------
+
     findStock,
+
     validateNewStock,
+
     calculateFeedsAmount,
+
     calculatePercentageRemaining,
 
+
+    // ------------------------------------------------------
     // Summary
+    // ------------------------------------------------------
+
     getStockSummary
 
 };
