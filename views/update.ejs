@@ -152,6 +152,44 @@
         </button>
 
 
+
+        <!-- =============================================
+             FEED STORE
+             
+             ADMIN ONLY
+        ============================================== -->
+
+        <% if (user && user.role === "admin") { %>
+
+
+            <a
+                href="/dairy/feedstore/<%= dairy._id %>"
+                class="asset-bar-trigger"
+                style="
+                    text-decoration:none;
+                    display:inline-flex;
+                    align-items:center;
+                    justify-content:center;
+                "
+            >
+
+                <span
+                    class="asset-bar-trigger-icon"
+                    aria-hidden="true"
+                >
+                    📦
+                </span>
+
+                <span class="asset-bar-trigger-text">
+                    Feed Store
+                </span>
+
+            </a>
+
+
+        <% } %>
+
+
     </div>
 
 
