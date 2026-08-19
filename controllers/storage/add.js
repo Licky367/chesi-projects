@@ -2,6 +2,35 @@
 // controllers/storage/add.js
 // STORAGE ADD CONTROLLER
 // ==========================================================
+//
+// PURPOSE
+// ----------------------------------------------------------
+//
+// Handles:
+//
+//     GET  /storage/:id/add
+//     POST /storage/:id/add
+//
+// IMPORTANT:
+//
+//     :id = Dairy._id
+//
+// The controller ALWAYS uses the parent Dairy's:
+//
+//     MongoDB _id
+//
+// The service is responsible for resolving:
+//
+//     Dairy._id
+//          ↓
+//     Dairy.code
+//          ↓
+//     DairyStorage.farmCode
+//
+// The controller never uses Dairy.code as the URL id.
+//
+// ==========================================================
+
 
 const addService =
     require("../../services/storage/add");
@@ -10,8 +39,23 @@ const addService =
 // ==========================================================
 // ADMIN CHECK
 // ==========================================================
+//
+// Only users with:
+//
+//     role = "admin"
+//
+// can access storage creation.
+//
+// ==========================================================
 
-function requireAdmin(req, res) {
+function requireAdmin(
+    req,
+    res
+) {
+
+    // ======================================================
+    // NOT LOGGED IN
+    // ======================================================
 
     if (
         !req.session ||
@@ -20,11 +64,17 @@ function requireAdmin(req, res) {
 
         res
             .status(401)
-            .send("Unauthorized");
+            .send(
+                "Unauthorized"
+            );
 
         return false;
     }
 
+
+    // ======================================================
+    // NOT ADMIN
+    // ======================================================
 
     if (
         req.session.user.role !== "admin"
@@ -45,13 +95,21 @@ function requireAdmin(req, res) {
 
 
 // ==========================================================
-// SHOW ADD FORM
+// GET ADD FORM
+// ==========================================================
 //
 // GET:
 //
 //     /storage/:id/add
 //
-// :id = Dairy._id of the parent farm
+// IMPORTANT:
+//
+//     :id = Dairy._id
+//
+// Example:
+//
+//     /storage/67xxxxxxxxxxxxxxxxxxxxxx/add
+//
 // ==========================================================
 
 exports.form =
@@ -79,7 +137,13 @@ async function (
 
 
         // ==================================================
-        // PARENT DAIRY ID
+        // GET PARENT DAIRY ID
+        // ==================================================
+        //
+        // This MUST remain the MongoDB Dairy._id.
+        //
+        // Do NOT replace this with dairy.code.
+        //
         // ==================================================
 
         const dairyId =
@@ -89,15 +153,15 @@ async function (
 
 
         // ==================================================
-        // GET PARENT FARM
+        // LOAD PARENT DAIRY
+        // ==================================================
         //
-        // dairyId = Dairy._id
-        //
-        // Service resolves:
+        // The service validates the ID and finds:
         //
         //     Dairy._id
-        //          ↓
-        //     Dairy.code
+        //
+        // It also verifies that the Dairy is a farm.
+        //
         // ==================================================
 
         const dairy =
@@ -107,7 +171,7 @@ async function (
 
 
         // ==================================================
-        // RENDER
+        // RENDER FORM
         // ==================================================
 
         return res.render(
@@ -117,18 +181,35 @@ async function (
                 title:
                     "Add Storage",
 
+                // ------------------------------------------
+                // Parent Dairy document
+                // ------------------------------------------
+
                 dairy,
 
+                // ------------------------------------------
+                // Keep the actual MongoDB _id available
+                // ------------------------------------------
+
                 dairyId,
+
+                // ------------------------------------------
+                // Logged-in user
+                // ------------------------------------------
 
                 user:
                     req.session.user,
 
-                // IMPORTANT:
-                // Always define these because add.ejs
-                // expects them.
+                // ------------------------------------------
+                // Always define error
+                // ------------------------------------------
+
                 error:
                     null,
+
+                // ------------------------------------------
+                // Always define formData
+                // ------------------------------------------
 
                 formData: {
 
@@ -150,7 +231,6 @@ async function (
             error
         );
 
-
         return next(error);
     }
 };
@@ -158,20 +238,26 @@ async function (
 
 // ==========================================================
 // CREATE STORAGE
+// ==========================================================
 //
 // POST:
 //
 //     /storage/:id/add
 //
-// User provides:
+// USER PROVIDES:
 //
 //     name
 //     type
 //
-// Server generates:
+// SERVER DETERMINES:
 //
 //     farmCode
 //     roomNumber
+//
+// IMPORTANT:
+//
+//     req.params.id remains Dairy._id.
+//
 // ==========================================================
 
 exports.create =
@@ -201,6 +287,18 @@ async function (
         // ==================================================
         // PARENT DAIRY ID
         // ==================================================
+        //
+        // This is the MongoDB _id.
+        //
+        // It is the same ID used by:
+        //
+        //     /storage/:id
+        //
+        //     /storage/:id/add
+        //
+        //     /storage/:id/...
+        //
+        // ==================================================
 
         const dairyId =
             String(
@@ -226,12 +324,20 @@ async function (
 
         // ==================================================
         // CREATE STORAGE
+        // ==================================================
         //
-        // Service determines:
+        // The service handles:
         //
-        //     dairy.code
+        //     Dairy._id
+        //          ↓
+        //     Dairy.code
+        //          ↓
         //     farmCode
+        //
+        // and generates:
+        //
         //     roomNumber
+        //
         // ==================================================
 
         await addService.createStorage({
@@ -248,6 +354,12 @@ async function (
         // ==================================================
         // SUCCESS
         // ==================================================
+        //
+        // Redirect using the SAME parent Dairy._id.
+        //
+        // NEVER use dairy.code here.
+        //
+        // ==================================================
 
         return res.redirect(
             `/storage/${dairyId}`
@@ -262,16 +374,16 @@ async function (
 
 
         // ==================================================
-        // EXPECTED APPLICATION ERROR
+        // APPLICATION ERROR
         // ==================================================
 
         if (
             error.status
         ) {
 
-            // ------------------------------------------------
-            // Reload form for validation/conflict errors.
-            // ------------------------------------------------
+            // =================================================
+            // VALIDATION / CLIENT ERRORS
+            // =================================================
 
             if (
                 error.status >= 400 &&
@@ -280,11 +392,21 @@ async function (
 
                 try {
 
+                    // ==========================================
+                    // Re-load the parent Dairy using
+                    // the SAME MongoDB _id.
+                    // ==========================================
+
                     const dairy =
                         await addService.getParentDairy(
                             req.params.id
                         );
 
+
+                    // ==========================================
+                    // Render form again while preserving
+                    // the user's submitted values.
+                    // ==========================================
 
                     return res
                         .status(
@@ -297,32 +419,52 @@ async function (
                                 title:
                                     "Add Storage",
 
+                                // ------------------------------
+                                // Parent Dairy
+                                // ------------------------------
+
                                 dairy,
 
+                                // ------------------------------
+                                // IMPORTANT:
+                                //
+                                // This remains Dairy._id.
+                                // ------------------------------
+
                                 dairyId:
-                                    req.params.id,
+                                    String(
+                                        req.params.id || ""
+                                    ).trim(),
+
+                                // ------------------------------
+                                // Logged-in user
+                                // ------------------------------
 
                                 user:
                                     req.session.user,
 
-                                // --------------------------
-                                // ERROR MESSAGE
-                                // --------------------------
+                                // ------------------------------
+                                // Error message
+                                // ------------------------------
 
                                 error:
                                     error.message,
 
-                                // --------------------------
-                                // PRESERVE FORM VALUES
-                                // --------------------------
+                                // ------------------------------
+                                // Preserve submitted values
+                                // ------------------------------
 
                                 formData: {
 
                                     name:
-                                        req.body.name || "",
+                                        String(
+                                            req.body.name || ""
+                                        ).trim(),
 
                                     type:
-                                        req.body.type || ""
+                                        String(
+                                            req.body.type || ""
+                                        ).trim()
 
                                 }
 
@@ -342,6 +484,10 @@ async function (
                 }
             }
 
+
+            // =================================================
+            // OTHER KNOWN ERROR
+            // =================================================
 
             return res
                 .status(
@@ -363,5 +509,15 @@ async function (
 
 
 // ==========================================================
-// EXPORT
+// EXPORTS
 // ==========================================================
+
+module.exports = {
+
+    form:
+        exports.form,
+
+    create:
+        exports.create
+
+};
