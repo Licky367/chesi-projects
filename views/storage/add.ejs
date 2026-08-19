@@ -1,0 +1,400 @@
+<!-- ==========================================================
+     views/storage/add.ejs
+     ADD STORAGE FACILITY
+     ==========================================================
+
+     ROUTE:
+
+         GET  /storage/:id/add
+         POST /storage/:id/add
+
+     :id = parent Dairy._id
+
+     USER ENTERS:
+
+         name
+         type
+
+     SERVER DETERMINES:
+
+         farmCode
+         roomNumber
+
+========================================================== -->
+
+
+<link
+    rel="stylesheet"
+    href="/css/storage/add.css"
+>
+
+
+<div class="storage-add-page">
+
+
+    <!-- ======================================================
+         HEADER
+    ======================================================= -->
+
+    <div class="storage-add-header">
+
+        <a
+            href="/storage/<%= dairy._id %>"
+            class="storage-back-link"
+        >
+            <span>←</span>
+            <span>Back to Storage</span>
+        </a>
+
+
+        <div class="storage-header-content">
+
+            <div class="storage-header-icon">
+                📦
+            </div>
+
+            <div>
+
+                <h1>
+                    Add Storage Facility
+                </h1>
+
+                <p>
+
+                    Add a new room or AgroStore to
+
+                    <strong>
+                        <%= dairy.name %>
+                    </strong>
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ======================================================
+         ERROR
+    ======================================================= -->
+
+    <% if (error) { %>
+
+        <div
+            class="storage-alert storage-alert-error"
+            role="alert"
+        >
+
+            <span>
+                ⚠️
+            </span>
+
+            <span>
+                <%= error %>
+            </span>
+
+        </div>
+
+    <% } %>
+
+
+
+    <!-- ======================================================
+         FORM CARD
+    ======================================================= -->
+
+    <div class="storage-form-card">
+
+
+        <div class="storage-form-heading">
+
+            <h2>
+                Storage Details
+            </h2>
+
+            <p>
+                Enter the storage name and choose its type.
+            </p>
+
+        </div>
+
+
+
+        <!-- ==================================================
+             FORM
+        =================================================== -->
+
+        <form
+            action="/storage/<%= dairy._id %>/add"
+            method="POST"
+            class="storage-form"
+        >
+
+
+            <!-- ==============================================
+                 NAME
+            =============================================== -->
+
+            <div class="form-group">
+
+                <label for="name">
+
+                    Storage Name
+
+                    <span class="required">
+                        *
+                    </span>
+
+                </label>
+
+
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value="<%= formData?.name || '' %>"
+                    placeholder="e.g. Main Feed Store"
+                    maxlength="200"
+                    required
+                    autocomplete="off"
+                >
+
+
+                <small>
+                    Enter the name you want to give this
+                    storage facility.
+                </small>
+
+            </div>
+
+
+
+            <!-- ==============================================
+                 TYPE
+            =============================================== -->
+
+            <div class="form-group">
+
+                <label>
+
+                    Storage Type
+
+                    <span class="required">
+                        *
+                    </span>
+
+                </label>
+
+
+                <div class="storage-type-options">
+
+
+                    <!-- ======================================
+                         ROOM
+                    ======================================= -->
+
+                    <label
+                        class="storage-type-option"
+                        for="type-room"
+                    >
+
+                        <input
+                            type="radio"
+                            id="type-room"
+                            name="type"
+                            value="room"
+                            <%= (
+                                formData?.type === "room" ||
+                                !formData?.type
+                            )
+                                ? "checked"
+                                : "" %>
+                            required
+                        >
+
+
+                        <span class="storage-type-card">
+
+                            <span class="storage-option-icon">
+                                🚪
+                            </span>
+
+                            <span class="storage-option-content">
+
+                                <strong>
+                                    Room
+                                </strong>
+
+                                <small>
+                                    Normal storage room
+                                </small>
+
+                            </span>
+
+                        </span>
+
+                    </label>
+
+
+
+                    <!-- ======================================
+                         AGRO STORE
+                    ======================================= -->
+
+                    <label
+                        class="storage-type-option"
+                        for="type-agroStore"
+                    >
+
+                        <input
+                            type="radio"
+                            id="type-agroStore"
+                            name="type"
+                            value="agroStore"
+                            <%= formData?.type === "agroStore"
+                                ? "checked"
+                                : "" %>
+                        >
+
+
+                        <span class="storage-type-card">
+
+                            <span class="storage-option-icon">
+                                🌾
+                            </span>
+
+                            <span class="storage-option-content">
+
+                                <strong>
+                                    AgroStore
+                                </strong>
+
+                                <small>
+                                    Feed and agricultural storage
+                                </small>
+
+                            </span>
+
+                        </span>
+
+                    </label>
+
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 NUMBERING INFORMATION
+            ================================================== -->
+
+            <div class="storage-info-box">
+
+                <div class="storage-info-icon">
+                    ℹ️
+                </div>
+
+                <div>
+
+                    <strong>
+                        Storage number is automatic
+                    </strong>
+
+                    <p>
+                        The server automatically assigns
+                        the next storage number for this
+                        Dairy Farm.
+                    </p>
+
+                    <p>
+                        First Room:
+                        <strong>1</strong>
+                    </p>
+
+                    <p>
+                        First AgroStore:
+                        <strong>-1</strong>
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 ACTIONS
+            ================================================== -->
+
+            <div class="storage-form-actions">
+
+                <a
+                    href="/storage/<%= dairy._id %>"
+                    class="storage-btn storage-btn-secondary"
+                >
+                    Cancel
+                </a>
+
+
+                <button
+                    type="submit"
+                    class="storage-btn storage-btn-primary"
+                >
+
+                    <span>
+                        +
+                    </span>
+
+                    Add Storage
+
+                </button>
+
+            </div>
+
+
+        </form>
+
+
+    </div>
+
+
+
+    <!-- ======================================================
+         PARENT FARM INFORMATION
+    ======================================================= -->
+
+    <div class="storage-farm-card">
+
+        <div class="storage-farm-icon">
+            🏡
+        </div>
+
+
+        <div class="storage-farm-details">
+
+            <span class="storage-farm-label">
+                Parent Dairy Farm
+            </span>
+
+            <strong>
+                <%= dairy.name %>
+            </strong>
+
+            <span class="storage-farm-code">
+
+                Farm Code:
+                <%= dairy.code %>
+
+            </span>
+
+        </div>
+
+    </div>
+
+
+</div>
