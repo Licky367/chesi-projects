@@ -9,16 +9,9 @@
 //     GET  /storage/:id/add
 //     POST /storage/:id/add
 //
-// IMPORTANT ID CONTRACT
-// ----------------------------------------------------------
+// IMPORTANT ID CONTRACT:
 //
 //     :id = parent Dairy._id
-//
-// NEVER:
-//
-//     :id = Dairy.code
-//     :id = DairyStorage._id
-//     :id = roomNumber
 //
 // RELATION:
 //
@@ -41,7 +34,10 @@ const storageService =
 // ADMIN CHECK
 // ==========================================================
 //
-// Only administrators can create storage facilities.
+// Only administrators can create storage.
+//
+// Viewing storage remains available according to the
+// application's normal route access.
 //
 // ==========================================================
 
@@ -50,10 +46,6 @@ function requireAdmin(
     res
 ) {
 
-    // ======================================================
-    // NOT LOGGED IN
-    // ======================================================
-
     if (
         !req.session ||
         !req.session.user
@@ -61,17 +53,11 @@ function requireAdmin(
 
         res
             .status(401)
-            .send(
-                "Unauthorized"
-            );
+            .send("Unauthorized");
 
         return false;
     }
 
-
-    // ======================================================
-    // NOT ADMIN
-    // ======================================================
 
     if (
         req.session.user.role !== "admin"
@@ -88,53 +74,6 @@ function requireAdmin(
 
 
     return true;
-}
-
-
-// ==========================================================
-// NORMALIZE TYPE
-// ==========================================================
-//
-// We deliberately keep this inside the controller.
-//
-// The service does its own normalization too.
-//
-// Allowed:
-//
-//     all
-//     room
-//     agroStore
-//
-// ==========================================================
-
-function normalizeType(
-    value
-) {
-
-    const type =
-        String(
-            value || "all"
-        )
-        .trim();
-
-
-    if (
-        type === "room"
-    ) {
-
-        return "room";
-    }
-
-
-    if (
-        type === "agroStore"
-    ) {
-
-        return "agroStore";
-    }
-
-
-    return "all";
 }
 
 
@@ -159,23 +98,20 @@ async function list(
     try {
 
         // ==================================================
-        // READ PARENT DAIRY ID
+        // GET DAIRY ID
         // ==================================================
 
         const dairyId =
             String(
                 req.params.id || ""
-            )
-            .trim();
+            ).trim();
 
 
         // ==================================================
-        // REQUIRE ID
+        // REQUIRE DAIRY ID
         // ==================================================
 
-        if (
-            !dairyId
-        ) {
+        if (!dairyId) {
 
             return res
                 .status(400)
@@ -198,38 +134,12 @@ async function list(
 
 
         // ==================================================
-        // STORAGE TYPE FILTER
+        // GET TYPE FILTER
         // ==================================================
 
         const type =
-            normalizeType(
+            storageService.normalizeType(
                 req.query.type
-            );
-
-
-        // ==================================================
-        // GET PARENT DAIRY
-        // ==================================================
-        //
-        // This resolves:
-        //
-        //     Dairy._id
-        //          ↓
-        //     Dairy.code
-        //          ↓
-        //     farmCode
-        //
-        // ==================================================
-
-        const {
-
-            dairy,
-
-            farmCode
-
-        } =
-            await storageService.getDairyById(
-                dairyId
             );
 
 
@@ -237,20 +147,17 @@ async function list(
         // GET STORAGE
         // ==================================================
         //
-        // The merged service returns the STORAGE ARRAY
-        // directly.
+        // Service resolves:
         //
-        // It does NOT return:
-        //
-        //     {
-        //         dairy,
-        //         farmCode,
-        //         storage
-        //     }
+        //     Dairy._id
+        //          ↓
+        //     Dairy.code
+        //          ↓
+        //     DairyStorage.farmCode
         //
         // ==================================================
 
-        const storage =
+        const result =
             await storageService.getStorage({
 
                 dairyId,
@@ -261,7 +168,7 @@ async function list(
 
 
         // ==================================================
-        // RENDER STORAGE PAGE
+        // RENDER
         // ==================================================
 
         return res.render(
@@ -271,42 +178,20 @@ async function list(
                 title:
                     "Feed Store",
 
-                // ------------------------------------------
-                // Parent Dairy
-                // ------------------------------------------
-
-                dairy,
-
-                // ------------------------------------------
-                // Storage belonging to this farm
-                // ------------------------------------------
+                dairy:
+                    result.dairy,
 
                 storage:
-                    storage || [],
-
-                // ------------------------------------------
-                // Selected filter
-                // ------------------------------------------
+                    result.storage,
 
                 selectedType:
-                    type,
-
-                // ------------------------------------------
-                // Parent Dairy MongoDB _id
-                // ------------------------------------------
+                    result.type,
 
                 dairyId:
-                    dairy._id,
+                    result.dairy._id,
 
-                // ------------------------------------------
-                // Dairy.code used by storage relation
-                // ------------------------------------------
-
-                farmCode,
-
-                // ------------------------------------------
-                // Logged-in user
-                // ------------------------------------------
+                farmCode:
+                    result.farmCode,
 
                 user:
                     req.session?.user || null
@@ -347,7 +232,7 @@ async function form(
     try {
 
         // ==================================================
-        // ADMIN ONLY
+        // ADMIN CHECK
         // ==================================================
 
         if (
@@ -362,28 +247,17 @@ async function form(
 
 
         // ==================================================
-        // PARENT DAIRY ID
+        // GET DAIRY ID
         // ==================================================
 
         const dairyId =
             String(
                 req.params.id || ""
-            )
-            .trim();
+            ).trim();
 
 
         // ==================================================
         // GET PARENT DAIRY
-        // ==================================================
-        //
-        // Service resolves:
-        //
-        //     Dairy._id
-        //          ↓
-        //     Dairy.code
-        //          ↓
-        //     farmCode
-        //
         // ==================================================
 
         const {
@@ -393,13 +267,13 @@ async function form(
             farmCode
 
         } =
-            await storageService.getDairyById(
+            await storageService.getParentDairy(
                 dairyId
             );
 
 
         // ==================================================
-        // RENDER ADD FORM
+        // RENDER
         // ==================================================
 
         return res.render(
@@ -427,7 +301,7 @@ async function form(
                         "",
 
                     type:
-                        ""
+                        "room"
 
                 }
 
@@ -454,12 +328,12 @@ async function form(
 //
 //     /storage/:id/add
 //
-// USER PROVIDES:
+// USER:
 //
 //     name
 //     type
 //
-// SERVER DETERMINES:
+// SERVER:
 //
 //     farmCode
 //     roomNumber
@@ -473,40 +347,36 @@ async function create(
 ) {
 
     // ======================================================
-    // IMPORTANT:
+    // THESE ARE DECLARED OUTSIDE try
+    // ======================================================
     //
-    // These variables are declared OUTSIDE try.
-    //
-    // The catch block needs access to them when re-rendering
-    // the form after a validation error.
+    // This is important because the catch block needs them
+    // when redisplaying the form after validation errors.
     //
     // ======================================================
 
     const dairyId =
         String(
             req.params.id || ""
-        )
-        .trim();
+        ).trim();
 
 
     const name =
         String(
             req.body?.name || ""
-        )
-        .trim();
+        ).trim();
 
 
     const type =
         String(
             req.body?.type || ""
-        )
-        .trim();
+        ).trim();
 
 
     try {
 
         // ==================================================
-        // ADMIN ONLY
+        // ADMIN CHECK
         // ==================================================
 
         if (
@@ -524,19 +394,12 @@ async function create(
         // CREATE STORAGE
         // ==================================================
         //
-        // The service resolves:
+        // IMPORTANT:
         //
-        //     dairyId
-        //          ↓
-        //     Dairy._id
-        //          ↓
-        //     Dairy.code
-        //          ↓
-        //     farmCode
+        // We do NOT send farmCode or roomNumber from the
+        // browser.
         //
-        // and generates:
-        //
-        //     roomNumber
+        // The service generates both.
         //
         // ==================================================
 
@@ -555,7 +418,7 @@ async function create(
         // SUCCESS
         // ==================================================
         //
-        // Redirect using the SAME Dairy._id.
+        // Redirect using Dairy._id.
         //
         // ==================================================
 
@@ -572,7 +435,7 @@ async function create(
 
 
         // ==================================================
-        // KNOWN APPLICATION ERROR
+        // EXPECTED APPLICATION ERROR
         // ==================================================
 
         if (
@@ -580,7 +443,7 @@ async function create(
         ) {
 
             // =================================================
-            // VALIDATION / CONFLICT / CLIENT ERROR
+            // VALIDATION / CONFLICT
             // =================================================
 
             if (
@@ -590,10 +453,6 @@ async function create(
 
                 try {
 
-                    // ==========================================
-                    // RELOAD PARENT DAIRY
-                    // ==========================================
-
                     const {
 
                         dairy,
@@ -601,14 +460,10 @@ async function create(
                         farmCode
 
                     } =
-                        await storageService.getDairyById(
+                        await storageService.getParentDairy(
                             dairyId
                         );
 
-
-                    // ==========================================
-                    // RENDER FORM AGAIN
-                    // ==========================================
 
                     return res
                         .status(
@@ -621,41 +476,17 @@ async function create(
                                 title:
                                     "Add Storage",
 
-                                // ------------------------------
-                                // Parent Dairy
-                                // ------------------------------
-
                                 dairy,
-
-                                // ------------------------------
-                                // Parent Dairy MongoDB _id
-                                // ------------------------------
 
                                 dairyId,
 
-                                // ------------------------------
-                                // Parent Dairy code
-                                // ------------------------------
-
                                 farmCode,
-
-                                // ------------------------------
-                                // Logged-in user
-                                // ------------------------------
 
                                 user:
                                     req.session?.user || null,
 
-                                // ------------------------------
-                                // Error
-                                // ------------------------------
-
                                 error:
                                     error.message,
-
-                                // ------------------------------
-                                // Preserve submitted data
-                                // ------------------------------
 
                                 formData: {
 
@@ -683,7 +514,7 @@ async function create(
 
 
             // =================================================
-            // OTHER KNOWN ERROR
+            // OTHER APPLICATION ERROR
             // =================================================
 
             return res
@@ -707,14 +538,6 @@ async function create(
 
 // ==========================================================
 // EXPORT
-// ==========================================================
-//
-// THESE EXACT NAMES MUST MATCH THE ROUTER:
-//
-//     storageController.list
-//     storageController.form
-//     storageController.create
-//
 // ==========================================================
 
 module.exports = {
