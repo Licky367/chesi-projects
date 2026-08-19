@@ -4,6 +4,8 @@
 //
 // DAIRY / ANIMAL / FACILITY / ASSET MODEL
 //
+// ==========================================================
+//
 // ENTITY IDENTITY
 // ----------------------------------------------------------
 //
@@ -14,7 +16,7 @@
 //     = ANIMAL
 //
 // code === null
-//     = STRUCTURE / FACILITY / ASSET
+//     = FACILITY / ASSET
 //
 // ==========================================================
 //
@@ -30,83 +32,90 @@
 // Animals:
 //     assetCode = negative Dairy Farm code
 //
-// Structures / Facilities:
+// Assigned Assets:
 //     assetCode = negative Dairy Farm code
-//     OR null for standalone structures/assets
+//
+// Standalone Assets:
+//     assetCode = null
 //
 // ==========================================================
 //
-// FEED STORE
+// STORAGE FACILITY
 // ----------------------------------------------------------
 //
-// A feedStore is a FACILITY used for storing:
+// Storage is a special facility.
 //
-//     • animal feed
-//     • veterinary medicine
-//     • farm supplies
+// It is identified by:
 //
-// It is NOT an animal dwelling.
-//
-// A Dairy Farm may have:
-//
-//     ZERO feed stores
-//     ONE feed store
-//
-// MongoDB enforces:
-//
-//     maximum ONE feedStore per Dairy Farm
-//
-// Feed-store inventory:
-//
-//     feedStocks[]
-//
-// Every feedStocks item has its own MongoDB `_id`.
-//
-// storageService uses:
-//
-//     dairy.feedStocks._id
-//
-// ==========================================================
-//
-// FEED STOCK FINANCIAL SEMANTICS
-// ----------------------------------------------------------
-//
-// quantityRemaining
-//     = current physical stock
-//
-// initialQuantity
-//     = original quantity when the stock record was created
-//
-// percentageRemaining
-//     = quantityRemaining / initialQuantity × 100
-//
-// IMPORTANT:
-//
-// Restocking does NOT replace initialQuantity.
-//
-// Therefore percentageRemaining MAY exceed 100.
+//     storageNumber
 //
 // Example:
 //
-//     initialQuantity   = 100
-//     quantityRemaining = 150
+//     storageNumber = -1
 //
-//     percentageRemaining = 150%
+// means:
+//
+//     Storage Facility belonging to
+//     Dairy Farm code -1.
+//
+// A storage facility:
+//
+//     code          = null
+//     assetCode     = null
+//     storageNumber = negative farm code
+//
+// There may be:
+//
+//     ZERO storage facilities
+//     ONE storage facility
+//
+// per Dairy Farm.
+//
+// MongoDB enforces this uniqueness.
 //
 // ==========================================================
 //
-// unitPrice
-//     = latest purchase unit price
+// FEED / MEDICINE STOCK
+// ----------------------------------------------------------
 //
-// feedsAmount
-//     = money associated with the LATEST stock addition
+// FeedStock is NOT embedded in this model.
 //
-// It is NOT:
+// FeedStock remains an independent MongoDB collection.
 //
-//     quantityRemaining × unitPrice
+// A storage facility can be the physical owner/location
+// of FeedStock.
+//
+// The relationship is exposed through the virtual:
+//
+//     feedStocks
+//
+// and:
+//
+//     feedStockCount
+//
+// IMPORTANT:
+//
+// These are virtual relationships only.
+//
+// No FeedStock documents are duplicated inside Dairy.
 //
 // ==========================================================
-
+//
+// IMPORTANT
+// ----------------------------------------------------------
+//
+// feedStore is NO LONGER a structure type.
+//
+// feedStock.js remains an independent model.
+//
+// Storage facilities are represented by Dairy documents
+// using:
+//
+//     code          = null
+//     assetCode     = null
+//     storageNumber = negative farm code
+//
+// ==========================================================
 
 const mongoose =
     require("mongoose");
@@ -160,6 +169,15 @@ const DAIRY_FARM_TYPES = [
 // ==========================================================
 // STRUCTURE / FACILITY TYPES
 // ==========================================================
+//
+// IMPORTANT:
+//
+// feedStore has been removed.
+//
+// Storage facilities are identified by
+// storageNumber instead.
+//
+// ==========================================================
 
 const STRUCTURE_TYPES = [
 
@@ -169,7 +187,6 @@ const STRUCTURE_TYPES = [
     "building",
     "cowshed",
     "milkingParlour",
-    "feedStore",
     "hayShed",
     "waterSystem",
     "fencing",
@@ -196,75 +213,6 @@ const DAIRY_STATUSES = [
 
 
 // ==========================================================
-// FEED TYPES
-// ==========================================================
-
-const FEED_TYPES = [
-
-    "Fodder",
-    "Silage",
-    "Hay",
-    "Dairy Meal",
-    "Calf Starter",
-    "Calf Grower",
-    "Maize Bran",
-    "Wheat Bran",
-    "Pollard",
-    "Maize Germ",
-    "Cotton Seed Cake",
-    "Sunflower Cake",
-    "Soybean Meal",
-    "Mineral Supplement",
-    "Molasses",
-    "Salt",
-    "Other"
-
-];
-
-
-// ==========================================================
-// VETERINARY MEDICINES
-// ==========================================================
-
-const VETERINARY_MEDICINES = [
-
-    "Antibiotics",
-    "Dewormer",
-    "Acaricide",
-    "Antiseptic",
-    "Wound Treatment",
-    "Mastitis Treatment",
-    "Anti-inflammatory",
-    "Pain Relief",
-    "Vitamin Supplement",
-    "Mineral Supplement",
-    "Calcium Supplement",
-    "Rehydration Treatment",
-    "Vaccines",
-    "Other"
-
-];
-
-
-// ==========================================================
-// STOCK UNITS
-// ==========================================================
-
-const STOCK_UNITS = [
-
-    "kg",
-    "bags",
-    "tonnes",
-    "bales",
-    "litres",
-    "bottles",
-    "packs",
-    "units"
-
-];
-
-
-// ==========================================================
 // PROFILE IMAGE LIMIT
 // ==========================================================
 
@@ -272,359 +220,22 @@ const MAX_PROFILE_IMAGES = 5;
 
 
 // ==========================================================
-// STOCK IMAGE LIMIT
-// ==========================================================
-
-const MAX_STOCK_IMAGES = 10;
-
-
-// ==========================================================
-// FEED-STORE STOCK SUBDOCUMENT
+// STOCK RELATIONSHIP NOTES
 // ==========================================================
 //
-// Represents ONE CURRENT inventory item.
+// FeedStock is intentionally NOT required here at schema
+// validation time.
 //
-// MongoDB automatically creates:
+// This prevents circular model dependency:
 //
-//     _id
+//     Dairy -> FeedStock -> Dairy
 //
-// for every stock item.
+// The relationship is implemented using a Mongoose virtual.
+//
+// FeedStock documents can reference the Dairy document
+// representing the storage facility.
 //
 // ==========================================================
-
-const feedStockSchema = new mongoose.Schema(
-
-    {
-
-        // ==================================================
-        // STOCK NAME
-        // ==================================================
-
-        name: {
-
-            type: String,
-
-            required: true,
-
-            trim: true,
-
-            maxlength: 150
-
-        },
-
-        // ==================================================
-        // CATEGORY
-        // ==================================================
-
-        category: {
-
-            type: String,
-
-            enum: [
-
-                "feed",
-                "medicine"
-
-            ],
-
-            required: true,
-
-            trim: true,
-
-            lowercase: true
-
-        },
-
-
-        // ==================================================
-        // FEED NAME
-        // ==================================================
-
-        feedName: {
-
-            type: String,
-
-            default: "",
-
-            trim: true,
-
-            maxlength: 150
-
-        },
-
-
-        // ==================================================
-        // MEDICINE NAME
-        // ==================================================
-
-        medicineName: {
-
-            type: String,
-
-            default: "",
-
-            trim: true,
-
-            maxlength: 150
-
-        },
-
-
-        // ==================================================
-        // CURRENT QUANTITY
-        // ==================================================
-
-        quantityRemaining: {
-
-            type: Number,
-
-            min: 0,
-
-            default: 0
-
-        },
-
-
-        // ==================================================
-        // ORIGINAL QUANTITY
-        // ==================================================
-        //
-        // This is the baseline used to calculate
-        // percentageRemaining.
-        //
-        // IMPORTANT:
-        //
-        // Restocking does NOT increase this value.
-        //
-        // ==================================================
-
-        initialQuantity: {
-
-            type: Number,
-
-            min: 0,
-
-            default: 0
-
-        },
-
-
-        // ==================================================
-        // PERCENTAGE REMAINING
-        // ==================================================
-        //
-        // May exceed 100 after restocking.
-        //
-        // Example:
-        //
-        // initialQuantity   = 100
-        // quantityRemaining = 150
-        //
-        // percentageRemaining = 150
-        //
-        // ==================================================
-
-        percentageRemaining: {
-
-            type: Number,
-
-            min: 0,
-
-            default: 0
-
-        },
-
-
-        // ==================================================
-        // UNIT
-        // ==================================================
-
-        unit: {
-
-            type: String,
-
-            enum: STOCK_UNITS,
-
-            required: true,
-
-            trim: true
-
-        },
-
-
-        // ==================================================
-        // LATEST UNIT PRICE
-        // ==================================================
-
-        unitPrice: {
-
-            type: Number,
-
-            min: 0,
-
-            default: 0
-
-        },
-
-
-        // ==================================================
-        // LATEST STOCK ADDITION AMOUNT
-        // ==================================================
-        //
-        // This represents:
-        //
-        //     quantityAdded × unitPrice
-        //
-        // for the latest stock addition.
-        //
-        // It is NOT current inventory value.
-        //
-        // It must NOT be recalculated from
-        // quantityRemaining.
-        //
-        // ==================================================
-
-        feedsAmount: {
-
-            type: Number,
-
-            min: 0,
-
-            default: 0
-
-        },
-
-
-        // ==================================================
-        // INSTRUCTIONS
-        // ==================================================
-
-        instructions: {
-
-            type: String,
-
-            trim: true,
-
-            default: "",
-
-            maxlength: 2000
-
-        },
-
-
-        // ==================================================
-        // EXPECTED DURATION
-        // ==================================================
-
-        expectedDuration: {
-
-            type: String,
-
-            trim: true,
-
-            default: "",
-
-            maxlength: 100
-
-        },
-
-
-        // ==================================================
-        // MESSAGE
-        // ==================================================
-
-        message: {
-
-            type: String,
-
-            trim: true,
-
-            default: "",
-
-            maxlength: 2000
-
-        },
-
-
-        // ==================================================
-        // STOCK IMAGES
-        // ==================================================
-
-        images: {
-
-            type: [
-
-                {
-
-                    type: String,
-
-                    trim: true
-
-                }
-
-            ],
-
-            default: [],
-
-            validate: {
-
-                validator: function (images) {
-
-                    return (
-
-                        Array.isArray(images) &&
-
-                        images.length <=
-                            MAX_STOCK_IMAGES
-
-                    );
-
-                },
-
-                message:
-                    `A maximum of ${MAX_STOCK_IMAGES} stock images is allowed.`
-
-            }
-
-        },
-
-
-        // ==================================================
-        // STOCK CREATION / FIRST ADDITION
-        // ==================================================
-
-        addedAt: {
-
-            type: Date,
-
-            default: Date.now
-
-        },
-
-
-        // ==================================================
-        // LAST STOCK UPDATE
-        // ==================================================
-
-        updatedAt: {
-
-            type: Date,
-
-            default: Date.now
-
-        }
-
-    },
-
-    {
-
-        _id: true,
-
-        id: true
-
-    }
-
-);
 
 
 // ==========================================================
@@ -701,7 +312,7 @@ const dairySchema = new mongoose.Schema(
         //
         // POSITIVE = ANIMAL
         //
-        // NULL     = STRUCTURE / FACILITY / ASSET
+        // NULL     = FACILITY / ASSET
         //
         // ==================================================
 
@@ -761,6 +372,12 @@ const dairySchema = new mongoose.Schema(
         // ==================================================
         // DATE OF BIRTH
         // ==================================================
+        //
+        // Used by animals.
+        //
+        // Farms and facilities have no DOB.
+        //
+        // ==================================================
 
         dateOfBirth: {
 
@@ -773,6 +390,12 @@ const dairySchema = new mongoose.Schema(
 
         // ==================================================
         // MASS
+        // ==================================================
+        //
+        // Used by animals.
+        //
+        // Farms and facilities are normalized to 0.
+        //
         // ==================================================
 
         mass: {
@@ -803,21 +426,31 @@ const dairySchema = new mongoose.Schema(
         // ASSET CODE
         // ==================================================
         //
+        // This identifies the Dairy Farm to which an
+        // animal or asset belongs.
+        //
         // Animals:
         //
-        //     negative Dairy Farm code
+        //     assetCode = negative farm code
         //
-        // Structures:
+        // Assigned assets:
         //
-        //     negative Dairy Farm code
+        //     assetCode = negative farm code
         //
-        // Standalone structures/assets:
+        // Standalone assets:
         //
-        //     null
+        //     assetCode = null
         //
         // Dairy Farms:
         //
-        //     null
+        //     assetCode = null
+        //
+        // STORAGE FACILITIES:
+        //
+        //     assetCode = null
+        //
+        // because storage ownership is identified through
+        // storageNumber.
         //
         // ==================================================
 
@@ -855,6 +488,73 @@ const dairySchema = new mongoose.Schema(
 
                 message:
                     "assetCode must be a negative Dairy Farm code or null."
+
+            }
+
+        },
+
+
+        // ==================================================
+        // STORAGE NUMBER
+        // ==================================================
+        //
+        // This identifies a storage facility's parent farm.
+        //
+        // Example:
+        //
+        //     storageNumber = -1
+        //
+        // means:
+        //
+        //     storage facility belonging to
+        //     Dairy Farm code -1.
+        //
+        // A storage facility:
+        //
+        //     code          = null
+        //     assetCode     = null
+        //     storageNumber = negative farm code
+        //
+        // Non-storage entities:
+        //
+        //     storageNumber = null
+        //
+        // ==================================================
+
+        storageNumber: {
+
+            type: Number,
+
+            default: null,
+
+            validate: {
+
+                validator: function (value) {
+
+                    if (
+
+                        value === null ||
+
+                        value === undefined
+
+                    ) {
+
+                        return true;
+
+                    }
+
+                    return (
+
+                        Number.isInteger(value) &&
+
+                        value < 0
+
+                    );
+
+                },
+
+                message:
+                    "storageNumber must be a negative Dairy Farm code or null."
 
             }
 
@@ -1076,9 +776,15 @@ const dairySchema = new mongoose.Schema(
         //
         //     DAIRY_BREEDS
         //
-        // Structure:
+        // Facility / Asset:
         //
         //     STRUCTURE_TYPES
+        //
+        // Storage facility:
+        //
+        //     identified by storageNumber
+        //
+        //     type may be empty.
         //
         // ==================================================
 
@@ -1089,52 +795,6 @@ const dairySchema = new mongoose.Schema(
             trim: true,
 
             default: ""
-
-        },
-
-
-        // ==================================================
-        // FEED STORE STOCK
-        // ==================================================
-        //
-        // Only feedStore facilities may contain this array.
-        //
-        // ==================================================
-
-        feedStocks: {
-
-            type: [
-
-                feedStockSchema
-
-            ],
-
-            default: []
-
-        },
-
-
-        // ==================================================
-        // FEED STORE FINANCIAL TOTAL
-        // ==================================================
-        //
-        // This is the sum of feedsAmount from feedStocks.
-        //
-        // Since each stock's feedsAmount represents its
-        // latest addition, this parent value represents
-        // the aggregate of those latest addition amounts.
-        //
-        // It is NOT current inventory valuation.
-        //
-        // ==================================================
-
-        feedsAmount: {
-
-            type: Number,
-
-            min: 0,
-
-            default: 0
 
         },
 
@@ -1362,6 +1022,10 @@ dairySchema.virtual(
 // ==========================================================
 // VIRTUAL: IS STRUCTURE
 // ==========================================================
+//
+// Any entity with no code is a facility/asset.
+//
+// ==========================================================
 
 dairySchema.virtual(
     "isStructure"
@@ -1380,10 +1044,6 @@ dairySchema.virtual(
 
 // ==========================================================
 // VIRTUAL: IS MANUAL ASSET
-// ==========================================================
-//
-// A structure is treated as a manual asset entity.
-//
 // ==========================================================
 
 dairySchema.virtual(
@@ -1405,9 +1065,13 @@ dairySchema.virtual(
 
     return (
 
+        this.isStructure &&
+
         this.assetCode !== null &&
 
-        this.assetCode !== undefined
+        this.assetCode !== undefined &&
+
+        !this.isStorageFacility
 
     );
 
@@ -1416,6 +1080,14 @@ dairySchema.virtual(
 
 // ==========================================================
 // VIRTUAL: IS STANDALONE ASSET
+// ==========================================================
+//
+// Standalone asset:
+//
+//     no code
+//     no assetCode
+//     no storageNumber
+//
 // ==========================================================
 
 dairySchema.virtual(
@@ -1432,6 +1104,14 @@ dairySchema.virtual(
 
             this.assetCode === undefined
 
+        ) &&
+
+        (
+
+            this.storageNumber === null ||
+
+            this.storageNumber === undefined
+
         )
 
     );
@@ -1440,18 +1120,26 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// VIRTUAL: IS FEED STORE
+// VIRTUAL: IS STORAGE FACILITY
+// ==========================================================
+//
+// A storage facility is identified ONLY by storageNumber.
+//
 // ==========================================================
 
 dairySchema.virtual(
-    "isFeedStore"
+    "isStorageFacility"
 ).get(function () {
 
     return (
 
         this.isStructure &&
 
-        this.type === "feedStore"
+        this.storageNumber !== null &&
+
+        this.storageNumber !== undefined &&
+
+        Number(this.storageNumber) < 0
 
     );
 
@@ -1459,14 +1147,97 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// VIRTUAL: GENDER
+// VIRTUAL: HAS FEED STOCK
 // ==========================================================
 //
-// Existing identity convention:
+// This is a logical helper.
 //
-//     even positive code = Female
-//     odd positive code  = Male
+// The actual stock remains in FeedStock collection.
 //
+// ==========================================================
+
+dairySchema.virtual(
+    "hasFeedStock"
+).get(function () {
+
+    return this.isStorageFacility;
+
+});
+
+
+// ==========================================================
+// VIRTUAL: FEED STOCK OWNER
+// ==========================================================
+//
+// FeedStock records belonging to a storage facility should
+// use this Dairy document's _id as their owner reference.
+//
+// ==========================================================
+
+dairySchema.virtual(
+    "feedStockOwnerId"
+).get(function () {
+
+    if (!this.isStorageFacility) {
+
+        return null;
+
+    }
+
+    return this._id || null;
+
+});
+
+
+// ==========================================================
+// VIRTUAL: PARENT FARM CODE
+// ==========================================================
+//
+// For storage:
+//
+//     storageNumber
+//
+// For assets/animals:
+//
+//     assetCode
+//
+// ==========================================================
+
+dairySchema.virtual(
+    "parentFarmCode"
+).get(function () {
+
+    if (this.isDairyFarm) {
+
+        return this.code;
+
+    }
+
+    if (this.isStorageFacility) {
+
+        return this.storageNumber;
+
+    }
+
+    if (
+
+        this.assetCode !== null &&
+
+        this.assetCode !== undefined
+
+    ) {
+
+        return this.assetCode;
+
+    }
+
+    return null;
+
+});
+
+
+// ==========================================================
+// VIRTUAL: GENDER
 // ==========================================================
 
 dairySchema.virtual(
@@ -1934,6 +1705,70 @@ dairySchema.virtual(
 
 
 // ==========================================================
+// VIRTUAL: FEED STOCK RELATIONSHIP
+// ==========================================================
+//
+// FeedStock is an independent model.
+//
+// The FeedStock document should contain:
+//
+//     dairy: <storage facility _id>
+//
+// This virtual allows:
+//
+//     storage.feedStocks
+//
+// to populate FeedStock documents.
+//
+// ==========================================================
+
+dairySchema.virtual(
+    "feedStocks",
+    {
+
+        ref: "FeedStock",
+
+        localField: "_id",
+
+        foreignField: "dairy",
+
+        justOne: false
+
+    }
+
+);
+
+
+// ==========================================================
+// VIRTUAL: FEED STOCK COUNT
+// ==========================================================
+//
+// This can be populated using:
+//
+//     {
+//         path: "feedStockCount"
+//     }
+//
+// ==========================================================
+
+dairySchema.virtual(
+    "feedStockCount",
+    {
+
+        ref: "FeedStock",
+
+        localField: "_id",
+
+        foreignField: "dairy",
+
+        count: true
+
+    }
+
+);
+
+
+// ==========================================================
 // PRE VALIDATE
 // ==========================================================
 
@@ -2051,715 +1886,47 @@ dairySchema.pre(
 
 
         // ==================================================
-        // NORMALIZE FEED STOCK ARRAY
+        // NORMALIZE STORAGE NUMBER
         // ==================================================
 
         if (
-            !Array.isArray(
-                this.feedStocks
-            )
+            this.storageNumber === undefined
         ) {
 
-            this.feedStocks = [];
-
-        }
-
-
-        this.feedStocks =
-
-            this.feedStocks
-
-                .filter(Boolean)
-
-                .map(
-
-                    stock => {
-
-                        // ==================================
-                        // CATEGORY
-                        // ==================================
-
-                        stock.category =
-
-                            String(
-                                stock.category ||
-                                "feed"
-                            )
-                            .trim()
-                            .toLowerCase();
-
-
-                        // ==================================
-                        // FEED NAME
-                        // ==================================
-
-                        stock.feedName =
-
-                            String(
-                                stock.feedName ||
-                                ""
-                            )
-                            .trim();
-
-
-                        // ==================================
-                        // MEDICINE NAME
-                        // ==================================
-
-                        stock.medicineName =
-
-                            String(
-                                stock.medicineName ||
-                                ""
-                            )
-                            .trim();
-
-
-                        // ==================================
-                        // CURRENT QUANTITY
-                        // ==================================
-
-                        let quantityRemaining =
-
-                            Number(
-                                stock.quantityRemaining
-                            );
-
-
-                        if (
-
-                            !Number.isFinite(
-                                quantityRemaining
-                            ) ||
-
-                            quantityRemaining < 0
-
-                        ) {
-
-                            quantityRemaining = 0;
-
-                        }
-
-
-                        stock.quantityRemaining =
-
-                            Math.round(
-
-                                quantityRemaining *
-                                100
-
-                            ) / 100;
-
-
-                        // ==================================
-                        // ORIGINAL QUANTITY
-                        // ==================================
-                        //
-                        // IMPORTANT:
-                        //
-                        // Do NOT replace an existing
-                        // initialQuantity with the current
-                        // quantity.
-                        //
-                        // This preserves the original
-                        // baseline during restocking.
-                        //
-                        // ==================================
-
-                        let initialQuantity =
-
-                            Number(
-                                stock.initialQuantity
-                            );
-
-
-                        if (
-
-                            !Number.isFinite(
-                                initialQuantity
-                            ) ||
-
-                            initialQuantity < 0
-
-                        ) {
-
-                            initialQuantity =
-                                stock.quantityRemaining;
-
-                        }
-
-
-                        stock.initialQuantity =
-
-                            Math.round(
-
-                                initialQuantity *
-                                100
-
-                            ) / 100;
-
-
-                        // ==================================
-                        // PERCENTAGE REMAINING
-                        // ==================================
-                        //
-                        // Unlike the previous model,
-                        // this is NOT capped at 100.
-                        //
-                        // Restocking can therefore produce:
-                        //
-                        //     125%
-                        //     150%
-                        //     etc.
-                        //
-                        // ==================================
-
-                        let percentage = 0;
-
-
-                        if (
-                            stock.initialQuantity > 0
-                        ) {
-
-                            percentage =
-
-                                (
-
-                                    stock.quantityRemaining /
-
-                                    stock.initialQuantity
-
-                                ) * 100;
-
-                        } else if (
-
-                            stock.quantityRemaining > 0
-
-                        ) {
-
-                            percentage = 100;
-
-                        }
-
-
-                        if (
-                            !Number.isFinite(
-                                percentage
-                            )
-                        ) {
-
-                            percentage = 0;
-
-                        }
-
-
-                        stock.percentageRemaining =
-
-                            Math.round(
-
-                                Math.max(
-                                    0,
-                                    percentage
-                                ) * 100
-
-                            ) / 100;
-
-
-                        // ==================================
-                        // UNIT PRICE
-                        // ==================================
-
-                        let unitPrice =
-
-                            Number(
-                                stock.unitPrice
-                            );
-
-
-                        if (
-
-                            !Number.isFinite(
-                                unitPrice
-                            ) ||
-
-                            unitPrice < 0
-
-                        ) {
-
-                            unitPrice = 0;
-
-                        }
-
-
-                        stock.unitPrice =
-
-                            Math.round(
-
-                                unitPrice *
-                                100
-
-                            ) / 100;
-
-
-                        // ==================================
-                        // FEEDS AMOUNT
-                        // ==================================
-                        //
-                        // NEVER calculate this from
-                        // quantityRemaining.
-                        //
-                        // It represents the latest
-                        // stock addition amount.
-                        //
-                        // ==================================
-
-                        let feedsAmount =
-
-                            Number(
-                                stock.feedsAmount
-                            );
-
-
-                        if (
-
-                            !Number.isFinite(
-                                feedsAmount
-                            ) ||
-
-                            feedsAmount < 0
-
-                        ) {
-
-                            feedsAmount = 0;
-
-                        }
-
-
-                        stock.feedsAmount =
-
-                            Math.round(
-
-                                feedsAmount *
-                                100
-
-                            ) / 100;
-
-
-                        // ==================================
-                        // INSTRUCTIONS
-                        // ==================================
-
-                        stock.instructions =
-
-                            String(
-                                stock.instructions ||
-                                ""
-                            )
-                            .trim();
-
-
-                        // ==================================
-                        // EXPECTED DURATION
-                        // ==================================
-
-                        stock.expectedDuration =
-
-                            String(
-                                stock.expectedDuration ||
-                                ""
-                            )
-                            .trim();
-
-
-                        // ==================================
-                        // MESSAGE
-                        // ==================================
-
-                        stock.message =
-
-                            String(
-                                stock.message ||
-                                ""
-                            )
-                            .trim();
-
-
-                        // ==================================
-                        // IMAGES
-                        // ==================================
-
-                        if (
-                            !Array.isArray(
-                                stock.images
-                            )
-                        ) {
-
-                            stock.images = [];
-
-                        }
-
-
-                        stock.images =
-
-                            stock.images
-
-                                .filter(Boolean)
-
-                                .map(
-
-                                    image =>
-
-                                        String(
-                                            image
-                                        ).trim()
-
-                                )
-
-                                .filter(Boolean)
-
-                                .slice(
-
-                                    0,
-
-                                    MAX_STOCK_IMAGES
-
-                                );
-
-
-                        // ==================================
-                        // ADDED DATE
-                        // ==================================
-
-                        if (
-                            !stock.addedAt
-                        ) {
-
-                            stock.addedAt =
-                                new Date();
-
-                        }
-
-
-                        // ==================================
-                        // UPDATED DATE
-                        // ==================================
-
-                        if (
-                            !stock.updatedAt
-                        ) {
-
-                            stock.updatedAt =
-                                new Date();
-
-                        }
-
-
-                        // ==================================
-                        // CATEGORY-SPECIFIC NAME CLEANUP
-                        // ==================================
-
-                        if (
-                            stock.category === "feed"
-                        ) {
-
-                            stock.medicineName = "";
-
-                        }
-
-
-                        if (
-                            stock.category === "medicine"
-                        ) {
-
-                            stock.feedName = "";
-
-                        }
-
-
-                        return stock;
-
-                    }
-
-                );
-
-
-        // ==================================================
-        // VALIDATE STOCK ITEMS
-        // ==================================================
-
-        for (
-            const stock of this.feedStocks
-        ) {
-
-            // ==============================================
-            // CATEGORY
-            // ==============================================
-
-            if (
-
-                stock.category !== "feed" &&
-
-                stock.category !== "medicine"
-
-            ) {
-
-                const error =
-
-                    new Error(
-                        "Stock category must be either feed or medicine."
-                    );
-
-
-                error.status = 400;
-
-
-                return next(error);
-
-            }
-
-
-            // ==============================================
-            // FEED NAME
-            // ==============================================
-
-            if (
-
-                stock.category === "feed" &&
-
-                !stock.feedName
-
-            ) {
-
-                const error =
-
-                    new Error(
-                        "Feed name is required for feed stock."
-                    );
-
-
-                error.status = 400;
-
-
-                return next(error);
-
-            }
-
-
-            // ==============================================
-            // MEDICINE NAME
-            // ==============================================
-
-            if (
-
-                stock.category === "medicine" &&
-
-                !stock.medicineName
-
-            ) {
-
-                const error =
-
-                    new Error(
-                        "Medicine name is required for medicine stock."
-                    );
-
-
-                error.status = 400;
-
-
-                return next(error);
-
-            }
-
-
-            // ==============================================
-            // QUANTITY
-            // ==============================================
-
-            if (
-
-                !Number.isFinite(
-                    Number(
-                        stock.quantityRemaining
-                    )
-                ) ||
-
-                Number(
-                    stock.quantityRemaining
-                ) < 0
-
-            ) {
-
-                const error =
-
-                    new Error(
-                        "Stock quantity cannot be negative."
-                    );
-
-
-                error.status = 400;
-
-
-                return next(error);
-
-            }
-
-
-            // ==============================================
-            // INITIAL QUANTITY
-            // ==============================================
-
-            if (
-
-                !Number.isFinite(
-                    Number(
-                        stock.initialQuantity
-                    )
-                ) ||
-
-                Number(
-                    stock.initialQuantity
-                ) < 0
-
-            ) {
-
-                const error =
-
-                    new Error(
-                        "Initial stock quantity cannot be negative."
-                    );
-
-
-                error.status = 400;
-
-
-                return next(error);
-
-            }
-
-
-            // ==============================================
-            // PRICE
-            // ==============================================
-
-            if (
-
-                !Number.isFinite(
-                    Number(
-                        stock.unitPrice
-                    )
-                ) ||
-
-                Number(
-                    stock.unitPrice
-                ) < 0
-
-            ) {
-
-                const error =
-
-                    new Error(
-                        "Stock unit price cannot be negative."
-                    );
-
-
-                error.status = 400;
-
-
-                return next(error);
-
-            }
-
-
-            // ==============================================
-            // FEEDS AMOUNT
-            // ==============================================
-
-            if (
-
-                !Number.isFinite(
-                    Number(
-                        stock.feedsAmount
-                    )
-                ) ||
-
-                Number(
-                    stock.feedsAmount
-                ) < 0
-
-            ) {
-
-                const error =
-
-                    new Error(
-                        "Stock feeds amount cannot be negative."
-                    );
-
-
-                error.status = 400;
-
-
-                return next(error);
-
-            }
+            this.storageNumber = null;
 
         }
 
 
         // ==================================================
-        // FEED STOCK ONLY ON FEED STORE
+        // STORAGE FACILITY
+        // ==================================================
+        //
+        // Storage facilities are:
+        //
+        //     code          = null
+        //     assetCode     = null
+        //     storageNumber = negative farm code
+        //
         // ==================================================
 
         if (
-
-            this.feedStocks.length > 0 &&
-
-            !this.isFeedStore
-
-        ) {
-
-            const error =
-
-                new Error(
-
-                    "Feed stock can only belong to a feedStore facility."
-
-                );
-
-
-            error.status = 400;
-
-
-            return next(error);
-
-        }
-
-
-        // ==================================================
-        // FEED STORE VALIDATION
-        // ==================================================
-
-        if (
-            this.isFeedStore
+            this.storageNumber !== null
         ) {
 
             // ----------------------------------------------
-            // Must belong to a Dairy Farm.
+            // Storage cannot have an identity code.
             // ----------------------------------------------
 
             if (
-
-                this.assetCode === null ||
-
-                this.assetCode === undefined
-
+                this.code !== null
             ) {
 
                 const error =
 
                     new Error(
 
-                        "Feed Store must belong to a Dairy Farm. assetCode is required."
+                        "A storage facility cannot have a code."
 
                     );
 
@@ -2773,18 +1940,49 @@ dairySchema.pre(
 
 
             // ----------------------------------------------
-            // Parent must be a negative Dairy Farm code.
+            // Storage cannot use assetCode.
             // ----------------------------------------------
 
             if (
-                Number(this.assetCode) >= 0
+                this.assetCode !== null
             ) {
 
                 const error =
 
                     new Error(
 
-                        "Feed Store assetCode must be the negative code of its parent Dairy Farm."
+                        "A storage facility cannot have assetCode. Use storageNumber."
+
+                    );
+
+
+                error.status = 400;
+
+
+                return next(error);
+
+            }
+
+
+            // ----------------------------------------------
+            // Storage number must be negative.
+            // ----------------------------------------------
+
+            if (
+
+                !Number.isInteger(
+                    this.storageNumber
+                ) ||
+
+                this.storageNumber >= 0
+
+            ) {
+
+                const error =
+
+                    new Error(
+
+                        "storageNumber must be the negative code of the parent Dairy Farm."
 
                     );
 
@@ -2797,62 +1995,6 @@ dairySchema.pre(
             }
 
         }
-
-
-        // ==================================================
-        // PARENT FEED AMOUNT
-        // ==================================================
-        //
-        // This is the aggregate of stock-level
-        // feedsAmount values.
-        //
-        // It is NOT inventory valuation.
-        //
-        // ==================================================
-
-        this.feedsAmount =
-
-            this.feedStocks.reduce(
-
-                (
-
-                    total,
-
-                    stock
-
-                ) => {
-
-                    return (
-
-                        total +
-
-                        Math.max(
-
-                            0,
-
-                            Number(
-                                stock.feedsAmount
-                            ) || 0
-
-                        )
-
-                    );
-
-                },
-
-                0
-
-            );
-
-
-        this.feedsAmount =
-
-            Math.round(
-
-                this.feedsAmount *
-                100
-
-            ) / 100;
 
 
         // ==================================================
@@ -2863,47 +2005,15 @@ dairySchema.pre(
             this.isDairyFarm
         ) {
 
-            // ----------------------------------------------
-            // Farms cannot belong to another farm.
-            // ----------------------------------------------
-
             this.assetCode = null;
 
-
-            // ----------------------------------------------
-            // Farm-specific animal fields.
-            // ----------------------------------------------
+            this.storageNumber = null;
 
             this.dateOfBirth = null;
 
             this.mass = 0;
 
             this.isMilking = false;
-
-
-            // ----------------------------------------------
-            // Farm cannot be feed store.
-            // ----------------------------------------------
-
-            if (
-                this.type === "feedStore"
-            ) {
-
-                const error =
-
-                    new Error(
-
-                        "A Dairy Farm cannot have type feedStore."
-
-                    );
-
-
-                error.status = 400;
-
-
-                return next(error);
-
-            }
 
 
             // ----------------------------------------------
@@ -2948,18 +2058,18 @@ dairySchema.pre(
         ) {
 
             // ----------------------------------------------
-            // Animal cannot be feed store.
+            // Animal cannot be storage.
             // ----------------------------------------------
 
             if (
-                this.type === "feedStore"
+                this.storageNumber !== null
             ) {
 
                 const error =
 
                     new Error(
 
-                        "An animal cannot have type feedStore."
+                        "An animal cannot have storageNumber."
 
                     );
 
@@ -3073,16 +2183,12 @@ dairySchema.pre(
 
 
         // ==================================================
-        // STRUCTURE / FACILITY
+        // STRUCTURE / ASSET
         // ==================================================
 
         if (
             this.isStructure
         ) {
-
-            // ----------------------------------------------
-            // Structures do not have animal fields.
-            // ----------------------------------------------
 
             this.dateOfBirth = null;
 
@@ -3092,7 +2198,28 @@ dairySchema.pre(
 
 
             // ----------------------------------------------
-            // Validate assigned structure parent.
+            // STORAGE IS A SPECIAL FACILITY
+            // ----------------------------------------------
+
+            if (
+                this.isStorageFacility
+            ) {
+
+                // ==========================================
+                // Storage cannot have assetCode.
+                // ==========================================
+
+                this.assetCode = null;
+
+                // ==========================================
+                // Storage does not need a structure type.
+                // ==========================================
+
+            }
+
+
+            // ----------------------------------------------
+            // Validate assigned asset parent.
             // ----------------------------------------------
 
             if (
@@ -3124,6 +2251,8 @@ dairySchema.pre(
 
             // ----------------------------------------------
             // Validate structure type.
+            //
+            // Storage facilities do not require a type.
             // ----------------------------------------------
 
             if (
@@ -3332,6 +2461,8 @@ dairySchema.pre(
 
             this.assetCode = null;
 
+            this.storageNumber = null;
+
             this.dateOfBirth = null;
 
             this.mass = 0;
@@ -3359,110 +2490,24 @@ dairySchema.pre(
 
 
         // ==================================================
-        // STOCK ADDED DATES
-        // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // We intentionally DO NOT overwrite updatedAt here.
-        //
-        // storageService.touchStock() controls the stock's
-        // actual last-update timestamp.
-        //
-        // Otherwise saving unrelated Dairy fields would make
-        // every stock item appear newly updated.
-        //
+        // FINAL STORAGE NORMALIZATION
         // ==================================================
 
         if (
-            Array.isArray(
-                this.feedStocks
-            )
+            this.isStorageFacility
         ) {
 
-            this.feedStocks.forEach(
+            this.code = null;
 
-                stock => {
+            this.assetCode = null;
 
-                    if (
-                        !stock.addedAt
-                    ) {
+            this.dateOfBirth = null;
 
-                        stock.addedAt =
-                            new Date();
+            this.mass = 0;
 
-                    }
-
-
-                    if (
-                        !stock.updatedAt
-                    ) {
-
-                        stock.updatedAt =
-                            new Date();
-
-                    }
-
-                }
-
-            );
+            this.isMilking = false;
 
         }
-
-
-        // ==================================================
-        // FINAL FEED AMOUNT SYNCHRONIZATION
-        // ==================================================
-
-        this.feedsAmount =
-
-            Array.isArray(
-                this.feedStocks
-            )
-
-                ? this.feedStocks.reduce(
-
-                    (
-
-                        total,
-
-                        stock
-
-                    ) => {
-
-                        return (
-
-                            total +
-
-                            Math.max(
-
-                                0,
-
-                                Number(
-                                    stock.feedsAmount
-                                ) || 0
-
-                            )
-
-                        );
-
-                    },
-
-                    0
-
-                )
-
-                : 0;
-
-
-        this.feedsAmount =
-
-            Math.round(
-
-                this.feedsAmount *
-                100
-
-            ) / 100;
 
 
         next();
@@ -3537,19 +2582,16 @@ dairySchema.index({
 
 
 // ==========================================================
-// FEED STORE UNIQUENESS
+// STORAGE NUMBER
 // ==========================================================
 //
-// Only ONE feedStore may belong to a given Dairy Farm.
+// ONLY ONE STORAGE FACILITY PER FARM.
 //
 // Example:
 //
-//     assetCode = -1
-//     type      = feedStore
+//     storageNumber = -1
 //
 // can occur only once.
-//
-// Other structures are unaffected.
 //
 // ==========================================================
 
@@ -3557,9 +2599,7 @@ dairySchema.index(
 
     {
 
-        assetCode: 1,
-
-        type: 1
+        storageNumber: 1
 
     },
 
@@ -3569,9 +2609,7 @@ dairySchema.index(
 
         partialFilterExpression: {
 
-            type: "feedStore",
-
-            assetCode: {
+            storageNumber: {
 
                 $type: "number"
 
@@ -3585,45 +2623,12 @@ dairySchema.index(
 
 
 // ==========================================================
-// FEED STOCK CATEGORY
-// ==========================================================
-
-dairySchema.index({
-
-    "feedStocks.category": 1
-
-});
-
-
-// ==========================================================
-// FEED STOCK NAME
-// ==========================================================
-
-dairySchema.index({
-
-    "feedStocks.feedName": 1
-
-});
-
-
-// ==========================================================
-// MEDICINE STOCK NAME
-// ==========================================================
-
-dairySchema.index({
-
-    "feedStocks.medicineName": 1
-
-});
-
-
-// ==========================================================
 // CODE UNIQUENESS
 // ==========================================================
 //
 // Numeric codes must be unique.
 //
-// Structures use code = null and are therefore excluded.
+// Structures/facilities use code = null and are excluded.
 //
 // ==========================================================
 
@@ -3655,14 +2660,18 @@ dairySchema.index(
 
 
 // ==========================================================
-// STATIC: GET FEED STORE
+// STATIC: GET STORAGE FACILITY
 // ==========================================================
 //
-// Finds the feed store belonging to a Dairy Farm.
+// Finds the storage facility belonging to a Dairy Farm.
+//
+// Example:
+//
+//     Dairy.getStorageFacility(-1)
 //
 // ==========================================================
 
-dairySchema.statics.getFeedStore =
+dairySchema.statics.getStorageFacility =
 
     async function (
         farmCode
@@ -3687,9 +2696,7 @@ dairySchema.statics.getFeedStore =
 
         return this.findOne({
 
-            type: "feedStore",
-
-            assetCode: code
+            storageNumber: code
 
         });
 
@@ -3697,10 +2704,10 @@ dairySchema.statics.getFeedStore =
 
 
 // ==========================================================
-// STATIC: HAS FEED STORE
+// STATIC: HAS STORAGE FACILITY
 // ==========================================================
 
-dairySchema.statics.hasFeedStore =
+dairySchema.statics.hasStorageFacility =
 
     async function (
         farmCode
@@ -3723,13 +2730,11 @@ dairySchema.statics.hasFeedStore =
         }
 
 
-        const feedStore =
+        const storage =
 
             await this.findOne({
 
-                type: "feedStore",
-
-                assetCode: code
+                storageNumber: code
 
             })
 
@@ -3738,7 +2743,168 @@ dairySchema.statics.hasFeedStore =
             .lean();
 
 
-        return !!feedStore;
+        return !!storage;
+
+    };
+
+
+// ==========================================================
+// STATIC: GET FARM ASSETS
+// ==========================================================
+//
+// Returns assets belonging to a farm through assetCode.
+//
+// Storage facilities are deliberately excluded because
+// storage ownership uses storageNumber.
+//
+// ==========================================================
+
+dairySchema.statics.getFarmAssets =
+
+    function (
+        farmCode
+    ) {
+
+        const code =
+            Number(farmCode);
+
+
+        if (
+
+            !Number.isInteger(code) ||
+
+            code >= 0
+
+        ) {
+
+            return this.find({
+
+                _id: null
+
+            });
+
+        }
+
+
+        return this.find({
+
+            assetCode: code
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET FARM STORAGE
+// ==========================================================
+
+dairySchema.statics.getFarmStorage =
+
+    function (
+        farmCode
+    ) {
+
+        const code =
+            Number(farmCode);
+
+
+        if (
+
+            !Number.isInteger(code) ||
+
+            code >= 0
+
+        ) {
+
+            return this.find({
+
+                _id: null
+
+            });
+
+        }
+
+
+        return this.find({
+
+            storageNumber: code
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET STANDALONE ASSETS
+// ==========================================================
+//
+// Standalone assets:
+//
+//     code = null
+//     assetCode = null
+//     storageNumber = null
+//
+// ==========================================================
+
+dairySchema.statics.getStandaloneAssets =
+
+    function () {
+
+        return this.find({
+
+            code: null,
+
+            assetCode: null,
+
+            storageNumber: null
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET STORAGE STOCK OWNER
+// ==========================================================
+//
+// Returns the storage facility that should own stock
+// belonging to a particular Dairy Farm.
+//
+// Example:
+//
+//     Dairy.getStorageStockOwner(-1)
+//
+// ==========================================================
+
+dairySchema.statics.getStorageStockOwner =
+
+    async function (
+        farmCode
+    ) {
+
+        const code =
+            Number(farmCode);
+
+
+        if (
+
+            !Number.isInteger(code) ||
+
+            code >= 0
+
+        ) {
+
+            return null;
+
+        }
+
+
+        return this.findOne({
+
+            storageNumber: code
+
+        });
 
     };
 
@@ -3820,70 +2986,6 @@ dairySchema.statics.getMaxProfileImages =
     function () {
 
         return MAX_PROFILE_IMAGES;
-
-    };
-
-
-// ==========================================================
-// STATIC: GET MAX STOCK IMAGES
-// ==========================================================
-
-dairySchema.statics.getMaxStockImages =
-
-    function () {
-
-        return MAX_STOCK_IMAGES;
-
-    };
-
-
-// ==========================================================
-// STATIC: GET FEED TYPES
-// ==========================================================
-
-dairySchema.statics.getFeedTypes =
-
-    function () {
-
-        return [
-
-            ...FEED_TYPES
-
-        ];
-
-    };
-
-
-// ==========================================================
-// STATIC: GET VETERINARY MEDICINES
-// ==========================================================
-
-dairySchema.statics.getVeterinaryMedicines =
-
-    function () {
-
-        return [
-
-            ...VETERINARY_MEDICINES
-
-        ];
-
-    };
-
-
-// ==========================================================
-// STATIC: GET STOCK UNITS
-// ==========================================================
-
-dairySchema.statics.getStockUnits =
-
-    function () {
-
-        return [
-
-            ...STOCK_UNITS
-
-        ];
 
     };
 
@@ -3996,24 +3098,8 @@ Dairy.DAIRY_STATUSES =
     DAIRY_STATUSES;
 
 
-Dairy.FEED_TYPES =
-    FEED_TYPES;
-
-
-Dairy.VETERINARY_MEDICINES =
-    VETERINARY_MEDICINES;
-
-
-Dairy.STOCK_UNITS =
-    STOCK_UNITS;
-
-
 Dairy.MAX_PROFILE_IMAGES =
     MAX_PROFILE_IMAGES;
-
-
-Dairy.MAX_STOCK_IMAGES =
-    MAX_STOCK_IMAGES;
 
 
 // ==========================================================
