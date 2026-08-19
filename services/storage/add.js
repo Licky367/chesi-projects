@@ -6,13 +6,16 @@
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Creates storage belonging to a parent Dairy Farm.
+// Creates storage belonging to ONE parent Dairy Farm.
 //
-// ROUTE:
+// ROUTES:
 //
-//     /storage/:id/add
+//     GET  /storage/:id/add
+//     POST /storage/:id/add
 //
-// :id = parent Dairy._id
+// IMPORTANT:
+//
+//     :id = Dairy._id
 //
 // RELATION:
 //
@@ -22,12 +25,12 @@
 //          ↓
 //     DairyStorage.farmCode
 //
-// USER INPUT:
+// USER PROVIDES:
 //
 //     name
 //     type
 //
-// SERVER GENERATES:
+// SERVER DETERMINES:
 //
 //     farmCode
 //     roomNumber
@@ -50,6 +53,7 @@
 //
 // ==========================================================
 
+
 const mongoose =
     require("mongoose");
 
@@ -62,6 +66,16 @@ const DairyStorage =
 
 // ==========================================================
 // VALIDATE DAIRY ID
+// ==========================================================
+//
+// dairyId MUST be:
+//
+//     Dairy._id
+//
+// It must NOT be:
+//
+//     Dairy.code
+//
 // ==========================================================
 
 function validateDairyId(
@@ -79,12 +93,11 @@ function validateDairyId(
                 "Invalid dairy ID."
             );
 
-        error.status = 400;
+        error.status =
+            400;
 
         throw error;
-
     }
-
 }
 
 
@@ -92,11 +105,18 @@ function validateDairyId(
 // GET PARENT DAIRY
 // ==========================================================
 //
-// IMPORTANT:
+// INPUT:
 //
-// dairyId is ALWAYS Dairy._id.
+//     dairyId = Dairy._id
 //
-// farmCode is obtained from dairy.code.
+// RETURNS:
+//
+//     dairy
+//     farmCode
+//
+// The farmCode is obtained internally from:
+//
+//     dairy.code
 //
 // ==========================================================
 
@@ -104,16 +124,30 @@ async function getParentDairy(
     dairyId
 ) {
 
+    // ======================================================
+    // VALIDATE MONGODB ID
+    // ======================================================
+
     validateDairyId(
         dairyId
     );
 
 
+    // ======================================================
+    // FIND DAIRY BY _ID
+    // ======================================================
+
     const dairy =
         await Dairy
-            .findById(dairyId)
+            .findById(
+                dairyId
+            )
             .lean();
 
+
+    // ======================================================
+    // DAIRY NOT FOUND
+    // ======================================================
 
     if (!dairy) {
 
@@ -122,15 +156,23 @@ async function getParentDairy(
                 "Dairy farm not found."
             );
 
-        error.status = 404;
+        error.status =
+            404;
 
         throw error;
-
     }
 
 
     // ======================================================
-    // PARENT MUST BE A DAIRY FARM
+    // RESOLVE FARM CODE
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // This is NOT the route ID.
+    //
+    // It is only the value used by DairyStorage.
+    //
     // ======================================================
 
     const farmCode =
@@ -139,8 +181,14 @@ async function getParentDairy(
         );
 
 
+    // ======================================================
+    // VERIFY FARM CODE
+    // ======================================================
+
     if (
-        !Number.isInteger(farmCode) ||
+        !Number.isInteger(
+            farmCode
+        ) ||
         farmCode >= 0
     ) {
 
@@ -149,12 +197,16 @@ async function getParentDairy(
                 "The selected Dairy is not a Dairy Farm."
             );
 
-        error.status = 422;
+        error.status =
+            422;
 
         throw error;
-
     }
 
+
+    // ======================================================
+    // RETURN
+    // ======================================================
 
     return {
 
@@ -163,7 +215,6 @@ async function getParentDairy(
         farmCode
 
     };
-
 }
 
 
@@ -171,17 +222,15 @@ async function getParentDairy(
 // GET NEXT ROOM NUMBER
 // ==========================================================
 //
-// First room:
+// ROOM NUMBERS ARE POSITIVE:
 //
 //     1
-//
-// Existing:
-//
-//     1, 2, 3
-//
-// Next:
-//
+//     2
+//     3
 //     4
+//
+// The next number is determined from the highest existing
+// active room.
 //
 // ==========================================================
 
@@ -208,36 +257,48 @@ async function getNextRoomNumber(
             .lean();
 
 
+    // ======================================================
+    // EXTRACT VALID ROOM NUMBERS
+    // ======================================================
+
     const numbers =
         rooms
             .map(
-                item =>
+                room =>
                     Number(
-                        item.roomNumber
+                        room.roomNumber
                     )
             )
             .filter(
                 number =>
-                    Number.isInteger(number) &&
+                    Number.isInteger(
+                        number
+                    ) &&
                     number > 0
             );
 
+
+    // ======================================================
+    // FIRST ROOM
+    // ======================================================
 
     if (
         numbers.length === 0
     ) {
 
         return 1;
-
     }
 
+
+    // ======================================================
+    // NEXT ROOM
+    // ======================================================
 
     return (
         Math.max(
             ...numbers
         ) + 1
     );
-
 }
 
 
@@ -245,17 +306,15 @@ async function getNextRoomNumber(
 // GET NEXT AGROSTORE NUMBER
 // ==========================================================
 //
-// First:
+// AGROSTORE NUMBERS ARE NEGATIVE:
 //
 //     -1
-//
-// Existing:
-//
-//     -1, -2, -3
-//
-// Next:
-//
+//     -2
+//     -3
 //     -4
+//
+// Because the numbers become more negative, we find the
+// smallest existing number and subtract one.
 //
 // ==========================================================
 
@@ -282,41 +341,87 @@ async function getNextAgroStoreNumber(
             .lean();
 
 
+    // ======================================================
+    // EXTRACT VALID AGROSTORE NUMBERS
+    // ======================================================
+
     const numbers =
         stores
             .map(
-                item =>
+                store =>
                     Number(
-                        item.roomNumber
+                        store.roomNumber
                     )
             )
             .filter(
                 number =>
-                    Number.isInteger(number) &&
+                    Number.isInteger(
+                        number
+                    ) &&
                     number < 0
             );
 
+
+    // ======================================================
+    // FIRST AGROSTORE
+    // ======================================================
 
     if (
         numbers.length === 0
     ) {
 
         return -1;
-
     }
 
+
+    // ======================================================
+    // NEXT AGROSTORE
+    // ======================================================
 
     return (
         Math.min(
             ...numbers
         ) - 1
     );
-
 }
 
 
 // ==========================================================
-// CHECK NAME AVAILABILITY
+// ESCAPE REGEXP
+// ==========================================================
+
+function escapeRegExp(
+    value
+) {
+
+    return String(
+        value
+    ).replace(
+        /[.*+?^${}()|[\]\\]/g,
+        "\\$&"
+    );
+}
+
+
+// ==========================================================
+// CHECK STORAGE NAME
+// ==========================================================
+//
+// Storage names must be unique within the same Dairy Farm.
+//
+// Comparison is case-insensitive.
+//
+// Therefore:
+//
+//     Main Store
+//
+// and:
+//
+//     main store
+//
+// cannot both exist as active storage facilities on the
+// same farm.
+//
 // ==========================================================
 
 async function ensureNameAvailable(
@@ -350,6 +455,10 @@ async function ensureNameAvailable(
             .lean();
 
 
+    // ======================================================
+    // DUPLICATE NAME
+    // ======================================================
+
     if (existing) {
 
         const error =
@@ -357,33 +466,11 @@ async function ensureNameAvailable(
                 "A storage facility with this name already exists on this Dairy Farm."
             );
 
-        error.status = 409;
+        error.status =
+            409;
 
         throw error;
-
     }
-
-}
-
-
-// ==========================================================
-// ESCAPE REGEXP
-// ==========================================================
-
-function escapeRegExp(
-    value
-) {
-
-    return String(
-        value
-    ).replace(
-
-        /[.*+?^${}()|[\]\\]/g,
-
-        "\\$&"
-
-    );
-
 }
 
 
@@ -391,13 +478,16 @@ function escapeRegExp(
 // GET ADD PAGE DATA
 // ==========================================================
 //
-// THIS FUNCTION WAS MISSING.
+// Used by:
 //
-// The controller calls:
+//     GET /storage/:id/add
 //
-//     getAddPageData(dairyId)
+// IMPORTANT:
 //
-// Therefore it MUST be exported.
+//     dairyId = Dairy._id
+//
+// This function exists specifically so the controller can
+// load the parent Dairy before rendering the form.
 //
 // ==========================================================
 
@@ -424,17 +514,48 @@ async function getAddPageData(
         farmCode
 
     };
-
 }
 
 
 // ==========================================================
 // CREATE STORAGE
 // ==========================================================
+//
+// INPUT:
+//
+//     {
+//         dairyId,
+//         name,
+//         type
+//     }
+//
+// dairyId:
+//
+//     Dairy._id
+//
+// name:
+//
+//     User supplied.
+//
+// type:
+//
+//     "room"
+//     "agroStore"
+//
+// SERVER GENERATES:
+//
+//     farmCode
+//     roomNumber
+//
+// ==========================================================
 
 async function createStorage(
     options = {}
 ) {
+
+    // ======================================================
+    // GET INPUT
+    // ======================================================
 
     const dairyId =
         String(
@@ -455,7 +576,15 @@ async function createStorage(
 
 
     // ======================================================
-    // GET PARENT FARM
+    // GET PARENT DAIRY
+    // ======================================================
+    //
+    // This resolves:
+    //
+    //     Dairy._id
+    //          ↓
+    //     dairy.code
+    //
     // ======================================================
 
     const {
@@ -474,19 +603,25 @@ async function createStorage(
     // VALIDATE NAME
     // ======================================================
 
-    if (!name) {
+    if (
+        !name
+    ) {
 
         const error =
             new Error(
                 "Storage name is required."
             );
 
-        error.status = 400;
+        error.status =
+            400;
 
         throw error;
-
     }
 
+
+    // ======================================================
+    // NAME LENGTH
+    // ======================================================
 
     if (
         name.length > 200
@@ -497,10 +632,10 @@ async function createStorage(
                 "Storage name cannot exceed 200 characters."
             );
 
-        error.status = 400;
+        error.status =
+            400;
 
         throw error;
-
     }
 
 
@@ -512,7 +647,9 @@ async function createStorage(
         ![
             "room",
             "agroStore"
-        ].includes(type)
+        ].includes(
+            type
+        )
     ) {
 
         const error =
@@ -520,15 +657,15 @@ async function createStorage(
                 "Storage type must be either room or agroStore."
             );
 
-        error.status = 400;
+        error.status =
+            400;
 
         throw error;
-
     }
 
 
     // ======================================================
-    // CHECK NAME
+    // CHECK NAME DUPLICATE
     // ======================================================
 
     await ensureNameAvailable(
@@ -538,7 +675,7 @@ async function createStorage(
 
 
     // ======================================================
-    // GENERATE ROOM NUMBER
+    // GENERATE STORAGE NUMBER
     // ======================================================
 
     let roomNumber;
@@ -559,13 +696,24 @@ async function createStorage(
             await getNextAgroStoreNumber(
                 farmCode
             );
-
     }
 
 
     // ======================================================
     // CREATE STORAGE DOCUMENT
     // ======================================================
+//
+// IMPORTANT:
+//
+// farmCode comes from:
+//
+//     dairy.code
+//
+// roomNumber is generated by the server.
+//
+// Neither is taken from req.body.
+//
+// ======================================================
 
     const storage =
         await DairyStorage.create({
@@ -585,7 +733,7 @@ async function createStorage(
 
 
     // ======================================================
-    // RETURN
+    // RETURN CREATED STORAGE
     // ======================================================
 
     return {
@@ -599,7 +747,6 @@ async function createStorage(
         storage
 
     };
-
 }
 
 
