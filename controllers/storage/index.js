@@ -3,6 +3,9 @@
 // STORAGE CONTROLLER
 // ==========================================================
 
+const mongoose =
+    require("mongoose");
+
 const storageService =
     require("../../services/storage");
 
@@ -11,25 +14,125 @@ const storageService =
 // STORAGE INDEX
 // ==========================================================
 //
-// Displays all available rooms and AgroStores.
+// GET:
+//
+//     /storage/:id
+//
+// Where:
+//
+//     :id = Dairy._id
+//
+// The controller does NOT treat :id as farmCode.
+//
+// It represents the MongoDB _id of the Dairy.
+//
+// The service will:
+//
+//     1. Find the Dairy using _id.
+//     2. Read dairy.code.
+//     3. Find DairyStorage records where:
+//
+//            farmCode === dairy.code
+//
+//     4. Apply the optional storage type filter.
+//
+// ==========================================================
 //
 // Optional query:
 //
-//     ?type=all
-//     ?type=room
-//     ?type=agroStore
+//     /storage/:id
 //
-// If no filter is supplied:
+//     /storage/:id?type=all
 //
-//     all active storage is displayed.
+//     /storage/:id?type=room
+//
+//     /storage/:id?type=agroStore
+//
+// Default:
+//
+//     all active storage.
+//
 // ==========================================================
 
 exports.index = async function (
     req,
-    res
+    res,
+    next
 ) {
 
     try {
+
+        // ==================================================
+        // READ DAIRY ID
+        // ==================================================
+
+        const dairyId =
+            String(
+                req.params.id || ""
+            ).trim();
+
+
+        // ==================================================
+        // VALIDATE DAIRY ID
+        // ==================================================
+
+        if (
+            !dairyId
+        ) {
+
+            return res.status(400).render(
+
+                "400",
+
+                {
+
+                    title:
+                        "Invalid Dairy",
+
+                    error:
+                        "A Dairy ID is required.",
+
+                    user:
+                        req.session?.user || null
+
+                }
+
+            );
+
+        }
+
+
+        // ==================================================
+        // MONGODB OBJECT ID VALIDATION
+        // ==================================================
+
+        if (
+            !mongoose.Types.ObjectId.isValid(
+                dairyId
+            )
+        ) {
+
+            return res.status(400).render(
+
+                "400",
+
+                {
+
+                    title:
+                        "Invalid Dairy ID",
+
+                    error:
+                        "The supplied Dairy ID is not valid.",
+
+                    user:
+                        req.session?.user || null
+
+                }
+
+            );
+
+        }
+
 
         // ==================================================
         // READ FILTER
@@ -49,7 +152,9 @@ exports.index = async function (
         const allowedTypes = [
 
             "all",
+
             "room",
+
             "agroStore"
 
         ];
@@ -65,11 +170,25 @@ exports.index = async function (
 
 
         // ==================================================
-        // GET STORAGE
+        // GET STORAGE FOR DAIRY
+        // ==================================================
+        //
+        // The service receives the Dairy _id.
+        //
+        // It is responsible for resolving:
+        //
+        //     Dairy._id
+        //          ↓
+        //     Dairy.code
+        //          ↓
+        //     DairyStorage.farmCode
+        //
         // ==================================================
 
-        const storage =
+        const result =
             await storageService.getStorage({
+
+                dairyId,
 
                 type
 
@@ -77,7 +196,64 @@ exports.index = async function (
 
 
         // ==================================================
-        // RENDER
+        // GET VALUES FROM SERVICE
+        // ==================================================
+        //
+        // The service should return:
+        //
+        // {
+        //
+        //     dairy,
+        //
+        //     storage
+        //
+        // }
+        //
+        // This keeps the controller independent from the
+        // actual DairyStorage lookup implementation.
+        //
+        // ==================================================
+
+        const dairy =
+            result?.dairy || null;
+
+
+        const storage =
+            result?.storage || [];
+
+
+        // ==================================================
+        // DAIRY NOT FOUND
+        // ==================================================
+
+        if (
+            !dairy
+        ) {
+
+            return res.status(404).render(
+
+                "404",
+
+                {
+
+                    title:
+                        "Dairy Not Found",
+
+                    error:
+                        "The requested Dairy farm could not be found.",
+
+                    user:
+                        req.session?.user || null
+
+                }
+
+            );
+
+        }
+
+
+        // ==================================================
+        // RENDER STORAGE PAGE
         // ==================================================
 
         return res.render(
@@ -89,22 +265,31 @@ exports.index = async function (
                 title:
                     "Storage",
 
+                dairy,
+
                 storage,
 
                 selectedType:
                     type,
 
+                dairyId:
+                    dairy._id,
+
+                farmCode:
+                    dairy.code,
+
                 user:
-                    req.session.user || null
+                    req.session?.user || null
 
             }
 
         );
 
+
     } catch (error) {
 
         // ==================================================
-        // ERROR
+        // LOG ERROR
         // ==================================================
 
         console.error(
@@ -113,23 +298,17 @@ exports.index = async function (
         );
 
 
-        return res.status(500).render(
+        // ==================================================
+        // PASS TO GLOBAL ERROR HANDLER
+        // ==================================================
+        //
+        // Your server.js already has a global error
+        // handler, so there is no need to duplicate the
+        // entire error rendering logic here.
+        //
+        // ==================================================
 
-            "error",
-
-            {
-
-                title:
-                    "Storage Error",
-
-                message:
-                    "Unable to load storage information.",
-
-                error
-
-            }
-
-        );
+        return next(error);
 
     }
 
