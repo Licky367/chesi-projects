@@ -7,11 +7,22 @@
    PURPOSE:
        Add a new quantity to an existing stock item.
 
-   EXAMPLE:
+   STOCK IDENTITY:
+       stock.name
 
-       Existing stock = 100 kg
-       Restock        = 50 kg
-       New total      = 150 kg
+   CATEGORY:
+       feed     = Animal Feed
+       medicine = Veterinary Medicine
+
+   IMPORTANT:
+       feedName and medicineName are NOT used here.
+
+       They are category-specific source fields used when
+       creating/identifying the stock.
+
+       The existing stock is identified exclusively by:
+           stock._id
+           stock.name
 ========================================================== */
 
 const currentDairy = dairy || {};
@@ -22,24 +33,74 @@ const isAdmin =
     currentUser.role === "admin";
 
 
+/* ==========================================================
+   STOCK ID
+========================================================== */
+
 const stockId =
     String(
         currentStock._id || ""
     );
 
 
+/*
+ * A restock page must represent a real existing stock.
+ * Do not create an artificial/unnamed stock identity.
+ */
+
+const hasStockId =
+    Boolean(stockId);
+
+
+
+/* ==========================================================
+   STOCK CATEGORY
+========================================================== */
+
 const stockCategory =
     String(
-        currentStock.category || "feed"
+        currentStock.category || ""
     ).toLowerCase();
 
 
-const stockName =
-    currentStock.name ||
-    currentStock.feedName ||
-    currentStock.medicineName ||
-    "Unnamed stock";
+const isFeed =
+    stockCategory === "feed";
 
+
+const isMedicine =
+    stockCategory === "medicine";
+
+
+
+/* ==========================================================
+   STOCK NAME
+========================================================== */
+
+const stockName =
+    String(
+        currentStock.name || ""
+    ).trim();
+
+
+
+/*
+ * A stock without a name is not a valid stock item.
+ *
+ * Do not fall back to:
+ *
+ *     feedName
+ *     medicineName
+ *     "Unnamed stock"
+ */
+
+const hasStockName =
+    Boolean(stockName);
+
+
+
+/* ==========================================================
+   STOCK QUANTITY
+========================================================== */
 
 const quantity =
     Number(
@@ -53,10 +114,21 @@ const currentQuantity =
         : 0;
 
 
-const stockUnit =
-    currentStock.unit ||
-    "";
 
+/* ==========================================================
+   STOCK UNIT
+========================================================== */
+
+const stockUnit =
+    String(
+        currentStock.unit || ""
+    ).trim();
+
+
+
+/* ==========================================================
+   STOCK PRICE
+========================================================== */
 
 const stockPrice =
     Number(
@@ -69,6 +141,11 @@ const safePrice =
         ? stockPrice
         : "";
 
+
+
+/* ==========================================================
+   ADDITIONAL STOCK INFORMATION
+========================================================== */
 
 const instructions =
     currentStock.instructions ||
@@ -85,7 +162,24 @@ const message =
     currentStock.additionalInformation ||
     "";
 
+
+
+/* ==========================================================
+   VALID STOCK
+========================================================== */
+
+const validStock =
+    hasStockId &&
+    hasStockName &&
+    (
+        isFeed ||
+        isMedicine
+    );
+
 %>
+
+
+<% if (validStock) { %>
 
 
 <div class="storage-page">
@@ -123,7 +217,7 @@ const message =
 
         <div class="stock-summary-icon">
 
-            <% if (stockCategory === "medicine") { %>
+            <% if (isMedicine) { %>
 
                 💊
 
@@ -144,9 +238,9 @@ const message =
 
             <span>
 
-                <%= stockCategory === "medicine"
-                    ? "Veterinary medicine"
-                    : "Animal feed"
+                <%= isMedicine
+                    ? "Veterinary Medicine"
+                    : "Animal Feed"
                 %>
 
             </span>
@@ -184,12 +278,20 @@ const message =
     >
 
 
+        <!-- ==================================================
+             ACTION
+        =================================================== -->
+
         <input
             type="hidden"
             name="action"
             value="restock"
         >
 
+
+        <!-- ==================================================
+             STOCK ID
+        =================================================== -->
 
         <input
             type="hidden"
@@ -211,7 +313,7 @@ const message =
 
             <input
                 type="text"
-                value="<%= stockCategory === 'medicine'
+                value="<%= isMedicine
                     ? 'Veterinary Medicine'
                     : 'Animal Feed' %>"
                 readonly
@@ -229,12 +331,19 @@ const message =
 
         <!-- ==================================================
              STOCK NAME
+             
+             IMPORTANT:
+             stock.name is the ONLY stock identity.
+             
+             No feedName.
+             No medicineName.
+             No unnamed fallback.
         =================================================== -->
 
         <div class="storage-field">
 
             <label>
-                Stock item
+                Stock name
             </label>
 
             <input
@@ -243,23 +352,11 @@ const message =
                 readonly
             >
 
-            <% if (stockCategory === "feed") { %>
-
-                <input
-                    type="hidden"
-                    name="feedName"
-                    value="<%= stockName %>"
-                >
-
-            <% } else { %>
-
-                <input
-                    type="hidden"
-                    name="medicineName"
-                    value="<%= stockName %>"
-                >
-
-            <% } %>
+            <input
+                type="hidden"
+                name="name"
+                value="<%= stockName %>"
+            >
 
         </div>
 
@@ -560,6 +657,40 @@ const message =
     </form>
 
 </div>
+
+
+
+<% } else { %>
+
+
+<!-- ==========================================================
+     INVALID STOCK
+     
+     Do NOT display an unnamed or unidentified stock.
+========================================================== -->
+
+<div class="storage-page">
+
+    <div class="invalid-stock">
+
+        <div class="invalid-stock-icon">
+            ⚠️
+        </div>
+
+        <strong>
+            Stock unavailable
+        </strong>
+
+        <span>
+            This stock item could not be identified.
+        </span>
+
+    </div>
+
+</div>
+
+
+<% } %>
 
 
 
@@ -1099,6 +1230,58 @@ const message =
 
 
 /* ==========================================================
+   INVALID STOCK
+========================================================== */
+
+.invalid-stock {
+
+    display: flex;
+
+    align-items: center;
+
+    flex-direction: column;
+
+    gap: 6px;
+
+    padding: 35px 18px;
+
+    border: 1px dashed #d4dfd8;
+
+    border-radius: 14px;
+
+    background: #f8fbf9;
+
+    text-align: center;
+
+}
+
+
+.invalid-stock-icon {
+
+    font-size: 26px;
+
+}
+
+
+.invalid-stock strong {
+
+    color: #344139;
+
+    font-size: 14px;
+
+}
+
+
+.invalid-stock span {
+
+    color: #7d8982;
+
+    font-size: 10px;
+
+}
+
+
+/* ==========================================================
    MOBILE
 ========================================================== */
 
@@ -1134,6 +1317,20 @@ const message =
     .preview-equals {
 
         display: none;
+
+    }
+
+
+    .stock-summary {
+
+        padding: 10px;
+
+    }
+
+
+    .stock-summary-info strong {
+
+        font-size: 12px;
 
     }
 
@@ -1179,6 +1376,10 @@ document.addEventListener(
 
 
 
+        /* ======================================================
+           UPDATE RESTOCK PREVIEW
+        ======================================================= */
+
         function updatePreview() {
 
             const value =
@@ -1215,6 +1416,10 @@ document.addEventListener(
 
 
 
+        /* ======================================================
+           EVENTS
+        ======================================================= */
+
         quantity.addEventListener(
             "input",
             updatePreview
@@ -1233,3 +1438,6 @@ document.addEventListener(
 );
 
 </script>
+
+
+<% } %>
