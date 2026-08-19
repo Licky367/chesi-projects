@@ -5,10 +5,28 @@
 
 const currentDairy = dairy || {};
 
+const currentUser = user || {};
+
+const userRole =
+    String(currentUser.role || "").trim();
+
+
 const feedStocks =
     Array.isArray(currentDairy.feedStocks)
         ? currentDairy.feedStocks
         : [];
+
+
+/* ==========================================================
+   ROLE HELPERS
+========================================================== */
+
+const isAdmin =
+    userRole === "admin";
+
+
+const isDairyWorker =
+    userRole === "dairyWorker";
 
 
 /* ==========================================================
@@ -41,14 +59,26 @@ function formatNumber(value) {
 function formatDate(value) {
 
     if (!value) {
+
         return "";
+
     }
 
-    const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) {
+    const date =
+        new Date(value);
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+
         return "";
+
     }
+
 
     return date.toLocaleString();
 
@@ -58,8 +88,87 @@ function formatDate(value) {
 function stockCategory(stock) {
 
     return stock.category === "medicine"
+
         ? "Medicine"
+
         : "Feed";
+
+}
+
+
+function getStockActionUrl(stock) {
+
+    if (!stock || !stock._id) {
+
+        return "#";
+
+    }
+
+
+    if (isAdmin) {
+
+        return (
+
+            "/dairy/" +
+
+            encodeURIComponent(
+                currentDairy._id
+            ) +
+
+            "/feedstore/restock/" +
+
+            encodeURIComponent(
+                stock._id
+            )
+
+        );
+
+    }
+
+
+    if (isDairyWorker) {
+
+        return (
+
+            "/dairy/" +
+
+            encodeURIComponent(
+                currentDairy._id
+            ) +
+
+            "/feedstore/update/" +
+
+            encodeURIComponent(
+                stock._id
+            )
+
+        );
+
+    }
+
+
+    return "#";
+
+}
+
+
+function getStockActionText() {
+
+    if (isAdmin) {
+
+        return "Restock";
+
+    }
+
+
+    if (isDairyWorker) {
+
+        return "Update Remainder";
+
+    }
+
+
+    return "";
 
 }
 
@@ -74,39 +183,58 @@ function stockCategory(stock) {
 
 
     <!-- ======================================================
-         HEADER
+         PAGE HEADER
     ======================================================= -->
 
     <div class="feedstore-header">
 
+
         <div class="feedstore-header-content">
 
             <div class="feedstore-eyebrow">
+
                 FEED STORE
+
             </div>
 
+
             <h1>
+
                 <%= currentDairy.name || "Feed Store" %>
+
             </h1>
 
+
             <p>
+
                 Feed store inventory
+
             </p>
 
         </div>
 
 
+        <!-- ==================================================
+             STOCK COUNT
+        =================================================== -->
+
         <div class="feedstore-count">
 
             <strong>
+
                 <%= feedStocks.length %>
+
             </strong>
 
+
             <span>
+
                 Stock Items
+
             </span>
 
         </div>
+
 
     </div>
 
@@ -117,20 +245,31 @@ function stockCategory(stock) {
 
     <% if (feedStocks.length === 0) { %>
 
+
         <div class="feedstore-empty">
 
+
             <div class="empty-icon">
+
                 📦
+
             </div>
 
+
             <h2>
+
                 No Stock
+
             </h2>
 
+
             <p>
-                There are currently no stock items in this
-                feed store.
+
+                There are currently no stock items
+                in this feed store.
+
             </p>
+
 
         </div>
 
@@ -147,6 +286,7 @@ function stockCategory(stock) {
 
             <% feedStocks.forEach(function(stock) { %>
 
+
                 <div
                     class="feedstock-item"
                     data-stock-id="<%= stock._id %>"
@@ -154,23 +294,85 @@ function stockCategory(stock) {
 
 
                     <!-- ======================================
-                         STOCK NAME
+                         CARD HEADER
                     ======================================= -->
 
-                    <div class="feedstock-main">
-
-                        <h2 class="feedstock-name">
-
-                            <%= stock.name || "Unnamed Stock" %>
-
-                        </h2>
+                    <div class="feedstock-card-header">
 
 
-                        <div class="feedstock-category">
+                        <!-- ==================================
+                             STOCK IDENTITY
+                        =================================== -->
 
-                            <%= stockCategory(stock) %>
+                        <div class="feedstock-main">
+
+
+                            <div class="feedstock-name-row">
+
+
+                                <h2 class="feedstock-name">
+
+                                    <%= stock.name || "Unnamed Stock" %>
+
+                                </h2>
+
+
+                                <span
+                                    class="feedstock-category
+                                    <%= stock.category === 'medicine'
+                                        ? 'medicine'
+                                        : 'feed'
+                                    %>"
+                                >
+
+                                    <%= stockCategory(stock) %>
+
+                                </span>
+
+
+                            </div>
+
 
                         </div>
+
+
+                        <!-- ==================================
+                             ROLE ACTION
+                        =================================== -->
+
+                        <% if (
+                            (isAdmin || isDairyWorker) &&
+                            stock._id
+                        ) { %>
+
+
+                            <a
+                                href="<%= getStockActionUrl(stock) %>"
+                                class="stock-action-btn
+                                    <%= isAdmin
+                                        ? 'restock-btn'
+                                        : 'update-btn'
+                                    %>"
+                            >
+
+                                <span class="action-icon">
+
+                                    <%= isAdmin ? "＋" : "↻" %>
+
+                                </span>
+
+
+                                <span>
+
+                                    <%= getStockActionText() %>
+
+                                </span>
+
+                            </a>
+
+
+                        <% } %>
+
 
                     </div>
 
@@ -181,19 +383,28 @@ function stockCategory(stock) {
 
                     <div class="feedstock-field">
 
+
                         <span class="field-label">
+
                             Quantity Remaining
+
                         </span>
 
-                        <strong>
+
+                        <strong class="field-value">
 
                             <%= formatNumber(
                                 stock.quantityRemaining
                             ) %>
 
-                            <%= stock.unit || "" %>
+                            <span class="field-unit">
+
+                                <%= stock.unit || "" %>
+
+                            </span>
 
                         </strong>
+
 
                     </div>
 
@@ -204,19 +415,28 @@ function stockCategory(stock) {
 
                     <div class="feedstock-field">
 
+
                         <span class="field-label">
+
                             Initial Quantity
+
                         </span>
 
-                        <strong>
+
+                        <strong class="field-value">
 
                             <%= formatNumber(
                                 stock.initialQuantity
                             ) %>
 
-                            <%= stock.unit || "" %>
+                            <span class="field-unit">
+
+                                <%= stock.unit || "" %>
+
+                            </span>
 
                         </strong>
+
 
                     </div>
 
@@ -227,17 +447,28 @@ function stockCategory(stock) {
 
                     <div class="feedstock-field">
 
+
                         <span class="field-label">
+
                             Percentage Remaining
+
                         </span>
 
-                        <strong>
+
+                        <strong
+                            class="field-value
+                            <%= safeNumber(stock.percentageRemaining) <= 20
+                                ? 'low-stock'
+                                : ''
+                            %>"
+                        >
 
                             <%= formatNumber(
                                 stock.percentageRemaining
                             ) %>%
 
                         </strong>
+
 
                     </div>
 
@@ -248,15 +479,20 @@ function stockCategory(stock) {
 
                     <div class="feedstock-field">
 
+
                         <span class="field-label">
+
                             Unit
+
                         </span>
 
-                        <strong>
+
+                        <strong class="field-value">
 
                             <%= stock.unit || "-" %>
 
                         </strong>
+
 
                     </div>
 
@@ -267,11 +503,15 @@ function stockCategory(stock) {
 
                     <div class="feedstock-field">
 
+
                         <span class="field-label">
+
                             Unit Price
+
                         </span>
 
-                        <strong>
+
+                        <strong class="field-value">
 
                             <%= formatNumber(
                                 stock.unitPrice
@@ -279,26 +519,32 @@ function stockCategory(stock) {
 
                         </strong>
 
+
                     </div>
 
 
                     <!-- ======================================
-                         LATEST STOCK ADDITION
+                         LATEST ADDITION
                     ======================================= -->
 
                     <div class="feedstock-field">
 
+
                         <span class="field-label">
+
                             Latest Stock Addition
+
                         </span>
 
-                        <strong>
+
+                        <strong class="field-value">
 
                             <%= formatNumber(
                                 stock.feedsAmount
                             ) %>
 
                         </strong>
+
 
                     </div>
 
@@ -309,19 +555,26 @@ function stockCategory(stock) {
 
                     <% if (stock.expectedDuration) { %>
 
+
                         <div class="feedstock-field">
 
+
                             <span class="field-label">
+
                                 Expected Duration
+
                             </span>
 
-                            <strong>
+
+                            <strong class="field-value">
 
                                 <%= stock.expectedDuration %>
 
                             </strong>
 
+
                         </div>
+
 
                     <% } %>
 
@@ -332,17 +585,26 @@ function stockCategory(stock) {
 
                     <% if (stock.instructions) { %>
 
+
                         <div class="feedstock-description">
 
+
                             <span class="field-label">
+
                                 Instructions
+
                             </span>
 
+
                             <p>
+
                                 <%= stock.instructions %>
+
                             </p>
 
+
                         </div>
+
 
                     <% } %>
 
@@ -353,23 +615,32 @@ function stockCategory(stock) {
 
                     <% if (stock.message) { %>
 
+
                         <div class="feedstock-description">
 
+
                             <span class="field-label">
+
                                 Message
+
                             </span>
 
+
                             <p>
+
                                 <%= stock.message %>
+
                             </p>
 
+
                         </div>
+
 
                     <% } %>
 
 
                     <!-- ======================================
-                         IMAGES
+                         STOCK IMAGES
                     ======================================= -->
 
                     <% if (
@@ -377,30 +648,38 @@ function stockCategory(stock) {
                         stock.images.length > 0
                     ) { %>
 
+
                         <div class="feedstock-images">
+
 
                             <% stock.images.forEach(function(image) { %>
 
+
                                 <img
                                     src="<%= image %>"
-                                    alt="<%= stock.name || "Stock" %>"
+                                    alt="<%= stock.name || 'Stock' %>"
                                     loading="lazy"
                                 >
 
+
                             <% }); %>
 
+
                         </div>
+
 
                     <% } %>
 
 
                     <!-- ======================================
-                         DATES
+                         STOCK DATES
                     ======================================= -->
 
                     <div class="feedstock-dates">
 
+
                         <% if (stock.addedAt) { %>
+
 
                             <span>
 
@@ -411,10 +690,12 @@ function stockCategory(stock) {
 
                             </span>
 
+
                         <% } %>
 
 
                         <% if (stock.updatedAt) { %>
+
 
                             <span>
 
@@ -425,12 +706,15 @@ function stockCategory(stock) {
 
                             </span>
 
+
                         <% } %>
+
 
                     </div>
 
 
                 </div>
+
 
             <% }); %>
 
@@ -464,7 +748,7 @@ function stockCategory(stock) {
 
 
 /* ==========================================================
-   HEADER
+   PAGE HEADER
 ========================================================== */
 
 .feedstore-header {
@@ -473,7 +757,7 @@ function stockCategory(stock) {
 
     justify-content: space-between;
 
-    align-items: flex-start;
+    align-items: center;
 
     gap: 20px;
 
@@ -491,15 +775,15 @@ function stockCategory(stock) {
 
 .feedstore-eyebrow {
 
-    font-size: 12px;
+    color: #0b5d1e;
 
-    font-weight: 700;
+    font-size: 11px;
 
-    letter-spacing: 1.5px;
+    font-weight: 800;
 
-    opacity: .65;
+    letter-spacing: 1.8px;
 
-    margin-bottom: 5px;
+    margin-bottom: 6px;
 
 }
 
@@ -508,7 +792,11 @@ function stockCategory(stock) {
 
     margin: 0;
 
+    color: #12351c;
+
     font-size: 28px;
+
+    font-weight: 800;
 
     line-height: 1.2;
 
@@ -517,9 +805,11 @@ function stockCategory(stock) {
 
 .feedstore-header p {
 
-    margin: 6px 0 0;
+    margin: 7px 0 0;
 
-    opacity: .65;
+    color: #6b7280;
+
+    font-size: 14px;
 
 }
 
@@ -542,9 +832,11 @@ function stockCategory(stock) {
 
     padding: 12px 16px;
 
-    border-radius: 12px;
+    border: 1px solid #d9eadc;
 
-    background: #f3f4f6;
+    border-radius: 14px;
+
+    background: #f2f9f3;
 
     box-sizing: border-box;
 
@@ -553,7 +845,11 @@ function stockCategory(stock) {
 
 .feedstore-count strong {
 
-    font-size: 22px;
+    color: #0b5d1e;
+
+    font-size: 23px;
+
+    font-weight: 800;
 
     line-height: 1;
 
@@ -564,9 +860,11 @@ function stockCategory(stock) {
 
     margin-top: 5px;
 
-    font-size: 12px;
+    color: #66806d;
 
-    opacity: .65;
+    font-size: 11px;
+
+    font-weight: 600;
 
 }
 
@@ -581,40 +879,88 @@ function stockCategory(stock) {
 
     flex-direction: column;
 
-    gap: 14px;
+    gap: 16px;
 
 }
 
 
 /* ==========================================================
-   STOCK ITEM
+   STOCK CARD
 ========================================================== */
 
 .feedstock-item {
 
+    position: relative;
+
+    overflow: hidden;
+
     padding: 20px;
 
-    border: 1px solid #e5e7eb;
+    border: 1px solid #dfe9e1;
 
-    border-radius: 16px;
+    border-radius: 18px;
 
     background: #ffffff;
 
     box-sizing: border-box;
 
     box-shadow:
-        0 2px 8px rgba(0, 0, 0, .04);
+        0 5px 18px rgba(11, 93, 30, .06);
+
+    transition:
+        box-shadow .2s ease,
+        border-color .2s ease;
+
+}
+
+
+.feedstock-item:hover {
+
+    border-color: #b9d7bf;
+
+    box-shadow:
+        0 8px 25px rgba(11, 93, 30, .10);
 
 }
 
 
 /* ==========================================================
-   STOCK MAIN
+   CARD HEADER
 ========================================================== */
+
+.feedstock-card-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 18px;
+
+    margin-bottom: 15px;
+
+}
+
 
 .feedstock-main {
 
-    margin-bottom: 18px;
+    min-width: 0;
+
+    flex: 1;
+
+}
+
+
+.feedstock-name-row {
+
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: 9px;
 
 }
 
@@ -623,30 +969,126 @@ function stockCategory(stock) {
 
     margin: 0;
 
+    color: #173b21;
+
     font-size: 20px;
 
-    font-weight: 700;
+    font-weight: 800;
 
     line-height: 1.3;
 
 }
 
 
+/* ==========================================================
+   CATEGORY
+========================================================== */
+
 .feedstock-category {
 
-    display: inline-block;
+    display: inline-flex;
 
-    margin-top: 7px;
+    align-items: center;
 
-    padding: 4px 9px;
+    min-height: 24px;
+
+    padding: 0 9px;
 
     border-radius: 999px;
 
-    background: #f3f4f6;
+    background: #edf7ef;
 
-    font-size: 11px;
+    color: #0b5d1e;
 
-    font-weight: 700;
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: .3px;
+
+    text-transform: uppercase;
+
+}
+
+
+.feedstock-category.medicine {
+
+    background: #f0f7f2;
+
+    color: #356b42;
+
+}
+
+
+/* ==========================================================
+   ACTION BUTTON
+========================================================== */
+
+.stock-action-btn {
+
+    flex-shrink: 0;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    min-height: 40px;
+
+    padding: 0 14px;
+
+    border-radius: 10px;
+
+    background: #0b5d1e;
+
+    color: #ffffff;
+
+    text-decoration: none;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+
+    box-sizing: border-box;
+
+    box-shadow:
+        0 4px 10px rgba(11, 93, 30, .18);
+
+    transition:
+        background .2s ease,
+        transform .15s ease,
+        box-shadow .2s ease;
+
+}
+
+
+.stock-action-btn:hover {
+
+    background: #084916;
+
+    box-shadow:
+        0 6px 14px rgba(11, 93, 30, .24);
+
+}
+
+
+.stock-action-btn:active {
+
+    transform: scale(.97);
+
+}
+
+
+.action-icon {
+
+    font-size: 16px;
+
+    line-height: 1;
 
 }
 
@@ -665,42 +1107,70 @@ function stockCategory(stock) {
 
     gap: 20px;
 
-    padding: 10px 0;
+    min-height: 42px;
 
-    border-top: 1px solid #f0f0f0;
+    padding: 8px 0;
+
+    border-top: 1px solid #edf2ee;
+
+    box-sizing: border-box;
 
 }
 
 
 .field-label {
 
+    color: #718078;
+
     font-size: 12px;
 
-    opacity: .6;
+    font-weight: 600;
 
 }
 
 
-.feedstock-field strong {
+.field-value {
+
+    color: #193d23;
+
+    font-size: 14px;
+
+    font-weight: 750;
 
     text-align: right;
 
-    font-size: 14px;
+}
+
+
+.field-unit {
+
+    color: #718078;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+}
+
+
+.low-stock {
+
+    color: #b45309;
 
 }
 
 
 /* ==========================================================
-   DESCRIPTION
+   DESCRIPTIONS
 ========================================================== */
 
 .feedstock-description {
 
-    margin-top: 14px;
+    margin-top: 13px;
 
-    padding-top: 14px;
+    padding-top: 13px;
 
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid #edf2ee;
 
 }
 
@@ -709,7 +1179,11 @@ function stockCategory(stock) {
 
     margin: 6px 0 0;
 
-    line-height: 1.5;
+    color: #425149;
+
+    font-size: 13px;
+
+    line-height: 1.55;
 
     white-space: pre-wrap;
 
@@ -735,15 +1209,17 @@ function stockCategory(stock) {
 
 .feedstock-images img {
 
-    width: 80px;
+    display: block;
 
-    height: 80px;
+    width: 78px;
+
+    height: 78px;
 
     object-fit: cover;
 
-    border-radius: 10px;
+    border: 1px solid #dfe9e1;
 
-    display: block;
+    border-radius: 10px;
 
 }
 
@@ -762,13 +1238,13 @@ function stockCategory(stock) {
 
     margin-top: 16px;
 
-    padding-top: 12px;
+    padding-top: 13px;
 
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid #edf2ee;
 
-    font-size: 11px;
+    color: #89968e;
 
-    opacity: .55;
+    font-size: 10px;
 
 }
 
@@ -779,22 +1255,38 @@ function stockCategory(stock) {
 
 .feedstore-empty {
 
+    padding: 65px 20px;
+
+    border: 1px dashed #bdd4c2;
+
+    border-radius: 18px;
+
+    background: #f8fcf9;
+
     text-align: center;
-
-    padding: 60px 20px;
-
-    border: 1px dashed #d1d5db;
-
-    border-radius: 16px;
 
 }
 
 
 .empty-icon {
 
-    font-size: 42px;
+    display: flex;
 
-    margin-bottom: 12px;
+    align-items: center;
+
+    justify-content: center;
+
+    width: 62px;
+
+    height: 62px;
+
+    margin: 0 auto 15px;
+
+    border-radius: 50%;
+
+    background: #e7f4e9;
+
+    font-size: 28px;
 
 }
 
@@ -803,14 +1295,24 @@ function stockCategory(stock) {
 
     margin: 0 0 7px;
 
+    color: #173b21;
+
+    font-size: 20px;
+
 }
 
 
 .feedstore-empty p {
 
-    margin: 0;
+    max-width: 400px;
 
-    opacity: .65;
+    margin: 0 auto;
+
+    color: #718078;
+
+    font-size: 13px;
+
+    line-height: 1.5;
 
 }
 
@@ -823,9 +1325,8 @@ function stockCategory(stock) {
 
     .feedstore-page {
 
-        padding-left: 14px;
-
-        padding-right: 14px;
+        padding:
+            18px 13px 45px;
 
     }
 
@@ -834,21 +1335,48 @@ function stockCategory(stock) {
 
         align-items: center;
 
+        gap: 12px;
+
+        margin-bottom: 18px;
+
     }
 
 
     .feedstore-header h1 {
 
-        font-size: 23px;
+        font-size: 22px;
+
+    }
+
+
+    .feedstore-header p {
+
+        font-size: 12px;
 
     }
 
 
     .feedstore-count {
 
-        min-width: 75px;
+        min-width: 72px;
 
-        padding: 10px 12px;
+        padding: 10px 9px;
+
+        border-radius: 12px;
+
+    }
+
+
+    .feedstore-count strong {
+
+        font-size: 19px;
+
+    }
+
+
+    .feedstore-count span {
+
+        font-size: 9px;
 
     }
 
@@ -856,6 +1384,103 @@ function stockCategory(stock) {
     .feedstock-item {
 
         padding: 16px;
+
+        border-radius: 15px;
+
+    }
+
+
+    .feedstock-card-header {
+
+        align-items: flex-start;
+
+        gap: 10px;
+
+    }
+
+
+    .feedstock-name-row {
+
+        display: block;
+
+    }
+
+
+    .feedstock-name {
+
+        font-size: 18px;
+
+        margin-bottom: 7px;
+
+    }
+
+
+    .stock-action-btn {
+
+        min-height: 38px;
+
+        padding: 0 11px;
+
+        font-size: 11px;
+
+    }
+
+
+    .action-icon {
+
+        font-size: 14px;
+
+    }
+
+
+    .feedstock-field {
+
+        min-height: 40px;
+
+    }
+
+
+    .field-label {
+
+        font-size: 11px;
+
+    }
+
+
+    .field-value {
+
+        font-size: 13px;
+
+    }
+
+
+    .feedstock-images img {
+
+        width: 68px;
+
+        height: 68px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   VERY SMALL SCREENS
+========================================================== */
+
+@media (max-width: 400px) {
+
+    .feedstock-card-header {
+
+        display: block;
+
+    }
+
+
+    .stock-action-btn {
+
+        margin-top: 12px;
 
     }
 
