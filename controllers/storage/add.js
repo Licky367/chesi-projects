@@ -8,60 +8,20 @@ const addService =
 
 
 // ==========================================================
-// ADMIN CHECK
+// GET ADD STORAGE PAGE
 // ==========================================================
-
-function requireAdmin(
-    req,
-    res
-) {
-
-    if (
-        !req.session ||
-        !req.session.user
-    ) {
-
-        res
-            .status(401)
-            .send("Unauthorized");
-
-        return false;
-
-    }
-
-
-    if (
-        req.session.user.role !== "admin"
-    ) {
-
-        res
-            .status(403)
-            .send(
-                "Only administrators can add storage facilities."
-            );
-
-        return false;
-
-    }
-
-
-    return true;
-
-}
-
-
-// ==========================================================
-// SHOW ADD FORM
 //
 // GET:
 //
 //     /storage/:id/add
 //
-// :id = parent Dairy._id
+// :id = parent Dairy Farm _id
+//
+// ONLY ADMIN
 //
 // ==========================================================
 
-exports.form =
+exports.page =
 async function (
     req,
     res,
@@ -70,33 +30,67 @@ async function (
 
     try {
 
+        // ==================================================
+        // AUTHENTICATION
+        // ==================================================
+
         if (
-            !requireAdmin(
-                req,
-                res
-            )
+            !req.session ||
+            !req.session.user
         ) {
 
-            return;
+            return res
+                .status(401)
+                .send(
+                    "Unauthorized"
+                );
 
         }
 
 
-        const dairyId =
-            String(
-                req.params.id || ""
-            ).trim();
+        // ==================================================
+        // ADMIN ONLY
+        // ==================================================
 
+        if (
+            req.session.user.role !== "admin"
+        ) {
 
-        const data =
-            await addService
-                .getAddPageData(
-                    dairyId
+            return res
+                .status(403)
+                .send(
+                    "Only administrators can add storage."
                 );
 
+        }
+
+
+        // ==================================================
+        // PARENT FARM ID
+        // ==================================================
+
+        const dairyId =
+            req.params.id;
+
+
+        // ==================================================
+        // GET PAGE DATA
+        // ==================================================
+
+        const data =
+            await addService.getAddPageData(
+                dairyId
+            );
+
+
+        // ==================================================
+        // RENDER
+        // ==================================================
 
         return res.render(
+
             "storage/add",
+
             {
 
                 title:
@@ -105,16 +99,26 @@ async function (
                 dairy:
                     data.dairy,
 
+                farmCode:
+                    data.farmCode,
+
+                nextRoomNumber:
+                    data.nextRoomNumber,
+
+                nextAgroStoreNumber:
+                    data.nextAgroStoreNumber,
+
                 user:
                     req.session.user
 
             }
+
         );
 
     } catch (error) {
 
         console.error(
-            "STORAGE ADD FORM ERROR:",
+            "STORAGE ADD PAGE ERROR:",
             error
         );
 
@@ -127,20 +131,11 @@ async function (
 
 // ==========================================================
 // CREATE STORAGE
+// ==========================================================
 //
 // POST:
 //
 //     /storage/:id/add
-//
-// User supplies:
-//
-//     name
-//     type
-//
-// Server determines:
-//
-//     farmCode
-//     roomNumber
 //
 // ==========================================================
 
@@ -153,37 +148,65 @@ async function (
 
     try {
 
+        // ==================================================
+        // AUTHENTICATION
+        // ==================================================
+
         if (
-            !requireAdmin(
-                req,
-                res
-            )
+            !req.session ||
+            !req.session.user
         ) {
 
-            return;
+            return res
+                .status(401)
+                .send(
+                    "Unauthorized"
+                );
 
         }
 
 
-        const dairyId =
-            String(
-                req.params.id || ""
-            ).trim();
+        // ==================================================
+        // ADMIN ONLY
+        // ==================================================
 
+        if (
+            req.session.user.role !== "admin"
+        ) {
+
+            return res
+                .status(403)
+                .send(
+                    "Only administrators can add storage."
+                );
+
+        }
+
+
+        // ==================================================
+        // PARENT FARM ID
+        // ==================================================
+
+        const dairyId =
+            req.params.id;
+
+
+        // ==================================================
+        // USER INPUT
+        // ==================================================
 
         const name =
-            String(
-                req.body.name || ""
-            ).trim();
-
+            req.body.name;
 
         const type =
-            String(
-                req.body.type || ""
-            ).trim();
+            req.body.type;
 
 
-        await addService.createStorage({
+        // ==================================================
+        // CREATE
+        // ==================================================
+
+        await addService.addStorage(
 
             dairyId,
 
@@ -191,8 +214,12 @@ async function (
 
             type
 
-        });
+        );
 
+
+        // ==================================================
+        // RETURN TO STORAGE PAGE
+        // ==================================================
 
         return res.redirect(
             `/storage/${dairyId}`
@@ -205,27 +232,8 @@ async function (
             error
         );
 
-
-        if (
-            error.status
-        ) {
-
-            return res
-                .status(error.status)
-                .send(
-                    error.message
-                );
-
-        }
-
-
         return next(error);
 
     }
 
 };
-
-
-// ==========================================================
-// EXPORT
-// ==========================================================
