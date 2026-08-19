@@ -8,6 +8,7 @@
        Add a new quantity to an existing stock item.
 
    STOCK IDENTITY:
+       stock._id
        stock.name
 
    CATEGORY:
@@ -16,18 +17,16 @@
 
    IMPORTANT:
        feedName and medicineName are NOT used here.
-
-       They are category-specific source fields used when
-       creating/identifying the stock.
-
-       The existing stock is identified exclusively by:
-           stock._id
-           stock.name
 ========================================================== */
 
 const currentDairy = dairy || {};
 const currentUser = user || {};
 const currentStock = stock || {};
+
+
+/* ==========================================================
+   USER
+========================================================== */
 
 const isAdmin =
     currentUser.role === "admin";
@@ -43,14 +42,8 @@ const stockId =
     );
 
 
-/*
- * A restock page must represent a real existing stock.
- * Do not create an artificial/unnamed stock identity.
- */
-
 const hasStockId =
     Boolean(stockId);
-
 
 
 /* ==========================================================
@@ -71,7 +64,6 @@ const isMedicine =
     stockCategory === "medicine";
 
 
-
 /* ==========================================================
    STOCK NAME
 ========================================================== */
@@ -82,20 +74,8 @@ const stockName =
     ).trim();
 
 
-
-/*
- * A stock without a name is not a valid stock item.
- *
- * Do not fall back to:
- *
- *     feedName
- *     medicineName
- *     "Unnamed stock"
- */
-
 const hasStockName =
     Boolean(stockName);
-
 
 
 /* ==========================================================
@@ -114,7 +94,6 @@ const currentQuantity =
         : 0;
 
 
-
 /* ==========================================================
    STOCK UNIT
 ========================================================== */
@@ -123,7 +102,6 @@ const stockUnit =
     String(
         currentStock.unit || ""
     ).trim();
-
 
 
 /* ==========================================================
@@ -142,9 +120,8 @@ const safePrice =
         : "";
 
 
-
 /* ==========================================================
-   ADDITIONAL STOCK INFORMATION
+   ADDITIONAL INFORMATION
 ========================================================== */
 
 const instructions =
@@ -161,7 +138,6 @@ const message =
     currentStock.message ||
     currentStock.additionalInformation ||
     "";
-
 
 
 /* ==========================================================
@@ -181,9 +157,7 @@ const validStock =
 
 <% if (validStock) { %>
 
-
 <div class="storage-page">
-
 
     <!-- ======================================================
          HEADER
@@ -207,13 +181,11 @@ const validStock =
     </header>
 
 
-
     <!-- ======================================================
          STOCK SUMMARY
     ======================================================= -->
 
     <div class="stock-summary">
-
 
         <div class="stock-summary-icon">
 
@@ -237,12 +209,10 @@ const validStock =
             </strong>
 
             <span>
-
                 <%= isMedicine
                     ? "Veterinary Medicine"
                     : "Animal Feed"
                 %>
-
             </span>
 
         </div>
@@ -260,9 +230,7 @@ const validStock =
 
         </div>
 
-
     </div>
-
 
 
     <!-- ======================================================
@@ -276,7 +244,6 @@ const validStock =
         method="POST"
         enctype="multipart/form-data"
     >
-
 
         <!-- ==================================================
              ACTION
@@ -298,7 +265,6 @@ const validStock =
             name="stockId"
             value="<%= stockId %>"
         >
-
 
 
         <!-- ==================================================
@@ -328,16 +294,8 @@ const validStock =
         </div>
 
 
-
         <!-- ==================================================
              STOCK NAME
-             
-             IMPORTANT:
-             stock.name is the ONLY stock identity.
-             
-             No feedName.
-             No medicineName.
-             No unnamed fallback.
         =================================================== -->
 
         <div class="storage-field">
@@ -361,7 +319,6 @@ const validStock =
         </div>
 
 
-
         <!-- ==================================================
              CURRENT STOCK
         =================================================== -->
@@ -383,7 +340,6 @@ const validStock =
             </strong>
 
         </div>
-
 
 
         <!-- ==================================================
@@ -413,7 +369,6 @@ const validStock =
         </div>
 
 
-
         <!-- ==================================================
              UNIT
         =================================================== -->
@@ -437,7 +392,6 @@ const validStock =
             >
 
         </div>
-
 
 
         <!-- ==================================================
@@ -500,9 +454,7 @@ const validStock =
         </div>
 
 
-
         <% if (isAdmin) { %>
-
 
             <!-- ==============================================
                  UNIT PRICE
@@ -540,7 +492,6 @@ const validStock =
             </div>
 
 
-
             <!-- ==============================================
                  INSTRUCTIONS
             =============================================== -->
@@ -560,7 +511,6 @@ const validStock =
                 ><%= instructions %></textarea>
 
             </div>
-
 
 
             <!-- ==============================================
@@ -587,7 +537,6 @@ const validStock =
         <% } %>
 
 
-
         <!-- ==================================================
              ADDITIONAL INFORMATION
         =================================================== -->
@@ -607,7 +556,6 @@ const validStock =
             ><%= message %></textarea>
 
         </div>
-
 
 
         <!-- ==================================================
@@ -631,7 +579,6 @@ const validStock =
         </div>
 
 
-
         <!-- ==================================================
              SUBMIT
         =================================================== -->
@@ -653,20 +600,15 @@ const validStock =
 
         </button>
 
-
     </form>
 
 </div>
 
 
-
 <% } else { %>
-
 
 <!-- ==========================================================
      INVALID STOCK
-     
-     Do NOT display an unnamed or unidentified stock.
 ========================================================== -->
 
 <div class="storage-page">
@@ -689,9 +631,7 @@ const validStock =
 
 </div>
 
-
 <% } %>
-
 
 
 <style>
@@ -716,7 +656,9 @@ const validStock =
 
 
 .storage-page * {
+
     box-sizing: border-box;
+
 }
 
 
@@ -796,6 +738,7 @@ const validStock =
 .stock-summary-icon {
 
     width: 40px;
+
     height: 40px;
 
     display: flex;
@@ -901,7 +844,7 @@ const validStock =
 
     box-shadow:
         0 5px 20px
-        rgba(23,65,43,.06);
+        rgba(23, 65, 43, .06);
 
 }
 
@@ -972,7 +915,7 @@ const validStock =
 
     box-shadow:
         0 0 0 3px
-        rgba(25,135,84,.08);
+        rgba(25, 135, 84, .08);
 
 }
 
@@ -998,7 +941,7 @@ const validStock =
 
 
 /* ==========================================================
-   CURRENT STOCK BOX
+   CURRENT STOCK
 ========================================================== */
 
 .current-stock-box {
@@ -1339,13 +1282,11 @@ const validStock =
 </style>
 
 
-
 <script>
 
 document.addEventListener(
     "DOMContentLoaded",
     function () {
-
 
         const quantity =
             document.getElementById(
@@ -1375,6 +1316,21 @@ document.addEventListener(
             <%= currentQuantity %>;
 
 
+        /* ======================================================
+           SAFETY CHECK
+        ======================================================= */
+
+        if (
+            !quantity ||
+            !previewRestock ||
+            !previewTotal ||
+            !submit
+        ) {
+
+            return;
+
+        }
+
 
         /* ======================================================
            UPDATE RESTOCK PREVIEW
@@ -1399,7 +1355,6 @@ document.addEventListener(
                 restockQuantity;
 
 
-
             previewRestock.textContent =
                 restockQuantity.toLocaleString();
 
@@ -1408,12 +1363,10 @@ document.addEventListener(
                 newTotal.toLocaleString();
 
 
-
             submit.disabled =
                 restockQuantity <= 0;
 
         }
-
 
 
         /* ======================================================
@@ -1438,6 +1391,3 @@ document.addEventListener(
 );
 
 </script>
-
-
-<% } %>
