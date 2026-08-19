@@ -10,19 +10,49 @@ const isAdmin =
     currentUser.role === "admin";
 
 
+/* ==========================================================
+   VALID STOCK ITEMS
+==========================================================
+
+   Rules:
+
+   1. Stock MUST have an _id.
+   2. Stock MUST have stock.name.
+   3. No fallback to feedName or medicineName.
+   4. Invalid records are not displayed.
+========================================================== */
+
 const feedStoreItems =
     Array.isArray(currentDairy.feedStocks)
-        ? currentDairy.feedStocks
+        ? currentDairy.feedStocks.filter(function(stock) {
+
+            if (!stock) {
+                return false;
+            }
+
+            const id =
+                String(stock._id || "").trim();
+
+            const name =
+                String(stock.name || "").trim();
+
+            return (
+                id.length > 0 &&
+                name.length > 0
+            );
+
+        })
         : [];
 
 
 /* ==========================================================
-   SAFE HELPERS
+   SAFE NUMBER
 ========================================================== */
 
 function safeNumber(value) {
 
-    const number = Number(value);
+    const number =
+        Number(value);
 
     return Number.isFinite(number)
         ? number
@@ -32,30 +62,23 @@ function safeNumber(value) {
 
 
 /* ==========================================================
-   STOCK CATEGORY
-========================================================== */
-
-function stockCategory(stock) {
-
-    return String(
-        stock.category || "feed"
-    ).toLowerCase();
-
-}
-
-
-/* ==========================================================
    STOCK NAME
+==========================================================
+
+   IMPORTANT:
+
+   stock.name is the ONLY name used here.
+
+   No feedName.
+   No medicineName.
+   No fallback.
 ========================================================== */
 
 function stockName(stock) {
 
-    return (
-        stock.name ||
-        stock.feedName ||
-        stock.medicineName ||
-        "Unnamed stock"
-    );
+    return String(
+        stock.name
+    ).trim();
 
 }
 
@@ -79,10 +102,9 @@ function stockQuantity(stock) {
 
 function stockUnit(stock) {
 
-    return (
-        stock.unit ||
-        ""
-    );
+    return String(
+        stock.unit || ""
+    ).trim();
 
 }
 
@@ -148,7 +170,7 @@ function formatStockDate(value) {
 
 <div
     class="feedstore"
-    data-dairy-id="<%= currentDairy._id %>"
+    data-dairy-id="<%= currentDairy._id || "" %>"
 >
 
 
@@ -179,22 +201,10 @@ function formatStockDate(value) {
 
 
     <!-- ======================================================
-         ADD STOCK COMPOSER
-         
-         IMPORTANT:
-         
-         This no longer opens a modal.
-         
-         It goes directly to:
-         
-             /dairy/:id/feedstore/add
-         
-         which should render:
-         
-             views/update/storage/add-stock.ejs
+         ADD STOCK
     ======================================================= -->
 
-    <% if (isAdmin) { %>
+    <% if (isAdmin && currentDairy._id) { %>
 
         <button
             type="button"
@@ -214,7 +224,7 @@ function formatStockDate(value) {
                 </strong>
 
                 <span>
-                    Add animal feed or veterinary medicine
+                    Add animal feed or AgroVets stock
                 </span>
 
             </div>
@@ -269,12 +279,8 @@ function formatStockDate(value) {
 
                     const id =
                         String(
-                            stock._id || ""
-                        );
-
-
-                    const stockCat =
-                        stockCategory(stock);
+                            stock._id
+                        ).trim();
 
 
                     const name =
@@ -311,63 +317,33 @@ function formatStockDate(value) {
                         role="button"
 
                         data-stock-id="<%= id %>"
+
                         data-stock-name="<%= name %>"
-                        data-stock-category="<%= stockCat %>"
+
                         data-stock-update-url="/dairy/<%= currentDairy._id %>/feedstore/update/<%= id %>"
+
                         data-stock-restock-url="/dairy/<%= currentDairy._id %>/feedstore/restock/<%= id %>"
                     >
 
 
                         <!-- ==============================================
-                             LEFT
+                             STOCK INFORMATION
                         =============================================== -->
 
-                        <div class="stock-item-left">
+                        <div class="stock-info">
 
 
-                            <div class="stock-icon">
-
-                                <% if (
-                                    stockCat === "medicine"
-                                ) { %>
-
-                                    💊
-
-                                <% } else { %>
-
-                                    🌾
-
-                                <% } %>
-
-                            </div>
+                            <strong class="stock-name">
+                                <%= name %>
+                            </strong>
 
 
+                            <span class="stock-updated">
 
-                            <div class="stock-info">
+                                Last updated:
+                                <%= formattedDate %>
 
-                                <strong>
-                                    <%= name %>
-                                </strong>
-
-
-                                <span class="stock-category">
-
-                                    <%= stockCat === "medicine"
-                                        ? "Veterinary medicine"
-                                        : "Animal feed"
-                                    %>
-
-                                </span>
-
-
-                                <span class="stock-updated">
-
-                                    Last updated:
-                                    <%= formattedDate %>
-
-                                </span>
-
-                            </div>
+                            </span>
 
 
                         </div>
@@ -375,7 +351,7 @@ function formatStockDate(value) {
 
 
                         <!-- ==============================================
-                             RIGHT
+                             QUANTITY
                         =============================================== -->
 
                         <div class="stock-item-right">
@@ -386,6 +362,7 @@ function formatStockDate(value) {
                                 <strong>
                                     <%= quantity.toLocaleString() %>
                                 </strong>
+
 
                                 <% if (unit) { %>
 
@@ -464,18 +441,6 @@ function formatStockDate(value) {
 
 <!-- ==========================================================
      ADMIN STOCK ACTION MODAL
-     
-     This modal is ONLY for choosing:
-     
-         UPDATE
-         RESTOCK
-     
-     It does NOT contain either form.
-     
-     The actual pages are:
-     
-         views/update/storage/update-stock.ejs
-         views/update/storage/restock-stock.ejs
 ========================================================== -->
 
 <% if (isAdmin) { %>
@@ -517,25 +482,21 @@ function formatStockDate(value) {
 
         <div class="stock-action-header">
 
-
             <div>
 
                 <span class="stock-action-eyebrow">
                     STOCK MANAGEMENT
                 </span>
 
-
                 <h2 id="stockActionTitle">
                     Manage Stock
                 </h2>
-
 
                 <p id="stockActionDescription">
                     Choose what you want to do with this stock.
                 </p>
 
             </div>
-
 
 
             <button
@@ -546,7 +507,6 @@ function formatStockDate(value) {
             >
                 ×
             </button>
-
 
         </div>
 
@@ -569,11 +529,9 @@ function formatStockDate(value) {
                 class="stock-action-option"
             >
 
-
                 <span class="stock-action-icon update-icon">
                     ✏️
                 </span>
-
 
                 <span class="stock-action-text">
 
@@ -587,11 +545,9 @@ function formatStockDate(value) {
 
                 </span>
 
-
                 <span class="stock-action-arrow">
                     →
                 </span>
-
 
             </button>
 
@@ -607,11 +563,9 @@ function formatStockDate(value) {
                 class="stock-action-option"
             >
 
-
                 <span class="stock-action-icon restock-icon">
                     📦
                 </span>
-
 
                 <span class="stock-action-text">
 
@@ -625,11 +579,9 @@ function formatStockDate(value) {
 
                 </span>
 
-
                 <span class="stock-action-arrow">
                     →
                 </span>
-
 
             </button>
 
@@ -720,7 +672,7 @@ function formatStockDate(value) {
 
 
 /* ==========================================================
-   ADD STOCK COMPOSER
+   ADD STOCK
 ========================================================== */
 
 .feedstore-composer {
@@ -929,7 +881,7 @@ function formatStockDate(value) {
 
     justify-content: space-between;
 
-    gap: 10px;
+    gap: 12px;
 
     padding: 11px;
 
@@ -966,58 +918,23 @@ function formatStockDate(value) {
 
 
 /* ==========================================================
-   LEFT SIDE
+   STOCK INFORMATION
 ========================================================== */
 
-.stock-item-left {
-
-    display: flex;
-
-    align-items: center;
-
-    gap: 10px;
+.stock-info {
 
     min-width: 0;
-
-}
-
-
-.stock-icon {
-
-    width: 38px;
-    height: 38px;
-
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex-shrink: 0;
-
-    border-radius: 10px;
-
-    background: #eef7f1;
-
-    font-size: 17px;
-
-}
-
-
-.stock-info {
 
     display: flex;
 
     flex-direction: column;
 
-    gap: 2px;
-
-    min-width: 0;
+    gap: 3px;
 
 }
 
 
-.stock-info strong {
+.stock-name {
 
     overflow: hidden;
 
@@ -1025,18 +942,11 @@ function formatStockDate(value) {
 
     font-size: 13px;
 
+    font-weight: 700;
+
     white-space: nowrap;
 
     text-overflow: ellipsis;
-
-}
-
-
-.stock-category {
-
-    color: #87918b;
-
-    font-size: 9px;
 
 }
 
@@ -1051,7 +961,7 @@ function formatStockDate(value) {
 
 
 /* ==========================================================
-   RIGHT SIDE
+   RIGHT SIDE / QUANTITY
 ========================================================== */
 
 .stock-item-right {
@@ -1462,7 +1372,6 @@ function formatStockDate(value) {
 
 @media (max-width: 600px) {
 
-
     .feedstore {
 
         padding:
@@ -1637,13 +1546,9 @@ document.addEventListener(
            OPEN ADMIN ACTION MODAL
         ======================================================= */
 
-        function openActionModal(
-            card
-        ) {
+        function openActionModal(card) {
 
-            if (
-                !actionModal
-            ) {
+            if (!actionModal) {
 
                 return;
 
@@ -1651,16 +1556,14 @@ document.addEventListener(
 
 
             selectedUpdateUrl =
-                card.dataset.stockUpdateUrl ||
-                "";
+                card.dataset.stockUpdateUrl || "";
 
 
             selectedRestockUrl =
-                card.dataset.stockRestockUrl ||
-                "";
+                card.dataset.stockRestockUrl || "";
 
 
-            const stockName =
+            const name =
                 card.dataset.stockName ||
                 "Stock";
 
@@ -1669,7 +1572,7 @@ document.addEventListener(
 
                 actionDescription.textContent =
                     "Choose what you want to do with " +
-                    stockName +
+                    name +
                     ".";
 
             }
@@ -1692,9 +1595,7 @@ document.addEventListener(
 
         function closeActionModal() {
 
-            if (
-                !actionModal
-            ) {
+            if (!actionModal) {
 
                 return;
 
@@ -1769,7 +1670,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           UPDATE BUTTON
+           UPDATE
         ======================================================= */
 
         if (updateButton) {
@@ -1778,9 +1679,7 @@ document.addEventListener(
                 "click",
                 function () {
 
-                    if (
-                        selectedUpdateUrl
-                    ) {
+                    if (selectedUpdateUrl) {
 
                         window.location.href =
                             selectedUpdateUrl;
@@ -1795,7 +1694,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           RESTOCK BUTTON
+           RESTOCK
         ======================================================= */
 
         if (restockButton) {
@@ -1804,9 +1703,7 @@ document.addEventListener(
                 "click",
                 function () {
 
-                    if (
-                        selectedRestockUrl
-                    ) {
+                    if (selectedRestockUrl) {
 
                         window.location.href =
                             selectedRestockUrl;
@@ -1837,15 +1734,6 @@ document.addEventListener(
                         function() {
 
 
-                            /*
-                             * ADMIN:
-                             *
-                             * Show:
-                             *
-                             *   Update existing stock
-                             *   Restock
-                             */
-
                             <% if (isAdmin) { %>
 
                                 openActionModal(
@@ -1853,14 +1741,6 @@ document.addEventListener(
                                 );
 
                             <% } else { %>
-
-
-                                /*
-                                 * DAIRY WORKER:
-                                 *
-                                 * Go directly to
-                                 * update page.
-                                 */
 
                                 const url =
                                     card.dataset.stockUpdateUrl;
@@ -1894,7 +1774,6 @@ document.addEventListener(
                             ) {
 
                                 event.preventDefault();
-
 
                                 card.click();
 
