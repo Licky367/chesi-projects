@@ -1928,4 +1928,4 @@ module.exports = {
 
     updateFeedQuantities
 
-};
+}
