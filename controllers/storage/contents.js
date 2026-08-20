@@ -8,7 +8,22 @@
 //     Display and manage everything allocated inside a
 //     Room or AgroStore.
 //
+// STORAGE ARCHITECTURE:
+//
+//     NORMAL STORAGE
+//         - add
+//         - omit
+//         - reshuffle
+//
+//     AGROSTORE (type === "feeds")
+//         - add feeds
+//         - update quantity
+//         - automatic omission when quantity = 0
+//         - no manual omit
+//         - no reshuffle
+//
 // ==========================================================
+
 
 const storageContentsService =
     require("../../services/storage/contents");
@@ -34,6 +49,7 @@ function getBodyValue(
         return req.body[key];
 
     }
+
 
     return undefined;
 
@@ -67,13 +83,19 @@ function getItemIds(
 
 
     if (
+
         value !== undefined &&
+
         value !== null &&
+
         String(value).trim() !== ""
+
     ) {
 
         return [
+
             String(value)
+
         ];
 
     }
@@ -116,6 +138,7 @@ async function renderContents(
     const dairyId =
         req.params.dairyId;
 
+
     const storageId =
         req.params.storageId;
 
@@ -148,7 +171,9 @@ async function renderContents(
 
 
     return res.render(
+
         "storage/contents",
+
         {
 
             dairy:
@@ -176,6 +201,7 @@ async function renderContents(
             pageError
 
         }
+
     );
 
 }
@@ -204,10 +230,15 @@ async function contents(
             error
         );
 
+
         return sendError(
+
             res,
+
             error,
+
             "Unable to load storage contents."
+
         );
 
     }
@@ -229,8 +260,10 @@ async function addItems(
         const dairyId =
             req.params.dairyId;
 
+
         const storageId =
             req.params.storageId;
+
 
         const itemIds =
             getItemIds(req);
@@ -259,12 +292,14 @@ async function addItems(
             }.`;
 
 
+
         return res.redirect(
+
             `/storage/${dairyId}/contents/${storageId}?tab=add&success=${encodeURIComponent(
                 message
             )}`
-        );
 
+        );
 
     } catch (error) {
 
@@ -275,10 +310,151 @@ async function addItems(
 
 
         return handleMutationError(
+
             req,
+
             res,
+
             error,
+
             "add"
+
+        );
+
+    }
+
+}
+
+
+// ==========================================================
+// UPDATE FEED QUANTITY
+// ==========================================================
+//
+// This operation is primarily for AgroStore.
+//
+// The service determines whether:
+//
+//     quantity > 0
+//
+// or:
+//
+//     quantity === 0
+//
+// If quantity reaches zero, the service automatically
+// clears dwellNumber and therefore removes the item from
+// the AgroStore.
+//
+// ==========================================================
+
+async function updateQuantity(
+    req,
+    res
+) {
+
+    try {
+
+        const dairyId =
+            req.params.dairyId;
+
+
+        const storageId =
+            req.params.storageId;
+
+
+        const itemId =
+            getBodyValue(
+                req,
+                "itemId"
+            );
+
+
+        const quantity =
+            getBodyValue(
+                req,
+                "quantity"
+            );
+
+
+        const result =
+            await storageContentsService.updateFeedQuantity({
+
+                dairyId,
+
+                storageId,
+
+                itemId,
+
+                quantity
+
+            });
+
+
+        let message;
+
+
+        // --------------------------------------------------
+        // ITEM AUTOMATICALLY OMITTED
+        // --------------------------------------------------
+
+        if (
+            result.omitted === true
+        ) {
+
+            message =
+                `${
+                    result.item.name ||
+                    "Feed item"
+                } has been automatically omitted because its quantity reached zero.`;
+
+        }
+
+
+        // --------------------------------------------------
+        // QUANTITY UPDATED
+        // --------------------------------------------------
+
+        else {
+
+            message =
+                `${
+                    result.item.name ||
+                    "Feed item"
+                } quantity updated to ${
+                    result.item.quantity
+                } ${
+                    result.item.unit ||
+                    ""
+                }.`.trim();
+
+        }
+
+
+        return res.redirect(
+
+            `/storage/${dairyId}/contents/${storageId}?tab=view&success=${encodeURIComponent(
+                message
+            )}`
+
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Storage quantity update error:",
+            error
+        );
+
+
+        return handleMutationError(
+
+            req,
+
+            res,
+
+            error,
+
+            "view"
+
         );
 
     }
@@ -288,6 +464,13 @@ async function addItems(
 
 // ==========================================================
 // OMIT ITEMS
+// ==========================================================
+//
+// This operation remains for NORMAL storage.
+//
+// AgroStore omission is automatic and therefore the service
+// must reject manual omission for type === "feeds".
+//
 // ==========================================================
 
 async function omitItems(
@@ -300,8 +483,10 @@ async function omitItems(
         const dairyId =
             req.params.dairyId;
 
+
         const storageId =
             req.params.storageId;
+
 
         const itemIds =
             getItemIds(req);
@@ -330,12 +515,14 @@ async function omitItems(
             }.`;
 
 
+
         return res.redirect(
+
             `/storage/${dairyId}/contents/${storageId}?tab=view&success=${encodeURIComponent(
                 message
             )}`
-        );
 
+        );
 
     } catch (error) {
 
@@ -346,10 +533,15 @@ async function omitItems(
 
 
         return handleMutationError(
+
             req,
+
             res,
+
             error,
+
             "view"
+
         );
 
     }
@@ -359,6 +551,12 @@ async function omitItems(
 
 // ==========================================================
 // RESHUFFLE ITEMS
+// ==========================================================
+//
+// This operation remains for NORMAL storage.
+//
+// AgroStore does not support reshuffling.
+//
 // ==========================================================
 
 async function reshuffleItems(
@@ -371,16 +569,22 @@ async function reshuffleItems(
         const dairyId =
             req.params.dairyId;
 
+
         const storageId =
             req.params.storageId;
+
 
         const itemIds =
             getItemIds(req);
 
+
         const targetStorageId =
             getBodyValue(
+
                 req,
+
                 "targetStorageId"
+
             );
 
 
@@ -409,12 +613,14 @@ async function reshuffleItems(
             }.`;
 
 
+
         return res.redirect(
+
             `/storage/${dairyId}/contents/${storageId}?tab=view&success=${encodeURIComponent(
                 message
             )}`
-        );
 
+        );
 
     } catch (error) {
 
@@ -425,10 +631,15 @@ async function reshuffleItems(
 
 
         return handleMutationError(
+
             req,
+
             res,
+
             error,
+
             "view"
+
         );
 
     }
@@ -449,9 +660,11 @@ async function handleMutationError(
 
     const statusCode =
         Number(
+
             error.status ||
             error.statusCode ||
             500
+
         );
 
 
@@ -460,9 +673,13 @@ async function handleMutationError(
     ) {
 
         return sendError(
+
             res,
+
             error,
+
             "Unable to update storage contents."
+
         );
 
     }
@@ -471,8 +688,11 @@ async function handleMutationError(
     try {
 
         return await renderContents(
+
             req,
+
             res,
+
             {
 
                 activeTab,
@@ -482,6 +702,7 @@ async function handleMutationError(
                     "Unable to update storage contents."
 
             }
+
         );
 
     } catch (renderError) {
@@ -493,9 +714,13 @@ async function handleMutationError(
 
 
         return sendError(
+
             res,
+
             renderError,
+
             "Unable to update storage contents."
+
         );
 
     }
@@ -515,24 +740,35 @@ function sendError(
 
     const statusCode =
         Number(
+
             error.status ||
             error.statusCode ||
             500
+
         );
 
 
     const safeStatus =
         statusCode >= 400 &&
         statusCode < 600
+
             ? statusCode
+
             : 500;
 
 
+
     return res
-        .status(safeStatus)
+
+        .status(
+            safeStatus
+        )
+
         .send(
+
             error.message ||
             fallbackMessage
+
         );
 
 }
@@ -550,6 +786,8 @@ module.exports = {
 
     omitItems,
 
-    reshuffleItems
+    reshuffleItems,
+
+    updateQuantity
 
 };
