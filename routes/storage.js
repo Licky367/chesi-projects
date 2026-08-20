@@ -11,20 +11,25 @@
 //
 //     GET  /storage/:dairyId/contents/:storageId
 //
+//     POST /storage/:dairyId/contents/:storageId/add
+//     POST /storage/:dairyId/contents/:storageId/omit
+//     POST /storage/:dairyId/contents/:storageId/reshuffle
+//
 // IMPORTANT:
 //
-//     The first :id for the normal storage routes
-//     represents Dairy._id.
+//     dairyId:
+//         = Dairy._id of the parent Dairy Farm.
 //
-//     Contents route:
+//     storageId:
+//         = DairyStorage._id of the specific Room / AgroStore.
 //
-//         :dairyId   = parent Dairy._id
-//         :storageId = DairyStorage._id
+//     Allocation is controlled by:
 //
-// NEVER:
+//         Dairy.assetCode
+//             = parent Dairy.code
 //
-//     Dairy.code as the route farm identifier.
-//     roomNumber as the route farm identifier.
+//         Dairy.dwellNumber
+//             = DairyStorage.roomNumber
 //
 // ==========================================================
 
@@ -46,9 +51,7 @@ const storageController =
 //
 //     /storage/:id
 //
-// Example:
-//
-//     /storage/68abc123...
+// :id = Dairy Farm._id
 //
 // ==========================================================
 
@@ -66,6 +69,8 @@ router.get(
 //
 //     /storage/:id/add
 //
+// :id = Dairy Farm._id
+//
 // ==========================================================
 
 router.get(
@@ -81,6 +86,8 @@ router.get(
 // POST:
 //
 //     /storage/:id/add
+//
+// :id = Dairy Farm._id
 //
 // ==========================================================
 
@@ -98,24 +105,125 @@ router.post(
 //
 //     /storage/:dairyId/contents/:storageId
 //
-// URL SHAPE:
-//
-//     /storage/:id/contents/:id
-//
-// The parameter names are different internally so Express
-// can distinguish the two IDs.
-//
 // dairyId:
-//     Dairy._id of the parent farm.
+//     Parent Dairy Farm._id
 //
 // storageId:
-//     DairyStorage._id of the room / AgroStore.
+//     DairyStorage._id
 //
 // ==========================================================
 
 router.get(
     "/:dairyId/contents/:storageId",
     storageController.contents
+);
+
+
+// ==========================================================
+// ADD ITEMS TO STORAGE
+// ==========================================================
+//
+// POST:
+//
+//     /storage/:dairyId/contents/:storageId/add
+//
+// PURPOSE:
+//
+//     Add selected Dairy records to this Room / AgroStore.
+//
+// RULE:
+//
+//     Selected records must:
+//
+//         assetCode = parent Dairy Farm.code
+//
+//     AND:
+//
+//         dwellNumber = null
+//
+//     After validation:
+//
+//         dwellNumber = storage.roomNumber
+//
+// The controller/service should validate that the selected
+// records actually belong to the parent farm.
+//
+// ==========================================================
+
+router.post(
+    "/:dairyId/contents/:storageId/add",
+    storageController.addItems
+);
+
+
+// ==========================================================
+// OMIT ITEMS FROM STORAGE
+// ==========================================================
+//
+// POST:
+//
+//     /storage/:dairyId/contents/:storageId/omit
+//
+// PURPOSE:
+//
+//     Remove selected items from this Room / AgroStore.
+//
+// RULE:
+//
+//     dwellNumber = null
+//
+// IMPORTANT:
+//
+//     assetCode is NOT changed.
+//
+//     The item therefore remains an asset/animal of the
+//     parent farm, but is no longer allocated to a storage
+//     facility.
+//
+// ==========================================================
+
+router.post(
+    "/:dairyId/contents/:storageId/omit",
+    storageController.omitItems
+);
+
+
+// ==========================================================
+// RESHUFFLE ITEMS
+// ==========================================================
+//
+// POST:
+//
+//     /storage/:dairyId/contents/:storageId/reshuffle
+//
+// PURPOSE:
+//
+//     Move selected items from the current Room / AgroStore
+//     to another storage facility.
+//
+// RULE:
+//
+//     If current storage is a Room:
+//
+//         destination must be a Room.
+//
+//     If current storage is an AgroStore:
+//
+//         destination must be an AgroStore.
+//
+//     Destination must belong to the same parent Dairy Farm.
+//
+//     Selected items:
+//
+//         dwellNumber = destination.roomNumber
+//
+//     assetCode remains unchanged.
+//
+// ==========================================================
+
+router.post(
+    "/:dairyId/contents/:storageId/reshuffle",
+    storageController.reshuffleItems
 );
 
 
