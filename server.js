@@ -354,12 +354,12 @@ try {
 //
 // ==========================================================
 
-let storageRoutes;
+let storagesRoutes;
 
 try {
 
   storageRoutes =
-    require("./routes/storage");
+    require("./routes/storages");
 
 } catch (err) {
 
@@ -1169,13 +1169,13 @@ if (financialsRoutes) {
 //
 // ==========================================================
 
-if (storageRoutes) {
+if (storagesRoutes) {
 
   app.use(
 
     "/storage",
 
-    storageRoutes
+    storagesRoutes
 
   );
 
