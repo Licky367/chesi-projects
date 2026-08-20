@@ -439,7 +439,7 @@
 
 
 /* ==========================================================
-   FEED QUANTITY
+   AGROSTORE QUANTITY
 ========================================================== */
 
 .feed-quantity-section {
@@ -476,6 +476,11 @@
     font-weight: 700;
     color: #7b6a42;
 }
+
+
+/* ==========================================================
+   QUANTITY REDUCTION FORM
+========================================================== */
 
 .quantity-form {
     display: flex;
@@ -514,17 +519,6 @@
     outline: none;
     border-color: #a98528;
     box-shadow: 0 0 0 2px rgba(169, 133, 40, 0.12);
-}
-
-.quantity-unit {
-    min-width: 90px;
-    height: 40px;
-    padding: 0 10px;
-    border: 1px solid #d8c797;
-    border-radius: 8px;
-    background: #ffffff;
-    color: #51401b;
-    font-size: 13px;
 }
 
 .quantity-save-button {
@@ -679,7 +673,6 @@
     }
 
     .quantity-field,
-    .quantity-unit,
     .quantity-save-button {
         width: 100%;
     }
@@ -720,11 +713,21 @@
      * STORAGE MODE
      * ======================================================
      *
-     * AgroStore is identified by storage type.
+     * AgroStore is identified by:
      *
-     * This is intentionally calculated here so the view
-     * does not depend entirely on a virtual such as
-     * storage.isAgroStore.
+     *     storage.type === "feeds"
+     *
+     * AgroStore:
+     *
+     *     feeds only
+     *     quantity must be > 0
+     *     no omit
+     *     no reshuffle
+     *     quantity can only be reduced
+     *
+     * Rooms:
+     *
+     *     existing room logic remains unchanged
      */
 
     const isAgroStore =
@@ -753,8 +756,8 @@
 
                 <% if (isAgroStore) { %>
 
-                    Manage animal feeds and monitor
-                    the quantity remaining in this AgroStore.
+                    Manage animal feeds and monitor the
+                    quantity remaining in this AgroStore.
 
                 <% } else { %>
 
@@ -897,9 +900,12 @@
 
 
         <!-- =================================================
-             NORMAL ROOM MANAGEMENT
+             NORMAL ROOM
              =================================================
-             Only non-feed storage gets omit + reshuffle.
+             Rooms retain:
+                 • Select
+                 • Omit
+                 • Reshuffle
         ================================================== -->
 
         <% if (!isAgroStore) { %>
@@ -1272,10 +1278,12 @@
 
 
             <!-- =================================================
-                 AGROSTORE CONTENTS
+                 AGROSTORE
                  =================================================
+                 ONLY FEEDS
                  NO OMIT
                  NO RESHUFFLE
+                 POSITIVE QUANTITY ONLY
             ================================================== -->
 
             <div class="contents-list">
@@ -1326,11 +1334,39 @@
                                 <div class="content-detail">
 
                                     <span class="detail-label">
-                                        Feed Type
+                                        Type
                                     </span>
 
                                     <span class="detail-value">
                                         <%= item.type || "feeds" %>
+                                    </span>
+
+                                </div>
+
+
+                                <div class="content-detail">
+
+                                    <span class="detail-label">
+                                        Quantity
+                                    </span>
+
+                                    <span class="detail-value">
+                                        <%= Number(
+                                            item.quantity || 0
+                                        ).toLocaleString() %>
+                                    </span>
+
+                                </div>
+
+
+                                <div class="content-detail">
+
+                                    <span class="detail-label">
+                                        Unit
+                                    </span>
+
+                                    <span class="detail-value">
+                                        <%= item.unit || "unit" %>
                                     </span>
 
                                 </div>
@@ -1348,11 +1384,24 @@
 
                                 </div>
 
+
+                                <div class="content-detail">
+
+                                    <span class="detail-label">
+                                        Dwell Number
+                                    </span>
+
+                                    <span class="detail-value">
+                                        <%= item.dwellNumber ?? "—" %>
+                                    </span>
+
+                                </div>
+
                             </div>
 
 
                             <!-- =================================
-                                 QUANTITY
+                                 FEED QUANTITY
                             ================================== -->
 
                             <div class="feed-quantity-section">
@@ -1400,7 +1449,7 @@
                                         <label
                                             for="quantity-<%= item._id %>"
                                         >
-                                            New Remaining Quantity
+                                            Remaining Quantity
                                         </label>
 
 
@@ -1410,87 +1459,36 @@
                                             type="number"
                                             name="quantity"
                                             min="0"
+                                            max="<%= Number(item.quantity || 0) %>"
                                             step="any"
                                             value="<%= item.quantity ?? 0 %>"
+                                            data-current-quantity="<%= Number(item.quantity || 0) %>"
                                             required
                                         >
 
                                     </div>
 
 
-                                    <select
-                                        class="quantity-unit"
-                                        name="unit"
-                                        aria-label="Feed unit"
-                                    >
+                                    <div class="quantity-field">
 
-                                        <%
-                                            const currentUnit =
-                                                String(
-                                                    item.unit || ""
-                                                )
-                                                .trim()
-                                                .toLowerCase();
-                                        %>
+                                        <label>
+                                            Unit
+                                        </label>
 
-
-                                        <option
-                                            value="kg"
-                                            <%= currentUnit === "kg"
-                                                ? "selected"
-                                                : "" %>
+                                        <div
+                                            class="quantity-unit-display"
                                         >
-                                            kg
-                                        </option>
+                                            <%= item.unit || "unit" %>
+                                        </div>
 
-
-                                        <option
-                                            value="bales"
-                                            <%= currentUnit === "bales"
-                                                ? "selected"
-                                                : "" %>
-                                        >
-                                            bales
-                                        </option>
-
-
-                                        <option
-                                            value="bags"
-                                            <%= currentUnit === "bags"
-                                                ? "selected"
-                                                : "" %>
-                                        >
-                                            bags
-                                        </option>
-
-
-                                        <option
-                                            value="litres"
-                                            <%= currentUnit === "litres"
-                                                ? "selected"
-                                                : "" %>
-                                        >
-                                            litres
-                                        </option>
-
-
-                                        <option
-                                            value="units"
-                                            <%= currentUnit === "units"
-                                                ? "selected"
-                                                : "" %>
-                                        >
-                                            units
-                                        </option>
-
-                                    </select>
+                                    </div>
 
 
                                     <button
                                         type="submit"
                                         class="quantity-save-button"
                                     >
-                                        Save
+                                        Save Quantity
                                     </button>
 
                                 </form>
@@ -1498,11 +1496,13 @@
 
                                 <p class="quantity-help">
 
-                                    Record the amount currently remaining.
+                                    You can only reduce the quantity
+                                    currently available in this AgroStore.
+                                    Increasing the quantity is not allowed.
+
                                     Setting the quantity to
                                     <strong>0</strong>
-                                    automatically removes this feed from
-                                    the AgroStore.
+                                    removes the feed from the AgroStore.
 
                                 </p>
 
@@ -1524,7 +1524,6 @@
                 <% }); %>
 
             </div>
-
 
         <% } %>
 
@@ -1605,8 +1604,9 @@
 
             <% if (isAgroStore) { %>
 
-                Select feeds belonging to this farm that are
-                currently not allocated to a storage facility.
+                Select feeds belonging to this farm that have
+                a positive remaining quantity and are not
+                currently allocated to a storage facility.
 
             <% } else { %>
 
@@ -1794,17 +1794,21 @@
                                 </div>
 
 
-                                <div class="add-detail">
+                                <% if (!isAgroStore) { %>
 
-                                    <span class="add-detail-label">
-                                        Dwell Number
-                                    </span>
+                                    <div class="add-detail">
 
-                                    <span class="add-detail-value">
-                                        —
-                                    </span>
+                                        <span class="add-detail-label">
+                                            Dwell Number
+                                        </span>
 
-                                </div>
+                                        <span class="add-detail-value">
+                                            —
+                                        </span>
+
+                                    </div>
+
+                                <% } %>
 
 
                                 <% if (isAgroStore) { %>
@@ -1821,8 +1825,19 @@
                                                 item.quantity || 0
                                             ).toLocaleString() %>
 
-                                            <%= item.unit || "unit" %>
+                                        </span>
 
+                                    </div>
+
+
+                                    <div class="add-detail">
+
+                                        <span class="add-detail-label">
+                                            Unit
+                                        </span>
+
+                                        <span class="add-detail-value">
+                                            <%= item.unit || "unit" %>
                                         </span>
 
                                     </div>
@@ -1863,7 +1878,8 @@
                     <% if (isAgroStore) { %>
 
                         There are currently no unallocated feed
-                        items belonging to this farm.
+                        items belonging to this farm with a
+                        positive remaining quantity.
 
                     <% } else { %>
 
@@ -1977,9 +1993,9 @@ document.addEventListener(
 
 
         /* ==================================================
-           NORMAL STORAGE MANAGEMENT
+           ROOM MANAGEMENT ONLY
            ==================================================
-           These controls do NOT exist for AgroStore.
+           AgroStore does not enter this block.
         ================================================== */
 
         if (!isAgroStore) {
@@ -2558,7 +2574,9 @@ document.addEventListener(
 
 
         /* ==================================================
-           QUANTITY UPDATE CONFIRMATION
+           AGROSTORE QUANTITY
+           ==================================================
+           Quantity can ONLY be reduced.
         ================================================== */
 
         const quantityForms =
@@ -2593,15 +2611,22 @@ document.addEventListener(
                             );
 
 
+                        const currentQuantity =
+                            Number(
+                                input.dataset.currentQuantity
+                            );
+
+
                         if (
-                            Number.isNaN(quantity) ||
-                            quantity < 0
+                            !Number.isFinite(
+                                quantity
+                            )
                         ) {
 
                             event.preventDefault();
 
                             alert(
-                                "Please enter a valid quantity of zero or greater."
+                                "Please enter a valid quantity."
                             );
 
                             return;
@@ -2609,11 +2634,62 @@ document.addEventListener(
                         }
 
 
-                        if (quantity === 0) {
+                        if (
+                            quantity < 0
+                        ) {
+
+                            event.preventDefault();
+
+                            alert(
+                                "Quantity cannot be negative."
+                            );
+
+                            return;
+
+                        }
+
+
+                        if (
+                            quantity > currentQuantity
+                        ) {
+
+                            event.preventDefault();
+
+                            alert(
+                                "The quantity can only be reduced. You cannot add quantity through this form."
+                            );
+
+                            input.value =
+                                currentQuantity;
+
+                            return;
+
+                        }
+
+
+                        if (
+                            quantity ===
+                            currentQuantity
+                        ) {
+
+                            event.preventDefault();
+
+                            alert(
+                                "Enter a quantity lower than the current quantity."
+                            );
+
+                            return;
+
+                        }
+
+
+                        if (
+                            quantity === 0
+                        ) {
 
                             const confirmed =
                                 window.confirm(
-                                    "The quantity is being set to zero. This feed will automatically be removed from the AgroStore. Continue?"
+                                    "The quantity is being reduced to zero. This feed will be removed from the AgroStore. Continue?"
                                 );
 
 
