@@ -25,7 +25,7 @@
 
 
 const storageService =
-    require("../../services/storage/storageService");
+    require("../../services/storage");
 
 
 // ==========================================================
