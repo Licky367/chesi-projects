@@ -823,21 +823,21 @@
 
                                 <!-- ==================================
                                      VIEW CONTENTS
-                                     ================================== -->
-                                <!--
-                                    IMPORTANT:
+                                     ==================================
 
-                                    This is NOT the parent farm ID.
+                                     URL FORMAT:
 
-                                    item._id is the MongoDB _id of
-                                    THIS specific Room / AgroStore.
+                                     /storage/
+                                     <dairyFarmId>/
+                                     contents/
+                                     <roomOrAgroStoreId>
 
-                                    The contents page therefore
-                                    receives the storage facility ID.
-                                -->
+                                     dairy._id = parent dairy farm
+                                     item._id  = specific room/agroStore
+                                ================================== -->
 
                                 <a
-                                    href="/storage/contents/<%= item._id %>"
+                                    href="/storage/<%= dairy._id %>/contents/<%= item._id %>"
                                     class="view-storage-button"
                                 >
                                     View
