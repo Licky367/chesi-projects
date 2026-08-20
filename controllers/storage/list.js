@@ -119,11 +119,11 @@ async function list(
 
 
         // ==================================================
-        // RENDER STORAGE PAGE
+        // RENDER ADD PAGE
         // ==================================================
 
         return res.render(
-            "storage/storage",
+            "storage/add",
             {
 
                 title:
