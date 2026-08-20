@@ -148,14 +148,15 @@ function validateItemIds(
 // FIND PARENT FARM
 // ==========================================================
 //
-// `dairyId` is the actual MongoDB `_id` of the parent farm.
+// dairyId is the MongoDB _id of the parent Dairy Farm.
 //
-// The parent farm itself is identified by:
+// Farm:
 //
 //     code < 0
 //
-// Its `code` is then used as the ownership identifier for
-// child Dairy records through their `assetCode`.
+// Child assets/animals:
+//
+//     assetCode = parent farm code
 //
 // ==========================================================
 
@@ -193,23 +194,6 @@ async function findParentFarm(
     }
 
 
-    // ------------------------------------------------------
-    // THE SELECTED RECORD MUST ACTUALLY BE A FARM
-    //
-    // Farm:
-    //
-    //     code < 0
-    //
-    // Animal:
-    //
-    //     code > 0
-    //
-    // Structure / Asset:
-    //
-    //     code === null
-    //
-    // ------------------------------------------------------
-
     if (
 
         dairy.code === null ||
@@ -237,15 +221,9 @@ async function findParentFarm(
 // FIND STORAGE BELONGING TO FARM
 // ==========================================================
 //
-// DairyStorage does not use dairy._id according to the
-// current storage design.
+// DairyStorage belongs to a farm through:
 //
-// It uses:
-//
-//     farmCode = parent Dairy Farm code
-//
-// Therefore the storage is verified against the parent farm
-// resolved from dairyId.
+//     farmCode = parent farm code
 //
 // ==========================================================
 
@@ -296,25 +274,46 @@ async function findStorageForFarm({
 
 
 // ==========================================================
+// CHECK WHETHER STORAGE IS AGROSTORE
+// ==========================================================
+//
+// AgroStore storage type is represented by:
+//
+//     type === "feeds"
+//
+// ==========================================================
+
+function isAgroStore(
+    storage
+) {
+
+    return (
+
+        storage &&
+
+        String(storage.type)
+            .trim()
+            .toLowerCase() ===
+            "feeds"
+
+    );
+
+}
+
+
+// ==========================================================
 // FARM ITEM FILTER
 // ==========================================================
 //
-// IMPORTANT:
-//
 // There is NO `farm` field in dairy.js.
 //
-// Ownership is represented by:
+// Ownership is established through:
 //
-//     child.assetCode === parentFarm.code
+//     assetCode === parentFarm.code
 //
 // The parent farm itself was resolved using:
 //
-//     parentFarm._id === dairyId
-//
-// Therefore this filter guarantees that the item belongs
-// to the exact parent farm represented by `dairyId`.
-//
-// An item must also have an assetCode.
+//     dairyId === parentFarm._id
 //
 // ==========================================================
 
@@ -336,21 +335,13 @@ function farmItemFilter(
 // UNALLOCATED ITEM FILTER
 // ==========================================================
 //
-// An available item:
+// An unallocated item has:
 //
-//     belongs to the parent farm
+//     dwellNumber === null
 //
-// AND
+// OR:
 //
-//     has no dwellNumber
-//
-// Both situations are supported:
-//
-//     dwellNumber: null
-//
-// or:
-//
-//     dwellNumber field does not exist
+//     dwellNumber does not exist.
 //
 // ==========================================================
 
@@ -379,6 +370,87 @@ function unallocatedItemFilter() {
 
 
 // ==========================================================
+// AGROSTORE AVAILABLE ITEM FILTER
+// ==========================================================
+//
+// An item may be considered available for an AgroStore ONLY
+// when ALL THREE conditions are true:
+//
+//     1. assetCode belongs to parent farm
+//     2. dwellNumber is empty
+//     3. type === "feeds"
+//
+// ==========================================================
+
+function agroStoreAvailableItemFilter(
+    dairy
+) {
+
+    return {
+
+        ...farmItemFilter(
+            dairy
+        ),
+
+        type:
+            "feeds",
+
+        ...unallocatedItemFilter()
+
+    };
+
+}
+
+
+// ==========================================================
+// GENERAL AVAILABLE ITEM FILTER
+// ==========================================================
+//
+// For non-AgroStore storage:
+//
+//     assetCode = parent farm code
+//     dwellNumber = null/missing
+//
+// For AgroStore:
+//
+//     assetCode = parent farm code
+//     dwellNumber = null/missing
+//     type = feeds
+//
+// ==========================================================
+
+function availableItemFilter({
+    dairy,
+    storage
+}) {
+
+    if (
+        isAgroStore(
+            storage
+        )
+    ) {
+
+        return agroStoreAvailableItemFilter(
+            dairy
+        );
+
+    }
+
+
+    return {
+
+        ...farmItemFilter(
+            dairy
+        ),
+
+        ...unallocatedItemFilter()
+
+    };
+
+}
+
+
+// ==========================================================
 // GET STORAGE CONTENTS
 // ==========================================================
 
@@ -388,7 +460,7 @@ async function getStorageContents({
 }) {
 
     // ------------------------------------------------------
-    // RESOLVE THE PARENT FARM BY ITS _id
+    // FIND PARENT FARM
     // ------------------------------------------------------
 
     const dairy =
@@ -398,7 +470,7 @@ async function getStorageContents({
 
 
     // ------------------------------------------------------
-    // VERIFY STORAGE BELONGS TO THAT FARM
+    // FIND STORAGE
     // ------------------------------------------------------
 
     const storage =
@@ -412,13 +484,11 @@ async function getStorageContents({
 
 
     // ======================================================
-    // CURRENT STORAGE CONTENTS
+    // CURRENT CONTENTS
     // ======================================================
     //
-    // Every returned item must:
-    //
-    // 1. Have the parent farm's assetCode
-    // 2. Have this storage's dwellNumber
+    // The contents must belong to this parent farm and must
+    // occupy this storage's dwellNumber.
     //
     // ======================================================
 
@@ -446,28 +516,37 @@ async function getStorageContents({
     // AVAILABLE ITEMS
     // ======================================================
     //
+    // IMPORTANT:
+    //
     // `availableItems` is NOT a schema field.
     //
-    // It is a calculated result.
+    // It is generated by this query.
     //
-    // Available means:
+    // AgroStore:
     //
-    // 1. Belongs to this parent farm
-    // 2. Has an assetCode
-    // 3. Has no dwellNumber
+    //     assetCode = farm code
+    //     no dwellNumber
+    //     type = feeds
+    //
+    // Other storage:
+    //
+    //     assetCode = farm code
+    //     no dwellNumber
     //
     // ======================================================
 
     const availableItems =
-        await Dairy.find({
+        await Dairy.find(
 
-            ...farmItemFilter(
-                dairy
-            ),
+            availableItemFilter({
 
-            ...unallocatedItemFilter()
+                dairy,
 
-        })
+                storage
+
+            })
+
+        )
         .sort({
 
             code: 1,
@@ -502,7 +581,7 @@ async function getStorageContents({
 
 
     // ------------------------------------------------------
-    // DO NOT INCLUDE CURRENT STORAGE
+    // REMOVE CURRENT STORAGE
     // ------------------------------------------------------
 
     const filteredTargetStorages =
@@ -544,18 +623,6 @@ async function getStorageContents({
 // ==========================================================
 // GET AVAILABLE ITEMS
 // ==========================================================
-//
-// Returns Dairy records that:
-//
-//     assetCode = parent farm code
-//
-// AND:
-//
-//     dwellNumber = null
-//
-// or dwellNumber does not exist.
-//
-// ==========================================================
 
 async function getAvailableItems({
     dairyId,
@@ -563,7 +630,7 @@ async function getAvailableItems({
 }) {
 
     // ------------------------------------------------------
-    // RESOLVE PARENT FARM
+    // FIND PARENT FARM
     // ------------------------------------------------------
 
     const dairy =
@@ -573,16 +640,17 @@ async function getAvailableItems({
 
 
     // ------------------------------------------------------
-    // VERIFY STORAGE BELONGS TO PARENT FARM
+    // FIND STORAGE
     // ------------------------------------------------------
 
-    await findStorageForFarm({
+    const storage =
+        await findStorageForFarm({
 
-        dairy,
+            dairy,
 
-        storageId
+            storageId
 
-    });
+        });
 
 
     // ------------------------------------------------------
@@ -590,15 +658,17 @@ async function getAvailableItems({
     // ------------------------------------------------------
 
     const items =
-        await Dairy.find({
+        await Dairy.find(
 
-            ...farmItemFilter(
-                dairy
-            ),
+            availableItemFilter({
 
-            ...unallocatedItemFilter()
+                dairy,
 
-        })
+                storage
+
+            })
+
+        )
         .sort({
 
             code: 1,
@@ -636,7 +706,7 @@ async function addItemsToStorage({
 
 
     // ------------------------------------------------------
-    // RESOLVE PARENT FARM
+    // FIND PARENT FARM
     // ------------------------------------------------------
 
     const dairy =
@@ -646,7 +716,7 @@ async function addItemsToStorage({
 
 
     // ------------------------------------------------------
-    // VERIFY STORAGE BELONGS TO FARM
+    // FIND STORAGE
     // ------------------------------------------------------
 
     const storage =
@@ -677,21 +747,22 @@ async function addItemsToStorage({
 
 
     // ======================================================
-    // VERIFY EVERY SELECTED ITEM
+    // VERIFY SELECTED ITEMS
     // ======================================================
     //
-    // This is the critical ownership check.
+    // This query enforces ALL rules.
     //
-    // The selected Dairy record MUST have:
+    // Every item must:
     //
-    //     assetCode = dairy.code
+    //     belong to this parent farm
     //
-    // where `dairy` was obtained using:
+    //     AND
     //
-    //     Dairy.findById(dairyId)
+    //     have no current allocation
     //
-    // Therefore an item belonging to another farm cannot
-    // pass this query.
+    // AND, if this is an AgroStore:
+    //
+    //     type === "feeds"
     //
     // ======================================================
 
@@ -702,17 +773,19 @@ async function addItemsToStorage({
                 $in: ids
             },
 
-            ...farmItemFilter(
-                dairy
-            ),
+            ...availableItemFilter({
 
-            ...unallocatedItemFilter()
+                dairy,
+
+                storage
+
+            })
 
         });
 
 
     // ------------------------------------------------------
-    // EVERY REQUESTED ID MUST HAVE BEEN FOUND
+    // EVERY REQUESTED ITEM MUST PASS
     // ------------------------------------------------------
 
     if (
@@ -720,8 +793,22 @@ async function addItemsToStorage({
         ids.length
     ) {
 
+        if (
+            isAgroStore(
+                storage
+            )
+        ) {
+
+            throw createError(
+                "One or more selected items are invalid, belong to another farm, are already allocated, or are not feeds.",
+                400
+            );
+
+        }
+
+
         throw createError(
-            "One or more selected items are invalid, do not belong to this farm, or are already allocated.",
+            "One or more selected items are invalid, belong to another farm, or are already allocated.",
             400
         );
 
@@ -741,11 +828,13 @@ async function addItemsToStorage({
                     $in: ids
                 },
 
-                ...farmItemFilter(
-                    dairy
-                ),
+                ...availableItemFilter({
 
-                ...unallocatedItemFilter()
+                    dairy,
+
+                    storage
+
+                })
 
             },
 
@@ -796,7 +885,7 @@ async function omitItemsFromStorage({
 
 
     // ------------------------------------------------------
-    // RESOLVE PARENT FARM
+    // FIND PARENT FARM
     // ------------------------------------------------------
 
     const dairy =
@@ -806,7 +895,7 @@ async function omitItemsFromStorage({
 
 
     // ------------------------------------------------------
-    // VERIFY STORAGE BELONGS TO FARM
+    // FIND STORAGE
     // ------------------------------------------------------
 
     const storage =
@@ -825,11 +914,17 @@ async function omitItemsFromStorage({
     //
     // Item must:
     //
-    //     belong to this farm
+    //     belong to this parent farm
     //
     // AND:
     //
-    //     currently occupy this storage
+    //     currently occupy this storage.
+    //
+    // We intentionally DO NOT require type === "feeds" here.
+    //
+    // The item is already allocated to this storage, and the
+    // operation should remain capable of removing legacy or
+    // previously allocated records safely.
     //
     // ======================================================
 
@@ -951,7 +1046,7 @@ async function reshuffleItems({
 
 
     // ------------------------------------------------------
-    // RESOLVE PARENT FARM
+    // FIND PARENT FARM
     // ------------------------------------------------------
 
     const dairy =
@@ -1058,17 +1153,7 @@ async function reshuffleItems({
 
 
     // ======================================================
-    // VERIFY ITEMS
-    // ======================================================
-    //
-    // Every item MUST:
-    //
-    //     belong to this parent farm
-    //
-    // AND:
-    //
-    //     currently be inside the selected storage.
-    //
+    // VERIFY CURRENT ITEMS
     // ======================================================
 
     const items =
@@ -1097,6 +1182,49 @@ async function reshuffleItems({
             "One or more selected items do not belong to this storage facility.",
             400
         );
+
+    }
+
+
+    // ======================================================
+    // AGROSTORE TARGET VALIDATION
+    // ======================================================
+    //
+    // If the target is an AgroStore, EVERY item being moved
+    // into it must be a feed.
+    //
+    // This protects against bypassing the normal "available
+    // items" screen by reshuffling directly.
+    //
+    // ======================================================
+
+    if (
+        isAgroStore(
+            targetStorage
+        )
+    ) {
+
+        const invalidFeed =
+            items.find(
+
+                item =>
+
+                    String(item.type)
+                        .trim()
+                        .toLowerCase() !==
+                    "feeds"
+
+            );
+
+
+        if (invalidFeed) {
+
+            throw createError(
+                "Only feeds can be moved into an AgroStore.",
+                400
+            );
+
+        }
 
     }
 
