@@ -6,7 +6,7 @@
 // Combines:
 //
 //     list.js
-//     storage.js
+//     add.js
 //
 // Route handlers:
 //
@@ -25,7 +25,7 @@ const listController =
     require("./list");
 
 const storageController =
-    require("./storage");
+    require("./add");
 
 
 // ==========================================================
