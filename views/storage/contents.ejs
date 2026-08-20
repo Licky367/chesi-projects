@@ -5,15 +5,10 @@
    ========================================================== */
 
 .storage-contents-page {
-
     max-width: 1200px;
-
     margin: 0 auto;
-
     padding: 20px;
-
     color: #26332a;
-
 }
 
 
@@ -22,48 +17,28 @@
    ========================================================== */
 
 .contents-header {
-
     margin-bottom: 22px;
-
 }
-
 
 .contents-header-top {
-
     display: flex;
-
     align-items: flex-start;
-
     justify-content: space-between;
-
     gap: 15px;
-
 }
-
 
 .contents-header h2 {
-
     margin: 0;
-
     color: #0b5d1e;
-
     font-size: 26px;
-
     font-weight: 700;
-
 }
 
-
 .contents-subtitle {
-
     margin: 6px 0 0;
-
     color: #66736a;
-
     font-size: 14px;
-
     line-height: 1.5;
-
 }
 
 
@@ -72,38 +47,22 @@
    ========================================================== */
 
 .back-storage {
-
     display: inline-flex;
-
     align-items: center;
-
     justify-content: center;
-
     padding: 9px 14px;
-
     border: 1px solid #b8cfbd;
-
     border-radius: 8px;
-
     background: #f4faf5;
-
     color: #0b5d1e;
-
     text-decoration: none;
-
     font-size: 13px;
-
     font-weight: 600;
-
     white-space: nowrap;
-
 }
 
-
 .back-storage:hover {
-
     background: #e6f3e9;
-
 }
 
 
@@ -112,49 +71,82 @@
    ========================================================== */
 
 .storage-reference {
-
     display: flex;
-
     flex-wrap: wrap;
-
     gap: 9px;
-
     margin-top: 14px;
-
 }
-
 
 .reference-item {
-
     display: inline-flex;
-
     align-items: center;
-
     gap: 6px;
-
     padding: 7px 11px;
-
     background: #eaf5ed;
-
     border: 1px solid #cfe3d3;
-
     border-radius: 8px;
-
     color: #0b5d1e;
-
     font-size: 13px;
-
     font-weight: 600;
+}
 
+.reference-label {
+    color: #6b796f;
+    font-weight: 500;
 }
 
 
-.reference-label {
+/* ==========================================================
+   TABS
+   ========================================================== */
 
-    color: #6b796f;
+.storage-tabs {
+    display: flex;
+    gap: 4px;
+    margin: 22px 0 18px;
+    padding: 5px;
+    background: #edf5ef;
+    border: 1px solid #d5e4d8;
+    border-radius: 11px;
+}
 
-    font-weight: 500;
+.storage-tab {
+    flex: 1;
+    min-height: 42px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #637068;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
+}
 
+.storage-tab:hover {
+    color: #0b5d1e;
+}
+
+.storage-tab.active {
+    background: #ffffff;
+    color: #0b5d1e;
+    box-shadow: 0 2px 7px rgba(11, 93, 30, 0.10);
+}
+
+
+/* ==========================================================
+   TAB PANELS
+   ========================================================== */
+
+.storage-tab-panel {
+    display: none;
+}
+
+.storage-tab-panel.active {
+    display: block;
 }
 
 
@@ -163,28 +155,211 @@
    ========================================================== */
 
 .contents-summary {
-
     display: flex;
-
     align-items: center;
-
     margin: 16px 0;
-
     color: #637068;
-
     font-size: 14px;
+}
 
+.contents-summary strong {
+    color: #0b5d1e;
+    font-size: 20px;
+    margin-right: 4px;
 }
 
 
-.contents-summary strong {
+/* ==========================================================
+   MANAGEMENT BAR
+   ========================================================== */
 
+.contents-management {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 13px 15px;
+    background: #ffffff;
+    border: 1px solid #dce9df;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(11, 93, 30, 0.05);
+}
+
+.management-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.management-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.selection-count {
+    color: #637068;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.selection-count strong {
     color: #0b5d1e;
+}
 
-    font-size: 20px;
 
-    margin-right: 4px;
+/* ==========================================================
+   SELECT ALL
+   ========================================================== */
 
+.select-all-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #31533a;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.select-all-wrapper input {
+    width: 17px;
+    height: 17px;
+    accent-color: #0b5d1e;
+    cursor: pointer;
+}
+
+
+/* ==========================================================
+   ACTION BUTTONS
+   ========================================================== */
+
+.storage-action-button {
+    min-height: 38px;
+    padding: 0 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.storage-action-button:active {
+    transform: translateY(1px);
+}
+
+.storage-action-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.omit-button {
+    border: 1px solid #dfc4a4;
+    background: #fff8ed;
+    color: #986000;
+}
+
+.omit-button:hover:not(:disabled) {
+    background: #fff0d9;
+    border-color: #cda878;
+}
+
+.reshuffle-button {
+    border: 1px solid #b8cfbd;
+    background: #f4faf5;
+    color: #0b5d1e;
+}
+
+.reshuffle-button:hover:not(:disabled) {
+    background: #e6f3e9;
+    border-color: #8fb99a;
+}
+
+.add-button {
+    border: none;
+    background: #0b5d1e;
+    color: #ffffff;
+}
+
+.add-button:hover:not(:disabled) {
+    background: #084817;
+}
+
+
+/* ==========================================================
+   RESHUFFLE PANEL
+   ========================================================== */
+
+.reshuffle-panel {
+    display: none;
+    margin-bottom: 18px;
+    padding: 16px;
+    background: #f8fbf9;
+    border: 1px solid #cfe3d3;
+    border-left: 4px solid #0b5d1e;
+    border-radius: 10px;
+}
+
+.reshuffle-panel.active {
+    display: block;
+}
+
+.reshuffle-panel h3 {
+    margin: 0 0 5px;
+    color: #0b5d1e;
+    font-size: 16px;
+}
+
+.reshuffle-panel p {
+    margin: 0 0 13px;
+    color: #66736a;
+    font-size: 13px;
+}
+
+.reshuffle-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.reshuffle-select-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 260px;
+    flex: 1;
+}
+
+.reshuffle-select-group label {
+    color: #31533a;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.reshuffle-select {
+    height: 40px;
+    padding: 0 11px;
+    border: 1px solid #cbdccf;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #26332a;
+    font-size: 13px;
+    outline: none;
+}
+
+.reshuffle-select:focus {
+    border-color: #0b5d1e;
+    box-shadow: 0 0 0 3px rgba(11, 93, 30, 0.10);
 }
 
 
@@ -193,17 +368,13 @@
    ========================================================== */
 
 .contents-list {
-
     display: grid;
-
     grid-template-columns:
         repeat(
             auto-fit,
             minmax(320px, 1fr)
         );
-
     gap: 16px;
-
 }
 
 
@@ -212,10 +383,11 @@
    ========================================================== */
 
 .content-card {
+    position: relative;
 
     display: flex;
 
-    gap: 15px;
+    gap: 13px;
 
     background: #ffffff;
 
@@ -231,20 +403,38 @@
     transition:
         transform 0.2s ease,
         box-shadow 0.2s ease,
-        border-color 0.2s ease;
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
 
+.content-card:hover {
+    transform: translateY(-2px);
+    border-color: #a9c9b0;
+    box-shadow:
+        0 8px 22px rgba(11, 93, 30, 0.10);
+}
+
+.content-card.selected {
+    border-color: #78a985;
+    background: #f8fcf9;
 }
 
 
-.content-card:hover {
+/* ==========================================================
+   ITEM CHECKBOX
+   ========================================================== */
 
-    transform: translateY(-2px);
+.content-checkbox {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 2px;
+}
 
-    border-color: #a9c9b0;
-
-    box-shadow:
-        0 8px 22px rgba(11, 93, 30, 0.10);
-
+.content-checkbox input {
+    width: 19px;
+    height: 19px;
+    accent-color: #0b5d1e;
+    cursor: pointer;
 }
 
 
@@ -253,27 +443,20 @@
    ========================================================== */
 
 .content-icon {
-
     width: 52px;
-
     height: 52px;
-
     min-width: 52px;
 
     display: flex;
-
     align-items: center;
-
     justify-content: center;
 
     border-radius: 12px;
 
     background: #eaf5ed;
-
     border: 1px solid #cfe3d3;
 
     font-size: 25px;
-
 }
 
 
@@ -282,11 +465,8 @@
    ========================================================== */
 
 .content-information {
-
     flex: 1;
-
     min-width: 0;
-
 }
 
 
@@ -295,32 +475,19 @@
    ========================================================== */
 
 .content-title-row {
-
     display: flex;
-
     align-items: center;
-
     justify-content: space-between;
-
     gap: 10px;
-
     margin-bottom: 14px;
-
 }
 
-
 .content-title-row h3 {
-
     margin: 0;
-
     color: #0b5d1e;
-
     font-size: 18px;
-
     font-weight: 700;
-
     word-break: break-word;
-
 }
 
 
@@ -329,11 +496,8 @@
    ========================================================== */
 
 .content-type {
-
     display: inline-flex;
-
     align-items: center;
-
     justify-content: center;
 
     padding: 5px 9px;
@@ -341,29 +505,19 @@
     border-radius: 20px;
 
     font-size: 11px;
-
     font-weight: 700;
 
     white-space: nowrap;
-
 }
-
 
 .animal-type {
-
     background: #e8f4eb;
-
     color: #0b5d1e;
-
 }
 
-
 .asset-type {
-
     background: #edf5df;
-
     color: #4b6716;
-
 }
 
 
@@ -372,72 +526,43 @@
    ========================================================== */
 
 .content-details {
-
     display: grid;
-
     grid-template-columns:
         repeat(
             3,
             1fr
         );
-
     gap: 10px;
-
 }
-
 
 .content-detail {
-
     display: flex;
-
     flex-direction: column;
-
     gap: 3px;
-
     padding: 9px;
-
     background: #f7faf8;
-
     border-radius: 8px;
-
 }
-
 
 .detail-label {
-
     color: #7a877e;
-
     font-size: 11px;
-
     font-weight: 600;
-
     text-transform: uppercase;
-
 }
-
 
 .detail-value {
-
     color: #26332a;
-
     font-size: 14px;
-
     font-weight: 600;
-
 }
-
 
 .status-active {
-
     color: #0b5d1e;
-
 }
 
-
 .status-inactive {
-
     color: #9a5b00;
-
 }
 
 
@@ -446,19 +571,185 @@
    ========================================================== */
 
 .content-description {
-
     margin: 13px 0 0;
-
     padding-top: 11px;
-
     border-top: 1px solid #e5eee7;
-
     color: #66736a;
-
     font-size: 13px;
-
     line-height: 1.5;
+}
 
+
+/* ==========================================================
+   ADD TAB
+   ========================================================== */
+
+.add-header {
+    margin-bottom: 16px;
+}
+
+.add-header h3 {
+    margin: 0;
+    color: #0b5d1e;
+    font-size: 19px;
+}
+
+.add-header p {
+    margin: 5px 0 0;
+    color: #66736a;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+
+/* ==========================================================
+   ADD MANAGEMENT BAR
+   ========================================================== */
+
+.add-management {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 13px 15px;
+    background: #ffffff;
+    border: 1px solid #dce9df;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(11, 93, 30, 0.05);
+}
+
+
+/* ==========================================================
+   ADD LIST
+   ========================================================== */
+
+.add-list {
+    display: grid;
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(320px, 1fr)
+        );
+    gap: 16px;
+}
+
+.add-card {
+    display: flex;
+    gap: 13px;
+    background: #ffffff;
+    border: 1px solid #dce9df;
+    border-radius: 14px;
+    padding: 17px;
+    box-shadow:
+        0 5px 16px rgba(11, 93, 30, 0.06);
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.add-card:hover {
+    transform: translateY(-2px);
+    border-color: #a9c9b0;
+}
+
+.add-card.selected {
+    border-color: #78a985;
+    background: #f8fcf9;
+}
+
+.add-checkbox {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 2px;
+}
+
+.add-checkbox input {
+    width: 19px;
+    height: 19px;
+    accent-color: #0b5d1e;
+    cursor: pointer;
+}
+
+
+/* ==========================================================
+   ADD ITEM ICON
+   ========================================================== */
+
+.add-icon {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background: #eaf5ed;
+    border: 1px solid #cfe3d3;
+
+    font-size: 23px;
+}
+
+
+/* ==========================================================
+   ADD INFORMATION
+   ========================================================== */
+
+.add-information {
+    flex: 1;
+    min-width: 0;
+}
+
+.add-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 11px;
+}
+
+.add-title h3 {
+    margin: 0;
+    color: #0b5d1e;
+    font-size: 17px;
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.add-details {
+    display: grid;
+    grid-template-columns:
+        repeat(
+            2,
+            1fr
+        );
+    gap: 8px;
+}
+
+.add-detail {
+    padding: 8px;
+    background: #f7faf8;
+    border-radius: 7px;
+}
+
+.add-detail-label {
+    display: block;
+    margin-bottom: 2px;
+    color: #7a877e;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.add-detail-value {
+    color: #26332a;
+    font-size: 13px;
+    font-weight: 600;
 }
 
 
@@ -467,35 +758,22 @@
    ========================================================== */
 
 .empty-contents {
-
     background: #ffffff;
-
     border: 1px dashed #b9cfbd;
-
     border-radius: 14px;
-
     padding: 45px 20px;
-
     text-align: center;
-
     box-shadow:
         0 4px 14px rgba(11, 93, 30, 0.04);
-
 }
 
-
 .empty-contents-icon {
-
     width: 64px;
-
     height: 64px;
-
     margin: 0 auto 15px;
 
     display: flex;
-
     align-items: center;
-
     justify-content: center;
 
     border-radius: 50%;
@@ -503,29 +781,27 @@
     background: #eaf5ed;
 
     font-size: 28px;
-
 }
-
 
 .empty-contents h3 {
-
     margin: 0 0 8px;
-
     color: #0b5d1e;
-
     font-size: 20px;
+}
 
+.empty-contents p {
+    margin: 0;
+    color: #718078;
+    font-size: 14px;
 }
 
 
-.empty-contents p {
+/* ==========================================================
+   NO ADDABLE ITEMS
+   ========================================================== */
 
-    margin: 0;
-
-    color: #718078;
-
-    font-size: 14px;
-
+.no-add-items {
+    margin-top: 10px;
 }
 
 
@@ -536,60 +812,80 @@
 @media (max-width: 700px) {
 
     .storage-contents-page {
-
         padding: 15px;
-
     }
-
 
     .contents-header-top {
-
         flex-direction: column;
-
     }
-
 
     .contents-header h2 {
-
         font-size: 23px;
-
     }
-
 
     .back-storage {
-
         width: 100%;
-
     }
 
+    .storage-tabs {
+        width: 100%;
+    }
 
-    .contents-list {
+    .storage-tab {
+        font-size: 13px;
+    }
 
+    .contents-list,
+    .add-list {
         grid-template-columns: 1fr;
-
     }
 
-
-    .content-card {
-
+    .content-card,
+    .add-card {
         padding: 15px;
-
     }
 
-
-    .content-title-row {
-
+    .content-title-row,
+    .add-title {
         align-items: flex-start;
-
         flex-direction: column;
-
     }
-
 
     .content-details {
-
         grid-template-columns: 1fr;
+    }
 
+    .add-details {
+        grid-template-columns: 1fr;
+    }
+
+    .contents-management,
+    .add-management {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .management-left,
+    .management-right {
+        width: 100%;
+    }
+
+    .storage-action-button {
+        flex: 1;
+    }
+
+    .reshuffle-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .reshuffle-select-group {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .reshuffle-form .storage-action-button {
+        width: 100%;
     }
 
 }
@@ -601,30 +897,28 @@
 
 @media (max-width: 400px) {
 
-    .content-card {
-
-        gap: 11px;
-
+    .content-card,
+    .add-card {
+        gap: 10px;
     }
-
 
     .content-icon {
-
         width: 44px;
-
         height: 44px;
-
         min-width: 44px;
-
         font-size: 21px;
-
     }
 
+    .add-icon {
+        width: 43px;
+        height: 43px;
+        min-width: 43px;
+        font-size: 20px;
+    }
 
-    .content-title-row h3 {
-
+    .content-title-row h3,
+    .add-title h3 {
         font-size: 16px;
-
     }
 
 }
@@ -646,16 +940,16 @@
             <div>
 
                 <h2>
-
                     <%= storage.displayName %>
-
                 </h2>
-
 
                 <p class="contents-subtitle">
 
-                    Items currently allocated to this
-                    storage facility.
+                    Manage items allocated to this
+                    <%= storage.isAgroStore
+                        ? "AgroStore"
+                        : "Room"
+                    %>.
 
                 </p>
 
@@ -666,9 +960,7 @@
                 href="/storage/<%= dairy._id %>"
                 class="back-storage"
             >
-
                 ← Back to Storage
-
             </a>
 
         </div>
@@ -679,7 +971,6 @@
              ================================================== -->
 
         <div class="storage-reference">
-
 
             <div class="reference-item">
 
@@ -733,15 +1024,14 @@
             <div class="reference-item">
 
                 <span class="reference-label">
-                    Allocation
+                    Storage ID
                 </span>
 
                 <span>
-                    dwellNumber = <%= storage.roomNumber %>
+                    <%= storage._id %>
                 </span>
 
             </div>
-
 
         </div>
 
@@ -749,379 +1039,1672 @@
 
 
     <!-- ==================================================
-         SUMMARY
+         TABS
          ================================================== -->
 
-    <div class="contents-summary">
+    <div class="storage-tabs">
 
-        <span>
+        <button
+            type="button"
+            class="storage-tab active"
+            data-tab="view"
+        >
+            View Contents
+        </button>
 
-            <strong>
-                <%= itemCount %>
-            </strong>
 
-            <%= itemCount === 1
-                ? "item"
-                : "items"
-            %>
-
-        </span>
+        <button
+            type="button"
+            class="storage-tab"
+            data-tab="add"
+        >
+            Add Items
+        </button>
 
     </div>
 
 
     <!-- ==================================================
-         CONTENT LIST
+         VIEW TAB
          ================================================== -->
 
-    <% if (items && items.length > 0) { %>
+    <section
+        id="viewTab"
+        class="storage-tab-panel active"
+    >
 
 
-        <div class="contents-list">
+        <!-- ==================================================
+             SUMMARY
+             ================================================== -->
+
+        <div class="contents-summary">
+
+            <span>
+
+                <strong>
+                    <%= itemCount %>
+                </strong>
+
+                <%= itemCount === 1
+                    ? "item"
+                    : "items"
+                %>
+
+                currently allocated
+
+            </span>
+
+        </div>
 
 
-            <% items.forEach(function (item) { %>
+        <!-- ==================================================
+             MANAGEMENT BAR
+             ================================================== -->
+
+        <% if (items && items.length > 0) { %>
+
+            <form
+                id="contentsManagementForm"
+                method="POST"
+                action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/manage"
+            >
+
+                <!--
+                    The backend should use:
+
+                    action = "omit"
+                        OR
+                    action = "reshuffle"
+
+                    itemIds = selected item IDs
+
+                    destinationId = selected destination
+                    when action = reshuffle.
+                -->
 
 
-                <div class="content-card">
+                <div class="contents-management">
 
 
-                    <!-- ======================================
-                         ICON
-                         ====================================== -->
+                    <div class="management-left">
 
-                    <div class="content-icon">
+                        <label class="select-all-wrapper">
 
-                        <% if (item.code !== null &&
-                               item.code !== undefined &&
-                               Number(item.code) > 0) { %>
+                            <input
+                                type="checkbox"
+                                id="selectAllContents"
+                            >
 
-                            🐄
+                            Select All
 
-                        <% } else { %>
+                        </label>
 
-                            🔧
 
-                        <% } %>
+                        <span
+                            id="contentsSelectionCount"
+                            class="selection-count"
+                        >
+                            0 selected
+                        </span>
 
                     </div>
 
 
-                    <!-- ======================================
-                         INFORMATION
-                         ====================================== -->
-
-                    <div class="content-information">
-
-
-                        <!-- ==================================
-                             TITLE
-                             ================================== -->
-
-                        <div class="content-title-row">
-
-                            <h3>
-
-                                <%= item.name %>
-
-                            </h3>
-
-
-                            <span
-                                class="content-type <%= (
-                                    item.code !== null &&
-                                    item.code !== undefined &&
-                                    Number(item.code) > 0
-                                )
-                                    ? "animal-type"
-                                    : "asset-type"
-                                %>"
-                            >
-
-                                <%= (
-                                    item.code !== null &&
-                                    item.code !== undefined &&
-                                    Number(item.code) > 0
-                                )
-                                    ? "Animal"
-                                    : "Asset"
-                                %>
-
-                            </span>
-
-                        </div>
-
-
-                        <!-- ==================================
-                             DETAILS
-                             ================================== -->
-
-                        <div class="content-details">
-
-
-                            <!-- ==================================
-                                 CODE / ID
-                                 ================================== -->
-
-                            <div class="content-detail">
-
-                                <span class="detail-label">
-
-                                    <%= (
-                                        item.code !== null &&
-                                        item.code !== undefined &&
-                                        Number(item.code) > 0
-                                    )
-                                        ? "Animal Code"
-                                        : "Asset"
-                                    %>
-
-                                </span>
-
-                                <span class="detail-value">
-
-                                    <%= (
-                                        item.code !== null &&
-                                        item.code !== undefined
-                                    )
-                                        ? item.code
-                                        : "—"
-                                    %>
-
-                                </span>
-
-                            </div>
-
-
-                            <!-- ==================================
-                                 TYPE
-                                 ================================== -->
-
-                            <div class="content-detail">
-
-                                <span class="detail-label">
-
-                                    <%= (
-                                        item.code !== null &&
-                                        item.code !== undefined &&
-                                        Number(item.code) > 0
-                                    )
-                                        ? "Breed"
-                                        : "Type"
-                                    %>
-
-                                </span>
-
-                                <span class="detail-value">
-
-                                    <%= item.type || "—" %>
-
-                                </span>
-
-                            </div>
-
-
-                            <!-- ==================================
-                                 STATUS
-                                 ================================== -->
-
-                            <div class="content-detail">
-
-                                <span class="detail-label">
-                                    Status
-                                </span>
-
-                                <span
-                                    class="detail-value <%= item.status === "active"
-                                        ? "status-active"
-                                        : "status-inactive"
-                                    %>"
-                                >
-
-                                    <%= item.status === "active"
-                                        ? "Active"
-                                        : item.status
-                                    %>
-
-                                </span>
-
-                            </div>
-
-
-                            <!-- ==================================
-                                 DWELL NUMBER
-                                 ================================== -->
-
-                            <div class="content-detail">
-
-                                <span class="detail-label">
-                                    Dwell Number
-                                </span>
-
-                                <span class="detail-value">
-
-                                    <%= item.dwellNumber %>
-
-                                </span>
-
-                            </div>
-
-
-                            <!-- ==================================
-                                 CONDITION
-                                 ================================== -->
-
-                            <div class="content-detail">
-
-                                <span class="detail-label">
-                                    Condition
-                                </span>
-
-                                <span class="detail-value">
-
-                                    <%= item.condition || "—" %>
-
-                                </span>
-
-                            </div>
-
-
-                            <!-- ==================================
-                                 VALUE
-                                 ================================== -->
-
-                            <div class="content-detail">
-
-                                <span class="detail-label">
-                                    Current Worth
-                                </span>
-
-                                <span class="detail-value">
-
-                                    <%= Number(
-                                        item.currentWorth || 0
-                                    ).toLocaleString() %>
-
-                                </span>
-
-                            </div>
-
-
-                        </div>
-
-
-                        <!-- ==================================
-                             ANIMAL INFORMATION
-                             ================================== -->
-
-                        <% if (
-                            item.code !== null &&
-                            item.code !== undefined &&
-                            Number(item.code) > 0
-                        ) { %>
-
-                            <p class="content-description">
-
-                                <strong>
-                                    Gender:
-                                </strong>
-
-                                <%= item.gender || "—" %>
-
-
-                                &nbsp; • &nbsp;
-
-
-                                <strong>
-                                    Age:
-                                </strong>
-
-                                <%= item.ageText || "—" %>
-
-
-                                &nbsp; • &nbsp;
-
-
-                                <strong>
-                                    Milking:
-                                </strong>
-
-                                <%= item.isMilking
-                                    ? "Yes"
-                                    : "No"
-                                %>
-
-                            </p>
-
-                        <% } %>
-
-
-                        <!-- ==================================
-                             DESCRIPTION
-                             ================================== -->
-
-                        <% if (item.description) { %>
-
-                            <p class="content-description">
-
-                                <%= item.description %>
-
-                            </p>
-
-                        <% } %>
-
+                    <div class="management-right">
+
+                        <button
+                            type="button"
+                            id="openReshuffleButton"
+                            class="storage-action-button reshuffle-button"
+                            disabled
+                        >
+                            Reshuffle
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            name="action"
+                            value="omit"
+                            class="storage-action-button omit-button"
+                            id="omitButton"
+                            disabled
+                        >
+                            Omit
+                        </button>
 
                     </div>
 
                 </div>
 
 
-            <% }); %>
+                <!-- ==================================================
+                     RESHUFFLE PANEL
+                     ================================================== -->
+
+                <div
+                    id="reshufflePanel"
+                    class="reshuffle-panel"
+                >
+
+                    <h3>
+                        Reshuffle Selected Items
+                    </h3>
 
 
-        </div>
+                    <p>
+
+                        Select the destination
+                        <%= storage.isAgroStore
+                            ? "AgroStore"
+                            : "Room"
+                        %>
+                        on this dairy farm.
+
+                    </p>
 
 
-    <% } else { %>
+                    <div class="reshuffle-form">
 
 
-        <!-- ==================================================
-             EMPTY STATE
-             ================================================== -->
+                        <div class="reshuffle-select-group">
 
-        <div class="empty-contents">
+                            <label for="destinationStorage">
+
+                                Destination
+                                <%= storage.isAgroStore
+                                    ? "AgroStore"
+                                    : "Room"
+                                %>
+
+                            </label>
 
 
-            <div class="empty-contents-icon">
+                            <select
+                                id="destinationStorage"
+                                name="destinationId"
+                                class="reshuffle-select"
+                            >
 
-                <%= storage.isAgroStore
-                    ? "🏪"
-                    : "🏠"
-                %>
+                                <option value="">
+                                    Select destination...
+                                </option>
+
+
+                                <% if (
+                                    destinationStorage &&
+                                    destinationStorage.length > 0
+                                ) { %>
+
+
+                                    <% destinationStorage.forEach(
+                                        function(destination)
+                                    { %>
+
+
+                                        <option
+                                            value="<%= destination._id %>"
+                                        >
+
+                                            <%= destination.displayName ||
+                                                destination.name ||
+                                                (
+                                                    destination.isAgroStore
+                                                        ? `AgroStore ${Math.abs(
+                                                            destination.roomNumber
+                                                        )}`
+                                                        : `Room ${destination.roomNumber}`
+                                                )
+                                            %>
+
+                                        </option>
+
+
+                                    <% }); %>
+
+
+                                <% } else { %>
+
+                                    <option
+                                        value=""
+                                        disabled
+                                    >
+                                        No other
+                                        <%= storage.isAgroStore
+                                            ? "AgroStores"
+                                            : "Rooms"
+                                        %>
+                                        available
+                                    </option>
+
+                                <% } %>
+
+                            </select>
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            name="action"
+                            value="reshuffle"
+                            id="reshuffleSubmitButton"
+                            class="storage-action-button add-button"
+                            disabled
+                        >
+                            Reshuffle Selected
+                        </button>
+
+
+                        <button
+                            type="button"
+                            id="cancelReshuffleButton"
+                            class="storage-action-button omit-button"
+                        >
+                            Cancel
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ==================================================
+                     CONTENT LIST
+                     ================================================== -->
+
+                <% if (items && items.length > 0) { %>
+
+
+                    <div class="contents-list">
+
+
+                        <% items.forEach(function(item) { %>
+
+
+                            <div
+                                class="content-card"
+                                data-item-id="<%= item._id %>"
+                            >
+
+
+                                <!-- ==================================
+                                     CHECKBOX
+                                     ================================== -->
+
+                                <div class="content-checkbox">
+
+                                    <input
+                                        type="checkbox"
+                                        class="content-item-checkbox"
+                                        name="itemIds"
+                                        value="<%= item._id %>"
+                                    >
+
+                                </div>
+
+
+                                <!-- ==================================
+                                     ICON
+                                     ================================== -->
+
+                                <div class="content-icon">
+
+                                    <% if (
+                                        item.code !== null &&
+                                        item.code !== undefined &&
+                                        Number(item.code) > 0
+                                    ) { %>
+
+                                        🐄
+
+                                    <% } else { %>
+
+                                        🔧
+
+                                    <% } %>
+
+                                </div>
+
+
+                                <!-- ==================================
+                                     INFORMATION
+                                     ================================== -->
+
+                                <div class="content-information">
+
+
+                                    <!-- ==================================
+                                         TITLE
+                                         ================================== -->
+
+                                    <div class="content-title-row">
+
+                                        <h3>
+                                            <%= item.name %>
+                                        </h3>
+
+
+                                        <span
+                                            class="content-type <%= (
+                                                item.code !== null &&
+                                                item.code !== undefined &&
+                                                Number(item.code) > 0
+                                            )
+                                                ? "animal-type"
+                                                : "asset-type"
+                                            %>"
+                                        >
+
+                                            <%= (
+                                                item.code !== null &&
+                                                item.code !== undefined &&
+                                                Number(item.code) > 0
+                                            )
+                                                ? "Animal"
+                                                : "Asset"
+                                            %>
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <!-- ==================================
+                                         DETAILS
+                                         ================================== -->
+
+                                    <div class="content-details">
+
+
+                                        <div class="content-detail">
+
+                                            <span class="detail-label">
+
+                                                <%= (
+                                                    item.code !== null &&
+                                                    item.code !== undefined &&
+                                                    Number(item.code) > 0
+                                                )
+                                                    ? "Animal Code"
+                                                    : "Asset Code"
+                                                %>
+
+                                            </span>
+
+
+                                            <span class="detail-value">
+
+                                                <%= (
+                                                    item.code !== null &&
+                                                    item.code !== undefined
+                                                )
+                                                    ? item.code
+                                                    : "—"
+                                                %>
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <div class="content-detail">
+
+                                            <span class="detail-label">
+
+                                                <%= (
+                                                    item.code !== null &&
+                                                    item.code !== undefined &&
+                                                    Number(item.code) > 0
+                                                )
+                                                    ? "Breed"
+                                                    : "Type"
+                                                %>
+
+                                            </span>
+
+
+                                            <span class="detail-value">
+
+                                                <%= item.type || "—" %>
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <div class="content-detail">
+
+                                            <span class="detail-label">
+                                                Status
+                                            </span>
+
+
+                                            <span
+                                                class="detail-value <%= item.status === "active"
+                                                    ? "status-active"
+                                                    : "status-inactive"
+                                                %>"
+                                            >
+
+                                                <%= item.status === "active"
+                                                    ? "Active"
+                                                    : item.status
+                                                %>
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <div class="content-detail">
+
+                                            <span class="detail-label">
+                                                Dwell Number
+                                            </span>
+
+
+                                            <span class="detail-value">
+
+                                                <%= item.dwellNumber !== null &&
+                                                    item.dwellNumber !== undefined
+                                                    ? item.dwellNumber
+                                                    : "—"
+                                                %>
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <div class="content-detail">
+
+                                            <span class="detail-label">
+                                                Condition
+                                            </span>
+
+
+                                            <span class="detail-value">
+
+                                                <%= item.condition || "—" %>
+
+                                            </span>
+
+                                        </div>
+
+
+                                        <div class="content-detail">
+
+                                            <span class="detail-label">
+                                                Current Worth
+                                            </span>
+
+
+                                            <span class="detail-value">
+
+                                                <%= Number(
+                                                    item.currentWorth || 0
+                                                ).toLocaleString() %>
+
+                                            </span>
+
+                                        </div>
+
+
+                                    </div>
+
+
+                                    <!-- ==================================
+                                         ANIMAL INFORMATION
+                                         ================================== -->
+
+                                    <% if (
+                                        item.code !== null &&
+                                        item.code !== undefined &&
+                                        Number(item.code) > 0
+                                    ) { %>
+
+
+                                        <p class="content-description">
+
+                                            <strong>
+                                                Gender:
+                                            </strong>
+
+                                            <%= item.gender || "—" %>
+
+
+                                            &nbsp; • &nbsp;
+
+
+                                            <strong>
+                                                Age:
+                                            </strong>
+
+                                            <%= item.ageText || "—" %>
+
+
+                                            &nbsp; • &nbsp;
+
+
+                                            <strong>
+                                                Milking:
+                                            </strong>
+
+                                            <%= item.isMilking
+                                                ? "Yes"
+                                                : "No"
+                                            %>
+
+                                        </p>
+
+
+                                    <% } %>
+
+
+                                    <!-- ==================================
+                                         DESCRIPTION
+                                         ================================== -->
+
+                                    <% if (item.description) { %>
+
+                                        <p class="content-description">
+
+                                            <%= item.description %>
+
+                                        </p>
+
+                                    <% } %>
+
+
+                                </div>
+
+                            </div>
+
+
+                        <% }); %>
+
+
+                    </div>
+
+
+                <% } else { %>
+
+
+                    <div class="empty-contents">
+
+                        <div class="empty-contents-icon">
+
+                            <%= storage.isAgroStore
+                                ? "🏪"
+                                : "🏠"
+                            %>
+
+                        </div>
+
+
+                        <h3>
+                            No Items Found
+                        </h3>
+
+
+                        <p>
+
+                            There are currently no items allocated
+                            to
+                            <strong>
+                                <%= storage.displayName %>
+                            </strong>.
+
+                        </p>
+
+                    </div>
+
+
+                <% } %>
+
+
+            </form>
+
+
+        <% } else { %>
+
+
+            <div class="empty-contents">
+
+                <div class="empty-contents-icon">
+
+                    <%= storage.isAgroStore
+                        ? "🏪"
+                        : "🏠"
+                    %>
+
+                </div>
+
+
+                <h3>
+                    No Items Found
+                </h3>
+
+
+                <p>
+
+                    There are currently no items allocated
+                    to
+                    <strong>
+                        <%= storage.displayName %>
+                    </strong>.
+
+                </p>
 
             </div>
 
 
+        <% } %>
+
+
+    </section>
+
+
+    <!-- ==================================================
+         ADD TAB
+         ================================================== -->
+
+    <section
+        id="addTab"
+        class="storage-tab-panel"
+    >
+
+
+        <div class="add-header">
+
             <h3>
-
-                No Items Found
-
+                Add Items to <%= storage.displayName %>
             </h3>
-
 
             <p>
 
-                There are currently no items allocated to
-                <strong>
-                    <%= storage.displayName %>
-                </strong>.
+                Select animals or assets that have an
+                <strong>assetCode</strong>
+                but are not currently allocated to any
+                Room or AgroStore.
 
             </p>
 
-
         </div>
 
-    <% } %>
+
+        <!-- ==================================================
+             ADD FORM
+             ================================================== -->
+
+        <form
+            method="POST"
+            action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add"
+            id="addItemsForm"
+        >
+
+
+            <% if (
+                availableItems &&
+                availableItems.length > 0
+            ) { %>
+
+
+                <!-- ==========================================
+                     ADD MANAGEMENT
+                     ========================================== -->
+
+                <div class="add-management">
+
+
+                    <div class="management-left">
+
+                        <label class="select-all-wrapper">
+
+                            <input
+                                type="checkbox"
+                                id="selectAllAddItems"
+                            >
+
+                            Select All
+
+                        </label>
+
+
+                        <span
+                            id="addSelectionCount"
+                            class="selection-count"
+                        >
+                            0 selected
+                        </span>
+
+                    </div>
+
+
+                    <div class="management-right">
+
+                        <button
+                            type="submit"
+                            id="addSelectedButton"
+                            class="storage-action-button add-button"
+                            disabled
+                        >
+                            Add Selected
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ==========================================
+                     AVAILABLE ITEMS
+                     ========================================== -->
+
+                <div class="add-list">
+
+
+                    <% availableItems.forEach(function(item) { %>
+
+
+                        <div
+                            class="add-card"
+                            data-add-item-id="<%= item._id %>"
+                        >
+
+
+                            <!-- ==================================
+                                 CHECKBOX
+                                 ================================== -->
+
+                            <div class="add-checkbox">
+
+                                <input
+                                    type="checkbox"
+                                    class="add-item-checkbox"
+                                    name="itemIds"
+                                    value="<%= item._id %>"
+                                >
+
+                            </div>
+
+
+                            <!-- ==================================
+                                 ICON
+                                 ================================== -->
+
+                            <div class="add-icon">
+
+                                <% if (
+                                    item.code !== null &&
+                                    item.code !== undefined &&
+                                    Number(item.code) > 0
+                                ) { %>
+
+                                    🐄
+
+                                <% } else { %>
+
+                                    🔧
+
+                                <% } %>
+
+                            </div>
+
+
+                            <!-- ==================================
+                                 INFORMATION
+                                 ================================== -->
+
+                            <div class="add-information">
+
+
+                                <div class="add-title">
+
+                                    <h3>
+                                        <%= item.name %>
+                                    </h3>
+
+
+                                    <span
+                                        class="content-type <%= (
+                                            item.code !== null &&
+                                            item.code !== undefined &&
+                                            Number(item.code) > 0
+                                        )
+                                            ? "animal-type"
+                                            : "asset-type"
+                                        %>"
+                                    >
+
+                                        <%= (
+                                            item.code !== null &&
+                                            item.code !== undefined &&
+                                            Number(item.code) > 0
+                                        )
+                                            ? "Animal"
+                                            : "Asset"
+                                        %>
+
+                                    </span>
+
+                                </div>
+
+
+                                <div class="add-details">
+
+
+                                    <!-- ==================================
+                                         ASSET CODE
+                                         ================================== -->
+
+                                    <div class="add-detail">
+
+                                        <span class="add-detail-label">
+                                            Asset Code
+                                        </span>
+
+                                        <span class="add-detail-value">
+
+                                            <%= item.assetCode ||
+                                                item.code ||
+                                                "—"
+                                            %>
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <!-- ==================================
+                                         TYPE / BREED
+                                         ================================== -->
+
+                                    <div class="add-detail">
+
+                                        <span class="add-detail-label">
+
+                                            <%= (
+                                                item.code !== null &&
+                                                item.code !== undefined &&
+                                                Number(item.code) > 0
+                                            )
+                                                ? "Breed"
+                                                : "Type"
+                                            %>
+
+                                        </span>
+
+                                        <span class="add-detail-value">
+
+                                            <%= item.type || "—" %>
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <!-- ==================================
+                                         STATUS
+                                         ================================== -->
+
+                                    <div class="add-detail">
+
+                                        <span class="add-detail-label">
+                                            Status
+                                        </span>
+
+                                        <span class="add-detail-value">
+
+                                            <%= item.status || "—" %>
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <!-- ==================================
+                                         DWELL
+                                         ================================== -->
+
+                                    <div class="add-detail">
+
+                                        <span class="add-detail-label">
+                                            Dwell Number
+                                        </span>
+
+                                        <span class="add-detail-value">
+
+                                            —
+
+                                        </span>
+
+                                    </div>
+
+
+                                </div>
+
+
+                            </div>
+
+                        </div>
+
+
+                    <% }); %>
+
+
+                </div>
+
+
+            <% } else { %>
+
+
+                <!-- ==========================================
+                     EMPTY AVAILABLE ITEMS
+                     ========================================== -->
+
+                <div class="empty-contents no-add-items">
+
+
+                    <div class="empty-contents-icon">
+                        📦
+                    </div>
+
+
+                    <h3>
+                        No Items Available
+                    </h3>
+
+
+                    <p>
+
+                        There are currently no animals or assets
+                        with an asset code that are unallocated
+                        to a storage facility.
+
+                    </p>
+
+
+                </div>
+
+
+            <% } %>
+
+
+        </form>
+
+
+    </section>
 
 
 </div>
+
+
+<script>
+
+/* ==========================================================
+   STORAGE CONTENTS MANAGEMENT
+   ========================================================== */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+
+    /* ======================================================
+       TABS
+    ====================================================== */
+
+    const tabs =
+        document.querySelectorAll(".storage-tab");
+
+    const panels =
+        document.querySelectorAll(".storage-tab-panel");
+
+
+    tabs.forEach(function (tab) {
+
+        tab.addEventListener("click", function () {
+
+            const target =
+                tab.dataset.tab;
+
+
+            tabs.forEach(function (otherTab) {
+
+                otherTab.classList.remove("active");
+
+            });
+
+
+            panels.forEach(function (panel) {
+
+                panel.classList.remove("active");
+
+            });
+
+
+            tab.classList.add("active");
+
+
+            const targetPanel =
+                document.getElementById(
+                    target === "view"
+                        ? "viewTab"
+                        : "addTab"
+                );
+
+
+            if (targetPanel) {
+
+                targetPanel.classList.add("active");
+
+            }
+
+        });
+
+    });
+
+
+    /* ======================================================
+       VIEW TAB
+    ====================================================== */
+
+    const contentCheckboxes =
+        document.querySelectorAll(
+            ".content-item-checkbox"
+        );
+
+
+    const selectAllContents =
+        document.getElementById(
+            "selectAllContents"
+        );
+
+
+    const contentsSelectionCount =
+        document.getElementById(
+            "contentsSelectionCount"
+        );
+
+
+    const omitButton =
+        document.getElementById(
+            "omitButton"
+        );
+
+
+    const openReshuffleButton =
+        document.getElementById(
+            "openReshuffleButton"
+        );
+
+
+    const reshufflePanel =
+        document.getElementById(
+            "reshufflePanel"
+        );
+
+
+    const destinationStorage =
+        document.getElementById(
+            "destinationStorage"
+        );
+
+
+    const reshuffleSubmitButton =
+        document.getElementById(
+            "reshuffleSubmitButton"
+        );
+
+
+    const cancelReshuffleButton =
+        document.getElementById(
+            "cancelReshuffleButton"
+        );
+
+
+    /* ======================================================
+       UPDATE VIEW SELECTION
+    ====================================================== */
+
+    function updateContentSelection() {
+
+
+        let selectedCount = 0;
+
+
+        contentCheckboxes.forEach(function (checkbox) {
+
+
+            const card =
+                checkbox.closest(".content-card");
+
+
+            if (checkbox.checked) {
+
+                selectedCount++;
+
+
+                if (card) {
+
+                    card.classList.add("selected");
+
+                }
+
+            } else {
+
+                if (card) {
+
+                    card.classList.remove("selected");
+
+                }
+
+            }
+
+        });
+
+
+        if (contentsSelectionCount) {
+
+            contentsSelectionCount.textContent =
+                `${selectedCount} selected`;
+
+        }
+
+
+        if (omitButton) {
+
+            omitButton.disabled =
+                selectedCount === 0;
+
+        }
+
+
+        if (openReshuffleButton) {
+
+            openReshuffleButton.disabled =
+                selectedCount === 0;
+
+        }
+
+
+        if (reshuffleSubmitButton) {
+
+            reshuffleSubmitButton.disabled =
+                selectedCount === 0 ||
+                !destinationStorage ||
+                !destinationStorage.value;
+
+        }
+
+
+        if (selectAllContents) {
+
+            if (
+                contentCheckboxes.length > 0 &&
+                selectedCount === contentCheckboxes.length
+            ) {
+
+                selectAllContents.checked = true;
+
+            } else {
+
+                selectAllContents.checked = false;
+
+            }
+
+        }
+
+    }
+
+
+    /* ======================================================
+       SELECT ALL CONTENTS
+    ====================================================== */
+
+    if (selectAllContents) {
+
+        selectAllContents.addEventListener(
+            "change",
+            function () {
+
+
+                contentCheckboxes.forEach(
+                    function (checkbox) {
+
+                        checkbox.checked =
+                            selectAllContents.checked;
+
+                    }
+                );
+
+
+                updateContentSelection();
+
+            }
+        );
+
+    }
+
+
+    /* ======================================================
+       INDIVIDUAL CONTENT SELECTION
+    ====================================================== */
+
+    contentCheckboxes.forEach(
+        function (checkbox) {
+
+            checkbox.addEventListener(
+                "change",
+                updateContentSelection
+            );
+
+        }
+    );
+
+
+    /* ======================================================
+       OPEN RESHUFFLE
+    ====================================================== */
+
+    if (openReshuffleButton) {
+
+        openReshuffleButton.addEventListener(
+            "click",
+            function () {
+
+
+                if (
+                    openReshuffleButton.disabled
+                ) {
+
+                    return;
+
+                }
+
+
+                reshufflePanel.classList.add(
+                    "active"
+                );
+
+
+                updateContentSelection();
+
+
+                if (destinationStorage) {
+
+                    destinationStorage.focus();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ======================================================
+       CANCEL RESHUFFLE
+    ====================================================== */
+
+    if (cancelReshuffleButton) {
+
+        cancelReshuffleButton.addEventListener(
+            "click",
+            function () {
+
+
+                reshufflePanel.classList.remove(
+                    "active"
+                );
+
+
+                if (destinationStorage) {
+
+                    destinationStorage.value = "";
+
+                }
+
+
+                updateContentSelection();
+
+            }
+        );
+
+    }
+
+
+    /* ======================================================
+       DESTINATION CHANGE
+    ====================================================== */
+
+    if (destinationStorage) {
+
+        destinationStorage.addEventListener(
+            "change",
+            updateContentSelection
+        );
+
+    }
+
+
+    /* ======================================================
+       CONFIRM OMIT
+    ====================================================== */
+
+    const contentsManagementForm =
+        document.getElementById(
+            "contentsManagementForm"
+        );
+
+
+    if (contentsManagementForm) {
+
+        contentsManagementForm.addEventListener(
+            "submit",
+            function (event) {
+
+
+                const submitter =
+                    event.submitter;
+
+
+                if (
+                    submitter &&
+                    submitter.value === "omit"
+                ) {
+
+
+                    const selected =
+                        document.querySelectorAll(
+                            ".content-item-checkbox:checked"
+                        );
+
+
+                    if (selected.length === 0) {
+
+                        event.preventDefault();
+
+                        return;
+
+                    }
+
+
+                    const confirmed =
+                        window.confirm(
+                            `Remove ${selected.length} selected item${selected.length === 1 ? "" : "s"} from ${"<%= storage.displayName %>"}?`
+                        );
+
+
+                    if (!confirmed) {
+
+                        event.preventDefault();
+
+                    }
+
+                }
+
+
+                if (
+                    submitter &&
+                    submitter.value === "reshuffle"
+                ) {
+
+
+                    const selected =
+                        document.querySelectorAll(
+                            ".content-item-checkbox:checked"
+                        );
+
+
+                    if (
+                        selected.length === 0 ||
+                        !destinationStorage ||
+                        !destinationStorage.value
+                    ) {
+
+                        event.preventDefault();
+
+                        return;
+
+                    }
+
+
+                    const confirmed =
+                        window.confirm(
+                            `Reshuffle ${selected.length} selected item${selected.length === 1 ? "" : "s"} to the selected destination?`
+                        );
+
+
+                    if (!confirmed) {
+
+                        event.preventDefault();
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ======================================================
+       ADD TAB
+    ====================================================== */
+
+    const addCheckboxes =
+        document.querySelectorAll(
+            ".add-item-checkbox"
+        );
+
+
+    const selectAllAddItems =
+        document.getElementById(
+            "selectAllAddItems"
+        );
+
+
+    const addSelectionCount =
+        document.getElementById(
+            "addSelectionCount"
+        );
+
+
+    const addSelectedButton =
+        document.getElementById(
+            "addSelectedButton"
+        );
+
+
+    /* ======================================================
+       UPDATE ADD SELECTION
+    ====================================================== */
+
+    function updateAddSelection() {
+
+
+        let selectedCount = 0;
+
+
+        addCheckboxes.forEach(
+            function (checkbox) {
+
+
+                const card =
+                    checkbox.closest(".add-card");
+
+
+                if (checkbox.checked) {
+
+                    selectedCount++;
+
+
+                    if (card) {
+
+                        card.classList.add(
+                            "selected"
+                        );
+
+                    }
+
+                } else {
+
+                    if (card) {
+
+                        card.classList.remove(
+                            "selected"
+                        );
+
+                    }
+
+                }
+
+            }
+        );
+
+
+        if (addSelectionCount) {
+
+            addSelectionCount.textContent =
+                `${selectedCount} selected`;
+
+        }
+
+
+        if (addSelectedButton) {
+
+            addSelectedButton.disabled =
+                selectedCount === 0;
+
+        }
+
+
+        if (selectAllAddItems) {
+
+            if (
+                addCheckboxes.length > 0 &&
+                selectedCount === addCheckboxes.length
+            ) {
+
+                selectAllAddItems.checked = true;
+
+            } else {
+
+                selectAllAddItems.checked = false;
+
+            }
+
+        }
+
+    }
+
+
+    /* ======================================================
+       SELECT ALL ADD ITEMS
+    ====================================================== */
+
+    if (selectAllAddItems) {
+
+        selectAllAddItems.addEventListener(
+            "change",
+            function () {
+
+
+                addCheckboxes.forEach(
+                    function (checkbox) {
+
+                        checkbox.checked =
+                            selectAllAddItems.checked;
+
+                    }
+                );
+
+
+                updateAddSelection();
+
+            }
+        );
+
+    }
+
+
+    /* ======================================================
+       INDIVIDUAL ADD SELECTION
+    ====================================================== */
+
+    addCheckboxes.forEach(
+        function (checkbox) {
+
+            checkbox.addEventListener(
+                "change",
+                updateAddSelection
+            );
+
+        }
+    );
+
+
+    /* ======================================================
+       CONFIRM ADD
+    ====================================================== */
+
+    const addItemsForm =
+        document.getElementById(
+            "addItemsForm"
+        );
+
+
+    if (addItemsForm) {
+
+        addItemsForm.addEventListener(
+            "submit",
+            function (event) {
+
+
+                const selected =
+                    document.querySelectorAll(
+                        ".add-item-checkbox:checked"
+                    );
+
+
+                if (selected.length === 0) {
+
+                    event.preventDefault();
+
+                    return;
+
+                }
+
+
+                const confirmed =
+                    window.confirm(
+                        `Add ${selected.length} selected item${selected.length === 1 ? "" : "s"} to ${"<%= storage.displayName %>"}?`
+                    );
+
+
+                if (!confirmed) {
+
+                    event.preventDefault();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* ======================================================
+       INITIAL STATE
+    ====================================================== */
+
+    updateContentSelection();
+
+    updateAddSelection();
+
+});
+
+</script>
