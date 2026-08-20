@@ -2,100 +2,6 @@
 // services/storage/contents.js
 // STORAGE CONTENTS SERVICE
 // ==========================================================
-//
-// PURPOSE:
-//
-// Handles everything related to the contents of a
-// Room or AgroStore.
-//
-// SUPPORTED OPERATIONS:
-//
-//     1. View current contents
-//     2. Find items available for addition
-//     3. Add items
-//     4. Omit items
-//     5. Reshuffle items
-//
-// ==========================================================
-//
-// ALLOCATION RULE
-// ----------------------------------------------------------
-//
-// A Dairy record belongs to a particular storage facility
-// when:
-//
-//     Dairy.assetCode
-//         ===
-//     Parent Dairy Farm.code
-//
-// AND
-//
-//     Dairy.dwellNumber
-//         ===
-//     DairyStorage.roomNumber
-//
-// This rule applies IDENTICALLY to:
-//
-//     Room
-//     AgroStore
-//
-// There is NO separate allocation mechanism.
-//
-// ==========================================================
-//
-// ADD RULE
-// ----------------------------------------------------------
-//
-// An item can be added to a storage facility when:
-//
-//     assetCode exists
-//
-// AND
-//
-//     dwellNumber === null
-//
-// The item must also belong to the parent farm:
-//
-//     item.assetCode === parentFarm.code
-//
-// ==========================================================
-//
-// OMIT RULE
-// ----------------------------------------------------------
-//
-// Omitting an item does NOT change assetCode.
-//
-// It only changes:
-//
-//     dwellNumber = null
-//
-// This makes the item available for allocation again.
-//
-// ==========================================================
-//
-// RESHUFFLE RULE
-// ----------------------------------------------------------
-//
-// Reshuffling changes:
-//
-//     dwellNumber
-//
-// from the current storage number to the target storage
-// number.
-//
-// The target storage MUST:
-//
-//     1. Belong to the same parent farm
-//     2. Be active
-//     3. Be the same storage type
-//
-// Therefore:
-//
-//     Room → Room
-//     AgroStore → AgroStore
-//
-// ==========================================================
-
 
 const mongoose =
     require("mongoose");
@@ -135,46 +41,44 @@ function isValidObjectId(
     value
 ) {
 
-    return mongoose.Types.ObjectId.isValid(
-        value
+    return Boolean(
+        value &&
+        mongoose.Types.ObjectId.isValid(
+            value
+        )
     );
 
 }
 
 
 // ==========================================================
-// NORMALIZE ARRAY
-// ==========================================================
-//
-// Accepts:
-//
-//     ["id1", "id2"]
-//
-// Also safely handles:
-//
-//     "id1"
-//
+// NORMALIZE IDS
 // ==========================================================
 
 function normalizeIdArray(
     value
 ) {
 
-    if (Array.isArray(value)) {
+    const values =
+        Array.isArray(value)
+            ? value
+            : value
+                ? [value]
+                : [];
 
-        return value
-            .filter(Boolean)
-            .map(String);
 
-    }
-
-    if (value) {
-
-        return [String(value)];
-
-    }
-
-    return [];
+    return [
+        ...new Set(
+            values
+                .filter(
+                    item =>
+                        item !== null &&
+                        item !== undefined &&
+                        String(item).trim() !== ""
+                )
+                .map(String)
+        )
+    ];
 
 }
 
@@ -193,7 +97,9 @@ function validateItemIds(
         );
 
 
-    if (!ids.length) {
+    if (
+        ids.length === 0
+    ) {
 
         throw createError(
             "No items were selected.",
@@ -203,14 +109,14 @@ function validateItemIds(
     }
 
 
-    const invalid =
+    const invalidId =
         ids.find(
             id =>
                 !isValidObjectId(id)
         );
 
 
-    if (invalid) {
+    if (invalidId) {
 
         throw createError(
             "One or more selected item IDs are invalid.",
@@ -263,18 +169,14 @@ async function findParentFarm(
     }
 
 
-    // ======================================================
-    // A FARM HAS A NEGATIVE CODE
-    // ======================================================
+    // ------------------------------------------------------
+    // STORAGE PARENT MUST BE A FARM
+    // ------------------------------------------------------
 
     if (
-
         dairy.code === null ||
-
         dairy.code === undefined ||
-
         Number(dairy.code) >= 0
-
     ) {
 
         throw createError(
@@ -293,22 +195,10 @@ async function findParentFarm(
 // ==========================================================
 // FIND STORAGE BELONGING TO FARM
 // ==========================================================
-//
-// The storage ID alone is NOT trusted.
-//
-// We verify:
-//
-//     storage._id
-//     storage.farmCode === dairy.code
-//
-// ==========================================================
 
 async function findStorageForFarm({
-
     dairy,
-
     storageId
-
 }) {
 
     if (
@@ -355,41 +245,17 @@ async function findStorageForFarm({
 // ==========================================================
 // GET STORAGE CONTENTS
 // ==========================================================
-//
-// RETURNS:
-//
-//     {
-//         dairy,
-//         storage,
-//         items,
-//         itemCount,
-//         availableItems,
-//         targetStorages
-//     }
-//
-// ==========================================================
 
 async function getStorageContents({
-
     dairyId,
-
     storageId
-
 }) {
-
-    // ======================================================
-    // FIND FARM
-    // ======================================================
 
     const dairy =
         await findParentFarm(
             dairyId
         );
 
-
-    // ======================================================
-    // FIND STORAGE
-    // ======================================================
 
     const storage =
         await findStorageForFarm({
@@ -401,9 +267,9 @@ async function getStorageContents({
         });
 
 
-    // ======================================================
-    // FIND CURRENT CONTENTS
-    // ======================================================
+    // ------------------------------------------------------
+    // CURRENT CONTENTS
+    // ------------------------------------------------------
 
     const items =
         await Dairy.find({
@@ -424,14 +290,9 @@ async function getStorageContents({
         });
 
 
-    // ======================================================
-    // FIND ITEMS AVAILABLE FOR ADDITION
-    // ======================================================
-    //
-    // These are records belonging to this farm that have
-    // an assetCode but are currently not allocated.
-    //
-    // ======================================================
+    // ------------------------------------------------------
+    // AVAILABLE ITEMS
+    // ------------------------------------------------------
 
     const availableItems =
         await Dairy.find({
@@ -452,21 +313,9 @@ async function getStorageContents({
         });
 
 
-    // ======================================================
-    // FIND TARGET STORAGE FACILITIES
-    // ======================================================
-    //
-    // Reshuffling is restricted to the SAME storage type.
-    //
-    // If current storage is a Room:
-    //
-    //     only Rooms
-    //
-    // If current storage is an AgroStore:
-    //
-    //     only AgroStores
-    //
-    // ======================================================
+    // ------------------------------------------------------
+    // SAME TYPE TARGETS
+    // ------------------------------------------------------
 
     const targetStorages =
         await DairyStorage.find({
@@ -488,15 +337,6 @@ async function getStorageContents({
         });
 
 
-    // ======================================================
-    // REMOVE CURRENT STORAGE FROM RESHUFFLE OPTIONS
-    // ======================================================
-    //
-    // There is no point reshuffling an item to the storage
-    // it is already in.
-    //
-    // ======================================================
-
     const filteredTargetStorages =
         targetStorages.filter(
             target =>
@@ -504,10 +344,6 @@ async function getStorageContents({
                 String(storage._id)
         );
 
-
-    // ======================================================
-    // RETURN
-    // ======================================================
 
     return {
 
@@ -533,34 +369,17 @@ async function getStorageContents({
 // ==========================================================
 // GET AVAILABLE ITEMS
 // ==========================================================
-//
-// This is separated from getStorageContents so the
-// controller can request the available items independently
-// if needed later.
-//
-// ==========================================================
 
 async function getAvailableItems({
-
     dairyId,
-
     storageId
-
 }) {
-
-    // ======================================================
-    // FIND FARM
-    // ======================================================
 
     const dairy =
         await findParentFarm(
             dairyId
         );
 
-
-    // ======================================================
-    // VERIFY STORAGE BELONGS TO FARM
-    // ======================================================
 
     await findStorageForFarm({
 
@@ -570,10 +389,6 @@ async function getAvailableItems({
 
     });
 
-
-    // ======================================================
-    // FIND UNALLOCATED ITEMS
-    // ======================================================
 
     const items =
         await Dairy.find({
@@ -606,36 +421,14 @@ async function getAvailableItems({
 
 
 // ==========================================================
-// ADD ITEMS TO STORAGE
-// ==========================================================
-//
-// PARAMETERS:
-//
-//     dairyId
-//     storageId
-//     itemIds
-//
-// OPERATION:
-//
-//     dwellNumber = storage.roomNumber
-//
-// assetCode DOES NOT change.
-//
+// ADD ITEMS
 // ==========================================================
 
 async function addItemsToStorage({
-
     dairyId,
-
     storageId,
-
     itemIds
-
 }) {
-
-    // ======================================================
-    // VALIDATE ITEM IDS
-    // ======================================================
 
     const ids =
         validateItemIds(
@@ -643,19 +436,11 @@ async function addItemsToStorage({
         );
 
 
-    // ======================================================
-    // FIND FARM
-    // ======================================================
-
     const dairy =
         await findParentFarm(
             dairyId
         );
 
-
-    // ======================================================
-    // FIND STORAGE
-    // ======================================================
 
     const storage =
         await findStorageForFarm({
@@ -666,10 +451,6 @@ async function addItemsToStorage({
 
         });
 
-
-    // ======================================================
-    // ONLY ACTIVE STORAGE CAN RECEIVE ITEMS
-    // ======================================================
 
     if (
         storage.status !==
@@ -683,10 +464,6 @@ async function addItemsToStorage({
 
     }
 
-
-    // ======================================================
-    // FIND SELECTED ITEMS
-    // ======================================================
 
     const items =
         await Dairy.find({
@@ -704,10 +481,6 @@ async function addItemsToStorage({
         });
 
 
-    // ======================================================
-    // VERIFY ALL SELECTED ITEMS WERE FOUND
-    // ======================================================
-
     if (
         items.length !==
         ids.length
@@ -720,10 +493,6 @@ async function addItemsToStorage({
 
     }
 
-
-    // ======================================================
-    // ALLOCATE ITEMS
-    // ======================================================
 
     const result =
         await Dairy.updateMany(
@@ -756,10 +525,6 @@ async function addItemsToStorage({
         );
 
 
-    // ======================================================
-    // RETURN
-    // ======================================================
-
     return {
 
         modifiedCount:
@@ -777,36 +542,14 @@ async function addItemsToStorage({
 
 
 // ==========================================================
-// OMIT ITEMS FROM STORAGE
-// ==========================================================
-//
-// PARAMETERS:
-//
-//     dairyId
-//     storageId
-//     itemIds
-//
-// OPERATION:
-//
-//     dwellNumber = null
-//
-// assetCode remains untouched.
-//
+// OMIT ITEMS
 // ==========================================================
 
 async function omitItemsFromStorage({
-
     dairyId,
-
     storageId,
-
     itemIds
-
 }) {
-
-    // ======================================================
-    // VALIDATE IDS
-    // ======================================================
 
     const ids =
         validateItemIds(
@@ -814,19 +557,11 @@ async function omitItemsFromStorage({
         );
 
 
-    // ======================================================
-    // FIND FARM
-    // ======================================================
-
     const dairy =
         await findParentFarm(
             dairyId
         );
 
-
-    // ======================================================
-    // FIND STORAGE
-    // ======================================================
 
     const storage =
         await findStorageForFarm({
@@ -837,10 +572,6 @@ async function omitItemsFromStorage({
 
         });
 
-
-    // ======================================================
-    // VERIFY ITEMS CURRENTLY BELONG TO THIS STORAGE
-    // ======================================================
 
     const items =
         await Dairy.find({
@@ -858,10 +589,6 @@ async function omitItemsFromStorage({
         });
 
 
-    // ======================================================
-    // ALL SELECTED ITEMS MUST BELONG HERE
-    // ======================================================
-
     if (
         items.length !==
         ids.length
@@ -874,10 +601,6 @@ async function omitItemsFromStorage({
 
     }
 
-
-    // ======================================================
-    // REMOVE FROM STORAGE
-    // ======================================================
 
     const result =
         await Dairy.updateMany(
@@ -910,10 +633,6 @@ async function omitItemsFromStorage({
         );
 
 
-    // ======================================================
-    // RETURN
-    // ======================================================
-
     return {
 
         modifiedCount:
@@ -933,45 +652,19 @@ async function omitItemsFromStorage({
 // ==========================================================
 // RESHUFFLE ITEMS
 // ==========================================================
-//
-// PARAMETERS:
-//
-//     dairyId
-//     storageId
-//     targetStorageId
-//     itemIds
-//
-// OPERATION:
-//
-//     dwellNumber = targetStorage.roomNumber
-//
-// ==========================================================
 
 async function reshuffleItems({
-
     dairyId,
-
     storageId,
-
     targetStorageId,
-
     itemIds
-
 }) {
-
-    // ======================================================
-    // VALIDATE IDS
-    // ======================================================
 
     const ids =
         validateItemIds(
             itemIds
         );
 
-
-    // ======================================================
-    // VALIDATE TARGET STORAGE ID
-    // ======================================================
 
     if (
         !isValidObjectId(
@@ -987,19 +680,11 @@ async function reshuffleItems({
     }
 
 
-    // ======================================================
-    // FIND FARM
-    // ======================================================
-
     const dairy =
         await findParentFarm(
             dairyId
         );
 
-
-    // ======================================================
-    // FIND CURRENT STORAGE
-    // ======================================================
 
     const storage =
         await findStorageForFarm({
@@ -1010,10 +695,6 @@ async function reshuffleItems({
 
         });
 
-
-    // ======================================================
-    // FIND TARGET STORAGE
-    // ======================================================
 
     const targetStorage =
         await findStorageForFarm({
@@ -1026,9 +707,18 @@ async function reshuffleItems({
         });
 
 
-    // ======================================================
-    // TARGET MUST BE ACTIVE
-    // ======================================================
+    if (
+        storage.status !==
+        "active"
+    ) {
+
+        throw createError(
+            "The current storage facility is inactive.",
+            400
+        );
+
+    }
+
 
     if (
         targetStorage.status !==
@@ -1043,10 +733,6 @@ async function reshuffleItems({
     }
 
 
-    // ======================================================
-    // TARGET MUST BE DIFFERENT
-    // ======================================================
-
     if (
         String(targetStorage._id) ===
         String(storage._id)
@@ -1060,19 +746,9 @@ async function reshuffleItems({
     }
 
 
-    // ======================================================
-    // TARGET MUST HAVE SAME TYPE
-    // ======================================================
-    //
-    // Room → Room
-    //
-    // AgroStore → AgroStore
-    //
-    // ======================================================
-
     if (
-        targetStorage.type !==
-        storage.type
+        String(targetStorage.type) !==
+        String(storage.type)
     ) {
 
         throw createError(
@@ -1082,10 +758,6 @@ async function reshuffleItems({
 
     }
 
-
-    // ======================================================
-    // VERIFY SELECTED ITEMS ARE CURRENTLY HERE
-    // ======================================================
 
     const items =
         await Dairy.find({
@@ -1103,10 +775,6 @@ async function reshuffleItems({
         });
 
 
-    // ======================================================
-    // ALL SELECTED ITEMS MUST BELONG TO CURRENT STORAGE
-    // ======================================================
-
     if (
         items.length !==
         ids.length
@@ -1119,10 +787,6 @@ async function reshuffleItems({
 
     }
 
-
-    // ======================================================
-    // MOVE ITEMS
-    // ======================================================
 
     const result =
         await Dairy.updateMany(
@@ -1154,10 +818,6 @@ async function reshuffleItems({
 
         );
 
-
-    // ======================================================
-    // RETURN
-    // ======================================================
 
     return {
 
