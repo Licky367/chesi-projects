@@ -628,7 +628,7 @@
 
 
         <!-- ==================================================
-             FARM REFERENCE
+             FARM INFORMATION
              ================================================== -->
 
         <% if (dairy) { %>
@@ -824,9 +824,20 @@
                                 <!-- ==================================
                                      VIEW CONTENTS
                                      ================================== -->
+                                <!--
+                                    IMPORTANT:
+
+                                    This is NOT the parent farm ID.
+
+                                    item._id is the MongoDB _id of
+                                    THIS specific Room / AgroStore.
+
+                                    The contents page therefore
+                                    receives the storage facility ID.
+                                -->
 
                                 <a
-                                    href="/storage/<%= dairy._id %>/contents/<%= item.roomNumber %>"
+                                    href="/storage/contents/<%= item._id %>"
                                     class="view-storage-button"
                                 >
                                     View
