@@ -7,6 +7,7 @@
 //
 //     list.js
 //     add.js
+//     contents.js
 //
 // PUBLIC API:
 //
@@ -18,6 +19,7 @@
 //     getAgroStores
 //     getStorageFacility
 //     createStorage
+//     getStorageContents
 //
 // ==========================================================
 
@@ -28,17 +30,21 @@ const list =
 const add =
     require("./add");
 
+const contents =
+    require("./contents");
+
 
 // ==========================================================
 // EXPORT
 // ==========================================================
 //
-// Keep the exact same service API that the original
-// storageService.js exposed.
+// Keep the existing storage service API and add the
+// storage contents API.
 //
 // ==========================================================
 
 module.exports = {
+
 
     // ======================================================
     // LIST / READ
@@ -71,6 +77,14 @@ module.exports = {
     // ======================================================
 
     createStorage:
-        add.createStorage
+        add.createStorage,
+
+
+    // ======================================================
+    // CONTENTS
+    // ======================================================
+
+    getStorageContents:
+        contents.getStorageContents
 
 };
