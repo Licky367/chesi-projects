@@ -1,13 +1,22 @@
 <% /*
- * ======================================================
- * STORAGE MODE
- * ======================================================
+ * ==============================================================
+ * STORAGE CONTENTS
+ * ==============================================================
  *
- * AgroStore is identified by storage type.
+ * FILE:
+ *     views/storage/contents.ejs
  *
- * This is intentionally calculated here so the view
- * does not depend entirely on a virtual such as
- * storage.isAgroStore.
+ * PURPOSE:
+ *     Manage the contents of a Storage / Room.
+ *
+ * STORAGE MODES:
+ *     type === "feeds"  → AgroStore
+ *     anything else     → Normal Room
+ *
+ * IMPORTANT:
+ *     Existing form actions, IDs and controller variables are
+ *     intentionally preserved.
+ * ==============================================================
  */
 
 const isAgroStore =
@@ -15,334 +24,1748 @@ const isAgroStore =
     String(storage.type || "")
         .trim()
         .toLowerCase() === "feeds";
+
+const storageTitle =
+    storage.displayName ||
+    (isAgroStore
+        ? "AgroStore"
+        : `Room ${storage.roomNumber}`);
+
+const storageNumber = isAgroStore
+    ? Math.abs(storage.roomNumber)
+    : storage.roomNumber;
 %>
 
 
-<div class="contents-header-top">
+<style>
+
+/* ==============================================================
+   STORAGE CONTENTS — COREVESTER UI
+   ============================================================== */
+
+.storage-page{
+    width:100%;
+    max-width:1180px;
+    margin:0 auto;
+    padding:18px 18px 70px;
+    color:#17231d;
+}
+
+
+/* ==============================================================
+   HERO
+   ============================================================== */
+
+.storage-hero{
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:24px;
+
+    padding:28px 30px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #ffffff 0%,
+            #f8fbf8 70%,
+            #f1f7f2 100%
+        );
+
+    border:1px solid #e3ebe5;
+    border-radius:24px;
+
+    box-shadow:
+        0 8px 30px rgba(22,42,29,.06);
+}
+
+.storage-hero::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:0;
+    bottom:0;
+    width:6px;
+    background:#287a46;
+}
+
+.storage-hero::after{
+    content:"";
+    position:absolute;
+    width:190px;
+    height:190px;
+    right:-75px;
+    top:-95px;
+    border-radius:50%;
+    background:rgba(43,126,72,.045);
+    pointer-events:none;
+}
+
+.storage-hero-content{
+    position:relative;
+    z-index:1;
+}
+
+.storage-kicker{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:#5e7667;
+}
+
+.storage-kicker-dot{
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#2d804b;
+}
+
+.storage-hero h2{
+    margin:0;
+    font-size:clamp(25px,4vw,34px);
+    line-height:1.1;
+    font-weight:800;
+    letter-spacing:-.035em;
+    color:#15221a;
+}
+
+.storage-subtitle{
+    max-width:650px;
+    margin:9px 0 0;
 
-    <div>
+    font-size:14px;
+    line-height:1.65;
+    color:#69766f;
+}
 
-        <h2>
-            <%= storage.displayName || "Storage" %>
-        </h2>
+.back-storage{
+    position:relative;
+    z-index:2;
 
-        <p class="contents-subtitle">
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
 
-            <% if (isAgroStore) { %>
+    min-height:42px;
+    padding:0 16px;
 
-                Manage animal feeds and monitor
-                the quantity remaining in this AgroStore.
+    border:1px solid #dce6df;
+    border-radius:12px;
 
-            <% } else { %>
+    background:#fff;
+    color:#315440;
 
-                Manage items allocated to this Room.
+    font-size:13px;
+    font-weight:750;
+    text-decoration:none;
 
-            <% } %>
+    white-space:nowrap;
 
-        </p>
+    box-shadow:0 3px 10px rgba(20,40,28,.04);
 
-    </div>
+    transition:
+        transform .18s ease,
+        border-color .18s ease,
+        background .18s ease;
+}
 
+.back-storage:hover{
+    transform:translateY(-1px);
+    border-color:#b9d0c0;
+    background:#f8fbf9;
+}
 
-    <a
-        href="/storage/<%= dairy._id %>"
-        class="back-storage"
-    >
-        ← Back to Storage
-    </a>
 
-</div>
+/* ==============================================================
+   REFERENCE STRIP
+   ============================================================== */
 
+.storage-reference{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
 
-<div class="storage-reference">
+    margin-top:14px;
+}
 
-    <div class="reference-item">
+.reference-item{
+    min-width:0;
 
-        <span class="reference-label">
-            Farm
-        </span>
+    display:flex;
+    flex-direction:column;
+    gap:5px;
 
-        <span>
-            <%= dairy.name %>
-        </span>
+    padding:15px 17px;
 
-    </div>
+    background:#fff;
 
+    border:1px solid #e5ece7;
+    border-radius:16px;
 
-    <div class="reference-item">
+    box-shadow:0 4px 16px rgba(21,42,28,.035);
+}
 
-        <span class="reference-label">
-            Farm Code
-        </span>
+.reference-label{
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#89968f;
+}
 
-        <span>
-            <%= dairy.code %>
-        </span>
+.reference-item > span:last-child{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
 
-    </div>
+    font-size:14px;
+    font-weight:750;
+    color:#26382d;
+}
 
 
-    <div class="reference-item">
+/* ==============================================================
+   MESSAGES
+   ============================================================== */
 
-        <span class="reference-label">
+.storage-message{
+    display:flex;
+    align-items:center;
+    gap:10px;
 
-            <%= isAgroStore
-                ? "AgroStore Number"
-                : "Room Number"
-            %>
+    margin-top:14px;
+    padding:13px 16px;
 
-        </span>
+    border-radius:13px;
 
-        <span>
+    font-size:13px;
+    font-weight:650;
+}
 
-            <%= isAgroStore
-                ? Math.abs(storage.roomNumber)
-                : storage.roomNumber
-            %>
+.storage-success{
+    color:#22613a;
+    background:#f0f8f2;
+    border:1px solid #d5e9da;
+}
 
-        </span>
+.storage-success::before{
+    content:"✓";
+    display:flex;
+    align-items:center;
+    justify-content:center;
 
-    </div>
+    width:21px;
+    height:21px;
+    border-radius:50%;
 
-</div>
+    background:#dcefe0;
+    font-size:12px;
+}
 
+.storage-error{
+    color:#9a3e35;
+    background:#fff5f4;
+    border:1px solid #f0d9d6;
+}
 
-<% if (successMessage) { %>
+.storage-error::before{
+    content:"!";
+    display:flex;
+    align-items:center;
+    justify-content:center;
 
-    <div class="storage-message storage-success">
+    width:21px;
+    height:21px;
+    border-radius:50%;
 
-        <%= successMessage %>
+    background:#f8dfdc;
+    font-size:12px;
+}
 
-    </div>
 
-<% } %>
+/* ==============================================================
+   TABS
+   ============================================================== */
 
+.storage-tabs{
+    display:flex;
+    align-items:center;
+    gap:5px;
 
-<% if (pageError) { %>
+    width:max-content;
+    max-width:100%;
 
-    <div class="storage-message storage-error">
+    margin:24px auto 0;
+    padding:5px;
 
-        <%= pageError %>
+    background:#eef3ef;
+    border:1px solid #e1e9e3;
+    border-radius:14px;
+}
 
-    </div>
+.storage-tab{
+    min-height:39px;
+    padding:0 18px;
 
-<% } %>
+    border:0;
+    border-radius:10px;
 
+    background:transparent;
+    color:#6d7972;
 
+    font-size:13px;
+    font-weight:750;
 
-<button
-    type="button"
-    class="storage-tab <%= activeTab === "add" ? "" : "active" %>"
-    data-tab="view"
->
-    View Contents
-</button>
+    cursor:pointer;
 
+    transition:
+        background .18s ease,
+        color .18s ease,
+        box-shadow .18s ease;
+}
 
-<button
-    type="button"
-    class="storage-tab <%= activeTab === "add" ? "active" : "" %>"
-    data-tab="add"
->
-    Add Items
-</button>
+.storage-tab.active{
+    background:#fff;
+    color:#245e39;
 
+    box-shadow:
+        0 2px 8px rgba(22,43,29,.09);
+}
 
 
-<div class="contents-summary">
+/* ==============================================================
+   SUMMARY
+   ============================================================== */
 
-    <span>
+.contents-summary{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
 
-        <strong>
-            <%= itemCount %>
-        </strong>
+    margin:20px 0 12px;
+    padding:0 3px;
 
-        <%= itemCount === 1 ? "item" : "items" %>
+    color:#718078;
+    font-size:13px;
+}
 
-        currently stored
+.contents-summary strong{
+    color:#1f3427;
+    font-size:20px;
+    letter-spacing:-.03em;
+    margin-right:4px;
+}
 
-    </span>
 
-</div>
+/* ==============================================================
+   MANAGEMENT BAR
+   ============================================================== */
 
+.contents-management,
+.add-management{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
 
+    padding:12px 14px;
+    margin-bottom:14px;
 
-<% if (items && items.length > 0) { %>
+    background:#fff;
 
-    <!-- =================================================
-       NORMAL ROOM MANAGEMENT
-       =================================================
+    border:1px solid #e3ebe5;
+    border-radius:15px;
 
-       Only non-feed storage gets omit + reshuffle.
+    box-shadow:0 4px 14px rgba(22,43,29,.035);
+}
 
-       ================================================== -->
+.management-left,
+.management-right{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
 
-    <% if (!isAgroStore) { %>
+.select-all-wrapper{
+    display:flex;
+    align-items:center;
+    gap:9px;
 
+    color:#34473b;
+    font-size:13px;
+    font-weight:750;
 
-        <form
-            id="reshuffleForm"
-            method="POST"
-            action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/reshuffle"
-        >
+    cursor:pointer;
+}
 
-            <div class="contents-management">
+.select-all-wrapper input{
+    width:17px;
+    height:17px;
+    accent-color:#2b7d48;
+}
 
-                <div class="management-left">
+.selection-count{
+    padding:5px 9px;
 
-                    <label class="select-all-wrapper">
+    border-radius:8px;
 
-                        <input
-                            type="checkbox"
-                            id="selectAllContents"
-                        >
+    background:#f2f6f3;
+    color:#708078;
 
-                        Select All
+    font-size:11px;
+    font-weight:700;
+}
 
-                    </label>
+.storage-action-button{
+    min-height:37px;
+    padding:0 14px;
 
+    border:1px solid transparent;
+    border-radius:10px;
 
-                    <span
-                        id="contentsSelectionCount"
-                        class="selection-count"
-                    >
-                        0 selected
-                    </span>
+    font-size:12px;
+    font-weight:800;
 
-                </div>
+    cursor:pointer;
 
+    transition:
+        transform .16s ease,
+        box-shadow .16s ease,
+        opacity .16s ease;
+}
 
-                <div class="management-right">
+.storage-action-button:not(:disabled):hover{
+    transform:translateY(-1px);
+}
 
-                    <button
-                        type="button"
-                        id="openReshuffleButton"
-                        class="storage-action-button reshuffle-button"
-                        disabled
-                    >
-                        Reshuffle
-                    </button>
+.storage-action-button:disabled{
+    opacity:.42;
+    cursor:not-allowed;
+}
 
+.add-button{
+    background:#287847;
+    color:#fff;
 
-                    <button
-                        type="button"
-                        id="omitButton"
-                        class="storage-action-button omit-button"
-                        disabled
-                    >
-                        Omit Selected
-                    </button>
+    box-shadow:0 4px 12px rgba(40,120,71,.16);
+}
 
-                </div>
+.reshuffle-button{
+    background:#eef6f0;
+    border-color:#d5e5d9;
+    color:#27633b;
+}
+
+.omit-button{
+    background:#fff5f3;
+    border-color:#efdcd8;
+    color:#a34c40;
+}
+
+
+/* ==============================================================
+   RESHUFFLE PANEL
+   ============================================================== */
+
+.reshuffle-panel{
+    display:none;
+
+    margin:0 0 16px;
+    padding:20px;
+
+    border:1px solid #dbe8de;
+    border-radius:18px;
+
+    background:#f8fbf8;
+}
+
+.reshuffle-panel.open{
+    display:block;
+}
+
+.reshuffle-panel h3{
+    margin:0;
+
+    font-size:16px;
+    color:#22382a;
+}
+
+.reshuffle-panel > p{
+    margin:6px 0 17px;
+
+    color:#718078;
+    font-size:13px;
+    line-height:1.55;
+}
+
+.reshuffle-form{
+    display:flex;
+    align-items:flex-end;
+    gap:10px;
+}
+
+.reshuffle-select-group{
+    flex:1;
+}
+
+.reshuffle-select-group label{
+    display:block;
+    margin-bottom:6px;
+
+    font-size:11px;
+    font-weight:800;
+    color:#68766e;
+}
+
+.reshuffle-select{
+    width:100%;
+    height:40px;
+    padding:0 12px;
+
+    border:1px solid #d9e4dc;
+    border-radius:10px;
+
+    background:#fff;
+    color:#26382d;
+
+    outline:none;
+}
+
+
+/* ==============================================================
+   CONTENT CARDS
+   ============================================================== */
+
+.contents-list{
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+}
+
+.content-card{
+    position:relative;
+
+    display:grid;
+    grid-template-columns:auto 48px minmax(0,1fr);
+    align-items:start;
+    gap:14px;
+
+    padding:18px;
+
+    background:#fff;
+
+    border:1px solid #e3ebe5;
+    border-radius:18px;
+
+    box-shadow:
+        0 4px 16px rgba(21,42,28,.035);
+
+    transition:
+        border-color .18s ease,
+        box-shadow .18s ease,
+        transform .18s ease;
+}
+
+.content-card:hover{
+    transform:translateY(-1px);
+    border-color:#d0dfd4;
+    box-shadow:0 8px 24px rgba(21,42,28,.065);
+}
+
+.content-card.selected{
+    border-color:#8fbea0;
+    background:#fbfefc;
+}
+
+.content-checkbox{
+    padding-top:4px;
+}
+
+.content-checkbox input,
+.add-checkbox input{
+    width:17px;
+    height:17px;
+    accent-color:#2b7d48;
+    cursor:pointer;
+}
+
+.content-icon,
+.add-icon{
+    width:48px;
+    height:48px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:14px;
+
+    background:#f1f6f2;
+
+    font-size:22px;
+}
+
+.content-information{
+    min-width:0;
+}
+
+.content-title-row,
+.add-title{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    flex-wrap:wrap;
+}
+
+.content-title-row h3,
+.add-title h3{
+    margin:0;
+
+    color:#1c3023;
+
+    font-size:16px;
+    line-height:1.3;
+    font-weight:800;
+    letter-spacing:-.015em;
+}
+
+.content-type{
+    display:inline-flex;
+    align-items:center;
+
+    min-height:22px;
+    padding:0 8px;
+
+    border-radius:999px;
+
+    font-size:9px;
+    line-height:1;
+    font-weight:850;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+}
+
+.animal-type{
+    background:#edf6ef;
+    color:#317047;
+}
+
+.asset-type{
+    background:#f1f3f4;
+    color:#65716b;
+}
+
+.feed-type{
+    background:#eef7ef;
+    color:#2c7342;
+}
+
+.content-details,
+.add-details{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:9px;
+
+    margin-top:15px;
+}
+
+.content-detail,
+.add-detail{
+    min-width:0;
+
+    padding:9px 10px;
+
+    background:#f8faf8;
+    border-radius:10px;
+}
+
+.detail-label,
+.add-detail-label{
+    display:block;
+
+    margin-bottom:4px;
+
+    font-size:9px;
+    line-height:1.2;
+    font-weight:800;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:#8a968f;
+}
+
+.detail-value,
+.add-detail-value{
+    display:block;
+
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+
+    font-size:12px;
+    font-weight:700;
+    color:#34483b;
+}
+
+.status-active{
+    color:#2d7746;
+}
+
+.content-description{
+    margin:13px 0 0;
+
+    color:#68766e;
+
+    font-size:12px;
+    line-height:1.6;
+}
+
+.content-description strong{
+    color:#3c4f43;
+}
+
+
+/* ==============================================================
+   FEED QUANTITY PANEL
+   ============================================================== */
+
+.feed-quantity-section{
+    margin-top:17px;
+    padding:16px;
+
+    border:1px solid #dce9df;
+    border-radius:15px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f7fbf8,
+            #fbfdfb
+        );
+}
+
+.feed-quantity-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+
+    margin-bottom:13px;
+}
+
+.feed-quantity-title{
+    color:#3d5145;
+
+    font-size:11px;
+    font-weight:850;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+}
+
+.feed-current-quantity{
+    color:#23653a;
+
+    font-size:20px;
+    font-weight:850;
+    letter-spacing:-.03em;
+}
+
+.feed-unit{
+    margin-left:4px;
+
+    color:#718078;
+    font-size:11px;
+    font-weight:700;
+}
+
+.quantity-form{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 110px auto;
+    align-items:end;
+    gap:9px;
+}
+
+.quantity-field label{
+    display:block;
+    margin-bottom:6px;
+
+    font-size:10px;
+    font-weight:800;
+    color:#6c7971;
+}
+
+.quantity-input,
+.quantity-unit{
+    width:100%;
+    height:40px;
+
+    padding:0 11px;
+
+    border:1px solid #d7e3da;
+    border-radius:10px;
+
+    background:#fff;
+    color:#273a2e;
+
+    font-size:13px;
+    font-weight:650;
+
+    outline:none;
+
+    box-sizing:border-box;
+}
+
+.quantity-input:focus,
+.quantity-unit:focus,
+.reshuffle-select:focus{
+    border-color:#77a88a;
+    box-shadow:0 0 0 3px rgba(45,126,73,.08);
+}
+
+.quantity-save-button{
+    height:40px;
+    padding:0 17px;
+
+    border:0;
+    border-radius:10px;
+
+    background:#287847;
+    color:#fff;
+
+    font-size:12px;
+    font-weight:800;
+
+    cursor:pointer;
+
+    box-shadow:0 4px 12px rgba(40,120,71,.14);
+}
+
+.quantity-help{
+    margin:11px 0 0;
+
+    color:#89958e;
+
+    font-size:10px;
+    line-height:1.55;
+}
+
+
+/* ==============================================================
+   ADD SECTION
+   ============================================================== */
+
+.add-header{
+    margin:34px 0 15px;
+    padding-top:26px;
+
+    border-top:1px solid #e6ece8;
+}
+
+.add-header h3{
+    margin:0;
+
+    color:#1d3124;
+
+    font-size:21px;
+    font-weight:800;
+    letter-spacing:-.025em;
+}
+
+.add-header p{
+    max-width:700px;
+    margin:6px 0 0;
+
+    color:#718078;
+
+    font-size:13px;
+    line-height:1.6;
+}
+
+.add-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.add-card{
+    display:grid;
+    grid-template-columns:auto 42px minmax(0,1fr);
+    align-items:start;
+    gap:13px;
+
+    padding:15px 16px;
+
+    background:#fff;
+
+    border:1px solid #e4ebe6;
+    border-radius:16px;
+
+    transition:
+        border-color .18s ease,
+        background .18s ease,
+        box-shadow .18s ease;
+}
+
+.add-card:hover{
+    border-color:#cdddcf;
+    box-shadow:0 5px 17px rgba(21,42,28,.045);
+}
+
+.add-checkbox{
+    padding-top:4px;
+}
+
+.add-icon{
+    width:42px;
+    height:42px;
+
+    border-radius:12px;
+    font-size:19px;
+}
+
+.add-information{
+    min-width:0;
+}
+
+
+/* ==============================================================
+   EMPTY STATE
+   ============================================================== */
+
+.empty-contents{
+    display:flex;
+    align-items:center;
+    flex-direction:column;
+
+    margin-top:10px;
+    padding:48px 25px;
+
+    text-align:center;
+
+    background:#fbfcfb;
+
+    border:1px dashed #d8e2db;
+    border-radius:20px;
+}
+
+.empty-contents-icon{
+    width:58px;
+    height:58px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    margin-bottom:14px;
+
+    border-radius:18px;
+
+    background:#f0f6f1;
+
+    font-size:26px;
+}
+
+.empty-contents h3{
+    margin:0;
+
+    color:#2b3d32;
+
+    font-size:17px;
+    font-weight:800;
+}
+
+.empty-contents p{
+    max-width:480px;
+    margin:7px 0 0;
+
+    color:#7b8780;
+
+    font-size:13px;
+    line-height:1.65;
+}
+
+.empty-contents strong{
+    color:#4b5d52;
+}
+
+
+/* ==============================================================
+   RESPONSIVE
+   ============================================================== */
+
+@media (max-width:850px){
+
+    .storage-hero{
+        align-items:flex-start;
+        flex-direction:column;
+        padding:24px 22px;
+    }
+
+    .back-storage{
+        width:100%;
+    }
+
+    .storage-reference{
+        grid-template-columns:1fr;
+    }
+
+    .content-details,
+    .add-details{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .reshuffle-form{
+        align-items:stretch;
+        flex-direction:column;
+    }
+
+    .reshuffle-form .storage-action-button{
+        width:100%;
+    }
+}
+
+
+@media (max-width:620px){
+
+    .storage-page{
+        padding:12px 11px 50px;
+    }
+
+    .storage-hero{
+        border-radius:19px;
+        padding:21px 18px;
+    }
+
+    .storage-hero h2{
+        font-size:25px;
+    }
+
+    .storage-tabs{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+
+        width:100%;
+    }
+
+    .storage-tab{
+        width:100%;
+        padding:0 8px;
+    }
+
+    .contents-management,
+    .add-management{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .management-left,
+    .management-right{
+        width:100%;
+    }
+
+    .management-right{
+        justify-content:stretch;
+    }
+
+    .management-right .storage-action-button{
+        flex:1;
+    }
+
+    .content-card{
+        grid-template-columns:auto 42px minmax(0,1fr);
+        gap:10px;
+        padding:14px;
+        border-radius:16px;
+    }
+
+    .content-icon{
+        width:42px;
+        height:42px;
+        border-radius:12px;
+        font-size:19px;
+    }
+
+    .content-title-row h3,
+    .add-title h3{
+        font-size:14px;
+    }
+
+    .content-details,
+    .add-details{
+        grid-template-columns:1fr 1fr;
+        gap:7px;
+    }
+
+    .content-detail,
+    .add-detail{
+        padding:8px;
+    }
+
+    .quantity-form{
+        grid-template-columns:1fr 95px;
+    }
+
+    .quantity-save-button{
+        grid-column:1 / -1;
+        width:100%;
+    }
+
+    .feed-quantity-header{
+        align-items:flex-start;
+        flex-direction:column;
+        gap:4px;
+    }
+
+    .add-card{
+        grid-template-columns:auto 38px minmax(0,1fr);
+        gap:9px;
+        padding:13px;
+    }
+
+    .add-icon{
+        width:38px;
+        height:38px;
+    }
+}
+
+
+@media (max-width:420px){
+
+    .storage-reference{
+        gap:8px;
+    }
+
+    .reference-item{
+        padding:12px 13px;
+    }
+
+    .content-details,
+    .add-details{
+        grid-template-columns:1fr;
+    }
+
+    .management-right{
+        flex-direction:column;
+    }
+
+    .management-right .storage-action-button{
+        width:100%;
+    }
+
+    .quantity-form{
+        grid-template-columns:1fr;
+    }
+
+    .quantity-save-button{
+        grid-column:auto;
+    }
+}
+
+</style>
+
+
+<div class="storage-page">
+
+
+    <!-- ==========================================================
+         HERO
+         ========================================================== -->
+
+    <header class="storage-hero">
+
+        <div class="storage-hero-content">
+
+            <div class="storage-kicker">
+
+                <span class="storage-kicker-dot"></span>
+
+                <%= isAgroStore
+                    ? "AgroStore"
+                    : "Storage Room"
+                %>
 
             </div>
 
+            <h2>
+                <%= storageTitle %>
+            </h2>
+
+            <p class="storage-subtitle">
+
+                <% if (isAgroStore) { %>
+
+                    Manage animal feeds and monitor the
+                    quantity currently remaining in this AgroStore.
+
+                <% } else { %>
+
+                    Manage animals, equipment and other assets
+                    allocated to this storage room.
+
+                <% } %>
+
+            </p>
+
+        </div>
 
 
-            <!-- ==========================================
-               RESHUFFLE PANEL
-               =========================================== -->
+        <a
+            href="/storage/<%= dairy._id %>"
+            class="back-storage"
+        >
+            <span>←</span>
+            Back to Storage
+        </a>
 
-            <div
-                id="reshufflePanel"
-                class="reshuffle-panel"
+    </header>
+
+
+
+    <!-- ==========================================================
+         REFERENCE INFORMATION
+         ========================================================== -->
+
+    <div class="storage-reference">
+
+        <div class="reference-item">
+
+            <span class="reference-label">
+                Farm
+            </span>
+
+            <span>
+                <%= dairy.name %>
+            </span>
+
+        </div>
+
+
+        <div class="reference-item">
+
+            <span class="reference-label">
+                Farm Code
+            </span>
+
+            <span>
+                <%= dairy.code %>
+            </span>
+
+        </div>
+
+
+        <div class="reference-item">
+
+            <span class="reference-label">
+
+                <%= isAgroStore
+                    ? "AgroStore Number"
+                    : "Room Number"
+                %>
+
+            </span>
+
+            <span>
+                <%= storageNumber %>
+            </span>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ==========================================================
+         MESSAGES
+         ========================================================== -->
+
+    <% if (successMessage) { %>
+
+        <div class="storage-message storage-success">
+            <%= successMessage %>
+        </div>
+
+    <% } %>
+
+
+    <% if (pageError) { %>
+
+        <div class="storage-message storage-error">
+            <%= pageError %>
+        </div>
+
+    <% } %>
+
+
+
+    <!-- ==========================================================
+         CONTENT TABS
+         ========================================================== -->
+
+    <div class="storage-tabs">
+
+        <button
+            type="button"
+            class="storage-tab <%= activeTab === "add" ? "" : "active" %>"
+            data-tab="view"
+        >
+            View Contents
+        </button>
+
+
+        <button
+            type="button"
+            class="storage-tab <%= activeTab === "add" ? "active" : "" %>"
+            data-tab="add"
+        >
+            Add Items
+        </button>
+
+    </div>
+
+
+
+    <!-- ==========================================================
+         CONTENT SUMMARY
+         ========================================================== -->
+
+    <div class="contents-summary">
+
+        <span>
+
+            <strong>
+                <%= itemCount %>
+            </strong>
+
+            <%= itemCount === 1 ? "item" : "items" %>
+            currently stored
+
+        </span>
+
+    </div>
+
+
+
+    <!-- ==========================================================
+         CURRENT CONTENTS
+         ========================================================== -->
+
+    <% if (items && items.length > 0) { %>
+
+
+        <% if (!isAgroStore) { %>
+
+
+            <!-- ==================================================
+                 NORMAL ROOM MANAGEMENT
+                 ================================================== -->
+
+            <form
+                id="reshuffleForm"
+                method="POST"
+                action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/reshuffle"
             >
 
-                <h3>
-                    Reshuffle Selected Items
-                </h3>
 
+                <div class="contents-management">
 
-                <p>
-                    Move the selected items to another
-                    active Room on this farm.
-                </p>
+                    <div class="management-left">
 
+                        <label class="select-all-wrapper">
 
-                <div class="reshuffle-form">
+                            <input
+                                type="checkbox"
+                                id="selectAllContents"
+                            >
 
-                    <div class="reshuffle-select-group">
+                            <span>Select All</span>
 
-                        <label for="destinationStorage">
-                            Destination
                         </label>
 
 
-                        <select
-                            id="destinationStorage"
-                            name="targetStorageId"
-                            class="reshuffle-select"
+                        <span
+                            id="contentsSelectionCount"
+                            class="selection-count"
                         >
-
-                            <option value="">
-                                Select destination...
-                            </option>
-
-
-                            <% if (
-                                targetStorages &&
-                                targetStorages.length > 0
-                            ) { %>
-
-                                <% targetStorages.forEach(
-                                    function(destination)
-                                { %>
-
-                                    <option
-                                        value="<%= destination._id %>"
-                                    >
-
-                                        <%= destination.displayName ||
-                                            `Room ${destination.roomNumber}`
-                                        %>
-
-                                    </option>
-
-                                <% }); %>
-
-                            <% } else { %>
-
-                                <option
-                                    value=""
-                                    disabled
-                                >
-                                    No other Rooms available
-                                </option>
-
-                            <% } %>
-
-                        </select>
+                            0 selected
+                        </span>
 
                     </div>
 
 
-                    <button
-                        type="submit"
-                        id="reshuffleSubmitButton"
-                        class="storage-action-button add-button"
-                        disabled
-                    >
-                        Reshuffle Selected
-                    </button>
+                    <div class="management-right">
+
+                        <button
+                            type="button"
+                            id="openReshuffleButton"
+                            class="storage-action-button reshuffle-button"
+                            disabled
+                        >
+                            Reshuffle
+                        </button>
 
 
-                    <button
-                        type="button"
-                        id="cancelReshuffleButton"
-                        class="storage-action-button omit-button"
-                    >
-                        Cancel
-                    </button>
+                        <button
+                            type="button"
+                            id="omitButton"
+                            class="storage-action-button omit-button"
+                            disabled
+                        >
+                            Omit Selected
+                        </button>
+
+                    </div>
 
                 </div>
 
-            </div>
+
+
+                <!-- ==================================================
+                     RESHUFFLE PANEL
+                     ================================================== -->
+
+                <div
+                    id="reshufflePanel"
+                    class="reshuffle-panel"
+                >
+
+                    <h3>
+                        Reshuffle Selected Items
+                    </h3>
+
+
+                    <p>
+                        Move the selected items to another active
+                        room on this farm.
+                    </p>
+
+
+                    <div class="reshuffle-form">
+
+                        <div class="reshuffle-select-group">
+
+                            <label for="destinationStorage">
+                                Destination
+                            </label>
+
+
+                            <select
+                                id="destinationStorage"
+                                name="targetStorageId"
+                                class="reshuffle-select"
+                            >
+
+                                <option value="">
+                                    Select destination...
+                                </option>
+
+
+                                <% if (
+                                    targetStorages &&
+                                    targetStorages.length > 0
+                                ) { %>
+
+                                    <% targetStorages.forEach(
+                                        function(destination)
+                                    { %>
+
+                                        <option
+                                            value="<%= destination._id %>"
+                                        >
+
+                                            <%= destination.displayName ||
+                                                `Room ${destination.roomNumber}`
+                                            %>
+
+                                        </option>
+
+                                    <% }); %>
+
+                                <% } else { %>
+
+                                    <option
+                                        value=""
+                                        disabled
+                                    >
+                                        No other Rooms available
+                                    </option>
+
+                                <% } %>
+
+                            </select>
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            id="reshuffleSubmitButton"
+                            class="storage-action-button add-button"
+                            disabled
+                        >
+                            Reshuffle Selected
+                        </button>
+
+
+                        <button
+                            type="button"
+                            id="cancelReshuffleButton"
+                            class="storage-action-button omit-button"
+                        >
+                            Cancel
+                        </button>
+
+                    </div>
+
+                </div>
 
 
 
-            <!-- ==========================================
-               ROOM CONTENTS
-               =========================================== -->
+                <!-- ==================================================
+                     ROOM CONTENTS
+                     ================================================== -->
+
+                <div class="contents-list">
+
+                    <% items.forEach(function(item) { %>
+
+                        <%
+                            const isAnimal =
+                                item.code !== null &&
+                                item.code !== undefined &&
+                                Number(item.code) > 0;
+                        %>
+
+
+                        <div
+                            class="content-card"
+                            data-item-id="<%= item._id %>"
+                        >
+
+                            <div class="content-checkbox">
+
+                                <input
+                                    type="checkbox"
+                                    class="content-item-checkbox"
+                                    name="itemIds"
+                                    value="<%= item._id %>"
+                                >
+
+                            </div>
+
+
+                            <div class="content-icon">
+
+                                <%= isAnimal ? "🐄" : "🔧" %>
+
+                            </div>
+
+
+                            <div class="content-information">
+
+                                <div class="content-title-row">
+
+                                    <h3>
+                                        <%= item.name || "Unnamed Item" %>
+                                    </h3>
+
+
+                                    <span
+                                        class="content-type <%= isAnimal
+                                            ? "animal-type"
+                                            : "asset-type"
+                                        %>"
+                                    >
+
+                                        <%= isAnimal
+                                            ? "Animal"
+                                            : "Asset"
+                                        %>
+
+                                    </span>
+
+                                </div>
+
+
+
+                                <div class="content-details">
+
+                                    <div class="content-detail">
+
+                                        <span class="detail-label">
+                                            Code
+                                        </span>
+
+                                        <span class="detail-value">
+                                            <%= item.code ?? "—" %>
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="content-detail">
+
+                                        <span class="detail-label">
+                                            Type
+                                        </span>
+
+                                        <span class="detail-value">
+                                            <%= item.type || "—" %>
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="content-detail">
+
+                                        <span class="detail-label">
+                                            Status
+                                        </span>
+
+                                        <span class="detail-value status-active">
+                                            <%= item.status || "—" %>
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="content-detail">
+
+                                        <span class="detail-label">
+                                            Dwell Number
+                                        </span>
+
+                                        <span class="detail-value">
+                                            <%= item.dwellNumber ?? "—" %>
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="content-detail">
+
+                                        <span class="detail-label">
+                                            Condition
+                                        </span>
+
+                                        <span class="detail-value">
+                                            <%= item.condition || "—" %>
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="content-detail">
+
+                                        <span class="detail-label">
+                                            Quantity
+                                        </span>
+
+                                        <span class="detail-value">
+
+                                            <%= Number(
+                                                item.quantity || 0
+                                            ).toLocaleString() %>
+
+                                            <%= item.unit || "unit" %>
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="content-detail">
+
+                                        <span class="detail-label">
+                                            Current Worth
+                                        </span>
+
+                                        <span class="detail-value">
+
+                                            <%= Number(
+                                                item.currentWorth || 0
+                                            ).toLocaleString() %>
+
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+
+
+                                <% if (isAnimal) { %>
+
+                                    <p class="content-description">
+
+                                        <strong>Gender:</strong>
+                                        <%= item.gender || "—" %>
+
+                                        &nbsp; • &nbsp;
+
+                                        <strong>Age:</strong>
+                                        <%= item.ageText || "—" %>
+
+                                        &nbsp; • &nbsp;
+
+                                        <strong>Milking:</strong>
+                                        <%= item.isMilking ? "Yes" : "No" %>
+
+                                    </p>
+
+                                <% } %>
+
+
+                                <% if (item.description) { %>
+
+                                    <p class="content-description">
+                                        <%= item.description %>
+                                    </p>
+
+                                <% } %>
+
+                            </div>
+
+                        </div>
+
+                    <% }); %>
+
+                </div>
+
+            </form>
+
+
+
+            <!-- ==================================================
+                 HIDDEN OMIT FORM
+                 ================================================== -->
+
+            <form
+                id="omitForm"
+                method="POST"
+                action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/omit"
+                style="display:none;"
+            >
+
+                <div id="omitInputs"></div>
+
+            </form>
+
+
+
+        <% } else { %>
+
+
+            <!-- ==================================================
+                 AGROSTORE CONTENTS
+                 ================================================== -->
 
             <div class="contents-list">
 
@@ -353,29 +1776,8 @@ const isAgroStore =
                         data-item-id="<%= item._id %>"
                     >
 
-                        <div class="content-checkbox">
-
-                            <input
-                                type="checkbox"
-                                class="content-item-checkbox"
-                                name="itemIds"
-                                value="<%= item._id %>"
-                            >
-
-                        </div>
-
-
                         <div class="content-icon">
-
-                            <%= (
-                                item.code !== null &&
-                                item.code !== undefined &&
-                                Number(item.code) > 0
-                            )
-                                ? "🐄"
-                                : "🔧"
-                            %>
-
+                            🌾
                         </div>
 
 
@@ -384,30 +1786,12 @@ const isAgroStore =
                             <div class="content-title-row">
 
                                 <h3>
-                                    <%= item.name || "Unnamed Item" %>
+                                    <%= item.name || "Unnamed Feed" %>
                                 </h3>
 
 
-                                <span
-                                    class="content-type <%= (
-                                        item.code !== null &&
-                                        item.code !== undefined &&
-                                        Number(item.code) > 0
-                                    )
-                                        ? "animal-type"
-                                        : "asset-type"
-                                    %>"
-                                >
-
-                                    <%= (
-                                        item.code !== null &&
-                                        item.code !== undefined &&
-                                        Number(item.code) > 0
-                                    )
-                                        ? "Animal"
-                                        : "Asset"
-                                    %>
-
+                                <span class="content-type feed-type">
+                                    Feed
                                 </span>
 
                             </div>
@@ -432,11 +1816,11 @@ const isAgroStore =
                                 <div class="content-detail">
 
                                     <span class="detail-label">
-                                        Type
+                                        Feed Type
                                     </span>
 
                                     <span class="detail-value">
-                                        <%= item.type || "—" %>
+                                        <%= item.type || "feeds" %>
                                     </span>
 
                                 </div>
@@ -450,32 +1834,6 @@ const isAgroStore =
 
                                     <span class="detail-value status-active">
                                         <%= item.status || "—" %>
-                                    </span>
-
-                                </div>
-
-
-                                <div class="content-detail">
-
-                                    <span class="detail-label">
-                                        Dwell Number
-                                    </span>
-
-                                    <span class="detail-value">
-                                        <%= item.dwellNumber ?? "—" %>
-                                    </span>
-
-                                </div>
-
-
-                                <div class="content-detail">
-
-                                    <span class="detail-label">
-                                        Condition
-                                    </span>
-
-                                    <span class="detail-value">
-                                        <%= item.condition || "—" %>
                                     </span>
 
                                 </div>
@@ -499,51 +1857,177 @@ const isAgroStore =
 
                                 </div>
 
+                            </div>
 
-                                <div class="content-detail">
 
-                                    <span class="detail-label">
-                                        Current Worth
+
+                            <!-- ======================================
+                                 FEED QUANTITY
+                                 ====================================== -->
+
+                            <div class="feed-quantity-section">
+
+                                <div class="feed-quantity-header">
+
+                                    <span class="feed-quantity-title">
+                                        Quantity Remaining
                                     </span>
 
-                                    <span class="detail-value">
 
-                                        <%= Number(
-                                            item.currentWorth || 0
-                                        ).toLocaleString() %>
+                                    <span>
+
+                                        <span class="feed-current-quantity">
+
+                                            <%= Number(
+                                                item.quantity || 0
+                                            ).toLocaleString() %>
+
+                                        </span>
+
+
+                                        <span class="feed-unit">
+                                            <%= item.unit || "unit" %>
+                                        </span>
 
                                     </span>
 
                                 </div>
 
-                            </div>
+
+
+                                <form
+                                    class="quantity-form"
+                                    method="POST"
+                                    action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/quantity"
+                                    data-feed-quantity-form
+                                >
+
+                                    <input
+                                        type="hidden"
+                                        name="itemId"
+                                        value="<%= item._id %>"
+                                    >
+
+
+                                    <div class="quantity-field">
+
+                                        <label
+                                            for="quantity-<%= item._id %>"
+                                        >
+                                            New Remaining Quantity
+                                        </label>
+
+
+                                        <input
+                                            id="quantity-<%= item._id %>"
+                                            class="quantity-input"
+                                            type="number"
+                                            name="quantity"
+                                            min="0"
+                                            max="<%= Number(item.quantity || 0) %>"
+                                            step="any"
+                                            value="<%= item.quantity ?? 0 %>"
+                                            required
+                                        >
+
+                                    </div>
 
 
 
-                            <% if (
-                                item.code !== null &&
-                                item.code !== undefined &&
-                                Number(item.code) > 0
-                            ) { %>
+                                    <select
+                                        class="quantity-unit"
+                                        name="unit"
+                                        aria-label="Feed unit"
+                                    >
 
-                                <p class="content-description">
+                                        <%
+                                            const currentUnit =
+                                                String(
+                                                    item.unit || ""
+                                                )
+                                                .trim()
+                                                .toLowerCase();
+                                        %>
 
-                                    <strong>Gender:</strong>
-                                    <%= item.gender || "—" %>
 
-                                    &nbsp; • &nbsp;
+                                        <option
+                                            value="kg"
+                                            <%= currentUnit === "kg"
+                                                ? "selected"
+                                                : "" %>
+                                        >
+                                            kg
+                                        </option>
 
-                                    <strong>Age:</strong>
-                                    <%= item.ageText || "—" %>
 
-                                    &nbsp; • &nbsp;
+                                        <option
+                                            value="bales"
+                                            <%= currentUnit === "bales"
+                                                ? "selected"
+                                                : "" %>
+                                        >
+                                            bales
+                                        </option>
 
-                                    <strong>Milking:</strong>
-                                    <%= item.isMilking ? "Yes" : "No" %>
+
+                                        <option
+                                            value="bags"
+                                            <%= currentUnit === "bags"
+                                                ? "selected"
+                                                : "" %>
+                                        >
+                                            bags
+                                        </option>
+
+
+                                        <option
+                                            value="litres"
+                                            <%= currentUnit === "litres"
+                                                ? "selected"
+                                                : "" %>
+                                        >
+                                            litres
+                                        </option>
+
+
+                                        <option
+                                            value="units"
+                                            <%= currentUnit === "units"
+                                                ? "selected"
+                                                : "" %>
+                                        >
+                                            units
+                                        </option>
+
+                                    </select>
+
+
+
+                                    <button
+                                        type="submit"
+                                        class="quantity-save-button"
+                                    >
+                                        Save
+                                    </button>
+
+                                </form>
+
+
+
+                                <p class="quantity-help">
+
+                                    Record the amount currently remaining.
+                                    The quantity can only be reduced from
+                                    the amount currently stored.
+
+                                    Setting the quantity to
+                                    <strong>0</strong>
+                                    automatically removes this feed
+                                    from the AgroStore.
 
                                 </p>
 
-                            <% } %>
+                            </div>
 
 
 
@@ -563,662 +2047,22 @@ const isAgroStore =
 
             </div>
 
-        </form>
-
-
-
-        <!-- ==========================================
-           HIDDEN OMIT FORM
-           =========================================== -->
-
-        <form
-            id="omitForm"
-            method="POST"
-            action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/omit"
-            style="display:none;"
-        >
-
-            <div id="omitInputs"></div>
-
-        </form>
-
-
-
-    <% } else { %>
-
-
-        <!-- =================================================
-           AGROSTORE CONTENTS
-           =================================================
-
-           NO OMIT
-           NO RESHUFFLE
-
-           ================================================== -->
-
-        <div class="contents-list">
-
-            <% items.forEach(function(item) { %>
-
-                <div
-                    class="content-card"
-                    data-item-id="<%= item._id %>"
-                >
-
-                    <div class="content-icon">
-                        🌾
-                    </div>
-
-
-                    <div class="content-information">
-
-                        <div class="content-title-row">
-
-                            <h3>
-                                <%= item.name || "Unnamed Feed" %>
-                            </h3>
-
-
-                            <span class="content-type feed-type">
-                                Feed
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="content-details">
-
-                            <div class="content-detail">
-
-                                <span class="detail-label">
-                                    Code
-                                </span>
-
-                                <span class="detail-value">
-                                    <%= item.code ?? "—" %>
-                                </span>
-
-                            </div>
-
-
-                            <div class="content-detail">
-
-                                <span class="detail-label">
-                                    Feed Type
-                                </span>
-
-                                <span class="detail-value">
-                                    <%= item.type || "feeds" %>
-                                </span>
-
-                            </div>
-
-
-                            <div class="content-detail">
-
-                                <span class="detail-label">
-                                    Status
-                                </span>
-
-                                <span class="detail-value status-active">
-                                    <%= item.status || "—" %>
-                                </span>
-
-                            </div>
-
-
-                            <div class="content-detail">
-
-                                <span class="detail-label">
-                                    Quantity
-                                </span>
-
-                                <span class="detail-value">
-
-                                    <%= Number(
-                                        item.quantity || 0
-                                    ).toLocaleString() %>
-
-                                    <%= item.unit || "unit" %>
-
-                                </span>
-
-                            </div>
-
-                        </div>
-
-
-
-                        <!-- =================================
-                           QUANTITY
-                           ================================== -->
-
-                        <div class="feed-quantity-section">
-
-                            <div class="feed-quantity-header">
-
-                                <span class="feed-quantity-title">
-                                    Quantity Remaining
-                                </span>
-
-
-                                <span>
-
-                                    <span class="feed-current-quantity">
-
-                                        <%= Number(
-                                            item.quantity || 0
-                                        ).toLocaleString() %>
-
-                                    </span>
-
-
-                                    <span class="feed-unit">
-                                        <%= item.unit || "unit" %>
-                                    </span>
-
-                                </span>
-
-                            </div>
-
-
-
-                            <form
-                                class="quantity-form"
-                                method="POST"
-                                action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/quantity"
-                                data-feed-quantity-form
-                            >
-
-                                <input
-                                    type="hidden"
-                                    name="itemId"
-                                    value="<%= item._id %>"
-                                >
-
-
-
-                                <div class="quantity-field">
-
-                                    <label
-                                        for="quantity-<%= item._id %>"
-                                    >
-                                        New Remaining Quantity
-                                    </label>
-
-
-                                    <input
-                                        id="quantity-<%= item._id %>"
-                                        class="quantity-input"
-                                        type="number"
-                                        name="quantity"
-                                        min="0"
-                                        max="<%= Number(item.quantity || 0) %>"
-                                        step="any"
-                                        value="<%= item.quantity ?? 0 %>"
-                                        required
-                                    >
-
-                                </div>
-
-
-
-                                <select
-                                    class="quantity-unit"
-                                    name="unit"
-                                    aria-label="Feed unit"
-                                >
-
-                                    <%
-                                        const currentUnit =
-                                            String(
-                                                item.unit || ""
-                                            )
-                                            .trim()
-                                            .toLowerCase();
-                                    %>
-
-
-                                    <option
-                                        value="kg"
-                                        <%= currentUnit === "kg"
-                                            ? "selected"
-                                            : "" %>
-                                    >
-                                        kg
-                                    </option>
-
-
-                                    <option
-                                        value="bales"
-                                        <%= currentUnit === "bales"
-                                            ? "selected"
-                                            : "" %>
-                                    >
-                                        bales
-                                    </option>
-
-
-                                    <option
-                                        value="bags"
-                                        <%= currentUnit === "bags"
-                                            ? "selected"
-                                            : "" %>
-                                    >
-                                        bags
-                                    </option>
-
-
-                                    <option
-                                        value="litres"
-                                        <%= currentUnit === "litres"
-                                            ? "selected"
-                                            : "" %>
-                                    >
-                                        litres
-                                    </option>
-
-
-                                    <option
-                                        value="units"
-                                        <%= currentUnit === "units"
-                                            ? "selected"
-                                            : "" %>
-                                    >
-                                        units
-                                    </option>
-
-                                </select>
-
-
-
-                                <button
-                                    type="submit"
-                                    class="quantity-save-button"
-                                >
-                                    Save
-                                </button>
-
-                            </form>
-
-
-
-                            <p class="quantity-help">
-
-                                Record the amount currently remaining.
-
-                                The quantity can only be reduced from
-                                the amount currently stored.
-
-                                Setting the quantity to
-                                <strong>0</strong>
-                                automatically removes this feed from
-                                the AgroStore.
-
-                            </p>
-
-                        </div>
-
-
-
-                        <% if (item.description) { %>
-
-                            <p class="content-description">
-                                <%= item.description %>
-                            </p>
-
-                        <% } %>
-
-                    </div>
-
-                </div>
-
-            <% }); %>
-
-        </div>
-
-    <% } %>
-
-
-
-<% } else { %>
-
-
-    <!-- =================================================
-       EMPTY
-       ================================================== -->
-
-    <div class="empty-contents">
-
-        <div class="empty-contents-icon">
-
-            <%= isAgroStore ? "🌾" : "🏠" %>
-
-        </div>
-
-
-        <h3>
-
-            <%= isAgroStore
-                ? "AgroStore is Empty"
-                : "No Items Found"
-            %>
-
-        </h3>
-
-
-        <p>
-
-            <% if (isAgroStore) { %>
-
-                There are currently no feeds with remaining
-                quantity in
-
-                <strong>
-                    <%= storage.displayName %>
-                </strong>.
-
-            <% } else { %>
-
-                There are currently no items allocated to
-
-                <strong>
-                    <%= storage.displayName %>
-                </strong>.
-
-            <% } %>
-
-        </p>
-
-    </div>
-
-
-<% } %>
-
-
-
-<div class="add-header">
-
-    <h3>
-
-        Add Items to
-        <%= storage.displayName || "Storage" %>
-
-    </h3>
-
-
-    <p>
-
-        <% if (isAgroStore) { %>
-
-            Select feeds belonging to this farm that are
-            currently not allocated to a storage facility.
-
-        <% } else { %>
-
-            Select animals or assets belonging to this farm
-            that are currently unallocated.
-
         <% } %>
 
-    </p>
-
-</div>
-
-
-
-<form
-    method="POST"
-    action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add"
-    id="addItemsForm"
->
-
-
-    <% if (
-        availableItems &&
-        availableItems.length > 0
-    ) { %>
-
-
-        <div class="add-management">
-
-            <div class="management-left">
-
-                <label class="select-all-wrapper">
-
-                    <input
-                        type="checkbox"
-                        id="selectAllAddItems"
-                    >
-
-                    Select All
-
-                </label>
-
-
-                <span
-                    id="addSelectionCount"
-                    class="selection-count"
-                >
-                    0 selected
-                </span>
-
-            </div>
-
-
-            <div class="management-right">
-
-                <button
-                    type="submit"
-                    id="addSelectedButton"
-                    class="storage-action-button add-button"
-                    disabled
-                >
-                    Add Selected
-                </button>
-
-            </div>
-
-        </div>
-
-
-
-        <div class="add-list">
-
-            <% availableItems.forEach(function(item) { %>
-
-                <div
-                    class="add-card"
-                    data-add-item-id="<%= item._id %>"
-                >
-
-                    <div class="add-checkbox">
-
-                        <input
-                            type="checkbox"
-                            class="add-item-checkbox"
-                            name="itemIds"
-                            value="<%= item._id %>"
-                        >
-
-                    </div>
-
-
-                    <div class="add-icon">
-
-                        <%= isAgroStore
-                            ? "🌾"
-                            : (
-                                item.code !== null &&
-                                item.code !== undefined &&
-                                Number(item.code) > 0
-                            )
-                                ? "🐄"
-                                : "🔧"
-                        %>
-
-                    </div>
-
-
-                    <div class="add-information">
-
-                        <div class="add-title">
-
-                            <h3>
-                                <%= item.name || "Unnamed Item" %>
-                            </h3>
-
-
-                            <span
-                                class="content-type <%= isAgroStore
-                                    ? "feed-type"
-                                    : (
-                                        item.code !== null &&
-                                        item.code !== undefined &&
-                                        Number(item.code) > 0
-                                    )
-                                        ? "animal-type"
-                                        : "asset-type"
-                                %>"
-                            >
-
-                                <%= isAgroStore
-                                    ? "Feed"
-                                    : (
-                                        item.code !== null &&
-                                        item.code !== undefined &&
-                                        Number(item.code) > 0
-                                    )
-                                        ? "Animal"
-                                        : "Asset"
-                                %>
-
-                            </span>
-
-                        </div>
-
-
-
-                        <div class="add-details">
-
-                            <div class="add-detail">
-
-                                <span class="add-detail-label">
-                                    Asset Code
-                                </span>
-
-                                <span class="add-detail-value">
-
-                                    <%= item.assetCode ||
-                                        item.code ||
-                                        "—"
-                                    %>
-
-                                </span>
-
-                            </div>
-
-
-                            <div class="add-detail">
-
-                                <span class="add-detail-label">
-                                    Type
-                                </span>
-
-                                <span class="add-detail-value">
-                                    <%= item.type || "—" %>
-                                </span>
-
-                            </div>
-
-
-                            <div class="add-detail">
-
-                                <span class="add-detail-label">
-                                    Status
-                                </span>
-
-                                <span class="add-detail-value">
-                                    <%= item.status || "—" %>
-                                </span>
-
-                            </div>
-
-
-                            <div class="add-detail">
-
-                                <span class="add-detail-label">
-                                    Dwell Number
-                                </span>
-
-                                <span class="add-detail-value">
-                                    —
-                                </span>
-
-                            </div>
-
-
-                            <div class="add-detail">
-
-                                <span class="add-detail-label">
-                                    Quantity
-                                </span>
-
-                                <span class="add-detail-value">
-
-                                    <%= Number(
-                                        item.quantity || 0
-                                    ).toLocaleString() %>
-
-                                    <%= item.unit || "unit" %>
-
-                                </span>
-
-                            </div>
-
-
-                            <% if (isAgroStore) { %>
-
-                                <div class="add-detail">
-
-                                    <span class="add-detail-label">
-                                        Available Quantity
-                                    </span>
-
-                                    <span class="add-detail-value">
-
-                                        <%= Number(
-                                            item.quantity || 0
-                                        ).toLocaleString() %>
-
-                                        <%= item.unit || "unit" %>
-
-                                    </span>
-
-                                </div>
-
-                            <% } %>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            <% }); %>
-
-        </div>
 
 
     <% } else { %>
 
+
+        <!-- ==========================================================
+             EMPTY CURRENT CONTENTS
+             ========================================================== -->
 
         <div class="empty-contents">
 
             <div class="empty-contents-icon">
 
-                <%= isAgroStore ? "🌾" : "📦" %>
+                <%= isAgroStore ? "🌾" : "🏠" %>
 
             </div>
 
@@ -1226,8 +2070,8 @@ const isAgroStore =
             <h3>
 
                 <%= isAgroStore
-                    ? "No Feeds Available"
-                    : "No Items Available"
+                    ? "AgroStore is Empty"
+                    : "No Items Found"
                 %>
 
             </h3>
@@ -1237,13 +2081,55 @@ const isAgroStore =
 
                 <% if (isAgroStore) { %>
 
-                    There are currently no unallocated feed
-                    items belonging to this farm.
+                    There are currently no feeds with remaining
+                    quantity in
+
+                    <strong>
+                        <%= storageTitle %>
+                    </strong>.
 
                 <% } else { %>
 
-                    There are currently no unallocated items
-                    belonging to this farm.
+                    There are currently no items allocated to
+
+                    <strong>
+                        <%= storageTitle %>
+                    </strong>.
+
+                <% } %>
+
+            </p>
+
+        </div>
+
+    <% } %>
+
+
+
+    <!-- ==========================================================
+         ADD ITEMS
+         ========================================================== -->
+
+    <section class="add-section">
+
+        <div class="add-header">
+
+            <h3>
+                Add Items to <%= storageTitle %>
+            </h3>
+
+
+            <p>
+
+                <% if (isAgroStore) { %>
+
+                    Select feeds belonging to this farm that are
+                    currently not allocated to a storage facility.
+
+                <% } else { %>
+
+                    Select animals or assets belonging to this farm
+                    that are currently unallocated.
 
                 <% } %>
 
@@ -1252,7 +2138,296 @@ const isAgroStore =
         </div>
 
 
-    <% } %>
+
+        <form
+            method="POST"
+            action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add"
+            id="addItemsForm"
+        >
 
 
-</form>
+            <% if (
+                availableItems &&
+                availableItems.length > 0
+            ) { %>
+
+
+                <div class="add-management">
+
+                    <div class="management-left">
+
+                        <label class="select-all-wrapper">
+
+                            <input
+                                type="checkbox"
+                                id="selectAllAddItems"
+                            >
+
+                            <span>Select All</span>
+
+                        </label>
+
+
+                        <span
+                            id="addSelectionCount"
+                            class="selection-count"
+                        >
+                            0 selected
+                        </span>
+
+                    </div>
+
+
+                    <div class="management-right">
+
+                        <button
+                            type="submit"
+                            id="addSelectedButton"
+                            class="storage-action-button add-button"
+                            disabled
+                        >
+                            Add Selected
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="add-list">
+
+                    <% availableItems.forEach(function(item) { %>
+
+                        <%
+                            const availableIsAnimal =
+                                item.code !== null &&
+                                item.code !== undefined &&
+                                Number(item.code) > 0;
+                        %>
+
+
+                        <div
+                            class="add-card"
+                            data-add-item-id="<%= item._id %>"
+                        >
+
+                            <div class="add-checkbox">
+
+                                <input
+                                    type="checkbox"
+                                    class="add-item-checkbox"
+                                    name="itemIds"
+                                    value="<%= item._id %>"
+                                >
+
+                            </div>
+
+
+                            <div class="add-icon">
+
+                                <%= isAgroStore
+                                    ? "🌾"
+                                    : availableIsAnimal
+                                        ? "🐄"
+                                        : "🔧"
+                                %>
+
+                            </div>
+
+
+                            <div class="add-information">
+
+                                <div class="add-title">
+
+                                    <h3>
+                                        <%= item.name || "Unnamed Item" %>
+                                    </h3>
+
+
+                                    <span
+                                        class="content-type <%= isAgroStore
+                                            ? "feed-type"
+                                            : availableIsAnimal
+                                                ? "animal-type"
+                                                : "asset-type"
+                                        %>"
+                                    >
+
+                                        <%= isAgroStore
+                                            ? "Feed"
+                                            : availableIsAnimal
+                                                ? "Animal"
+                                                : "Asset"
+                                        %>
+
+                                    </span>
+
+                                </div>
+
+
+
+                                <div class="add-details">
+
+                                    <div class="add-detail">
+
+                                        <span class="add-detail-label">
+                                            Asset Code
+                                        </span>
+
+                                        <span class="add-detail-value">
+
+                                            <%= item.assetCode ||
+                                                item.code ||
+                                                "—"
+                                            %>
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="add-detail">
+
+                                        <span class="add-detail-label">
+                                            Type
+                                        </span>
+
+                                        <span class="add-detail-value">
+                                            <%= item.type || "—" %>
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="add-detail">
+
+                                        <span class="add-detail-label">
+                                            Status
+                                        </span>
+
+                                        <span class="add-detail-value">
+                                            <%= item.status || "—" %>
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="add-detail">
+
+                                        <span class="add-detail-label">
+                                            Dwell Number
+                                        </span>
+
+                                        <span class="add-detail-value">
+                                            —
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="add-detail">
+
+                                        <span class="add-detail-label">
+                                            Quantity
+                                        </span>
+
+                                        <span class="add-detail-value">
+
+                                            <%= Number(
+                                                item.quantity || 0
+                                            ).toLocaleString() %>
+
+                                            <%= item.unit || "unit" %>
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <% if (isAgroStore) { %>
+
+                                        <div class="add-detail">
+
+                                            <span class="add-detail-label">
+                                                Available Quantity
+                                            </span>
+
+                                            <span class="add-detail-value">
+
+                                                <%= Number(
+                                                    item.quantity || 0
+                                                ).toLocaleString() %>
+
+                                                <%= item.unit || "unit" %>
+
+                                            </span>
+
+                                        </div>
+
+                                    <% } %>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    <% }); %>
+
+                </div>
+
+
+            <% } else { %>
+
+
+                <!-- ==================================================
+                     EMPTY AVAILABLE ITEMS
+                     ================================================== -->
+
+                <div class="empty-contents">
+
+                    <div class="empty-contents-icon">
+
+                        <%= isAgroStore ? "🌾" : "📦" %>
+
+                    </div>
+
+
+                    <h3>
+
+                        <%= isAgroStore
+                            ? "No Feeds Available"
+                            : "No Items Available"
+                        %>
+
+                    </h3>
+
+
+                    <p>
+
+                        <% if (isAgroStore) { %>
+
+                            There are currently no unallocated feed
+                            items belonging to this farm.
+
+                        <% } else { %>
+
+                            There are currently no unallocated items
+                            belonging to this farm.
+
+                        <% } %>
+
+                    </p>
+
+                </div>
+
+
+            <% } %>
+
+
+        </form>
+
+    </section>
+
+</div>
