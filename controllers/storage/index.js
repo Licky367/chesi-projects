@@ -29,16 +29,7 @@ const contents =
 
 module.exports = {
 
-    // ======================================================
-    // STORAGE LIST
-    // ======================================================
-
     list,
-
-
-    // ======================================================
-    // ADD STORAGE
-    // ======================================================
 
     form:
         add.form,
@@ -46,11 +37,15 @@ module.exports = {
     create:
         add.create,
 
+    contents,
 
-    // ======================================================
-    // STORAGE CONTENTS
-    // ======================================================
+    addItems:
+        contents.addItems,
 
-    contents
+    omitItems:
+        contents.omitItems,
+
+    reshuffleItems:
+        contents.reshuffleItems
 
 };
