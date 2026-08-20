@@ -11,6 +11,7 @@
 //
 // ==========================================================
 
+
 const list =
     require("./list");
 
@@ -27,9 +28,9 @@ const contents =
 
 module.exports = {
 
-    // ------------------------------------------------------
+    // ======================================================
     // LIST / READ
-    // ------------------------------------------------------
+    // ======================================================
 
     normalizeType:
         list.normalizeType,
@@ -53,17 +54,17 @@ module.exports = {
         list.getStorageFacility,
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // CREATE STORAGE
-    // ------------------------------------------------------
+    // ======================================================
 
     createStorage:
         add.createStorage,
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // CONTENTS
-    // ------------------------------------------------------
+    // ======================================================
 
     getStorageContents:
         contents.getStorageContents,
@@ -74,10 +75,26 @@ module.exports = {
     addItemsToStorage:
         contents.addItemsToStorage,
 
+
+    // ======================================================
+    // NORMAL STORAGE OPERATIONS
+    // ======================================================
+
     omitItemsFromStorage:
         contents.omitItemsFromStorage,
 
     reshuffleItems:
-        contents.reshuffleItems
+        contents.reshuffleItems,
+
+
+    // ======================================================
+    // AGROSTORE QUANTITY OPERATIONS
+    // ======================================================
+
+    updateFeedQuantity:
+        contents.updateFeedQuantity,
+
+    updateFeedQuantities:
+        contents.updateFeedQuantities
 
 };
