@@ -148,13 +148,13 @@ function validateItemIds(
 // FIND PARENT FARM
 // ==========================================================
 //
-// dairyId is the MongoDB _id of the parent Dairy Farm.
+// dairyId = parent farm _id
 //
 // Farm:
 //
 //     code < 0
 //
-// Child assets/animals:
+// Child records:
 //
 //     assetCode = parent farm code
 //
@@ -220,12 +220,6 @@ async function findParentFarm(
 // ==========================================================
 // FIND STORAGE BELONGING TO FARM
 // ==========================================================
-//
-// DairyStorage belongs to a farm through:
-//
-//     farmCode = parent farm code
-//
-// ==========================================================
 
 async function findStorageForFarm({
     dairy,
@@ -274,10 +268,10 @@ async function findStorageForFarm({
 
 
 // ==========================================================
-// CHECK WHETHER STORAGE IS AGROSTORE
+// CHECK AGROSTORE
 // ==========================================================
 //
-// AgroStore storage type is represented by:
+// AgroStore:
 //
 //     type === "feeds"
 //
@@ -304,18 +298,6 @@ function isAgroStore(
 // ==========================================================
 // FARM ITEM FILTER
 // ==========================================================
-//
-// There is NO `farm` field in dairy.js.
-//
-// Ownership is established through:
-//
-//     assetCode === parentFarm.code
-//
-// The parent farm itself was resolved using:
-//
-//     dairyId === parentFarm._id
-//
-// ==========================================================
 
 function farmItemFilter(
     dairy
@@ -333,16 +315,6 @@ function farmItemFilter(
 
 // ==========================================================
 // UNALLOCATED ITEM FILTER
-// ==========================================================
-//
-// An unallocated item has:
-//
-//     dwellNumber === null
-//
-// OR:
-//
-//     dwellNumber does not exist.
-//
 // ==========================================================
 
 function unallocatedItemFilter() {
@@ -373,12 +345,12 @@ function unallocatedItemFilter() {
 // AGROSTORE AVAILABLE ITEM FILTER
 // ==========================================================
 //
-// An item may be considered available for an AgroStore ONLY
-// when ALL THREE conditions are true:
+// For AgroStore:
 //
-//     1. assetCode belongs to parent farm
-//     2. dwellNumber is empty
-//     3. type === "feeds"
+//     assetCode = parent farm code
+//     type = feeds
+//     no dwellNumber
+//     quantity > 0
 //
 // ==========================================================
 
@@ -395,7 +367,11 @@ function agroStoreAvailableItemFilter(
         type:
             "feeds",
 
-        ...unallocatedItemFilter()
+        ...unallocatedItemFilter(),
+
+        quantity: {
+            $gt: 0
+        }
 
     };
 
@@ -406,16 +382,13 @@ function agroStoreAvailableItemFilter(
 // GENERAL AVAILABLE ITEM FILTER
 // ==========================================================
 //
-// For non-AgroStore storage:
+// AgroStore:
 //
-//     assetCode = parent farm code
-//     dwellNumber = null/missing
+//     farm + feeds + unallocated + quantity > 0
 //
-// For AgroStore:
+// Other storage:
 //
-//     assetCode = parent farm code
-//     dwellNumber = null/missing
-//     type = feeds
+//     farm + unallocated
 //
 // ==========================================================
 
@@ -460,7 +433,7 @@ async function getStorageContents({
 }) {
 
     // ------------------------------------------------------
-    // FIND PARENT FARM
+    // FIND FARM
     // ------------------------------------------------------
 
     const dairy =
@@ -486,23 +459,39 @@ async function getStorageContents({
     // ======================================================
     // CURRENT CONTENTS
     // ======================================================
-    //
-    // The contents must belong to this parent farm and must
-    // occupy this storage's dwellNumber.
-    //
-    // ======================================================
+
+    const currentFilter = {
+
+        ...farmItemFilter(
+            dairy
+        ),
+
+        dwellNumber:
+            storage.roomNumber
+
+    };
+
+
+    // ------------------------------------------------------
+    // AGROSTORE CAN ONLY CONTAIN FEEDS
+    // ------------------------------------------------------
+
+    if (
+        isAgroStore(
+            storage
+        )
+    ) {
+
+        currentFilter.type =
+            "feeds";
+
+    }
+
 
     const items =
-        await Dairy.find({
-
-            ...farmItemFilter(
-                dairy
-            ),
-
-            dwellNumber:
-                storage.roomNumber
-
-        })
+        await Dairy.find(
+            currentFilter
+        )
         .sort({
 
             code: 1,
@@ -514,25 +503,6 @@ async function getStorageContents({
 
     // ======================================================
     // AVAILABLE ITEMS
-    // ======================================================
-    //
-    // IMPORTANT:
-    //
-    // `availableItems` is NOT a schema field.
-    //
-    // It is generated by this query.
-    //
-    // AgroStore:
-    //
-    //     assetCode = farm code
-    //     no dwellNumber
-    //     type = feeds
-    //
-    // Other storage:
-    //
-    //     assetCode = farm code
-    //     no dwellNumber
-    //
     // ======================================================
 
     const availableItems =
@@ -557,42 +527,55 @@ async function getStorageContents({
 
 
     // ======================================================
-    // TARGET STORAGE FACILITIES
+    // TARGET STORAGES
+    // ======================================================
+    //
+    // Only useful for normal storage.
+    //
+    // AgroStore does NOT expose reshuffle targets.
+    //
     // ======================================================
 
-    const targetStorages =
-        await DairyStorage.find({
-
-            farmCode:
-                dairy.code,
-
-            type:
-                storage.type,
-
-            status:
-                "active"
-
-        })
-        .sort({
-
-            roomNumber: 1
-
-        });
+    let targetStorages = [];
 
 
-    // ------------------------------------------------------
-    // REMOVE CURRENT STORAGE
-    // ------------------------------------------------------
+    if (
+        !isAgroStore(
+            storage
+        )
+    ) {
 
-    const filteredTargetStorages =
-        targetStorages.filter(
+        const storages =
+            await DairyStorage.find({
 
-            target =>
+                farmCode:
+                    dairy.code,
 
-                String(target._id) !==
-                String(storage._id)
+                type:
+                    storage.type,
 
-        );
+                status:
+                    "active"
+
+            })
+            .sort({
+
+                roomNumber: 1
+
+            });
+
+
+        targetStorages =
+            storages.filter(
+
+                target =>
+
+                    String(target._id) !==
+                    String(storage._id)
+
+            );
+
+    }
 
 
     // ======================================================
@@ -612,8 +595,7 @@ async function getStorageContents({
 
         availableItems,
 
-        targetStorages:
-            filteredTargetStorages
+        targetStorages
 
     };
 
@@ -629,19 +611,11 @@ async function getAvailableItems({
     storageId
 }) {
 
-    // ------------------------------------------------------
-    // FIND PARENT FARM
-    // ------------------------------------------------------
-
     const dairy =
         await findParentFarm(
             dairyId
         );
 
-
-    // ------------------------------------------------------
-    // FIND STORAGE
-    // ------------------------------------------------------
 
     const storage =
         await findStorageForFarm({
@@ -652,10 +626,6 @@ async function getAvailableItems({
 
         });
 
-
-    // ------------------------------------------------------
-    // FIND AVAILABLE ITEMS
-    // ------------------------------------------------------
 
     const items =
         await Dairy.find(
@@ -682,6 +652,8 @@ async function getAvailableItems({
 
         dairy,
 
+        storage,
+
         items
 
     };
@@ -705,19 +677,11 @@ async function addItemsToStorage({
         );
 
 
-    // ------------------------------------------------------
-    // FIND PARENT FARM
-    // ------------------------------------------------------
-
     const dairy =
         await findParentFarm(
             dairyId
         );
 
-
-    // ------------------------------------------------------
-    // FIND STORAGE
-    // ------------------------------------------------------
 
     const storage =
         await findStorageForFarm({
@@ -734,7 +698,9 @@ async function addItemsToStorage({
     // ------------------------------------------------------
 
     if (
-        storage.status !==
+        String(storage.status)
+            .trim()
+            .toLowerCase() !==
         "active"
     ) {
 
@@ -747,23 +713,7 @@ async function addItemsToStorage({
 
 
     // ======================================================
-    // VERIFY SELECTED ITEMS
-    // ======================================================
-    //
-    // This query enforces ALL rules.
-    //
-    // Every item must:
-    //
-    //     belong to this parent farm
-    //
-    //     AND
-    //
-    //     have no current allocation
-    //
-    // AND, if this is an AgroStore:
-    //
-    //     type === "feeds"
-    //
+    // VERIFY ITEMS
     // ======================================================
 
     const items =
@@ -784,10 +734,6 @@ async function addItemsToStorage({
         });
 
 
-    // ------------------------------------------------------
-    // EVERY REQUESTED ITEM MUST PASS
-    // ------------------------------------------------------
-
     if (
         items.length !==
         ids.length
@@ -800,7 +746,7 @@ async function addItemsToStorage({
         ) {
 
             throw createError(
-                "One or more selected items are invalid, belong to another farm, are already allocated, or are not feeds.",
+                "One or more selected items are invalid, belong to another farm, are already allocated, are not feeds, or have no remaining quantity.",
                 400
             );
 
@@ -816,7 +762,7 @@ async function addItemsToStorage({
 
 
     // ======================================================
-    // ALLOCATE ITEMS
+    // ALLOCATE
     // ======================================================
 
     const result =
@@ -869,7 +815,19 @@ async function addItemsToStorage({
 
 
 // ==========================================================
-// OMIT ITEMS FROM STORAGE
+// OMIT ITEMS FROM NORMAL STORAGE
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This operation remains available for normal storage.
+//
+// It is NOT available for AgroStore.
+//
+// AgroStore feeds are automatically omitted when:
+//
+//     quantity === 0
+//
 // ==========================================================
 
 async function omitItemsFromStorage({
@@ -884,19 +842,11 @@ async function omitItemsFromStorage({
         );
 
 
-    // ------------------------------------------------------
-    // FIND PARENT FARM
-    // ------------------------------------------------------
-
     const dairy =
         await findParentFarm(
             dairyId
         );
 
-
-    // ------------------------------------------------------
-    // FIND STORAGE
-    // ------------------------------------------------------
 
     const storage =
         await findStorageForFarm({
@@ -908,24 +858,26 @@ async function omitItemsFromStorage({
         });
 
 
+    // ------------------------------------------------------
+    // AGROSTORE DOES NOT USE MANUAL OMIT
+    // ------------------------------------------------------
+
+    if (
+        isAgroStore(
+            storage
+        )
+    ) {
+
+        throw createError(
+            "Feeds cannot be manually omitted from an AgroStore. Set the remaining quantity to zero instead.",
+            400
+        );
+
+    }
+
+
     // ======================================================
-    // VERIFY ITEMS
-    // ======================================================
-    //
-    // Item must:
-    //
-    //     belong to this parent farm
-    //
-    // AND:
-    //
-    //     currently occupy this storage.
-    //
-    // We intentionally DO NOT require type === "feeds" here.
-    //
-    // The item is already allocated to this storage, and the
-    // operation should remain capable of removing legacy or
-    // previously allocated records safely.
-    //
+    // FIND ITEMS
     // ======================================================
 
     const items =
@@ -959,7 +911,7 @@ async function omitItemsFromStorage({
 
 
     // ======================================================
-    // REMOVE FROM STORAGE
+    // OMIT
     // ======================================================
 
     const result =
@@ -1013,6 +965,12 @@ async function omitItemsFromStorage({
 // ==========================================================
 // RESHUFFLE ITEMS
 // ==========================================================
+//
+// This remains available for NORMAL storage.
+//
+// AgroStore feeds cannot be reshuffled.
+//
+// ==========================================================
 
 async function reshuffleItems({
     dairyId,
@@ -1028,7 +986,7 @@ async function reshuffleItems({
 
 
     // ------------------------------------------------------
-    // VALIDATE TARGET STORAGE ID
+    // VALIDATE TARGET
     // ------------------------------------------------------
 
     if (
@@ -1045,19 +1003,11 @@ async function reshuffleItems({
     }
 
 
-    // ------------------------------------------------------
-    // FIND PARENT FARM
-    // ------------------------------------------------------
-
     const dairy =
         await findParentFarm(
             dairyId
         );
 
-
-    // ------------------------------------------------------
-    // FIND CURRENT STORAGE
-    // ------------------------------------------------------
 
     const storage =
         await findStorageForFarm({
@@ -1068,10 +1018,6 @@ async function reshuffleItems({
 
         });
 
-
-    // ------------------------------------------------------
-    // FIND TARGET STORAGE
-    // ------------------------------------------------------
 
     const targetStorage =
         await findStorageForFarm({
@@ -1085,11 +1031,34 @@ async function reshuffleItems({
 
 
     // ------------------------------------------------------
-    // CURRENT STORAGE MUST BE ACTIVE
+    // AGROSTORE CANNOT RESHUFFLE
     // ------------------------------------------------------
 
     if (
-        storage.status !==
+        isAgroStore(
+            storage
+        ) ||
+        isAgroStore(
+            targetStorage
+        )
+    ) {
+
+        throw createError(
+            "AgroStore feeds cannot be reshuffled. Update the feed quantity instead.",
+            400
+        );
+
+    }
+
+
+    // ------------------------------------------------------
+    // CURRENT STORAGE ACTIVE
+    // ------------------------------------------------------
+
+    if (
+        String(storage.status)
+            .trim()
+            .toLowerCase() !==
         "active"
     ) {
 
@@ -1102,11 +1071,13 @@ async function reshuffleItems({
 
 
     // ------------------------------------------------------
-    // TARGET STORAGE MUST BE ACTIVE
+    // TARGET STORAGE ACTIVE
     // ------------------------------------------------------
 
     if (
-        targetStorage.status !==
+        String(targetStorage.status)
+            .trim()
+            .toLowerCase() !==
         "active"
     ) {
 
@@ -1119,7 +1090,7 @@ async function reshuffleItems({
 
 
     // ------------------------------------------------------
-    // STORAGE CANNOT BE THE SAME
+    // SAME STORAGE
     // ------------------------------------------------------
 
     if (
@@ -1153,7 +1124,7 @@ async function reshuffleItems({
 
 
     // ======================================================
-    // VERIFY CURRENT ITEMS
+    // VERIFY ITEMS
     // ======================================================
 
     const items =
@@ -1187,50 +1158,7 @@ async function reshuffleItems({
 
 
     // ======================================================
-    // AGROSTORE TARGET VALIDATION
-    // ======================================================
-    //
-    // If the target is an AgroStore, EVERY item being moved
-    // into it must be a feed.
-    //
-    // This protects against bypassing the normal "available
-    // items" screen by reshuffling directly.
-    //
-    // ======================================================
-
-    if (
-        isAgroStore(
-            targetStorage
-        )
-    ) {
-
-        const invalidFeed =
-            items.find(
-
-                item =>
-
-                    String(item.type)
-                        .trim()
-                        .toLowerCase() !==
-                    "feeds"
-
-            );
-
-
-        if (invalidFeed) {
-
-            throw createError(
-                "Only feeds can be moved into an AgroStore.",
-                400
-            );
-
-        }
-
-    }
-
-
-    // ======================================================
-    // MOVE ITEMS
+    // MOVE
     // ======================================================
 
     const result =
@@ -1284,10 +1212,377 @@ async function reshuffleItems({
 
 
 // ==========================================================
+// UPDATE SINGLE FEED QUANTITY
+// ==========================================================
+//
+// Only works for AgroStore.
+//
+// User records CURRENT quantity remaining.
+//
+// quantity > 0
+//     -> feed remains in AgroStore
+//
+// quantity === 0
+//     -> quantity saved as 0
+//     -> dwellNumber cleared
+//     -> feed automatically omitted
+//
+// ==========================================================
+
+async function updateFeedQuantity({
+    dairyId,
+    storageId,
+    itemId,
+    quantity
+}) {
+
+    if (
+        !isValidObjectId(
+            itemId
+        )
+    ) {
+
+        throw createError(
+            "Invalid feed item ID.",
+            400
+        );
+
+    }
+
+
+    const numericQuantity =
+        Number(
+            quantity
+        );
+
+
+    if (
+        !Number.isFinite(
+            numericQuantity
+        )
+    ) {
+
+        throw createError(
+            "Quantity must be a valid number.",
+            400
+        );
+
+    }
+
+
+    if (
+        numericQuantity < 0
+    ) {
+
+        throw createError(
+            "Quantity cannot be negative.",
+            400
+        );
+
+    }
+
+
+    const dairy =
+        await findParentFarm(
+            dairyId
+        );
+
+
+    const storage =
+        await findStorageForFarm({
+
+            dairy,
+
+            storageId
+
+        });
+
+
+    // ------------------------------------------------------
+    // ONLY AGROSTORE
+    // ------------------------------------------------------
+
+    if (
+        !isAgroStore(
+            storage
+        )
+    ) {
+
+        throw createError(
+            "Feed quantity can only be updated for an AgroStore.",
+            400
+        );
+
+    }
+
+
+    // ======================================================
+    // FIND FEED
+    // ======================================================
+
+    const feed =
+        await Dairy.findOne({
+
+            _id:
+                itemId,
+
+            ...farmItemFilter(
+                dairy
+            ),
+
+            type:
+                "feeds",
+
+            dwellNumber:
+                storage.roomNumber
+
+        });
+
+
+    if (!feed) {
+
+        throw createError(
+            "The selected feed was not found in this AgroStore.",
+            404
+        );
+
+    }
+
+
+    // ======================================================
+    // ZERO = AUTOMATIC OMIT
+    // ======================================================
+
+    if (
+        numericQuantity === 0
+    ) {
+
+        const updatedFeed =
+            await Dairy.findOneAndUpdate(
+
+                {
+
+                    _id:
+                        itemId,
+
+                    ...farmItemFilter(
+                        dairy
+                    ),
+
+                    type:
+                        "feeds",
+
+                    dwellNumber:
+                        storage.roomNumber
+
+                },
+
+                {
+
+                    $set: {
+
+                        quantity:
+                            0,
+
+                        dwellNumber:
+                            null
+
+                    }
+
+                },
+
+                {
+
+                    new:
+                        true
+
+                }
+
+            );
+
+
+        return {
+
+            dairy,
+
+            storage,
+
+            item:
+                updatedFeed,
+
+            quantity:
+                0,
+
+            omitted:
+                true
+
+        };
+
+    }
+
+
+    // ======================================================
+    // UPDATE REMAINING QUANTITY
+    // ======================================================
+
+    const updatedFeed =
+        await Dairy.findOneAndUpdate(
+
+            {
+
+                _id:
+                    itemId,
+
+                ...farmItemFilter(
+                    dairy
+                ),
+
+                type:
+                    "feeds",
+
+                dwellNumber:
+                    storage.roomNumber
+
+            },
+
+            {
+
+                $set: {
+
+                    quantity:
+                        numericQuantity
+
+                }
+
+            },
+
+            {
+
+                new:
+                    true
+
+            }
+
+        );
+
+
+    return {
+
+        dairy,
+
+        storage,
+
+        item:
+            updatedFeed,
+
+        quantity:
+            numericQuantity,
+
+        omitted:
+            false
+
+    };
+
+}
+
+
+// ==========================================================
+// UPDATE MULTIPLE FEED QUANTITIES
+// ==========================================================
+//
+// records:
+//
+// [
+//     {
+//         itemId,
+//         quantity
+//     }
+// ]
+//
+// ==========================================================
+
+async function updateFeedQuantities({
+    dairyId,
+    storageId,
+    records
+}) {
+
+    if (
+        !Array.isArray(
+            records
+        ) ||
+        records.length === 0
+    ) {
+
+        throw createError(
+            "No feed quantities were supplied.",
+            400
+        );
+
+    }
+
+
+    const results = [];
+
+
+    for (
+        const record of records
+    ) {
+
+        if (
+            !record
+        ) {
+
+            continue;
+
+        }
+
+
+        const result =
+            await updateFeedQuantity({
+
+                dairyId,
+
+                storageId,
+
+                itemId:
+                    record.itemId,
+
+                quantity:
+                    record.quantity
+
+            });
+
+
+        results.push(
+            result
+        );
+
+    }
+
+
+    return {
+
+        dairyId,
+
+        storageId,
+
+        results
+
+    };
+
+}
+
+
+// ==========================================================
 // EXPORT
 // ==========================================================
 
 module.exports = {
+
+    // ------------------------------------------------------
+    // CONTENTS
+    // ------------------------------------------------------
 
     getStorageContents,
 
@@ -1295,8 +1590,22 @@ module.exports = {
 
     addItemsToStorage,
 
+
+    // ------------------------------------------------------
+    // NORMAL STORAGE
+    // ------------------------------------------------------
+
     omitItemsFromStorage,
 
-    reshuffleItems
+    reshuffleItems,
+
+
+    // ------------------------------------------------------
+    // AGROSTORE
+    // ------------------------------------------------------
+
+    updateFeedQuantity,
+
+    updateFeedQuantities
 
 };
