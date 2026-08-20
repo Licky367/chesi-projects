@@ -28,7 +28,7 @@ const router =
     express.Router();
 
 const storageController =
-    require("../controllers/storage/storageController");
+    require("../controllers/storage");
 
 
 // ==========================================================
