@@ -1,23 +1,35 @@
 <% /*
- * ==============================================================
- * STORAGE CONTENTS
- * ==============================================================
- *
- * FILE:
- *     views/storage/contents.ejs
- *
- * PURPOSE:
- *     Manage the contents of a Storage / Room.
- *
- * STORAGE MODES:
- *     type === "feeds"  → AgroStore
- *     anything else     → Normal Room
- *
- * IMPORTANT:
- *     Existing form actions, IDs and controller variables are
- *     intentionally preserved.
- * ==============================================================
- */
+==============================================================
+STORAGE CONTENTS
+==============================================================
+
+FILE:
+    views/storage/contents.ejs
+
+PURPOSE:
+    Main contents-management page for:
+
+        1. Normal Storage Rooms
+        2. AgroStore (type === "feeds")
+
+PAGE STRUCTURE:
+    VIEW CONTENTS
+        - Current contents
+        - Normal storage: omit + reshuffle
+        - AgroStore: quantity management
+
+    ADD ITEMS
+        - Available/unallocated items
+
+IMPORTANT:
+    Backend routes and field names are preserved.
+==============================================================
+*/
+
+
+/* ==========================================================
+   STORAGE MODE
+========================================================== */
 
 const isAgroStore =
     storage &&
@@ -25,492 +37,413 @@ const isAgroStore =
         .trim()
         .toLowerCase() === "feeds";
 
-const storageTitle =
-    storage.displayName ||
-    (isAgroStore
-        ? "AgroStore"
-        : `Room ${storage.roomNumber}`);
 
-const storageNumber = isAgroStore
-    ? Math.abs(storage.roomNumber)
-    : storage.roomNumber;
+/* ==========================================================
+   DISPLAY VALUES
+========================================================== */
+
+const storageName =
+    storage.displayName ||
+    (
+        isAgroStore
+            ? "AgroStore"
+            : `Room ${storage.roomNumber}`
+    );
+
+
+const currentTab =
+    activeTab === "add"
+        ? "add"
+        : "view";
+
 %>
 
 
 <style>
 
-/* ==============================================================
-   STORAGE CONTENTS — COREVESTER UI
-   ============================================================== */
+/* ============================================================
+   PAGE
+============================================================ */
 
-.storage-page{
+.storage-contents-page{
     width:100%;
-    max-width:1180px;
+    max-width:1050px;
     margin:0 auto;
-    padding:18px 18px 70px;
-    color:#17231d;
+    padding:18px 16px 60px;
+    box-sizing:border-box;
 }
 
 
-/* ==============================================================
-   HERO
-   ============================================================== */
+/* ============================================================
+   HEADER
+============================================================ */
 
-.storage-hero{
-    position:relative;
-    overflow:hidden;
-    display:flex;
-    align-items:flex-end;
-    justify-content:space-between;
-    gap:24px;
-
-    padding:28px 30px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #ffffff 0%,
-            #f8fbf8 70%,
-            #f1f7f2 100%
-        );
-
-    border:1px solid #e3ebe5;
-    border-radius:24px;
-
-    box-shadow:
-        0 8px 30px rgba(22,42,29,.06);
-}
-
-.storage-hero::before{
-    content:"";
-    position:absolute;
-    left:0;
-    top:0;
-    bottom:0;
-    width:6px;
-    background:#287a46;
-}
-
-.storage-hero::after{
-    content:"";
-    position:absolute;
-    width:190px;
-    height:190px;
-    right:-75px;
-    top:-95px;
-    border-radius:50%;
-    background:rgba(43,126,72,.045);
-    pointer-events:none;
-}
-
-.storage-hero-content{
-    position:relative;
-    z-index:1;
-}
-
-.storage-kicker{
+.storage-page-header{
     display:flex;
     align-items:center;
-    gap:8px;
-    margin-bottom:8px;
+    justify-content:space-between;
+    gap:18px;
 
-    font-size:11px;
+    margin-bottom:18px;
+}
+
+.storage-header-main{
+    min-width:0;
+}
+
+.storage-header-eyebrow{
+    margin:0 0 5px;
+
+    color:#789080;
+
+    font-size:10px;
     font-weight:800;
-    letter-spacing:.12em;
+    letter-spacing:.11em;
     text-transform:uppercase;
-    color:#5e7667;
 }
 
-.storage-kicker-dot{
-    width:7px;
-    height:7px;
-    border-radius:50%;
-    background:#2d804b;
-}
-
-.storage-hero h2{
+.storage-page-title{
     margin:0;
-    font-size:clamp(25px,4vw,34px);
-    line-height:1.1;
+
+    color:#1d2d23;
+
+    font-size:27px;
+    line-height:1.15;
     font-weight:800;
     letter-spacing:-.035em;
-    color:#15221a;
 }
 
-.storage-subtitle{
-    max-width:650px;
-    margin:9px 0 0;
+.storage-page-description{
+    max-width:620px;
 
-    font-size:14px;
-    line-height:1.65;
-    color:#69766f;
+    margin:7px 0 0;
+
+    color:#77837c;
+
+    font-size:13px;
+    line-height:1.55;
 }
 
 .back-storage{
-    position:relative;
-    z-index:2;
+    flex:none;
 
     display:inline-flex;
     align-items:center;
-    justify-content:center;
-    gap:8px;
+    gap:7px;
 
-    min-height:42px;
-    padding:0 16px;
+    min-height:38px;
+    padding:0 13px;
 
-    border:1px solid #dce6df;
-    border-radius:12px;
+    border:1px solid #dfe7e1;
+    border-radius:10px;
 
     background:#fff;
-    color:#315440;
 
-    font-size:13px;
+    color:#31533d;
+
+    font-size:12px;
     font-weight:750;
+
     text-decoration:none;
 
-    white-space:nowrap;
-
-    box-shadow:0 3px 10px rgba(20,40,28,.04);
-
-    transition:
-        transform .18s ease,
-        border-color .18s ease,
-        background .18s ease;
+    transition:.18s ease;
 }
 
 .back-storage:hover{
-    transform:translateY(-1px);
-    border-color:#b9d0c0;
-    background:#f8fbf9;
+    border-color:#bdd2c2;
+    background:#f8fbf8;
 }
 
 
-/* ==============================================================
-   REFERENCE STRIP
-   ============================================================== */
-
-.storage-reference{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:12px;
-
-    margin-top:14px;
-}
-
-.reference-item{
-    min-width:0;
-
-    display:flex;
-    flex-direction:column;
-    gap:5px;
-
-    padding:15px 17px;
-
-    background:#fff;
-
-    border:1px solid #e5ece7;
-    border-radius:16px;
-
-    box-shadow:0 4px 16px rgba(21,42,28,.035);
-}
-
-.reference-label{
-    font-size:10px;
-    font-weight:800;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    color:#89968f;
-}
-
-.reference-item > span:last-child{
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-
-    font-size:14px;
-    font-weight:750;
-    color:#26382d;
-}
-
-
-/* ==============================================================
-   MESSAGES
-   ============================================================== */
+/* ============================================================
+   MESSAGE
+============================================================ */
 
 .storage-message{
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:9px;
 
-    margin-top:14px;
-    padding:13px 16px;
+    margin:0 0 16px;
+    padding:11px 13px;
 
-    border-radius:13px;
+    border-radius:10px;
 
-    font-size:13px;
+    font-size:12px;
     font-weight:650;
 }
 
 .storage-success{
-    color:#22613a;
-    background:#f0f8f2;
-    border:1px solid #d5e9da;
-}
-
-.storage-success::before{
-    content:"✓";
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    width:21px;
-    height:21px;
-    border-radius:50%;
-
-    background:#dcefe0;
-    font-size:12px;
+    background:#f1f8f3;
+    border:1px solid #d8e9dc;
+    color:#28603a;
 }
 
 .storage-error{
-    color:#9a3e35;
     background:#fff5f4;
-    border:1px solid #f0d9d6;
-}
-
-.storage-error::before{
-    content:"!";
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    width:21px;
-    height:21px;
-    border-radius:50%;
-
-    background:#f8dfdc;
-    font-size:12px;
+    border:1px solid #efd9d6;
+    color:#9a443b;
 }
 
 
-/* ==============================================================
+/* ============================================================
    TABS
-   ============================================================== */
+============================================================ */
 
 .storage-tabs{
     display:flex;
     align-items:center;
-    gap:5px;
 
-    width:max-content;
-    max-width:100%;
+    width:100%;
 
-    margin:24px auto 0;
-    padding:5px;
+    padding:4px;
 
-    background:#eef3ef;
-    border:1px solid #e1e9e3;
-    border-radius:14px;
+    margin-bottom:20px;
+
+    background:#f1f4f2;
+
+    border:1px solid #e2e8e3;
+    border-radius:12px;
 }
 
 .storage-tab{
-    min-height:39px;
-    padding:0 18px;
+    flex:1;
+
+    min-height:40px;
 
     border:0;
-    border-radius:10px;
+    border-radius:9px;
 
     background:transparent;
-    color:#6d7972;
 
-    font-size:13px;
-    font-weight:750;
+    color:#758078;
+
+    font-size:12px;
+    font-weight:800;
 
     cursor:pointer;
 
-    transition:
-        background .18s ease,
-        color .18s ease,
-        box-shadow .18s ease;
+    transition:.18s ease;
+}
+
+.storage-tab:hover{
+    color:#385342;
 }
 
 .storage-tab.active{
     background:#fff;
-    color:#245e39;
+
+    color:#245d38;
 
     box-shadow:
-        0 2px 8px rgba(22,43,29,.09);
+        0 2px 7px rgba(27,53,36,.08);
 }
 
 
-/* ==============================================================
-   SUMMARY
-   ============================================================== */
+/* ============================================================
+   TAB PANELS
+============================================================ */
 
-.contents-summary{
+.storage-tab-panel{
+    display:none;
+}
+
+.storage-tab-panel.active{
+    display:block;
+}
+
+
+/* ============================================================
+   CONTENTS TOP BAR
+============================================================ */
+
+.contents-topbar{
     display:flex;
     align-items:center;
     justify-content:space-between;
+    gap:12px;
 
-    margin:20px 0 12px;
-    padding:0 3px;
-
-    color:#718078;
-    font-size:13px;
+    margin-bottom:13px;
 }
 
-.contents-summary strong{
-    color:#1f3427;
-    font-size:20px;
-    letter-spacing:-.03em;
-    margin-right:4px;
+.contents-heading{
+    margin:0;
+
+    color:#24372a;
+
+    font-size:17px;
+    font-weight:800;
+    letter-spacing:-.02em;
+}
+
+.contents-count{
+    color:#87928b;
+
+    font-size:11px;
+    font-weight:650;
+}
+
+.contents-count strong{
+    color:#2e4938;
+    font-size:16px;
 }
 
 
-/* ==============================================================
+/* ============================================================
    MANAGEMENT BAR
-   ============================================================== */
+============================================================ */
 
 .contents-management,
 .add-management{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:15px;
+    gap:12px;
 
-    padding:12px 14px;
-    margin-bottom:14px;
+    margin-bottom:12px;
+    padding:10px 12px;
 
     background:#fff;
 
-    border:1px solid #e3ebe5;
-    border-radius:15px;
-
-    box-shadow:0 4px 14px rgba(22,43,29,.035);
+    border:1px solid #e2e9e4;
+    border-radius:12px;
 }
 
 .management-left,
 .management-right{
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:8px;
 }
 
 .select-all-wrapper{
     display:flex;
     align-items:center;
-    gap:9px;
+    gap:7px;
 
-    color:#34473b;
-    font-size:13px;
+    color:#425248;
+
+    font-size:11px;
     font-weight:750;
 
     cursor:pointer;
 }
 
 .select-all-wrapper input{
-    width:17px;
-    height:17px;
-    accent-color:#2b7d48;
+    width:16px;
+    height:16px;
+
+    margin:0;
+
+    accent-color:#2d7a47;
 }
 
 .selection-count{
-    padding:5px 9px;
+    padding:4px 8px;
 
-    border-radius:8px;
+    border-radius:7px;
 
-    background:#f2f6f3;
-    color:#708078;
+    background:#f3f6f3;
 
-    font-size:11px;
+    color:#7a867f;
+
+    font-size:10px;
     font-weight:700;
 }
 
 .storage-action-button{
-    min-height:37px;
-    padding:0 14px;
+    min-height:34px;
 
-    border:1px solid transparent;
-    border-radius:10px;
+    padding:0 12px;
 
-    font-size:12px;
+    border-radius:8px;
+
+    font-size:11px;
     font-weight:800;
 
     cursor:pointer;
 
-    transition:
-        transform .16s ease,
-        box-shadow .16s ease,
-        opacity .16s ease;
+    transition:.16s ease;
+}
+
+.storage-action-button:disabled{
+    opacity:.4;
+    cursor:not-allowed;
 }
 
 .storage-action-button:not(:disabled):hover{
     transform:translateY(-1px);
 }
 
-.storage-action-button:disabled{
-    opacity:.42;
-    cursor:not-allowed;
-}
-
-.add-button{
-    background:#287847;
-    color:#fff;
-
-    box-shadow:0 4px 12px rgba(40,120,71,.16);
-}
-
 .reshuffle-button{
-    background:#eef6f0;
-    border-color:#d5e5d9;
-    color:#27633b;
+    border:1px solid #d5e5d9;
+
+    background:#f2f8f3;
+
+    color:#2d6840;
 }
 
 .omit-button{
-    background:#fff5f3;
-    border-color:#efdcd8;
-    color:#a34c40;
+    border:1px solid #eedbd7;
+
+    background:#fff6f4;
+
+    color:#9d493e;
+}
+
+.add-button{
+    border:1px solid #286e41;
+
+    background:#2d7b48;
+
+    color:#fff;
+
+    box-shadow:0 3px 8px rgba(45,123,72,.13);
 }
 
 
-/* ==============================================================
+/* ============================================================
    RESHUFFLE PANEL
-   ============================================================== */
+============================================================ */
 
 .reshuffle-panel{
     display:none;
 
-    margin:0 0 16px;
-    padding:20px;
+    margin:0 0 13px;
+    padding:15px;
+
+    background:#f7faf8;
 
     border:1px solid #dbe8de;
-    border-radius:18px;
-
-    background:#f8fbf8;
+    border-radius:13px;
 }
 
 .reshuffle-panel.open{
     display:block;
 }
 
-.reshuffle-panel h3{
+.reshuffle-heading{
     margin:0;
 
-    font-size:16px;
-    color:#22382a;
+    color:#294333;
+
+    font-size:14px;
+    font-weight:800;
 }
 
-.reshuffle-panel > p{
-    margin:6px 0 17px;
+.reshuffle-description{
+    margin:5px 0 13px;
 
-    color:#718078;
-    font-size:13px;
-    line-height:1.55;
+    color:#7a867f;
+
+    font-size:11px;
+    line-height:1.5;
 }
 
 .reshuffle-form{
     display:flex;
     align-items:flex-end;
-    gap:10px;
+    gap:8px;
 }
 
 .reshuffle-select-group{
@@ -519,87 +452,373 @@ const storageNumber = isAgroStore
 
 .reshuffle-select-group label{
     display:block;
-    margin-bottom:6px;
 
-    font-size:11px;
-    font-weight:800;
+    margin-bottom:5px;
+
     color:#68766e;
+
+    font-size:10px;
+    font-weight:800;
 }
 
 .reshuffle-select{
     width:100%;
-    height:40px;
-    padding:0 12px;
+    height:37px;
 
-    border:1px solid #d9e4dc;
-    border-radius:10px;
+    padding:0 10px;
+
+    border:1px solid #d7e2da;
+    border-radius:8px;
 
     background:#fff;
-    color:#26382d;
+
+    color:#33483a;
+
+    font-size:11px;
 
     outline:none;
 }
 
+.reshuffle-select:focus{
+    border-color:#82aa8e;
+}
 
-/* ==============================================================
-   CONTENT CARDS
-   ============================================================== */
+
+/* ============================================================
+   CONTENT LIST
+============================================================ */
 
 .contents-list{
     display:flex;
     flex-direction:column;
-    gap:11px;
+    gap:9px;
 }
 
+
+/* ============================================================
+   CONTENT CARD
+============================================================ */
+
 .content-card{
-    position:relative;
-
     display:grid;
-    grid-template-columns:auto 48px minmax(0,1fr);
-    align-items:start;
-    gap:14px;
+    grid-template-columns:auto 44px minmax(0,1fr);
 
-    padding:18px;
+    align-items:start;
+
+    gap:12px;
+
+    padding:14px;
 
     background:#fff;
 
-    border:1px solid #e3ebe5;
-    border-radius:18px;
+    border:1px solid #e3e9e5;
+    border-radius:14px;
 
     box-shadow:
-        0 4px 16px rgba(21,42,28,.035);
+        0 2px 9px rgba(24,45,31,.025);
 
     transition:
-        border-color .18s ease,
-        box-shadow .18s ease,
-        transform .18s ease;
+        border-color .16s ease,
+        box-shadow .16s ease,
+        background .16s ease;
 }
 
 .content-card:hover{
-    transform:translateY(-1px);
-    border-color:#d0dfd4;
-    box-shadow:0 8px 24px rgba(21,42,28,.065);
+    border-color:#d2dfd5;
+
+    box-shadow:
+        0 5px 16px rgba(24,45,31,.05);
 }
 
 .content-card.selected{
-    border-color:#8fbea0;
-    background:#fbfefc;
+    border-color:#8db89a;
+    background:#fbfefb;
 }
 
 .content-checkbox{
     padding-top:4px;
 }
 
-.content-checkbox input,
-.add-checkbox input{
-    width:17px;
-    height:17px;
-    accent-color:#2b7d48;
+.content-checkbox input{
+    width:16px;
+    height:16px;
+
+    margin:0;
+
+    accent-color:#2d7a47;
+}
+
+.content-icon{
+    width:44px;
+    height:44px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:12px;
+
+    background:#f1f6f2;
+
+    font-size:21px;
+}
+
+.content-information{
+    min-width:0;
+}
+
+.content-title-row{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:7px;
+}
+
+.content-title-row h3{
+    margin:0;
+
+    color:#25382b;
+
+    font-size:15px;
+    line-height:1.3;
+    font-weight:800;
+}
+
+.content-type{
+    display:inline-flex;
+    align-items:center;
+
+    min-height:20px;
+
+    padding:0 7px;
+
+    border-radius:999px;
+
+    font-size:8px;
+    font-weight:850;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+}
+
+.animal-type{
+    background:#edf7ef;
+    color:#347148;
+}
+
+.asset-type{
+    background:#f1f3f3;
+    color:#68746d;
+}
+
+.feed-type{
+    background:#edf7ef;
+    color:#2d7243;
+}
+
+
+/* ============================================================
+   NORMAL CONTENT META
+============================================================ */
+
+.content-meta{
+    display:flex;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:5px 13px;
+
+    margin-top:8px;
+}
+
+.content-meta-item{
+    color:#7b8780;
+
+    font-size:10px;
+}
+
+.content-meta-item strong{
+    color:#46574c;
+    font-weight:750;
+}
+
+.content-meta-separator{
+    color:#c4ccc7;
+}
+
+
+/* ============================================================
+   ANIMAL INFORMATION
+============================================================ */
+
+.animal-information{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px 13px;
+
+    margin-top:8px;
+
+    color:#7c8881;
+
+    font-size:10px;
+}
+
+.animal-information strong{
+    color:#4a5d50;
+}
+
+
+/* ============================================================
+   DESCRIPTION
+============================================================ */
+
+.content-description{
+    margin:9px 0 0;
+
+    color:#7b8780;
+
+    font-size:10px;
+    line-height:1.5;
+}
+
+
+/* ============================================================
+   AGROSTORE QUANTITY
+============================================================ */
+
+.feed-quantity-section{
+    margin-top:13px;
+    padding:13px;
+
+    background:#f8fbf8;
+
+    border:1px solid #dfeae1;
+    border-radius:11px;
+}
+
+.feed-quantity-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+
+    margin-bottom:10px;
+}
+
+.feed-quantity-title{
+    color:#68776e;
+
+    font-size:9px;
+    font-weight:850;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+}
+
+.feed-current-quantity{
+    color:#276b3e;
+
+    font-size:17px;
+    font-weight:850;
+}
+
+.feed-unit{
+    margin-left:3px;
+
+    color:#7b8780;
+
+    font-size:10px;
+    font-weight:700;
+}
+
+.quantity-form{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 105px auto;
+
+    align-items:end;
+
+    gap:7px;
+}
+
+.quantity-field label{
+    display:block;
+
+    margin-bottom:5px;
+
+    color:#748078;
+
+    font-size:9px;
+    font-weight:750;
+}
+
+.quantity-input,
+.quantity-unit{
+    width:100%;
+    height:36px;
+
+    box-sizing:border-box;
+
+    padding:0 9px;
+
+    border:1px solid #d6e2d9;
+    border-radius:8px;
+
+    background:#fff;
+
+    color:#304438;
+
+    font-size:11px;
+
+    outline:none;
+}
+
+.quantity-input:focus,
+.quantity-unit:focus{
+    border-color:#82aa8e;
+    box-shadow:0 0 0 3px rgba(45,122,71,.07);
+}
+
+.quantity-save-button{
+    height:36px;
+
+    padding:0 14px;
+
+    border:0;
+    border-radius:8px;
+
+    background:#2d7b48;
+
+    color:#fff;
+
+    font-size:10px;
+    font-weight:800;
+
     cursor:pointer;
 }
 
-.content-icon,
-.add-icon{
+.quantity-help{
+    margin:8px 0 0;
+
+    color:#8a958e;
+
+    font-size:9px;
+    line-height:1.45;
+}
+
+
+/* ============================================================
+   EMPTY CONTENT
+============================================================ */
+
+.empty-contents{
+    padding:45px 20px;
+
+    text-align:center;
+
+    background:#fafcfa;
+
+    border:1px dashed #dce5df;
+    border-radius:15px;
+}
+
+.empty-icon{
     width:48px;
     height:48px;
 
@@ -607,419 +826,206 @@ const storageNumber = isAgroStore
     align-items:center;
     justify-content:center;
 
+    margin:0 auto 11px;
+
     border-radius:14px;
 
-    background:#f1f6f2;
+    background:#f0f6f1;
 
     font-size:22px;
 }
 
-.content-information{
-    min-width:0;
-}
-
-.content-title-row,
-.add-title{
-    display:flex;
-    align-items:center;
-    gap:9px;
-    flex-wrap:wrap;
-}
-
-.content-title-row h3,
-.add-title h3{
+.empty-contents h3{
     margin:0;
 
-    color:#1c3023;
+    color:#35473b;
 
-    font-size:16px;
-    line-height:1.3;
+    font-size:15px;
     font-weight:800;
-    letter-spacing:-.015em;
 }
 
-.content-type{
-    display:inline-flex;
-    align-items:center;
+.empty-contents p{
+    max-width:430px;
 
-    min-height:22px;
-    padding:0 8px;
+    margin:6px auto 0;
 
-    border-radius:999px;
-
-    font-size:9px;
-    line-height:1;
-    font-weight:850;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-}
-
-.animal-type{
-    background:#edf6ef;
-    color:#317047;
-}
-
-.asset-type{
-    background:#f1f3f4;
-    color:#65716b;
-}
-
-.feed-type{
-    background:#eef7ef;
-    color:#2c7342;
-}
-
-.content-details,
-.add-details{
-    display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:9px;
-
-    margin-top:15px;
-}
-
-.content-detail,
-.add-detail{
-    min-width:0;
-
-    padding:9px 10px;
-
-    background:#f8faf8;
-    border-radius:10px;
-}
-
-.detail-label,
-.add-detail-label{
-    display:block;
-
-    margin-bottom:4px;
-
-    font-size:9px;
-    line-height:1.2;
-    font-weight:800;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-    color:#8a968f;
-}
-
-.detail-value,
-.add-detail-value{
-    display:block;
-
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-
-    font-size:12px;
-    font-weight:700;
-    color:#34483b;
-}
-
-.status-active{
-    color:#2d7746;
-}
-
-.content-description{
-    margin:13px 0 0;
-
-    color:#68766e;
-
-    font-size:12px;
-    line-height:1.6;
-}
-
-.content-description strong{
-    color:#3c4f43;
-}
-
-
-/* ==============================================================
-   FEED QUANTITY PANEL
-   ============================================================== */
-
-.feed-quantity-section{
-    margin-top:17px;
-    padding:16px;
-
-    border:1px solid #dce9df;
-    border-radius:15px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #f7fbf8,
-            #fbfdfb
-        );
-}
-
-.feed-quantity-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:15px;
-
-    margin-bottom:13px;
-}
-
-.feed-quantity-title{
-    color:#3d5145;
+    color:#849088;
 
     font-size:11px;
-    font-weight:850;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-}
-
-.feed-current-quantity{
-    color:#23653a;
-
-    font-size:20px;
-    font-weight:850;
-    letter-spacing:-.03em;
-}
-
-.feed-unit{
-    margin-left:4px;
-
-    color:#718078;
-    font-size:11px;
-    font-weight:700;
-}
-
-.quantity-form{
-    display:grid;
-    grid-template-columns:minmax(0,1fr) 110px auto;
-    align-items:end;
-    gap:9px;
-}
-
-.quantity-field label{
-    display:block;
-    margin-bottom:6px;
-
-    font-size:10px;
-    font-weight:800;
-    color:#6c7971;
-}
-
-.quantity-input,
-.quantity-unit{
-    width:100%;
-    height:40px;
-
-    padding:0 11px;
-
-    border:1px solid #d7e3da;
-    border-radius:10px;
-
-    background:#fff;
-    color:#273a2e;
-
-    font-size:13px;
-    font-weight:650;
-
-    outline:none;
-
-    box-sizing:border-box;
-}
-
-.quantity-input:focus,
-.quantity-unit:focus,
-.reshuffle-select:focus{
-    border-color:#77a88a;
-    box-shadow:0 0 0 3px rgba(45,126,73,.08);
-}
-
-.quantity-save-button{
-    height:40px;
-    padding:0 17px;
-
-    border:0;
-    border-radius:10px;
-
-    background:#287847;
-    color:#fff;
-
-    font-size:12px;
-    font-weight:800;
-
-    cursor:pointer;
-
-    box-shadow:0 4px 12px rgba(40,120,71,.14);
-}
-
-.quantity-help{
-    margin:11px 0 0;
-
-    color:#89958e;
-
-    font-size:10px;
     line-height:1.55;
 }
 
 
-/* ==============================================================
-   ADD SECTION
-   ============================================================== */
+/* ============================================================
+   ADD ITEMS
+============================================================ */
 
-.add-header{
-    margin:34px 0 15px;
-    padding-top:26px;
-
-    border-top:1px solid #e6ece8;
+.add-introduction{
+    margin-bottom:13px;
 }
 
-.add-header h3{
+.add-introduction h3{
     margin:0;
 
-    color:#1d3124;
+    color:#26392c;
 
-    font-size:21px;
+    font-size:17px;
     font-weight:800;
-    letter-spacing:-.025em;
 }
 
-.add-header p{
-    max-width:700px;
-    margin:6px 0 0;
+.add-introduction p{
+    margin:5px 0 0;
 
-    color:#718078;
+    color:#7b8780;
 
-    font-size:13px;
-    line-height:1.6;
+    font-size:11px;
+    line-height:1.5;
 }
 
 .add-list{
     display:flex;
     flex-direction:column;
-    gap:10px;
+    gap:9px;
 }
 
 .add-card{
     display:grid;
     grid-template-columns:auto 42px minmax(0,1fr);
-    align-items:start;
-    gap:13px;
 
-    padding:15px 16px;
+    align-items:start;
+
+    gap:11px;
+
+    padding:13px;
 
     background:#fff;
 
-    border:1px solid #e4ebe6;
-    border-radius:16px;
+    border:1px solid #e3e9e5;
+    border-radius:13px;
 
     transition:
-        border-color .18s ease,
-        background .18s ease,
-        box-shadow .18s ease;
+        border-color .16s ease,
+        background .16s ease;
 }
 
 .add-card:hover{
-    border-color:#cdddcf;
-    box-shadow:0 5px 17px rgba(21,42,28,.045);
+    border-color:#d0ddd3;
+}
+
+.add-card.selected{
+    border-color:#8db89a;
+    background:#fbfefb;
 }
 
 .add-checkbox{
-    padding-top:4px;
+    padding-top:3px;
+}
+
+.add-checkbox input{
+    width:16px;
+    height:16px;
+
+    margin:0;
+
+    accent-color:#2d7a47;
 }
 
 .add-icon{
     width:42px;
     height:42px;
 
-    border-radius:12px;
-    font-size:19px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:11px;
+
+    background:#f2f6f3;
+
+    font-size:20px;
 }
 
 .add-information{
     min-width:0;
 }
 
-
-/* ==============================================================
-   EMPTY STATE
-   ============================================================== */
-
-.empty-contents{
+.add-title{
     display:flex;
     align-items:center;
-    flex-direction:column;
-
-    margin-top:10px;
-    padding:48px 25px;
-
-    text-align:center;
-
-    background:#fbfcfb;
-
-    border:1px dashed #d8e2db;
-    border-radius:20px;
+    flex-wrap:wrap;
+    gap:7px;
 }
 
-.empty-contents-icon{
-    width:58px;
-    height:58px;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    margin-bottom:14px;
-
-    border-radius:18px;
-
-    background:#f0f6f1;
-
-    font-size:26px;
-}
-
-.empty-contents h3{
+.add-title h3{
     margin:0;
 
-    color:#2b3d32;
+    color:#283a2e;
 
-    font-size:17px;
+    font-size:14px;
     font-weight:800;
 }
 
-.empty-contents p{
-    max-width:480px;
-    margin:7px 0 0;
+.add-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:5px 13px;
 
-    color:#7b8780;
-
-    font-size:13px;
-    line-height:1.65;
+    margin-top:7px;
 }
 
-.empty-contents strong{
-    color:#4b5d52;
+.add-meta span{
+    color:#7d8982;
+
+    font-size:10px;
+}
+
+.add-meta strong{
+    color:#4a5b50;
 }
 
 
-/* ==============================================================
-   RESPONSIVE
-   ============================================================== */
+/* ============================================================
+   MOBILE
+============================================================ */
 
-@media (max-width:850px){
+@media (max-width:700px){
 
-    .storage-hero{
+    .storage-contents-page{
+        padding:13px 11px 45px;
+    }
+
+    .storage-page-header{
         align-items:flex-start;
         flex-direction:column;
-        padding:24px 22px;
     }
 
     .back-storage{
         width:100%;
+        justify-content:center;
     }
 
-    .storage-reference{
-        grid-template-columns:1fr;
+    .storage-page-title{
+        font-size:24px;
     }
 
-    .content-details,
-    .add-details{
-        grid-template-columns:repeat(2,minmax(0,1fr));
+    .contents-management,
+    .add-management{
+        align-items:stretch;
+        flex-direction:column;
+    }
+
+    .management-left,
+    .management-right{
+        width:100%;
+    }
+
+    .management-right{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+    }
+
+    .storage-action-button{
+        width:100%;
     }
 
     .reshuffle-form{
@@ -1030,83 +1036,17 @@ const storageNumber = isAgroStore
     .reshuffle-form .storage-action-button{
         width:100%;
     }
-}
-
-
-@media (max-width:620px){
-
-    .storage-page{
-        padding:12px 11px 50px;
-    }
-
-    .storage-hero{
-        border-radius:19px;
-        padding:21px 18px;
-    }
-
-    .storage-hero h2{
-        font-size:25px;
-    }
-
-    .storage-tabs{
-        display:grid;
-        grid-template-columns:1fr 1fr;
-
-        width:100%;
-    }
-
-    .storage-tab{
-        width:100%;
-        padding:0 8px;
-    }
-
-    .contents-management,
-    .add-management{
-        align-items:flex-start;
-        flex-direction:column;
-    }
-
-    .management-left,
-    .management-right{
-        width:100%;
-    }
-
-    .management-right{
-        justify-content:stretch;
-    }
-
-    .management-right .storage-action-button{
-        flex:1;
-    }
 
     .content-card{
-        grid-template-columns:auto 42px minmax(0,1fr);
-        gap:10px;
-        padding:14px;
-        border-radius:16px;
+        grid-template-columns:auto 40px minmax(0,1fr);
+        gap:9px;
+
+        padding:12px;
     }
 
     .content-icon{
-        width:42px;
-        height:42px;
-        border-radius:12px;
-        font-size:19px;
-    }
-
-    .content-title-row h3,
-    .add-title h3{
-        font-size:14px;
-    }
-
-    .content-details,
-    .add-details{
-        grid-template-columns:1fr 1fr;
-        gap:7px;
-    }
-
-    .content-detail,
-    .add-detail{
-        padding:8px;
+        width:40px;
+        height:40px;
     }
 
     .quantity-form{
@@ -1117,47 +1057,27 @@ const storageNumber = isAgroStore
         grid-column:1 / -1;
         width:100%;
     }
-
-    .feed-quantity-header{
-        align-items:flex-start;
-        flex-direction:column;
-        gap:4px;
-    }
-
-    .add-card{
-        grid-template-columns:auto 38px minmax(0,1fr);
-        gap:9px;
-        padding:13px;
-    }
-
-    .add-icon{
-        width:38px;
-        height:38px;
-    }
 }
 
 
-@media (max-width:420px){
+@media (max-width:430px){
 
-    .storage-reference{
-        gap:8px;
+    .storage-tabs{
+        margin-bottom:16px;
     }
 
-    .reference-item{
-        padding:12px 13px;
-    }
-
-    .content-details,
-    .add-details{
-        grid-template-columns:1fr;
+    .storage-tab{
+        font-size:11px;
     }
 
     .management-right{
-        flex-direction:column;
+        grid-template-columns:1fr;
     }
 
-    .management-right .storage-action-button{
-        width:100%;
+    .content-meta{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:6px;
     }
 
     .quantity-form{
@@ -1167,47 +1087,50 @@ const storageNumber = isAgroStore
     .quantity-save-button{
         grid-column:auto;
     }
+
+    .feed-quantity-header{
+        align-items:flex-start;
+        flex-direction:column;
+    }
 }
 
 </style>
 
 
-<div class="storage-page">
+<div class="storage-contents-page">
 
 
     <!-- ==========================================================
-         HERO
-         ========================================================== -->
+         HEADER
+    =========================================================== -->
 
-    <header class="storage-hero">
+    <header class="storage-page-header">
 
-        <div class="storage-hero-content">
+        <div class="storage-header-main">
 
-            <div class="storage-kicker">
-
-                <span class="storage-kicker-dot"></span>
+            <p class="storage-header-eyebrow">
 
                 <%= isAgroStore
                     ? "AgroStore"
-                    : "Storage Room"
+                    : "Storage"
                 %>
 
-            </div>
+            </p>
 
-            <h2>
-                <%= storageTitle %>
-            </h2>
+            <h1 class="storage-page-title">
+                <%= storageName %>
+            </h1>
 
-            <p class="storage-subtitle">
+            <p class="storage-page-description">
 
                 <% if (isAgroStore) { %>
 
-                    Manage animal feeds and monitor the
-                    quantity currently remaining in this AgroStore.
+                    Manage feeds currently stored here and
+                    update the quantity remaining.
 
                 <% } else { %>
 
-                    Manage animals, equipment and other assets
+                    View and manage the items currently
                     allocated to this storage room.
 
                 <% } %>
@@ -1221,8 +1144,7 @@ const storageNumber = isAgroStore
             href="/storage/<%= dairy._id %>"
             class="back-storage"
         >
-            <span>←</span>
-            Back to Storage
+            ← Back to Storage
         </a>
 
     </header>
@@ -1230,66 +1152,19 @@ const storageNumber = isAgroStore
 
 
     <!-- ==========================================================
-         REFERENCE INFORMATION
-         ========================================================== -->
-
-    <div class="storage-reference">
-
-        <div class="reference-item">
-
-            <span class="reference-label">
-                Farm
-            </span>
-
-            <span>
-                <%= dairy.name %>
-            </span>
-
-        </div>
-
-
-        <div class="reference-item">
-
-            <span class="reference-label">
-                Farm Code
-            </span>
-
-            <span>
-                <%= dairy.code %>
-            </span>
-
-        </div>
-
-
-        <div class="reference-item">
-
-            <span class="reference-label">
-
-                <%= isAgroStore
-                    ? "AgroStore Number"
-                    : "Room Number"
-                %>
-
-            </span>
-
-            <span>
-                <%= storageNumber %>
-            </span>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- ==========================================================
          MESSAGES
-         ========================================================== -->
+    =========================================================== -->
 
     <% if (successMessage) { %>
 
         <div class="storage-message storage-success">
-            <%= successMessage %>
+
+            ✓
+
+            <span>
+                <%= successMessage %>
+            </span>
+
         </div>
 
     <% } %>
@@ -1298,7 +1173,13 @@ const storageNumber = isAgroStore
     <% if (pageError) { %>
 
         <div class="storage-message storage-error">
-            <%= pageError %>
+
+            !
+
+            <span>
+                <%= pageError %>
+            </span>
+
         </div>
 
     <% } %>
@@ -1306,15 +1187,15 @@ const storageNumber = isAgroStore
 
 
     <!-- ==========================================================
-         CONTENT TABS
-         ========================================================== -->
+         TABS
+    =========================================================== -->
 
     <div class="storage-tabs">
 
         <button
             type="button"
-            class="storage-tab <%= activeTab === "add" ? "" : "active" %>"
-            data-tab="view"
+            class="storage-tab <%= currentTab === "view" ? "active" : "" %>"
+            data-storage-tab="view"
         >
             View Contents
         </button>
@@ -1322,8 +1203,8 @@ const storageNumber = isAgroStore
 
         <button
             type="button"
-            class="storage-tab <%= activeTab === "add" ? "active" : "" %>"
-            data-tab="add"
+            class="storage-tab <%= currentTab === "add" ? "active" : "" %>"
+            data-storage-tab="add"
         >
             Add Items
         </button>
@@ -1333,238 +1214,452 @@ const storageNumber = isAgroStore
 
 
     <!-- ==========================================================
-         CONTENT SUMMARY
+         ==========================================================
+         VIEW CONTENTS TAB
+         ==========================================================
          ========================================================== -->
 
-    <div class="contents-summary">
-
-        <span>
-
-            <strong>
-                <%= itemCount %>
-            </strong>
-
-            <%= itemCount === 1 ? "item" : "items" %>
-            currently stored
-
-        </span>
-
-    </div>
+    <section
+        id="storageViewTab"
+        class="storage-tab-panel <%= currentTab === "view" ? "active" : "" %>"
+        data-storage-panel="view"
+    >
 
 
+        <div class="contents-topbar">
 
-    <!-- ==========================================================
-         CURRENT CONTENTS
-         ========================================================== -->
-
-    <% if (items && items.length > 0) { %>
+            <h2 class="contents-heading">
+                Current Contents
+            </h2>
 
 
-        <% if (!isAgroStore) { %>
+            <div class="contents-count">
+
+                <strong>
+                    <%= itemCount %>
+                </strong>
+
+                <%= itemCount === 1 ? "item" : "items" %>
+
+            </div>
+
+        </div>
+
+
+
+        <% if (items && items.length > 0) { %>
 
 
             <!-- ==================================================
-                 NORMAL ROOM MANAGEMENT
-                 ================================================== -->
+                 NORMAL STORAGE
+            =================================================== -->
 
-            <form
-                id="reshuffleForm"
-                method="POST"
-                action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/reshuffle"
-            >
+            <% if (!isAgroStore) { %>
 
 
-                <div class="contents-management">
-
-                    <div class="management-left">
-
-                        <label class="select-all-wrapper">
-
-                            <input
-                                type="checkbox"
-                                id="selectAllContents"
-                            >
-
-                            <span>Select All</span>
-
-                        </label>
-
-
-                        <span
-                            id="contentsSelectionCount"
-                            class="selection-count"
-                        >
-                            0 selected
-                        </span>
-
-                    </div>
-
-
-                    <div class="management-right">
-
-                        <button
-                            type="button"
-                            id="openReshuffleButton"
-                            class="storage-action-button reshuffle-button"
-                            disabled
-                        >
-                            Reshuffle
-                        </button>
-
-
-                        <button
-                            type="button"
-                            id="omitButton"
-                            class="storage-action-button omit-button"
-                            disabled
-                        >
-                            Omit Selected
-                        </button>
-
-                    </div>
-
-                </div>
-
-
-
-                <!-- ==================================================
-                     RESHUFFLE PANEL
-                     ================================================== -->
-
-                <div
-                    id="reshufflePanel"
-                    class="reshuffle-panel"
+                <form
+                    id="reshuffleForm"
+                    method="POST"
+                    action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/reshuffle"
                 >
 
-                    <h3>
-                        Reshuffle Selected Items
-                    </h3>
 
+                    <!-- ==========================================
+                         MANAGEMENT BAR
+                    =========================================== -->
 
-                    <p>
-                        Move the selected items to another active
-                        room on this farm.
-                    </p>
+                    <div class="contents-management">
 
+                        <div class="management-left">
 
-                    <div class="reshuffle-form">
+                            <label class="select-all-wrapper">
 
-                        <div class="reshuffle-select-group">
+                                <input
+                                    type="checkbox"
+                                    id="selectAllContents"
+                                >
 
-                            <label for="destinationStorage">
-                                Destination
+                                <span>
+                                    Select All
+                                </span>
+
                             </label>
 
 
-                            <select
-                                id="destinationStorage"
-                                name="targetStorageId"
-                                class="reshuffle-select"
+                            <span
+                                id="contentsSelectionCount"
+                                class="selection-count"
                             >
-
-                                <option value="">
-                                    Select destination...
-                                </option>
-
-
-                                <% if (
-                                    targetStorages &&
-                                    targetStorages.length > 0
-                                ) { %>
-
-                                    <% targetStorages.forEach(
-                                        function(destination)
-                                    { %>
-
-                                        <option
-                                            value="<%= destination._id %>"
-                                        >
-
-                                            <%= destination.displayName ||
-                                                `Room ${destination.roomNumber}`
-                                            %>
-
-                                        </option>
-
-                                    <% }); %>
-
-                                <% } else { %>
-
-                                    <option
-                                        value=""
-                                        disabled
-                                    >
-                                        No other Rooms available
-                                    </option>
-
-                                <% } %>
-
-                            </select>
+                                0 selected
+                            </span>
 
                         </div>
 
 
-                        <button
-                            type="submit"
-                            id="reshuffleSubmitButton"
-                            class="storage-action-button add-button"
-                            disabled
-                        >
-                            Reshuffle Selected
-                        </button>
+                        <div class="management-right">
+
+                            <button
+                                type="button"
+                                id="openReshuffleButton"
+                                class="storage-action-button reshuffle-button"
+                                disabled
+                            >
+                                Reshuffle
+                            </button>
 
 
-                        <button
-                            type="button"
-                            id="cancelReshuffleButton"
-                            class="storage-action-button omit-button"
-                        >
-                            Cancel
-                        </button>
+                            <button
+                                type="button"
+                                id="omitButton"
+                                class="storage-action-button omit-button"
+                                disabled
+                            >
+                                Omit Selected
+                            </button>
+
+                        </div>
 
                     </div>
 
-                </div>
+
+
+                    <!-- ==========================================
+                         RESHUFFLE PANEL
+                    =========================================== -->
+
+                    <div
+                        id="reshufflePanel"
+                        class="reshuffle-panel"
+                    >
+
+                        <h3 class="reshuffle-heading">
+                            Reshuffle Selected Items
+                        </h3>
+
+
+                        <p class="reshuffle-description">
+
+                            Move the selected items to another
+                            active storage room of the same type.
+
+                        </p>
+
+
+                        <div class="reshuffle-form">
+
+                            <div class="reshuffle-select-group">
+
+                                <label for="destinationStorage">
+                                    Destination
+                                </label>
+
+
+                                <select
+                                    id="destinationStorage"
+                                    name="targetStorageId"
+                                    class="reshuffle-select"
+                                >
+
+                                    <option value="">
+                                        Select destination...
+                                    </option>
+
+
+                                    <% if (
+                                        targetStorages &&
+                                        targetStorages.length > 0
+                                    ) { %>
+
+                                        <% targetStorages.forEach(
+                                            function(destination)
+                                        { %>
+
+                                            <option
+                                                value="<%= destination._id %>"
+                                            >
+
+                                                <%= destination.displayName ||
+                                                    `Room ${destination.roomNumber}`
+                                                %>
+
+                                            </option>
+
+                                        <% }); %>
+
+                                    <% } else { %>
+
+                                        <option
+                                            value=""
+                                            disabled
+                                        >
+                                            No other Rooms available
+                                        </option>
+
+                                    <% } %>
+
+                                </select>
+
+                            </div>
+
+
+                            <button
+                                type="submit"
+                                id="reshuffleSubmitButton"
+                                class="storage-action-button add-button"
+                                disabled
+                            >
+                                Reshuffle Selected
+                            </button>
+
+
+                            <button
+                                type="button"
+                                id="cancelReshuffleButton"
+                                class="storage-action-button omit-button"
+                            >
+                                Cancel
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- ==========================================
+                         CONTENT LIST
+                    =========================================== -->
+
+                    <div class="contents-list">
+
+                        <% items.forEach(function(item) { %>
+
+                            <%
+                                const isAnimal =
+                                    item.code !== null &&
+                                    item.code !== undefined &&
+                                    Number(item.code) > 0;
+                            %>
+
+
+                            <article
+                                class="content-card"
+                                data-content-card
+                                data-item-id="<%= item._id %>"
+                            >
+
+                                <div class="content-checkbox">
+
+                                    <input
+                                        type="checkbox"
+                                        class="content-item-checkbox"
+                                        name="itemIds"
+                                        value="<%= item._id %>"
+                                    >
+
+                                </div>
+
+
+                                <div class="content-icon">
+
+                                    <%= isAnimal
+                                        ? "🐄"
+                                        : "🔧"
+                                    %>
+
+                                </div>
+
+
+                                <div class="content-information">
+
+                                    <div class="content-title-row">
+
+                                        <h3>
+                                            <%= item.name || "Unnamed Item" %>
+                                        </h3>
+
+
+                                        <span
+                                            class="content-type <%= isAnimal
+                                                ? "animal-type"
+                                                : "asset-type"
+                                            %>"
+                                        >
+
+                                            <%= isAnimal
+                                                ? "Animal"
+                                                : "Asset"
+                                            %>
+
+                                        </span>
+
+                                    </div>
+
+
+
+                                    <div class="content-meta">
+
+                                        <span class="content-meta-item">
+
+                                            <strong>Code:</strong>
+
+                                            <%= item.code ?? "—" %>
+
+                                        </span>
+
+
+                                        <span class="content-meta-item">
+
+                                            <strong>Type:</strong>
+
+                                            <%= item.type || "—" %>
+
+                                        </span>
+
+
+                                        <span class="content-meta-item">
+
+                                            <strong>Status:</strong>
+
+                                            <%= item.status || "—" %>
+
+                                        </span>
+
+
+                                        <% if (item.quantity !== null &&
+                                               item.quantity !== undefined) { %>
+
+                                            <span class="content-meta-item">
+
+                                                <strong>Quantity:</strong>
+
+                                                <%= Number(
+                                                    item.quantity || 0
+                                                ).toLocaleString() %>
+
+                                                <%= item.unit || "unit" %>
+
+                                            </span>
+
+                                        <% } %>
+
+
+                                        <% if (item.condition) { %>
+
+                                            <span class="content-meta-item">
+
+                                                <strong>Condition:</strong>
+
+                                                <%= item.condition %>
+
+                                            </span>
+
+                                        <% } %>
+
+
+                                        <% if (item.currentWorth !== null &&
+                                               item.currentWorth !== undefined) { %>
+
+                                            <span class="content-meta-item">
+
+                                                <strong>Worth:</strong>
+
+                                                <%= Number(
+                                                    item.currentWorth || 0
+                                                ).toLocaleString() %>
+
+                                            </span>
+
+                                        <% } %>
+
+                                    </div>
+
+
+
+                                    <% if (isAnimal) { %>
+
+                                        <div class="animal-information">
+
+                                            <span>
+                                                <strong>Gender:</strong>
+                                                <%= item.gender || "—" %>
+                                            </span>
+
+                                            <span>
+                                                <strong>Age:</strong>
+                                                <%= item.ageText || "—" %>
+                                            </span>
+
+                                            <span>
+                                                <strong>Milking:</strong>
+                                                <%= item.isMilking
+                                                    ? "Yes"
+                                                    : "No"
+                                                %>
+                                            </span>
+
+                                        </div>
+
+                                    <% } %>
+
+
+
+                                    <% if (item.description) { %>
+
+                                        <p class="content-description">
+                                            <%= item.description %>
+                                        </p>
+
+                                    <% } %>
+
+                                </div>
+
+                            </article>
+
+                        <% }); %>
+
+                    </div>
+
+                </form>
 
 
 
                 <!-- ==================================================
-                     ROOM CONTENTS
-                     ================================================== -->
+                     OMIT FORM
+                =================================================== -->
+
+                <form
+                    id="omitForm"
+                    method="POST"
+                    action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/omit"
+                    style="display:none;"
+                >
+
+                    <div id="omitInputs"></div>
+
+                </form>
+
+
+
+            <% } else { %>
+
+
+                <!-- ==================================================
+                     AGROSTORE
+                =================================================== -->
 
                 <div class="contents-list">
 
                     <% items.forEach(function(item) { %>
 
-                        <%
-                            const isAnimal =
-                                item.code !== null &&
-                                item.code !== undefined &&
-                                Number(item.code) > 0;
-                        %>
-
-
-                        <div
+                        <article
                             class="content-card"
+                            data-content-card
                             data-item-id="<%= item._id %>"
                         >
 
-                            <div class="content-checkbox">
-
-                                <input
-                                    type="checkbox"
-                                    class="content-item-checkbox"
-                                    name="itemIds"
-                                    value="<%= item._id %>"
-                                >
-
-                            </div>
-
-
                             <div class="content-icon">
-
-                                <%= isAnimal ? "🐄" : "🔧" %>
-
+                                🌾
                             </div>
 
 
@@ -1573,21 +1668,34 @@ const storageNumber = isAgroStore
                                 <div class="content-title-row">
 
                                     <h3>
-                                        <%= item.name || "Unnamed Item" %>
+                                        <%= item.name || "Unnamed Feed" %>
                                     </h3>
 
 
-                                    <span
-                                        class="content-type <%= isAnimal
-                                            ? "animal-type"
-                                            : "asset-type"
-                                        %>"
-                                    >
+                                    <span class="content-type feed-type">
+                                        Feed
+                                    </span>
 
-                                        <%= isAnimal
-                                            ? "Animal"
-                                            : "Asset"
-                                        %>
+                                </div>
+
+
+
+                                <div class="content-meta">
+
+                                    <span class="content-meta-item">
+
+                                        <strong>Type:</strong>
+
+                                        <%= item.type || "feeds" %>
+
+                                    </span>
+
+
+                                    <span class="content-meta-item">
+
+                                        <strong>Status:</strong>
+
+                                        <%= item.status || "—" %>
 
                                     </span>
 
@@ -1595,132 +1703,172 @@ const storageNumber = isAgroStore
 
 
 
-                                <div class="content-details">
+                                <!-- ======================================
+                                     QUANTITY
+                                ======================================= -->
 
-                                    <div class="content-detail">
+                                <div class="feed-quantity-section">
 
-                                        <span class="detail-label">
-                                            Code
+                                    <div class="feed-quantity-header">
+
+                                        <span class="feed-quantity-title">
+                                            Quantity Remaining
                                         </span>
 
-                                        <span class="detail-value">
-                                            <%= item.code ?? "—" %>
-                                        </span>
 
-                                    </div>
+                                        <span>
 
+                                            <span class="feed-current-quantity">
 
-                                    <div class="content-detail">
+                                                <%= Number(
+                                                    item.quantity || 0
+                                                ).toLocaleString() %>
 
-                                        <span class="detail-label">
-                                            Type
-                                        </span>
-
-                                        <span class="detail-value">
-                                            <%= item.type || "—" %>
-                                        </span>
-
-                                    </div>
+                                            </span>
 
 
-                                    <div class="content-detail">
-
-                                        <span class="detail-label">
-                                            Status
-                                        </span>
-
-                                        <span class="detail-value status-active">
-                                            <%= item.status || "—" %>
-                                        </span>
-
-                                    </div>
-
-
-                                    <div class="content-detail">
-
-                                        <span class="detail-label">
-                                            Dwell Number
-                                        </span>
-
-                                        <span class="detail-value">
-                                            <%= item.dwellNumber ?? "—" %>
-                                        </span>
-
-                                    </div>
-
-
-                                    <div class="content-detail">
-
-                                        <span class="detail-label">
-                                            Condition
-                                        </span>
-
-                                        <span class="detail-value">
-                                            <%= item.condition || "—" %>
-                                        </span>
-
-                                    </div>
-
-
-                                    <div class="content-detail">
-
-                                        <span class="detail-label">
-                                            Quantity
-                                        </span>
-
-                                        <span class="detail-value">
-
-                                            <%= Number(
-                                                item.quantity || 0
-                                            ).toLocaleString() %>
-
-                                            <%= item.unit || "unit" %>
+                                            <span class="feed-unit">
+                                                <%= item.unit || "unit" %>
+                                            </span>
 
                                         </span>
 
                                     </div>
 
 
-                                    <div class="content-detail">
 
-                                        <span class="detail-label">
-                                            Current Worth
-                                        </span>
+                                    <form
+                                        class="quantity-form"
+                                        method="POST"
+                                        action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/quantity"
+                                        data-feed-quantity-form
+                                    >
 
-                                        <span class="detail-value">
-
-                                            <%= Number(
-                                                item.currentWorth || 0
-                                            ).toLocaleString() %>
-
-                                        </span>
-
-                                    </div>
-
-                                </div>
+                                        <input
+                                            type="hidden"
+                                            name="itemId"
+                                            value="<%= item._id %>"
+                                        >
 
 
+                                        <div class="quantity-field">
 
-                                <% if (isAnimal) { %>
+                                            <label
+                                                for="quantity-<%= item._id %>"
+                                            >
+                                                New Remaining Quantity
+                                            </label>
 
-                                    <p class="content-description">
 
-                                        <strong>Gender:</strong>
-                                        <%= item.gender || "—" %>
+                                            <input
+                                                id="quantity-<%= item._id %>"
+                                                class="quantity-input"
+                                                type="number"
+                                                name="quantity"
+                                                min="0"
+                                                max="<%= Number(item.quantity || 0) %>"
+                                                step="any"
+                                                value="<%= item.quantity ?? 0 %>"
+                                                required
+                                            >
 
-                                        &nbsp; • &nbsp;
+                                        </div>
 
-                                        <strong>Age:</strong>
-                                        <%= item.ageText || "—" %>
 
-                                        &nbsp; • &nbsp;
 
-                                        <strong>Milking:</strong>
-                                        <%= item.isMilking ? "Yes" : "No" %>
+                                        <%
+                                            const currentUnit =
+                                                String(
+                                                    item.unit || ""
+                                                )
+                                                .trim()
+                                                .toLowerCase();
+                                        %>
+
+
+                                        <select
+                                            class="quantity-unit"
+                                            name="unit"
+                                            aria-label="Feed unit"
+                                        >
+
+                                            <option
+                                                value="kg"
+                                                <%= currentUnit === "kg"
+                                                    ? "selected"
+                                                    : "" %>
+                                            >
+                                                kg
+                                            </option>
+
+
+                                            <option
+                                                value="bales"
+                                                <%= currentUnit === "bales"
+                                                    ? "selected"
+                                                    : "" %>
+                                            >
+                                                bales
+                                            </option>
+
+
+                                            <option
+                                                value="bags"
+                                                <%= currentUnit === "bags"
+                                                    ? "selected"
+                                                    : "" %>
+                                            >
+                                                bags
+                                            </option>
+
+
+                                            <option
+                                                value="litres"
+                                                <%= currentUnit === "litres"
+                                                    ? "selected"
+                                                    : "" %>
+                                            >
+                                                litres
+                                            </option>
+
+
+                                            <option
+                                                value="units"
+                                                <%= currentUnit === "units"
+                                                    ? "selected"
+                                                    : "" %>
+                                            >
+                                                units
+                                            </option>
+
+                                        </select>
+
+
+
+                                        <button
+                                            type="submit"
+                                            class="quantity-save-button"
+                                        >
+                                            Save
+                                        </button>
+
+                                    </form>
+
+
+
+                                    <p class="quantity-help">
+
+                                        Reduce the quantity to record
+                                        what is currently remaining.
+                                        Setting it to
+                                        <strong>0</strong>
+                                        automatically removes the feed
+                                        from this AgroStore.
 
                                     </p>
 
-                                <% } %>
+                                </div>
+
 
 
                                 <% if (item.description) { %>
@@ -1733,30 +1881,13 @@ const storageNumber = isAgroStore
 
                             </div>
 
-                        </div>
+                        </article>
 
                     <% }); %>
 
                 </div>
 
-            </form>
-
-
-
-            <!-- ==================================================
-                 HIDDEN OMIT FORM
-                 ================================================== -->
-
-            <form
-                id="omitForm"
-                method="POST"
-                action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/omit"
-                style="display:none;"
-            >
-
-                <div id="omitInputs"></div>
-
-            </form>
+            <% } %>
 
 
 
@@ -1764,358 +1895,72 @@ const storageNumber = isAgroStore
 
 
             <!-- ==================================================
-                 AGROSTORE CONTENTS
-                 ================================================== -->
+                 EMPTY CONTENTS
+            =================================================== -->
 
-            <div class="contents-list">
+            <div class="empty-contents">
 
-                <% items.forEach(function(item) { %>
+                <div class="empty-icon">
 
-                    <div
-                        class="content-card"
-                        data-item-id="<%= item._id %>"
-                    >
+                    <%= isAgroStore
+                        ? "🌾"
+                        : "📦"
+                    %>
 
-                        <div class="content-icon">
-                            🌾
-                        </div>
+                </div>
 
 
-                        <div class="content-information">
+                <h3>
 
-                            <div class="content-title-row">
+                    <%= isAgroStore
+                        ? "AgroStore is Empty"
+                        : "No Items in This Storage"
+                    %>
 
-                                <h3>
-                                    <%= item.name || "Unnamed Feed" %>
-                                </h3>
+                </h3>
 
 
-                                <span class="content-type feed-type">
-                                    Feed
-                                </span>
+                <p>
 
-                            </div>
+                    <% if (isAgroStore) { %>
 
+                        There are currently no feeds with
+                        remaining quantity in this AgroStore.
 
+                    <% } else { %>
 
-                            <div class="content-details">
+                        There are currently no items allocated
+                        to this storage room.
 
-                                <div class="content-detail">
+                    <% } %>
 
-                                    <span class="detail-label">
-                                        Code
-                                    </span>
-
-                                    <span class="detail-value">
-                                        <%= item.code ?? "—" %>
-                                    </span>
-
-                                </div>
-
-
-                                <div class="content-detail">
-
-                                    <span class="detail-label">
-                                        Feed Type
-                                    </span>
-
-                                    <span class="detail-value">
-                                        <%= item.type || "feeds" %>
-                                    </span>
-
-                                </div>
-
-
-                                <div class="content-detail">
-
-                                    <span class="detail-label">
-                                        Status
-                                    </span>
-
-                                    <span class="detail-value status-active">
-                                        <%= item.status || "—" %>
-                                    </span>
-
-                                </div>
-
-
-                                <div class="content-detail">
-
-                                    <span class="detail-label">
-                                        Quantity
-                                    </span>
-
-                                    <span class="detail-value">
-
-                                        <%= Number(
-                                            item.quantity || 0
-                                        ).toLocaleString() %>
-
-                                        <%= item.unit || "unit" %>
-
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-
-
-                            <!-- ======================================
-                                 FEED QUANTITY
-                                 ====================================== -->
-
-                            <div class="feed-quantity-section">
-
-                                <div class="feed-quantity-header">
-
-                                    <span class="feed-quantity-title">
-                                        Quantity Remaining
-                                    </span>
-
-
-                                    <span>
-
-                                        <span class="feed-current-quantity">
-
-                                            <%= Number(
-                                                item.quantity || 0
-                                            ).toLocaleString() %>
-
-                                        </span>
-
-
-                                        <span class="feed-unit">
-                                            <%= item.unit || "unit" %>
-                                        </span>
-
-                                    </span>
-
-                                </div>
-
-
-
-                                <form
-                                    class="quantity-form"
-                                    method="POST"
-                                    action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/quantity"
-                                    data-feed-quantity-form
-                                >
-
-                                    <input
-                                        type="hidden"
-                                        name="itemId"
-                                        value="<%= item._id %>"
-                                    >
-
-
-                                    <div class="quantity-field">
-
-                                        <label
-                                            for="quantity-<%= item._id %>"
-                                        >
-                                            New Remaining Quantity
-                                        </label>
-
-
-                                        <input
-                                            id="quantity-<%= item._id %>"
-                                            class="quantity-input"
-                                            type="number"
-                                            name="quantity"
-                                            min="0"
-                                            max="<%= Number(item.quantity || 0) %>"
-                                            step="any"
-                                            value="<%= item.quantity ?? 0 %>"
-                                            required
-                                        >
-
-                                    </div>
-
-
-
-                                    <select
-                                        class="quantity-unit"
-                                        name="unit"
-                                        aria-label="Feed unit"
-                                    >
-
-                                        <%
-                                            const currentUnit =
-                                                String(
-                                                    item.unit || ""
-                                                )
-                                                .trim()
-                                                .toLowerCase();
-                                        %>
-
-
-                                        <option
-                                            value="kg"
-                                            <%= currentUnit === "kg"
-                                                ? "selected"
-                                                : "" %>
-                                        >
-                                            kg
-                                        </option>
-
-
-                                        <option
-                                            value="bales"
-                                            <%= currentUnit === "bales"
-                                                ? "selected"
-                                                : "" %>
-                                        >
-                                            bales
-                                        </option>
-
-
-                                        <option
-                                            value="bags"
-                                            <%= currentUnit === "bags"
-                                                ? "selected"
-                                                : "" %>
-                                        >
-                                            bags
-                                        </option>
-
-
-                                        <option
-                                            value="litres"
-                                            <%= currentUnit === "litres"
-                                                ? "selected"
-                                                : "" %>
-                                        >
-                                            litres
-                                        </option>
-
-
-                                        <option
-                                            value="units"
-                                            <%= currentUnit === "units"
-                                                ? "selected"
-                                                : "" %>
-                                        >
-                                            units
-                                        </option>
-
-                                    </select>
-
-
-
-                                    <button
-                                        type="submit"
-                                        class="quantity-save-button"
-                                    >
-                                        Save
-                                    </button>
-
-                                </form>
-
-
-
-                                <p class="quantity-help">
-
-                                    Record the amount currently remaining.
-                                    The quantity can only be reduced from
-                                    the amount currently stored.
-
-                                    Setting the quantity to
-                                    <strong>0</strong>
-                                    automatically removes this feed
-                                    from the AgroStore.
-
-                                </p>
-
-                            </div>
-
-
-
-                            <% if (item.description) { %>
-
-                                <p class="content-description">
-                                    <%= item.description %>
-                                </p>
-
-                            <% } %>
-
-                        </div>
-
-                    </div>
-
-                <% }); %>
+                </p>
 
             </div>
 
         <% } %>
 
-
-
-    <% } else { %>
-
-
-        <!-- ==========================================================
-             EMPTY CURRENT CONTENTS
-             ========================================================== -->
-
-        <div class="empty-contents">
-
-            <div class="empty-contents-icon">
-
-                <%= isAgroStore ? "🌾" : "🏠" %>
-
-            </div>
-
-
-            <h3>
-
-                <%= isAgroStore
-                    ? "AgroStore is Empty"
-                    : "No Items Found"
-                %>
-
-            </h3>
-
-
-            <p>
-
-                <% if (isAgroStore) { %>
-
-                    There are currently no feeds with remaining
-                    quantity in
-
-                    <strong>
-                        <%= storageTitle %>
-                    </strong>.
-
-                <% } else { %>
-
-                    There are currently no items allocated to
-
-                    <strong>
-                        <%= storageTitle %>
-                    </strong>.
-
-                <% } %>
-
-            </p>
-
-        </div>
-
-    <% } %>
+    </section>
 
 
 
     <!-- ==========================================================
-         ADD ITEMS
+         ==========================================================
+         ADD ITEMS TAB
+         ==========================================================
          ========================================================== -->
 
-    <section class="add-section">
+    <section
+        id="storageAddTab"
+        class="storage-tab-panel <%= currentTab === "add" ? "active" : "" %>"
+        data-storage-panel="add"
+    >
 
-        <div class="add-header">
+
+        <div class="add-introduction">
 
             <h3>
-                Add Items to <%= storageTitle %>
+                Add Items
             </h3>
 
 
@@ -2123,13 +1968,12 @@ const storageNumber = isAgroStore
 
                 <% if (isAgroStore) { %>
 
-                    Select feeds belonging to this farm that are
-                    currently not allocated to a storage facility.
+                    Select unallocated feeds that belong to this farm.
 
                 <% } else { %>
 
-                    Select animals or assets belonging to this farm
-                    that are currently unallocated.
+                    Select unallocated animals or assets that belong
+                    to this farm.
 
                 <% } %>
 
@@ -2139,76 +1983,87 @@ const storageNumber = isAgroStore
 
 
 
-        <form
-            method="POST"
-            action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add"
-            id="addItemsForm"
-        >
+        <% if (
+            availableItems &&
+            availableItems.length > 0
+        ) { %>
 
 
-            <% if (
-                availableItems &&
-                availableItems.length > 0
-            ) { %>
+            <!-- ==================================================
+                 ADD MANAGEMENT
+            =================================================== -->
 
+            <div class="add-management">
 
-                <div class="add-management">
+                <div class="management-left">
 
-                    <div class="management-left">
+                    <label class="select-all-wrapper">
 
-                        <label class="select-all-wrapper">
-
-                            <input
-                                type="checkbox"
-                                id="selectAllAddItems"
-                            >
-
-                            <span>Select All</span>
-
-                        </label>
-
-
-                        <span
-                            id="addSelectionCount"
-                            class="selection-count"
+                        <input
+                            type="checkbox"
+                            id="selectAllAddItems"
                         >
-                            0 selected
+
+                        <span>
+                            Select All
                         </span>
 
-                    </div>
+                    </label>
 
 
-                    <div class="management-right">
-
-                        <button
-                            type="submit"
-                            id="addSelectedButton"
-                            class="storage-action-button add-button"
-                            disabled
-                        >
-                            Add Selected
-                        </button>
-
-                    </div>
+                    <span
+                        id="addSelectionCount"
+                        class="selection-count"
+                    >
+                        0 selected
+                    </span>
 
                 </div>
 
 
+                <div class="management-right">
+
+                    <button
+                        type="submit"
+                        form="addItemsForm"
+                        id="addSelectedButton"
+                        class="storage-action-button add-button"
+                        disabled
+                    >
+                        Add Selected
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================================
+                 ADD FORM
+            =================================================== -->
+
+            <form
+                method="POST"
+                action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add"
+                id="addItemsForm"
+            >
 
                 <div class="add-list">
 
                     <% availableItems.forEach(function(item) { %>
 
                         <%
-                            const availableIsAnimal =
+                            const isAvailableAnimal =
                                 item.code !== null &&
                                 item.code !== undefined &&
                                 Number(item.code) > 0;
                         %>
 
 
-                        <div
+                        <article
                             class="add-card"
+                            data-add-card
                             data-add-item-id="<%= item._id %>"
                         >
 
@@ -2228,7 +2083,7 @@ const storageNumber = isAgroStore
 
                                 <%= isAgroStore
                                     ? "🌾"
-                                    : availableIsAnimal
+                                    : isAvailableAnimal
                                         ? "🐄"
                                         : "🔧"
                                 %>
@@ -2248,7 +2103,7 @@ const storageNumber = isAgroStore
                                     <span
                                         class="content-type <%= isAgroStore
                                             ? "feed-type"
-                                            : availableIsAnimal
+                                            : isAvailableAnimal
                                                 ? "animal-type"
                                                 : "asset-type"
                                         %>"
@@ -2256,7 +2111,7 @@ const storageNumber = isAgroStore
 
                                         <%= isAgroStore
                                             ? "Feed"
-                                            : availableIsAnimal
+                                            : isAvailableAnimal
                                                 ? "Animal"
                                                 : "Asset"
                                         %>
@@ -2267,72 +2122,54 @@ const storageNumber = isAgroStore
 
 
 
-                                <div class="add-details">
+                                <div class="add-meta">
 
-                                    <div class="add-detail">
+                                    <span>
 
-                                        <span class="add-detail-label">
-                                            Asset Code
-                                        </span>
+                                        <strong>
+                                            Code:
+                                        </strong>
 
-                                        <span class="add-detail-value">
+                                        <%= item.assetCode ||
+                                            item.code ||
+                                            "—"
+                                        %>
 
-                                            <%= item.assetCode ||
-                                                item.code ||
-                                                "—"
-                                            %>
-
-                                        </span>
-
-                                    </div>
+                                    </span>
 
 
-                                    <div class="add-detail">
+                                    <span>
 
-                                        <span class="add-detail-label">
-                                            Type
-                                        </span>
+                                        <strong>
+                                            Type:
+                                        </strong>
 
-                                        <span class="add-detail-value">
-                                            <%= item.type || "—" %>
-                                        </span>
+                                        <%= item.type || "—" %>
 
-                                    </div>
+                                    </span>
 
 
-                                    <div class="add-detail">
+                                    <span>
 
-                                        <span class="add-detail-label">
-                                            Status
-                                        </span>
+                                        <strong>
+                                            Status:
+                                        </strong>
 
-                                        <span class="add-detail-value">
-                                            <%= item.status || "—" %>
-                                        </span>
+                                        <%= item.status || "—" %>
 
-                                    </div>
+                                    </span>
 
 
-                                    <div class="add-detail">
+                                    <% if (
+                                        item.quantity !== null &&
+                                        item.quantity !== undefined
+                                    ) { %>
 
-                                        <span class="add-detail-label">
-                                            Dwell Number
-                                        </span>
+                                        <span>
 
-                                        <span class="add-detail-value">
-                                            —
-                                        </span>
-
-                                    </div>
-
-
-                                    <div class="add-detail">
-
-                                        <span class="add-detail-label">
-                                            Quantity
-                                        </span>
-
-                                        <span class="add-detail-value">
+                                            <strong>
+                                                Quantity:
+                                            </strong>
 
                                             <%= Number(
                                                 item.quantity || 0
@@ -2342,92 +2179,798 @@ const storageNumber = isAgroStore
 
                                         </span>
 
-                                    </div>
-
-
-                                    <% if (isAgroStore) { %>
-
-                                        <div class="add-detail">
-
-                                            <span class="add-detail-label">
-                                                Available Quantity
-                                            </span>
-
-                                            <span class="add-detail-value">
-
-                                                <%= Number(
-                                                    item.quantity || 0
-                                                ).toLocaleString() %>
-
-                                                <%= item.unit || "unit" %>
-
-                                            </span>
-
-                                        </div>
-
                                     <% } %>
 
                                 </div>
 
                             </div>
 
-                        </div>
+                        </article>
 
                     <% }); %>
 
                 </div>
 
-
-            <% } else { %>
-
-
-                <!-- ==================================================
-                     EMPTY AVAILABLE ITEMS
-                     ================================================== -->
-
-                <div class="empty-contents">
-
-                    <div class="empty-contents-icon">
-
-                        <%= isAgroStore ? "🌾" : "📦" %>
-
-                    </div>
+            </form>
 
 
-                    <h3>
-
-                        <%= isAgroStore
-                            ? "No Feeds Available"
-                            : "No Items Available"
-                        %>
-
-                    </h3>
+        <% } else { %>
 
 
-                    <p>
+            <!-- ==================================================
+                 NOTHING AVAILABLE
+            =================================================== -->
 
-                        <% if (isAgroStore) { %>
+            <div class="empty-contents">
 
-                            There are currently no unallocated feed
-                            items belonging to this farm.
+                <div class="empty-icon">
 
-                        <% } else { %>
-
-                            There are currently no unallocated items
-                            belonging to this farm.
-
-                        <% } %>
-
-                    </p>
+                    <%= isAgroStore
+                        ? "🌾"
+                        : "📦"
+                    %>
 
                 </div>
 
 
-            <% } %>
+                <h3>
+
+                    <%= isAgroStore
+                        ? "No Feeds Available"
+                        : "No Items Available"
+                    %>
+
+                </h3>
 
 
-        </form>
+                <p>
+
+                    <% if (isAgroStore) { %>
+
+                        There are currently no unallocated feeds
+                        belonging to this farm.
+
+                    <% } else { %>
+
+                        There are currently no unallocated items
+                        belonging to this farm.
+
+                    <% } %>
+
+                </p>
+
+            </div>
+
+        <% } %>
 
     </section>
 
 </div>
+
+
+
+<script>
+
+/* ============================================================
+   STORAGE CONTENTS PAGE JAVASCRIPT
+============================================================ */
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function(){
+
+        /* ======================================================
+           TABS
+        ====================================================== */
+
+        const tabs =
+            document.querySelectorAll(
+                "[data-storage-tab]"
+            );
+
+
+        const panels =
+            document.querySelectorAll(
+                "[data-storage-panel]"
+            );
+
+
+        tabs.forEach(
+            function(tab){
+
+                tab.addEventListener(
+                    "click",
+                    function(){
+
+                        const target =
+                            tab.dataset.storageTab;
+
+
+                        tabs.forEach(
+                            function(item){
+
+                                item.classList.toggle(
+                                    "active",
+                                    item.dataset.storageTab === target
+                                );
+
+                            }
+                        );
+
+
+                        panels.forEach(
+                            function(panel){
+
+                                panel.classList.toggle(
+                                    "active",
+                                    panel.dataset.storagePanel === target
+                                );
+
+                            }
+                        );
+
+
+                        /*
+                         * Keep the browser URL aligned with the
+                         * selected tab without reloading the page.
+                         */
+
+                        try {
+
+                            const url =
+                                new URL(
+                                    window.location.href
+                                );
+
+
+                            url.searchParams.set(
+                                "tab",
+                                target
+                            );
+
+
+                            window.history.replaceState(
+                                {},
+                                "",
+                                url
+                            );
+
+                        } catch(error){
+
+                            /*
+                             * URL updating is cosmetic only.
+                             */
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+        /* ======================================================
+           NORMAL STORAGE SELECTION
+        ====================================================== */
+
+        const selectAllContents =
+            document.getElementById(
+                "selectAllContents"
+            );
+
+
+        const contentCheckboxes =
+            document.querySelectorAll(
+                ".content-item-checkbox"
+            );
+
+
+        const contentsSelectionCount =
+            document.getElementById(
+                "contentsSelectionCount"
+            );
+
+
+        const openReshuffleButton =
+            document.getElementById(
+                "openReshuffleButton"
+            );
+
+
+        const omitButton =
+            document.getElementById(
+                "omitButton"
+            );
+
+
+        const reshufflePanel =
+            document.getElementById(
+                "reshufflePanel"
+            );
+
+
+        const destinationStorage =
+            document.getElementById(
+                "destinationStorage"
+            );
+
+
+        const reshuffleSubmitButton =
+            document.getElementById(
+                "reshuffleSubmitButton"
+            );
+
+
+        const cancelReshuffleButton =
+            document.getElementById(
+                "cancelReshuffleButton"
+            );
+
+
+        const reshuffleForm =
+            document.getElementById(
+                "reshuffleForm"
+            );
+
+
+        const omitForm =
+            document.getElementById(
+                "omitForm"
+            );
+
+
+        const omitInputs =
+            document.getElementById(
+                "omitInputs"
+            );
+
+
+        /* ======================================================
+           GET SELECTED CONTENTS
+        ====================================================== */
+
+        function getSelectedContents(){
+
+            return Array.from(
+                document.querySelectorAll(
+                    ".content-item-checkbox:checked"
+                )
+            );
+
+        }
+
+
+        /* ======================================================
+           UPDATE CONTENT SELECTION
+        ====================================================== */
+
+        function updateContentSelection(){
+
+            const selected =
+                getSelectedContents();
+
+
+            const count =
+                selected.length;
+
+
+            if (
+                contentsSelectionCount
+            ){
+
+                contentsSelectionCount.textContent =
+                    `${count} selected`;
+
+            }
+
+
+            if (
+                openReshuffleButton
+            ){
+
+                openReshuffleButton.disabled =
+                    count === 0;
+
+            }
+
+
+            if (
+                omitButton
+            ){
+
+                omitButton.disabled =
+                    count === 0;
+
+            }
+
+
+            document
+                .querySelectorAll(
+                    "[data-content-card]"
+                )
+                .forEach(
+                    function(card){
+
+                        const checkbox =
+                            card.querySelector(
+                                ".content-item-checkbox"
+                            );
+
+
+                        card.classList.toggle(
+                            "selected",
+                            Boolean(
+                                checkbox &&
+                                checkbox.checked
+                            )
+                        );
+
+                    }
+                );
+
+
+            if (
+                selectAllContents
+            ){
+
+                selectAllContents.checked =
+                    contentCheckboxes.length > 0 &&
+                    count === contentCheckboxes.length;
+
+            }
+
+        }
+
+
+        /* ======================================================
+           SELECT ALL CONTENTS
+        ====================================================== */
+
+        if (
+            selectAllContents
+        ){
+
+            selectAllContents.addEventListener(
+                "change",
+                function(){
+
+                    contentCheckboxes.forEach(
+                        function(checkbox){
+
+                            checkbox.checked =
+                                selectAllContents.checked;
+
+                        }
+                    );
+
+
+                    updateContentSelection();
+
+                }
+            );
+
+        }
+
+
+        /* ======================================================
+           INDIVIDUAL CONTENT CHECKBOXES
+        ====================================================== */
+
+        contentCheckboxes.forEach(
+            function(checkbox){
+
+                checkbox.addEventListener(
+                    "change",
+                    updateContentSelection
+                );
+
+            }
+        );
+
+
+        /* ======================================================
+           OPEN RESHUFFLE
+        ====================================================== */
+
+        if (
+            openReshuffleButton
+        ){
+
+            openReshuffleButton.addEventListener(
+                "click",
+                function(){
+
+                    if (
+                        openReshuffleButton.disabled
+                    ){
+
+                        return;
+
+                    }
+
+
+                    reshufflePanel.classList.add(
+                        "open"
+                    );
+
+
+                    updateReshuffleButton();
+
+                }
+            );
+
+        }
+
+
+        /* ======================================================
+           CANCEL RESHUFFLE
+        ====================================================== */
+
+        if (
+            cancelReshuffleButton
+        ){
+
+            cancelReshuffleButton.addEventListener(
+                "click",
+                function(){
+
+                    reshufflePanel.classList.remove(
+                        "open"
+                    );
+
+
+                    if (
+                        destinationStorage
+                    ){
+
+                        destinationStorage.value =
+                            "";
+
+                    }
+
+
+                    updateReshuffleButton();
+
+                }
+            );
+
+        }
+
+
+        /* ======================================================
+           RESHUFFLE VALIDATION
+        ====================================================== */
+
+        function updateReshuffleButton(){
+
+            if (
+                !reshuffleSubmitButton
+            ){
+
+                return;
+
+            }
+
+
+            const selected =
+                getSelectedContents();
+
+
+            const hasDestination =
+                destinationStorage &&
+                destinationStorage.value;
+
+
+            reshuffleSubmitButton.disabled =
+                selected.length === 0 ||
+                !hasDestination;
+
+        }
+
+
+        if (
+            destinationStorage
+        ){
+
+            destinationStorage.addEventListener(
+                "change",
+                updateReshuffleButton
+            );
+
+        }
+
+
+        /* ======================================================
+           RESHUFFLE SUBMIT
+        ====================================================== */
+
+        if (
+            reshuffleForm
+        ){
+
+            reshuffleForm.addEventListener(
+                "submit",
+                function(event){
+
+                    const selected =
+                        getSelectedContents();
+
+
+                    if (
+                        selected.length === 0
+                    ){
+
+                        event.preventDefault();
+
+                        return;
+
+                    }
+
+
+                    if (
+                        !destinationStorage ||
+                        !destinationStorage.value
+                    ){
+
+                        event.preventDefault();
+
+                        return;
+
+                    }
+
+                }
+            );
+
+        }
+
+
+        /* ======================================================
+           OMIT SELECTED
+        ====================================================== */
+
+        if (
+            omitButton
+        ){
+
+            omitButton.addEventListener(
+                "click",
+                function(){
+
+                    const selected =
+                        getSelectedContents();
+
+
+                    if (
+                        selected.length === 0 ||
+                        !omitForm ||
+                        !omitInputs
+                    ){
+
+                        return;
+
+                    }
+
+
+                    /*
+                     * The reshuffle form already contains the
+                     * selected checkboxes, so the omit action
+                     * gets its own hidden form.
+                     */
+
+                    omitInputs.innerHTML =
+                        "";
+
+
+                    selected.forEach(
+                        function(checkbox){
+
+                            const input =
+                                document.createElement(
+                                    "input"
+                                );
+
+
+                            input.type =
+                                "hidden";
+
+
+                            input.name =
+                                "itemIds";
+
+
+                            input.value =
+                                checkbox.value;
+
+
+                            omitInputs.appendChild(
+                                input
+                            );
+
+                        }
+                    );
+
+
+                    omitForm.submit();
+
+                }
+            );
+
+        }
+
+
+        /* ======================================================
+           ADD ITEMS SELECTION
+        ====================================================== */
+
+        const selectAllAddItems =
+            document.getElementById(
+                "selectAllAddItems"
+            );
+
+
+        const addCheckboxes =
+            document.querySelectorAll(
+                ".add-item-checkbox"
+            );
+
+
+        const addSelectionCount =
+            document.getElementById(
+                "addSelectionCount"
+            );
+
+
+        const addSelectedButton =
+            document.getElementById(
+                "addSelectedButton"
+            );
+
+
+        /* ======================================================
+           GET SELECTED ADD ITEMS
+        ====================================================== */
+
+        function getSelectedAddItems(){
+
+            return Array.from(
+                document.querySelectorAll(
+                    ".add-item-checkbox:checked"
+                )
+            );
+
+        }
+
+
+        /* ======================================================
+           UPDATE ADD SELECTION
+        ====================================================== */
+
+        function updateAddSelection(){
+
+            const selected =
+                getSelectedAddItems();
+
+
+            const count =
+                selected.length;
+
+
+            if (
+                addSelectionCount
+            ){
+
+                addSelectionCount.textContent =
+                    `${count} selected`;
+
+            }
+
+
+            if (
+                addSelectedButton
+            ){
+
+                addSelectedButton.disabled =
+                    count === 0;
+
+            }
+
+
+            document
+                .querySelectorAll(
+                    "[data-add-card]"
+                )
+                .forEach(
+                    function(card){
+
+                        const checkbox =
+                            card.querySelector(
+                                ".add-item-checkbox"
+                            );
+
+
+                        card.classList.toggle(
+                            "selected",
+                            Boolean(
+                                checkbox &&
+                                checkbox.checked
+                            )
+                        );
+
+                    }
+                );
+
+
+            if (
+                selectAllAddItems
+            ){
+
+                selectAllAddItems.checked =
+                    addCheckboxes.length > 0 &&
+                    count === addCheckboxes.length;
+
+            }
+
+        }
+
+
+        /* ======================================================
+           SELECT ALL ADD ITEMS
+        ====================================================== */
+
+        if (
+            selectAllAddItems
+        ){
+
+            selectAllAddItems.addEventListener(
+                "change",
+                function(){
+
+                    addCheckboxes.forEach(
+                        function(checkbox){
+
+                            checkbox.checked =
+                                selectAllAddItems.checked;
+
+                        }
+                    );
+
+
+                    updateAddSelection();
+
+                }
+            );
+
+        }
+
+
+        /* ======================================================
+           INDIVIDUAL ADD CHECKBOXES
+        ====================================================== */
+
+        addCheckboxes.forEach(
+            function(checkbox){
+
+                checkbox.addEventListener(
+                    "change",
+                    updateAddSelection
+                );
+
+            }
+        );
+
+
+        /* ======================================================
+           INITIAL STATE
+        ====================================================== */
+
+        updateContentSelection();
+
+        updateReshuffleButton();
+
+        updateAddSelection();
+
+    }
+);
+
+</script>
