@@ -1,70 +1,76 @@
 // ==========================================================
-// services/storage/add.js
-// STORAGE SERVICE INDEX
+// services/storage/index.js
+// STORAGE SERVICE ENTRY POINT
 // ==========================================================
-//
-// PUBLIC STORAGE SERVICE API
 //
 // Combines:
 //
 //     list.js
 //     add.js
 //
-// This file preserves the original service interface.
+// PUBLIC API:
+//
+//     normalizeType
+//     getParentDairy
+//     getStorage
+//     getAllStorage
+//     getRooms
+//     getAgroStores
+//     getStorageFacility
+//     createStorage
 //
 // ==========================================================
 
 
-const listService =
+const list =
     require("./list");
 
-const storageService =
+const add =
     require("./add");
 
 
 // ==========================================================
 // EXPORT
 // ==========================================================
+//
+// Keep the exact same service API that the original
+// storageService.js exposed.
+//
+// ==========================================================
 
 module.exports = {
 
     // ======================================================
-    // LIST / READ OPERATIONS
+    // LIST / READ
     // ======================================================
 
     normalizeType:
-        listService.normalizeType,
-
-    validateDairyId:
-        listService.validateDairyId,
+        list.normalizeType,
 
     getParentDairy:
-        listService.getParentDairy,
-
-    sortStorage:
-        listService.sortStorage,
+        list.getParentDairy,
 
     getStorage:
-        listService.getStorage,
+        list.getStorage,
 
     getAllStorage:
-        listService.getAllStorage,
+        list.getAllStorage,
 
     getRooms:
-        listService.getRooms,
+        list.getRooms,
 
     getAgroStores:
-        listService.getAgroStores,
+        list.getAgroStores,
 
     getStorageFacility:
-        listService.getStorageFacility,
+        list.getStorageFacility,
 
 
     // ======================================================
-    // CREATION OPERATIONS
+    // ADD / CREATE
     // ======================================================
 
     createStorage:
-        storageService.createStorage
+        add.createStorage
 
 };
