@@ -9,27 +9,7 @@
 //     add.js
 //     contents.js
 //
-// PUBLIC API:
-//
-//     normalizeType
-//     getParentDairy
-//     getStorage
-//     getAllStorage
-//     getRooms
-//     getAgroStores
-//     getStorageFacility
-//     createStorage
-//
-// CONTENTS:
-//
-//     getStorageContents
-//     getAvailableItems
-//     addItemsToStorage
-//     omitItemsFromStorage
-//     reshuffleItems
-//
 // ==========================================================
-
 
 const list =
     require("./list");
@@ -47,10 +27,9 @@ const contents =
 
 module.exports = {
 
-
-    // ======================================================
+    // ------------------------------------------------------
     // LIST / READ
-    // ======================================================
+    // ------------------------------------------------------
 
     normalizeType:
         list.normalizeType,
@@ -74,17 +53,17 @@ module.exports = {
         list.getStorageFacility,
 
 
-    // ======================================================
-    // ADD / CREATE STORAGE FACILITY
-    // ======================================================
+    // ------------------------------------------------------
+    // CREATE STORAGE
+    // ------------------------------------------------------
 
     createStorage:
         add.createStorage,
 
 
-    // ======================================================
-    // STORAGE CONTENTS
-    // ======================================================
+    // ------------------------------------------------------
+    // CONTENTS
+    // ------------------------------------------------------
 
     getStorageContents:
         contents.getStorageContents,
