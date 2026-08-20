@@ -9,40 +9,53 @@
 //     add.js
 //     contents.js
 //
+// Architecture:
+//
+//     NORMAL STORAGE
+//         - add items
+//         - omit items
+//         - reshuffle items
+//
+//     AGROSTORE (type === "feeds")
+//         - add feeds
+//         - update quantity
+//         - automatic omission when quantity reaches 0
+//         - NO manual omit
+//         - NO reshuffle
+//
 // IMPORTANT:
 //
-//     Every property exported here MUST be a function,
-//     because routes/storage.js passes these directly to
-//     Express.
+// Every property exported here MUST be a function,
+// because routes/storage.js passes these directly to Express.
 //
 // ==========================================================
 
-const listController = require("./list");
 
-const addController = require("./add");
+const listController =
+    require("./list");
 
-const contentsController = require("./contents");
+
+const addController =
+    require("./add");
+
+
+const contentsController =
+    require("./contents");
 
 
 // ==========================================================
 // CONTROLLER HANDLER RESOLVER
 // ==========================================================
 //
-// This allows the entry point to safely work whether:
-//
-//     list.js
-//
-// exports:
+// Allows a controller module to export either:
 //
 //     module.exports = function (...) {}
 //
 // OR:
 //
 //     module.exports = {
-//         list: function (...) {}
+//         functionName: function (...) {}
 //     }
-//
-// The same applies to add.js.
 //
 // ==========================================================
 
@@ -53,7 +66,7 @@ function resolveHandler(
 ) {
 
     // ------------------------------------------------------
-    // Direct function export
+    // DIRECT FUNCTION EXPORT
     // ------------------------------------------------------
 
     if (
@@ -66,7 +79,7 @@ function resolveHandler(
 
 
     // ------------------------------------------------------
-    // Named function export
+    // NAMED FUNCTION EXPORT
     // ------------------------------------------------------
 
     if (
@@ -93,7 +106,7 @@ function resolveHandler(
 
 
     // ------------------------------------------------------
-    // Invalid controller
+    // INVALID CONTROLLER
     // ------------------------------------------------------
 
     throw new TypeError(
@@ -104,120 +117,190 @@ function resolveHandler(
 
 
 // ==========================================================
-// LIST CONTROLLER
+// LIST
 // ==========================================================
 
 const list =
     resolveHandler(
+
         listController,
+
         [
             "list",
             "index"
         ],
+
         "list"
+
     );
 
 
 // ==========================================================
-// ADD FORM CONTROLLER
+// ADD FORM
 // ==========================================================
 
 const form =
     resolveHandler(
+
         addController,
+
         [
             "form",
             "showForm",
             "addForm"
         ],
+
         "form"
+
     );
 
 
 // ==========================================================
-// CREATE CONTROLLER
+// CREATE STORAGE
 // ==========================================================
 
 const create =
     resolveHandler(
+
         addController,
+
         [
             "create",
             "createStorage",
             "add"
         ],
+
         "create"
+
     );
 
 
 // ==========================================================
-// CONTENTS CONTROLLER
+// STORAGE CONTENTS
 // ==========================================================
 
 const contents =
     resolveHandler(
+
         contentsController,
+
         [
             "contents",
             "index"
         ],
+
         "contents"
+
     );
 
 
 // ==========================================================
-// ADD ITEMS CONTROLLER
+// ADD ITEMS
 // ==========================================================
 
 const addItems =
     resolveHandler(
+
         contentsController,
+
         [
             "addItems"
         ],
+
         "addItems"
+
     );
 
 
 // ==========================================================
-// OMIT ITEMS CONTROLLER
+// OMIT ITEMS
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This remains available for NORMAL storage.
+//
+// The controller/service will reject manual omission from
+// AgroStore.
+//
 // ==========================================================
 
 const omitItems =
     resolveHandler(
+
         contentsController,
+
         [
             "omitItems"
         ],
+
         "omitItems"
+
     );
 
 
 // ==========================================================
-// RESHUFFLE CONTROLLER
+// RESHUFFLE ITEMS
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This remains available for NORMAL storage.
+//
+// The controller/service will reject reshuffling involving
+// AgroStore.
+//
 // ==========================================================
 
 const reshuffleItems =
     resolveHandler(
+
         contentsController,
+
         [
             "reshuffleItems"
         ],
+
         "reshuffleItems"
+
+    );
+
+
+// ==========================================================
+// UPDATE QUANTITY
+// ==========================================================
+//
+// AgroStore operation.
+//
+// The service is responsible for:
+//
+//     quantity > 0
+//         -> keep item in AgroStore
+//
+//     quantity === 0
+//         -> automatically omit item
+//
+// Negative quantities are rejected by the service.
+//
+// ==========================================================
+
+const updateQuantity =
+    resolveHandler(
+
+        contentsController,
+
+        [
+            "updateQuantity",
+            "updateFeedQuantity"
+        ],
+
+        "updateQuantity"
+
     );
 
 
 // ==========================================================
 // EXPORT
-// ==========================================================
-//
-// Every exported value below is guaranteed to be a
-// FUNCTION.
-//
-// Therefore Express can safely receive:
-//
-//     router.get(path, storageController.contents)
-//
 // ==========================================================
 
 module.exports = {
@@ -234,6 +317,8 @@ module.exports = {
 
     omitItems,
 
-    reshuffleItems
+    reshuffleItems,
+
+    updateQuantity
 
 };
