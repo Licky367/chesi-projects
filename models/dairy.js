@@ -51,20 +51,34 @@
 //
 // ==========================================================
 //
-// IMPORTANT
+// FEEDS
 // ----------------------------------------------------------
 //
-// Negative dwellNumber values are VALID.
+// type === "feeds"
+//     = FEED ASSET
 //
-// Example:
+// Feed records require:
 //
-//     assetCode: -1
-//     dwellNumber: -2
+//     quantity
+//     unit
 //
-// means:
+// quantity:
+//     >= 0
 //
-//     Farm -1
-//     AgroStore -2
+// unit:
+//     required text describing the quantity unit
+//
+// AgroStore:
+//     type === "feeds"
+//     quantity > 0
+//
+// When quantity becomes 0:
+//
+//     quantity = 0
+//     dwellNumber = null
+//
+// The storage service is responsible for clearing the
+// dwellNumber when feed quantity reaches zero.
 //
 // ==========================================================
 
@@ -225,7 +239,8 @@ function normalizeProfileImage(
     }
 
 
-    const value = String(image).trim();
+    const value =
+        String(image).trim();
 
 
     if (!value) {
@@ -694,6 +709,92 @@ const dairySchema = new mongoose.Schema(
 
 
         // ==================================================
+        // FEED QUANTITY
+        // ==================================================
+        //
+        // REQUIRED WHEN:
+        //
+        //     type === "feeds"
+        //
+        // Feed quantity represents the CURRENT remaining
+        // quantity.
+        //
+        // 0 is valid because a completely consumed feed
+        // may remain in the database historically.
+        //
+        // Negative values are never allowed.
+        //
+        // ==================================================
+
+        quantity: {
+
+            type: Number,
+
+            min: 0,
+
+            required: function () {
+
+                return (
+
+                    String(this.type)
+                        .trim()
+                        .toLowerCase() ===
+                    "feeds"
+
+                );
+
+            }
+
+        },
+
+
+        // ==================================================
+        // FEED UNIT
+        // ==================================================
+        //
+        // REQUIRED WHEN:
+        //
+        //     type === "feeds"
+        //
+        // The unit is descriptive and is not changed by
+        // quantity updates.
+        //
+        // Examples may include:
+        //
+        //     kg
+        //     bags
+        //     tonnes
+        //
+        // The model deliberately does not restrict the
+        // application to a fixed unit list.
+        //
+        // ==================================================
+
+        unit: {
+
+            type: String,
+
+            trim: true,
+
+            maxlength: 50,
+
+            required: function () {
+
+                return (
+
+                    String(this.type)
+                        .trim()
+                        .toLowerCase() ===
+                    "feeds"
+
+                );
+
+            }
+
+        },
+
+
+        // ==================================================
         // BUYING PRICE
         // ==================================================
 
@@ -990,6 +1091,70 @@ dairySchema.virtual(
 
 
 // ==========================================================
+// VIRTUAL: IS FEED
+// ==========================================================
+
+dairySchema.virtual(
+    "isFeed"
+).get(function () {
+
+    return (
+
+        this.isStructure &&
+
+        String(this.type)
+            .trim()
+            .toLowerCase() ===
+            "feeds"
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: HAS FEED QUANTITY
+// ==========================================================
+
+dairySchema.virtual(
+    "hasFeedQuantity"
+).get(function () {
+
+    return (
+
+        this.isFeed &&
+
+        Number.isFinite(
+            Number(this.quantity)
+        ) &&
+
+        Number(this.quantity) > 0
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: FEED IS EMPTY
+// ==========================================================
+
+dairySchema.virtual(
+    "isFeedEmpty"
+).get(function () {
+
+    return (
+
+        this.isFeed &&
+
+        Number(this.quantity) === 0
+
+    );
+
+});
+
+
+// ==========================================================
 // VIRTUAL: IS DWELLING
 // ==========================================================
 
@@ -1249,7 +1414,6 @@ dairySchema.virtual(
 
 
         days +=
-
             previousMonth.getDate();
 
     }
@@ -1558,11 +1722,6 @@ dairySchema.virtual(
     return this.isAnimal;
 
 });
-// ==========================================================
-// models/dairy.js
-// DAIRY / ANIMAL / FACILITY / ASSET MODEL
-// PART 2 OF 2
-// ==========================================================
 
 
 // ==========================================================
@@ -1576,14 +1735,28 @@ dairySchema.pre("validate", function (next) {
     // ------------------------------------------------------
 
     if (!Array.isArray(this.profileImages)) {
+
         this.profileImages = [];
+
     }
 
-    this.profileImages = this.profileImages
-        .filter(Boolean)
-        .map(image => String(image).trim())
-        .filter(Boolean)
-        .slice(0, MAX_PROFILE_IMAGES);
+
+    this.profileImages =
+        this.profileImages
+
+            .filter(Boolean)
+
+            .map(
+                image =>
+                    String(image).trim()
+            )
+
+            .filter(Boolean)
+
+            .slice(
+                0,
+                MAX_PROFILE_IMAGES
+            );
 
 
     // ------------------------------------------------------
@@ -1591,12 +1764,21 @@ dairySchema.pre("validate", function (next) {
     // ------------------------------------------------------
 
     if (
+
         this.profileImages.length === 0 &&
+
         this.profileImage
+
     ) {
+
         this.profileImages = [
-            String(this.profileImage).trim()
+
+            String(
+                this.profileImage
+            ).trim()
+
         ];
+
     }
 
 
@@ -1604,7 +1786,9 @@ dairySchema.pre("validate", function (next) {
     // PRIMARY PROFILE IMAGE
     // ------------------------------------------------------
 
-    if (this.profileImages.length > 0) {
+    if (
+        this.profileImages.length > 0
+    ) {
 
         this.profileImage =
             this.profileImages[0];
@@ -1620,16 +1804,175 @@ dairySchema.pre("validate", function (next) {
     // NORMALIZE NULLABLE VALUES
     // ------------------------------------------------------
 
-    if (this.code === undefined) {
+    if (
+        this.code === undefined
+    ) {
+
         this.code = null;
+
     }
 
-    if (this.assetCode === undefined) {
+
+    if (
+        this.assetCode === undefined
+    ) {
+
         this.assetCode = null;
+
     }
 
-    if (this.dwellNumber === undefined) {
+
+    if (
+        this.dwellNumber === undefined
+    ) {
+
         this.dwellNumber = null;
+
+    }
+
+
+    // ======================================================
+    // NORMALIZE TYPE
+    // ======================================================
+
+    if (
+        typeof this.type === "string"
+    ) {
+
+        this.type =
+            this.type.trim();
+
+    }
+
+
+    // ======================================================
+    // FEED VALIDATION
+    // ======================================================
+
+    if (
+        String(this.type)
+            .trim()
+            .toLowerCase() ===
+        "feeds"
+    ) {
+
+        // --------------------------------------------------
+        // QUANTITY IS REQUIRED
+        // --------------------------------------------------
+
+        if (
+            this.quantity === null ||
+            this.quantity === undefined ||
+            this.quantity === ""
+        ) {
+
+            const error =
+                new Error(
+                    "Feed quantity is required."
+                );
+
+            error.status = 400;
+
+            return next(error);
+
+        }
+
+
+        // --------------------------------------------------
+        // QUANTITY MUST BE NUMERIC
+        // --------------------------------------------------
+
+        const numericQuantity =
+            Number(this.quantity);
+
+
+        if (
+            !Number.isFinite(
+                numericQuantity
+            )
+        ) {
+
+            const error =
+                new Error(
+                    "Feed quantity must be a valid number."
+                );
+
+            error.status = 400;
+
+            return next(error);
+
+        }
+
+
+        // --------------------------------------------------
+        // QUANTITY CANNOT BE NEGATIVE
+        // --------------------------------------------------
+
+        if (
+            numericQuantity < 0
+        ) {
+
+            const error =
+                new Error(
+                    "Feed quantity cannot be negative."
+                );
+
+            error.status = 400;
+
+            return next(error);
+
+        }
+
+
+        this.quantity =
+            numericQuantity;
+
+
+        // --------------------------------------------------
+        // UNIT IS REQUIRED
+        // --------------------------------------------------
+
+        if (
+            this.unit === null ||
+            this.unit === undefined ||
+            String(this.unit).trim() === ""
+        ) {
+
+            const error =
+                new Error(
+                    "Feed unit is required."
+                );
+
+            error.status = 400;
+
+            return next(error);
+
+        }
+
+
+        this.unit =
+            String(
+                this.unit
+            ).trim();
+
+
+        // --------------------------------------------------
+        // FEEDS ARE STRUCTURE / ASSET RECORDS
+        // --------------------------------------------------
+
+        if (!this.isStructure) {
+
+            const error =
+                new Error(
+                    "A feed record must be a facility or asset record with code set to null."
+                );
+
+            error.status = 400;
+
+            return next(error);
+
+        }
+
     }
 
 
@@ -1652,13 +1995,19 @@ dairySchema.pre("validate", function (next) {
         // Validate farm type.
 
         if (
+
             this.type &&
-            !DAIRY_FARM_TYPES.includes(this.type)
+
+            !DAIRY_FARM_TYPES.includes(
+                this.type
+            )
+
         ) {
 
-            const error = new Error(
-                `Invalid dairy farm type: ${this.type}.`
-            );
+            const error =
+                new Error(
+                    `Invalid dairy farm type: ${this.type}.`
+                );
 
             error.status = 400;
 
@@ -1680,7 +2029,9 @@ dairySchema.pre("validate", function (next) {
         // --------------------------------------------------
 
         if (!this.isFemale) {
+
             this.isMilking = false;
+
         }
 
 
@@ -1689,13 +2040,17 @@ dairySchema.pre("validate", function (next) {
         // --------------------------------------------------
 
         if (
+
             this.assetCode === null ||
+
             this.assetCode === undefined
+
         ) {
 
-            const error = new Error(
-                "Animal must belong to a Dairy Farm. assetCode is required."
-            );
+            const error =
+                new Error(
+                    "Animal must belong to a Dairy Farm. assetCode is required."
+                );
 
             error.status = 400;
 
@@ -1708,11 +2063,14 @@ dairySchema.pre("validate", function (next) {
         // Parent farm code must be negative.
         // --------------------------------------------------
 
-        if (Number(this.assetCode) >= 0) {
+        if (
+            Number(this.assetCode) >= 0
+        ) {
 
-            const error = new Error(
-                "Animal assetCode must be the negative code of its parent Dairy Farm."
-            );
+            const error =
+                new Error(
+                    "Animal assetCode must be the negative code of its parent Dairy Farm."
+                );
 
             error.status = 400;
 
@@ -1726,13 +2084,19 @@ dairySchema.pre("validate", function (next) {
         // --------------------------------------------------
 
         if (
+
             this.type &&
-            !DAIRY_BREEDS.includes(this.type)
+
+            !DAIRY_BREEDS.includes(
+                this.type
+            )
+
         ) {
 
-            const error = new Error(
-                `Invalid dairy breed: ${this.type}.`
-            );
+            const error =
+                new Error(
+                    `Invalid dairy breed: ${this.type}.`
+                );
 
             error.status = 400;
 
@@ -1759,15 +2123,21 @@ dairySchema.pre("validate", function (next) {
         // --------------------------------------------------
 
         if (
+
             this.assetCode !== null &&
+
             this.assetCode !== undefined
+
         ) {
 
-            if (Number(this.assetCode) >= 0) {
+            if (
+                Number(this.assetCode) >= 0
+            ) {
 
-                const error = new Error(
-                    "Structure assetCode must be the negative code of its parent Dairy Farm."
-                );
+                const error =
+                    new Error(
+                        "Structure assetCode must be the negative code of its parent Dairy Farm."
+                    );
 
                 error.status = 400;
 
@@ -1783,13 +2153,19 @@ dairySchema.pre("validate", function (next) {
         // --------------------------------------------------
 
         if (
+
             this.type &&
-            !STRUCTURE_TYPES.includes(this.type)
+
+            !STRUCTURE_TYPES.includes(
+                this.type
+            )
+
         ) {
 
-            const error = new Error(
-                `Invalid structure type: ${this.type}.`
-            );
+            const error =
+                new Error(
+                    `Invalid structure type: ${this.type}.`
+                );
 
             error.status = 400;
 
@@ -1803,22 +2179,21 @@ dairySchema.pre("validate", function (next) {
     // ======================================================
     // DWELL NUMBER
     // ======================================================
-    //
-    // Both positive and negative integers are valid.
-    //
-    // >= 0 = normal room
-    // <  0 = AgroStore
-    //
-    // ======================================================
 
     if (
+
         this.dwellNumber !== null &&
-        !Number.isInteger(this.dwellNumber)
+
+        !Number.isInteger(
+            this.dwellNumber
+        )
+
     ) {
 
-        const error = new Error(
-            "dwellNumber must be a whole number or null."
-        );
+        const error =
+            new Error(
+                "dwellNumber must be a whole number or null."
+            );
 
         error.status = 400;
 
@@ -1832,7 +2207,9 @@ dairySchema.pre("validate", function (next) {
     // ======================================================
 
     if (!this.medicalAttention) {
+
         this.medicalAttention = {};
+
     }
 
 
@@ -1868,43 +2245,48 @@ dairySchema.pre("validate", function (next) {
 
 
     this.medicalAttention.markedBy =
-        this.medicalAttention.markedBy || null;
+        this.medicalAttention.markedBy ||
+        null;
 
 
     this.medicalAttention.markedAt =
-        this.medicalAttention.markedAt || null;
+        this.medicalAttention.markedAt ||
+        null;
 
 
     this.medicalAttention.updatedAt =
-        this.medicalAttention.updatedAt || null;
+        this.medicalAttention.updatedAt ||
+        null;
 
 
     this.medicalAttention.clearedBy =
-        this.medicalAttention.clearedBy || null;
+        this.medicalAttention.clearedBy ||
+        null;
 
 
     this.medicalAttention.clearedAt =
-        this.medicalAttention.clearedAt || null;
+        this.medicalAttention.clearedAt ||
+        null;
 
 
     // ======================================================
     // CLEAR MEDICAL DATA WHEN NOT MARKED
     // ======================================================
 
-    if (!this.medicalAttention.isMarked) {
+    if (
+        !this.medicalAttention.isMarked
+    ) {
 
         this.medicalAttention.type = "";
         this.medicalAttention.details = "";
         this.medicalAttention.charges = 0;
         this.medicalAttention.description = "";
 
-        /*
-         * Do not retain the previous active medical
-         * marker once the condition has been cleared.
-         */
+        this.medicalAttention.markedBy =
+            null;
 
-        this.medicalAttention.markedBy = null;
-        this.medicalAttention.markedAt = null;
+        this.medicalAttention.markedAt =
+            null;
 
     }
 
@@ -1925,8 +2307,13 @@ dairySchema.pre("save", function (next) {
     // ======================================================
 
     if (
-        this.isModified("medicalAttention") &&
+
+        this.isModified(
+            "medicalAttention"
+        ) &&
+
         this.medicalAttention
+
     ) {
 
         this.medicalAttention.updatedAt =
@@ -1942,7 +2329,8 @@ dairySchema.pre("save", function (next) {
     if (!this.acquisitionDate) {
 
         this.acquisitionDate =
-            this.createdAt || new Date();
+            this.createdAt ||
+            new Date();
 
     }
 
@@ -1977,18 +2365,43 @@ dairySchema.pre("save", function (next) {
 
 
     // ======================================================
+    // FEED NORMALIZATION
+    // ======================================================
+
+    if (this.isFeed) {
+
+        this.quantity =
+            Number(this.quantity);
+
+
+        this.unit =
+            String(
+                this.unit || ""
+            ).trim();
+
+    }
+
+
+    // ======================================================
     // FINAL DWELL VALIDATION
     // ======================================================
 
     if (
+
         this.dwellNumber !== null &&
+
         this.dwellNumber !== undefined &&
-        !Number.isInteger(this.dwellNumber)
+
+        !Number.isInteger(
+            this.dwellNumber
+        )
+
     ) {
 
-        const error = new Error(
-            "dwellNumber must be a whole number or null."
-        );
+        const error =
+            new Error(
+                "dwellNumber must be a whole number or null."
+            );
 
         error.status = 400;
 
@@ -2005,14 +2418,6 @@ dairySchema.pre("save", function (next) {
 // ==========================================================
 // INDEXES
 // ==========================================================
-//
-// IMPORTANT:
-// Do NOT use `index: true` on a field when the same index is
-// also declared below with schema.index().
-//
-// This avoids the Mongoose duplicate-index warning.
-//
-// ==========================================================
 
 
 // ----------------------------------------------------------
@@ -2026,11 +2431,6 @@ dairySchema.index({
 
 // ----------------------------------------------------------
 // MAINTENANCE
-// ----------------------------------------------------------
-//
-// This is the ONLY index declaration for needsMaintenance.
-// There must NOT also be:
-//     needsMaintenance: { type: Boolean, index: true }
 // ----------------------------------------------------------
 
 dairySchema.index({
@@ -2070,18 +2470,6 @@ dairySchema.index({
 // ----------------------------------------------------------
 // FARM + DWELLING
 // ----------------------------------------------------------
-//
-// Covers:
-//
-//     Farm room contents
-//     Farm AgroStore contents
-//
-// Example:
-//
-//     assetCode: -1
-//     dwellNumber: -2
-//
-// ----------------------------------------------------------
 
 dairySchema.index({
     assetCode: 1,
@@ -2101,34 +2489,44 @@ dairySchema.index({
 
 
 // ----------------------------------------------------------
-// CODE UNIQUENESS
+// FEEDS
 // ----------------------------------------------------------
 //
-// Farms:
-//     code < 0
-//
-// Animals:
-//     code > 0
-//
-// Structures/assets:
-//     code === null
-//
-// Only numeric codes participate in uniqueness.
+// Useful for AgroStore/feed queries.
 //
 // ----------------------------------------------------------
 
+dairySchema.index({
+    type: 1,
+    quantity: 1,
+    unit: 1,
+    status: 1
+});
+
+
+// ----------------------------------------------------------
+// CODE UNIQUENESS
+// ----------------------------------------------------------
+
 dairySchema.index(
+
     {
         code: 1
     },
+
     {
         unique: true,
+
         partialFilterExpression: {
+
             code: {
                 $type: "number"
             }
+
         }
+
     }
+
 );
 
 
@@ -2139,11 +2537,16 @@ dairySchema.index(
 dairySchema.statics.getFarmAssets =
     function (farmCode) {
 
-        const code = Number(farmCode);
+        const code =
+            Number(farmCode);
+
 
         if (
+
             !Number.isInteger(code) ||
+
             code >= 0
+
         ) {
 
             return this.find({
@@ -2151,6 +2554,7 @@ dairySchema.statics.getFarmAssets =
             });
 
         }
+
 
         return this.find({
             assetCode: code
@@ -2162,25 +2566,20 @@ dairySchema.statics.getFarmAssets =
 // ==========================================================
 // STATIC: GET FARM DWELLINGS
 // ==========================================================
-//
-// Returns all entities belonging to the farm that have an
-// allocation.
-//
-// Includes:
-//
-//     normal rooms
-//     AgroStores
-//
-// ==========================================================
 
 dairySchema.statics.getFarmDwellings =
     function (farmCode) {
 
-        const code = Number(farmCode);
+        const code =
+            Number(farmCode);
+
 
         if (
+
             !Number.isInteger(code) ||
+
             code >= 0
+
         ) {
 
             return this.find({
@@ -2189,11 +2588,15 @@ dairySchema.statics.getFarmDwellings =
 
         }
 
+
         return this.find({
+
             assetCode: code,
+
             dwellNumber: {
                 $ne: null
             }
+
         });
 
     };
@@ -2202,18 +2605,6 @@ dairySchema.statics.getFarmDwellings =
 // ==========================================================
 // STATIC: GET FARM ROOM CONTENT
 // ==========================================================
-//
-// Works for both:
-//
-//     normal rooms
-//     AgroStores
-//
-// Examples:
-//
-//     getFarmRoomContent(-1, 1)
-//     getFarmRoomContent(-1, -1)
-//
-// ==========================================================
 
 dairySchema.statics.getFarmRoomContent =
     function (
@@ -2221,13 +2612,21 @@ dairySchema.statics.getFarmRoomContent =
         roomNumber
     ) {
 
-        const farm = Number(farmCode);
-        const room = Number(roomNumber);
+        const farm =
+            Number(farmCode);
+
+        const room =
+            Number(roomNumber);
+
 
         if (
+
             !Number.isInteger(farm) ||
+
             farm >= 0 ||
+
             !Number.isInteger(room)
+
         ) {
 
             return this.find({
@@ -2236,9 +2635,13 @@ dairySchema.statics.getFarmRoomContent =
 
         }
 
+
         return this.find({
+
             assetCode: farm,
+
             dwellNumber: room
+
         });
 
     };
@@ -2248,14 +2651,8 @@ dairySchema.statics.getFarmRoomContent =
 // STATIC: GET AGROSTORE CONTENT
 // ==========================================================
 //
-// Example:
-//
-//     Dairy.getAgroStoreContent(-1, -2)
-//
-// Means:
-//
-//     Farm -1
-//     AgroStore -2
+// Only positive-quantity feeds are active AgroStore
+// contents.
 //
 // ==========================================================
 
@@ -2265,14 +2662,23 @@ dairySchema.statics.getAgroStoreContent =
         agroStoreNumber
     ) {
 
-        const farm = Number(farmCode);
-        const store = Number(agroStoreNumber);
+        const farm =
+            Number(farmCode);
+
+        const store =
+            Number(agroStoreNumber);
+
 
         if (
+
             !Number.isInteger(farm) ||
+
             farm >= 0 ||
+
             !Number.isInteger(store) ||
+
             store >= 0
+
         ) {
 
             return this.find({
@@ -2281,9 +2687,19 @@ dairySchema.statics.getAgroStoreContent =
 
         }
 
+
         return this.find({
+
             assetCode: farm,
-            dwellNumber: store
+
+            dwellNumber: store,
+
+            type: "feeds",
+
+            quantity: {
+                $gt: 0
+            }
+
         });
 
     };
@@ -2299,14 +2715,23 @@ dairySchema.statics.getFarmNormalRoomContent =
         roomNumber
     ) {
 
-        const farm = Number(farmCode);
-        const room = Number(roomNumber);
+        const farm =
+            Number(farmCode);
+
+        const room =
+            Number(roomNumber);
+
 
         if (
+
             !Number.isInteger(farm) ||
+
             farm >= 0 ||
+
             !Number.isInteger(room) ||
+
             room < 0
+
         ) {
 
             return this.find({
@@ -2315,9 +2740,13 @@ dairySchema.statics.getFarmNormalRoomContent =
 
         }
 
+
         return this.find({
+
             assetCode: farm,
+
             dwellNumber: room
+
         });
 
     };
@@ -2326,52 +2755,66 @@ dairySchema.statics.getFarmNormalRoomContent =
 // ==========================================================
 // STATIC: GET ACTIVE ROOM NUMBERS
 // ==========================================================
-//
-// Returns occupied normal-room numbers.
-//
-// AgroStore numbers are excluded.
-//
-// ==========================================================
 
 dairySchema.statics.getActiveRoomNumbers =
     async function (farmCode) {
 
-        const farm = Number(farmCode);
+        const farm =
+            Number(farmCode);
+
 
         if (
+
             !Number.isInteger(farm) ||
+
             farm >= 0
+
         ) {
 
             return [];
 
         }
 
-        const result = await this.aggregate([
 
-            {
-                $match: {
-                    assetCode: farm,
-                    dwellNumber: {
-                        $gte: 0
-                    },
-                    status: "active"
+        const result =
+            await this.aggregate([
+
+                {
+                    $match: {
+
+                        assetCode: farm,
+
+                        dwellNumber: {
+                            $gte: 0
+                        },
+
+                        status: "active"
+
+                    }
+
+                },
+
+                {
+                    $group: {
+
+                        _id:
+                            "$dwellNumber"
+
+                    }
+
+                },
+
+                {
+                    $sort: {
+
+                        _id: 1
+
+                    }
+
                 }
-            },
 
-            {
-                $group: {
-                    _id: "$dwellNumber"
-                }
-            },
+            ]);
 
-            {
-                $sort: {
-                    _id: 1
-                }
-            }
-
-        ]);
 
         return result.map(
             item => item._id
@@ -2383,51 +2826,72 @@ dairySchema.statics.getActiveRoomNumbers =
 // ==========================================================
 // STATIC: GET ACTIVE AGROSTORE NUMBERS
 // ==========================================================
-//
-// Returns negative dwell numbers currently occupied by
-// AgroStore contents.
-//
-// ==========================================================
 
 dairySchema.statics.getActiveAgroStoreNumbers =
     async function (farmCode) {
 
-        const farm = Number(farmCode);
+        const farm =
+            Number(farmCode);
+
 
         if (
+
             !Number.isInteger(farm) ||
+
             farm >= 0
+
         ) {
 
             return [];
 
         }
 
-        const result = await this.aggregate([
 
-            {
-                $match: {
-                    assetCode: farm,
-                    dwellNumber: {
-                        $lt: 0
-                    },
-                    status: "active"
+        const result =
+            await this.aggregate([
+
+                {
+                    $match: {
+
+                        assetCode: farm,
+
+                        dwellNumber: {
+                            $lt: 0
+                        },
+
+                        type: "feeds",
+
+                        quantity: {
+                            $gt: 0
+                        },
+
+                        status: "active"
+
+                    }
+
+                },
+
+                {
+                    $group: {
+
+                        _id:
+                            "$dwellNumber"
+
+                    }
+
+                },
+
+                {
+                    $sort: {
+
+                        _id: 1
+
+                    }
+
                 }
-            },
 
-            {
-                $group: {
-                    _id: "$dwellNumber"
-                }
-            },
+            ]);
 
-            {
-                $sort: {
-                    _id: 1
-                }
-            }
-
-        ]);
 
         return result.map(
             item => item._id
@@ -2439,20 +2903,20 @@ dairySchema.statics.getActiveAgroStoreNumbers =
 // ==========================================================
 // STATIC: GET FARM AGROSTORE CONTENTS
 // ==========================================================
-//
-// Returns every active entity allocated to an AgroStore
-// belonging to the specified farm.
-//
-// ==========================================================
 
 dairySchema.statics.getFarmAgroStoreContents =
     function (farmCode) {
 
-        const farm = Number(farmCode);
+        const farm =
+            Number(farmCode);
+
 
         if (
+
             !Number.isInteger(farm) ||
+
             farm >= 0
+
         ) {
 
             return this.find({
@@ -2461,12 +2925,23 @@ dairySchema.statics.getFarmAgroStoreContents =
 
         }
 
+
         return this.find({
+
             assetCode: farm,
+
             dwellNumber: {
                 $lt: 0
             },
+
+            type: "feeds",
+
+            quantity: {
+                $gt: 0
+            },
+
             status: "active"
+
         });
 
     };
@@ -2480,8 +2955,11 @@ dairySchema.statics.getStandaloneAssets =
     function () {
 
         return this.find({
+
             code: null,
+
             assetCode: null
+
         });
 
     };
@@ -2556,42 +3034,116 @@ dairySchema.statics.getMaxProfileImages =
 
 
 // ==========================================================
-// STATIC: CALCULATE NET WORTH
+// STATIC: GET FEED ITEMS
 // ==========================================================
 //
-// Current worth of all active records.
+// Returns feed records only.
 //
+// ==========================================================
+
+dairySchema.statics.getFeedItems =
+    function () {
+
+        return this.find({
+
+            type: "feeds"
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET AVAILABLE FEEDS
+// ==========================================================
+//
+// Available means:
+//
+//     type = feeds
+//     quantity > 0
+//     not allocated
+//
+// ==========================================================
+
+dairySchema.statics.getAvailableFeeds =
+    function () {
+
+        return this.find({
+
+            type: "feeds",
+
+            quantity: {
+                $gt: 0
+            },
+
+            $or: [
+
+                {
+                    dwellNumber: null
+                },
+
+                {
+                    dwellNumber: {
+                        $exists: false
+                    }
+                }
+
+            ]
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: CALCULATE NET WORTH
 // ==========================================================
 
 dairySchema.statics.calculateNetWorth =
     async function () {
 
-        const result = await this.aggregate([
+        const result =
+            await this.aggregate([
 
-            {
-                $match: {
-                    status: "active"
-                }
-            },
+                {
+                    $match: {
 
-            {
-                $group: {
-                    _id: null,
+                        status: "active"
 
-                    totalNetWorth: {
-                        $sum: "$currentWorth"
                     }
-                }
-            }
 
-        ]);
+                },
+
+                {
+                    $group: {
+
+                        _id: null,
+
+                        totalNetWorth: {
+
+                            $sum:
+                                "$currentWorth"
+
+                        }
+
+                    }
+
+                }
+
+            ]);
+
 
         if (!result.length) {
+
             return 0;
+
         }
 
+
         return Number(
+
             result[0].totalNetWorth || 0
+
         );
 
     };
@@ -2614,7 +3166,9 @@ dairySchema.statics.getTotalCurrentWorth =
 // ==========================================================
 
 const Dairy =
+
     mongoose.models.Dairy ||
+
     mongoose.model(
         "Dairy",
         dairySchema
