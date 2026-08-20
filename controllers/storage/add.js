@@ -1,7 +1,7 @@
 // ==========================================================
 // controllers/storage/add.js
-// STORAGE CREATION CONTROLLER
-// =========================================================
+// STORAGE ADD CONTROLLER
+// ==========================================================
 //
 // HANDLES:
 //
@@ -12,21 +12,21 @@
 //
 //     :id = parent Dairy._id
 //
-// USER PROVIDES:
+// RELATION:
 //
-//     name
-//     type
-//
-// SERVER DETERMINES:
-//
-//     farmCode
-//     roomNumber
+//     req.params.id
+//          ↓
+//     Dairy._id
+//          ↓
+//     Dairy.code
+//          ↓
+//     DairyStorage.farmCode
 //
 // ==========================================================
 
 
 const storageService =
-    require("../../services/storage");
+    require("../../services/storage/storageService");
 
 
 // ==========================================================
@@ -138,7 +138,7 @@ async function form(
 
 
         // ==================================================
-        // RENDER ADD FORM
+        // RENDER
         // ==================================================
 
         return res.render(
@@ -212,13 +212,13 @@ async function create(
 ) {
 
     // ======================================================
-    // THESE MUST BE OUTSIDE try
+    // THESE ARE DECLARED OUTSIDE try
     // ======================================================
     //
-    // They are needed by the catch block when the form
-    // has to be rendered again after a validation error.
-//
-// ======================================================
+    // This is important because the catch block needs them
+    // when redisplaying the form after validation errors.
+    //
+    // ======================================================
 
     const dairyId =
         String(
@@ -259,10 +259,10 @@ async function create(
         // CREATE STORAGE
         // ==================================================
         //
-        // DO NOT send:
+        // IMPORTANT:
         //
-        //     farmCode
-        //     roomNumber
+        // We do NOT send farmCode or roomNumber from the
+        // browser.
         //
         // The service generates both.
         //
