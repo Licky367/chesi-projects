@@ -1,32 +1,38 @@
 // ==========================================================
 // services/storage/add.js
-// STORAGE CREATION SERVICE
+// STORAGE ADD / CREATE SERVICE
 // ==========================================================
 //
-// HANDLES:
+// PURPOSE
+// ----------------------------------------------------------
+//
+// Handles creation of storage facilities belonging to ONE
+// parent Dairy Farm.
+//
+// FUNCTION:
 //
 //     createStorage()
 //
-// SUPPORT FUNCTIONS:
-//
-//     escapeRegExp()
-//     ensureNameAvailable()
-//     getNextRoomNumber()
-//     getNextAgroStoreNumber()
-//
 // IMPORTANT:
 //
-//     farmCode is NEVER accepted from req.body.
+// The browser provides ONLY:
 //
-//     roomNumber is NEVER accepted from req.body.
+//     dairyId
+//     name
+//     type
 //
-//     Both are generated server-side.
+// The server generates:
+//
+//     farmCode
+//     roomNumber
+//     status
 //
 // ==========================================================
 
 
 const DairyStorage =
     require("../../models/dairyStorage");
+
 
 const {
     getParentDairy
@@ -60,6 +66,8 @@ function escapeRegExp(
 // Case insensitive:
 //
 //     Main Feed Store
+//
+// and:
 //
 //     main feed store
 //
@@ -263,11 +271,17 @@ async function getNextAgroStoreNumber(
 //         type
 //     }
 //
-// SERVER:
+// USER PROVIDES:
 //
-//     resolves farmCode
-//     generates roomNumber
-//     sets active status
+//     dairyId
+//     name
+//     type
+//
+// SERVER PROVIDES:
+//
+//     farmCode
+//     roomNumber
+//     status
 //
 // ==========================================================
 
@@ -282,22 +296,19 @@ async function createStorage(
     const dairyId =
         String(
             options.dairyId || ""
-        )
-        .trim();
+        ).trim();
 
 
     const name =
         String(
             options.name || ""
-        )
-        .trim();
+        ).trim();
 
 
     const type =
         String(
             options.type || ""
-        )
-        .trim();
+        ).trim();
 
 
     // ======================================================
@@ -418,6 +429,14 @@ async function createStorage(
 
     // ======================================================
     // CREATE DOCUMENT
+    // ======================================================
+    //
+    // Notice:
+    //
+    // farmCode is NEVER accepted from req.body.
+    //
+    // roomNumber is NEVER accepted from req.body.
+    //
     // ======================================================
 
     const storage =
