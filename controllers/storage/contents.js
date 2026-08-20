@@ -6,72 +6,17 @@
 // PURPOSE:
 //
 //     Display and manage everything allocated inside a
-//     particular Room or AgroStore.
-//
-// ROUTE:
-//
-//     GET /storage/:dairyId/contents/:storageId
-//
-// PARAMETERS:
-//
-//     dairyId
-//         = parent Dairy._id
-//
-//     storageId
-//         = DairyStorage._id
+//     Room or AgroStore.
 //
 // ==========================================================
-//
-// OPERATIONS:
-//
-//     GET
-//         View contents page
-//
-//     POST add
-//         Add selected unallocated items to this storage
-//
-//     POST omit
-//         Remove selected items from this storage
-//         by setting:
-//
-//             dwellNumber = null
-//
-//     POST reshuffle
-//         Move selected items to another storage facility
-//         of the SAME TYPE belonging to the SAME FARM.
-//
-//         Room      → Room
-//         AgroStore → AgroStore
-//
-// ==========================================================
-//
-// ALLOCATION RULE:
-//
-//     Dairy.assetCode
-//         ===
-//     parent Dairy Farm.code
-//
-// AND
-//
-//     Dairy.dwellNumber
-//         ===
-//     DairyStorage.roomNumber
-//
-// ==========================================================
-
 
 const storageContentsService =
     require("../../services/storage/contents");
 
 
 // ==========================================================
-// HELPERS
+// GET BODY VALUE
 // ==========================================================
-
-
-/* ==========================================================
-   GET REQUEST VALUE
-========================================================== */
 
 function getBodyValue(
     req,
@@ -95,21 +40,9 @@ function getBodyValue(
 }
 
 
-/* ==========================================================
-   NORMALIZE SELECTED ITEM IDS
-==========================================================
-//
-// Supports both:
-//
-//     itemIds=abc
-//
-// and:
-//
-//     itemIds=abc&itemIds=def
-//
-// depending on how the form submits the checkboxes.
-//
-//========================================================== */
+// ==========================================================
+// NORMALIZE SELECTED ITEM IDS
+// ==========================================================
 
 function getItemIds(
     req
@@ -122,16 +55,26 @@ function getItemIds(
         );
 
 
-    if (Array.isArray(value)) {
+    if (
+        Array.isArray(value)
+    ) {
 
-        return value;
+        return value
+            .filter(Boolean)
+            .map(String);
 
     }
 
 
-    if (value) {
+    if (
+        value !== undefined &&
+        value !== null &&
+        String(value).trim() !== ""
+    ) {
 
-        return [value];
+        return [
+            String(value)
+        ];
 
     }
 
@@ -142,12 +85,26 @@ function getItemIds(
 
 
 // ==========================================================
-// RENDER CONTENTS PAGE
+// CREATE SUCCESS MESSAGE
 // ==========================================================
-//
-// Centralized rendering so that GET and successful
-// mutations can use exactly the same page structure.
-//
+
+function createCountMessage(
+    count,
+    singular,
+    plural
+) {
+
+    return `${count} ${
+        count === 1
+            ? singular
+            : plural
+    }`;
+
+}
+
+
+// ==========================================================
+// RENDER CONTENTS
 // ==========================================================
 
 async function renderContents(
@@ -163,10 +120,6 @@ async function renderContents(
         req.params.storageId;
 
 
-    // ======================================================
-    // LOAD EVERYTHING REQUIRED BY THE PAGE
-    // ======================================================
-
     const result =
         await storageContentsService.getStorageContents({
 
@@ -177,43 +130,22 @@ async function renderContents(
         });
 
 
-    // ======================================================
-    // ACTIVE TAB
-    // ======================================================
-    //
-    // Default:
-    //
-    //     view
-    //
-    // When the user submits Add and validation fails,
-    // the controller can return to:
-    //
-    //     add
-    //
-    // ======================================================
-
     const activeTab =
         options.activeTab ||
         req.query.tab ||
         "view";
 
 
-    // ======================================================
-    // SUCCESS / ERROR MESSAGE
-    // ======================================================
-
     const successMessage =
         options.successMessage ||
+        req.query.success ||
         null;
+
 
     const pageError =
         options.pageError ||
         null;
 
-
-    // ======================================================
-    // RENDER
-    // ======================================================
 
     return res.render(
         "storage/contents",
@@ -225,33 +157,17 @@ async function renderContents(
             storage:
                 result.storage,
 
-            // ----------------------------------------------
-            // CURRENT CONTENTS
-            // ----------------------------------------------
-
             items:
                 result.items,
 
             itemCount:
                 result.itemCount,
 
-            // ----------------------------------------------
-            // ITEMS AVAILABLE FOR ADDITION
-            // ----------------------------------------------
-
             availableItems:
                 result.availableItems,
 
-            // ----------------------------------------------
-            // SAME-TYPE TARGET STORAGE FACILITIES
-            // ----------------------------------------------
-
             targetStorages:
                 result.targetStorages,
-
-            // ----------------------------------------------
-            // UI STATE
-            // ----------------------------------------------
 
             activeTab,
 
@@ -266,13 +182,7 @@ async function renderContents(
 
 
 // ==========================================================
-// GET STORAGE CONTENTS
-// ==========================================================
-//
-// ROUTE:
-//
-//     GET /storage/:dairyId/contents/:storageId
-//
+// GET CONTENTS
 // ==========================================================
 
 async function contents(
@@ -294,7 +204,6 @@ async function contents(
             error
         );
 
-
         return sendError(
             res,
             error,
@@ -308,25 +217,6 @@ async function contents(
 
 // ==========================================================
 // ADD ITEMS
-// ==========================================================
-//
-// EXPECTED BODY:
-//
-//     itemIds
-//
-// Example:
-//
-//     itemIds[]=id1
-//     itemIds[]=id2
-//
-// SERVICE:
-//
-//     addItemsToStorage()
-//
-// RESULT:
-//
-//     dwellNumber becomes the current storage.roomNumber.
-//
 // ==========================================================
 
 async function addItems(
@@ -343,14 +233,8 @@ async function addItems(
             req.params.storageId;
 
         const itemIds =
-            getItemIds(
-                req
-            );
+            getItemIds(req);
 
-
-        // ==================================================
-        // SERVICE
-        // ==================================================
 
         const result =
             await storageContentsService.addItemsToStorage({
@@ -364,24 +248,20 @@ async function addItems(
             });
 
 
-        // ==================================================
-        // SUCCESS
-        // ==================================================
-        //
-        // Redirect back to the contents page.
-        //
-        // This prevents duplicate submissions when the user
-        // refreshes the browser.
-        //
-        // ==================================================
+        const message =
+            `${createCountMessage(
+                result.modifiedCount,
+                "item",
+                "items"
+            )} added to ${
+                result.storage.displayName ||
+                "storage"
+            }.`;
+
 
         return res.redirect(
             `/storage/${dairyId}/contents/${storageId}?tab=add&success=${encodeURIComponent(
-                `${result.modifiedCount} ${
-                    result.modifiedCount === 1
-                        ? "item"
-                        : "items"
-                } added to ${result.storage.displayName || "storage"}.`
+                message
             )}`
         );
 
@@ -409,16 +289,6 @@ async function addItems(
 // ==========================================================
 // OMIT ITEMS
 // ==========================================================
-//
-// EXPECTED BODY:
-//
-//     itemIds
-//
-// OPERATION:
-//
-//     dwellNumber = null
-//
-// ==========================================================
 
 async function omitItems(
     req,
@@ -434,14 +304,8 @@ async function omitItems(
             req.params.storageId;
 
         const itemIds =
-            getItemIds(
-                req
-            );
+            getItemIds(req);
 
-
-        // ==================================================
-        // SERVICE
-        // ==================================================
 
         const result =
             await storageContentsService.omitItemsFromStorage({
@@ -455,17 +319,20 @@ async function omitItems(
             });
 
 
-        // ==================================================
-        // SUCCESS
-        // ==================================================
+        const message =
+            `${createCountMessage(
+                result.modifiedCount,
+                "item",
+                "items"
+            )} omitted from ${
+                result.storage.displayName ||
+                "storage"
+            }.`;
+
 
         return res.redirect(
             `/storage/${dairyId}/contents/${storageId}?tab=view&success=${encodeURIComponent(
-                `${result.modifiedCount} ${
-                    result.modifiedCount === 1
-                        ? "item"
-                        : "items"
-                } omitted from ${result.storage.displayName || "storage"}.`
+                message
             )}`
         );
 
@@ -493,17 +360,6 @@ async function omitItems(
 // ==========================================================
 // RESHUFFLE ITEMS
 // ==========================================================
-//
-// EXPECTED BODY:
-//
-//     itemIds
-//     targetStorageId
-//
-// OPERATION:
-//
-//     dwellNumber = targetStorage.roomNumber
-//
-// ==========================================================
 
 async function reshuffleItems(
     req,
@@ -519,9 +375,7 @@ async function reshuffleItems(
             req.params.storageId;
 
         const itemIds =
-            getItemIds(
-                req
-            );
+            getItemIds(req);
 
         const targetStorageId =
             getBodyValue(
@@ -529,10 +383,6 @@ async function reshuffleItems(
                 "targetStorageId"
             );
 
-
-        // ==================================================
-        // SERVICE
-        // ==================================================
 
         const result =
             await storageContentsService.reshuffleItems({
@@ -548,20 +398,20 @@ async function reshuffleItems(
             });
 
 
-        // ==================================================
-        // SUCCESS
-        // ==================================================
+        const message =
+            `${createCountMessage(
+                result.modifiedCount,
+                "item",
+                "items"
+            )} reshuffled to ${
+                result.targetStorage.displayName ||
+                "the selected storage"
+            }.`;
+
 
         return res.redirect(
             `/storage/${dairyId}/contents/${storageId}?tab=view&success=${encodeURIComponent(
-                `${result.modifiedCount} ${
-                    result.modifiedCount === 1
-                        ? "item"
-                        : "items"
-                } reshuffled to ${
-                    result.targetStorage.displayName ||
-                    "the selected storage"
-                }.`
+                message
             )}`
         );
 
@@ -589,19 +439,6 @@ async function reshuffleItems(
 // ==========================================================
 // HANDLE MUTATION ERROR
 // ==========================================================
-//
-// Instead of returning a plain error page, return the user
-// to the contents page.
-//
-// This is particularly useful for:
-//
-//     - no items selected
-//     - invalid target storage
-//     - wrong storage type
-//     - item already allocated
-//     - item belongs to another farm
-//
-// ==========================================================
 
 async function handleMutationError(
     req,
@@ -618,10 +455,6 @@ async function handleMutationError(
         );
 
 
-    // ======================================================
-    // FOR SERVER ERRORS
-    // ======================================================
-
     if (
         statusCode >= 500
     ) {
@@ -634,10 +467,6 @@ async function handleMutationError(
 
     }
 
-
-    // ======================================================
-    // FOR EXPECTED USER / VALIDATION ERRORS
-    // ======================================================
 
     try {
 
@@ -658,7 +487,7 @@ async function handleMutationError(
     } catch (renderError) {
 
         console.error(
-            "Storage contents error rendering failed:",
+            "Storage contents render error:",
             renderError
         );
 
@@ -692,13 +521,15 @@ function sendError(
         );
 
 
+    const safeStatus =
+        statusCode >= 400 &&
+        statusCode < 600
+            ? statusCode
+            : 500;
+
+
     return res
-        .status(
-            statusCode >= 400 &&
-            statusCode < 600
-                ? statusCode
-                : 500
-        )
+        .status(safeStatus)
         .send(
             error.message ||
             fallbackMessage
@@ -709,15 +540,6 @@ function sendError(
 
 // ==========================================================
 // EXPORT
-// ==========================================================
-//
-// The router can now map:
-//
-//     contents
-//     addItems
-//     omitItems
-//     reshuffleItems
-//
 // ==========================================================
 
 module.exports = {
