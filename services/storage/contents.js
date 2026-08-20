@@ -285,7 +285,7 @@ function isAgroStore(
 
         storage &&
 
-        String(storage.type)
+        String(storage.type || "")
             .trim()
             .toLowerCase() ===
             "feeds"
@@ -342,15 +342,51 @@ function unallocatedItemFilter() {
 
 
 // ==========================================================
+// AGROSTORE CONTENT FILTER
+// ==========================================================
+//
+// AgroStore may contain:
+//
+//     type = feeds
+//     quantity > 0
+//     dwellNumber = AgroStore number
+//
+// Nothing else.
+//
+// ==========================================================
+
+function agroStoreContentFilter(
+    dairy,
+    storage
+) {
+
+    return {
+
+        ...farmItemFilter(
+            dairy
+        ),
+
+        dwellNumber:
+            storage.roomNumber,
+
+        type:
+            "feeds",
+
+        quantity: {
+            $gt: 0
+        }
+
+    };
+
+}
+
+
+// ==========================================================
 // AGROSTORE AVAILABLE ITEM FILTER
 // ==========================================================
 //
-// For AgroStore:
-//
-//     assetCode = parent farm code
-//     type = feeds
-//     no dwellNumber
-//     quantity > 0
+// Only unallocated feeds with positive quantity can be
+// added to an AgroStore.
 //
 // ==========================================================
 
@@ -379,16 +415,47 @@ function agroStoreAvailableItemFilter(
 
 
 // ==========================================================
+// NORMAL STORAGE CONTENT FILTER
+// ==========================================================
+//
+// Normal Rooms can contain the farm's allocated animals/assets.
+//
+// ==========================================================
+
+function normalStorageContentFilter(
+    dairy,
+    storage
+) {
+
+    return {
+
+        ...farmItemFilter(
+            dairy
+        ),
+
+        dwellNumber:
+            storage.roomNumber
+
+    };
+
+}
+
+
+// ==========================================================
 // GENERAL AVAILABLE ITEM FILTER
 // ==========================================================
 //
 // AgroStore:
 //
-//     farm + feeds + unallocated + quantity > 0
+//     farm
+//     feeds
+//     unallocated
+//     quantity > 0
 //
-// Other storage:
+// Room:
 //
-//     farm + unallocated
+//     farm
+//     unallocated
 //
 // ==========================================================
 
@@ -460,21 +527,8 @@ async function getStorageContents({
     // CURRENT CONTENTS
     // ======================================================
 
-    const currentFilter = {
+    let currentFilter;
 
-        ...farmItemFilter(
-            dairy
-        ),
-
-        dwellNumber:
-            storage.roomNumber
-
-    };
-
-
-    // ------------------------------------------------------
-    // AGROSTORE CAN ONLY CONTAIN FEEDS
-    // ------------------------------------------------------
 
     if (
         isAgroStore(
@@ -482,8 +536,29 @@ async function getStorageContents({
         )
     ) {
 
-        currentFilter.type =
-            "feeds";
+        // --------------------------------------------------
+        // AGROSTORE:
+        // ONLY POSITIVE-QUANTITY FEEDS
+        // --------------------------------------------------
+
+        currentFilter =
+            agroStoreContentFilter(
+                dairy,
+                storage
+            );
+
+    } else {
+
+        // --------------------------------------------------
+        // NORMAL ROOM:
+        // EXISTING ROOM LOGIC
+        // --------------------------------------------------
+
+        currentFilter =
+            normalStorageContentFilter(
+                dairy,
+                storage
+            );
 
     }
 
@@ -523,16 +598,16 @@ async function getStorageContents({
 
             name: 1
 
-        });
+        );
 
 
     // ======================================================
     // TARGET STORAGES
     // ======================================================
     //
-    // Only useful for normal storage.
+    // ONLY NORMAL ROOMS GET RESHUFFLE TARGETS.
     //
-    // AgroStore does NOT expose reshuffle targets.
+    // AgroStore receives no targets.
     //
     // ======================================================
 
@@ -664,6 +739,18 @@ async function getAvailableItems({
 // ==========================================================
 // ADD ITEMS TO STORAGE
 // ==========================================================
+//
+// NORMAL ROOM:
+//
+//     Existing room allocation logic.
+//
+// AGROSTORE:
+//
+//     ONLY feeds
+//     ONLY quantity > 0
+//     ONLY unallocated feeds
+//
+// ==========================================================
 
 async function addItemsToStorage({
     dairyId,
@@ -698,7 +785,7 @@ async function addItemsToStorage({
     // ------------------------------------------------------
 
     if (
-        String(storage.status)
+        String(storage.status || "")
             .trim()
             .toLowerCase() !==
         "active"
@@ -713,7 +800,93 @@ async function addItemsToStorage({
 
 
     // ======================================================
-    // VERIFY ITEMS
+    // AGROSTORE
+    // ======================================================
+
+    if (
+        isAgroStore(
+            storage
+        )
+    ) {
+
+        const items =
+            await Dairy.find({
+
+                _id: {
+                    $in: ids
+                },
+
+                ...agroStoreAvailableItemFilter(
+                    dairy
+                )
+
+            });
+
+
+        if (
+            items.length !==
+            ids.length
+        ) {
+
+            throw createError(
+                "One or more selected items are invalid, already allocated, are not feeds, or have no remaining quantity.",
+                400
+            );
+
+        }
+
+
+        // --------------------------------------------------
+        // ADD FEEDS TO AGROSTORE
+        // --------------------------------------------------
+
+        const result =
+            await Dairy.updateMany(
+
+                {
+
+                    _id: {
+                        $in: ids
+                    },
+
+                    ...agroStoreAvailableItemFilter(
+                        dairy
+                    )
+
+                },
+
+                {
+
+                    $set: {
+
+                        dwellNumber:
+                            storage.roomNumber
+
+                    }
+
+                }
+
+            );
+
+
+        return {
+
+            modifiedCount:
+                result.modifiedCount,
+
+            dairy,
+
+            storage,
+
+            items
+
+        };
+
+    }
+
+
+    // ======================================================
+    // NORMAL ROOM
     // ======================================================
 
     const items =
@@ -739,20 +912,6 @@ async function addItemsToStorage({
         ids.length
     ) {
 
-        if (
-            isAgroStore(
-                storage
-            )
-        ) {
-
-            throw createError(
-                "One or more selected items are invalid, belong to another farm, are already allocated, are not feeds, or have no remaining quantity.",
-                400
-            );
-
-        }
-
-
         throw createError(
             "One or more selected items are invalid, belong to another farm, or are already allocated.",
             400
@@ -761,9 +920,9 @@ async function addItemsToStorage({
     }
 
 
-    // ======================================================
-    // ALLOCATE
-    // ======================================================
+    // ------------------------------------------------------
+    // ALLOCATE TO ROOM
+    // ------------------------------------------------------
 
     const result =
         await Dairy.updateMany(
@@ -820,13 +979,9 @@ async function addItemsToStorage({
 //
 // IMPORTANT:
 //
-// This operation remains available for normal storage.
+// Omit exists ONLY for normal Rooms.
 //
-// It is NOT available for AgroStore.
-//
-// AgroStore feeds are automatically omitted when:
-//
-//     quantity === 0
+// AgroStore feeds cannot be manually omitted.
 //
 // ==========================================================
 
@@ -859,7 +1014,7 @@ async function omitItemsFromStorage({
 
 
     // ------------------------------------------------------
-    // AGROSTORE DOES NOT USE MANUAL OMIT
+    // AGROSTORE DOES NOT USE OMIT
     // ------------------------------------------------------
 
     if (
@@ -869,7 +1024,7 @@ async function omitItemsFromStorage({
     ) {
 
         throw createError(
-            "Feeds cannot be manually omitted from an AgroStore. Set the remaining quantity to zero instead.",
+            "Feeds cannot be manually omitted from an AgroStore. Reduce the feed quantity to zero instead.",
             400
         );
 
@@ -877,7 +1032,7 @@ async function omitItemsFromStorage({
 
 
     // ======================================================
-    // FIND ITEMS
+    // FIND ROOM ITEMS
     // ======================================================
 
     const items =
@@ -911,7 +1066,7 @@ async function omitItemsFromStorage({
 
 
     // ======================================================
-    // OMIT
+    // OMIT FROM ROOM
     // ======================================================
 
     const result =
@@ -966,9 +1121,9 @@ async function omitItemsFromStorage({
 // RESHUFFLE ITEMS
 // ==========================================================
 //
-// This remains available for NORMAL storage.
+// Reshuffling applies ONLY to normal Rooms.
 //
-// AgroStore feeds cannot be reshuffled.
+// AgroStores cannot be reshuffled into or out of.
 //
 // ==========================================================
 
@@ -1030,9 +1185,9 @@ async function reshuffleItems({
         });
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // AGROSTORE CANNOT RESHUFFLE
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
         isAgroStore(
@@ -1044,19 +1199,19 @@ async function reshuffleItems({
     ) {
 
         throw createError(
-            "AgroStore feeds cannot be reshuffled. Update the feed quantity instead.",
+            "AgroStore feeds cannot be reshuffled. Reduce the feed quantity instead.",
             400
         );
 
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // CURRENT STORAGE ACTIVE
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
-        String(storage.status)
+        String(storage.status || "")
             .trim()
             .toLowerCase() !==
         "active"
@@ -1070,12 +1225,12 @@ async function reshuffleItems({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // TARGET STORAGE ACTIVE
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
-        String(targetStorage.status)
+        String(targetStorage.status || "")
             .trim()
             .toLowerCase() !==
         "active"
@@ -1089,9 +1244,9 @@ async function reshuffleItems({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // SAME STORAGE
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
         String(targetStorage._id) ===
@@ -1106,9 +1261,9 @@ async function reshuffleItems({
     }
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // STORAGE TYPES MUST MATCH
-    // ------------------------------------------------------
+    // ======================================================
 
     if (
         String(targetStorage.type) !==
@@ -1124,7 +1279,7 @@ async function reshuffleItems({
 
 
     // ======================================================
-    // VERIFY ITEMS
+    // VERIFY ROOM ITEMS
     // ======================================================
 
     const items =
@@ -1158,7 +1313,7 @@ async function reshuffleItems({
 
 
     // ======================================================
-    // MOVE
+    // MOVE ITEMS
     // ======================================================
 
     const result =
@@ -1215,17 +1370,28 @@ async function reshuffleItems({
 // UPDATE SINGLE FEED QUANTITY
 // ==========================================================
 //
-// Only works for AgroStore.
+// AGROSTORE ONLY.
 //
-// User records CURRENT quantity remaining.
+// IMPORTANT:
 //
-// quantity > 0
-//     -> feed remains in AgroStore
+// The quantity may ONLY decrease.
 //
-// quantity === 0
-//     -> quantity saved as 0
-//     -> dwellNumber cleared
-//     -> feed automatically omitted
+// Example:
+//
+//     Current = 100
+//     New     = 70   ✅
+//
+//     Current = 100
+//     New     = 100  ❌ no increase/change
+//
+//     Current = 100
+//     New     = 120  ❌ rejected
+//
+//     Current = 100
+//     New     = 0    ✅ feed removed from AgroStore
+//
+// The service enforces this server-side.
+// Therefore changing the HTML input manually cannot bypass it.
 //
 // ==========================================================
 
@@ -1233,8 +1399,13 @@ async function updateFeedQuantity({
     dairyId,
     storageId,
     itemId,
-    quantity
+    quantity,
+    unit
 }) {
+
+    // ------------------------------------------------------
+    // VALIDATE ITEM ID
+    // ------------------------------------------------------
 
     if (
         !isValidObjectId(
@@ -1249,6 +1420,10 @@ async function updateFeedQuantity({
 
     }
 
+
+    // ------------------------------------------------------
+    // VALIDATE QUANTITY
+    // ------------------------------------------------------
 
     const numericQuantity =
         Number(
@@ -1282,11 +1457,19 @@ async function updateFeedQuantity({
     }
 
 
+    // ------------------------------------------------------
+    // FIND FARM
+    // ------------------------------------------------------
+
     const dairy =
         await findParentFarm(
             dairyId
         );
 
+
+    // ------------------------------------------------------
+    // FIND STORAGE
+    // ------------------------------------------------------
 
     const storage =
         await findStorageForFarm({
@@ -1317,7 +1500,7 @@ async function updateFeedQuantity({
 
 
     // ======================================================
-    // FIND FEED
+    // FIND CURRENT FEED
     // ======================================================
 
     const feed =
@@ -1334,7 +1517,11 @@ async function updateFeedQuantity({
                 "feeds",
 
             dwellNumber:
-                storage.roomNumber
+                storage.roomNumber,
+
+            quantity: {
+                $gt: 0
+            }
 
         });
 
@@ -1342,7 +1529,7 @@ async function updateFeedQuantity({
     if (!feed) {
 
         throw createError(
-            "The selected feed was not found in this AgroStore.",
+            "The selected feed was not found in this AgroStore or has no remaining quantity.",
             404
         );
 
@@ -1350,7 +1537,84 @@ async function updateFeedQuantity({
 
 
     // ======================================================
-    // ZERO = AUTOMATIC OMIT
+    // CURRENT QUANTITY
+    // ======================================================
+
+    const currentQuantity =
+        Number(
+            feed.quantity || 0
+        );
+
+
+    // ======================================================
+    // DO NOT ALLOW ADDING QUANTITY
+    // ======================================================
+
+    if (
+        numericQuantity >=
+        currentQuantity
+    ) {
+
+        throw createError(
+            numericQuantity === currentQuantity
+                ? "The new quantity must be lower than the current quantity."
+                : "Feed quantity can only be reduced. You cannot add quantity through this form.",
+            400
+        );
+
+    }
+
+
+    // ======================================================
+    // UNIT
+    // ======================================================
+    //
+    // The quantity belongs to the existing unit.
+    //
+    // We do not allow:
+    //
+    //     100 kg -> 50 bags
+    //
+    // because that would change the meaning of the stored
+    // quantity rather than simply reducing it.
+    //
+    // ======================================================
+
+    if (
+        unit !== undefined &&
+        unit !== null &&
+        String(unit).trim() !== ""
+    ) {
+
+        const submittedUnit =
+            String(unit)
+                .trim()
+                .toLowerCase();
+
+
+        const currentUnit =
+            String(feed.unit || "")
+                .trim()
+                .toLowerCase();
+
+
+        if (
+            currentUnit &&
+            submittedUnit !== currentUnit
+        ) {
+
+            throw createError(
+                `The feed unit is ${currentUnit}. The unit cannot be changed while reducing quantity.`,
+                400
+            );
+
+        }
+
+    }
+
+
+    // ======================================================
+    // ZERO = REMOVE FROM AGROSTORE
     // ======================================================
 
     if (
@@ -1373,7 +1637,11 @@ async function updateFeedQuantity({
                         "feeds",
 
                     dwellNumber:
-                        storage.roomNumber
+                        storage.roomNumber,
+
+                    quantity: {
+                        $gt: 0
+                    }
 
                 },
 
@@ -1410,8 +1678,14 @@ async function updateFeedQuantity({
             item:
                 updatedFeed,
 
+            previousQuantity:
+                currentQuantity,
+
             quantity:
                 0,
+
+            reducedBy:
+                currentQuantity,
 
             omitted:
                 true
@@ -1422,7 +1696,7 @@ async function updateFeedQuantity({
 
 
     // ======================================================
-    // UPDATE REMAINING QUANTITY
+    // REDUCE QUANTITY
     // ======================================================
 
     const updatedFeed =
@@ -1441,7 +1715,12 @@ async function updateFeedQuantity({
                     "feeds",
 
                 dwellNumber:
-                    storage.roomNumber
+                    storage.roomNumber,
+
+                quantity: {
+                    $gt:
+                        numericQuantity
+                }
 
             },
 
@@ -1466,6 +1745,20 @@ async function updateFeedQuantity({
         );
 
 
+    // ------------------------------------------------------
+    // SAFETY CHECK
+    // ------------------------------------------------------
+
+    if (!updatedFeed) {
+
+        throw createError(
+            "The feed quantity could not be reduced. Please refresh the page and try again.",
+            409
+        );
+
+    }
+
+
     return {
 
         dairy,
@@ -1475,7 +1768,14 @@ async function updateFeedQuantity({
         item:
             updatedFeed,
 
+        previousQuantity:
+            currentQuantity,
+
         quantity:
+            numericQuantity,
+
+        reducedBy:
+            currentQuantity -
             numericQuantity,
 
         omitted:
@@ -1495,9 +1795,14 @@ async function updateFeedQuantity({
 // [
 //     {
 //         itemId,
-//         quantity
+//         quantity,
+//         unit
 //     }
 // ]
+//
+// Each feed is independently checked.
+//
+// No record can increase its quantity.
 //
 // ==========================================================
 
@@ -1549,13 +1854,28 @@ async function updateFeedQuantities({
                     record.itemId,
 
                 quantity:
-                    record.quantity
+                    record.quantity,
+
+                unit:
+                    record.unit
 
             });
 
 
         results.push(
             result
+        );
+
+    }
+
+
+    if (
+        results.length === 0
+    ) {
+
+        throw createError(
+            "No valid feed quantity records were supplied.",
+            400
         );
 
     }
@@ -1592,7 +1912,7 @@ module.exports = {
 
 
     // ------------------------------------------------------
-    // NORMAL STORAGE
+    // NORMAL ROOM STORAGE
     // ------------------------------------------------------
 
     omitItemsFromStorage,
