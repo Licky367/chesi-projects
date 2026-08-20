@@ -42,10 +42,13 @@ function isValidObjectId(
 ) {
 
     return Boolean(
+
         value &&
+
         mongoose.Types.ObjectId.isValid(
             value
         )
+
     );
 
 }
@@ -68,16 +71,26 @@ function normalizeIdArray(
 
 
     return [
+
         ...new Set(
+
             values
+
                 .filter(
                     item =>
+
                         item !== null &&
+
                         item !== undefined &&
+
                         String(item).trim() !== ""
+
                 )
+
                 .map(String)
+
         )
+
     ];
 
 }
@@ -134,6 +147,17 @@ function validateItemIds(
 // ==========================================================
 // FIND PARENT FARM
 // ==========================================================
+//
+// `dairyId` is the actual MongoDB `_id` of the parent farm.
+//
+// The parent farm itself is identified by:
+//
+//     code < 0
+//
+// Its `code` is then used as the ownership identifier for
+// child Dairy records through their `assetCode`.
+//
+// ==========================================================
 
 async function findParentFarm(
     dairyId
@@ -170,13 +194,30 @@ async function findParentFarm(
 
 
     // ------------------------------------------------------
-    // STORAGE PARENT MUST BE A FARM
+    // THE SELECTED RECORD MUST ACTUALLY BE A FARM
+    //
+    // Farm:
+    //
+    //     code < 0
+    //
+    // Animal:
+    //
+    //     code > 0
+    //
+    // Structure / Asset:
+    //
+    //     code === null
+    //
     // ------------------------------------------------------
 
     if (
+
         dairy.code === null ||
+
         dairy.code === undefined ||
+
         Number(dairy.code) >= 0
+
     ) {
 
         throw createError(
@@ -194,6 +235,18 @@ async function findParentFarm(
 
 // ==========================================================
 // FIND STORAGE BELONGING TO FARM
+// ==========================================================
+//
+// DairyStorage does not use dairy._id according to the
+// current storage design.
+//
+// It uses:
+//
+//     farmCode = parent Dairy Farm code
+//
+// Therefore the storage is verified against the parent farm
+// resolved from dairyId.
+//
 // ==========================================================
 
 async function findStorageForFarm({
@@ -243,6 +296,89 @@ async function findStorageForFarm({
 
 
 // ==========================================================
+// FARM ITEM FILTER
+// ==========================================================
+//
+// IMPORTANT:
+//
+// There is NO `farm` field in dairy.js.
+//
+// Ownership is represented by:
+//
+//     child.assetCode === parentFarm.code
+//
+// The parent farm itself was resolved using:
+//
+//     parentFarm._id === dairyId
+//
+// Therefore this filter guarantees that the item belongs
+// to the exact parent farm represented by `dairyId`.
+//
+// An item must also have an assetCode.
+//
+// ==========================================================
+
+function farmItemFilter(
+    dairy
+) {
+
+    return {
+
+        assetCode:
+            dairy.code
+
+    };
+
+}
+
+
+// ==========================================================
+// UNALLOCATED ITEM FILTER
+// ==========================================================
+//
+// An available item:
+//
+//     belongs to the parent farm
+//
+// AND
+//
+//     has no dwellNumber
+//
+// Both situations are supported:
+//
+//     dwellNumber: null
+//
+// or:
+//
+//     dwellNumber field does not exist
+//
+// ==========================================================
+
+function unallocatedItemFilter() {
+
+    return {
+
+        $or: [
+
+            {
+                dwellNumber:
+                    null
+            },
+
+            {
+                dwellNumber: {
+                    $exists: false
+                }
+            }
+
+        ]
+
+    };
+
+}
+
+
+// ==========================================================
 // GET STORAGE CONTENTS
 // ==========================================================
 
@@ -251,11 +387,19 @@ async function getStorageContents({
     storageId
 }) {
 
+    // ------------------------------------------------------
+    // RESOLVE THE PARENT FARM BY ITS _id
+    // ------------------------------------------------------
+
     const dairy =
         await findParentFarm(
             dairyId
         );
 
+
+    // ------------------------------------------------------
+    // VERIFY STORAGE BELONGS TO THAT FARM
+    // ------------------------------------------------------
 
     const storage =
         await findStorageForFarm({
@@ -267,15 +411,23 @@ async function getStorageContents({
         });
 
 
-    // ------------------------------------------------------
-    // CURRENT CONTENTS
-    // ------------------------------------------------------
+    // ======================================================
+    // CURRENT STORAGE CONTENTS
+    // ======================================================
+    //
+    // Every returned item must:
+    //
+    // 1. Have the parent farm's assetCode
+    // 2. Have this storage's dwellNumber
+    //
+    // ======================================================
 
     const items =
         await Dairy.find({
 
-            assetCode:
-                dairy.code,
+            ...farmItemFilter(
+                dairy
+            ),
 
             dwellNumber:
                 storage.roomNumber
@@ -290,18 +442,30 @@ async function getStorageContents({
         });
 
 
-    // ------------------------------------------------------
+    // ======================================================
     // AVAILABLE ITEMS
-    // ------------------------------------------------------
+    // ======================================================
+    //
+    // `availableItems` is NOT a schema field.
+    //
+    // It is a calculated result.
+    //
+    // Available means:
+    //
+    // 1. Belongs to this parent farm
+    // 2. Has an assetCode
+    // 3. Has no dwellNumber
+    //
+    // ======================================================
 
     const availableItems =
         await Dairy.find({
 
-            assetCode:
-                dairy.code,
+            ...farmItemFilter(
+                dairy
+            ),
 
-            dwellNumber:
-                null
+            ...unallocatedItemFilter()
 
         })
         .sort({
@@ -313,9 +477,9 @@ async function getStorageContents({
         });
 
 
-    // ------------------------------------------------------
-    // SAME TYPE TARGETS
-    // ------------------------------------------------------
+    // ======================================================
+    // TARGET STORAGE FACILITIES
+    // ======================================================
 
     const targetStorages =
         await DairyStorage.find({
@@ -337,13 +501,24 @@ async function getStorageContents({
         });
 
 
+    // ------------------------------------------------------
+    // DO NOT INCLUDE CURRENT STORAGE
+    // ------------------------------------------------------
+
     const filteredTargetStorages =
         targetStorages.filter(
+
             target =>
+
                 String(target._id) !==
                 String(storage._id)
+
         );
 
+
+    // ======================================================
+    // RETURN
+    // ======================================================
 
     return {
 
@@ -369,17 +544,37 @@ async function getStorageContents({
 // ==========================================================
 // GET AVAILABLE ITEMS
 // ==========================================================
+//
+// Returns Dairy records that:
+//
+//     assetCode = parent farm code
+//
+// AND:
+//
+//     dwellNumber = null
+//
+// or dwellNumber does not exist.
+//
+// ==========================================================
 
 async function getAvailableItems({
     dairyId,
     storageId
 }) {
 
+    // ------------------------------------------------------
+    // RESOLVE PARENT FARM
+    // ------------------------------------------------------
+
     const dairy =
         await findParentFarm(
             dairyId
         );
 
+
+    // ------------------------------------------------------
+    // VERIFY STORAGE BELONGS TO PARENT FARM
+    // ------------------------------------------------------
 
     await findStorageForFarm({
 
@@ -390,14 +585,18 @@ async function getAvailableItems({
     });
 
 
+    // ------------------------------------------------------
+    // FIND AVAILABLE ITEMS
+    // ------------------------------------------------------
+
     const items =
         await Dairy.find({
 
-            assetCode:
-                dairy.code,
+            ...farmItemFilter(
+                dairy
+            ),
 
-            dwellNumber:
-                null
+            ...unallocatedItemFilter()
 
         })
         .sort({
@@ -421,7 +620,7 @@ async function getAvailableItems({
 
 
 // ==========================================================
-// ADD ITEMS
+// ADD ITEMS TO STORAGE
 // ==========================================================
 
 async function addItemsToStorage({
@@ -436,11 +635,19 @@ async function addItemsToStorage({
         );
 
 
+    // ------------------------------------------------------
+    // RESOLVE PARENT FARM
+    // ------------------------------------------------------
+
     const dairy =
         await findParentFarm(
             dairyId
         );
 
+
+    // ------------------------------------------------------
+    // VERIFY STORAGE BELONGS TO FARM
+    // ------------------------------------------------------
 
     const storage =
         await findStorageForFarm({
@@ -451,6 +658,10 @@ async function addItemsToStorage({
 
         });
 
+
+    // ------------------------------------------------------
+    // STORAGE MUST BE ACTIVE
+    // ------------------------------------------------------
 
     if (
         storage.status !==
@@ -465,6 +676,25 @@ async function addItemsToStorage({
     }
 
 
+    // ======================================================
+    // VERIFY EVERY SELECTED ITEM
+    // ======================================================
+    //
+    // This is the critical ownership check.
+    //
+    // The selected Dairy record MUST have:
+    //
+    //     assetCode = dairy.code
+    //
+    // where `dairy` was obtained using:
+    //
+    //     Dairy.findById(dairyId)
+    //
+    // Therefore an item belonging to another farm cannot
+    // pass this query.
+    //
+    // ======================================================
+
     const items =
         await Dairy.find({
 
@@ -472,14 +702,18 @@ async function addItemsToStorage({
                 $in: ids
             },
 
-            assetCode:
-                dairy.code,
+            ...farmItemFilter(
+                dairy
+            ),
 
-            dwellNumber:
-                null
+            ...unallocatedItemFilter()
 
         });
 
+
+    // ------------------------------------------------------
+    // EVERY REQUESTED ID MUST HAVE BEEN FOUND
+    // ------------------------------------------------------
 
     if (
         items.length !==
@@ -487,12 +721,16 @@ async function addItemsToStorage({
     ) {
 
         throw createError(
-            "One or more selected items are invalid, belong to another farm, or are already allocated.",
+            "One or more selected items are invalid, do not belong to this farm, or are already allocated.",
             400
         );
 
     }
 
+
+    // ======================================================
+    // ALLOCATE ITEMS
+    // ======================================================
 
     const result =
         await Dairy.updateMany(
@@ -503,11 +741,11 @@ async function addItemsToStorage({
                     $in: ids
                 },
 
-                assetCode:
-                    dairy.code,
+                ...farmItemFilter(
+                    dairy
+                ),
 
-                dwellNumber:
-                    null
+                ...unallocatedItemFilter()
 
             },
 
@@ -542,7 +780,7 @@ async function addItemsToStorage({
 
 
 // ==========================================================
-// OMIT ITEMS
+// OMIT ITEMS FROM STORAGE
 // ==========================================================
 
 async function omitItemsFromStorage({
@@ -557,11 +795,19 @@ async function omitItemsFromStorage({
         );
 
 
+    // ------------------------------------------------------
+    // RESOLVE PARENT FARM
+    // ------------------------------------------------------
+
     const dairy =
         await findParentFarm(
             dairyId
         );
 
+
+    // ------------------------------------------------------
+    // VERIFY STORAGE BELONGS TO FARM
+    // ------------------------------------------------------
 
     const storage =
         await findStorageForFarm({
@@ -573,6 +819,20 @@ async function omitItemsFromStorage({
         });
 
 
+    // ======================================================
+    // VERIFY ITEMS
+    // ======================================================
+    //
+    // Item must:
+    //
+    //     belong to this farm
+    //
+    // AND:
+    //
+    //     currently occupy this storage
+    //
+    // ======================================================
+
     const items =
         await Dairy.find({
 
@@ -580,8 +840,9 @@ async function omitItemsFromStorage({
                 $in: ids
             },
 
-            assetCode:
-                dairy.code,
+            ...farmItemFilter(
+                dairy
+            ),
 
             dwellNumber:
                 storage.roomNumber
@@ -602,6 +863,10 @@ async function omitItemsFromStorage({
     }
 
 
+    // ======================================================
+    // REMOVE FROM STORAGE
+    // ======================================================
+
     const result =
         await Dairy.updateMany(
 
@@ -611,8 +876,9 @@ async function omitItemsFromStorage({
                     $in: ids
                 },
 
-                assetCode:
-                    dairy.code,
+                ...farmItemFilter(
+                    dairy
+                ),
 
                 dwellNumber:
                     storage.roomNumber
@@ -666,6 +932,10 @@ async function reshuffleItems({
         );
 
 
+    // ------------------------------------------------------
+    // VALIDATE TARGET STORAGE ID
+    // ------------------------------------------------------
+
     if (
         !isValidObjectId(
             targetStorageId
@@ -680,11 +950,19 @@ async function reshuffleItems({
     }
 
 
+    // ------------------------------------------------------
+    // RESOLVE PARENT FARM
+    // ------------------------------------------------------
+
     const dairy =
         await findParentFarm(
             dairyId
         );
 
+
+    // ------------------------------------------------------
+    // FIND CURRENT STORAGE
+    // ------------------------------------------------------
 
     const storage =
         await findStorageForFarm({
@@ -696,6 +974,10 @@ async function reshuffleItems({
         });
 
 
+    // ------------------------------------------------------
+    // FIND TARGET STORAGE
+    // ------------------------------------------------------
+
     const targetStorage =
         await findStorageForFarm({
 
@@ -706,6 +988,10 @@ async function reshuffleItems({
 
         });
 
+
+    // ------------------------------------------------------
+    // CURRENT STORAGE MUST BE ACTIVE
+    // ------------------------------------------------------
 
     if (
         storage.status !==
@@ -720,6 +1006,10 @@ async function reshuffleItems({
     }
 
 
+    // ------------------------------------------------------
+    // TARGET STORAGE MUST BE ACTIVE
+    // ------------------------------------------------------
+
     if (
         targetStorage.status !==
         "active"
@@ -732,6 +1022,10 @@ async function reshuffleItems({
 
     }
 
+
+    // ------------------------------------------------------
+    // STORAGE CANNOT BE THE SAME
+    // ------------------------------------------------------
 
     if (
         String(targetStorage._id) ===
@@ -746,6 +1040,10 @@ async function reshuffleItems({
     }
 
 
+    // ------------------------------------------------------
+    // STORAGE TYPES MUST MATCH
+    // ------------------------------------------------------
+
     if (
         String(targetStorage.type) !==
         String(storage.type)
@@ -759,6 +1057,20 @@ async function reshuffleItems({
     }
 
 
+    // ======================================================
+    // VERIFY ITEMS
+    // ======================================================
+    //
+    // Every item MUST:
+    //
+    //     belong to this parent farm
+    //
+    // AND:
+    //
+    //     currently be inside the selected storage.
+    //
+    // ======================================================
+
     const items =
         await Dairy.find({
 
@@ -766,8 +1078,9 @@ async function reshuffleItems({
                 $in: ids
             },
 
-            assetCode:
-                dairy.code,
+            ...farmItemFilter(
+                dairy
+            ),
 
             dwellNumber:
                 storage.roomNumber
@@ -788,6 +1101,10 @@ async function reshuffleItems({
     }
 
 
+    // ======================================================
+    // MOVE ITEMS
+    // ======================================================
+
     const result =
         await Dairy.updateMany(
 
@@ -797,8 +1114,9 @@ async function reshuffleItems({
                     $in: ids
                 },
 
-                assetCode:
-                    dairy.code,
+                ...farmItemFilter(
+                    dairy
+                ),
 
                 dwellNumber:
                     storage.roomNumber
