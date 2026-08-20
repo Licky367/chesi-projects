@@ -2,158 +2,78 @@
 // services/storage/contents.js
 // STORAGE CONTENTS SERVICE
 // ==========================================================
-//
-// PURPOSE
-// ----------------------------------------------------------
-//
-// Handles everything allocated inside a DairyStorage facility.
-//
-// STORAGE ARCHITECTURE:
-//
-//     NORMAL ROOM
-//         - contains normal Dairy assets/entities
-//         - add
-//         - omit
-//         - reshuffle
-//
-//     AGROSTORE
-//         - DairyStorage.type === "agroStore"
-//         - contains Dairy.type === "feeds"
-//         - quantity must be > 0 while allocated
-//         - quantity can only be reduced
-//         - quantity === 0 automatically removes the feed
-//         - no manual omit
-//         - no reshuffle
-//
-// IMPORTANT DISTINCTION:
-//
-//     DairyStorage.type
-//         "room"
-//         "agroStore"
-//
-//     Dairy.type
-//         "feeds"
-//         ...other Dairy types
-//
-// ==========================================================
 
+const mongoose = require("mongoose");
 
-const mongoose =
-    require("mongoose");
+const Dairy = require("../../models/dairy");
 
-
-const Dairy =
-    require("../../models/dairy");
-
-
-const DairyStorage =
-    require("../../models/dairyStorage");
-
+const DairyStorage = require("../../models/dairyStorage");
 
 // ==========================================================
 // ERROR HELPER
 // ==========================================================
 
-function createError(
-    message,
-    statusCode = 400
-) {
+function createError(message, statusCode = 400) {
 
     const error =
-        new Error(
-            message
-        );
-
+        new Error(message);
 
     error.status =
         statusCode;
-
 
     return error;
 
 }
 
-
 // ==========================================================
 // OBJECT ID VALIDATION
 // ==========================================================
 
-function isValidObjectId(
-    value
-) {
+function isValidObjectId(value) {
 
     return Boolean(
-
         value &&
-
-        mongoose.Types.ObjectId.isValid(
-            value
-        )
-
+        mongoose.Types.ObjectId.isValid(value)
     );
 
 }
-
 
 // ==========================================================
 // NORMALIZE IDS
 // ==========================================================
 
-function normalizeIdArray(
-    value
-) {
+function normalizeIdArray(value) {
 
     const values =
         Array.isArray(value)
-
             ? value
-
             : value
-
                 ? [value]
-
                 : [];
 
-
     return [
-
         ...new Set(
-
             values
-
                 .filter(
                     item =>
-
                         item !== null &&
-
                         item !== undefined &&
-
                         String(item).trim() !== ""
-
                 )
-
                 .map(String)
-
         )
-
     ];
 
 }
-
 
 // ==========================================================
 // VALIDATE ITEM IDS
 // ==========================================================
 
-function validateItemIds(
-    itemIds
-) {
+function validateItemIds(itemIds) {
 
     const ids =
-        normalizeIdArray(
-            itemIds
-        );
-
+        normalizeIdArray(itemIds);
 
     if (
         ids.length === 0
@@ -166,19 +86,13 @@ function validateItemIds(
 
     }
 
-
     const invalidId =
         ids.find(
             id =>
-                !isValidObjectId(
-                    id
-                )
+                !isValidObjectId(id)
         );
 
-
-    if (
-        invalidId
-    ) {
+    if (invalidId) {
 
         throw createError(
             "One or more selected item IDs are invalid.",
@@ -187,36 +101,30 @@ function validateItemIds(
 
     }
 
-
     return ids;
 
 }
-
 
 // ==========================================================
 // FIND PARENT FARM
 // ==========================================================
 //
-// dairyId = Dairy._id
+// dairyId = parent farm _id
 //
-// Parent farm:
+// Farm:
 //
-//     Dairy._id
-//          ↓
-//     Dairy.code
+//     code < 0
 //
-// Farm code MUST be negative.
+// Child records:
+//
+//     assetCode = parent farm code
 //
 // ==========================================================
 
-async function findParentFarm(
-    dairyId
-) {
+async function findParentFarm(dairyId) {
 
     if (
-        !isValidObjectId(
-            dairyId
-        )
+        !isValidObjectId(dairyId)
     ) {
 
         throw createError(
@@ -226,16 +134,12 @@ async function findParentFarm(
 
     }
 
-
     const dairy =
         await Dairy.findById(
             dairyId
         );
 
-
-    if (
-        !dairy
-    ) {
+    if (!dairy) {
 
         throw createError(
             "Dairy Farm not found.",
@@ -244,65 +148,25 @@ async function findParentFarm(
 
     }
 
-
     if (
-
         dairy.code === null ||
-
-        dairy.code === undefined
-
+        dairy.code === undefined ||
+        Number(dairy.code) >= 0
     ) {
 
         throw createError(
-            "The selected Dairy Farm does not have a farm code.",
-            422
-        );
-
-    }
-
-
-    const farmCode =
-        Number(
-            dairy.code
-        );
-
-
-    if (
-
-        !Number.isInteger(
-            farmCode
-        ) ||
-
-        farmCode >= 0
-
-    ) {
-
-        throw createError(
-            "The selected Dairy record is not a valid Dairy Farm.",
+            "The selected Dairy record is not a Dairy Farm.",
             400
         );
 
     }
 
-
     return dairy;
 
 }
 
-
 // ==========================================================
 // FIND STORAGE BELONGING TO FARM
-// ==========================================================
-//
-// IMPORTANT:
-//
-// The storageId is always checked together with:
-//
-//     farmCode
-//
-// Therefore a storage belonging to another farm cannot be
-// accessed simply by changing the storage ObjectId.
-//
 // ==========================================================
 
 async function findStorageForFarm({
@@ -311,9 +175,7 @@ async function findStorageForFarm({
 }) {
 
     if (
-        !isValidObjectId(
-            storageId
-        )
+        !isValidObjectId(storageId)
     ) {
 
         throw createError(
@@ -323,7 +185,6 @@ async function findStorageForFarm({
 
     }
 
-
     const storage =
         await DairyStorage.findOne({
 
@@ -331,16 +192,11 @@ async function findStorageForFarm({
                 storageId,
 
             farmCode:
-                Number(
-                    dairy.code
-                )
+                dairy.code
 
         });
 
-
-    if (
-        !storage
-    ) {
+    if (!storage) {
 
         throw createError(
             "Storage facility not found for this Dairy Farm.",
@@ -349,114 +205,49 @@ async function findStorageForFarm({
 
     }
 
-
     return storage;
 
 }
-
 
 // ==========================================================
 // CHECK AGROSTORE
 // ==========================================================
 //
-// IMPORTANT:
-//
-// DairyStorage uses:
-//
-//     type === "agroStore"
-//
-// NOT:
+// AgroStore:
 //
 //     type === "feeds"
 //
-// "feeds" belongs to Dairy.type.
-//
 // ==========================================================
 
-function isAgroStore(
-    storage
-) {
+function isAgroStore(storage) {
 
     return (
-
         storage &&
-
-        String(
-            storage.type || ""
-        )
-        .trim()
-        .toLowerCase() ===
-        "agrostore"
-
+        String(storage.type)
+            .trim()
+            .toLowerCase() ===
+            "feeds"
     );
 
 }
-
-
-// ==========================================================
-// CHECK NORMAL ROOM
-// ==========================================================
-
-function isNormalRoom(
-    storage
-) {
-
-    return (
-
-        storage &&
-
-        String(
-            storage.type || ""
-        )
-        .trim()
-        .toLowerCase() ===
-        "room"
-
-    );
-
-}
-
 
 // ==========================================================
 // FARM ITEM FILTER
 // ==========================================================
-//
-// Every child Dairy item belonging to this farm must have:
-//
-//     assetCode === farmCode
-//
-// ==========================================================
 
-function farmItemFilter(
-    dairy
-) {
+function farmItemFilter(dairy) {
 
     return {
 
         assetCode:
-            Number(
-                dairy.code
-            )
+            dairy.code
 
     };
 
 }
 
-
 // ==========================================================
 // UNALLOCATED ITEM FILTER
-// ==========================================================
-//
-// An item is available when it has no dwellNumber.
-//
-// Supports both:
-//
-//     dwellNumber: null
-//
-// and:
-//
-//     dwellNumber does not exist
-//
 // ==========================================================
 
 function unallocatedItemFilter() {
@@ -472,8 +263,7 @@ function unallocatedItemFilter() {
 
             {
                 dwellNumber: {
-                    $exists:
-                        false
+                    $exists: false
                 }
             }
 
@@ -483,69 +273,24 @@ function unallocatedItemFilter() {
 
 }
 
-
-// ==========================================================
-// AGROSTORE CONTENT FILTER
-// ==========================================================
-//
-// An AgroStore contains ONLY:
-//
-//     same farm
-//     type = feeds
-//     dwellNumber = AgroStore roomNumber
-//     quantity > 0
-//
-// ==========================================================
-
-function agroStoreContentFilter(
-    dairy,
-    storage
-) {
-
-    return {
-
-        ...farmItemFilter(
-            dairy
-        ),
-
-        type:
-            "feeds",
-
-        dwellNumber:
-            Number(
-                storage.roomNumber
-            ),
-
-        quantity: {
-
-            $gt:
-                0
-
-        }
-
-    };
-
-}
-
-
 // ==========================================================
 // AGROSTORE AVAILABLE ITEM FILTER
 // ==========================================================
 //
-// Only unallocated feeds with positive quantity may be added
-// to an AgroStore.
+// For AgroStore:
+//
+//     assetCode = parent farm code
+//     type = feeds
+//     no dwellNumber
+//     quantity > 0
 //
 // ==========================================================
 
-function agroStoreAvailableItemFilter(
-    dairy
-) {
+function agroStoreAvailableItemFilter(dairy) {
 
     return {
 
-        ...farmItemFilter(
-            dairy
-        ),
+        ...farmItemFilter(dairy),
 
         type:
             "feeds",
@@ -553,45 +298,12 @@ function agroStoreAvailableItemFilter(
         ...unallocatedItemFilter(),
 
         quantity: {
-
-            $gt:
-                0
-
+            $gt: 0
         }
 
     };
 
 }
-
-
-// ==========================================================
-// NORMAL ROOM CONTENT FILTER
-// ==========================================================
-//
-// A normal Room contains the farm's allocated Dairy entities.
-//
-// ==========================================================
-
-function normalStorageContentFilter(
-    dairy,
-    storage
-) {
-
-    return {
-
-        ...farmItemFilter(
-            dairy
-        ),
-
-        dwellNumber:
-            Number(
-                storage.roomNumber
-            )
-
-    };
-
-}
-
 
 // ==========================================================
 // GENERAL AVAILABLE ITEM FILTER
@@ -599,15 +311,11 @@ function normalStorageContentFilter(
 //
 // AgroStore:
 //
-//     farm
-//     type = feeds
-//     unallocated
-//     quantity > 0
+//     farm + feeds + unallocated + quantity > 0
 //
-// Room:
+// Other storage:
 //
-//     farm
-//     unallocated
+//     farm + unallocated
 //
 // ==========================================================
 
@@ -617,9 +325,7 @@ function availableItemFilter({
 }) {
 
     if (
-        isAgroStore(
-            storage
-        )
+        isAgroStore(storage)
     ) {
 
         return agroStoreAvailableItemFilter(
@@ -628,19 +334,15 @@ function availableItemFilter({
 
     }
 
-
     return {
 
-        ...farmItemFilter(
-            dairy
-        ),
+        ...farmItemFilter(dairy),
 
         ...unallocatedItemFilter()
 
     };
 
 }
-
 
 // ==========================================================
 // GET STORAGE CONTENTS
@@ -651,19 +353,18 @@ async function getStorageContents({
     storageId
 }) {
 
-    // ======================================================
+    // ------------------------------------------------------
     // FIND FARM
-    // ======================================================
+    // ------------------------------------------------------
 
     const dairy =
         await findParentFarm(
             dairyId
         );
 
-
-    // ======================================================
+    // ------------------------------------------------------
     // FIND STORAGE
-    // ======================================================
+    // ------------------------------------------------------
 
     const storage =
         await findStorageForFarm({
@@ -674,48 +375,31 @@ async function getStorageContents({
 
         });
 
-
     // ======================================================
     // CURRENT CONTENTS
     // ======================================================
 
-    let currentFilter;
+    const currentFilter = {
 
+        ...farmItemFilter(dairy),
+
+        dwellNumber:
+            storage.roomNumber
+
+    };
+
+    // ------------------------------------------------------
+    // AGROSTORE CAN ONLY CONTAIN FEEDS
+    // ------------------------------------------------------
 
     if (
-        isAgroStore(
-            storage
-        )
+        isAgroStore(storage)
     ) {
 
-        // --------------------------------------------------
-        // AGROSTORE
-        // --------------------------------------------------
-        //
-        // Only positive-quantity feeds.
-        //
-        currentFilter =
-            agroStoreContentFilter(
-                dairy,
-                storage
-            );
+        currentFilter.type =
+            "feeds";
 
     }
-
-    else {
-
-        // --------------------------------------------------
-        // NORMAL ROOM
-        // --------------------------------------------------
-
-        currentFilter =
-            normalStorageContentFilter(
-                dairy,
-                storage
-            );
-
-    }
-
 
     const items =
         await Dairy.find(
@@ -723,14 +407,11 @@ async function getStorageContents({
         )
         .sort({
 
-            code:
-                1,
+            code: 1,
 
-            name:
-                1
+            name: 1
 
         });
-
 
     // ======================================================
     // AVAILABLE ITEMS
@@ -750,45 +431,36 @@ async function getStorageContents({
         )
         .sort({
 
-            code:
-                1,
+            code: 1,
 
-            name:
-                1
+            name: 1
 
-        );
-
+        });
 
     // ======================================================
     // TARGET STORAGES
-    // ==========================================================
+    // ======================================================
     //
-    // Only normal rooms may have reshuffle targets.
+    // Only useful for normal storage.
     //
-    // AgroStores have NO reshuffle targets.
+    // AgroStore does NOT expose reshuffle targets.
     //
     // ======================================================
 
-    let targetStorages =
-        [];
-
+    let targetStorages = [];
 
     if (
-        isNormalRoom(
-            storage
-        )
+        !isAgroStore(storage)
     ) {
 
         const storages =
             await DairyStorage.find({
 
                 farmCode:
-                    Number(
-                        dairy.code
-                    ),
+                    dairy.code,
 
                 type:
-                    "room",
+                    storage.type,
 
                 status:
                     "active"
@@ -796,28 +468,20 @@ async function getStorageContents({
             })
             .sort({
 
-                roomNumber:
-                    1
+                roomNumber: 1
 
             });
-
 
         targetStorages =
             storages.filter(
 
                 target =>
-
-                    String(
-                        target._id
-                    ) !==
-                    String(
-                        storage._id
-                    )
+                    String(target._id) !==
+                    String(storage._id)
 
             );
 
     }
-
 
     // ======================================================
     // RETURN
@@ -842,7 +506,6 @@ async function getStorageContents({
 
 }
 
-
 // ==========================================================
 // GET AVAILABLE ITEMS
 // ==========================================================
@@ -857,7 +520,6 @@ async function getAvailableItems({
             dairyId
         );
 
-
     const storage =
         await findStorageForFarm({
 
@@ -866,7 +528,6 @@ async function getAvailableItems({
             storageId
 
         });
-
 
     const items =
         await Dairy.find(
@@ -882,14 +543,11 @@ async function getAvailableItems({
         )
         .sort({
 
-            code:
-                1,
+            code: 1,
 
-            name:
-                1
+            name: 1
 
         });
-
 
     return {
 
@@ -903,23 +561,8 @@ async function getAvailableItems({
 
 }
 
-
 // ==========================================================
 // ADD ITEMS TO STORAGE
-// ==========================================================
-//
-// NORMAL ROOM:
-//
-//     Farm item
-//     Unallocated
-//
-// AGROSTORE:
-//
-//     Farm item
-//     type = feeds
-//     Unallocated
-//     quantity > 0
-//
 // ==========================================================
 
 async function addItemsToStorage({
@@ -933,12 +576,10 @@ async function addItemsToStorage({
             itemIds
         );
 
-
     const dairy =
         await findParentFarm(
             dairyId
         );
-
 
     const storage =
         await findStorageForFarm({
@@ -949,17 +590,14 @@ async function addItemsToStorage({
 
         });
 
-
-    // ======================================================
+    // ------------------------------------------------------
     // STORAGE MUST BE ACTIVE
-    // ======================================================
+    // ------------------------------------------------------
 
     if (
-        String(
-            storage.status || ""
-        )
-        .trim()
-        .toLowerCase() !==
+        String(storage.status)
+            .trim()
+            .toLowerCase() !==
         "active"
     ) {
 
@@ -970,127 +608,15 @@ async function addItemsToStorage({
 
     }
 
-
     // ======================================================
-    // AGROSTORE
+    // VERIFY ITEMS
     // ======================================================
-
-    if (
-        isAgroStore(
-            storage
-        )
-    ) {
-
-        const items =
-            await Dairy.find({
-
-                _id: {
-
-                    $in:
-                        ids
-
-                },
-
-                ...agroStoreAvailableItemFilter(
-                    dairy
-                )
-
-            });
-
-
-        if (
-            items.length !==
-            ids.length
-        ) {
-
-            throw createError(
-                "One or more selected items are invalid, already allocated, are not feeds, or have no remaining quantity.",
-                400
-            );
-
-        }
-
-
-        // --------------------------------------------------
-        // ALLOCATE FEEDS
-        // --------------------------------------------------
-
-        const result =
-            await Dairy.updateMany(
-
-                {
-
-                    _id: {
-
-                        $in:
-                            ids
-
-                    },
-
-                    ...agroStoreAvailableItemFilter(
-                        dairy
-                    )
-
-                },
-
-                {
-
-                    $set: {
-
-                        dwellNumber:
-                            Number(
-                                storage.roomNumber
-                            )
-
-                    }
-
-                }
-
-            );
-
-
-        return {
-
-            modifiedCount:
-                result.modifiedCount,
-
-            dairy,
-
-            storage,
-
-            items
-
-        };
-
-    }
-
-
-    // ======================================================
-    // NORMAL ROOM
-    // ======================================================
-
-    if (
-        !isNormalRoom(
-            storage
-        )
-    ) {
-
-        throw createError(
-            "Invalid storage facility type.",
-            400
-        );
-
-    }
-
 
     const items =
         await Dairy.find({
 
             _id: {
-
-                $in:
-                    ids
-
+                $in: ids
             },
 
             ...availableItemFilter({
@@ -1103,11 +629,21 @@ async function addItemsToStorage({
 
         });
 
-
     if (
         items.length !==
         ids.length
     ) {
+
+        if (
+            isAgroStore(storage)
+        ) {
+
+            throw createError(
+                "One or more selected items are invalid, belong to another farm, are already allocated, are not feeds, or have no remaining quantity.",
+                400
+            );
+
+        }
 
         throw createError(
             "One or more selected items are invalid, belong to another farm, or are already allocated.",
@@ -1116,10 +652,9 @@ async function addItemsToStorage({
 
     }
 
-
-    // ------------------------------------------------------
-    // ALLOCATE TO ROOM
-    // ------------------------------------------------------
+    // ======================================================
+    // ALLOCATE
+    // ======================================================
 
     const result =
         await Dairy.updateMany(
@@ -1127,10 +662,7 @@ async function addItemsToStorage({
             {
 
                 _id: {
-
-                    $in:
-                        ids
-
+                    $in: ids
                 },
 
                 ...availableItemFilter({
@@ -1148,16 +680,13 @@ async function addItemsToStorage({
                 $set: {
 
                     dwellNumber:
-                        Number(
-                            storage.roomNumber
-                        )
+                        storage.roomNumber
 
                 }
 
             }
 
         );
-
 
     return {
 
@@ -1174,18 +703,19 @@ async function addItemsToStorage({
 
 }
 
-
 // ==========================================================
 // OMIT ITEMS FROM NORMAL STORAGE
 // ==========================================================
 //
-// AgroStore:
+// IMPORTANT:
 //
-//     NO manual omission.
+// This operation remains available for normal storage.
 //
-// Normal Room:
+// It is NOT available for AgroStore.
 //
-//     dwellNumber -> null
+// AgroStore feeds are automatically omitted when:
+//
+//     quantity === 0
 //
 // ==========================================================
 
@@ -1200,12 +730,10 @@ async function omitItemsFromStorage({
             itemIds
         );
 
-
     const dairy =
         await findParentFarm(
             dairyId
         );
-
 
     const storage =
         await findStorageForFarm({
@@ -1216,55 +744,30 @@ async function omitItemsFromStorage({
 
         });
 
-
-    // ======================================================
-    // AGROSTORE
-    // ======================================================
+    // ------------------------------------------------------
+    // AGROSTORE DOES NOT USE MANUAL OMIT
+    // ------------------------------------------------------
 
     if (
-        isAgroStore(
-            storage
-        )
+        isAgroStore(storage)
     ) {
 
         throw createError(
-            "Feeds cannot be manually omitted from an AgroStore. Reduce the feed quantity to zero instead.",
+            "Feeds cannot be manually omitted from an AgroStore. Set the remaining quantity to zero instead.",
             400
         );
 
     }
 
-
     // ======================================================
-    // MUST BE NORMAL ROOM
-    // ======================================================
-
-    if (
-        !isNormalRoom(
-            storage
-        )
-    ) {
-
-        throw createError(
-            "Items can only be omitted from a normal Room.",
-            400
-        );
-
-    }
-
-
-    // ======================================================
-    // FIND ROOM ITEMS
+    // FIND ITEMS
     // ======================================================
 
     const items =
         await Dairy.find({
 
             _id: {
-
-                $in:
-                    ids
-
+                $in: ids
             },
 
             ...farmItemFilter(
@@ -1272,12 +775,9 @@ async function omitItemsFromStorage({
             ),
 
             dwellNumber:
-                Number(
-                    storage.roomNumber
-                )
+                storage.roomNumber
 
         });
-
 
     if (
         items.length !==
@@ -1291,9 +791,8 @@ async function omitItemsFromStorage({
 
     }
 
-
     // ======================================================
-    // OMIT FROM ROOM
+    // OMIT
     // ======================================================
 
     const result =
@@ -1302,10 +801,7 @@ async function omitItemsFromStorage({
             {
 
                 _id: {
-
-                    $in:
-                        ids
-
+                    $in: ids
                 },
 
                 ...farmItemFilter(
@@ -1313,9 +809,7 @@ async function omitItemsFromStorage({
                 ),
 
                 dwellNumber:
-                    Number(
-                        storage.roomNumber
-                    )
+                    storage.roomNumber
 
             },
 
@@ -1332,7 +826,6 @@ async function omitItemsFromStorage({
 
         );
 
-
     return {
 
         modifiedCount:
@@ -1348,14 +841,13 @@ async function omitItemsFromStorage({
 
 }
 
-
 // ==========================================================
 // RESHUFFLE ITEMS
 // ==========================================================
 //
-// Only normal Rooms.
+// This remains available for NORMAL storage.
 //
-// AgroStores cannot be involved.
+// AgroStore feeds cannot be reshuffled.
 //
 // ==========================================================
 
@@ -1371,10 +863,9 @@ async function reshuffleItems({
             itemIds
         );
 
-
-    // ======================================================
-    // VALIDATE TARGET ID
-    // ======================================================
+    // ------------------------------------------------------
+    // VALIDATE TARGET
+    // ------------------------------------------------------
 
     if (
         !isValidObjectId(
@@ -1389,20 +880,10 @@ async function reshuffleItems({
 
     }
 
-
-    // ======================================================
-    // FIND FARM
-    // ======================================================
-
     const dairy =
         await findParentFarm(
             dairyId
         );
-
-
-    // ======================================================
-    // FIND CURRENT STORAGE
-    // ======================================================
 
     const storage =
         await findStorageForFarm({
@@ -1412,11 +893,6 @@ async function reshuffleItems({
             storageId
 
         });
-
-
-    // ======================================================
-    // FIND TARGET STORAGE
-    // ======================================================
 
     const targetStorage =
         await findStorageForFarm({
@@ -1428,53 +904,30 @@ async function reshuffleItems({
 
         });
 
-
-    // ======================================================
-    // CURRENT STORAGE MUST BE ROOM
-    // ======================================================
+    // ------------------------------------------------------
+    // AGROSTORE CANNOT RESHUFFLE
+    // ------------------------------------------------------
 
     if (
-        !isNormalRoom(
-            storage
-        )
+        isAgroStore(storage) ||
+        isAgroStore(targetStorage)
     ) {
 
         throw createError(
-            "AgroStore contents cannot be reshuffled.",
+            "AgroStore feeds cannot be reshuffled. Update the feed quantity instead.",
             400
         );
 
     }
 
-
-    // ======================================================
-    // TARGET STORAGE MUST BE ROOM
-    // ======================================================
-
-    if (
-        !isNormalRoom(
-            targetStorage
-        )
-    ) {
-
-        throw createError(
-            "Items can only be reshuffled into a normal Room.",
-            400
-        );
-
-    }
-
-
-    // ======================================================
+    // ------------------------------------------------------
     // CURRENT STORAGE ACTIVE
-    // ======================================================
+    // ------------------------------------------------------
 
     if (
-        String(
-            storage.status || ""
-        )
-        .trim()
-        .toLowerCase() !==
+        String(storage.status)
+            .trim()
+            .toLowerCase() !==
         "active"
     ) {
 
@@ -1485,17 +938,14 @@ async function reshuffleItems({
 
     }
 
-
-    // ======================================================
+    // ------------------------------------------------------
     // TARGET STORAGE ACTIVE
-    // ======================================================
+    // ------------------------------------------------------
 
     if (
-        String(
-            targetStorage.status || ""
-        )
-        .trim()
-        .toLowerCase() !==
+        String(targetStorage.status)
+            .trim()
+            .toLowerCase() !==
         "active"
     ) {
 
@@ -1506,18 +956,13 @@ async function reshuffleItems({
 
     }
 
-
-    // ======================================================
+    // ------------------------------------------------------
     // SAME STORAGE
-    // ======================================================
+    // ------------------------------------------------------
 
     if (
-        String(
-            targetStorage._id
-        ) ===
-        String(
-            storage._id
-        )
+        String(targetStorage._id) ===
+        String(storage._id)
     ) {
 
         throw createError(
@@ -1527,6 +972,21 @@ async function reshuffleItems({
 
     }
 
+    // ------------------------------------------------------
+    // STORAGE TYPES MUST MATCH
+    // ------------------------------------------------------
+
+    if (
+        String(targetStorage.type) !==
+        String(storage.type)
+    ) {
+
+        throw createError(
+            "Items can only be reshuffled between storage facilities of the same type.",
+            400
+        );
+
+    }
 
     // ======================================================
     // VERIFY ITEMS
@@ -1536,10 +996,7 @@ async function reshuffleItems({
         await Dairy.find({
 
             _id: {
-
-                $in:
-                    ids
-
+                $in: ids
             },
 
             ...farmItemFilter(
@@ -1547,12 +1004,9 @@ async function reshuffleItems({
             ),
 
             dwellNumber:
-                Number(
-                    storage.roomNumber
-                )
+                storage.roomNumber
 
         });
-
 
     if (
         items.length !==
@@ -1566,9 +1020,8 @@ async function reshuffleItems({
 
     }
 
-
     // ======================================================
-    // MOVE ITEMS
+    // MOVE
     // ======================================================
 
     const result =
@@ -1577,10 +1030,7 @@ async function reshuffleItems({
             {
 
                 _id: {
-
-                    $in:
-                        ids
-
+                    $in: ids
                 },
 
                 ...farmItemFilter(
@@ -1588,9 +1038,7 @@ async function reshuffleItems({
                 ),
 
                 dwellNumber:
-                    Number(
-                        storage.roomNumber
-                    )
+                    storage.roomNumber
 
             },
 
@@ -1599,16 +1047,13 @@ async function reshuffleItems({
                 $set: {
 
                     dwellNumber:
-                        Number(
-                            targetStorage.roomNumber
-                        )
+                        targetStorage.roomNumber
 
                 }
 
             }
 
         );
-
 
     return {
 
@@ -1627,26 +1072,21 @@ async function reshuffleItems({
 
 }
 
-
 // ==========================================================
 // UPDATE SINGLE FEED QUANTITY
 // ==========================================================
 //
-// AGROSTORE ONLY.
+// Only works for AgroStore.
 //
-// Rules:
+// User records CURRENT quantity remaining.
 //
-//     Current 100 -> 80   YES
-//     Current 100 -> 50   YES
-//     Current 100 -> 0    YES
+// quantity > 0
+//     -> feed remains in AgroStore
 //
-//     Current 100 -> 100  NO
-//     Current 100 -> 120  NO
-//
-// When quantity reaches zero:
-//
-//     quantity = 0
-//     dwellNumber = null
+// quantity === 0
+//     -> quantity saved as 0
+//     -> dwellNumber cleared
+//     -> feed automatically omitted
 //
 // ==========================================================
 
@@ -1654,13 +1094,8 @@ async function updateFeedQuantity({
     dairyId,
     storageId,
     itemId,
-    quantity,
-    unit
+    quantity
 }) {
-
-    // ======================================================
-    // VALIDATE ITEM ID
-    // ======================================================
 
     if (
         !isValidObjectId(
@@ -1675,16 +1110,10 @@ async function updateFeedQuantity({
 
     }
 
-
-    // ======================================================
-    // VALIDATE QUANTITY
-    // ======================================================
-
     const numericQuantity =
         Number(
             quantity
         );
-
 
     if (
         !Number.isFinite(
@@ -1699,7 +1128,6 @@ async function updateFeedQuantity({
 
     }
 
-
     if (
         numericQuantity < 0
     ) {
@@ -1711,20 +1139,10 @@ async function updateFeedQuantity({
 
     }
 
-
-    // ======================================================
-    // FIND FARM
-    // ======================================================
-
     const dairy =
         await findParentFarm(
             dairyId
         );
-
-
-    // ======================================================
-    // FIND STORAGE
-    // ======================================================
 
     const storage =
         await findStorageForFarm({
@@ -1735,15 +1153,12 @@ async function updateFeedQuantity({
 
         });
 
-
-    // ======================================================
-    // STORAGE MUST BE AGROSTORE
-    // ======================================================
+    // ------------------------------------------------------
+    // ONLY AGROSTORE
+    // ------------------------------------------------------
 
     if (
-        !isAgroStore(
-            storage
-        )
+        !isAgroStore(storage)
     ) {
 
         throw createError(
@@ -1753,30 +1168,8 @@ async function updateFeedQuantity({
 
     }
 
-
     // ======================================================
-    // STORAGE MUST BE ACTIVE
-    // ======================================================
-
-    if (
-        String(
-            storage.status || ""
-        )
-        .trim()
-        .toLowerCase() !==
-        "active"
-    ) {
-
-        throw createError(
-            "Feed quantity cannot be updated in an inactive AgroStore.",
-            400
-        );
-
-    }
-
-
-    // ======================================================
-    // FIND CURRENT FEED
+    // FIND FEED
     // ======================================================
 
     const feed =
@@ -1793,128 +1186,21 @@ async function updateFeedQuantity({
                 "feeds",
 
             dwellNumber:
-                Number(
-                    storage.roomNumber
-                ),
-
-            quantity: {
-
-                $gt:
-                    0
-
-            }
+                storage.roomNumber
 
         });
 
-
-    if (
-        !feed
-    ) {
+    if (!feed) {
 
         throw createError(
-            "The selected feed was not found in this AgroStore or has no remaining quantity.",
+            "The selected feed was not found in this AgroStore.",
             404
         );
 
     }
 
-
     // ======================================================
-    // CURRENT QUANTITY
-    // ======================================================
-
-    const currentQuantity =
-        Number(
-            feed.quantity || 0
-        );
-
-
-    // ======================================================
-    // QUANTITY MUST DECREASE
-    // ======================================================
-
-    if (
-        numericQuantity >=
-        currentQuantity
-    ) {
-
-        if (
-            numericQuantity ===
-            currentQuantity
-        ) {
-
-            throw createError(
-                "The new quantity must be lower than the current quantity.",
-                400
-            );
-
-        }
-
-
-        throw createError(
-            "Feed quantity can only be reduced. You cannot add quantity through this form.",
-            400
-        );
-
-    }
-
-
-    // ======================================================
-    // UNIT VALIDATION
-    // ======================================================
-    //
-    // The existing feed unit cannot be changed while
-    // reducing quantity.
-    //
-    // ======================================================
-
-    if (
-
-        unit !== undefined &&
-
-        unit !== null &&
-
-        String(unit).trim() !== ""
-
-    ) {
-
-        const submittedUnit =
-            String(
-                unit
-            )
-            .trim()
-            .toLowerCase();
-
-
-        const currentUnit =
-            String(
-                feed.unit || ""
-            )
-            .trim()
-            .toLowerCase();
-
-
-        if (
-
-            currentUnit &&
-
-            submittedUnit !==
-            currentUnit
-
-        ) {
-
-            throw createError(
-                `The feed unit is ${currentUnit}. The unit cannot be changed while reducing quantity.`,
-                400
-            );
-
-        }
-
-    }
-
-
-    // ======================================================
-    // ZERO = AUTOMATICALLY REMOVE FROM AGROSTORE
+    // ZERO = AUTOMATIC OMIT
     // ======================================================
 
     if (
@@ -1937,16 +1223,7 @@ async function updateFeedQuantity({
                         "feeds",
 
                     dwellNumber:
-                        Number(
-                            storage.roomNumber
-                        ),
-
-                    quantity: {
-
-                        $gt:
-                            0
-
-                    }
+                        storage.roomNumber
 
                 },
 
@@ -1973,19 +1250,6 @@ async function updateFeedQuantity({
 
             );
 
-
-        if (
-            !updatedFeed
-        ) {
-
-            throw createError(
-                "The feed could not be updated. Please refresh the page and try again.",
-                409
-            );
-
-        }
-
-
         return {
 
             dairy,
@@ -1995,14 +1259,8 @@ async function updateFeedQuantity({
             item:
                 updatedFeed,
 
-            previousQuantity:
-                currentQuantity,
-
             quantity:
                 0,
-
-            reducedBy:
-                currentQuantity,
 
             omitted:
                 true
@@ -2011,9 +1269,8 @@ async function updateFeedQuantity({
 
     }
 
-
     // ======================================================
-    // REDUCE QUANTITY
+    // UPDATE REMAINING QUANTITY
     // ======================================================
 
     const updatedFeed =
@@ -2032,16 +1289,7 @@ async function updateFeedQuantity({
                     "feeds",
 
                 dwellNumber:
-                    Number(
-                        storage.roomNumber
-                    ),
-
-                quantity: {
-
-                    $gt:
-                        numericQuantity
-
-                }
+                    storage.roomNumber
 
             },
 
@@ -2065,23 +1313,6 @@ async function updateFeedQuantity({
 
         );
 
-
-    // ======================================================
-    // CONCURRENT UPDATE SAFETY
-    // ======================================================
-
-    if (
-        !updatedFeed
-    ) {
-
-        throw createError(
-            "The feed quantity could not be reduced. Please refresh the page and try again.",
-            409
-        );
-
-    }
-
-
     return {
 
         dairy,
@@ -2091,14 +1322,7 @@ async function updateFeedQuantity({
         item:
             updatedFeed,
 
-        previousQuantity:
-            currentQuantity,
-
         quantity:
-            numericQuantity,
-
-        reducedBy:
-            currentQuantity -
             numericQuantity,
 
         omitted:
@@ -2107,7 +1331,6 @@ async function updateFeedQuantity({
     };
 
 }
-
 
 // ==========================================================
 // UPDATE MULTIPLE FEED QUANTITIES
@@ -2118,12 +1341,9 @@ async function updateFeedQuantity({
 // [
 //     {
 //         itemId,
-//         quantity,
-//         unit
+//         quantity
 //     }
 // ]
-//
-// Each feed is independently validated.
 //
 // ==========================================================
 
@@ -2147,10 +1367,7 @@ async function updateFeedQuantities({
 
     }
 
-
-    const results =
-        [];
-
+    const results = [];
 
     for (
         const record of records
@@ -2164,7 +1381,6 @@ async function updateFeedQuantities({
 
         }
 
-
         const result =
             await updateFeedQuantity({
 
@@ -2176,32 +1392,15 @@ async function updateFeedQuantities({
                     record.itemId,
 
                 quantity:
-                    record.quantity,
-
-                unit:
-                    record.unit
+                    record.quantity
 
             });
-
 
         results.push(
             result
         );
 
     }
-
-
-    if (
-        results.length === 0
-    ) {
-
-        throw createError(
-            "No valid feed quantity records were supplied.",
-            400
-        );
-
-    }
-
 
     return {
 
@@ -2214,7 +1413,6 @@ async function updateFeedQuantities({
     };
 
 }
-
 
 // ==========================================================
 // EXPORT
@@ -2232,15 +1430,13 @@ module.exports = {
 
     addItemsToStorage,
 
-
     // ------------------------------------------------------
-    // NORMAL ROOM STORAGE
+    // NORMAL STORAGE
     // ------------------------------------------------------
 
     omitItemsFromStorage,
 
     reshuffleItems,
-
 
     // ------------------------------------------------------
     // AGROSTORE
