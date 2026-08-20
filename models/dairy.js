@@ -195,6 +195,7 @@ const STRUCTURE_TYPES = [
     "generator",
     "solarSystem",
     "feedStore",
+    "feeds",
     "other"
 
 ];
