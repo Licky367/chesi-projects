@@ -19,7 +19,14 @@
 //     getAgroStores
 //     getStorageFacility
 //     createStorage
+//
+// CONTENTS:
+//
 //     getStorageContents
+//     getAvailableItems
+//     addItemsToStorage
+//     omitItemsFromStorage
+//     reshuffleItems
 //
 // ==========================================================
 
@@ -36,11 +43,6 @@ const contents =
 
 // ==========================================================
 // EXPORT
-// ==========================================================
-//
-// Keep the existing storage service API and add the
-// storage contents API.
-//
 // ==========================================================
 
 module.exports = {
@@ -73,7 +75,7 @@ module.exports = {
 
 
     // ======================================================
-    // ADD / CREATE
+    // ADD / CREATE STORAGE FACILITY
     // ======================================================
 
     createStorage:
@@ -81,10 +83,22 @@ module.exports = {
 
 
     // ======================================================
-    // CONTENTS
+    // STORAGE CONTENTS
     // ======================================================
 
     getStorageContents:
-        contents.getStorageContents
+        contents.getStorageContents,
+
+    getAvailableItems:
+        contents.getAvailableItems,
+
+    addItemsToStorage:
+        contents.addItemsToStorage,
+
+    omitItemsFromStorage:
+        contents.omitItemsFromStorage,
+
+    reshuffleItems:
+        contents.reshuffleItems
 
 };
