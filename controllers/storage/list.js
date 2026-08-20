@@ -1,4 +1,4 @@
-// =========================================================
+// ==========================================================
 // controllers/storage/list.js
 // STORAGE LIST CONTROLLER
 // ==========================================================
@@ -119,11 +119,11 @@ async function list(
 
 
         // ==================================================
-        // RENDER ADD PAGE
+        // RENDER
         // ==================================================
 
         return res.render(
-            "storage/add",
+            "storage/storage",
             {
 
                 title:
@@ -133,7 +133,7 @@ async function list(
                     result.dairy,
 
                 storage:
-                    result.storage || [],
+                    result.storage,
 
                 selectedType:
                     result.type,
@@ -166,8 +166,4 @@ async function list(
 // EXPORT
 // ==========================================================
 
-module.exports = {
-
-    list
-
-};
+module.exports = list;
