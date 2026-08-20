@@ -1,30 +1,21 @@
 // ==========================================================
 // controllers/storage/index.js
-// STORAGE CONTROLLER INDEX
+// STORAGE CONTROLLER ENTRY POINT
 // ==========================================================
 //
 // Combines:
 //
-//     list.js
-//     add.js
-//
-// Route handlers:
-//
-//     GET  /storage/:id
-//     GET  /storage/:id/add
-//     POST /storage/:id/add
-//
-// IMPORTANT:
-//
-//     :id = parent Dairy._id
+//     list
+//     add.form
+//     add.create
 //
 // ==========================================================
 
 
-const listController =
+const list =
     require("./list");
 
-const storageController =
+const add =
     require("./add");
 
 
@@ -34,27 +25,12 @@ const storageController =
 
 module.exports = {
 
-    // ======================================================
-    // GET /storage/:id
-    // ======================================================
-
-    list:
-        listController.list,
-
-
-    // ======================================================
-    // GET /storage/:id/add
-    // ======================================================
+    list,
 
     form:
-        storageController.form,
-
-
-    // ======================================================
-    // POST /storage/:id/add
-    // ======================================================
+        add.form,
 
     create:
-        storageController.create
+        add.create
 
 };
