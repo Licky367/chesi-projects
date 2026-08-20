@@ -1,4 +1,4 @@
-// =========================================================
+// ==========================================================
 // routes/storage.js
 // STORAGE ROUTES
 // ==========================================================
@@ -9,15 +9,22 @@
 //     GET  /storage/:id/add
 //     POST /storage/:id/add
 //
+//     GET  /storage/:dairyId/contents/:storageId
+//
 // IMPORTANT:
 //
-//     :id = Dairy._id
+//     The first :id for the normal storage routes
+//     represents Dairy._id.
+//
+//     Contents route:
+//
+//         :dairyId   = parent Dairy._id
+//         :storageId = DairyStorage._id
 //
 // NEVER:
 //
-//     :id = Dairy.code
-//     :id = DairyStorage._id
-//     :id = roomNumber
+//     Dairy.code as the route farm identifier.
+//     roomNumber as the route farm identifier.
 //
 // ==========================================================
 
@@ -80,6 +87,35 @@ router.get(
 router.post(
     "/:id/add",
     storageController.create
+);
+
+
+// ==========================================================
+// STORAGE CONTENTS
+// ==========================================================
+//
+// GET:
+//
+//     /storage/:dairyId/contents/:storageId
+//
+// URL SHAPE:
+//
+//     /storage/:id/contents/:id
+//
+// The parameter names are different internally so Express
+// can distinguish the two IDs.
+//
+// dairyId:
+//     Dairy._id of the parent farm.
+//
+// storageId:
+//     DairyStorage._id of the room / AgroStore.
+//
+// ==========================================================
+
+router.get(
+    "/:dairyId/contents/:storageId",
+    storageController.contents
 );
 
 
