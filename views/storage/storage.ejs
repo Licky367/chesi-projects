@@ -291,6 +291,72 @@
 
 
 /* ==========================================================
+   TITLE ACTIONS
+   ========================================================== */
+
+.storage-title-actions {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    gap: 8px;
+
+    flex-shrink: 0;
+}
+
+
+/* ==========================================================
+   VIEW CONTENTS BUTTON
+   ========================================================== */
+
+.view-storage-button {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 30px;
+
+    padding: 5px 11px;
+
+    border: 1px solid #b8cfbd;
+
+    border-radius: 7px;
+
+    background: #f4faf5;
+
+    color: #0b5d1e;
+
+    text-decoration: none;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.view-storage-button:hover {
+    background: #e6f3e9;
+
+    border-color: #8fb99a;
+
+    color: #084817;
+}
+
+.view-storage-button:active {
+    transform: translateY(1px);
+}
+
+
+/* ==========================================================
    STORAGE TYPE BADGE
    ========================================================== */
 
@@ -492,6 +558,11 @@
     .storage-title-row {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .storage-title-actions {
+        width: 100%;
+        justify-content: flex-start;
     }
 
     .storage-details {
@@ -723,7 +794,7 @@
 
 
                         <!-- ==================================
-                             TITLE
+                             TITLE ROW
                              ================================== -->
 
                         <div class="storage-title-row">
@@ -747,19 +818,40 @@
                             </h3>
 
 
-                            <span
-                                class="storage-type <%= item.type === "agroStore"
-                                    ? "agrostore-type"
-                                    : "room-type"
-                                %>"
-                            >
+                            <div class="storage-title-actions">
 
-                                <%= item.type === "agroStore"
-                                    ? "AgroStore"
-                                    : "Room"
-                                %>
 
-                            </span>
+                                <!-- ==================================
+                                     VIEW CONTENTS
+                                     ================================== -->
+
+                                <a
+                                    href="/storage/<%= dairy._id %>/contents/<%= item.roomNumber %>"
+                                    class="view-storage-button"
+                                >
+                                    View
+                                </a>
+
+
+                                <!-- ==================================
+                                     STORAGE TYPE
+                                     ================================== -->
+
+                                <span
+                                    class="storage-type <%= item.type === "agroStore"
+                                        ? "agrostore-type"
+                                        : "room-type"
+                                    %>"
+                                >
+
+                                    <%= item.type === "agroStore"
+                                        ? "AgroStore"
+                                        : "Room"
+                                    %>
+
+                                </span>
+
+                            </div>
 
                         </div>
 
