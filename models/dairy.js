@@ -13,26 +13,26 @@
 //     = ANIMAL
 //
 // code === null
-//     = FACILITY / ASSET
+//     = STRUCTURE / FACILITY / ASSET
 //
 // ==========================================================
 //
-// ASSET OWNERSHIP
+// OWNERSHIP
 // ----------------------------------------------------------
 //
 // assetCode
 //     = negative code of the parent Dairy Farm
 //
-// Dairy Farms:
+// Dairy Farm:
 //     assetCode = null
 //
-// Animals:
-//     assetCode = negative Dairy Farm code
+// Animal:
+//     assetCode = negative parent farm code
 //
-// Assigned Assets:
-//     assetCode = negative Dairy Farm code
+// Assigned Asset:
+//     assetCode = negative parent farm code
 //
-// Standalone Assets:
+// Standalone Asset:
 //     assetCode = null
 //
 // ==========================================================
@@ -40,107 +40,53 @@
 // DWELLING / ALLOCATION
 // ----------------------------------------------------------
 //
-// dwellNumber is the physical allocation/location number.
+// dwellNumber >= 0
+//     = normal room
 //
-// NORMAL ROOMS
-//     dwellNumber >= 0
+// dwellNumber < 0
+//     = AgroStore
 //
-// AGROSTORES
-//     dwellNumber < 0
-//
-// Therefore dwellNumber is used for BOTH:
-//
-//     Room
-//         dwellNumber >= 0
-//
-//     AgroStore
-//         dwellNumber < 0
-//
-// IMPORTANT:
-//
-// AgroStore allocation works exactly like room allocation.
-//
-// Examples:
-//
-//     assetCode: -1
-//     dwellNumber: 1
-//
-//         -> entity belongs to Farm -1
-//            and occupies Room 1
-//
-//     assetCode: -1
-//     dwellNumber: -1
-//
-//         -> entity belongs to Farm -1
-//            and is allocated to AgroStore -1
-//
-//     assetCode: -1
-//     dwellNumber: -2
-//
-//         -> entity belongs to Farm -1
-//            and is allocated to AgroStore -2
+// dwellNumber === null
+//     = not allocated
 //
 // ==========================================================
 //
 // STORAGE
 // ----------------------------------------------------------
 //
-// The AgroStore itself is represented by:
+// DairyStorage.roomNumber uses negative numbers:
 //
-//     models/dairyStorage.js
+//     -1
+//     -2
+//     -3
 //
-// DairyStorage uses negative roomNumber values:
+// Dairy.dwellNumber uses the SAME number when an entity is
+// allocated to that AgroStore.
 //
-//     roomNumber = -1
-//     roomNumber = -2
-//     roomNumber = -3
+// Example:
 //
-// The CONTENTS of an AgroStore are represented by Dairy
-// records whose:
+//     DairyStorage.roomNumber = -2
 //
-//     assetCode = parent Dairy Farm code
-//
-// and:
-//
-//     dwellNumber = AgroStore roomNumber
-//
-// Therefore:
-//
-//     DairyStorage.roomNumber
-//
-// matches:
-//
-//     Dairy.dwellNumber
-//
-// ==========================================================
-//
-// ROOM EXISTENCE
-// ----------------------------------------------------------
-//
-// Normal room existence is determined from Dairy records:
-//
-//     dwellNumber >= 0
-//
-// AgroStore existence is determined by DairyStorage.
-//
-// The frontend may provide room names.
+//     Dairy.assetCode = -1
+//     Dairy.dwellNumber = -2
 //
 // ==========================================================
 
-const mongoose =
-    require("mongoose");
+const mongoose = require("mongoose");
 
 
 // ==========================================================
 // CONSTANTS
 // ==========================================================
 
+const MAX_PROFILE_IMAGES = 5;
+
 
 // ==========================================================
 // DAIRY BREEDS
 // ==========================================================
 
-const DAIRY_BREEDS = [
+const DAIRY_BREEDS = Object.freeze([
 
     "Friesian",
     "Ayrshire",
@@ -156,14 +102,14 @@ const DAIRY_BREEDS = [
     "Crossbreed",
     "Other"
 
-];
+]);
 
 
 // ==========================================================
 // DAIRY FARM TYPES
 // ==========================================================
 
-const DAIRY_FARM_TYPES = [
+const DAIRY_FARM_TYPES = Object.freeze([
 
     "ranch",
     "zeroGrazing",
@@ -173,14 +119,14 @@ const DAIRY_FARM_TYPES = [
     "cooperative",
     "other"
 
-];
+]);
 
 
 // ==========================================================
-// STRUCTURE / FACILITY TYPES
+// STRUCTURE / ASSET TYPES
 // ==========================================================
 
-const STRUCTURE_TYPES = [
+const STRUCTURE_TYPES = Object.freeze([
 
     "machine",
     "equipment",
@@ -198,32 +144,112 @@ const STRUCTURE_TYPES = [
     "feeds",
     "other"
 
-];
+]);
 
 
 // ==========================================================
-// DAIRY STATUSES
+// STATUSES
 // ==========================================================
 
-const DAIRY_STATUSES = [
+const DAIRY_STATUSES = Object.freeze([
 
     "active",
     "sold",
     "disposed",
     "inactive"
 
-];
+]);
 
 
 // ==========================================================
-// PROFILE IMAGE LIMIT
+// HELPER FUNCTIONS
 // ==========================================================
 
-const MAX_PROFILE_IMAGES = 5;
+function isNullish(value) {
+
+    return (
+
+        value === null ||
+
+        value === undefined
+
+    );
+
+}
+
+
+function isInteger(value) {
+
+    return Number.isInteger(value);
+
+}
+
+
+function isNegativeInteger(value) {
+
+    return (
+
+        isInteger(value) &&
+
+        value < 0
+
+    );
+
+}
+
+
+function isNonNegativeInteger(value) {
+
+    return (
+
+        isInteger(value) &&
+
+        value >= 0
+
+    );
+
+}
+
+
+function toFiniteNumber(value, fallback = 0) {
+
+    const number = Number(value);
+
+    return Number.isFinite(number)
+
+        ? number
+
+        : fallback;
+
+}
+
+
+function cleanString(value) {
+
+    if (isNullish(value)) {
+
+        return "";
+
+    }
+
+    return String(value).trim();
+
+}
+
+
+function createValidationError(message) {
+
+    const error = new Error(message);
+
+    error.status = 400;
+
+    return error;
+
+}
 
 
 // ==========================================================
-// MAIN DAIRY SCHEMA
+// MAIN SCHEMA
 // ==========================================================
 
 const dairySchema = new mongoose.Schema(
@@ -252,7 +278,7 @@ const dairySchema = new mongoose.Schema(
 
             validate: {
 
-                validator: function (images) {
+                validator(images) {
 
                     return (
 
@@ -289,12 +315,12 @@ const dairySchema = new mongoose.Schema(
 
 
         // ==================================================
-        // CODE
+        // ENTITY CODE
         // ==================================================
         //
-        // NEGATIVE = DAIRY FARM
-        // POSITIVE = ANIMAL
-        // NULL     = FACILITY / ASSET
+        // Negative = Dairy Farm
+        // Positive = Animal
+        // Null     = Structure / Asset
         //
         // ==================================================
 
@@ -306,22 +332,14 @@ const dairySchema = new mongoose.Schema(
 
             validate: {
 
-                validator: function (value) {
+                validator(value) {
 
-                    if (
+                    return (
 
-                        value === null ||
+                        isNullish(value) ||
 
-                        value === undefined
+                        isInteger(value)
 
-                    ) {
-
-                        return true;
-
-                    }
-
-                    return Number.isInteger(
-                        value
                     );
 
                 },
@@ -393,12 +411,10 @@ const dairySchema = new mongoose.Schema(
 
 
         // ==================================================
-        // ASSET CODE
+        // PARENT FARM CODE
         // ==================================================
         //
-        // Identifies the parent Dairy Farm.
-        //
-        // Must always be negative when supplied.
+        // Must be the negative code of a Dairy Farm.
         //
         // ==================================================
 
@@ -410,25 +426,13 @@ const dairySchema = new mongoose.Schema(
 
             validate: {
 
-                validator: function (value) {
-
-                    if (
-
-                        value === null ||
-
-                        value === undefined
-
-                    ) {
-
-                        return true;
-
-                    }
+                validator(value) {
 
                     return (
 
-                        Number.isInteger(value) &&
+                        isNullish(value) ||
 
-                        value < 0
+                        isNegativeInteger(value)
 
                     );
 
@@ -443,25 +447,12 @@ const dairySchema = new mongoose.Schema(
 
 
         // ==================================================
-        // DWELL NUMBER
+        // DWELL / ALLOCATION NUMBER
         // ==================================================
         //
-        // This is the allocation/location identifier.
-        //
-        // POSITIVE / ZERO
-        //     = normal room
-        //
-        // NEGATIVE
-        //     = AgroStore
-        //
-        // NULL
-        //     = not allocated
-        //
-        // IMPORTANT:
-        //
-        // Negative dwellNumber IS VALID even when assetCode
-        // exists because negative dwellNumbers represent
-        // AgroStore allocation.
+        // >= 0 = normal room
+        // < 0  = AgroStore
+        // null = not allocated
         //
         // ==================================================
 
@@ -473,22 +464,14 @@ const dairySchema = new mongoose.Schema(
 
             validate: {
 
-                validator: function (value) {
+                validator(value) {
 
-                    if (
+                    return (
 
-                        value === null ||
+                        isNullish(value) ||
 
-                        value === undefined
+                        isInteger(value)
 
-                    ) {
-
-                        return true;
-
-                    }
-
-                    return Number.isInteger(
-                        value
                     );
 
                 },
@@ -509,13 +492,15 @@ const dairySchema = new mongoose.Schema(
 
             type: Boolean,
 
-            default: false
+            default: false,
+
+            index: true
 
         },
 
 
         // ==================================================
-        // MAINTENANCE
+        // MAINTENANCE INFORMATION
         // ==================================================
 
         maintenance: {
@@ -707,6 +692,17 @@ const dairySchema = new mongoose.Schema(
         // ==================================================
         // TYPE
         // ==================================================
+        //
+        // For animals:
+        //     breed
+        //
+        // For farms:
+        //     farm type
+        //
+        // For assets:
+        //     structure type
+        //
+        // ==================================================
 
         type: {
 
@@ -880,6 +876,8 @@ const dairySchema = new mongoose.Schema(
 
         minimize: false,
 
+        strict: true,
+
         toJSON: {
 
             virtuals: true
@@ -901,15 +899,11 @@ const dairySchema = new mongoose.Schema(
 // VIRTUAL: IS DAIRY FARM
 // ==========================================================
 
-dairySchema.virtual(
-    "isDairyFarm"
-).get(function () {
+dairySchema.virtual("isDairyFarm").get(function () {
 
     return (
 
-        this.code !== null &&
-
-        this.code !== undefined &&
+        !isNullish(this.code) &&
 
         Number(this.code) < 0
 
@@ -922,15 +916,11 @@ dairySchema.virtual(
 // VIRTUAL: IS ANIMAL
 // ==========================================================
 
-dairySchema.virtual(
-    "isAnimal"
-).get(function () {
+dairySchema.virtual("isAnimal").get(function () {
 
     return (
 
-        this.code !== null &&
-
-        this.code !== undefined &&
+        !isNullish(this.code) &&
 
         Number(this.code) > 0
 
@@ -940,20 +930,12 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// VIRTUAL: IS STRUCTURE
+// VIRTUAL: IS STRUCTURE / ASSET
 // ==========================================================
 
-dairySchema.virtual(
-    "isStructure"
-).get(function () {
+dairySchema.virtual("isStructure").get(function () {
 
-    return (
-
-        this.code === null ||
-
-        this.code === undefined
-
-    );
+    return isNullish(this.code);
 
 });
 
@@ -962,9 +944,7 @@ dairySchema.virtual(
 // VIRTUAL: IS MANUAL ASSET
 // ==========================================================
 
-dairySchema.virtual(
-    "isManualAsset"
-).get(function () {
+dairySchema.virtual("isManualAsset").get(function () {
 
     return this.isStructure;
 
@@ -975,17 +955,13 @@ dairySchema.virtual(
 // VIRTUAL: IS ASSIGNED ASSET
 // ==========================================================
 
-dairySchema.virtual(
-    "isAssignedAsset"
-).get(function () {
+dairySchema.virtual("isAssignedAsset").get(function () {
 
     return (
 
         this.isStructure &&
 
-        this.assetCode !== null &&
-
-        this.assetCode !== undefined
+        !isNullish(this.assetCode)
 
     );
 
@@ -996,21 +972,13 @@ dairySchema.virtual(
 // VIRTUAL: IS STANDALONE ASSET
 // ==========================================================
 
-dairySchema.virtual(
-    "isStandaloneAsset"
-).get(function () {
+dairySchema.virtual("isStandaloneAsset").get(function () {
 
     return (
 
         this.isStructure &&
 
-        (
-
-            this.assetCode === null ||
-
-            this.assetCode === undefined
-
-        )
+        isNullish(this.assetCode)
 
     );
 
@@ -1020,27 +988,10 @@ dairySchema.virtual(
 // ==========================================================
 // VIRTUAL: IS DWELLING
 // ==========================================================
-//
-// True whenever the entity has a dwellNumber.
-//
-// This includes BOTH:
-//
-//     normal rooms
-//     AgroStores
-//
-// ==========================================================
 
-dairySchema.virtual(
-    "isDwelling"
-).get(function () {
+dairySchema.virtual("isDwelling").get(function () {
 
-    return (
-
-        this.dwellNumber !== null &&
-
-        this.dwellNumber !== undefined
-
-    );
+    return !isNullish(this.dwellNumber);
 
 });
 
@@ -1049,15 +1000,11 @@ dairySchema.virtual(
 // VIRTUAL: IS NORMAL ROOM
 // ==========================================================
 
-dairySchema.virtual(
-    "isNormalRoom"
-).get(function () {
+dairySchema.virtual("isNormalRoom").get(function () {
 
     return (
 
-        this.dwellNumber !== null &&
-
-        this.dwellNumber !== undefined &&
+        !isNullish(this.dwellNumber) &&
 
         Number(this.dwellNumber) >= 0
 
@@ -1069,21 +1016,12 @@ dairySchema.virtual(
 // ==========================================================
 // VIRTUAL: IS AGROSTORE CONTENT
 // ==========================================================
-//
-// Negative dwellNumber means the entity has been allocated
-// to an AgroStore.
-//
-// ==========================================================
 
-dairySchema.virtual(
-    "isAgroStoreContent"
-).get(function () {
+dairySchema.virtual("isAgroStoreContent").get(function () {
 
     return (
 
-        this.dwellNumber !== null &&
-
-        this.dwellNumber !== undefined &&
+        !isNullish(this.dwellNumber) &&
 
         Number(this.dwellNumber) < 0
 
@@ -1095,14 +1033,8 @@ dairySchema.virtual(
 // ==========================================================
 // VIRTUAL: STORAGE DWELL NUMBER
 // ==========================================================
-//
-// Alias useful to services/views when dealing with storage.
-//
-// ==========================================================
 
-dairySchema.virtual(
-    "storageDwellNumber"
-).get(function () {
+dairySchema.virtual("storageDwellNumber").get(function () {
 
     return this.isAgroStoreContent
 
@@ -1117,9 +1049,7 @@ dairySchema.virtual(
 // VIRTUAL: HAS NEGATIVE DWELL
 // ==========================================================
 
-dairySchema.virtual(
-    "hasNegativeDwell"
-).get(function () {
+dairySchema.virtual("hasNegativeDwell").get(function () {
 
     return this.isAgroStoreContent;
 
@@ -1130,25 +1060,17 @@ dairySchema.virtual(
 // VIRTUAL: PARENT FARM CODE
 // ==========================================================
 
-dairySchema.virtual(
-    "parentFarmCode"
-).get(function () {
+dairySchema.virtual("parentFarmCode").get(function () {
 
     if (this.isDairyFarm) {
 
-        return this.code;
+        return Number(this.code);
 
     }
 
-    if (
+    if (!isNullish(this.assetCode)) {
 
-        this.assetCode !== null &&
-
-        this.assetCode !== undefined
-
-    ) {
-
-        return this.assetCode;
+        return Number(this.assetCode);
 
     }
 
@@ -1161,9 +1083,7 @@ dairySchema.virtual(
 // VIRTUAL: GENDER
 // ==========================================================
 
-dairySchema.virtual(
-    "gender"
-).get(function () {
+dairySchema.virtual("gender").get(function () {
 
     if (!this.isAnimal) {
 
@@ -1187,9 +1107,7 @@ dairySchema.virtual(
 // VIRTUAL: IS FEMALE
 // ==========================================================
 
-dairySchema.virtual(
-    "isFemale"
-).get(function () {
+dairySchema.virtual("isFemale").get(function () {
 
     return (
 
@@ -1206,9 +1124,7 @@ dairySchema.virtual(
 // VIRTUAL: HAS IDENTITY
 // ==========================================================
 
-dairySchema.virtual(
-    "hasIdentity"
-).get(function () {
+dairySchema.virtual("hasIdentity").get(function () {
 
     return this.isAnimal;
 
@@ -1219,9 +1135,7 @@ dairySchema.virtual(
 // VIRTUAL: AGE TEXT
 // ==========================================================
 
-dairySchema.virtual(
-    "ageText"
-).get(function () {
+dairySchema.virtual("ageText").get(function () {
 
     if (!this.dateOfBirth) {
 
@@ -1229,19 +1143,13 @@ dairySchema.virtual(
 
     }
 
-    const dob =
-        new Date(
-            this.dateOfBirth
-        );
+    const dob = new Date(this.dateOfBirth);
 
-    const now =
-        new Date();
+    const now = new Date();
 
     if (
 
-        Number.isNaN(
-            dob.getTime()
-        ) ||
+        Number.isNaN(dob.getTime()) ||
 
         dob > now
 
@@ -1263,25 +1171,25 @@ dairySchema.virtual(
         now.getDate() -
         dob.getDate();
 
+
     if (days < 0) {
 
         months--;
 
-        const previousMonth =
-            new Date(
+        const previousMonth = new Date(
 
-                now.getFullYear(),
+            now.getFullYear(),
 
-                now.getMonth(),
+            now.getMonth(),
 
-                0
+            0
 
-            );
+        );
 
-        days +=
-            previousMonth.getDate();
+        days += previousMonth.getDate();
 
     }
+
 
     if (months < 0) {
 
@@ -1290,6 +1198,7 @@ dairySchema.virtual(
         months += 12;
 
     }
+
 
     return (
 
@@ -1303,12 +1212,10 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// VIRTUAL: AGE YEARS
+// VIRTUAL: AGE IN YEARS
 // ==========================================================
 
-dairySchema.virtual(
-    "ageYears"
-).get(function () {
+dairySchema.virtual("ageYears").get(function () {
 
     if (!this.dateOfBirth) {
 
@@ -1316,19 +1223,11 @@ dairySchema.virtual(
 
     }
 
-    const dob =
-        new Date(
-            this.dateOfBirth
-        );
+    const dob = new Date(this.dateOfBirth);
 
-    const now =
-        new Date();
+    const now = new Date();
 
-    if (
-        Number.isNaN(
-            dob.getTime()
-        )
-    ) {
+    if (Number.isNaN(dob.getTime())) {
 
         return null;
 
@@ -1342,6 +1241,7 @@ dairySchema.virtual(
         now.getMonth() -
         dob.getMonth();
 
+
     if (
 
         monthDifference < 0 ||
@@ -1350,8 +1250,7 @@ dairySchema.virtual(
 
             monthDifference === 0 &&
 
-            now.getDate() <
-                dob.getDate()
+            now.getDate() < dob.getDate()
 
         )
 
@@ -1361,10 +1260,8 @@ dairySchema.virtual(
 
     }
 
-    return Math.max(
-        0,
-        age
-    );
+
+    return Math.max(0, age);
 
 });
 
@@ -1373,9 +1270,7 @@ dairySchema.virtual(
 // VIRTUAL: MILKING TEXT
 // ==========================================================
 
-dairySchema.virtual(
-    "isMilkingText"
-).get(function () {
+dairySchema.virtual("isMilkingText").get(function () {
 
     return this.isMilking
         ? "Yes"
@@ -1385,51 +1280,45 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// HELPER: NORMALIZE PROFILE IMAGE
+// PROFILE IMAGE HELPER
 // ==========================================================
 
-function normalizeProfileImage(
-    image,
-    name
-) {
+function normalizeProfileImage(image, name) {
 
     if (!image) {
 
         return (
 
-            `https://ui-avatars.com/api/?name=` +
+            "https://ui-avatars.com/api/?name=" +
 
-            `${encodeURIComponent(
+            encodeURIComponent(
                 name || "Dairy"
-            )}`
+            )
 
         );
 
     }
 
-    if (
 
-        /^https?:\/\//i.test(
-            String(image)
-        )
+    const value = String(image).trim();
 
-    ) {
 
-        return String(image);
+    if (!value) {
 
-    }
+        return (
 
-    if (
+            "https://ui-avatars.com/api/?name=" +
 
-        String(image).startsWith("/")
+            encodeURIComponent(
+                name || "Dairy"
+            )
 
-    ) {
-
-        return String(image);
+        );
 
     }
 
-    return String(image);
+
+    return value;
 
 }
 
@@ -1438,41 +1327,30 @@ function normalizeProfileImage(
 // VIRTUAL: DISPLAY IMAGES
 // ==========================================================
 
-dairySchema.virtual(
-    "displayImages"
-).get(function () {
+dairySchema.virtual("displayImages").get(function () {
 
     let images = [];
 
 
-    if (
-        Array.isArray(
-            this.profileImages
-        )
-    ) {
+    if (Array.isArray(this.profileImages)) {
 
-        images =
+        images = this.profileImages
 
-            this.profileImages
+            .filter(Boolean)
 
-                .filter(Boolean)
-
-                .map(
-
-                    image =>
-
-                        normalizeProfileImage(
-
-                            image,
-
-                            this.name
-
-                        )
-
-                );
+            .map(image =>
+                normalizeProfileImage(
+                    image,
+                    this.name
+                )
+            );
 
     }
 
+
+    // ----------------------------------------------
+    // Legacy profileImage fallback
+    // ----------------------------------------------
 
     if (
 
@@ -1485,11 +1363,8 @@ dairySchema.virtual(
         images.push(
 
             normalizeProfileImage(
-
                 this.profileImage,
-
                 this.name
-
             )
 
         );
@@ -1497,16 +1372,17 @@ dairySchema.virtual(
     }
 
 
+    // ----------------------------------------------
+    // Avatar fallback
+    // ----------------------------------------------
+
     if (images.length === 0) {
 
         images.push(
 
             normalizeProfileImage(
-
                 "",
-
                 this.name
-
             )
 
         );
@@ -1515,11 +1391,8 @@ dairySchema.virtual(
 
 
     return images.slice(
-
         0,
-
         MAX_PROFILE_IMAGES
-
     );
 
 });
@@ -1529,23 +1402,17 @@ dairySchema.virtual(
 // VIRTUAL: DISPLAY IMAGE
 // ==========================================================
 
-dairySchema.virtual(
-    "displayImage"
-).get(function () {
+dairySchema.virtual("displayImage").get(function () {
 
-    const images =
-        this.displayImages;
+    const images = this.displayImages;
 
-    return images.length
+    return images.length > 0
 
         ? images[0]
 
         : normalizeProfileImage(
-
             "",
-
             this.name
-
         );
 
 });
@@ -1555,11 +1422,9 @@ dairySchema.virtual(
 // VIRTUAL: REQUIRES MAINTENANCE
 // ==========================================================
 
-dairySchema.virtual(
-    "requiresMaintenance"
-).get(function () {
+dairySchema.virtual("requiresMaintenance").get(function () {
 
-    return !!this.needsMaintenance;
+    return Boolean(this.needsMaintenance);
 
 });
 
@@ -1568,11 +1433,9 @@ dairySchema.virtual(
 // VIRTUAL: NEEDS MEDICAL ATTENTION
 // ==========================================================
 
-dairySchema.virtual(
-    "needsMedicalAttention"
-).get(function () {
+dairySchema.virtual("needsMedicalAttention").get(function () {
 
-    return !!(
+    return Boolean(
 
         this.medicalAttention &&
 
@@ -1587,13 +1450,9 @@ dairySchema.virtual(
 // VIRTUAL: ASSET VALUE
 // ==========================================================
 
-dairySchema.virtual(
-    "assetValue"
-).get(function () {
+dairySchema.virtual("assetValue").get(function () {
 
-    return Number(
-        this.currentWorth
-    ) || 0;
+    return Number(this.currentWorth) || 0;
 
 });
 
@@ -1602,9 +1461,7 @@ dairySchema.virtual(
 // VIRTUAL: ACTIVE ASSET
 // ==========================================================
 
-dairySchema.virtual(
-    "isActiveAsset"
-).get(function () {
+dairySchema.virtual("isActiveAsset").get(function () {
 
     return this.status === "active";
 
@@ -1615,9 +1472,7 @@ dairySchema.virtual(
 // VIRTUAL: IDENTIFIED DAIRY
 // ==========================================================
 
-dairySchema.virtual(
-    "isIdentifiedDairy"
-).get(function () {
+dairySchema.virtual("isIdentifiedDairy").get(function () {
 
     return this.isAnimal;
 
@@ -1625,53 +1480,33 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// PRE VALIDATE
+// PRE-VALIDATE
 // ==========================================================
 
-dairySchema.pre(
-    "validate",
-    function (next) {
+dairySchema.pre("validate", function (next) {
+
+    try {
 
         // ==================================================
-        // PROFILE IMAGES
+        // NORMALIZE PROFILE IMAGES
         // ==================================================
 
-        if (
-            !Array.isArray(
-                this.profileImages
-            )
-        ) {
+        if (!Array.isArray(this.profileImages)) {
 
             this.profileImages = [];
 
         }
 
 
-        this.profileImages =
+        this.profileImages = this.profileImages
 
-            this.profileImages
+            .filter(Boolean)
 
-                .filter(Boolean)
+            .map(image => String(image).trim())
 
-                .map(
+            .filter(Boolean)
 
-                    image =>
-
-                        String(
-                            image
-                        ).trim()
-
-                )
-
-                .filter(Boolean)
-
-                .slice(
-
-                    0,
-
-                    MAX_PROFILE_IMAGES
-
-                );
+            .slice(0, MAX_PROFILE_IMAGES);
 
 
         // ==================================================
@@ -1688,9 +1523,7 @@ dairySchema.pre(
 
             this.profileImages = [
 
-                String(
-                    this.profileImage
-                ).trim()
+                String(this.profileImage).trim()
 
             ];
 
@@ -1698,73 +1531,94 @@ dairySchema.pre(
 
 
         // ==================================================
-        // PRIMARY PROFILE IMAGE
+        // KEEP PRIMARY IMAGE SYNCHRONIZED
         // ==================================================
 
-        if (
+        this.profileImage =
+
             this.profileImages.length > 0
-        ) {
 
-            this.profileImage =
-                this.profileImages[0];
+                ? this.profileImages[0]
 
-        } else {
-
-            this.profileImage = "";
-
-        }
+                : "";
 
 
         // ==================================================
-        // NORMALIZE CODE
+        // NORMALIZE NULLABLE NUMBERS
         // ==================================================
 
-        if (
-            this.code === undefined
-        ) {
+        if (this.code === undefined) {
 
             this.code = null;
 
         }
 
-
-        // ==================================================
-        // NORMALIZE ASSET CODE
-        // ==================================================
-
-        if (
-            this.assetCode === undefined
-        ) {
+        if (this.assetCode === undefined) {
 
             this.assetCode = null;
 
         }
 
-
-        // ==================================================
-        // NORMALIZE DWELL NUMBER
-        // ==================================================
-
-        if (
-            this.dwellNumber === undefined
-        ) {
+        if (this.dwellNumber === undefined) {
 
             this.dwellNumber = null;
 
         }
+
+
+        // ==================================================
+        // NORMALIZE MONEY / NUMERIC VALUES
+        // ==================================================
+
+        this.mass =
+            Math.max(
+                0,
+                toFiniteNumber(this.mass)
+            );
+
+        this.buyingPrice =
+            Math.max(
+                0,
+                toFiniteNumber(this.buyingPrice)
+            );
+
+        this.sellingPrice =
+            Math.max(
+                0,
+                toFiniteNumber(this.sellingPrice)
+            );
+
+        this.revenue =
+            Math.max(
+                0,
+                toFiniteNumber(this.revenue)
+            );
+
+        this.currentWorth =
+            Math.max(
+                0,
+                toFiniteNumber(this.currentWorth)
+            );
 
 
         // ==================================================
         // DAIRY FARM
         // ==================================================
 
-        if (
-            this.isDairyFarm
-        ) {
+        if (this.isDairyFarm) {
+
+            // ----------------------------------------------
+            // Farms cannot belong to another farm.
+            // ----------------------------------------------
 
             this.assetCode = null;
 
             this.dwellNumber = null;
+
+
+            // ----------------------------------------------
+            // Farm-specific fields.
+            // ----------------------------------------------
 
             this.dateOfBirth = null;
 
@@ -1773,29 +1627,27 @@ dairySchema.pre(
             this.isMilking = false;
 
 
+            // ----------------------------------------------
+            // Validate farm type.
+            // ----------------------------------------------
+
             if (
 
                 this.type &&
 
-                !DAIRY_FARM_TYPES.includes(
-                    this.type
-                )
+                !DAIRY_FARM_TYPES.includes(this.type)
 
             ) {
 
-                const error =
+                return next(
 
-                    new Error(
+                    createValidationError(
 
                         `Invalid dairy farm type: ${this.type}.`
 
-                    );
+                    )
 
-
-                error.status = 400;
-
-
-                return next(error);
+                );
 
             }
 
@@ -1806,17 +1658,13 @@ dairySchema.pre(
         // ANIMAL
         // ==================================================
 
-        if (
-            this.isAnimal
-        ) {
+        if (this.isAnimal) {
 
             // ----------------------------------------------
-            // Male animals cannot milk.
+            // Male animals cannot be marked as milking.
             // ----------------------------------------------
 
-            if (
-                !this.isFemale
-            ) {
+            if (!this.isFemale) {
 
                 this.isMilking = false;
 
@@ -1827,27 +1675,17 @@ dairySchema.pre(
             // Animal must belong to a farm.
             // ----------------------------------------------
 
-            if (
+            if (isNullish(this.assetCode)) {
 
-                this.assetCode === null ||
+                return next(
 
-                this.assetCode === undefined
-
-            ) {
-
-                const error =
-
-                    new Error(
+                    createValidationError(
 
                         "Animal must belong to a Dairy Farm. assetCode is required."
 
-                    );
+                    )
 
-
-                error.status = 400;
-
-
-                return next(error);
+                );
 
             }
 
@@ -1856,35 +1694,19 @@ dairySchema.pre(
             // Animal parent must be negative.
             // ----------------------------------------------
 
-            if (
-                Number(this.assetCode) >= 0
-            ) {
+            if (Number(this.assetCode) >= 0) {
 
-                const error =
+                return next(
 
-                    new Error(
+                    createValidationError(
 
                         "Animal assetCode must be the negative code of its parent Dairy Farm."
 
-                    );
+                    )
 
-
-                error.status = 400;
-
-
-                return next(error);
+                );
 
             }
-
-
-            // ----------------------------------------------
-            // Negative dwellNumber is VALID.
-            //
-            // It means the animal has been allocated to
-            // an AgroStore.
-            // ----------------------------------------------
-
-            // No rejection here.
 
 
             // ----------------------------------------------
@@ -1895,27 +1717,29 @@ dairySchema.pre(
 
                 this.type &&
 
-                !DAIRY_BREEDS.includes(
-                    this.type
-                )
+                !DAIRY_BREEDS.includes(this.type)
 
             ) {
 
-                const error =
+                return next(
 
-                    new Error(
+                    createValidationError(
 
                         `Invalid dairy breed: ${this.type}.`
 
-                    );
+                    )
 
-
-                error.status = 400;
-
-
-                return next(error);
+                );
 
             }
+
+            // ----------------------------------------------
+            // IMPORTANT:
+            //
+            // Negative dwellNumber is VALID.
+            //
+            // It represents AgroStore allocation.
+            // ----------------------------------------------
 
         }
 
@@ -1924,9 +1748,7 @@ dairySchema.pre(
         // STRUCTURE / ASSET
         // ==================================================
 
-        if (
-            this.isStructure
-        ) {
+        if (this.isStructure) {
 
             this.dateOfBirth = null;
 
@@ -1936,75 +1758,24 @@ dairySchema.pre(
 
 
             // ----------------------------------------------
-            // ASSET WITH A PARENT FARM
+            // Assigned asset
             // ----------------------------------------------
 
-            if (
+            if (!isNullish(this.assetCode)) {
 
-                this.assetCode !== null &&
+                if (Number(this.assetCode) >= 0) {
 
-                this.assetCode !== undefined
+                    return next(
 
-            ) {
-
-                if (
-                    Number(this.assetCode) >= 0
-                ) {
-
-                    const error =
-
-                        new Error(
+                        createValidationError(
 
                             "Structure assetCode must be the negative code of its parent Dairy Farm."
 
-                        );
-
-
-                    error.status = 400;
-
-
-                    return next(error);
-
-                }
-
-
-                // ------------------------------------------
-                // Negative dwellNumber is VALID.
-                //
-                // Negative = AgroStore allocation.
-                // Positive/zero = normal room allocation.
-                // ------------------------------------------
-
-            }
-
-
-            // ----------------------------------------------
-            // Validate dwellNumber.
-            // ----------------------------------------------
-
-            if (
-
-                this.dwellNumber !== null &&
-
-                !Number.isInteger(
-                    this.dwellNumber
-                )
-
-            ) {
-
-                const error =
-
-                    new Error(
-
-                        "dwellNumber must be a whole number or null."
+                        )
 
                     );
 
-
-                error.status = 400;
-
-
-                return next(error);
+                }
 
             }
 
@@ -2017,27 +1788,29 @@ dairySchema.pre(
 
                 this.type &&
 
-                !STRUCTURE_TYPES.includes(
-                    this.type
-                )
+                !STRUCTURE_TYPES.includes(this.type)
 
             ) {
 
-                const error =
+                return next(
 
-                    new Error(
+                    createValidationError(
 
                         `Invalid structure type: ${this.type}.`
 
-                    );
+                    )
 
-
-                error.status = 400;
-
-
-                return next(error);
+                );
 
             }
+
+
+            // ----------------------------------------------
+            // Negative dwellNumber is VALID.
+            //
+            // Negative = AgroStore
+            // Positive/zero = normal room
+            // ----------------------------------------------
 
         }
 
@@ -2045,28 +1818,33 @@ dairySchema.pre(
         // ==================================================
         // GLOBAL DWELL VALIDATION
         // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // Negative dwellNumber is now VALID.
-        //
-        // It represents AgroStore allocation.
-        //
-        // Therefore there is intentionally NO rule here
-        // rejecting:
-        //
-        //     assetCode + negative dwellNumber
-        //
-        // ==================================================
+
+        if (
+
+            !isNullish(this.dwellNumber) &&
+
+            !isInteger(this.dwellNumber)
+
+        ) {
+
+            return next(
+
+                createValidationError(
+
+                    "dwellNumber must be a whole number or null."
+
+                )
+
+            );
+
+        }
 
 
         // ==================================================
         // MEDICAL OBJECT
         // ==================================================
 
-        if (
-            !this.medicalAttention
-        ) {
+        if (!this.medicalAttention) {
 
             this.medicalAttention = {};
 
@@ -2074,87 +1852,67 @@ dairySchema.pre(
 
 
         this.medicalAttention.isMarked =
-
-            !!this.medicalAttention.isMarked;
+            Boolean(
+                this.medicalAttention.isMarked
+            );
 
 
         this.medicalAttention.type =
-
-            String(
-                this.medicalAttention.type ||
-                ""
-            )
-            .trim();
+            cleanString(
+                this.medicalAttention.type
+            );
 
 
         this.medicalAttention.details =
-
-            String(
-                this.medicalAttention.details ||
-                ""
-            )
-            .trim();
-
-
-        this.medicalAttention.charges =
-
-            Math.max(
-
-                0,
-
-                Number(
-                    this.medicalAttention.charges
-                ) || 0
-
+            cleanString(
+                this.medicalAttention.details
             );
 
 
         this.medicalAttention.description =
+            cleanString(
+                this.medicalAttention.description
+            );
 
-            String(
-                this.medicalAttention.description ||
-                ""
-            )
-            .trim();
+
+        this.medicalAttention.charges =
+            Math.max(
+                0,
+                toFiniteNumber(
+                    this.medicalAttention.charges
+                )
+            );
 
 
         this.medicalAttention.markedBy =
-
-            this.medicalAttention.markedBy ||
-            null;
+            this.medicalAttention.markedBy || null;
 
 
         this.medicalAttention.markedAt =
-
-            this.medicalAttention.markedAt ||
-            null;
+            this.medicalAttention.markedAt || null;
 
 
         this.medicalAttention.updatedAt =
-
-            this.medicalAttention.updatedAt ||
-            null;
+            this.medicalAttention.updatedAt || null;
 
 
         this.medicalAttention.clearedBy =
-
-            this.medicalAttention.clearedBy ||
-            null;
+            this.medicalAttention.clearedBy || null;
 
 
         this.medicalAttention.clearedAt =
-
-            this.medicalAttention.clearedAt ||
-            null;
+            this.medicalAttention.clearedAt || null;
 
 
         // ==================================================
-        // CLEAR MEDICAL DATA WHEN NOT MARKED
+        // CLEAR ACTIVE MEDICAL DETAILS ONLY WHEN NOT MARKED
+        // ==================================================
+        //
+        // This keeps the model internally consistent.
+        //
         // ==================================================
 
-        if (
-            !this.medicalAttention.isMarked
-        ) {
+        if (!this.medicalAttention.isMarked) {
 
             this.medicalAttention.type = "";
 
@@ -2164,50 +1922,42 @@ dairySchema.pre(
 
             this.medicalAttention.description = "";
 
-            this.medicalAttention.markedBy = null;
-
-            this.medicalAttention.markedAt = null;
-
-            this.medicalAttention.clearedBy = null;
-
-            this.medicalAttention.clearedAt = null;
-
         }
 
 
         next();
 
+    } catch (error) {
+
+        next(error);
+
     }
 
-);
+});
 
 
 // ==========================================================
-// PRE SAVE
+// PRE-SAVE
 // ==========================================================
 
-dairySchema.pre(
-    "save",
-    function (next) {
+dairySchema.pre("save", function (next) {
+
+    try {
 
         // ==================================================
         // MEDICAL UPDATED DATE
         // ==================================================
 
         if (
-            this.isModified(
-                "medicalAttention"
-            )
+
+            this.isModified("medicalAttention") &&
+
+            this.medicalAttention
+
         ) {
 
-            if (
-                this.medicalAttention
-            ) {
-
-                this.medicalAttention.updatedAt =
-                    new Date();
-
-            }
+            this.medicalAttention.updatedAt =
+                new Date();
 
         }
 
@@ -2231,9 +1981,7 @@ dairySchema.pre(
         // DAIRY FARM NORMALIZATION
         // ==================================================
 
-        if (
-            this.isDairyFarm
-        ) {
+        if (this.isDairyFarm) {
 
             this.assetCode = null;
 
@@ -2252,9 +2000,7 @@ dairySchema.pre(
         // STRUCTURE NORMALIZATION
         // ==================================================
 
-        if (
-            this.isStructure
-        ) {
+        if (this.isStructure) {
 
             this.dateOfBirth = null;
 
@@ -2268,49 +2014,37 @@ dairySchema.pre(
         // ==================================================
         // FINAL DWELL SAFETY
         // ==================================================
-        //
-        // Only ensure it remains an integer.
-        //
-        // Negative values are intentionally permitted because
-        // they represent AgroStore allocation.
-        //
-        // ==================================================
 
         if (
 
-            this.dwellNumber !== null &&
+            !isNullish(this.dwellNumber) &&
 
-            this.dwellNumber !== undefined &&
-
-            !Number.isInteger(
-                this.dwellNumber
-            )
+            !isInteger(this.dwellNumber)
 
         ) {
 
-            const error =
+            return next(
 
-                new Error(
+                createValidationError(
 
                     "dwellNumber must be a whole number or null."
 
-                );
+                )
 
-
-            error.status = 400;
-
-
-            return next(error);
+            );
 
         }
 
 
         next();
 
+    } catch (error) {
+
+        next(error);
+
     }
 
-);
-
+});
 
 // ==========================================================
 // INDEXES
@@ -2351,7 +2085,7 @@ dairySchema.index({
 
 
 // ==========================================================
-// ASSET ASSIGNMENT
+// ASSET OWNERSHIP
 // ==========================================================
 
 dairySchema.index({
@@ -2367,9 +2101,9 @@ dairySchema.index({
 // DWELLING / ALLOCATION
 // ==========================================================
 //
-// Covers BOTH:
+// Covers:
 //
-//     normal rooms
+//     Normal rooms
 //     AgroStores
 //
 // ==========================================================
@@ -2387,16 +2121,10 @@ dairySchema.index({
 // FARM + DWELLING
 // ==========================================================
 //
-// This is particularly important now because it retrieves
-// both:
+// Important for retrieving:
 //
-//     farm room contents
-//     farm AgroStore contents
-//
-// Example:
-//
-//     assetCode = -1
-//     dwellNumber = -2
+//     Farm room contents
+//     Farm AgroStore contents
 //
 // ==========================================================
 
@@ -2412,7 +2140,7 @@ dairySchema.index({
 
 
 // ==========================================================
-// FACILITY TYPE
+// FACILITY / ASSET TYPE
 // ==========================================================
 
 dairySchema.index({
@@ -2426,6 +2154,12 @@ dairySchema.index({
 
 // ==========================================================
 // CODE UNIQUENESS
+// ==========================================================
+//
+// Only numeric codes are unique.
+//
+// code === null is allowed for multiple structures/assets.
+//
 // ==========================================================
 
 dairySchema.index(
@@ -2456,164 +2190,158 @@ dairySchema.index(
 
 
 // ==========================================================
-// STATIC: GET FARM ASSETS
+// STATIC HELPER
+// ==========================================================
+//
+// Returns an empty query when an invalid farm code is
+// supplied instead of throwing an exception.
+//
 // ==========================================================
 
-dairySchema.statics.getFarmAssets =
+function emptyDairyQuery(Model) {
 
-    function (
-        farmCode
+    return Model.find({
+
+        _id: null
+
+    });
+
+}
+
+
+// ==========================================================
+// STATIC: GET FARM ASSETS
+// ==========================================================
+//
+// Returns all assets/animals belonging to a farm.
+//
+// ==========================================================
+
+dairySchema.statics.getFarmAssets = function (farmCode) {
+
+    const code = Number(farmCode);
+
+
+    if (
+
+        !isInteger(code) ||
+
+        code >= 0
+
     ) {
 
-        const code =
-            Number(farmCode);
+        return emptyDairyQuery(this);
+
+    }
 
 
-        if (
+    return this.find({
 
-            !Number.isInteger(code) ||
+        assetCode: code
 
-            code >= 0
+    });
 
-        ) {
-
-            return this.find({
-
-                _id: null
-
-            });
-
-        }
-
-
-        return this.find({
-
-            assetCode: code
-
-        });
-
-    };
+};
 
 
 // ==========================================================
 // STATIC: GET FARM DWELLINGS
 // ==========================================================
 //
-// Returns everything belonging to the farm that has been
-// allocated somewhere.
-//
-// This includes:
-//
-//     normal rooms
-//     AgroStores
+// Returns every entity belonging to the farm that has been
+// allocated to a normal room OR AgroStore.
 //
 // ==========================================================
 
-dairySchema.statics.getFarmDwellings =
+dairySchema.statics.getFarmDwellings = function (farmCode) {
 
-    function (
-        farmCode
+    const code = Number(farmCode);
+
+
+    if (
+
+        !isInteger(code) ||
+
+        code >= 0
+
     ) {
 
-        const code =
-            Number(farmCode);
+        return emptyDairyQuery(this);
+
+    }
 
 
-        if (
+    return this.find({
 
-            !Number.isInteger(code) ||
+        assetCode: code,
 
-            code >= 0
+        dwellNumber: {
 
-        ) {
-
-            return this.find({
-
-                _id: null
-
-            });
+            $ne: null
 
         }
 
+    });
 
-        return this.find({
-
-            assetCode: code,
-
-            dwellNumber: {
-
-                $ne: null
-
-            }
-
-        });
-
-    };
+};
 
 
 // ==========================================================
 // STATIC: GET FARM ROOM CONTENT
 // ==========================================================
 //
-// Returns everything in a particular allocation number.
+// Works for BOTH:
 //
-// Positive/zero:
-//     normal room
+//     roomNumber >= 0
+//         normal room
 //
-// Negative:
-//     AgroStore
+//     roomNumber < 0
+//         AgroStore
 //
 // ==========================================================
 
-dairySchema.statics.getFarmRoomContent =
+dairySchema.statics.getFarmRoomContent = function (
 
-    function (
-        farmCode,
-        roomNumber
+    farmCode,
+
+    roomNumber
+
+) {
+
+    const farm = Number(farmCode);
+
+    const room = Number(roomNumber);
+
+
+    if (
+
+        !isInteger(farm) ||
+
+        farm >= 0 ||
+
+        !isInteger(room)
+
     ) {
 
-        const farm =
-            Number(farmCode);
+        return emptyDairyQuery(this);
 
-        const room =
-            Number(roomNumber);
+    }
 
 
-        if (
+    return this.find({
 
-            !Number.isInteger(farm) ||
+        assetCode: farm,
 
-            farm >= 0 ||
+        dwellNumber: room
 
-            !Number.isInteger(room)
+    });
 
-        ) {
-
-            return this.find({
-
-                _id: null
-
-            });
-
-        }
-
-
-        return this.find({
-
-            assetCode: farm,
-
-            dwellNumber: room
-
-        });
-
-    };
+};
 
 
 // ==========================================================
 // STATIC: GET AGROSTORE CONTENT
 // ==========================================================
-//
-// Returns everything allocated to a specific AgroStore.
 //
 // Example:
 //
@@ -2626,503 +2354,663 @@ dairySchema.statics.getFarmRoomContent =
 //
 // ==========================================================
 
-dairySchema.statics.getAgroStoreContent =
+dairySchema.statics.getAgroStoreContent = function (
 
-    function (
-        farmCode,
-        agroStoreNumber
+    farmCode,
+
+    agroStoreNumber
+
+) {
+
+    const farm = Number(farmCode);
+
+    const store = Number(agroStoreNumber);
+
+
+    if (
+
+        !isInteger(farm) ||
+
+        farm >= 0 ||
+
+        !isInteger(store) ||
+
+        store >= 0
+
     ) {
 
-        const farm =
-            Number(farmCode);
+        return emptyDairyQuery(this);
 
-        const store =
-            Number(agroStoreNumber);
+    }
 
 
-        if (
+    return this.find({
 
-            !Number.isInteger(farm) ||
+        assetCode: farm,
 
-            farm >= 0 ||
+        dwellNumber: store
 
-            !Number.isInteger(store) ||
+    });
 
-            store >= 0
-
-        ) {
-
-            return this.find({
-
-                _id: null
-
-            });
-
-        }
-
-
-        return this.find({
-
-            assetCode: farm,
-
-            dwellNumber: store
-
-        });
-
-    };
+};
 
 
 // ==========================================================
-// STATIC: GET FARM NORMAL ROOM CONTENT
+// STATIC: GET NORMAL ROOM CONTENT
 // ==========================================================
 
-dairySchema.statics.getFarmNormalRoomContent =
+dairySchema.statics.getFarmNormalRoomContent = function (
 
-    function (
-        farmCode,
-        roomNumber
+    farmCode,
+
+    roomNumber
+
+) {
+
+    const farm = Number(farmCode);
+
+    const room = Number(roomNumber);
+
+
+    if (
+
+        !isInteger(farm) ||
+
+        farm >= 0 ||
+
+        !isInteger(room) ||
+
+        room < 0
+
     ) {
 
-        const farm =
-            Number(farmCode);
+        return emptyDairyQuery(this);
 
-        const room =
-            Number(roomNumber);
+    }
 
 
-        if (
+    return this.find({
 
-            !Number.isInteger(farm) ||
+        assetCode: farm,
 
-            farm >= 0 ||
+        dwellNumber: room
 
-            !Number.isInteger(room) ||
+    });
 
-            room < 0
-
-        ) {
-
-            return this.find({
-
-                _id: null
-
-            });
-
-        }
-
-
-        return this.find({
-
-            assetCode: farm,
-
-            dwellNumber: room
-
-        });
-
-    };
+};
 
 
 // ==========================================================
-// STATIC: GET ACTIVE ROOM NUMBERS
+// STATIC: GET ACTIVE NORMAL ROOM NUMBERS
 // ==========================================================
 //
-// Returns normal room numbers currently occupied by
-// entities belonging to the farm.
+// Returns only normal rooms currently occupied.
 //
-// Negative numbers are excluded because those represent
-// AgroStores.
+// AgroStores are excluded.
 //
 // ==========================================================
 
-dairySchema.statics.getActiveRoomNumbers =
+dairySchema.statics.getActiveRoomNumbers = async function (
 
-    async function (
-        farmCode
+    farmCode
+
+) {
+
+    const farm = Number(farmCode);
+
+
+    if (
+
+        !isInteger(farm) ||
+
+        farm >= 0
+
     ) {
 
-        const farm =
-            Number(farmCode);
+        return [];
+
+    }
 
 
-        if (
+    const result = await this.aggregate([
 
-            !Number.isInteger(farm) ||
+        {
 
-            farm >= 0
+            $match: {
 
-        ) {
+                assetCode: farm,
 
-            return [];
+                dwellNumber: {
 
-        }
-
-
-        const result =
-
-            await this.aggregate([
-
-                {
-
-                    $match: {
-
-                        assetCode: farm,
-
-                        dwellNumber: {
-
-                            $gte: 0
-
-                        },
-
-                        status: "active"
-
-                    }
+                    $gte: 0
 
                 },
 
-                {
+                status: "active"
 
-                    $group: {
+            }
 
-                        _id:
-                            "$dwellNumber"
+        },
 
-                    }
+        {
 
-                },
+            $group: {
 
-                {
+                _id: "$dwellNumber"
 
-                    $sort: {
+            }
 
-                        _id: 1
+        },
 
-                    }
+        {
 
-                }
+            $sort: {
 
-            ]);
+                _id: 1
+
+            }
+
+        }
+
+    ]);
 
 
-        return result.map(
+    return result.map(item => item._id);
 
-            item =>
-                item._id
-
-        );
-
-    };
+};
 
 
 // ==========================================================
 // STATIC: GET ACTIVE AGROSTORE NUMBERS
 // ==========================================================
 //
-// Returns negative dwellNumbers currently occupied by
-// AgroStore contents.
+// Returns negative dwell numbers currently occupied by
+// active AgroStore contents.
 //
 // ==========================================================
 
-dairySchema.statics.getActiveAgroStoreNumbers =
+dairySchema.statics.getActiveAgroStoreNumbers = async function (
 
-    async function (
-        farmCode
+    farmCode
+
+) {
+
+    const farm = Number(farmCode);
+
+
+    if (
+
+        !isInteger(farm) ||
+
+        farm >= 0
+
     ) {
 
-        const farm =
-            Number(farmCode);
+        return [];
+
+    }
 
 
-        if (
+    const result = await this.aggregate([
 
-            !Number.isInteger(farm) ||
+        {
 
-            farm >= 0
+            $match: {
 
-        ) {
+                assetCode: farm,
 
-            return [];
+                dwellNumber: {
 
-        }
-
-
-        const result =
-
-            await this.aggregate([
-
-                {
-
-                    $match: {
-
-                        assetCode: farm,
-
-                        dwellNumber: {
-
-                            $lt: 0
-
-                        },
-
-                        status: "active"
-
-                    }
+                    $lt: 0
 
                 },
 
-                {
+                status: "active"
 
-                    $group: {
+            }
 
-                        _id:
-                            "$dwellNumber"
+        },
 
-                    }
+        {
 
-                },
+            $group: {
 
-                {
+                _id: "$dwellNumber"
 
-                    $sort: {
+            }
 
-                        _id: 1
+        },
 
-                    }
+        {
 
-                }
+            $sort: {
 
-            ]);
+                _id: 1
 
-
-        return result.map(
-
-            item =>
-                item._id
-
-        );
-
-    };
-
-
-// ==========================================================
-// STATIC: GET FARM AGROSTORE CONTENT
-// ==========================================================
-//
-// Returns every entity allocated to an AgroStore belonging
-// to the specified farm.
-//
-// ==========================================================
-
-dairySchema.statics.getFarmAgroStoreContents =
-
-    function (
-        farmCode
-    ) {
-
-        const farm =
-            Number(farmCode);
-
-
-        if (
-
-            !Number.isInteger(farm) ||
-
-            farm >= 0
-
-        ) {
-
-            return this.find({
-
-                _id: null
-
-            });
+            }
 
         }
 
+    ]);
 
-        return this.find({
 
-            assetCode: farm,
+    return result.map(item => item._id);
 
-            dwellNumber: {
+};
 
-                $lt: 0
 
-            },
+// ==========================================================
+// STATIC: GET FARM AGROSTORE CONTENTS
+// ==========================================================
+//
+// Returns all active entities belonging to AgroStores of
+// the specified farm.
+//
+// ==========================================================
 
-            status: "active"
+dairySchema.statics.getFarmAgroStoreContents = function (
 
-        });
+    farmCode
 
-    };
+) {
+
+    const farm = Number(farmCode);
+
+
+    if (
+
+        !isInteger(farm) ||
+
+        farm >= 0
+
+    ) {
+
+        return emptyDairyQuery(this);
+
+    }
+
+
+    return this.find({
+
+        assetCode: farm,
+
+        dwellNumber: {
+
+            $lt: 0
+
+        },
+
+        status: "active"
+
+    });
+
+};
 
 
 // ==========================================================
 // STATIC: GET STANDALONE ASSETS
 // ==========================================================
 
-dairySchema.statics.getStandaloneAssets =
+dairySchema.statics.getStandaloneAssets = function () {
 
-    function () {
+    return this.find({
 
-        return this.find({
+        code: null,
 
-            code: null,
+        assetCode: null
 
-            assetCode: null
+    });
 
-        });
-
-    };
+};
 
 
 // ==========================================================
 // STATIC: GET DAIRY BREEDS
 // ==========================================================
 
-dairySchema.statics.getDairyBreeds =
+dairySchema.statics.getDairyBreeds = function () {
 
-    function () {
+    return [...DAIRY_BREEDS];
 
-        return [
-
-            ...DAIRY_BREEDS
-
-        ];
-
-    };
+};
 
 
 // ==========================================================
 // STATIC: GET DAIRY FARM TYPES
 // ==========================================================
 
-dairySchema.statics.getDairyFarmTypes =
+dairySchema.statics.getDairyFarmTypes = function () {
 
-    function () {
+    return [...DAIRY_FARM_TYPES];
 
-        return [
-
-            ...DAIRY_FARM_TYPES
-
-        ];
-
-    };
+};
 
 
 // ==========================================================
 // STATIC: GET STRUCTURE TYPES
 // ==========================================================
 
-dairySchema.statics.getStructureTypes =
+dairySchema.statics.getStructureTypes = function () {
 
-    function () {
+    return [...STRUCTURE_TYPES];
 
-        return [
-
-            ...STRUCTURE_TYPES
-
-        ];
-
-    };
+};
 
 
 // ==========================================================
 // STATIC: GET STATUSES
 // ==========================================================
 
-dairySchema.statics.getDairyStatuses =
+dairySchema.statics.getDairyStatuses = function () {
 
-    function () {
+    return [...DAIRY_STATUSES];
 
-        return [
-
-            ...DAIRY_STATUSES
-
-        ];
-
-    };
+};
 
 
 // ==========================================================
 // STATIC: GET MAX PROFILE IMAGES
 // ==========================================================
 
-dairySchema.statics.getMaxProfileImages =
+dairySchema.statics.getMaxProfileImages = function () {
 
-    function () {
+    return MAX_PROFILE_IMAGES;
 
-        return MAX_PROFILE_IMAGES;
-
-    };
+};
 
 
 // ==========================================================
 // STATIC: CALCULATE NET WORTH
 // ==========================================================
+//
+// Calculates the total current worth of all ACTIVE records.
+//
+// ==========================================================
 
-dairySchema.statics.calculateNetWorth =
+dairySchema.statics.calculateNetWorth = async function () {
 
-    async function () {
+    const result = await this.aggregate([
 
-        const result =
+        {
 
-            await this.aggregate([
+            $match: {
 
-                {
+                status: "active"
 
-                    $match: {
+            }
 
-                        status:
-                            "active"
+        },
 
-                    }
+        {
 
-                },
+            $group: {
 
-                {
+                _id: null,
 
-                    $group: {
+                totalNetWorth: {
 
-                        _id:
-                            null,
+                    $sum: {
 
-                        totalNetWorth: {
+                        $ifNull: [
 
-                            $sum:
-                                "$currentWorth"
+                            "$currentWorth",
 
-                        }
+                            0
+
+                        ]
 
                     }
 
                 }
 
-            ]);
+            }
+
+        }
+
+    ]);
 
 
-        return result.length
+    if (!result.length) {
 
-            ? Number(
+        return 0;
 
-                result[0].totalNetWorth ||
-                0
+    }
 
-            )
 
-            : 0;
+    return Number(
 
-    };
+        result[0].totalNetWorth || 0
+
+    );
+
+};
 
 
 // ==========================================================
 // STATIC: TOTAL CURRENT WORTH
 // ==========================================================
 
-dairySchema.statics.getTotalCurrentWorth =
+dairySchema.statics.getTotalCurrentWorth = function () {
 
-    async function () {
+    return this.calculateNetWorth();
 
-        return this.calculateNetWorth();
+};
 
-    };
+
+// ==========================================================
+// STATIC: GET ACTIVE FARM ASSETS
+// ==========================================================
+//
+// Useful when a service wants only active records belonging
+// to a farm.
+//
+// ==========================================================
+
+dairySchema.statics.getActiveFarmAssets = function (
+
+    farmCode
+
+) {
+
+    const code = Number(farmCode);
+
+
+    if (
+
+        !isInteger(code) ||
+
+        code >= 0
+
+    ) {
+
+        return emptyDairyQuery(this);
+
+    }
+
+
+    return this.find({
+
+        assetCode: code,
+
+        status: "active"
+
+    });
+
+};
+
+
+// ==========================================================
+// STATIC: GET FARM
+// ==========================================================
+//
+// Finds a Dairy Farm by its negative code.
+//
+// ==========================================================
+
+dairySchema.statics.getFarmByCode = function (farmCode) {
+
+    const code = Number(farmCode);
+
+
+    if (
+
+        !isInteger(code) ||
+
+        code >= 0
+
+    ) {
+
+        return this.findOne({
+
+            _id: null
+
+        });
+
+    }
+
+
+    return this.findOne({
+
+        code,
+
+        status: "active"
+
+    });
+
+};
+
+
+// ==========================================================
+// STATIC: GET ANIMAL BY CODE
+// ==========================================================
+//
+// Finds an animal by its positive identity code.
+//
+// ==========================================================
+
+dairySchema.statics.getAnimalByCode = function (animalCode) {
+
+    const code = Number(animalCode);
+
+
+    if (
+
+        !isInteger(code) ||
+
+        code <= 0
+
+    ) {
+
+        return this.findOne({
+
+            _id: null
+
+        });
+
+    }
+
+
+    return this.findOne({
+
+        code,
+
+        status: "active"
+
+    });
+
+};
+
+
+// ==========================================================
+// STATIC: GET FARM ANIMALS
+// ==========================================================
+
+dairySchema.statics.getFarmAnimals = function (farmCode) {
+
+    const farm = Number(farmCode);
+
+
+    if (
+
+        !isInteger(farm) ||
+
+        farm >= 0
+
+    ) {
+
+        return emptyDairyQuery(this);
+
+    }
+
+
+    return this.find({
+
+        assetCode: farm,
+
+        code: {
+
+            $gt: 0
+
+        },
+
+        status: "active"
+
+    }).sort({
+
+        code: 1
+
+    });
+
+};
+
+
+// ==========================================================
+// STATIC: GET FARM MILKING ANIMALS
+// ==========================================================
+
+dairySchema.statics.getFarmMilkingAnimals = function (
+
+    farmCode
+
+) {
+
+    const farm = Number(farmCode);
+
+
+    if (
+
+        !isInteger(farm) ||
+
+        farm >= 0
+
+    ) {
+
+        return emptyDairyQuery(this);
+
+    }
+
+
+    return this.find({
+
+        assetCode: farm,
+
+        code: {
+
+            $gt: 0
+
+        },
+
+        isMilking: true,
+
+        status: "active"
+
+    }).sort({
+
+        code: 1
+
+    });
+
+};
 
 
 // ==========================================================
@@ -3145,22 +3033,27 @@ const Dairy =
 // ==========================================================
 // CONSTANT EXPORTS
 // ==========================================================
+//
+// These remain attached to the model so existing code such
+// as:
+//
+//     Dairy.DAIRY_BREEDS
+//
+// continues to work.
+//
+// ==========================================================
 
 Dairy.DAIRY_BREEDS =
     DAIRY_BREEDS;
 
-
 Dairy.DAIRY_FARM_TYPES =
     DAIRY_FARM_TYPES;
-
 
 Dairy.STRUCTURE_TYPES =
     STRUCTURE_TYPES;
 
-
 Dairy.DAIRY_STATUSES =
     DAIRY_STATUSES;
-
 
 Dairy.MAX_PROFILE_IMAGES =
     MAX_PROFILE_IMAGES;
