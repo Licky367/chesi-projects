@@ -37,73 +37,93 @@
 //
 // ==========================================================
 //
-// ROOM / DWELLING
+// DWELLING / ALLOCATION
 // ----------------------------------------------------------
 //
-// dwellNumber
-//     = physical room/location where an animal or asset
-//       is accommodated.
+// dwellNumber is the physical allocation/location number.
 //
-// Normal rooms:
-//
+// NORMAL ROOMS
 //     dwellNumber >= 0
+//
+// AGROSTORES
+//     dwellNumber < 0
+//
+// Therefore dwellNumber is used for BOTH:
+//
+//     Room
+//         dwellNumber >= 0
+//
+//     AgroStore
+//         dwellNumber < 0
 //
 // IMPORTANT:
 //
-//     Anything having assetCode MUST NEVER have a
-//     negative dwellNumber.
+// AgroStore allocation works exactly like room allocation.
 //
-// Therefore:
+// Examples:
 //
-//     assetCode != null
-//         -> dwellNumber must be null or >= 0
+//     assetCode: -1
+//     dwellNumber: 1
 //
-// Negative room numbers are reserved for special storage
-// facilities represented by DairyStorage.
+//         -> entity belongs to Farm -1
+//            and occupies Room 1
+//
+//     assetCode: -1
+//     dwellNumber: -1
+//
+//         -> entity belongs to Farm -1
+//            and is allocated to AgroStore -1
+//
+//     assetCode: -1
+//     dwellNumber: -2
+//
+//         -> entity belongs to Farm -1
+//            and is allocated to AgroStore -2
 //
 // ==========================================================
 //
 // STORAGE
 // ----------------------------------------------------------
 //
-// Storage is NOT represented by storageNumber anymore.
-//
-// Storage is represented by:
+// The AgroStore itself is represented by:
 //
 //     models/dairyStorage.js
 //
-// Normal rooms:
+// DairyStorage uses negative roomNumber values:
 //
-//     roomNumber >= 0
+//     roomNumber = -1
+//     roomNumber = -2
+//     roomNumber = -3
 //
-// Special AgroStores:
+// The CONTENTS of an AgroStore are represented by Dairy
+// records whose:
 //
-//     roomNumber < 0
+//     assetCode = parent Dairy Farm code
 //
-// Examples:
+// and:
 //
-//     AgroStore -1
-//     AgroStore -2
-//     AgroStore -3
+//     dwellNumber = AgroStore roomNumber
+//
+// Therefore:
+//
+//     DairyStorage.roomNumber
+//
+// matches:
+//
+//     Dairy.dwellNumber
 //
 // ==========================================================
 //
 // ROOM EXISTENCE
 // ----------------------------------------------------------
 //
-// A normal room exists only when a Dairy entity has:
+// Normal room existence is determined from Dairy records:
 //
-//     dwellNumber = roomNumber
+//     dwellNumber >= 0
 //
-// Room names are managed by the frontend.
+// AgroStore existence is determined by DairyStorage.
 //
-// If a room has no configured name:
-//
-//     Room 1
-//     Room 2
-//     Room 3
-//
-// etc.
+// The frontend may provide room names.
 //
 // ==========================================================
 
@@ -272,9 +292,7 @@ const dairySchema = new mongoose.Schema(
         // ==================================================
         //
         // NEGATIVE = DAIRY FARM
-        //
         // POSITIVE = ANIMAL
-        //
         // NULL     = FACILITY / ASSET
         //
         // ==================================================
@@ -427,19 +445,22 @@ const dairySchema = new mongoose.Schema(
         // DWELL NUMBER
         // ==================================================
         //
-        // Identifies the room/location where this entity
-        // is physically accommodated.
+        // This is the allocation/location identifier.
         //
-        // Normal rooms:
+        // POSITIVE / ZERO
+        //     = normal room
         //
-        //     0
-        //     1
-        //     2
-        //     3
-        //     ...
+        // NEGATIVE
+        //     = AgroStore
         //
-        // Negative dwell numbers are NOT permitted for
-        // anything having assetCode.
+        // NULL
+        //     = not allocated
+        //
+        // IMPORTANT:
+        //
+        // Negative dwellNumber IS VALID even when assetCode
+        // exists because negative dwellNumbers represent
+        // AgroStore allocation.
         //
         // ==================================================
 
@@ -465,40 +486,14 @@ const dairySchema = new mongoose.Schema(
 
                     }
 
-                    if (
-                        !Number.isInteger(value)
-                    ) {
-
-                        return false;
-
-                    }
-
-                    // --------------------------------------
-                    // An entity belonging to a farm through
-                    // assetCode can NEVER use a negative
-                    // dwellNumber.
-                    // --------------------------------------
-
-                    if (
-
-                        this.assetCode !== null &&
-
-                        this.assetCode !== undefined &&
-
-                        value < 0
-
-                    ) {
-
-                        return false;
-
-                    }
-
-                    return true;
+                    return Number.isInteger(
+                        value
+                    );
 
                 },
 
                 message:
-                    "An entity with assetCode cannot have a negative dwellNumber."
+                    "dwellNumber must be a whole number or null."
 
             }
 
@@ -1025,13 +1020,36 @@ dairySchema.virtual(
 // VIRTUAL: IS DWELLING
 // ==========================================================
 //
-// True when the entity has been placed inside a normal
-// room.
+// True whenever the entity has a dwellNumber.
+//
+// This includes BOTH:
+//
+//     normal rooms
+//     AgroStores
 //
 // ==========================================================
 
 dairySchema.virtual(
     "isDwelling"
+).get(function () {
+
+    return (
+
+        this.dwellNumber !== null &&
+
+        this.dwellNumber !== undefined
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS NORMAL ROOM
+// ==========================================================
+
+dairySchema.virtual(
+    "isNormalRoom"
 ).get(function () {
 
     return (
@@ -1048,18 +1066,16 @@ dairySchema.virtual(
 
 
 // ==========================================================
-// VIRTUAL: HAS NEGATIVE DWELL
+// VIRTUAL: IS AGROSTORE CONTENT
 // ==========================================================
 //
-// Negative dwelling is never permitted for an entity with
-// assetCode.
-//
-// This virtual is mainly useful for diagnostics.
+// Negative dwellNumber means the entity has been allocated
+// to an AgroStore.
 //
 // ==========================================================
 
 dairySchema.virtual(
-    "hasNegativeDwell"
+    "isAgroStoreContent"
 ).get(function () {
 
     return (
@@ -1071,6 +1087,40 @@ dairySchema.virtual(
         Number(this.dwellNumber) < 0
 
     );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: STORAGE DWELL NUMBER
+// ==========================================================
+//
+// Alias useful to services/views when dealing with storage.
+//
+// ==========================================================
+
+dairySchema.virtual(
+    "storageDwellNumber"
+).get(function () {
+
+    return this.isAgroStoreContent
+
+        ? Number(this.dwellNumber)
+
+        : null;
+
+});
+
+
+// ==========================================================
+// VIRTUAL: HAS NEGATIVE DWELL
+// ==========================================================
+
+dairySchema.virtual(
+    "hasNegativeDwell"
+).get(function () {
+
+    return this.isAgroStoreContent;
 
 });
 
@@ -1722,10 +1772,6 @@ dairySchema.pre(
             this.isMilking = false;
 
 
-            // ----------------------------------------------
-            // Validate farm type.
-            // ----------------------------------------------
-
             if (
 
                 this.type &&
@@ -1831,32 +1877,13 @@ dairySchema.pre(
 
 
             // ----------------------------------------------
-            // Animal can only dwell in a normal room.
+            // Negative dwellNumber is VALID.
+            //
+            // It means the animal has been allocated to
+            // an AgroStore.
             // ----------------------------------------------
 
-            if (
-
-                this.dwellNumber !== null &&
-
-                Number(this.dwellNumber) < 0
-
-            ) {
-
-                const error =
-
-                    new Error(
-
-                        "An animal with assetCode can never have a negative dwellNumber."
-
-                    );
-
-
-                error.status = 400;
-
-
-                return next(error);
-
-            }
+            // No rejection here.
 
 
             // ----------------------------------------------
@@ -1941,44 +1968,17 @@ dairySchema.pre(
 
 
                 // ------------------------------------------
-                // CRITICAL RULE
+                // Negative dwellNumber is VALID.
                 //
-                // Assets with assetCode may NEVER have a
-                // negative dwellNumber.
+                // Negative = AgroStore allocation.
+                // Positive/zero = normal room allocation.
                 // ------------------------------------------
-
-                if (
-
-                    this.dwellNumber !== null &&
-
-                    Number(this.dwellNumber) < 0
-
-                ) {
-
-                    const error =
-
-                        new Error(
-
-                            "Anything with assetCode can never have a negative dwellNumber."
-
-                        );
-
-
-                    error.status = 400;
-
-
-                    return next(error);
-
-                }
 
             }
 
 
             // ----------------------------------------------
-            // Standalone asset with negative dwell is not
-            // allowed to represent an AgroStore.
-            //
-            // AgroStore belongs to DairyStorage.
+            // Validate dwellNumber.
             // ----------------------------------------------
 
             if (
@@ -2045,40 +2045,18 @@ dairySchema.pre(
         // GLOBAL DWELL VALIDATION
         // ==================================================
         //
-        // Anything with assetCode can NEVER have negative
-        // dwellNumber.
+        // IMPORTANT:
+        //
+        // Negative dwellNumber is now VALID.
+        //
+        // It represents AgroStore allocation.
+        //
+        // Therefore there is intentionally NO rule here
+        // rejecting:
+        //
+        //     assetCode + negative dwellNumber
         //
         // ==================================================
-
-        if (
-
-            this.assetCode !== null &&
-
-            this.assetCode !== undefined &&
-
-            this.dwellNumber !== null &&
-
-            this.dwellNumber !== undefined &&
-
-            Number(this.dwellNumber) < 0
-
-        ) {
-
-            const error =
-
-                new Error(
-
-                    "An entity with assetCode cannot have a negative dwellNumber."
-
-                );
-
-
-            error.status = 400;
-
-
-            return next(error);
-
-        }
 
 
         // ==================================================
@@ -2287,20 +2265,25 @@ dairySchema.pre(
 
 
         // ==================================================
-        // FINAL ASSET/DWELL SAFETY
+        // FINAL DWELL SAFETY
+        // ==================================================
+        //
+        // Only ensure it remains an integer.
+        //
+        // Negative values are intentionally permitted because
+        // they represent AgroStore allocation.
+        //
         // ==================================================
 
         if (
-
-            this.assetCode !== null &&
-
-            this.assetCode !== undefined &&
 
             this.dwellNumber !== null &&
 
             this.dwellNumber !== undefined &&
 
-            Number(this.dwellNumber) < 0
+            !Number.isInteger(
+                this.dwellNumber
+            )
 
         ) {
 
@@ -2308,7 +2291,7 @@ dairySchema.pre(
 
                 new Error(
 
-                    "Anything with assetCode can never have a negative dwellNumber."
+                    "dwellNumber must be a whole number or null."
 
                 );
 
@@ -2380,10 +2363,13 @@ dairySchema.index({
 
 
 // ==========================================================
-// DWELLING
+// DWELLING / ALLOCATION
 // ==========================================================
 //
-// Used to find everything occupying a room.
+// Covers BOTH:
+//
+//     normal rooms
+//     AgroStores
 //
 // ==========================================================
 
@@ -2400,8 +2386,16 @@ dairySchema.index({
 // FARM + DWELLING
 // ==========================================================
 //
-// Very useful when retrieving all entities belonging to
-// a farm that occupy a particular room.
+// This is particularly important now because it retrieves
+// both:
+//
+//     farm room contents
+//     farm AgroStore contents
+//
+// Example:
+//
+//     assetCode = -1
+//     dwellNumber = -2
 //
 // ==========================================================
 
@@ -2431,12 +2425,6 @@ dairySchema.index({
 
 // ==========================================================
 // CODE UNIQUENESS
-// ==========================================================
-//
-// Numeric codes must be unique.
-//
-// Structures/facilities use code = null and are excluded.
-//
 // ==========================================================
 
 dairySchema.index(
@@ -2510,10 +2498,13 @@ dairySchema.statics.getFarmAssets =
 // STATIC: GET FARM DWELLINGS
 // ==========================================================
 //
-// Returns all animals/assets belonging to a farm that
-// occupy normal rooms.
+// Returns everything belonging to the farm that has been
+// allocated somewhere.
 //
-// Negative dwellings are excluded.
+// This includes:
+//
+//     normal rooms
+//     AgroStores
 //
 // ==========================================================
 
@@ -2550,7 +2541,7 @@ dairySchema.statics.getFarmDwellings =
 
             dwellNumber: {
 
-                $gte: 0
+                $ne: null
 
             }
 
@@ -2563,15 +2554,128 @@ dairySchema.statics.getFarmDwellings =
 // STATIC: GET FARM ROOM CONTENT
 // ==========================================================
 //
-// Returns everything in a particular room.
+// Returns everything in a particular allocation number.
 //
-// Example:
+// Positive/zero:
+//     normal room
 //
-//     Dairy.getFarmRoomContent(-1, 1)
+// Negative:
+//     AgroStore
 //
 // ==========================================================
 
 dairySchema.statics.getFarmRoomContent =
+
+    function (
+        farmCode,
+        roomNumber
+    ) {
+
+        const farm =
+            Number(farmCode);
+
+        const room =
+            Number(roomNumber);
+
+
+        if (
+
+            !Number.isInteger(farm) ||
+
+            farm >= 0 ||
+
+            !Number.isInteger(room)
+
+        ) {
+
+            return this.find({
+
+                _id: null
+
+            });
+
+        }
+
+
+        return this.find({
+
+            assetCode: farm,
+
+            dwellNumber: room
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET AGROSTORE CONTENT
+// ==========================================================
+//
+// Returns everything allocated to a specific AgroStore.
+//
+// Example:
+//
+//     Dairy.getAgroStoreContent(-1, -2)
+//
+// Means:
+//
+//     Farm -1
+//     AgroStore -2
+//
+// ==========================================================
+
+dairySchema.statics.getAgroStoreContent =
+
+    function (
+        farmCode,
+        agroStoreNumber
+    ) {
+
+        const farm =
+            Number(farmCode);
+
+        const store =
+            Number(agroStoreNumber);
+
+
+        if (
+
+            !Number.isInteger(farm) ||
+
+            farm >= 0 ||
+
+            !Number.isInteger(store) ||
+
+            store >= 0
+
+        ) {
+
+            return this.find({
+
+                _id: null
+
+            });
+
+        }
+
+
+        return this.find({
+
+            assetCode: farm,
+
+            dwellNumber: store
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET FARM NORMAL ROOM CONTENT
+// ==========================================================
+
+dairySchema.statics.getFarmNormalRoomContent =
 
     function (
         farmCode,
@@ -2621,10 +2725,11 @@ dairySchema.statics.getFarmRoomContent =
 // STATIC: GET ACTIVE ROOM NUMBERS
 // ==========================================================
 //
-// Returns the normal room numbers currently occupied by
+// Returns normal room numbers currently occupied by
 // entities belonging to the farm.
 //
-// A room exists only when something has that dwellNumber.
+// Negative numbers are excluded because those represent
+// AgroStores.
 //
 // ==========================================================
 
@@ -2703,6 +2808,147 @@ dairySchema.statics.getActiveRoomNumbers =
                 item._id
 
         );
+
+    };
+
+
+// ==========================================================
+// STATIC: GET ACTIVE AGROSTORE NUMBERS
+// ==========================================================
+//
+// Returns negative dwellNumbers currently occupied by
+// AgroStore contents.
+//
+// ==========================================================
+
+dairySchema.statics.getActiveAgroStoreNumbers =
+
+    async function (
+        farmCode
+    ) {
+
+        const farm =
+            Number(farmCode);
+
+
+        if (
+
+            !Number.isInteger(farm) ||
+
+            farm >= 0
+
+        ) {
+
+            return [];
+
+        }
+
+
+        const result =
+
+            await this.aggregate([
+
+                {
+
+                    $match: {
+
+                        assetCode: farm,
+
+                        dwellNumber: {
+
+                            $lt: 0
+
+                        },
+
+                        status: "active"
+
+                    }
+
+                },
+
+                {
+
+                    $group: {
+
+                        _id:
+                            "$dwellNumber"
+
+                    }
+
+                },
+
+                {
+
+                    $sort: {
+
+                        _id: 1
+
+                    }
+
+                }
+
+            ]);
+
+
+        return result.map(
+
+            item =>
+                item._id
+
+        );
+
+    };
+
+
+// ==========================================================
+// STATIC: GET FARM AGROSTORE CONTENT
+// ==========================================================
+//
+// Returns every entity allocated to an AgroStore belonging
+// to the specified farm.
+//
+// ==========================================================
+
+dairySchema.statics.getFarmAgroStoreContents =
+
+    function (
+        farmCode
+    ) {
+
+        const farm =
+            Number(farmCode);
+
+
+        if (
+
+            !Number.isInteger(farm) ||
+
+            farm >= 0
+
+        ) {
+
+            return this.find({
+
+                _id: null
+
+            });
+
+        }
+
+
+        return this.find({
+
+            assetCode: farm,
+
+            dwellNumber: {
+
+                $lt: 0
+
+            },
+
+            status: "active"
+
+        });
 
     };
 
