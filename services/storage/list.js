@@ -1,14 +1,18 @@
 // ==========================================================
 // services/storage/list.js
-// STORAGE LIST SERVICE
+// STORAGE LIST / READ SERVICE
 // ==========================================================
 //
-// HANDLES:
+// PURPOSE
+// ----------------------------------------------------------
+//
+// Handles reading storage facilities belonging to ONE
+// parent Dairy Farm.
+//
+// FUNCTIONS:
 //
 //     normalizeType()
-//     validateDairyId()
 //     getParentDairy()
-//     sortStorage()
 //     getStorage()
 //     getAllStorage()
 //     getRooms()
@@ -232,6 +236,12 @@ async function getParentDairy(
     // ======================================================
     // FARM CODE MUST BE NEGATIVE INTEGER
     // ======================================================
+    //
+    // Your Dairy model convention:
+    //
+    //     negative code = Dairy Farm
+    //
+    // ======================================================
 
     if (
         !Number.isInteger(
@@ -282,7 +292,7 @@ async function getParentDairy(
 //      2
 //      3
 //
-// Numeric ascending:
+// Numeric ascending order:
 //
 //     -3
 //     -2
@@ -312,6 +322,24 @@ function sortStorage(
 
 // ==========================================================
 // GET STORAGE
+// ==========================================================
+//
+// INPUT:
+//
+//     {
+//         dairyId,
+//         type
+//     }
+//
+// RETURNS:
+//
+//     {
+//         dairy,
+//         farmCode,
+//         type,
+//         storage
+//     }
+//
 // ==========================================================
 
 async function getStorage(
@@ -497,12 +525,15 @@ async function getAgroStores(
 // GET ONE STORAGE FACILITY
 // ==========================================================
 //
-// Both:
+// INPUT:
 //
 //     dairyId
 //     roomNumber
 //
-// are required.
+// BOTH are required.
+//
+// This prevents a storage facility belonging to another
+// Dairy Farm from being returned.
 //
 // ==========================================================
 
@@ -623,11 +654,7 @@ module.exports = {
 
     normalizeType,
 
-    validateDairyId,
-
     getParentDairy,
-
-    sortStorage,
 
     getStorage,
 
