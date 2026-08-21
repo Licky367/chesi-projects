@@ -23,6 +23,12 @@ PAGE STRUCTURE:
 
 IMPORTANT:
     Backend routes and field names are preserved.
+
+URL CONTRACT:
+    Storage contents item page:
+
+        /storage/<%= dairy._id %>/contents/<%= item._id %>
+
 ==============================================================
 */
 
@@ -83,7 +89,6 @@ const currentTab =
     align-items:center;
     justify-content:space-between;
     gap:18px;
-
     margin-bottom:18px;
 }
 
@@ -93,9 +98,7 @@ const currentTab =
 
 .storage-header-eyebrow{
     margin:0 0 5px;
-
     color:#789080;
-
     font-size:10px;
     font-weight:800;
     letter-spacing:.11em;
@@ -104,9 +107,7 @@ const currentTab =
 
 .storage-page-title{
     margin:0;
-
     color:#1d2d23;
-
     font-size:27px;
     line-height:1.15;
     font-weight:800;
@@ -115,37 +116,26 @@ const currentTab =
 
 .storage-page-description{
     max-width:620px;
-
     margin:7px 0 0;
-
     color:#77837c;
-
     font-size:13px;
     line-height:1.55;
 }
 
 .back-storage{
     flex:none;
-
     display:inline-flex;
     align-items:center;
     gap:7px;
-
     min-height:38px;
     padding:0 13px;
-
     border:1px solid #dfe7e1;
     border-radius:10px;
-
     background:#fff;
-
     color:#31533d;
-
     font-size:12px;
     font-weight:750;
-
     text-decoration:none;
-
     transition:.18s ease;
 }
 
@@ -163,12 +153,9 @@ const currentTab =
     display:flex;
     align-items:center;
     gap:9px;
-
     margin:0 0 16px;
     padding:11px 13px;
-
     border-radius:10px;
-
     font-size:12px;
     font-weight:650;
 }
@@ -193,36 +180,24 @@ const currentTab =
 .storage-tabs{
     display:flex;
     align-items:center;
-
     width:100%;
-
     padding:4px;
-
     margin-bottom:20px;
-
     background:#f1f4f2;
-
     border:1px solid #e2e8e3;
     border-radius:12px;
 }
 
 .storage-tab{
     flex:1;
-
     min-height:40px;
-
     border:0;
     border-radius:9px;
-
     background:transparent;
-
     color:#758078;
-
     font-size:12px;
     font-weight:800;
-
     cursor:pointer;
-
     transition:.18s ease;
 }
 
@@ -232,9 +207,7 @@ const currentTab =
 
 .storage-tab.active{
     background:#fff;
-
     color:#245d38;
-
     box-shadow:
         0 2px 7px rgba(27,53,36,.08);
 }
@@ -262,15 +235,12 @@ const currentTab =
     align-items:center;
     justify-content:space-between;
     gap:12px;
-
     margin-bottom:13px;
 }
 
 .contents-heading{
     margin:0;
-
     color:#24372a;
-
     font-size:17px;
     font-weight:800;
     letter-spacing:-.02em;
@@ -278,7 +248,6 @@ const currentTab =
 
 .contents-count{
     color:#87928b;
-
     font-size:11px;
     font-weight:650;
 }
@@ -299,12 +268,9 @@ const currentTab =
     align-items:center;
     justify-content:space-between;
     gap:12px;
-
     margin-bottom:12px;
     padding:10px 12px;
-
     background:#fff;
-
     border:1px solid #e2e9e4;
     border-radius:12px;
 }
@@ -320,49 +286,35 @@ const currentTab =
     display:flex;
     align-items:center;
     gap:7px;
-
     color:#425248;
-
     font-size:11px;
     font-weight:750;
-
     cursor:pointer;
 }
 
 .select-all-wrapper input{
     width:16px;
     height:16px;
-
     margin:0;
-
     accent-color:#2d7a47;
 }
 
 .selection-count{
     padding:4px 8px;
-
     border-radius:7px;
-
     background:#f3f6f3;
-
     color:#7a867f;
-
     font-size:10px;
     font-weight:700;
 }
 
 .storage-action-button{
     min-height:34px;
-
     padding:0 12px;
-
     border-radius:8px;
-
     font-size:11px;
     font-weight:800;
-
     cursor:pointer;
-
     transition:.16s ease;
 }
 
@@ -377,27 +329,20 @@ const currentTab =
 
 .reshuffle-button{
     border:1px solid #d5e5d9;
-
     background:#f2f8f3;
-
     color:#2d6840;
 }
 
 .omit-button{
     border:1px solid #eedbd7;
-
     background:#fff6f4;
-
     color:#9d493e;
 }
 
 .add-button{
     border:1px solid #286e41;
-
     background:#2d7b48;
-
     color:#fff;
-
     box-shadow:0 3px 8px rgba(45,123,72,.13);
 }
 
@@ -408,12 +353,9 @@ const currentTab =
 
 .reshuffle-panel{
     display:none;
-
     margin:0 0 13px;
     padding:15px;
-
     background:#f7faf8;
-
     border:1px solid #dbe8de;
     border-radius:13px;
 }
@@ -424,18 +366,14 @@ const currentTab =
 
 .reshuffle-heading{
     margin:0;
-
     color:#294333;
-
     font-size:14px;
     font-weight:800;
 }
 
 .reshuffle-description{
     margin:5px 0 13px;
-
     color:#7a867f;
-
     font-size:11px;
     line-height:1.5;
 }
@@ -452,11 +390,8 @@ const currentTab =
 
 .reshuffle-select-group label{
     display:block;
-
     margin-bottom:5px;
-
     color:#68766e;
-
     font-size:10px;
     font-weight:800;
 }
@@ -464,18 +399,12 @@ const currentTab =
 .reshuffle-select{
     width:100%;
     height:37px;
-
     padding:0 10px;
-
     border:1px solid #d7e2da;
     border-radius:8px;
-
     background:#fff;
-
     color:#33483a;
-
     font-size:11px;
-
     outline:none;
 }
 
@@ -502,21 +431,14 @@ const currentTab =
 .content-card{
     display:grid;
     grid-template-columns:auto 44px minmax(0,1fr);
-
     align-items:start;
-
     gap:12px;
-
     padding:14px;
-
     background:#fff;
-
     border:1px solid #e3e9e5;
     border-radius:14px;
-
     box-shadow:
         0 2px 9px rgba(24,45,31,.025);
-
     transition:
         border-color .16s ease,
         box-shadow .16s ease,
@@ -525,7 +447,6 @@ const currentTab =
 
 .content-card:hover{
     border-color:#d2dfd5;
-
     box-shadow:
         0 5px 16px rgba(24,45,31,.05);
 }
@@ -542,24 +463,18 @@ const currentTab =
 .content-checkbox input{
     width:16px;
     height:16px;
-
     margin:0;
-
     accent-color:#2d7a47;
 }
 
 .content-icon{
     width:44px;
     height:44px;
-
     display:flex;
     align-items:center;
     justify-content:center;
-
     border-radius:12px;
-
     background:#f1f6f2;
-
     font-size:21px;
 }
 
@@ -576,9 +491,7 @@ const currentTab =
 
 .content-title-row h3{
     margin:0;
-
     color:#25382b;
-
     font-size:15px;
     line-height:1.3;
     font-weight:800;
@@ -587,13 +500,9 @@ const currentTab =
 .content-type{
     display:inline-flex;
     align-items:center;
-
     min-height:20px;
-
     padding:0 7px;
-
     border-radius:999px;
-
     font-size:8px;
     font-weight:850;
     letter-spacing:.07em;
@@ -625,13 +534,11 @@ const currentTab =
     align-items:center;
     flex-wrap:wrap;
     gap:5px 13px;
-
     margin-top:8px;
 }
 
 .content-meta-item{
     color:#7b8780;
-
     font-size:10px;
 }
 
@@ -653,11 +560,8 @@ const currentTab =
     display:flex;
     flex-wrap:wrap;
     gap:5px 13px;
-
     margin-top:8px;
-
     color:#7c8881;
-
     font-size:10px;
 }
 
@@ -672,9 +576,7 @@ const currentTab =
 
 .content-description{
     margin:9px 0 0;
-
     color:#7b8780;
-
     font-size:10px;
     line-height:1.5;
 }
@@ -687,9 +589,7 @@ const currentTab =
 .feed-quantity-section{
     margin-top:13px;
     padding:13px;
-
     background:#f8fbf8;
-
     border:1px solid #dfeae1;
     border-radius:11px;
 }
@@ -699,13 +599,11 @@ const currentTab =
     align-items:center;
     justify-content:space-between;
     gap:10px;
-
     margin-bottom:10px;
 }
 
 .feed-quantity-title{
     color:#68776e;
-
     font-size:9px;
     font-weight:850;
     letter-spacing:.08em;
@@ -714,16 +612,13 @@ const currentTab =
 
 .feed-current-quantity{
     color:#276b3e;
-
     font-size:17px;
     font-weight:850;
 }
 
 .feed-unit{
     margin-left:3px;
-
     color:#7b8780;
-
     font-size:10px;
     font-weight:700;
 }
@@ -731,19 +626,14 @@ const currentTab =
 .quantity-form{
     display:grid;
     grid-template-columns:minmax(0,1fr) 105px auto;
-
     align-items:end;
-
     gap:7px;
 }
 
 .quantity-field label{
     display:block;
-
     margin-bottom:5px;
-
     color:#748078;
-
     font-size:9px;
     font-weight:750;
 }
@@ -752,20 +642,13 @@ const currentTab =
 .quantity-unit{
     width:100%;
     height:36px;
-
     box-sizing:border-box;
-
     padding:0 9px;
-
     border:1px solid #d6e2d9;
     border-radius:8px;
-
     background:#fff;
-
     color:#304438;
-
     font-size:11px;
-
     outline:none;
 }
 
@@ -777,27 +660,19 @@ const currentTab =
 
 .quantity-save-button{
     height:36px;
-
     padding:0 14px;
-
     border:0;
     border-radius:8px;
-
     background:#2d7b48;
-
     color:#fff;
-
     font-size:10px;
     font-weight:800;
-
     cursor:pointer;
 }
 
 .quantity-help{
     margin:8px 0 0;
-
     color:#8a958e;
-
     font-size:9px;
     line-height:1.45;
 }
@@ -809,11 +684,8 @@ const currentTab =
 
 .empty-contents{
     padding:45px 20px;
-
     text-align:center;
-
     background:#fafcfa;
-
     border:1px dashed #dce5df;
     border-radius:15px;
 }
@@ -821,36 +693,26 @@ const currentTab =
 .empty-icon{
     width:48px;
     height:48px;
-
     display:flex;
     align-items:center;
     justify-content:center;
-
     margin:0 auto 11px;
-
     border-radius:14px;
-
     background:#f0f6f1;
-
     font-size:22px;
 }
 
 .empty-contents h3{
     margin:0;
-
     color:#35473b;
-
     font-size:15px;
     font-weight:800;
 }
 
 .empty-contents p{
     max-width:430px;
-
     margin:6px auto 0;
-
     color:#849088;
-
     font-size:11px;
     line-height:1.55;
 }
@@ -866,18 +728,14 @@ const currentTab =
 
 .add-introduction h3{
     margin:0;
-
     color:#26392c;
-
     font-size:17px;
     font-weight:800;
 }
 
 .add-introduction p{
     margin:5px 0 0;
-
     color:#7b8780;
-
     font-size:11px;
     line-height:1.5;
 }
@@ -891,18 +749,12 @@ const currentTab =
 .add-card{
     display:grid;
     grid-template-columns:auto 42px minmax(0,1fr);
-
     align-items:start;
-
     gap:11px;
-
     padding:13px;
-
     background:#fff;
-
     border:1px solid #e3e9e5;
     border-radius:13px;
-
     transition:
         border-color .16s ease,
         background .16s ease;
@@ -924,24 +776,18 @@ const currentTab =
 .add-checkbox input{
     width:16px;
     height:16px;
-
     margin:0;
-
     accent-color:#2d7a47;
 }
 
 .add-icon{
     width:42px;
     height:42px;
-
     display:flex;
     align-items:center;
     justify-content:center;
-
     border-radius:11px;
-
     background:#f2f6f3;
-
     font-size:20px;
 }
 
@@ -958,9 +804,7 @@ const currentTab =
 
 .add-title h3{
     margin:0;
-
     color:#283a2e;
-
     font-size:14px;
     font-weight:800;
 }
@@ -969,13 +813,11 @@ const currentTab =
     display:flex;
     flex-wrap:wrap;
     gap:5px 13px;
-
     margin-top:7px;
 }
 
 .add-meta span{
     color:#7d8982;
-
     font-size:10px;
 }
 
@@ -1040,7 +882,6 @@ const currentTab =
     .content-card{
         grid-template-columns:auto 40px minmax(0,1fr);
         gap:9px;
-
         padding:12px;
     }
 
@@ -1214,10 +1055,8 @@ const currentTab =
 
 
     <!-- ==========================================================
-         ==========================================================
          VIEW CONTENTS TAB
-         ==========================================================
-         ========================================================== -->
+    ========================================================== -->
 
     <section
         id="storageViewTab"
@@ -1263,10 +1102,6 @@ const currentTab =
                     action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/reshuffle"
                 >
 
-
-                    <!-- ==========================================
-                         MANAGEMENT BAR
-                    =========================================== -->
 
                     <div class="contents-management">
 
@@ -1322,10 +1157,6 @@ const currentTab =
                     </div>
 
 
-
-                    <!-- ==========================================
-                         RESHUFFLE PANEL
-                    =========================================== -->
 
                     <div
                         id="reshufflePanel"
@@ -1426,10 +1257,6 @@ const currentTab =
 
 
 
-                    <!-- ==========================================
-                         CONTENT LIST
-                    =========================================== -->
-
                     <div class="contents-list">
 
                         <% items.forEach(function(item) { %>
@@ -1526,8 +1353,10 @@ const currentTab =
                                         </span>
 
 
-                                        <% if (item.quantity !== null &&
-                                               item.quantity !== undefined) { %>
+                                        <% if (
+                                            item.quantity !== null &&
+                                            item.quantity !== undefined
+                                        ) { %>
 
                                             <span class="content-meta-item">
 
@@ -1557,8 +1386,10 @@ const currentTab =
                                         <% } %>
 
 
-                                        <% if (item.currentWorth !== null &&
-                                               item.currentWorth !== undefined) { %>
+                                        <% if (
+                                            item.currentWorth !== null &&
+                                            item.currentWorth !== undefined
+                                        ) { %>
 
                                             <span class="content-meta-item">
 
@@ -1623,10 +1454,6 @@ const currentTab =
                 </form>
 
 
-
-                <!-- ==================================================
-                     OMIT FORM
-                =================================================== -->
 
                 <form
                     id="omitForm"
@@ -1702,10 +1529,6 @@ const currentTab =
                                 </div>
 
 
-
-                                <!-- ======================================
-                                     QUANTITY
-                                ======================================= -->
 
                                 <div class="feed-quantity-section">
 
@@ -1817,7 +1640,7 @@ const currentTab =
                                                 <%= currentUnit === "bags"
                                                     ? "selected"
                                                     : "" %>
-                                            >
+                                                >
                                                 bags
                                             </option>
 
@@ -1894,10 +1717,6 @@ const currentTab =
         <% } else { %>
 
 
-            <!-- ==================================================
-                 EMPTY CONTENTS
-            =================================================== -->
-
             <div class="empty-contents">
 
                 <div class="empty-icon">
@@ -1945,10 +1764,8 @@ const currentTab =
 
 
     <!-- ==========================================================
-         ==========================================================
          ADD ITEMS TAB
-         ==========================================================
-         ========================================================== -->
+    ========================================================== -->
 
     <section
         id="storageAddTab"
@@ -1988,10 +1805,6 @@ const currentTab =
             availableItems.length > 0
         ) { %>
 
-
-            <!-- ==================================================
-                 ADD MANAGEMENT
-            =================================================== -->
 
             <div class="add-management">
 
@@ -2038,10 +1851,6 @@ const currentTab =
             </div>
 
 
-
-            <!-- ==================================================
-                 ADD FORM
-            =================================================== -->
 
             <form
                 method="POST"
@@ -2197,10 +2006,6 @@ const currentTab =
         <% } else { %>
 
 
-            <!-- ==================================================
-                 NOTHING AVAILABLE
-            =================================================== -->
-
             <div class="empty-contents">
 
                 <div class="empty-icon">
@@ -2309,11 +2114,6 @@ document.addEventListener(
                             }
                         );
 
-
-                        /*
-                         * Keep the browser URL aligned with the
-                         * selected tab without reloading the page.
-                         */
 
                         try {
 
@@ -2751,12 +2551,6 @@ document.addEventListener(
 
                     }
 
-
-                    /*
-                     * The reshuffle form already contains the
-                     * selected checkboxes, so the omit action
-                     * gets its own hidden form.
-                     */
 
                     omitInputs.innerHTML =
                         "";
