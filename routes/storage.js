@@ -8,6 +8,7 @@
 //     /storage/:id
 //     /storage/:id/add
 //     /storage/:dairyId/contents/:storageId
+//     /storage/:dairyId/contents/:storageId/add
 //
 // POST
 //
@@ -112,6 +113,10 @@ const storageController =
 // STORAGE LIST
 // ==========================================================
 //
+// URL:
+//
+//     GET /storage/:id
+//
 // Parent Dairy:
 //
 //     req.params.id
@@ -132,6 +137,10 @@ router.get(
 // ==========================================================
 // ADD STORAGE FORM
 // ==========================================================
+//
+// URL:
+//
+//     GET /storage/:id/add
 //
 // Parent Dairy:
 //
@@ -156,6 +165,10 @@ router.get(
 // CREATE STORAGE
 // ==========================================================
 //
+// URL:
+//
+//     POST /storage/:id/add
+//
 // User provides:
 //
 //     name
@@ -172,7 +185,7 @@ router.get(
 // The service determines:
 //
 //     recordType = "structure"
-//     assetCode = parent Dairy.code
+//     assetCode
 //     roomNumber
 //     status
 //
@@ -190,6 +203,10 @@ router.post(
 // ==========================================================
 // STORAGE CONTENTS
 // ==========================================================
+//
+// URL:
+//
+//     GET /storage/:dairyId/contents/:storageId
 //
 // :dairyId
 //     MongoDB _id of the parent Dairy Farm.
@@ -209,8 +226,12 @@ router.get(
 
 
 // ==========================================================
-// ADD ITEMS TO STORAGE
+// ADD ITEMS TO EXISTING STORAGE
 // ==========================================================
+//
+// URL:
+//
+//     POST /storage/:dairyId/contents/:storageId/add
 //
 // Applies to storage facilities according to the service
 // rules.
@@ -230,8 +251,82 @@ router.post(
 
 
 // ==========================================================
+// ADD NEW ITEM DIRECTLY TO STORAGE
+// ==========================================================
+//
+// GET
+//
+//     /storage/:dairyId/contents/:storageId/add
+//
+// The controller:
+//
+//     1. Resolves the parent Dairy.
+//     2. Resolves the selected storage.
+//     3. Determines the storage type.
+//     4. Loads any data required by the form.
+//     5. Renders the direct-add-storage-item view.
+//
+// The browser does NOT select the destination storage.
+//
+// The destination is determined by:
+//
+//     dairyId
+//     storageId
+//
+// ==========================================================
+
+router.get(
+
+    "/:dairyId/contents/:storageId/add",
+
+    storageController.getAddItemPage
+
+);
+
+
+// ==========================================================
+// CREATE NEW ITEM DIRECTLY IN STORAGE
+// ==========================================================
+//
+// POST
+//
+//     /storage/:dairyId/contents/:storageId/add
+//
+// The controller passes the submitted item data to the
+// service.
+//
+// The service remains responsible for:
+//
+//     - validating the parent Dairy
+//     - validating the storage
+//     - validating storage ownership
+//     - validating storage type
+//     - determining recordType
+//     - determining assetCode
+//     - determining dwellNumber / roomNumber
+//     - validating AgroStore quantity
+//     - validating allowed record types
+//     - creating the item
+//     - preventing invalid assignments
+//
+// ==========================================================
+
+router.post(
+
+    "/:dairyId/contents/:storageId/add",
+
+    storageController.postAddItem
+
+);
+
+
+// ==========================================================
 // OMIT ITEMS FROM STORAGE
 // ==========================================================
+//
+// URL:
+//
+//     POST /storage/:dairyId/contents/:storageId/omit
 //
 // NORMAL ROOM STORAGE:
 //
@@ -261,6 +356,10 @@ router.post(
 // RESHUFFLE ITEMS
 // ==========================================================
 //
+// URL:
+//
+//     POST /storage/:dairyId/contents/:storageId/reshuffle
+//
 // NORMAL ROOM STORAGE:
 //
 //     Reshuffling is allowed.
@@ -286,16 +385,15 @@ router.post(
 // UPDATE STORAGE QUANTITY
 // ==========================================================
 //
+// URL:
+//
+//     POST /storage/:dairyId/contents/:storageId/quantity
+//
 // Primarily used for:
 //
 //     type = "agroStore"
 //
-// Request:
-//
-//     POST
-//     /storage/:dairyId/contents/:storageId/quantity
-//
-// Body:
+// Request body:
 //
 //     itemId
 //     quantity
@@ -320,20 +418,6 @@ router.post(
 
     storageController.updateQuantity
 
-);
-// ==========================================================
-// ADD NEW ITEM DIRECTLY TO STORAGE
-// ==========================================================
-
-router.get(
-    "/storage/:dairyId/contents/:storageId/add",
-    storageController.getAddItemPage
-);
-
-
-router.post(
-    "/storage/:dairyId/contents/:storageId/add",
-    storageController.postAddItem
 );
 
 
