@@ -3,41 +3,37 @@
 // ADD ITEM DIRECTLY TO AN EXISTING STORAGE FACILITY
 // ==========================================================
 //
-// This service is intentionally an adapter around the existing
-// storage service.
+// URL:
 //
-// STORAGE TYPE CONTRACT:
+//     /storage/:dairyId/contents/:storageId/add/:storageType
 //
-//     The storage type is supplied explicitly by the route.
+// STORAGE TYPE:
 //
 //     "room"
 //     "agroStore"
 //
 // IMPORTANT:
 //
-//     "agroStore" is the exact database/application value.
+//     storageType comes explicitly from the URL.
 //
-//     Do NOT change it to:
-//         "agrostore"
+//     The service does NOT determine storageType by guessing
+//     from another database field.
+//
+//     "agroStore" is case-sensitive.
 //
 //     Do NOT use:
 //         toLowerCase()
 //
-// URL CONTRACT:
-//
-//     /storage/:dairyId/contents/:storageId/add/:storageType
-//
-// Example:
-//
-//     /storage/123/contents/456/add/room
-//
-//     /storage/123/contents/456/add/agroStore
-//
 // ==========================================================
+
+
+const Dairy =
+    require("../../models/dairy");
 
 
 const storageListService =
     require("./list");
+
 
 const storageContentsService =
     require("./contents");
@@ -122,20 +118,14 @@ function numberOrUndefined(value) {
 ============================================================ */
 
 /*
-IMPORTANT:
-
-The storage type comes from the URL.
-
 Supported values are exactly:
 
-    "room"
-    "agroStore"
+    room
+    agroStore
 
-We do NOT determine the type from:
+The value comes from the URL.
 
-    storage.type
-
-We do NOT convert the value to lowercase.
+Do not convert it to lowercase.
 */
 
 function validateStorageType(
@@ -173,42 +163,33 @@ function validateStorageType(
    GET DAIRY BREEDS
 ============================================================ */
 
-function getBreeds(dairy) {
+/*
+The breed list does NOT come from the Dairy document.
 
-    if (
-        Array.isArray(
-            dairy?.dairyBreeds
-        )
-    ) {
+The Dairy schema defines the authoritative breed list:
 
-        return dairy.dairyBreeds;
+    Dairy.getDairyBreeds()
 
-    }
+Therefore:
 
+    dairy.dairyBreeds
+    dairy.breeds
+    dairy.breed
 
-    if (
-        Array.isArray(
-            dairy?.breeds
-        )
-    ) {
+must NOT be used.
 
-        return dairy.breeds;
+For an animal record:
 
-    }
+    type
 
+contains the selected breed.
 
-    if (
-        Array.isArray(
-            dairy?.breed
-        )
-    ) {
+The list of available breeds comes from the model.
+*/
 
-        return dairy.breed;
+function getBreeds() {
 
-    }
-
-
-    return [];
+    return Dairy.getDairyBreeds();
 
 }
 
@@ -222,10 +203,10 @@ function getBreeds(dairy) {
 Allows this adapter to work with the existing storage service
 without assuming one exact function signature.
 
-Only genuine argument/signature mismatches cause the next
+Only genuine argument/signature mismatches cause another
 candidate signature to be attempted.
 
-Application/database errors are allowed to propagate.
+Application/database errors propagate normally.
 */
 
 async function callService(
@@ -263,12 +244,6 @@ async function callService(
             lastError =
                 error;
 
-
-            /*
-            ----------------------------------------------------
-            Only fall through for argument/signature mismatches.
-            ----------------------------------------------------
-            */
 
             const message =
                 String(
@@ -394,19 +369,11 @@ async function resolveStorage(
 ============================================================ */
 
 /*
-The storage type is now REQUIRED as an explicit argument.
+Returns everything required by the add-new page.
 
-The service does NOT inspect:
+The breed list comes directly from the Dairy model.
 
-    storage.type
-
-The caller must supply:
-
-    "room"
-
-or:
-
-    "agroStore"
+The storage type comes directly from the URL.
 */
 
 async function getAddNewContext({
@@ -417,7 +384,7 @@ async function getAddNewContext({
 
     /*
     ------------------------------------------------------------
-    Required identifiers
+    Validate identifiers
     ------------------------------------------------------------
     */
 
@@ -509,7 +476,7 @@ async function getAddNewContext({
 
     /*
     ------------------------------------------------------------
-    Return complete context
+    Return complete add-new context
     ------------------------------------------------------------
     */
 
@@ -523,7 +490,7 @@ async function getAddNewContext({
             validatedStorageType,
 
         dairyBreeds:
-            getBreeds(dairy)
+            getBreeds()
 
     };
 
@@ -540,10 +507,13 @@ function validateAndNormalize({
     storageType
 }) {
 
-    const data =
-        {
-            ...body
-        };
+    const data = {
+
+        ...(
+            body || {}
+        )
+
+    };
 
 
     /*
@@ -606,7 +576,7 @@ function validateAndNormalize({
 
 
     /* ========================================================
-       BUYING PRICE VALIDATION
+       BUYING PRICE
     ======================================================== */
 
     if (
@@ -622,7 +592,7 @@ function validateAndNormalize({
 
 
     /* ========================================================
-       CURRENT WORTH VALIDATION
+       CURRENT WORTH
     ======================================================== */
 
     if (
@@ -638,7 +608,7 @@ function validateAndNormalize({
 
 
     /* ========================================================
-       MASS VALIDATION
+       MASS
     ======================================================== */
 
     if (
@@ -663,7 +633,7 @@ function validateAndNormalize({
 
         /*
         --------------------------------------------------------
-        AgroStore records are feeds.
+        AgroStore additions are feed records.
         --------------------------------------------------------
         */
 
@@ -687,11 +657,23 @@ function validateAndNormalize({
             );
 
 
+        /*
+        --------------------------------------------------------
+        Unit
+        --------------------------------------------------------
+        */
+
         data.unit =
             clean(
                 data.unit
             );
 
+
+        /*
+        --------------------------------------------------------
+        Quantity validation
+        --------------------------------------------------------
+        */
 
         if (
             data.quantity === undefined ||
@@ -704,6 +686,12 @@ function validateAndNormalize({
 
         }
 
+
+        /*
+        --------------------------------------------------------
+        Unit validation
+        --------------------------------------------------------
+        */
 
         if (
             !data.unit
@@ -719,7 +707,7 @@ function validateAndNormalize({
 
 
     /* ========================================================
-       NORMAL STORAGE ROOM
+       NORMAL ROOM
     ======================================================== */
 
     if (
@@ -728,18 +716,22 @@ function validateAndNormalize({
 
         /*
         --------------------------------------------------------
-        Record type
+        Only animals and structures can be added to a room.
         --------------------------------------------------------
         */
+
+        const recordType =
+            clean(
+                data.recordType
+            );
+
 
         if (
             ![
                 "animal",
                 "structure"
             ].includes(
-                clean(
-                    data.recordType
-                )
+                recordType
             )
         ) {
 
@@ -751,9 +743,7 @@ function validateAndNormalize({
 
 
         data.recordType =
-            clean(
-                data.recordType
-            );
+            recordType;
 
 
         /* ====================================================
@@ -764,17 +754,35 @@ function validateAndNormalize({
             data.recordType === "animal"
         ) {
 
+            /*
+            ----------------------------------------------------
+            Gender
+            ----------------------------------------------------
+            */
+
             data.gender =
                 clean(
                     data.gender
                 );
 
 
+            /*
+            ----------------------------------------------------
+            Breed
+            ----------------------------------------------------
+            */
+
             data.type =
                 clean(
                     data.type
                 );
 
+
+            /*
+            ----------------------------------------------------
+            Date of Birth
+            ----------------------------------------------------
+            */
 
             data.dateOfBirth =
                 clean(
@@ -784,7 +792,7 @@ function validateAndNormalize({
 
             /*
             ----------------------------------------------------
-            Gender
+            Gender required
             ----------------------------------------------------
             */
 
@@ -801,7 +809,7 @@ function validateAndNormalize({
 
             /*
             ----------------------------------------------------
-            Date of Birth
+            Date of Birth required
             ----------------------------------------------------
             */
 
@@ -818,7 +826,7 @@ function validateAndNormalize({
 
             /*
             ----------------------------------------------------
-            Breed
+            Breed required
             ----------------------------------------------------
             */
 
@@ -832,6 +840,29 @@ function validateAndNormalize({
 
             }
 
+
+            /*
+            ----------------------------------------------------
+            Validate breed against model source of truth
+            ----------------------------------------------------
+            */
+
+            const breeds =
+                Dairy.getDairyBreeds();
+
+
+            if (
+                !breeds.includes(
+                    data.type
+                )
+            ) {
+
+                throw serviceError(
+                    "Invalid animal breed."
+                );
+
+            }
+
         }
 
 
@@ -840,15 +871,24 @@ function validateAndNormalize({
         ==================================================== */
 
         if (
-            data.recordType === "structure" &&
-            !clean(
-                data.type
-            )
+            data.recordType === "structure"
         ) {
 
-            throw serviceError(
-                "Structure type is required."
-            );
+            data.type =
+                clean(
+                    data.type
+                );
+
+
+            if (
+                !data.type
+            ) {
+
+                throw serviceError(
+                    "Structure type is required."
+                );
+
+            }
 
         }
 
@@ -876,7 +916,7 @@ async function addNewItem({
 
     /*
     ============================================================
-    VALIDATE EXPLICIT STORAGE TYPE
+    VALIDATE STORAGE TYPE
     ============================================================
     */
 
