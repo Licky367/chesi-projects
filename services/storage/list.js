@@ -3,33 +3,50 @@
 // STORAGE LIST / READ SERVICE
 // ==========================================================
 //
-// PURPOSE
-// ---------------------------------------------------------
+// SINGLE SOURCE OF TRUTH:
 //
-// Handles reading storage facilities belonging to ONE
-// parent Dairy Farm.
+//     models/dairy.js
 //
-// FUNCTIONS:
-//
-//     normalizeType()
-//     getParentDairy()
-//     getStorage()
-//     getAllStorage()
-//     getRooms()
-//     getAgroStores()
-//     getStorageFacility()
-//
-// IMPORTANT ID CONTRACT:
-//
-//     dairyId = Dairy._id
-//
-// RELATION:
+// STORAGE ARCHITECTURE:
 //
 //     Dairy._id
-//          ↓
+//         ↓
+//     parent Dairy Farm
+//         ↓
 //     Dairy.code
-//          ↓
-//     DairyStorage.farmCode
+//         ↓
+//     child structure.assetCode
+//
+// RECORD IDENTITY:
+//
+//     recordType === "structure"
+//         = structure record
+//
+// STORAGE TYPE:
+//
+//     type === "room"
+//         = normal storage room
+//
+//     type === "agroStore"
+//         = AgroStore
+//
+// DWELLING:
+//
+//     dwellNumber >= 0
+//         = normal room number
+//
+//     dwellNumber < 0
+//         = AgroStore number
+//
+// IMPORTANT:
+//
+//     recordType and type are DIFFERENT fields.
+//
+//     recordType = "structure"
+//         identifies the record category.
+//
+//     type = "room" / "agroStore"
+//         identifies the structure/storage type.
 //
 // ==========================================================
 
@@ -37,11 +54,23 @@
 const mongoose =
     require("mongoose");
 
+
 const Dairy =
     require("../../models/dairy");
 
-const DairyStorage =
-    require("../../models/dairyStorage");
+
+// ==========================================================
+// CONSTANTS
+// ==========================================================
+
+const STRUCTURE_RECORD_TYPE =
+    "structure";
+
+const ROOM_TYPE =
+    "room";
+
+const AGROSTORE_TYPE =
+    "agroStore";
 
 
 // ==========================================================
@@ -58,6 +87,12 @@ const DairyStorage =
 //
 //     all
 //
+// IMPORTANT:
+//
+// This normalizes the STORAGE `type`.
+//
+// It does NOT normalize `recordType`.
+//
 // ==========================================================
 
 function normalizeType(
@@ -72,22 +107,25 @@ function normalizeType(
 
 
     if (
-        value === "room"
+        value === ROOM_TYPE
     ) {
 
-        return "room";
+        return ROOM_TYPE;
+
     }
 
 
     if (
-        value === "agroStore"
+        value === AGROSTORE_TYPE
     ) {
 
-        return "agroStore";
+        return AGROSTORE_TYPE;
+
     }
 
 
     return "all";
+
 }
 
 
@@ -95,9 +133,17 @@ function normalizeType(
 // VALIDATE DAIRY ID
 // ==========================================================
 //
-// The route ID must always be:
+// The route ID is always:
 //
 //     Dairy._id
+//
+// Example:
+//
+//     /storage/64f.../add
+//
+// The ID is NOT:
+//
+//     Dairy.code
 //
 // ==========================================================
 
@@ -118,6 +164,7 @@ function validateDairyId(
             400;
 
         throw error;
+
     }
 
 
@@ -136,12 +183,14 @@ function validateDairyId(
             400;
 
         throw error;
+
     }
+
 }
 
 
 // ==========================================================
-// GET PARENT DAIRY
+// GET PARENT DAIRY FARM
 // ==========================================================
 //
 // INPUT:
@@ -155,6 +204,14 @@ function validateDairyId(
 //         farmCode
 //     }
 //
+// The returned `farmCode` is the parent's:
+//
+//     dairy.code
+//
+// It is then used to locate child structures through:
+//
+//     assetCode: farmCode
+//
 // ==========================================================
 
 async function getParentDairy(
@@ -162,7 +219,7 @@ async function getParentDairy(
 ) {
 
     // ======================================================
-    // VALIDATE ID
+    // VALIDATE MONGODB ID
     // ======================================================
 
     validateDairyId(
@@ -171,7 +228,7 @@ async function getParentDairy(
 
 
     // ======================================================
-    // FIND DAIRY
+    // FIND PARENT DAIRY
     // ======================================================
 
     const dairy =
@@ -199,32 +256,18 @@ async function getParentDairy(
             404;
 
         throw error;
+
     }
 
 
     // ======================================================
-    // DAIRY MUST HAVE CODE
+    // PARENT MUST BE A DAIRY FARM
     // ======================================================
-
-    if (
-        dairy.code === null ||
-        dairy.code === undefined
-    ) {
-
-        const error =
-            new Error(
-                "The selected Dairy does not have a farm code."
-            );
-
-        error.status =
-            422;
-
-        throw error;
-    }
-
-
-    // ======================================================
-    // CONVERT CODE TO NUMBER
+    //
+    // Dairy Farm identity:
+    //
+    //     code < 0
+    //
     // ======================================================
 
     const farmCode =
@@ -232,16 +275,6 @@ async function getParentDairy(
             dairy.code
         );
 
-
-    // ======================================================
-    // FARM CODE MUST BE NEGATIVE INTEGER
-    // ======================================================
-    //
-    // Your Dairy model convention:
-    //
-    //     negative code = Dairy Farm
-    //
-    // ======================================================
 
     if (
         !Number.isInteger(
@@ -259,6 +292,7 @@ async function getParentDairy(
             422;
 
         throw error;
+
     }
 
 
@@ -273,6 +307,31 @@ async function getParentDairy(
         farmCode
 
     };
+
+}
+
+
+// ==========================================================
+// STORAGE RECORD FILTER
+// ==========================================================
+//
+// Every storage facility must:
+//
+//     recordType === "structure"
+//
+// The storage `type` is handled separately.
+//
+// ==========================================================
+
+function getStructureFilter() {
+
+    return {
+
+        recordType:
+            STRUCTURE_RECORD_TYPE
+
+    };
+
 }
 
 
@@ -280,23 +339,29 @@ async function getParentDairy(
 // SORT STORAGE
 // ==========================================================
 //
-// AgroStores:
+// Storage is represented by:
 //
-//     -1
-//     -2
-//     -3
+//     dwellNumber
 //
-// Rooms:
+// Example:
 //
-//      1
-//      2
-//      3
+//     AgroStores:
+//         -3
+//         -2
+//         -1
+//
+//     Rooms:
+//          0
+//          1
+//          2
+//          3
 //
 // Numeric ascending order:
 //
 //     -3
 //     -2
 //     -1
+//      0
 //      1
 //      2
 //      3
@@ -308,15 +373,30 @@ function sortStorage(
 ) {
 
     return storage.sort(
-        (a, b) => {
+        (
+            a,
+            b
+        ) => {
+
+            const aNumber =
+                Number(
+                    a.dwellNumber
+                );
+
+            const bNumber =
+                Number(
+                    b.dwellNumber
+                );
+
 
             return (
-                Number(a.roomNumber) -
-                Number(b.roomNumber)
+                aNumber -
+                bNumber
             );
 
         }
     );
+
 }
 
 
@@ -376,7 +456,7 @@ async function getStorage(
 
 
     // ======================================================
-    // NORMALIZE FILTER
+    // NORMALIZE STORAGE TYPE
     // ======================================================
 
     const type =
@@ -388,10 +468,23 @@ async function getStorage(
     // ======================================================
     // BASE QUERY
     // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // recordType identifies this as a structure.
+    //
+    // type identifies which kind of storage.
+    //
+    // assetCode identifies the parent farm.
+    //
+    // ======================================================
 
     const query = {
 
-        farmCode,
+        ...getStructureFilter(),
+
+        assetCode:
+            farmCode,
 
         status:
             "active"
@@ -404,11 +497,12 @@ async function getStorage(
     // ======================================================
 
     if (
-        type === "room"
+        type === ROOM_TYPE
     ) {
 
         query.type =
-            "room";
+            ROOM_TYPE;
+
     }
 
 
@@ -417,20 +511,21 @@ async function getStorage(
     // ======================================================
 
     if (
-        type === "agroStore"
+        type === AGROSTORE_TYPE
     ) {
 
         query.type =
-            "agroStore";
+            AGROSTORE_TYPE;
+
     }
 
 
     // ======================================================
-    // FETCH
+    // FETCH FROM DAIRY MODEL
     // ======================================================
 
     const storage =
-        await DairyStorage
+        await Dairy
             .find(
                 query
             )
@@ -461,6 +556,7 @@ async function getStorage(
         storage
 
     };
+
 }
 
 
@@ -480,11 +576,21 @@ async function getAllStorage(
             "all"
 
     });
+
 }
 
 
 // ==========================================================
 // GET ROOMS
+// ==========================================================
+//
+// A room is:
+//
+//     recordType === "structure"
+//     type === "room"
+//     assetCode === farm.code
+//     dwellNumber >= 0
+//
 // ==========================================================
 
 async function getRooms(
@@ -496,14 +602,24 @@ async function getRooms(
         dairyId,
 
         type:
-            "room"
+            ROOM_TYPE
 
     });
+
 }
 
 
 // ==========================================================
 // GET AGROSTORES
+// ==========================================================
+//
+// An AgroStore is:
+//
+//     recordType === "structure"
+//     type === "agroStore"
+//     assetCode === farm.code
+//     dwellNumber < 0
+//
 // ==========================================================
 
 async function getAgroStores(
@@ -515,9 +631,10 @@ async function getAgroStores(
         dairyId,
 
         type:
-            "agroStore"
+            AGROSTORE_TYPE
 
     });
+
 }
 
 
@@ -529,6 +646,13 @@ async function getAgroStores(
 //
 //     dairyId
 //     roomNumber
+//
+// IMPORTANT:
+//
+// `dairyId` identifies the parent Dairy Farm through
+// MongoDB _id.
+//
+// `roomNumber` is actually the storage's `dwellNumber`.
 //
 // BOTH are required.
 //
@@ -559,7 +683,7 @@ async function getStorageFacility(
 
 
     // ======================================================
-    // CONVERT NUMBER
+    // CONVERT STORAGE NUMBER
     // ======================================================
 
     const number =
@@ -569,7 +693,7 @@ async function getStorageFacility(
 
 
     // ======================================================
-    // VALIDATE
+    // VALIDATE STORAGE NUMBER
     // ======================================================
 
     if (
@@ -587,20 +711,42 @@ async function getStorageFacility(
             400;
 
         throw error;
+
     }
 
 
     // ======================================================
-    // FIND STORAGE
+    // FIND STORAGE FACILITY
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // recordType === "structure"
+    //
+    // type is NOT used here because this function is capable
+    // of returning either:
+    //
+    //     room
+    //
+    // or:
+    //
+    //     agroStore
+    //
+    // The dwellNumber determines the actual storage number.
+    //
     // ======================================================
 
     const storage =
-        await DairyStorage
+        await Dairy
             .findOne({
 
-                farmCode,
+                recordType:
+                    STRUCTURE_RECORD_TYPE,
 
-                roomNumber:
+                assetCode:
+                    farmCode,
+
+                dwellNumber:
                     number,
 
                 status:
@@ -627,6 +773,7 @@ async function getStorageFacility(
             404;
 
         throw error;
+
     }
 
 
@@ -643,6 +790,7 @@ async function getStorageFacility(
         storage
 
     };
+
 }
 
 
