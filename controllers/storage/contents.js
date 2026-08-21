@@ -5,8 +5,8 @@
 //
 // PURPOSE:
 //
-//     Display and manage everything allocated inside a
-//     Room or AgroStore.
+//     Display and manage everything allocated inside an
+//     existing Room or AgroStore.
 //
 // PAGE URL:
 //
@@ -26,14 +26,16 @@
 //
 //     It is NOT used as the storage contents page ID.
 //
-// STORAGE ARCHITECTURE:
+// STORAGE FACILITY TYPES:
 //
-//     NORMAL STORAGE
+//     room
+//         - normal storage
 //         - add
 //         - omit
 //         - reshuffle
 //
-//     AGROSTORE (type === "feeds")
+//     agroStore
+//         - feed storage
 //         - add feeds
 //         - update quantity
 //         - automatic omission when quantity = 0
@@ -44,6 +46,23 @@
 
 const storageContentsService =
     require("../../services/storage/contents");
+
+
+// ==========================================================
+// STORAGE TYPE CONSTANTS
+// ==========================================================
+//
+// These are the ONLY supported storage facility types.
+//
+// ==========================================================
+
+const STORAGE_TYPES = {
+
+    ROOM: "room",
+
+    AGRO_STORE: "agroStore"
+
+};
 
 
 // ==========================================================
@@ -83,25 +102,33 @@ function getItemIds(req) {
             "itemIds"
         );
 
+
     if (
         Array.isArray(value)
     ) {
+
         return value
             .filter(Boolean)
             .map(String);
+
     }
+
 
     if (
         value !== undefined &&
         value !== null &&
         String(value).trim() !== ""
     ) {
+
         return [
             String(value).trim()
         ];
+
     }
 
+
     return [];
+
 }
 
 
@@ -114,11 +141,13 @@ function createCountMessage(
     singular,
     plural
 ) {
+
     return `${count} ${
         count === 1
             ? singular
             : plural
     }`;
+
 }
 
 
@@ -158,6 +187,7 @@ function getRouteIds(req) {
             ).trim()
 
     };
+
 }
 
 
@@ -186,8 +216,10 @@ function getContentsUrl(
             storageId
         )}`;
 
+
     const params =
         new URLSearchParams();
+
 
     Object.entries(
         query
@@ -202,21 +234,67 @@ function getContentsUrl(
                 value !== null &&
                 String(value) !== ""
             ) {
+
                 params.set(
                     key,
                     String(value)
                 );
+
             }
 
         }
     );
 
+
     const queryString =
         params.toString();
+
 
     return queryString
         ? `${baseUrl}?${queryString}`
         : baseUrl;
+
+}
+
+
+// ==========================================================
+// VALIDATE STORAGE TYPE
+// ==========================================================
+//
+// The application supports exactly:
+//
+//     room
+//     agroStore
+//
+// Nothing else is accepted.
+//
+// ==========================================================
+
+function validateStorageType(storage) {
+
+    const storageType =
+        storage?.type;
+
+
+    if (
+        storageType !== STORAGE_TYPES.ROOM &&
+        storageType !== STORAGE_TYPES.AGRO_STORE
+    ) {
+
+        const error =
+            new Error(
+                "Storage facility must be either room or agroStore."
+            );
+
+        error.status = 400;
+
+        throw error;
+
+    }
+
+
+    return storageType;
+
 }
 
 
@@ -255,6 +333,7 @@ async function renderContents(
         error.status = 400;
 
         throw error;
+
     }
 
 
@@ -272,6 +351,7 @@ async function renderContents(
         error.status = 400;
 
         throw error;
+
     }
 
 
@@ -279,7 +359,7 @@ async function renderContents(
     // GET STORAGE CONTENTS
     // ======================================================
     //
-    // Service receives BOTH IDs.
+    // The service receives BOTH IDs.
     //
     // dairyId:
     //     parent Dairy._id
@@ -295,6 +375,37 @@ async function renderContents(
                 dairyId,
                 storageId
             });
+
+
+    // ======================================================
+    // REQUIRE STORAGE RESULT
+    // ======================================================
+
+    if (
+        !result ||
+        !result.storage
+    ) {
+
+        const error =
+            new Error(
+                "Storage facility not found."
+            );
+
+        error.status = 404;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // VALIDATE STORAGE TYPE
+    // ======================================================
+
+    const storageType =
+        validateStorageType(
+            result.storage
+        );
 
 
     // ======================================================
@@ -344,17 +455,25 @@ async function renderContents(
             storage:
                 result.storage,
 
+            storageType,
+
+            isRoom:
+                storageType === STORAGE_TYPES.ROOM,
+
+            isAgroStore:
+                storageType === STORAGE_TYPES.AGRO_STORE,
+
             items:
-                result.items,
+                result.items || [],
 
             itemCount:
-                result.itemCount,
+                result.itemCount || 0,
 
             availableItems:
-                result.availableItems,
+                result.availableItems || [],
 
             targetStorages:
-                result.targetStorages,
+                result.targetStorages || [],
 
             activeTab,
 
@@ -372,6 +491,7 @@ async function renderContents(
 
         }
     );
+
 }
 
 
@@ -406,7 +526,9 @@ async function contents(req, res) {
             error,
             "Unable to load storage contents."
         );
+
     }
+
 }
 
 
@@ -417,6 +539,17 @@ async function contents(req, res) {
 // POST:
 //
 //     /storage/:dairyId/contents/:storageId/add
+//
+// ==========================================================
+//
+// This operation is supported by both:
+//
+//     room
+//     agroStore
+//
+// The storage service remains responsible for deciding how
+// the selected items are allocated according to the storage
+// facility type.
 //
 // ==========================================================
 
@@ -450,11 +583,11 @@ async function addItems(req, res) {
                 "item",
                 "items"
             )} added to ${
-                result.storage.displayName ||
+                result.storage?.displayName ||
                 "storage"
             }.`;
 
-        
+
         // ==================================================
         // REDIRECT BACK TO SAME STORAGE
         // ==================================================
@@ -483,12 +616,14 @@ async function addItems(req, res) {
             error,
             "add"
         );
+
     }
+
 }
 
 
 // ==========================================================
-// UPDATE FEED QUANTITY
+// UPDATE AGROSTORE QUANTITY
 // ==========================================================
 //
 // POST:
@@ -497,7 +632,9 @@ async function addItems(req, res) {
 //
 // ==========================================================
 //
-// This operation is primarily for AgroStore.
+// This operation applies specifically to:
+//
+//     storage.type === "agroStore"
 //
 // The service determines whether:
 //
@@ -507,9 +644,8 @@ async function addItems(req, res) {
 //
 //     quantity === 0
 //
-// If quantity reaches zero, the service automatically
-// clears dwellNumber and therefore removes the item from
-// the AgroStore.
+// When quantity reaches zero, the item is automatically
+// omitted from the AgroStore.
 //
 // ==========================================================
 
@@ -569,7 +705,7 @@ async function updateQuantity(req, res) {
 
             message =
                 `${
-                    result.item.name ||
+                    result.item?.name ||
                     "Feed item"
                 } has been automatically omitted because its quantity reached zero.`;
 
@@ -584,14 +720,15 @@ async function updateQuantity(req, res) {
 
             message =
                 `${
-                    result.item.name ||
+                    result.item?.name ||
                     "Feed item"
                 } quantity updated to ${
-                    result.item.quantity
+                    result.item?.quantity
                 } ${
-                    result.item.unit ||
+                    result.item?.unit ||
                     ""
                 }.`.trim();
+
         }
 
 
@@ -623,7 +760,9 @@ async function updateQuantity(req, res) {
             error,
             "view"
         );
+
     }
+
 }
 
 
@@ -635,10 +774,16 @@ async function updateQuantity(req, res) {
 //
 //     /storage/:dairyId/contents/:storageId/omit
 //
-// This operation remains for NORMAL storage.
+// ==========================================================
 //
-// AgroStore omission is automatic and therefore the service
-// must reject manual omission for type === "feeds".
+// Supported only by:
+//
+//     room
+//
+// AgroStore uses automatic omission when quantity reaches
+// zero.
+//
+// The service remains responsible for enforcing this rule.
 //
 // ==========================================================
 
@@ -672,7 +817,7 @@ async function omitItems(req, res) {
                 "item",
                 "items"
             )} omitted from ${
-                result.storage.displayName ||
+                result.storage?.displayName ||
                 "storage"
             }.`;
 
@@ -705,7 +850,9 @@ async function omitItems(req, res) {
             error,
             "view"
         );
+
     }
+
 }
 
 
@@ -717,7 +864,11 @@ async function omitItems(req, res) {
 //
 //     /storage/:dairyId/contents/:storageId/reshuffle
 //
-// This operation remains for NORMAL storage.
+// ==========================================================
+//
+// Supported only by:
+//
+//     room
 //
 // AgroStore does not support reshuffling.
 //
@@ -761,11 +912,11 @@ async function reshuffleItems(req, res) {
                 "item",
                 "items"
             )} reshuffled to ${
-                result.targetStorage.displayName ||
+                result.targetStorage?.displayName ||
                 "the selected storage"
             }.`;
 
-
+        
         // ==================================================
         // REDIRECT BACK TO ORIGINAL STORAGE
         // ==================================================
@@ -794,9 +945,10 @@ async function reshuffleItems(req, res) {
             error,
             "view"
         );
+
     }
+
 }
-        
 
 
 // ==========================================================
@@ -836,6 +988,7 @@ async function handleMutationError(
             error,
             "Unable to update storage contents."
         );
+
     }
 
 
@@ -869,7 +1022,9 @@ async function handleMutationError(
             renderError,
             "Unable to update storage contents."
         );
+
     }
+
 }
 
 
@@ -904,6 +1059,7 @@ function sendError(
             error.message ||
             fallbackMessage
         );
+
 }
 
 
