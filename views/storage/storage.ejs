@@ -699,7 +699,6 @@
                             ? "selected"
                             : ""
                         %>
-                    >
                         AgroStores
                     </option>
 
@@ -825,15 +824,21 @@
                                      VIEW CONTENTS
                                      ==================================
 
-                                     URL FORMAT:
+                                     NEW ARCHITECTURE:
+
+                                     Parent Farm:
+                                         dairy._id
+
+                                     Storage Dairy:
+                                         item._id
+
+                                     URL:
 
                                      /storage/
-                                     <dairyFarmId>/
+                                     <parentFarmId>/
                                      contents/
-                                     <roomOrAgroStoreId>
+                                     <dairyIdOfTheDairy>
 
-                                     dairy._id = parent dairy farm
-                                     item._id  = specific room/agroStore
                                 ================================== -->
 
                                 <a
@@ -885,7 +890,11 @@
                                 </span>
 
                                 <span class="detail-value">
-                                    <%= item.farmCode %>
+                                    <%= item.assetCode !== null &&
+                                        item.assetCode !== undefined
+                                            ? item.assetCode
+                                            : dairy.code
+                                    %>
                                 </span>
 
                             </div>
@@ -911,12 +920,12 @@
                                     <% if (item.type === "agroStore") { %>
 
                                         <%= Math.abs(
-                                            item.roomNumber
+                                            item.dwellNumber
                                         ) %>
 
                                     <% } else { %>
 
-                                        <%= item.roomNumber %>
+                                        <%= item.dwellNumber %>
 
                                     <% } %>
 
