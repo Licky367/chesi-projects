@@ -1,63 +1,82 @@
 // ==========================================================
 // services/storage/add.js
 // STORAGE ADD / CREATE SERVICE
-// =========================================================
+// ==========================================================
 //
 // PURPOSE
 // ----------------------------------------------------------
 //
-// Creates a Room or AgroStore belonging to ONE Dairy Farm.
+// Creates a storage record in the SINGLE Dairy model.
 //
-// STORAGE TYPES:
+// A storage record is:
 //
-//     room
-//         roomNumber: 1, 2, 3, ...
+//     recordType = "structure"
 //
-//     agroStore
-//         roomNumber: -1, -2, -3, ...
+// The user chooses the storage:
+//
+//     type = "room"
+//     OR
+//     type = "agroStore"
+//
+// PARENT:
+//
+//     /storage/:id/add
+//
+//     :id = parent Dairy Farm MongoDB _id
 //
 // OWNERSHIP:
 //
-//     assetCode = farmCode
+//     assetCode = parent Dairy.code
 //
-// Therefore:
+// ROOM NUMBERS:
 //
-//     Dairy Farm -1
-//         Room 1
-//             assetCode: -1
+//     room
+//         1, 2, 3, ...
 //
-//         AgroStore -1
-//             assetCode: -1
+//     agroStore
+//         -1, -2, -3, ...
 //
-// The browser provides ONLY:
+// USER PROVIDES:
 //
 //     dairyId
 //     name
 //     type
 //
-// The server determines:
+// SERVER DETERMINES:
 //
-//     farmCode
+//     recordType
 //     assetCode
 //     roomNumber
-//     status
+//
+// IMPORTANT:
+//
+//     recordType !== type
+//
+//     recordType:
+//         "structure"
+//
+//     type:
+//         "room"
+//         "agroStore"
 //
 // ==========================================================
 
 
-const DairyStorage =
-    require("../../models/dairyStorage");
+const mongoose =
+    require("mongoose");
 
 
-const {
-    getParentDairy
-} =
-    require("./list");
+const Dairy =
+    require("../../models/dairy");
 
 
 // ==========================================================
 // CONSTANTS
 // ==========================================================
+
+const STORAGE_RECORD_TYPE =
+    "structure";
+
 
 const STORAGE_TYPES = [
 
@@ -69,12 +88,156 @@ const STORAGE_TYPES = [
 
 
 // ==========================================================
-// ESCAPE REGEXP
+// NORMALIZE NAME
+// ==========================================================
+
+function normalizeName(name) {
+
+    return String(name || "")
+        .trim()
+        .replace(/\s+/g, " ");
+
+}
+
+
+// ==========================================================
+// VALIDATE PARENT DAIRY ID
 // ==========================================================
 //
-// Safely escapes a name before using it inside a regular
-// expression.
+// The ID comes from:
 //
+//     /storage/:id/add
+//
+// It must identify the parent Dairy Farm.
+//
+// ==========================================================
+
+function validateDairyId(dairyId) {
+
+    const id =
+        String(
+            dairyId || ""
+        ).trim();
+
+
+    if (!id) {
+
+        const error =
+            new Error(
+                "Dairy Farm ID is required."
+            );
+
+        error.status =
+            400;
+
+        throw error;
+
+    }
+
+
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            id
+        )
+    ) {
+
+        const error =
+            new Error(
+                "Invalid Dairy Farm ID."
+            );
+
+        error.status =
+            400;
+
+        throw error;
+
+    }
+
+
+    return id;
+
+}
+
+
+// ==========================================================
+// VALIDATE PARENT DAIRY FARM
+// ==========================================================
+//
+// The parent is identified by MongoDB _id.
+//
+// The parent's code must be negative because a Dairy Farm
+// is represented as a structure/facility record with a
+// negative Dairy code.
+//
+// ==========================================================
+
+async function getParentDairy(
+    dairyId
+) {
+
+    const parent =
+        await Dairy
+            .findById(
+                dairyId
+            )
+            .lean();
+
+
+    if (!parent) {
+
+        const error =
+            new Error(
+                "Parent Dairy Farm was not found."
+            );
+
+        error.status =
+            404;
+
+        throw error;
+
+    }
+
+
+    const farmCode =
+        Number(
+            parent.code
+        );
+
+
+    if (
+        !Number.isInteger(
+            farmCode
+        ) ||
+        farmCode >= 0
+    ) {
+
+        const error =
+            new Error(
+                "The selected Dairy is not a valid Dairy Farm."
+            );
+
+        error.status =
+            400;
+
+        throw error;
+
+    }
+
+
+    return {
+
+        dairy:
+            parent,
+
+        farmCode
+
+    };
+
+}
+
+
+// ==========================================================
+// ESCAPE REGEXP
 // ==========================================================
 
 function escapeRegExp(value) {
@@ -89,85 +252,31 @@ function escapeRegExp(value) {
 
 
 // ==========================================================
-// NORMALIZE STORAGE NAME
-// ==========================================================
-
-function normalizeName(name) {
-
-    return String(name || "")
-        .trim()
-        .replace(/\s+/g, " ");
-
-}
-
-
-// ==========================================================
-// VALIDATE FARM CODE
-// ==========================================================
-//
-// A valid Dairy Farm code must be:
-//
-//     integer
-//     negative
-//
-// ==========================================================
-
-function validateFarmCode(farmCode) {
-
-    const code =
-        Number(farmCode);
-
-
-    if (
-        !Number.isInteger(code) ||
-        code >= 0
-    ) {
-
-        const error =
-            new Error(
-                "Invalid Dairy Farm code."
-            );
-
-        error.status = 400;
-
-        throw error;
-
-    }
-
-
-    return code;
-
-}
-
-
-// ==========================================================
 // ENSURE STORAGE NAME IS AVAILABLE
 // ==========================================================
 //
-// Names are unique within ONE Dairy Farm.
+// Storage names are unique within the parent Dairy Farm.
 //
-// Case insensitive:
+// The relationship is determined through:
 //
-//     Main Feed Store
-//
-// and:
-//
-//     main feed store
-//
-// are considered the same.
+//     assetCode = parent Dairy.code
 //
 // ==========================================================
 
 async function ensureNameAvailable(
-    farmCode,
+    assetCode,
     name
 ) {
 
     const existing =
-        await DairyStorage
+        await Dairy
             .findOne({
 
-                farmCode,
+                recordType:
+                    STORAGE_RECORD_TYPE,
+
+                assetCode:
+                    assetCode,
 
                 name: {
 
@@ -177,10 +286,7 @@ async function ensureNameAvailable(
                     $options:
                         "i"
 
-                },
-
-                status:
-                    "active"
+                }
 
             })
             .select(
@@ -212,33 +318,39 @@ async function ensureNameAvailable(
 // GET NEXT ROOM NUMBER
 // ==========================================================
 //
-// Normal Rooms:
+// Room numbers are:
 //
 //     1
 //     2
 //     3
 //     ...
 //
-// The number is generated from active rooms belonging to
-// this farm.
+// Only records belonging to this parent Dairy Farm and
+// having:
+//
+//     recordType = "structure"
+//     type = "room"
+//
+// are considered.
 //
 // ==========================================================
 
 async function getNextRoomNumber(
-    farmCode
+    assetCode
 ) {
 
     const rooms =
-        await DairyStorage
+        await Dairy
             .find({
 
-                farmCode,
+                recordType:
+                    STORAGE_RECORD_TYPE,
+
+                assetCode:
+                    assetCode,
 
                 type:
-                    "room",
-
-                status:
-                    "active"
+                    "room"
 
             })
             .select(
@@ -279,11 +391,9 @@ async function getNextRoomNumber(
 
 
     return (
-
         Math.max(
             ...numbers
         ) + 1
-
     );
 
 }
@@ -293,32 +403,34 @@ async function getNextRoomNumber(
 // GET NEXT AGROSTORE NUMBER
 // ==========================================================
 //
-// AgroStores:
+// AgroStore numbers are:
 //
 //     -1
 //     -2
 //     -3
 //     ...
 //
-// The number is generated independently for each farm.
+// They are generated independently for each parent Dairy
+// Farm.
 //
 // ==========================================================
 
 async function getNextAgroStoreNumber(
-    farmCode
+    assetCode
 ) {
 
     const stores =
-        await DairyStorage
+        await Dairy
             .find({
 
-                farmCode,
+                recordType:
+                    STORAGE_RECORD_TYPE,
+
+                assetCode:
+                    assetCode,
 
                 type:
-                    "agroStore",
-
-                status:
-                    "active"
+                    "agroStore"
 
             })
             .select(
@@ -359,11 +471,9 @@ async function getNextAgroStoreNumber(
 
 
     return (
-
         Math.min(
             ...numbers
         ) - 1
-
     );
 
 }
@@ -381,22 +491,20 @@ async function getNextAgroStoreNumber(
 //         type
 //     }
 //
-// USER PROVIDES:
+// dairyId:
 //
-//     dairyId
-//     name
-//     type
+//     Parent Dairy Farm MongoDB _id.
 //
-// SERVER GENERATES:
+// name:
 //
-//     farmCode
-//     assetCode
-//     roomNumber
-//     status
+//     User-provided storage name.
 //
-// IMPORTANT:
+// type:
 //
-//     assetCode === farmCode
+//     User-selected storage type.
+//
+//         room
+//         agroStore
 //
 // ==========================================================
 
@@ -409,9 +517,9 @@ async function createStorage(
     // ======================================================
 
     const dairyId =
-        String(
-            options.dairyId || ""
-        ).trim();
+        validateDairyId(
+            options.dairyId
+        );
 
 
     const name =
@@ -424,84 +532,6 @@ async function createStorage(
         String(
             options.type || ""
         ).trim();
-
-
-    // ======================================================
-    // VALIDATE DAIRY ID
-    // ======================================================
-
-    if (
-        !dairyId
-    ) {
-
-        const error =
-            new Error(
-                "Dairy Farm ID is required."
-            );
-
-        error.status =
-            400;
-
-        throw error;
-
-    }
-
-
-    // ======================================================
-    // RESOLVE PARENT DAIRY
-    // ======================================================
-    //
-    // getParentDairy() is responsible for resolving the
-    // actual Dairy Farm from dairyId.
-    //
-    // farmCode comes from the database.
-    //
-    // It is NEVER trusted from the browser.
-    //
-    // ======================================================
-
-    const {
-
-        dairy,
-
-        farmCode
-
-    } =
-        await getParentDairy(
-            dairyId
-        );
-
-
-    // ======================================================
-    // VALIDATE FARM CODE
-    // ======================================================
-
-    const validFarmCode =
-        validateFarmCode(
-            farmCode
-        );
-
-
-    // ======================================================
-    // ASSET CODE
-    // ======================================================
-    //
-    // A storage facility belongs to its parent Dairy Farm.
-    //
-    // Therefore:
-    //
-    //     assetCode = farmCode
-    //
-    // Example:
-    //
-    //     farmCode = -7
-    //
-    //     assetCode = -7
-    //
-    // ======================================================
-
-    const assetCode =
-        validFarmCode;
 
 
     // ======================================================
@@ -525,10 +555,6 @@ async function createStorage(
     }
 
 
-    // ======================================================
-    // NAME LENGTH
-    // ======================================================
-
     if (
         name.length > 200
     ) {
@@ -547,7 +573,13 @@ async function createStorage(
 
 
     // ======================================================
-    // VALIDATE TYPE
+    // VALIDATE STORAGE TYPE
+    // ======================================================
+    //
+    // This is the USER'S storage type.
+    //
+    // It is NOT recordType.
+    //
     // ======================================================
 
     if (
@@ -570,17 +602,64 @@ async function createStorage(
 
 
     // ======================================================
+    // RESOLVE PARENT DAIRY FARM
+    // ======================================================
+    //
+    // dairyId is the MongoDB _id from:
+    //
+    //     /storage/:id/add
+    //
+    // The service resolves that ID to the actual parent
+    // Dairy Farm.
+    //
+    // ======================================================
+
+    const {
+
+        dairy,
+
+        farmCode
+
+    } =
+        await getParentDairy(
+            dairyId
+        );
+
+
+    // ======================================================
+    // ASSET CODE
+    // ======================================================
+    //
+    // The new storage record belongs to the parent Dairy
+    // Farm through the parent's Dairy code.
+    //
+    // Example:
+    //
+    //     parent._id = 66...
+    //     parent.code = -7
+    //
+    //     storage.assetCode = -7
+    //
+    // The MongoDB _id is NOT stored in assetCode.
+    //
+    // ======================================================
+
+    const assetCode =
+        farmCode;
+
+
+    // ======================================================
     // CHECK DUPLICATE NAME
     // ======================================================
 
     await ensureNameAvailable(
-        validFarmCode,
+        assetCode,
         name
     );
 
 
     // ======================================================
-    // GENERATE ROOM / AGROSTORE NUMBER
+    // GENERATE ROOM NUMBER
     // ======================================================
 
     let roomNumber;
@@ -592,14 +671,14 @@ async function createStorage(
 
         roomNumber =
             await getNextRoomNumber(
-                validFarmCode
+                assetCode
             );
 
     } else {
 
         roomNumber =
             await getNextAgroStoreNumber(
-                validFarmCode
+                assetCode
             );
 
     }
@@ -608,15 +687,13 @@ async function createStorage(
     // ======================================================
     // SAFETY CHECK
     // ======================================================
-    //
-    // The generated number must match the storage type.
-    //
-    // ======================================================
 
     if (
         type === "room" &&
         (
-            !Number.isInteger(roomNumber) ||
+            !Number.isInteger(
+                roomNumber
+            ) ||
             roomNumber <= 0
         )
     ) {
@@ -637,7 +714,9 @@ async function createStorage(
     if (
         type === "agroStore" &&
         (
-            !Number.isInteger(roomNumber) ||
+            !Number.isInteger(
+                roomNumber
+            ) ||
             roomNumber >= 0
         )
     ) {
@@ -656,72 +735,63 @@ async function createStorage(
 
 
     // ======================================================
-    // CREATE STORAGE DOCUMENT
+    // CREATE STORAGE RECORD
     // ======================================================
     //
-    // IMPORTANT:
+    // SINGLE SOURCE OF TRUTH:
     //
-    // farmCode and assetCode are generated by the server.
-    //
-    // Neither value comes from req.body.
+    //     models/dairy.js
     //
     // ======================================================
 
     const storage =
-        await DairyStorage.create({
+        await Dairy.create({
 
-            // ----------------------------------------------
-            // Parent Dairy Farm
-            // ----------------------------------------------
+            // ------------------------------------------------
+            // Backend-controlled record classification
+            // ------------------------------------------------
 
-            farmCode:
-                validFarmCode,
+            recordType:
+                STORAGE_RECORD_TYPE,
 
 
-            // ----------------------------------------------
-            // Parent Farm Ownership
-            // ----------------------------------------------
+            // ------------------------------------------------
+            // Parent relationship
+            // ------------------------------------------------
             //
-            // This is the important relationship:
+            // assetCode = parent Dairy.code
             //
-            //     assetCode === farmCode
-            //
-            // ----------------------------------------------
+            // NOT parent Dairy._id.
+            // ------------------------------------------------
 
             assetCode:
                 assetCode,
 
 
-            // ----------------------------------------------
-            // Storage name
-            // ----------------------------------------------
+            // ------------------------------------------------
+            // User-provided storage name
+            // ------------------------------------------------
 
             name:
                 name,
 
 
-            // ----------------------------------------------
-            // Storage type
-            // ----------------------------------------------
+            // ------------------------------------------------
+            // User-selected storage type
+            //
+            // This is independent from recordType.
+            // ------------------------------------------------
 
             type:
                 type,
 
 
-            // ----------------------------------------------
-            // Generated allocation number
-            // ----------------------------------------------
+            // ------------------------------------------------
+            // Backend-generated storage number
+            // ------------------------------------------------
 
             roomNumber:
-                roomNumber,
-
-
-            // ----------------------------------------------
-            // New storage is active
-            // ----------------------------------------------
-
-            status:
-                "active"
+                roomNumber
 
         });
 
@@ -735,13 +805,16 @@ async function createStorage(
         dairy,
 
         farmCode:
-            validFarmCode,
+            farmCode,
 
         assetCode,
 
-        roomNumber,
+        recordType:
+            STORAGE_RECORD_TYPE,
 
         type,
+
+        roomNumber,
 
         storage
 
