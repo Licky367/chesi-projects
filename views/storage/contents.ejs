@@ -29,21 +29,6 @@ IMPORTANT:
    STORAGE TYPE
 ============================================================ */
 
-/*
-IMPORTANT:
-
-The database value is exactly:
-
-    agroStore
-
-We intentionally DO NOT call toLowerCase() here.
-
-This prevents the view from inventing/expecting:
-
-    agrostore
-
-*/
-
 const storageType =
     storage &&
     storage.type
@@ -573,10 +558,59 @@ const addItemCount =
     line-height:1.55;
 }
 
+
+/* ============================================================
+   HEADER ACTIONS
+============================================================ */
+
+.storage-header-actions{
+    flex:none;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+}
+
+
+/* ============================================================
+   ADD ITEM BUTTON
+============================================================ */
+
+.add-storage-item-button{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    min-height:38px;
+    padding:0 14px;
+    border:1px solid #286e41;
+    border-radius:10px;
+    background:#2d7b48;
+    color:#fff;
+    font-size:12px;
+    font-weight:800;
+    text-decoration:none;
+    box-shadow:0 3px 8px rgba(45,123,72,.13);
+    transition:.18s ease;
+}
+
+.add-storage-item-button:hover{
+    background:#256b3d;
+    border-color:#256b3d;
+    color:#fff;
+    transform:translateY(-1px);
+}
+
+
+/* ============================================================
+   BACK TO STORAGE
+============================================================ */
+
 .back-storage{
     flex:none;
     display:inline-flex;
     align-items:center;
+    justify-content:center;
     gap:7px;
     min-height:38px;
     padding:0 13px;
@@ -1285,8 +1319,16 @@ const addItemCount =
         flex-direction:column;
     }
 
+    .storage-header-actions{
+        width:100%;
+        display:grid;
+        grid-template-columns:1fr 1fr;
+    }
+
+    .add-storage-item-button,
     .back-storage{
         width:100%;
+        box-sizing:border-box;
         justify-content:center;
     }
 
@@ -1346,6 +1388,10 @@ const addItemCount =
 
 
 @media (max-width:430px){
+
+    .storage-header-actions{
+        grid-template-columns:1fr;
+    }
 
     .storage-tabs{
         margin-bottom:16px;
@@ -1434,14 +1480,32 @@ const addItemCount =
         </div>
 
 
-        <a
-            href="/storage/<%= dairy._id %>"
-            class="back-storage"
-        >
+        <!-- ====================================================
+             HEADER ACTIONS
+        ===================================================== -->
 
-            ← Back to Storage
+        <div class="storage-header-actions">
 
-        </a>
+            <a
+                href="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add"
+                class="add-storage-item-button"
+            >
+
+                + Add Item
+
+            </a>
+
+
+            <a
+                href="/storage/<%= dairy._id %>"
+                class="back-storage"
+            >
+
+                ← Back to Storage
+
+            </a>
+
+        </div>
 
     </header>
 
@@ -1861,7 +1925,6 @@ const addItemCount =
 
                                 <div class="content-meta">
 
-
                                     <span class="content-meta-item">
 
                                         <strong>
@@ -1972,7 +2035,6 @@ const addItemCount =
                                         </span>
 
                                     <% } %>
-
 
                                 </div>
 
@@ -2337,7 +2399,6 @@ const addItemCount =
 
                                 <div class="add-meta">
 
-
                                     <span>
 
                                         <strong>
@@ -2424,7 +2485,6 @@ const addItemCount =
                                         </span>
 
                                     <% } %>
-
 
                                 </div>
 
