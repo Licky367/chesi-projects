@@ -59,6 +59,13 @@
 
      stock.ejs is deliberately NOT rendered here.
 
+     ANIMAL FEED UPDATE CARDS:
+     -----------------------------------------------------
+     feed-update-cards.ejs is an independent navigation
+     component.
+
+     It does NOT require feed data from the backend.
+
 ===================================================== -->
 
 
@@ -161,7 +168,7 @@
              FEED STORE
 
              CURRENT DAIRY STORAGE
-             ---------------------------------------------
+
              Route:
 
                  /storage/:id
@@ -419,6 +426,27 @@
 
 
     <!-- =================================================
+         ANIMAL FEED UPDATE CARDS
+
+         INDEPENDENT NAVIGATION COMPONENT
+
+         No backend feed data is required here.
+
+         The cards themselves are defined inside:
+
+             update/storage/feed-update-cards.ejs
+
+         They can later be given whatever destination
+         routes are required.
+    ================================================== -->
+
+    <%- include("update/storage/feed-update-cards", {
+        dairy: dairy
+    }) %>
+
+
+
+    <!-- =================================================
          ASSET SIDEBAR
     ================================================== -->
 
@@ -481,7 +509,7 @@
 
             <!-- =================================================
                  FEED LOOP
-            ================================================== -->
+            ================================================= -->
 
             <% feed.forEach(function(item, index) { %>
 
