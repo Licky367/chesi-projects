@@ -41,6 +41,16 @@ router.post(
 // ==========================================================
 // STORAGE CONTENTS
 // ==========================================================
+//
+// GET
+//     /storage/:dairyId/contents/:storageId
+//
+// :dairyId
+//     = parent Dairy Farm ID
+//
+// :storageId
+//     = storage facility ID
+// ==========================================================
 
 router.get(
     "/:dairyId/contents/:storageId",
@@ -53,24 +63,49 @@ router.get(
 // ==========================================================
 //
 // GET
-//     /storage/:dairyId/contents/:storageId/add
+//     /storage/:dairyId/contents/:storageId/add/:storageType
 //
-// The parent Dairy and selected storage are resolved by the
-// controller/service. The browser does not choose destination.
+// Examples:
+//
+//     /storage/DAIRY_ID/contents/STORAGE_ID/add/room
+//
+//     /storage/DAIRY_ID/contents/STORAGE_ID/add/agroStore
+//
+// :dairyId
+//     = parent Dairy Farm ID
+//
+// :storageId
+//     = selected storage facility ID
+//
+// :storageType
+//     = exact storage type
+//
+// Supported values:
+//
+//     room
+//     agroStore
+//
+// The storage type is supplied explicitly by the URL.
 // ==========================================================
 
 router.get(
-    "/:dairyId/contents/:storageId/add",
+    "/:dairyId/contents/:storageId/add/:storageType",
     storageController.addNewForm
 );
 
 
 // ==========================================================
-// ADD ITEMS TO STORAGE
+// ADD ITEM TO STORAGE
+// ==========================================================
+//
+// POST
+//     /storage/:dairyId/contents/:storageId/add/:storageType
+//
+// The storage type is supplied explicitly by the URL.
 // ==========================================================
 
 router.post(
-    "/:dairyId/contents/:storageId/add",
+    "/:dairyId/contents/:storageId/add/:storageType",
     storageController.addNewItem
 );
 
