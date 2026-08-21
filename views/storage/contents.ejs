@@ -11,37 +11,337 @@ PURPOSE:
     Main contents-management page for:
 
         1. Normal Storage Rooms
-        2. AgroStore (type === "feeds")
+        2. AgroStore
 
-URL CONTRACT:
+DATA SOURCE:
+    models/dairy.js
+
+IMPORTANT STORAGE RULES
+--------------------------------------------------------------
+
+Storage facility:
+
+    recordType === "structure"
+
+    type === "room"
+        = Normal Storage Room
+
+    type === "agroStore"
+        = AgroStore
+
+Farm:
+
+    code < 0
+
+Storage belongs to farm when:
+
+    storage.assetCode === dairy.code
+
+Item belongs to farm when:
+
+    item.assetCode === dairy.code
+
+Item location:
+
+    item.dwellNumber === storage.dwellNumber
+
+Feed:
+
+    item.type === "feeds"
+
+Normal room:
+
+    non-feed items only
+
+AgroStore:
+
+    feeds only
+
+URL:
+
     /storage/:dairyId/contents/:itemId
+
+where:
+
+    dairyId = Dairy Farm MongoDB _id
+    itemId  = Storage Facility MongoDB _id
 
 ==============================================================
 */
 
-const storageType = String(
-    storage && storage.type ? storage.type : ""
-).trim().toLowerCase();
 
-const isAgroStore = storageType === "feeds";
+/* ============================================================
+   SAFE INPUT VALUES
+============================================================ */
+
+const safeStorage =
+    typeof storage !== "undefined" && storage
+        ? storage
+        : null;
+
+const safeDairy =
+    typeof dairy !== "undefined" && dairy
+        ? dairy
+        : null;
+
+const safeItems =
+    Array.isArray(items)
+        ? items
+        : [];
+
+const safeAvailableItems =
+    Array.isArray(availableItems)
+        ? availableItems
+        : [];
+
+const safeTargetStorages =
+    Array.isArray(targetStorages)
+        ? targetStorages
+        : [];
+
+
+/* ============================================================
+   STORAGE TYPE
+============================================================ */
+
+/*
+ * IMPORTANT:
+ *
+ * Storage type is NOT "feeds".
+ *
+ * "feeds" belongs to item.type.
+ */
+
+const storageType =
+    String(
+        safeStorage && safeStorage.type
+            ? safeStorage.type
+            : ""
+    )
+    .trim()
+    .toLowerCase();
+
+
+const isNormalRoom =
+    storageType === "room";
+
+
+const isAgroStore =
+    storageType === "agrostore";
+
+
+/* ============================================================
+   STORAGE STATUS
+============================================================ */
+
+const storageStatus =
+    String(
+        safeStorage && safeStorage.status
+            ? safeStorage.status
+            : ""
+    )
+    .trim()
+    .toLowerCase();
+
+
+const isStorageActive =
+    storageStatus === "active";
+
+
+/* ============================================================
+   STORAGE NAME
+============================================================ */
 
 const storageName =
-    (storage && storage.displayName) ||
     (
-        isAgroStore
+        safeStorage &&
+        safeStorage.displayName
+    )
+        ? safeStorage.displayName
+
+        : isAgroStore
             ? "AgroStore"
-            : "Room " + (
-                storage && storage.roomNumber
-                    ? storage.roomNumber
-                    : "—"
+
+            : (
+                safeStorage &&
+                safeStorage.roomNumber
             )
-    );
+                ? "Room " + safeStorage.roomNumber
+
+                : (
+                    safeStorage &&
+                    safeStorage.dwellNumber !== undefined &&
+                    safeStorage.dwellNumber !== null
+                )
+                    ? "Storage " + safeStorage.dwellNumber
+
+                    : "Storage Facility";
+
+
+/* ============================================================
+   CURRENT TAB
+============================================================ */
+
+const requestedTab =
+    typeof activeTab !== "undefined"
+        ? String(activeTab).trim().toLowerCase()
+        : "";
 
 const currentTab =
-    activeTab === "add"
+    requestedTab === "add"
         ? "add"
         : "view";
+
+
+/* ============================================================
+   FARM ID
+============================================================ */
+
+const dairyId =
+    safeDairy && safeDairy._id
+        ? String(safeDairy._id)
+        : "";
+
+
+/* ============================================================
+   STORAGE ID
+============================================================ */
+
+const storageId =
+    safeStorage && safeStorage._id
+        ? String(safeStorage._id)
+        : "";
+
+
+/* ============================================================
+   HELPERS
+============================================================ */
+
+function hasValue(value){
+
+    return (
+        value !== null &&
+        value !== undefined &&
+        String(value).trim() !== ""
+    );
+
+}
+
+
+function displayCode(item){
+
+    if (
+        item &&
+        item.code !== null &&
+        item.code !== undefined &&
+        String(item.code).trim() !== ""
+    ){
+
+        return item.code;
+
+    }
+
+    return "—";
+
+}
+
+
+function isAnimalItem(item){
+
+    if (
+        !item ||
+        item.code === null ||
+        item.code === undefined
+    ){
+
+        return false;
+
+    }
+
+
+    const numericCode =
+        Number(item.code);
+
+
+    return (
+        Number.isFinite(numericCode) &&
+        Number.isInteger(numericCode) &&
+        numericCode > 0
+    );
+
+}
+
+
+function isFeedItem(item){
+
+    return (
+        item &&
+        String(item.type || "")
+            .trim()
+            .toLowerCase() === "feeds"
+    );
+
+}
+
+
+function isManualAsset(item){
+
+    return (
+        item &&
+        (
+            item.code === null ||
+            item.code === undefined
+        )
+    );
+
+}
+
+
+function itemLabel(item){
+
+    if (
+        item &&
+        item.name
+    ){
+
+        return item.name;
+
+    }
+
+    if (
+        isFeedItem(item)
+    ){
+
+        return "Unnamed Feed";
+
+    }
+
+    return "Unnamed Item";
+
+}
+
+
+function formatNumber(value){
+
+    const number =
+        Number(value);
+
+
+    if (
+        !Number.isFinite(number)
+    ){
+
+        return "0";
+
+    }
+
+
+    return number.toLocaleString();
+
+}
+
 %>
+
 
 <style>
 
@@ -147,6 +447,34 @@ const currentTab =
 .storage-error{
     background:#fff5f4;
     border:1px solid #efd9d6;
+    color:#9a443b;
+}
+
+
+/* ============================================================
+   STORAGE STATUS
+============================================================ */
+
+.storage-status{
+    display:inline-flex;
+    align-items:center;
+    min-height:22px;
+    padding:0 8px;
+    margin-top:9px;
+    border-radius:999px;
+    font-size:9px;
+    font-weight:850;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+}
+
+.storage-status.active{
+    background:#edf7ef;
+    color:#2d7243;
+}
+
+.storage-status.inactive{
+    background:#fff1ef;
     color:#9a443b;
 }
 
@@ -321,6 +649,26 @@ const currentTab =
     background:#2d7b48;
     color:#fff;
     box-shadow:0 3px 8px rgba(45,123,72,.13);
+}
+
+
+/* ============================================================
+   INACTIVE NOTICE
+============================================================ */
+
+.storage-inactive-notice{
+    margin:0 0 13px;
+    padding:11px 13px;
+    border:1px solid #eadbd7;
+    border-radius:10px;
+    background:#fff7f5;
+    color:#8f5048;
+    font-size:11px;
+    line-height:1.5;
+}
+
+.storage-inactive-notice strong{
+    color:#743d37;
 }
 
 
@@ -596,7 +944,7 @@ const currentTab =
 
 .quantity-form{
     display:grid;
-    grid-template-columns:minmax(0,1fr) 105px auto;
+    grid-template-columns:minmax(0,1fr) auto;
     align-items:end;
     gap:7px;
 }
@@ -609,8 +957,7 @@ const currentTab =
     font-weight:750;
 }
 
-.quantity-input,
-.quantity-unit{
+.quantity-input{
     width:100%;
     height:36px;
     box-sizing:border-box;
@@ -623,8 +970,7 @@ const currentTab =
     outline:none;
 }
 
-.quantity-input:focus,
-.quantity-unit:focus{
+.quantity-input:focus{
     border-color:#82aa8e;
     box-shadow:0 0 0 3px rgba(45,122,71,.07);
 }
@@ -639,6 +985,10 @@ const currentTab =
     font-size:10px;
     font-weight:800;
     cursor:pointer;
+}
+
+.quantity-save-button:hover{
+    background:#256a3d;
 }
 
 .quantity-help{
@@ -862,11 +1212,10 @@ const currentTab =
     }
 
     .quantity-form{
-        grid-template-columns:1fr 95px;
+        grid-template-columns:1fr;
     }
 
     .quantity-save-button{
-        grid-column:1 / -1;
         width:100%;
     }
 }
@@ -892,14 +1241,6 @@ const currentTab =
         gap:6px;
     }
 
-    .quantity-form{
-        grid-template-columns:1fr;
-    }
-
-    .quantity-save-button{
-        grid-column:auto;
-    }
-
     .feed-quantity-header{
         align-items:flex-start;
         flex-direction:column;
@@ -910,6 +1251,7 @@ const currentTab =
 
 
 <div class="storage-contents-page">
+
 
     <!-- ========================================================
          HEADER
@@ -923,8 +1265,10 @@ const currentTab =
 
                 <% if (isAgroStore) { %>
                     AgroStore
+                <% } else if (isNormalRoom) { %>
+                    Storage Room
                 <% } else { %>
-                    Storage
+                    Storage Facility
                 <% } %>
 
             </p>
@@ -935,17 +1279,37 @@ const currentTab =
             </h1>
 
 
+            <% if (safeStorage) { %>
+
+                <div
+                    class="storage-status <%= isStorageActive ? 'active' : 'inactive' %>"
+                >
+
+                    <%= isStorageActive ? "Active" : "Inactive" %>
+
+                </div>
+
+            <% } %>
+
+
             <p class="storage-page-description">
 
                 <% if (isAgroStore) { %>
 
-                    Manage feeds currently stored here and
-                    update the quantity remaining.
+                    Manage feeds currently stored here.
+                    Update the remaining quantity when feed is
+                    consumed. Setting the quantity to zero
+                    automatically removes the feed from this
+                    AgroStore.
+
+                <% } else if (isNormalRoom) { %>
+
+                    View and manage non-feed animals and assets
+                    currently allocated to this storage room.
 
                 <% } else { %>
 
-                    View and manage the items currently
-                    allocated to this storage room.
+                    Manage the contents of this storage facility.
 
                 <% } %>
 
@@ -955,7 +1319,7 @@ const currentTab =
 
 
         <a
-            href="/storage/<%= dairy._id %>"
+            href="/storage/<%= dairyId %>"
             class="back-storage"
         >
             ← Back to Storage
@@ -968,7 +1332,10 @@ const currentTab =
          MESSAGES
     ========================================================= -->
 
-    <% if (successMessage) { %>
+    <% if (
+        typeof successMessage !== "undefined" &&
+        successMessage
+    ) { %>
 
         <div class="storage-message storage-success">
 
@@ -983,7 +1350,10 @@ const currentTab =
     <% } %>
 
 
-    <% if (pageError) { %>
+    <% if (
+        typeof pageError !== "undefined" &&
+        pageError
+    ) { %>
 
         <div class="storage-message storage-error">
 
@@ -999,6 +1369,61 @@ const currentTab =
 
 
     <!-- ========================================================
+         INVALID STORAGE TYPE
+    ========================================================= -->
+
+    <% if (
+        safeStorage &&
+        !isNormalRoom &&
+        !isAgroStore
+    ) { %>
+
+        <div class="storage-message storage-error">
+
+            <span>!</span>
+
+            <span>
+                This Dairy record is not a supported storage
+                facility. Storage type must be
+                <strong>room</strong> or
+                <strong>agroStore</strong>.
+            </span>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- ========================================================
+         INACTIVE STORAGE NOTICE
+    ========================================================= -->
+
+    <% if (
+        safeStorage &&
+        !isStorageActive
+    ) { %>
+
+        <div class="storage-inactive-notice">
+
+            <strong>This storage facility is inactive.</strong>
+
+            Adding items and reshuffling items are disabled.
+            The backend will also reject those operations.
+
+            <% if (isNormalRoom) { %>
+
+                Items may still be omitted from a normal room,
+                because the storage service permits omission
+                independently of storage status.
+
+            <% } %>
+
+        </div>
+
+    <% } %>
+
+
+    <!-- ========================================================
          TABS
     ========================================================= -->
 
@@ -1006,7 +1431,7 @@ const currentTab =
 
         <button
             type="button"
-            class="storage-tab <% if (currentTab === 'view') { %>active<% } %>"
+            class="storage-tab <%= currentTab === 'view' ? 'active' : '' %>"
             data-storage-tab="view"
         >
             View Contents
@@ -1015,7 +1440,7 @@ const currentTab =
 
         <button
             type="button"
-            class="storage-tab <% if (currentTab === 'add') { %>active<% } %>"
+            class="storage-tab <%= currentTab === 'add' ? 'active' : '' %>"
             data-storage-tab="add"
         >
             Add Items
@@ -1030,7 +1455,7 @@ const currentTab =
 
     <section
         id="storageViewTab"
-        class="storage-tab-panel <% if (currentTab === 'view') { %>active<% } %>"
+        class="storage-tab-panel <%= currentTab === 'view' ? 'active' : '' %>"
         data-storage-panel="view"
     >
 
@@ -1044,11 +1469,11 @@ const currentTab =
             <div class="contents-count">
 
                 <strong>
-                    <%= itemCount || 0 %>
+                    <%= safeItems.length %>
                 </strong>
 
 
-                <% if (Number(itemCount || 0) === 1) { %>
+                <% if (safeItems.length === 1) { %>
                     item
                 <% } else { %>
                     items
@@ -1059,19 +1484,20 @@ const currentTab =
         </div>
 
 
-        <% if (items && items.length > 0) { %>
+        <!-- ====================================================
+             NORMAL ROOM CONTENTS
+        ==================================================== -->
+
+        <% if (isNormalRoom) { %>
 
 
-            <!-- ==================================================
-                 NORMAL STORAGE
-            ================================================== -->
+            <% if (safeItems.length > 0) { %>
 
-            <% if (!isAgroStore) { %>
 
                 <form
                     id="reshuffleForm"
                     method="POST"
-                    action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/reshuffle"
+                    action="/storage/<%= dairyId %>/contents/<%= storageId %>/reshuffle"
                 >
 
                     <div class="contents-management">
@@ -1109,6 +1535,7 @@ const currentTab =
                                 id="openReshuffleButton"
                                 class="storage-action-button reshuffle-button"
                                 disabled
+                                <%= !isStorageActive ? "data-storage-inactive=\"true\"" : "" %>
                             >
                                 Reshuffle
                             </button>
@@ -1128,6 +1555,10 @@ const currentTab =
                     </div>
 
 
+                    <!-- ==========================================
+                         RESHUFFLE PANEL
+                    ========================================== -->
+
                     <div
                         id="reshufflePanel"
                         class="reshuffle-panel"
@@ -1139,8 +1570,11 @@ const currentTab =
 
 
                         <p class="reshuffle-description">
-                            Move the selected items to another
-                            active storage room of the same type.
+
+                            Only another active normal storage room
+                            belonging to this same Dairy Farm can be
+                            selected as the destination.
+
                         </p>
 
 
@@ -1164,14 +1598,27 @@ const currentTab =
                                     </option>
 
 
-                                    <% if (targetStorages && targetStorages.length > 0) { %>
+                                    <% if (safeTargetStorages.length > 0) { %>
 
-                                        <% targetStorages.forEach(function(destination) { %>
+                                        <% safeTargetStorages.forEach(function(destination) { %>
 
                                             <option
                                                 value="<%= destination._id %>"
                                             >
-                                                <%= destination.displayName || ("Room " + (destination.roomNumber || "—")) %>
+
+                                                <%= destination.displayName ||
+                                                    (
+                                                        destination.roomNumber
+                                                            ? "Room " + destination.roomNumber
+                                                            : (
+                                                                destination.dwellNumber !== undefined &&
+                                                                destination.dwellNumber !== null
+                                                                    ? "Storage " + destination.dwellNumber
+                                                                    : "Storage Facility"
+                                                            )
+                                                    )
+                                                %>
+
                                             </option>
 
                                         <% }); %>
@@ -1182,7 +1629,7 @@ const currentTab =
                                             value=""
                                             disabled
                                         >
-                                            No other Rooms available
+                                            No other active Rooms available
                                         </option>
 
                                     <% } %>
@@ -1215,18 +1662,20 @@ const currentTab =
                     </div>
 
 
+                    <!-- ==========================================
+                         CURRENT ROOM CONTENTS
+                    ========================================== -->
+
                     <div class="contents-list">
 
-                        <% items.forEach(function(item) { %>
+                        <% safeItems.forEach(function(item) { %>
 
                             <%
-                                const itemCodeNumber = Number(item.code);
+                                const itemIsAnimal =
+                                    isAnimalItem(item);
 
-                                const isAnimal =
-                                    item.code !== null &&
-                                    item.code !== undefined &&
-                                    !Number.isNaN(itemCodeNumber) &&
-                                    itemCodeNumber > 0;
+                                const itemIsManualAsset =
+                                    isManualAsset(item);
                             %>
 
 
@@ -1243,6 +1692,7 @@ const currentTab =
                                         class="content-item-checkbox"
                                         name="itemIds"
                                         value="<%= item._id %>"
+                                        aria-label="Select <%= itemLabel(item) %>"
                                     >
 
                                 </div>
@@ -1250,10 +1700,12 @@ const currentTab =
 
                                 <div class="content-icon">
 
-                                    <% if (isAnimal) { %>
+                                    <% if (itemIsAnimal) { %>
                                         🐄
-                                    <% } else { %>
+                                    <% } else if (itemIsManualAsset) { %>
                                         🔧
+                                    <% } else { %>
+                                        📦
                                     <% } %>
 
                                 </div>
@@ -1264,18 +1716,26 @@ const currentTab =
                                     <div class="content-title-row">
 
                                         <h3>
-                                            <%= item.name || "Unnamed Item" %>
+                                            <%= itemLabel(item) %>
                                         </h3>
 
 
                                         <span
-                                            class="content-type <% if (isAnimal) { %>animal-type<% } else { %>asset-type<% } %>"
+                                            class="content-type <%= itemIsAnimal ? 'animal-type' : 'asset-type' %>"
                                         >
 
-                                            <% if (isAnimal) { %>
+                                            <% if (itemIsAnimal) { %>
+
                                                 Animal
+
+                                            <% } else if (itemIsManualAsset) { %>
+
+                                                Manual Asset
+
                                             <% } else { %>
+
                                                 Asset
+
                                             <% } %>
 
                                         </span>
@@ -1289,11 +1749,7 @@ const currentTab =
 
                                             <strong>Code:</strong>
 
-                                            <% if (item.code !== null && item.code !== undefined) { %>
-                                                <%= item.code %>
-                                            <% } else { %>
-                                                —
-                                            <% } %>
+                                            <%= displayCode(item) %>
 
                                         </span>
 
@@ -1316,13 +1772,16 @@ const currentTab =
                                         </span>
 
 
-                                        <% if (item.quantity !== null && item.quantity !== undefined) { %>
+                                        <% if (
+                                            item.quantity !== null &&
+                                            item.quantity !== undefined
+                                        ) { %>
 
                                             <span class="content-meta-item">
 
                                                 <strong>Quantity:</strong>
 
-                                                <%= Number(item.quantity || 0).toLocaleString() %>
+                                                <%= formatNumber(item.quantity) %>
 
                                                 <%= item.unit || "unit" %>
 
@@ -1344,13 +1803,16 @@ const currentTab =
                                         <% } %>
 
 
-                                        <% if (item.currentWorth !== null && item.currentWorth !== undefined) { %>
+                                        <% if (
+                                            item.currentWorth !== null &&
+                                            item.currentWorth !== undefined
+                                        ) { %>
 
                                             <span class="content-meta-item">
 
                                                 <strong>Worth:</strong>
 
-                                                <%= Number(item.currentWorth || 0).toLocaleString() %>
+                                                <%= formatNumber(item.currentWorth) %>
 
                                             </span>
 
@@ -1359,7 +1821,7 @@ const currentTab =
                                     </div>
 
 
-                                    <% if (isAnimal) { %>
+                                    <% if (itemIsAnimal) { %>
 
                                         <div class="animal-information">
 
@@ -1379,11 +1841,7 @@ const currentTab =
 
                                                 <strong>Milking:</strong>
 
-                                                <% if (item.isMilking) { %>
-                                                    Yes
-                                                <% } else { %>
-                                                    No
-                                                <% } %>
+                                                <%= item.isMilking ? "Yes" : "No" %>
 
                                             </span>
 
@@ -1411,10 +1869,14 @@ const currentTab =
                 </form>
 
 
+                <!-- ==========================================
+                     OMIT FORM
+                ========================================== -->
+
                 <form
                     id="omitForm"
                     method="POST"
-                    action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/omit"
+                    action="/storage/<%= dairyId %>/contents/<%= storageId %>/omit"
                     style="display:none;"
                 >
 
@@ -1426,13 +1888,41 @@ const currentTab =
             <% } else { %>
 
 
-                <!-- ==================================================
-                     AGROSTORE
-                ================================================== -->
+                <div class="empty-contents">
+
+                    <div class="empty-icon">
+                        📦
+                    </div>
+
+
+                    <h3>
+                        No Items in This Storage
+                    </h3>
+
+
+                    <p>
+                        There are currently no non-feed items
+                        allocated to this storage room.
+                    </p>
+
+                </div>
+
+            <% } %>
+
+
+        <!-- ====================================================
+             AGROSTORE CONTENTS
+        ==================================================== -->
+
+        <% } else if (isAgroStore) { %>
+
+
+            <% if (safeItems.length > 0) { %>
+
 
                 <div class="contents-list">
 
-                    <% items.forEach(function(item) { %>
+                    <% safeItems.forEach(function(item) { %>
 
                         <article
                             class="content-card"
@@ -1453,7 +1943,7 @@ const currentTab =
                                 <div class="content-title-row">
 
                                     <h3>
-                                        <%= item.name || "Unnamed Feed" %>
+                                        <%= itemLabel(item) %>
                                     </h3>
 
 
@@ -1483,8 +1973,25 @@ const currentTab =
 
                                     </span>
 
+
+                                    <% if (item.code !== null && item.code !== undefined) { %>
+
+                                        <span class="content-meta-item">
+
+                                            <strong>Code:</strong>
+
+                                            <%= item.code %>
+
+                                        </span>
+
+                                    <% } %>
+
                                 </div>
 
+
+                                <!-- ==================================
+                                     FEED QUANTITY
+                                ================================== -->
 
                                 <div class="feed-quantity-section">
 
@@ -1498,7 +2005,7 @@ const currentTab =
                                         <span>
 
                                             <span class="feed-current-quantity">
-                                                <%= Number(item.quantity || 0).toLocaleString() %>
+                                                <%= formatNumber(item.quantity) %>
                                             </span>
 
 
@@ -1514,7 +2021,7 @@ const currentTab =
                                     <form
                                         class="quantity-form"
                                         method="POST"
-                                        action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/quantity"
+                                        action="/storage/<%= dairyId %>/contents/<%= storageId %>/quantity"
                                         data-feed-quantity-form
                                     >
 
@@ -1527,7 +2034,9 @@ const currentTab =
 
                                         <div class="quantity-field">
 
-                                            <label for="quantity-<%= item._id %>">
+                                            <label
+                                                for="quantity-<%= item._id %>"
+                                            >
                                                 New Remaining Quantity
                                             </label>
 
@@ -1538,7 +2047,6 @@ const currentTab =
                                                 type="number"
                                                 name="quantity"
                                                 min="0"
-                                                max="<%= Number(item.quantity || 0) %>"
                                                 step="any"
                                                 value="<%= item.quantity !== undefined && item.quantity !== null ? item.quantity : 0 %>"
                                                 required
@@ -1547,66 +2055,11 @@ const currentTab =
                                         </div>
 
 
-                                        <%
-                                            const currentUnit = String(
-                                                item.unit || ""
-                                            ).trim().toLowerCase();
-                                        %>
-
-
-                                        <select
-                                            class="quantity-unit"
-                                            name="unit"
-                                            aria-label="Feed unit"
-                                        >
-
-                                            <option
-                                                value="kg"
-                                                <% if (currentUnit === "kg") { %>selected<% } %>
-                                            >
-                                                kg
-                                            </option>
-
-
-                                            <option
-                                                value="bales"
-                                                <% if (currentUnit === "bales") { %>selected<% } %>
-                                            >
-                                                bales
-                                            </option>
-
-
-                                            <option
-                                                value="bags"
-                                                <% if (currentUnit === "bags") { %>selected<% } %>
-                                            >
-                                                bags
-                                            </option>
-
-
-                                            <option
-                                                value="litres"
-                                                <% if (currentUnit === "litres") { %>selected<% } %>
-                                            >
-                                                litres
-                                            </option>
-
-
-                                            <option
-                                                value="units"
-                                                <% if (currentUnit === "units") { %>selected<% } %>
-                                            >
-                                                units
-                                            </option>
-
-                                        </select>
-
-
                                         <button
                                             type="submit"
                                             class="quantity-save-button"
                                         >
-                                            Save
+                                            Save Quantity
                                         </button>
 
                                     </form>
@@ -1614,12 +2067,14 @@ const currentTab =
 
                                     <p class="quantity-help">
 
-                                        Reduce the quantity to record
-                                        what is currently remaining.
-                                        Setting it to
+                                        Enter the amount currently remaining.
+                                        A quantity greater than zero keeps
+                                        the feed in this AgroStore.
+
+                                        Setting the quantity to
                                         <strong>0</strong>
-                                        automatically removes the feed
-                                        from this AgroStore.
+                                        automatically sets its storage
+                                        location to unallocated.
 
                                     </p>
 
@@ -1642,8 +2097,36 @@ const currentTab =
 
                 </div>
 
+
+            <% } else { %>
+
+
+                <div class="empty-contents">
+
+                    <div class="empty-icon">
+                        🌾
+                    </div>
+
+
+                    <h3>
+                        AgroStore is Empty
+                    </h3>
+
+
+                    <p>
+                        There are currently no feeds with
+                        remaining quantity allocated to this
+                        AgroStore.
+                    </p>
+
+                </div>
+
             <% } %>
 
+
+        <!-- ====================================================
+             INVALID STORAGE TYPE
+        ==================================================== -->
 
         <% } else { %>
 
@@ -1651,41 +2134,20 @@ const currentTab =
             <div class="empty-contents">
 
                 <div class="empty-icon">
-
-                    <% if (isAgroStore) { %>
-                        🌾
-                    <% } else { %>
-                        📦
-                    <% } %>
-
+                    ⚠️
                 </div>
 
 
                 <h3>
-
-                    <% if (isAgroStore) { %>
-                        AgroStore is Empty
-                    <% } else { %>
-                        No Items in This Storage
-                    <% } %>
-
+                    Unsupported Storage Type
                 </h3>
 
 
                 <p>
-
-                    <% if (isAgroStore) { %>
-
-                        There are currently no feeds with
-                        remaining quantity in this AgroStore.
-
-                    <% } else { %>
-
-                        There are currently no items allocated
-                        to this storage room.
-
-                    <% } %>
-
+                    This storage facility does not have a valid
+                    storage type. Expected
+                    <strong>room</strong> or
+                    <strong>agroStore</strong>.
                 </p>
 
             </div>
@@ -1701,7 +2163,7 @@ const currentTab =
 
     <section
         id="storageAddTab"
-        class="storage-tab-panel <% if (currentTab === 'add') { %>active<% } %>"
+        class="storage-tab-panel <%= currentTab === 'add' ? 'active' : '' %>"
         data-storage-panel="add"
     >
 
@@ -1716,12 +2178,19 @@ const currentTab =
 
                 <% if (isAgroStore) { %>
 
-                    Select unallocated feeds that belong to this farm.
+                    Select unallocated feeds belonging to this
+                    Dairy Farm. Only feeds with a remaining
+                    quantity greater than zero can be added.
+
+                <% } else if (isNormalRoom) { %>
+
+                    Select unallocated non-feed animals or assets
+                    belonging to this Dairy Farm.
 
                 <% } else { %>
 
-                    Select unallocated animals or assets that belong
-                    to this farm.
+                    Items cannot be added because this is not a
+                    supported storage type.
 
                 <% } %>
 
@@ -1730,7 +2199,10 @@ const currentTab =
         </div>
 
 
-        <% if (availableItems && availableItems.length > 0) { %>
+        <% if (
+            (isNormalRoom || isAgroStore) &&
+            safeAvailableItems.length > 0
+        ) { %>
 
 
             <div class="add-management">
@@ -1742,6 +2214,7 @@ const currentTab =
                         <input
                             type="checkbox"
                             id="selectAllAddItems"
+                            <%= !isStorageActive ? "disabled" : "" %>
                         >
 
                         <span>
@@ -1769,6 +2242,7 @@ const currentTab =
                         id="addSelectedButton"
                         class="storage-action-button add-button"
                         disabled
+                        <%= !isStorageActive ? "data-storage-inactive=\"true\"" : "" %>
                     >
                         Add Selected
                     </button>
@@ -1780,22 +2254,23 @@ const currentTab =
 
             <form
                 method="POST"
-                action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add"
+                action="/storage/<%= dairyId %>/contents/<%= storageId %>/add"
                 id="addItemsForm"
             >
 
                 <div class="add-list">
 
-                    <% availableItems.forEach(function(item) { %>
+                    <% safeAvailableItems.forEach(function(item) { %>
 
                         <%
-                            const availableCodeNumber = Number(item.code);
+                            const availableIsAnimal =
+                                isAnimalItem(item);
 
-                            const isAvailableAnimal =
-                                item.code !== null &&
-                                item.code !== undefined &&
-                                !Number.isNaN(availableCodeNumber) &&
-                                availableCodeNumber > 0;
+                            const availableIsFeed =
+                                isFeedItem(item);
+
+                            const availableIsManualAsset =
+                                isManualAsset(item);
                         %>
 
 
@@ -1812,6 +2287,8 @@ const currentTab =
                                     class="add-item-checkbox"
                                     name="itemIds"
                                     value="<%= item._id %>"
+                                    aria-label="Select <%= itemLabel(item) %>"
+                                    <%= !isStorageActive ? "disabled" : "" %>
                                 >
 
                             </div>
@@ -1819,12 +2296,22 @@ const currentTab =
 
                             <div class="add-icon">
 
-                                <% if (isAgroStore) { %>
+                                <% if (availableIsFeed) { %>
+
                                     🌾
-                                <% } else if (isAvailableAnimal) { %>
+
+                                <% } else if (availableIsAnimal) { %>
+
                                     🐄
-                                <% } else { %>
+
+                                <% } else if (availableIsManualAsset) { %>
+
                                     🔧
+
+                                <% } else { %>
+
+                                    📦
+
                                 <% } %>
 
                             </div>
@@ -1835,27 +2322,36 @@ const currentTab =
                                 <div class="add-title">
 
                                     <h3>
-                                        <%= item.name || "Unnamed Item" %>
+                                        <%= itemLabel(item) %>
                                     </h3>
 
 
                                     <span
                                         class="content-type
-                                        <% if (isAgroStore) { %>
-                                            feed-type
-                                        <% } else if (isAvailableAnimal) { %>
-                                            animal-type
-                                        <% } else { %>
-                                            asset-type
-                                        <% } %>"
+                                        <%= availableIsFeed
+                                            ? 'feed-type'
+                                            : availableIsAnimal
+                                                ? 'animal-type'
+                                                : 'asset-type'
+                                        %>"
                                     >
 
-                                        <% if (isAgroStore) { %>
+                                        <% if (availableIsFeed) { %>
+
                                             Feed
-                                        <% } else if (isAvailableAnimal) { %>
+
+                                        <% } else if (availableIsAnimal) { %>
+
                                             Animal
+
+                                        <% } else if (availableIsManualAsset) { %>
+
+                                            Manual Asset
+
                                         <% } else { %>
+
                                             Asset
+
                                         <% } %>
 
                                     </span>
@@ -1871,18 +2367,27 @@ const currentTab =
                                             Code:
                                         </strong>
 
-
-                                        <%
-                                            const displayCode =
-                                                item.assetCode ||
-                                                item.code ||
-                                                "—";
-                                        %>
-
-
-                                        <%= displayCode %>
+                                        <%= displayCode(item) %>
 
                                     </span>
+
+
+                                    <% if (
+                                        item.assetCode !== null &&
+                                        item.assetCode !== undefined
+                                    ) { %>
+
+                                        <span>
+
+                                            <strong>
+                                                Farm Code:
+                                            </strong>
+
+                                            <%= item.assetCode %>
+
+                                        </span>
+
+                                    <% } %>
 
 
                                     <span>
@@ -1907,7 +2412,10 @@ const currentTab =
                                     </span>
 
 
-                                    <% if (item.quantity !== null && item.quantity !== undefined) { %>
+                                    <% if (
+                                        item.quantity !== null &&
+                                        item.quantity !== undefined
+                                    ) { %>
 
                                         <span>
 
@@ -1915,7 +2423,7 @@ const currentTab =
                                                 Quantity:
                                             </strong>
 
-                                            <%= Number(item.quantity || 0).toLocaleString() %>
+                                            <%= formatNumber(item.quantity) %>
 
                                             <%= item.unit || "unit" %>
 
@@ -1936,7 +2444,10 @@ const currentTab =
             </form>
 
 
-        <% } else { %>
+        <% } else if (
+            isNormalRoom ||
+            isAgroStore
+        ) { %>
 
 
             <div class="empty-contents">
@@ -1955,9 +2466,13 @@ const currentTab =
                 <h3>
 
                     <% if (isAgroStore) { %>
+
                         No Feeds Available
+
                     <% } else { %>
+
                         No Items Available
+
                     <% } %>
 
                 </h3>
@@ -1968,15 +2483,41 @@ const currentTab =
                     <% if (isAgroStore) { %>
 
                         There are currently no unallocated feeds
-                        belonging to this farm.
+                        belonging to this farm with remaining
+                        quantity greater than zero.
 
                     <% } else { %>
 
-                        There are currently no unallocated items
-                        belonging to this farm.
+                        There are currently no unallocated
+                        non-feed items belonging to this farm.
 
                     <% } %>
 
+                </p>
+
+            </div>
+
+
+        <% } else { %>
+
+
+            <div class="empty-contents">
+
+                <div class="empty-icon">
+                    ⚠️
+                </div>
+
+
+                <h3>
+                    Storage Type Not Supported
+                </h3>
+
+
+                <p>
+                    Items cannot be allocated to this storage
+                    facility because its type is not
+                    <strong>room</strong> or
+                    <strong>agroStore</strong>.
                 </p>
 
             </div>
@@ -1995,84 +2536,107 @@ document.addEventListener(
     function(){
 
         /* ======================================================
-           TABS
+           SERVER STATE
         ====================================================== */
 
-        const tabs = document.querySelectorAll(
-            "[data-storage-tab]"
-        );
+        const isNormalRoom =
+            <%= isNormalRoom ? "true" : "false" %>;
 
-        const panels = document.querySelectorAll(
-            "[data-storage-panel]"
-        );
+        const isAgroStore =
+            <%= isAgroStore ? "true" : "false" %>;
 
-
-        tabs.forEach(function(tab){
-
-            tab.addEventListener(
-                "click",
-                function(){
-
-                    const target =
-                        tab.dataset.storageTab;
-
-
-                    tabs.forEach(function(item){
-
-                        item.classList.toggle(
-                            "active",
-                            item.dataset.storageTab === target
-                        );
-
-                    });
-
-
-                    panels.forEach(function(panel){
-
-                        panel.classList.toggle(
-                            "active",
-                            panel.dataset.storagePanel === target
-                        );
-
-                    });
-
-
-                    try {
-
-                        const url =
-                            new URL(
-                                window.location.href
-                            );
-
-
-                        url.searchParams.set(
-                            "tab",
-                            target
-                        );
-
-
-                        window.history.replaceState(
-                            {},
-                            "",
-                            url
-                        );
-
-                    } catch(error) {
-
-                        /*
-                         * URL update is cosmetic only.
-                         */
-
-                    }
-
-                }
-            );
-
-        });
+        const isStorageActive =
+            <%= isStorageActive ? "true" : "false" %>;
 
 
         /* ======================================================
-           NORMAL STORAGE SELECTION
+           TABS
+        ====================================================== */
+
+        const tabs =
+            document.querySelectorAll(
+                "[data-storage-tab]"
+            );
+
+
+        const panels =
+            document.querySelectorAll(
+                "[data-storage-panel]"
+            );
+
+
+        tabs.forEach(
+            function(tab){
+
+                tab.addEventListener(
+                    "click",
+                    function(){
+
+                        const target =
+                            tab.dataset.storageTab;
+
+
+                        tabs.forEach(
+                            function(item){
+
+                                item.classList.toggle(
+                                    "active",
+                                    item.dataset.storageTab === target
+                                );
+
+                            }
+                        );
+
+
+                        panels.forEach(
+                            function(panel){
+
+                                panel.classList.toggle(
+                                    "active",
+                                    panel.dataset.storagePanel === target
+                                );
+
+                            }
+                        );
+
+
+                        try {
+
+                            const url =
+                                new URL(
+                                    window.location.href
+                                );
+
+
+                            url.searchParams.set(
+                                "tab",
+                                target
+                            );
+
+
+                            window.history.replaceState(
+                                {},
+                                "",
+                                url
+                            );
+
+                        } catch(error){
+
+                            /*
+                             * Cosmetic URL update only.
+                             */
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+        /* ======================================================
+           NORMAL ROOM SELECTION
         ====================================================== */
 
         const selectAllContents =
@@ -2080,55 +2644,68 @@ document.addEventListener(
                 "selectAllContents"
             );
 
+
         const contentCheckboxes =
-            document.querySelectorAll(
-                ".content-item-checkbox"
+            Array.from(
+                document.querySelectorAll(
+                    ".content-item-checkbox"
+                )
             );
+
 
         const contentsSelectionCount =
             document.getElementById(
                 "contentsSelectionCount"
             );
 
+
         const openReshuffleButton =
             document.getElementById(
                 "openReshuffleButton"
             );
+
 
         const omitButton =
             document.getElementById(
                 "omitButton"
             );
 
+
         const reshufflePanel =
             document.getElementById(
                 "reshufflePanel"
             );
+
 
         const destinationStorage =
             document.getElementById(
                 "destinationStorage"
             );
 
+
         const reshuffleSubmitButton =
             document.getElementById(
                 "reshuffleSubmitButton"
             );
+
 
         const cancelReshuffleButton =
             document.getElementById(
                 "cancelReshuffleButton"
             );
 
+
         const reshuffleForm =
             document.getElementById(
                 "reshuffleForm"
             );
 
+
         const omitForm =
             document.getElementById(
                 "omitForm"
             );
+
 
         const omitInputs =
             document.getElementById(
@@ -2142,10 +2719,12 @@ document.addEventListener(
 
         function getSelectedContents(){
 
-            return Array.from(
-                document.querySelectorAll(
-                    ".content-item-checkbox:checked"
-                )
+            return contentCheckboxes.filter(
+                function(checkbox){
+
+                    return checkbox.checked;
+
+                }
             );
 
         }
@@ -2160,11 +2739,12 @@ document.addEventListener(
             const selected =
                 getSelectedContents();
 
+
             const count =
                 selected.length;
 
 
-            if (contentsSelectionCount) {
+            if (contentsSelectionCount){
 
                 contentsSelectionCount.textContent =
                     count + " selected";
@@ -2172,17 +2752,31 @@ document.addEventListener(
             }
 
 
-            if (openReshuffleButton) {
+            /*
+             * Backend rule:
+             *
+             * Reshuffling requires an active current room.
+             */
+
+            if (openReshuffleButton){
 
                 openReshuffleButton.disabled =
+                    !isNormalRoom ||
+                    !isStorageActive ||
                     count === 0;
 
             }
 
 
-            if (omitButton) {
+            /*
+             * Backend permits omission from a normal room
+             * regardless of its active status.
+             */
+
+            if (omitButton){
 
                 omitButton.disabled =
+                    !isNormalRoom ||
                     count === 0;
 
             }
@@ -2192,26 +2786,28 @@ document.addEventListener(
                 .querySelectorAll(
                     "[data-content-card]"
                 )
-                .forEach(function(card){
+                .forEach(
+                    function(card){
 
-                    const checkbox =
-                        card.querySelector(
-                            ".content-item-checkbox"
+                        const checkbox =
+                            card.querySelector(
+                                ".content-item-checkbox"
+                            );
+
+
+                        card.classList.toggle(
+                            "selected",
+                            Boolean(
+                                checkbox &&
+                                checkbox.checked
+                            )
                         );
 
-
-                    card.classList.toggle(
-                        "selected",
-                        Boolean(
-                            checkbox &&
-                            checkbox.checked
-                        )
-                    );
-
-                });
+                    }
+                );
 
 
-            if (selectAllContents) {
+            if (selectAllContents){
 
                 selectAllContents.checked =
                     contentCheckboxes.length > 0 &&
@@ -2226,7 +2822,7 @@ document.addEventListener(
            SELECT ALL CONTENTS
         ====================================================== */
 
-        if (selectAllContents) {
+        if (selectAllContents){
 
             selectAllContents.addEventListener(
                 "change",
@@ -2267,43 +2863,58 @@ document.addEventListener(
 
 
         /* ======================================================
-           RESHUFFLE BUTTON
+           RESHUFFLE BUTTON STATE
         ====================================================== */
 
         function updateReshuffleButton(){
 
-            if (!reshuffleSubmitButton) {
+            if (!reshuffleSubmitButton){
+
                 return;
+
             }
 
 
             const selected =
                 getSelectedContents();
 
+
             const hasDestination =
-                destinationStorage &&
-                destinationStorage.value;
+                Boolean(
+                    destinationStorage &&
+                    destinationStorage.value
+                );
 
 
             reshuffleSubmitButton.disabled =
+                !isNormalRoom ||
+                !isStorageActive ||
                 selected.length === 0 ||
                 !hasDestination;
 
         }
 
 
-        if (openReshuffleButton) {
+        /* ======================================================
+           OPEN RESHUFFLE
+        ====================================================== */
+
+        if (openReshuffleButton){
 
             openReshuffleButton.addEventListener(
                 "click",
                 function(){
 
-                    if (openReshuffleButton.disabled) {
+                    if (
+                        openReshuffleButton.disabled
+                    ){
+
                         return;
+
                     }
 
 
-                    if (reshufflePanel) {
+                    if (reshufflePanel){
 
                         reshufflePanel.classList.add(
                             "open"
@@ -2324,13 +2935,13 @@ document.addEventListener(
            CANCEL RESHUFFLE
         ====================================================== */
 
-        if (cancelReshuffleButton) {
+        if (cancelReshuffleButton){
 
             cancelReshuffleButton.addEventListener(
                 "click",
                 function(){
 
-                    if (reshufflePanel) {
+                    if (reshufflePanel){
 
                         reshufflePanel.classList.remove(
                             "open"
@@ -2339,7 +2950,7 @@ document.addEventListener(
                     }
 
 
-                    if (destinationStorage) {
+                    if (destinationStorage){
 
                         destinationStorage.value = "";
 
@@ -2358,7 +2969,7 @@ document.addEventListener(
            DESTINATION CHANGE
         ====================================================== */
 
-        if (destinationStorage) {
+        if (destinationStorage){
 
             destinationStorage.addEventListener(
                 "change",
@@ -2372,7 +2983,7 @@ document.addEventListener(
            RESHUFFLE SUBMIT
         ====================================================== */
 
-        if (reshuffleForm) {
+        if (reshuffleForm){
 
             reshuffleForm.addEventListener(
                 "submit",
@@ -2382,23 +2993,32 @@ document.addEventListener(
                         getSelectedContents();
 
 
-                    if (selected.length === 0) {
-
-                        event.preventDefault();
-                        return;
-
-                    }
+                    const destination =
+                        destinationStorage
+                            ? destinationStorage.value
+                            : "";
 
 
                     if (
-                        !destinationStorage ||
-                        !destinationStorage.value
-                    ) {
+                        !isNormalRoom ||
+                        !isStorageActive ||
+                        selected.length === 0 ||
+                        !destination
+                    ){
 
                         event.preventDefault();
+
                         return;
 
                     }
+
+
+                    /*
+                     * The backend validates that the target
+                     * belongs to this farm, is a structure,
+                     * is a normal room, is active and is not
+                     * the current room.
+                     */
 
                 }
             );
@@ -2410,7 +3030,7 @@ document.addEventListener(
            OMIT SELECTED
         ====================================================== */
 
-        if (omitButton) {
+        if (omitButton){
 
             omitButton.addEventListener(
                 "click",
@@ -2421,10 +3041,11 @@ document.addEventListener(
 
 
                     if (
+                        !isNormalRoom ||
                         selected.length === 0 ||
                         !omitForm ||
                         !omitInputs
-                    ) {
+                    ){
 
                         return;
 
@@ -2443,9 +3064,13 @@ document.addEventListener(
                                 );
 
 
-                            input.type = "hidden";
+                            input.type =
+                                "hidden";
 
-                            input.name = "itemIds";
+
+                            input.name =
+                                "itemIds";
+
 
                             input.value =
                                 checkbox.value;
@@ -2476,15 +3101,20 @@ document.addEventListener(
                 "selectAllAddItems"
             );
 
+
         const addCheckboxes =
-            document.querySelectorAll(
-                ".add-item-checkbox"
+            Array.from(
+                document.querySelectorAll(
+                    ".add-item-checkbox"
+                )
             );
+
 
         const addSelectionCount =
             document.getElementById(
                 "addSelectionCount"
             );
+
 
         const addSelectedButton =
             document.getElementById(
@@ -2498,10 +3128,12 @@ document.addEventListener(
 
         function getSelectedAddItems(){
 
-            return Array.from(
-                document.querySelectorAll(
-                    ".add-item-checkbox:checked"
-                )
+            return addCheckboxes.filter(
+                function(checkbox){
+
+                    return checkbox.checked;
+
+                }
             );
 
         }
@@ -2516,11 +3148,12 @@ document.addEventListener(
             const selected =
                 getSelectedAddItems();
 
+
             const count =
                 selected.length;
 
 
-            if (addSelectionCount) {
+            if (addSelectionCount){
 
                 addSelectionCount.textContent =
                     count + " selected";
@@ -2528,9 +3161,21 @@ document.addEventListener(
             }
 
 
-            if (addSelectedButton) {
+            /*
+             * Backend rule:
+             *
+             * addItemsToStorage()
+             * rejects inactive storage.
+             */
+
+            if (addSelectedButton){
 
                 addSelectedButton.disabled =
+                    !isStorageActive ||
+                    (
+                        !isNormalRoom &&
+                        !isAgroStore
+                    ) ||
                     count === 0;
 
             }
@@ -2540,26 +3185,28 @@ document.addEventListener(
                 .querySelectorAll(
                     "[data-add-card]"
                 )
-                .forEach(function(card){
+                .forEach(
+                    function(card){
 
-                    const checkbox =
-                        card.querySelector(
-                            ".add-item-checkbox"
+                        const checkbox =
+                            card.querySelector(
+                                ".add-item-checkbox"
+                            );
+
+
+                        card.classList.toggle(
+                            "selected",
+                            Boolean(
+                                checkbox &&
+                                checkbox.checked
+                            )
                         );
 
-
-                    card.classList.toggle(
-                        "selected",
-                        Boolean(
-                            checkbox &&
-                            checkbox.checked
-                        )
-                    );
-
-                });
+                    }
+                );
 
 
-            if (selectAllAddItems) {
+            if (selectAllAddItems){
 
                 selectAllAddItems.checked =
                     addCheckboxes.length > 0 &&
@@ -2574,17 +3221,33 @@ document.addEventListener(
            SELECT ALL ADD ITEMS
         ====================================================== */
 
-        if (selectAllAddItems) {
+        if (selectAllAddItems){
 
             selectAllAddItems.addEventListener(
                 "change",
                 function(){
 
+                    if (
+                        !isStorageActive
+                    ){
+
+                        selectAllAddItems.checked =
+                            false;
+
+                        return;
+
+                    }
+
+
                     addCheckboxes.forEach(
                         function(checkbox){
 
-                            checkbox.checked =
-                                selectAllAddItems.checked;
+                            if (!checkbox.disabled){
+
+                                checkbox.checked =
+                                    selectAllAddItems.checked;
+
+                            }
 
                         }
                     );
@@ -2608,6 +3271,150 @@ document.addEventListener(
                 checkbox.addEventListener(
                     "change",
                     updateAddSelection
+                );
+
+            }
+        );
+
+
+        /* ======================================================
+           ADD FORM VALIDATION
+        ====================================================== */
+
+        const addItemsForm =
+            document.getElementById(
+                "addItemsForm"
+            );
+
+
+        if (addItemsForm){
+
+            addItemsForm.addEventListener(
+                "submit",
+                function(event){
+
+                    const selected =
+                        getSelectedAddItems();
+
+
+                    if (
+                        !isStorageActive ||
+                        (
+                            !isNormalRoom &&
+                            !isAgroStore
+                        ) ||
+                        selected.length === 0
+                    ){
+
+                        event.preventDefault();
+
+                        return;
+
+                    }
+
+                    /*
+                     * The backend remains the final authority.
+                     *
+                     * For AgroStore:
+                     *
+                     *     type === "feeds"
+                     *     dwellNumber unallocated
+                     *     quantity > 0
+                     *
+                     * For room:
+                     *
+                     *     type !== "feeds"
+                     *     dwellNumber unallocated
+                     *
+                     * The frontend does not attempt to override
+                     * those rules.
+                     */
+
+                }
+            );
+
+        }
+
+
+        /* ======================================================
+           FEED QUANTITY FORMS
+        ====================================================== */
+
+        const feedQuantityForms =
+            document.querySelectorAll(
+                "[data-feed-quantity-form]"
+            );
+
+
+        feedQuantityForms.forEach(
+            function(form){
+
+                form.addEventListener(
+                    "submit",
+                    function(event){
+
+                        if (!isAgroStore){
+
+                            event.preventDefault();
+
+                            return;
+
+                        }
+
+
+                        const input =
+                            form.querySelector(
+                                ".quantity-input"
+                            );
+
+
+                        if (!input){
+
+                            event.preventDefault();
+
+                            return;
+
+                        }
+
+
+                        const numericQuantity =
+                            Number(
+                                input.value
+                            );
+
+
+                        if (
+                            !Number.isFinite(
+                                numericQuantity
+                            ) ||
+                            numericQuantity < 0
+                        ){
+
+                            event.preventDefault();
+
+                            input.focus();
+
+                            return;
+
+                        }
+
+
+                        /*
+                         * IMPORTANT:
+                         *
+                         * Do NOT impose a maximum equal to the
+                         * current quantity here.
+                         *
+                         * The service accepts any finite
+                         * non-negative quantity.
+                         *
+                         * Quantity = 0 is meaningful:
+                         *
+                         *     quantity = 0
+                         *     dwellNumber = null
+                         */
+
+                    }
                 );
 
             }
