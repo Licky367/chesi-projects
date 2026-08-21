@@ -8,6 +8,24 @@
 //     Display and manage everything allocated inside a
 //     Room or AgroStore.
 //
+// PAGE URL:
+//
+//     /storage/:dairyId/contents/:storageId
+//
+// URL ID CONTRACT:
+//
+//     :dairyId
+//         = parent Dairy._id
+//
+//     :storageId
+//         = storage facility Dairy._id
+//
+// IMPORTANT:
+//
+//     item._id is used inside forms as itemId.
+//
+//     It is NOT used as the storage contents page ID.
+//
 // STORAGE ARCHITECTURE:
 //
 //     NORMAL STORAGE
@@ -94,7 +112,7 @@ function getItemIds(
 
         return [
 
-            String(value)
+            String(value).trim()
 
         ];
 
@@ -126,6 +144,109 @@ function createCountMessage(
 
 
 // ==========================================================
+// GET URL PARAMETERS
+// ==========================================================
+//
+// URL:
+//
+//     /storage/:dairyId/contents/:storageId
+//
+// :dairyId
+//     = parent Dairy._id
+//
+// :storageId
+//     = storage facility Dairy._id
+//
+// ==========================================================
+
+function getRouteIds(
+    req
+) {
+
+    return {
+
+        dairyId:
+            String(
+                req.params.dairyId || ""
+            ).trim(),
+
+        storageId:
+            String(
+                req.params.storageId || ""
+            ).trim()
+
+    };
+
+}
+
+
+// ==========================================================
+// BUILD CONTENTS URL
+// ==========================================================
+//
+// ALWAYS returns:
+//
+//     /storage/<dairyId>/contents/<storageId>
+//
+// ==========================================================
+
+function getContentsUrl(
+    dairyId,
+    storageId,
+    query = {}
+) {
+
+    const baseUrl =
+        `/storage/${encodeURIComponent(
+            dairyId
+        )}/contents/${encodeURIComponent(
+            storageId
+        )}`;
+
+
+    const params =
+        new URLSearchParams();
+
+
+    Object.entries(
+        query
+    ).forEach(
+        function([
+            key,
+            value
+        ]) {
+
+            if (
+                value !== undefined &&
+                value !== null &&
+                String(value) !== ""
+            ) {
+
+                params.set(
+                    key,
+                    String(value)
+                );
+
+            }
+
+        }
+    );
+
+
+    const queryString =
+        params.toString();
+
+
+    return queryString
+
+        ? `${baseUrl}?${queryString}`
+
+        : baseUrl;
+
+}
+
+
+// ==========================================================
 // RENDER CONTENTS
 // ==========================================================
 
@@ -135,13 +256,77 @@ async function renderContents(
     options = {}
 ) {
 
-    const dairyId =
-        req.params.dairyId;
+    // ======================================================
+    // GET ROUTE IDS
+    // ======================================================
+
+    const {
+
+        dairyId,
+
+        storageId
+
+    } =
+        getRouteIds(
+            req
+        );
 
 
-    const storageId =
-        req.params.storageId;
+    // ======================================================
+    // REQUIRE DAIRY ID
+    // ======================================================
 
+    if (
+        !dairyId
+    ) {
+
+        const error =
+            new Error(
+                "Dairy ID is required."
+            );
+
+        error.status =
+            400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // REQUIRE STORAGE ID
+    // ======================================================
+
+    if (
+        !storageId
+    ) {
+
+        const error =
+            new Error(
+                "Storage ID is required."
+            );
+
+        error.status =
+            400;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // GET STORAGE CONTENTS
+    // ======================================================
+    //
+    // Service receives BOTH IDs.
+    //
+    // dairyId:
+    //     parent Dairy._id
+    //
+    // storageId:
+    //     storage facility Dairy._id
+    //
+    // ======================================================
 
     const result =
         await storageContentsService.getStorageContents({
@@ -153,11 +338,19 @@ async function renderContents(
         });
 
 
+    // ======================================================
+    // ACTIVE TAB
+    // ======================================================
+
     const activeTab =
         options.activeTab ||
         req.query.tab ||
         "view";
 
+
+    // ======================================================
+    // SUCCESS MESSAGE
+    // ======================================================
 
     const successMessage =
         options.successMessage ||
@@ -165,16 +358,28 @@ async function renderContents(
         null;
 
 
+    // ======================================================
+    // PAGE ERROR
+    // ======================================================
+
     const pageError =
         options.pageError ||
         null;
 
+
+    // ======================================================
+    // RENDER
+    // ======================================================
 
     return res.render(
 
         "storage/contents",
 
         {
+
+            title:
+                result.storage.displayName ||
+                "Storage Contents",
 
             dairy:
                 result.dairy,
@@ -198,7 +403,15 @@ async function renderContents(
 
             successMessage,
 
-            pageError
+            pageError,
+
+            // ----------------------------------------------
+            // EXPLICIT URL VALUES FOR THE VIEW
+            // ----------------------------------------------
+
+            dairyId,
+
+            storageId
 
         }
 
@@ -209,6 +422,12 @@ async function renderContents(
 
 // ==========================================================
 // GET CONTENTS
+// ==========================================================
+//
+// GET:
+//
+//     /storage/:dairyId/contents/:storageId
+//
 // ==========================================================
 
 async function contents(
@@ -249,6 +468,12 @@ async function contents(
 // ==========================================================
 // ADD ITEMS
 // ==========================================================
+//
+// POST:
+//
+//     /storage/:dairyId/contents/:storageId/add
+//
+// ==========================================================
 
 async function addItems(
     req,
@@ -257,16 +482,22 @@ async function addItems(
 
     try {
 
-        const dairyId =
-            req.params.dairyId;
+        const {
 
+            dairyId,
 
-        const storageId =
-            req.params.storageId;
+            storageId
+
+        } =
+            getRouteIds(
+                req
+            );
 
 
         const itemIds =
-            getItemIds(req);
+            getItemIds(
+                req
+            );
 
 
         const result =
@@ -293,11 +524,29 @@ async function addItems(
 
 
 
+        // ==================================================
+        // REDIRECT BACK TO SAME STORAGE
+        // ==================================================
+
         return res.redirect(
 
-            `/storage/${dairyId}/contents/${storageId}?tab=add&success=${encodeURIComponent(
-                message
-            )}`
+            getContentsUrl(
+
+                dairyId,
+
+                storageId,
+
+                {
+
+                    tab:
+                        "add",
+
+                    success:
+                        message
+
+                }
+
+            )
 
         );
 
@@ -330,6 +579,12 @@ async function addItems(
 // UPDATE FEED QUANTITY
 // ==========================================================
 //
+// POST:
+//
+//     /storage/:dairyId/contents/:storageId/quantity
+//
+// ==========================================================
+//
 // This operation is primarily for AgroStore.
 //
 // The service determines whether:
@@ -353,12 +608,16 @@ async function updateQuantity(
 
     try {
 
-        const dairyId =
-            req.params.dairyId;
+        const {
 
+            dairyId,
 
-        const storageId =
-            req.params.storageId;
+            storageId
+
+        } =
+            getRouteIds(
+                req
+            );
 
 
         const itemId =
@@ -375,6 +634,13 @@ async function updateQuantity(
             );
 
 
+        const unit =
+            getBodyValue(
+                req,
+                "unit"
+            );
+
+
         const result =
             await storageContentsService.updateFeedQuantity({
 
@@ -384,7 +650,9 @@ async function updateQuantity(
 
                 itemId,
 
-                quantity
+                quantity,
+
+                unit
 
             });
 
@@ -392,9 +660,9 @@ async function updateQuantity(
         let message;
 
 
-        // --------------------------------------------------
+        // ==================================================
         // ITEM AUTOMATICALLY OMITTED
-        // --------------------------------------------------
+        // ==================================================
 
         if (
             result.omitted === true
@@ -409,9 +677,9 @@ async function updateQuantity(
         }
 
 
-        // --------------------------------------------------
+        // ==================================================
         // QUANTITY UPDATED
-        // --------------------------------------------------
+        // ==================================================
 
         else {
 
@@ -429,11 +697,29 @@ async function updateQuantity(
         }
 
 
+        // ==================================================
+        // REDIRECT BACK TO SAME STORAGE
+        // ==================================================
+
         return res.redirect(
 
-            `/storage/${dairyId}/contents/${storageId}?tab=view&success=${encodeURIComponent(
-                message
-            )}`
+            getContentsUrl(
+
+                dairyId,
+
+                storageId,
+
+                {
+
+                    tab:
+                        "view",
+
+                    success:
+                        message
+
+                }
+
+            )
 
         );
 
@@ -466,6 +752,10 @@ async function updateQuantity(
 // OMIT ITEMS
 // ==========================================================
 //
+// POST:
+//
+//     /storage/:dairyId/contents/:storageId/omit
+//
 // This operation remains for NORMAL storage.
 //
 // AgroStore omission is automatic and therefore the service
@@ -480,16 +770,22 @@ async function omitItems(
 
     try {
 
-        const dairyId =
-            req.params.dairyId;
+        const {
 
+            dairyId,
 
-        const storageId =
-            req.params.storageId;
+            storageId
+
+        } =
+            getRouteIds(
+                req
+            );
 
 
         const itemIds =
-            getItemIds(req);
+            getItemIds(
+                req
+            );
 
 
         const result =
@@ -516,11 +812,29 @@ async function omitItems(
 
 
 
+        // ==================================================
+        // REDIRECT BACK TO SAME STORAGE
+        // ==================================================
+
         return res.redirect(
 
-            `/storage/${dairyId}/contents/${storageId}?tab=view&success=${encodeURIComponent(
-                message
-            )}`
+            getContentsUrl(
+
+                dairyId,
+
+                storageId,
+
+                {
+
+                    tab:
+                        "view",
+
+                    success:
+                        message
+
+                }
+
+            )
 
         );
 
@@ -553,6 +867,10 @@ async function omitItems(
 // RESHUFFLE ITEMS
 // ==========================================================
 //
+// POST:
+//
+//     /storage/:dairyId/contents/:storageId/reshuffle
+//
 // This operation remains for NORMAL storage.
 //
 // AgroStore does not support reshuffling.
@@ -566,16 +884,22 @@ async function reshuffleItems(
 
     try {
 
-        const dairyId =
-            req.params.dairyId;
+        const {
 
+            dairyId,
 
-        const storageId =
-            req.params.storageId;
+            storageId
+
+        } =
+            getRouteIds(
+                req
+            );
 
 
         const itemIds =
-            getItemIds(req);
+            getItemIds(
+                req
+            );
 
 
         const targetStorageId =
@@ -614,11 +938,29 @@ async function reshuffleItems(
 
 
 
+        // ==================================================
+        // REDIRECT BACK TO ORIGINAL STORAGE
+        // ==================================================
+
         return res.redirect(
 
-            `/storage/${dairyId}/contents/${storageId}?tab=view&success=${encodeURIComponent(
-                message
-            )}`
+            getContentsUrl(
+
+                dairyId,
+
+                storageId,
+
+                {
+
+                    tab:
+                        "view",
+
+                    success:
+                        message
+
+                }
+
+            )
 
         );
 
