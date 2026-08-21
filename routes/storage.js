@@ -321,6 +321,20 @@ router.post(
     storageController.updateQuantity
 
 );
+// ==========================================================
+// ADD NEW ITEM DIRECTLY TO STORAGE
+// ==========================================================
+
+router.get(
+    "/storage/:dairyId/contents/:storageId/add",
+    storageController.getAddItemPage
+);
+
+
+router.post(
+    "/storage/:dairyId/contents/:storageId/add",
+    storageController.postAddItem
+);
 
 
 // ==========================================================
