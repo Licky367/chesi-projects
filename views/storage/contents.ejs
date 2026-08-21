@@ -56,9 +56,25 @@ FARM OWNERSHIP:
 
 ADD ITEMS:
 
-    ALL Dairy records where:
+    ONLY Dairy records where:
 
-        assetCode === dairy.code
+        item.assetCode === dairy.code
+
+    AND:
+
+        item.dwellNumber is empty
+
+    AND:
+
+        item is NOT a storage structure
+
+    AND:
+
+        item.type !== "room"
+
+    AND:
+
+        item.type !== "agroStore"
 
 OMIT:
 
@@ -85,11 +101,9 @@ RESHUFFLE TARGETS:
 */
 
 
-/*
-==============================================================
-STORAGE TYPE
-==============================================================
-*/
+/* ============================================================
+   STORAGE TYPE
+============================================================ */
 
 const storageType = String(
     storage && storage.type
@@ -108,23 +122,21 @@ const isNormalRoom =
     storageType === "room";
 
 
-/*
-==============================================================
-STORAGE NAME
-==============================================================
-*/
+/* ============================================================
+   STORAGE NAME
+============================================================ */
 
 const storageName =
     (
         storage &&
         storage.displayName
     )
-    ||
+        ||
     (
         storage &&
         storage.name
     )
-    ||
+        ||
     (
         isAgroStore
             ? "AgroStore"
@@ -141,11 +153,9 @@ const storageName =
     );
 
 
-/*
-==============================================================
-STORAGE ROOM NUMBER
-==============================================================
-*/
+/* ============================================================
+   STORAGE ROOM NUMBER
+============================================================ */
 
 const storageRoomNumber =
     (
@@ -157,11 +167,9 @@ const storageRoomNumber =
         : "—";
 
 
-/*
-==============================================================
-ACTIVE TAB
-==============================================================
-*/
+/* ============================================================
+   CURRENT TAB
+============================================================ */
 
 const currentTab =
     activeTab === "add"
@@ -169,11 +177,9 @@ const currentTab =
         : "view";
 
 
-/*
-==============================================================
-SAFE DATA ARRAYS
-==============================================================
-*/
+/* ============================================================
+   SAFE DATA ARRAYS
+============================================================ */
 
 const currentItems =
     Array.isArray(items)
@@ -193,15 +199,9 @@ const storageTargets =
         : [];
 
 
-const currentItemCount =
-    currentItems.length;
-
-
-/*
-==============================================================
-DISPLAY HELPERS
-==============================================================
-*/
+/* ============================================================
+   HELPERS
+============================================================ */
 
 function displayValue(value) {
 
@@ -216,11 +216,9 @@ function displayValue(value) {
 }
 
 
-/*
-==============================================================
-DISPLAY STORAGE NAME
-==============================================================
-*/
+/* ============================================================
+   STORAGE DISPLAY NAME
+============================================================ */
 
 function displayStorageName(item) {
 
@@ -260,19 +258,11 @@ function displayStorageName(item) {
 }
 
 
-/*
-==============================================================
-FEED CLASSIFICATION HELPER
+/* ============================================================
+   FEED CLASSIFICATION
+============================================================ */
 
-IMPORTANT:
-
-This helper is deliberately named isFeedItem()
-instead of itemIsFeed() to avoid variable/function
-name collisions inside EJS blocks.
-==============================================================
-*/
-
-function isFeedItem(item) {
+function itemIsFeed(item) {
 
     return (
 
@@ -289,61 +279,270 @@ function isFeedItem(item) {
 }
 
 
-/*
-==============================================================
-ANIMAL CLASSIFICATION HELPER
+/* ============================================================
+   ANIMAL CLASSIFICATION
+============================================================ */
 
+/*
 IMPORTANT:
 
-This helper is deliberately named isAnimalItem()
-instead of itemIsAnimal() to prevent:
+Do NOT name a local variable itemIsAnimal.
 
-    const itemIsAnimal = itemIsAnimal(item);
-
-from shadowing the function.
-
-Storage allocation itself is NOT determined from code.
-
-A positive code is only used here for display
-classification where applicable.
-==============================================================
+The helper itself is called itemIsAnimal().
 */
 
-function isAnimalItem(item) {
+function itemIsAnimal(item) {
 
-    if (
-        !item
-    ) {
+    /*
+    ----------------------------------------------------------
+    Display classification only.
 
-        return false;
+    Storage allocation is NOT determined from code.
 
-    }
+    A positive code is simply rendered as an animal-style
+    record for presentation where applicable.
+    ----------------------------------------------------------
+    */
 
-
-    const hasCode =
-        item.code !== null &&
-        item.code !== undefined;
-
-
-    if (
-        !hasCode
-    ) {
+    if (!item) {
 
         return false;
 
     }
 
 
-    const numericCode =
-        Number(item.code);
+    const code =
+        Number(
+            item.code
+        );
 
 
     return (
-        !Number.isNaN(numericCode) &&
-        numericCode > 0
+
+        item.code !== null &&
+        item.code !== undefined &&
+        !Number.isNaN(code) &&
+        code > 0
+
     );
 
 }
+
+
+/* ============================================================
+   EMPTY DWELL NUMBER CHECK
+============================================================ */
+
+function hasEmptyDwellNumber(item) {
+
+    if (!item) {
+
+        return true;
+
+    }
+
+
+    return (
+
+        item.dwellNumber === null ||
+
+        item.dwellNumber === undefined ||
+
+        String(
+            item.dwellNumber
+        ).trim() === ""
+
+    );
+
+}
+
+
+/* ============================================================
+   STORAGE RECORD CHECK
+============================================================ */
+
+function isStorageRecord(item) {
+
+    if (!item) {
+
+        return false;
+
+    }
+
+
+    const recordType =
+        String(
+            item.recordType || ""
+        )
+        .trim()
+        .toLowerCase();
+
+
+    const type =
+        String(
+            item.type || ""
+        )
+        .trim()
+        .toLowerCase();
+
+
+    /*
+    ----------------------------------------------------------
+    A structure record is a storage/facility record.
+    ----------------------------------------------------------
+    */
+
+    if (
+        recordType === "structure"
+    ) {
+
+        return true;
+
+    }
+
+
+    /*
+    ----------------------------------------------------------
+    Explicitly exclude room and AgroStore types.
+    ----------------------------------------------------------
+    */
+
+    if (
+        type === "room" ||
+        type === "agrostore"
+    ) {
+
+        return true;
+
+    }
+
+
+    return false;
+
+}
+
+
+/* ============================================================
+   ADD ITEM ELIGIBILITY
+============================================================ */
+
+/*
+Only records satisfying ALL conditions are displayed in
+the Add Items tab:
+
+    1. assetCode === parent farm dairy.code
+    2. dwellNumber is empty
+    3. not a storage structure
+    4. not a room
+    5. not an AgroStore
+*/
+
+function canBeAddedToStorage(item) {
+
+    if (!item) {
+
+        return false;
+
+    }
+
+
+    /*
+    ----------------------------------------------------------
+    PARENT FARM OWNERSHIP
+    ----------------------------------------------------------
+    */
+
+    if (
+        dairy &&
+        dairy.code !== null &&
+        dairy.code !== undefined
+    ) {
+
+        if (
+            String(item.assetCode) !==
+            String(dairy.code)
+        ) {
+
+            return false;
+
+        }
+
+    } else {
+
+        return false;
+
+    }
+
+
+    /*
+    ----------------------------------------------------------
+    MUST NOT ALREADY HAVE A DWELL NUMBER
+    ----------------------------------------------------------
+    */
+
+    if (
+        !hasEmptyDwellNumber(item)
+    ) {
+
+        return false;
+
+    }
+
+
+    /*
+    ----------------------------------------------------------
+    MUST NOT BE A STORAGE RECORD
+    ----------------------------------------------------------
+    */
+
+    if (
+        isStorageRecord(item)
+    ) {
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+
+/* ============================================================
+   FILTERED ADD ITEMS
+============================================================ */
+
+/*
+Do not rely solely on the controller/service to filter this.
+
+The EJS view enforces the display rule as well.
+
+This prevents rooms and AgroStores from appearing in the
+Add Items tab even if they accidentally arrive inside
+availableItems.
+*/
+
+const filteredAddItems =
+    addItems.filter(
+        function(item) {
+
+            return canBeAddedToStorage(item);
+
+        }
+    );
+
+
+/* ============================================================
+   COUNTS
+============================================================ */
+
+const currentItemCount =
+    currentItems.length;
+
+
+const addItemCount =
+    filteredAddItems.length;
 
 %>
 
@@ -859,102 +1058,6 @@ function isAnimalItem(item) {
 
 
 /* ============================================================
-   AGROSTORE QUANTITY
-============================================================ */
-
-.feed-quantity-section{
-    margin-top:13px;
-    padding:13px;
-    background:#f8fbf8;
-    border:1px solid #dfeae1;
-    border-radius:11px;
-}
-
-.feed-quantity-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    margin-bottom:10px;
-}
-
-.feed-quantity-title{
-    color:#68776e;
-    font-size:9px;
-    font-weight:850;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-}
-
-.feed-current-quantity{
-    color:#276b3e;
-    font-size:17px;
-    font-weight:850;
-}
-
-.feed-unit{
-    margin-left:3px;
-    color:#7b8780;
-    font-size:10px;
-    font-weight:700;
-}
-
-.quantity-form{
-    display:grid;
-    grid-template-columns:minmax(0,1fr) 105px auto;
-    align-items:end;
-    gap:7px;
-}
-
-.quantity-field label{
-    display:block;
-    margin-bottom:5px;
-    color:#748078;
-    font-size:9px;
-    font-weight:750;
-}
-
-.quantity-input,
-.quantity-unit{
-    width:100%;
-    height:36px;
-    box-sizing:border-box;
-    padding:0 9px;
-    border:1px solid #d6e2d9;
-    border-radius:8px;
-    background:#fff;
-    color:#304438;
-    font-size:11px;
-    outline:none;
-}
-
-.quantity-input:focus,
-.quantity-unit:focus{
-    border-color:#82aa8e;
-    box-shadow:0 0 0 3px rgba(45,122,71,.07);
-}
-
-.quantity-save-button{
-    height:36px;
-    padding:0 14px;
-    border:0;
-    border-radius:8px;
-    background:#2d7b48;
-    color:#fff;
-    font-size:10px;
-    font-weight:800;
-    cursor:pointer;
-}
-
-.quantity-help{
-    margin:8px 0 0;
-    color:#8a958e;
-    font-size:9px;
-    line-height:1.45;
-}
-
-
-/* ============================================================
    EMPTY CONTENT
 ============================================================ */
 
@@ -1099,6 +1202,102 @@ function isAnimalItem(item) {
 
 .add-meta strong{
     color:#4a5b50;
+}
+
+
+/* ============================================================
+   AGROSTORE QUANTITY
+============================================================ */
+
+.feed-quantity-section{
+    margin-top:13px;
+    padding:13px;
+    background:#f8fbf8;
+    border:1px solid #dfeae1;
+    border-radius:11px;
+}
+
+.feed-quantity-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.feed-quantity-title{
+    color:#68776e;
+    font-size:9px;
+    font-weight:850;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+}
+
+.feed-current-quantity{
+    color:#276b3e;
+    font-size:17px;
+    font-weight:850;
+}
+
+.feed-unit{
+    margin-left:3px;
+    color:#7b8780;
+    font-size:10px;
+    font-weight:700;
+}
+
+.quantity-form{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 105px auto;
+    align-items:end;
+    gap:7px;
+}
+
+.quantity-field label{
+    display:block;
+    margin-bottom:5px;
+    color:#748078;
+    font-size:9px;
+    font-weight:750;
+}
+
+.quantity-input,
+.quantity-unit{
+    width:100%;
+    height:36px;
+    box-sizing:border-box;
+    padding:0 9px;
+    border:1px solid #d6e2d9;
+    border-radius:8px;
+    background:#fff;
+    color:#304438;
+    font-size:11px;
+    outline:none;
+}
+
+.quantity-input:focus,
+.quantity-unit:focus{
+    border-color:#82aa8e;
+    box-shadow:0 0 0 3px rgba(45,122,71,.07);
+}
+
+.quantity-save-button{
+    height:36px;
+    padding:0 14px;
+    border:0;
+    border-radius:8px;
+    background:#2d7b48;
+    color:#fff;
+    font-size:10px;
+    font-weight:800;
+    cursor:pointer;
+}
+
+.quantity-help{
+    margin:8px 0 0;
+    color:#8a958e;
+    font-size:9px;
+    line-height:1.45;
 }
 
 
@@ -1340,6 +1539,7 @@ function isAnimalItem(item) {
         data-storage-panel="view"
     >
 
+
         <div class="contents-topbar">
 
             <h2 class="contents-heading">
@@ -1544,26 +1744,27 @@ function isAnimalItem(item) {
 
                 <div class="contents-list">
 
+
                     <% currentItems.forEach(function(item) { %>
 
                         <%
                             /*
-                             * IMPORTANT:
-                             *
-                             * Do NOT write:
-                             *
-                             * const itemIsAnimal = itemIsAnimal(item);
-                             *
-                             * because that shadows the helper function.
-                             *
-                             * The helper is now isAnimalItem().
-                             */
+                            IMPORTANT:
+                            Do NOT use:
+
+                                const itemIsAnimal = itemIsAnimal(item);
+
+                            That creates a TDZ/shadowing error.
+
+                            Use a differently named local variable.
+                            */
 
                             const currentItemIsAnimal =
-                                isAnimalItem(item);
+                                itemIsAnimal(item);
+
 
                             const currentItemIsFeed =
-                                isFeedItem(item);
+                                itemIsFeed(item);
                         %>
 
 
@@ -1802,13 +2003,9 @@ function isAnimalItem(item) {
                                             </strong>
 
                                             <% if (item.isMilking) { %>
-
                                                 Yes
-
                                             <% } else { %>
-
                                                 No
-
                                             <% } %>
 
                                         </span>
@@ -1833,6 +2030,7 @@ function isAnimalItem(item) {
 
 
                     <% }); %>
+
 
                 </div>
 
@@ -1931,16 +2129,20 @@ function isAnimalItem(item) {
 
             <p>
 
-                All Dairy records belonging to this Dairy Farm are
-                listed here. Select the records you want to assign
-                to this storage.
+                Only Dairy records belonging to this Dairy Farm,
+                having the same <strong>assetCode</strong> as the
+                parent farm's <strong>dairy.code</strong>, and
+                currently without a <strong>dwellNumber</strong>
+                are available to add.
+
+                Storage rooms and AgroStores are excluded.
 
             </p>
 
         </div>
 
 
-        <% if (addItems.length > 0) { %>
+        <% if (addItemCount > 0) { %>
 
 
             <!-- ==================================================
@@ -2002,17 +2204,25 @@ function isAnimalItem(item) {
                 id="addItemsForm"
             >
 
+
                 <div class="add-list">
 
 
-                    <% addItems.forEach(function(item) { %>
+                    <% filteredAddItems.forEach(function(item) { %>
 
                         <%
-                            const addItemIsAnimal =
-                                isAnimalItem(item);
+                            /*
+                            IMPORTANT:
+                            Local variable names are deliberately
+                            different from the helper functions.
+                            */
 
-                            const addItemIsFeed =
-                                isFeedItem(item);
+                            const addRecordIsAnimal =
+                                itemIsAnimal(item);
+
+
+                            const addRecordIsFeed =
+                                itemIsFeed(item);
                         %>
 
 
@@ -2041,11 +2251,11 @@ function isAnimalItem(item) {
 
                             <div class="add-icon">
 
-                                <% if (addItemIsFeed) { %>
+                                <% if (addRecordIsFeed) { %>
 
                                     🌾
 
-                                <% } else if (addItemIsAnimal) { %>
+                                <% } else if (addRecordIsAnimal) { %>
 
                                     🐄
 
@@ -2072,20 +2282,20 @@ function isAnimalItem(item) {
 
                                     <span
                                         class="content-type
-                                        <% if (addItemIsFeed) { %>
+                                        <% if (addRecordIsFeed) { %>
                                             feed-type
-                                        <% } else if (addItemIsAnimal) { %>
+                                        <% } else if (addRecordIsAnimal) { %>
                                             animal-type
                                         <% } else { %>
                                             asset-type
                                         <% } %>"
                                     >
 
-                                        <% if (addItemIsFeed) { %>
+                                        <% if (addRecordIsFeed) { %>
 
                                             Feed
 
-                                        <% } else if (addItemIsAnimal) { %>
+                                        <% } else if (addRecordIsAnimal) { %>
 
                                             Animal
 
@@ -2240,9 +2450,13 @@ function isAnimalItem(item) {
 
                 <p>
 
-                    No Dairy records were returned whose
-                    <strong>assetCode</strong> belongs to this
-                    Dairy Farm.
+                    There are no eligible Dairy records available
+                    to add to this storage.
+
+                    Records must have
+                    <strong>assetCode = <%= displayValue(dairy && dairy.code) %></strong>,
+                    must have no <strong>dwellNumber</strong>, and
+                    must not be a storage room or AgroStore.
 
                 </p>
 
@@ -2292,11 +2506,11 @@ document.addEventListener(
 
 
                         tabs.forEach(
-                            function(tabItem){
+                            function(item){
 
-                                tabItem.classList.toggle(
+                                item.classList.toggle(
                                     "active",
-                                    tabItem.dataset.storageTab === target
+                                    item.dataset.storageTab === target
                                 );
 
                             }
