@@ -9,20 +9,6 @@
 //     add.js
 //     contents.js
 //
-// Architecture:
-//
-//     NORMAL STORAGE
-//         - add items
-//         - omit items
-//         - reshuffle items
-//
-//     AGROSTORE (type === "feeds")
-//         - add feeds
-//         - update quantity
-//         - automatic omission when quantity reaches 0
-//         - NO manual omit
-//         - NO reshuffle
-//
 // IMPORTANT:
 //
 // Every property exported here MUST be a function,
@@ -138,6 +124,16 @@ const list =
 // ==========================================================
 // ADD FORM
 // ==========================================================
+//
+// add.js exports:
+//
+//     getAddStorage
+//
+// This is exposed to the routes as:
+//
+//     form
+//
+// ==========================================================
 
 const form =
     resolveHandler(
@@ -145,6 +141,7 @@ const form =
         addController,
 
         [
+            "getAddStorage",
             "form",
             "showForm",
             "addForm"
@@ -158,6 +155,16 @@ const form =
 // ==========================================================
 // CREATE STORAGE
 // ==========================================================
+//
+// add.js exports:
+//
+//     createStorage
+//
+// This is exposed to the routes as:
+//
+//     create
+//
+// ==========================================================
 
 const create =
     resolveHandler(
@@ -165,8 +172,8 @@ const create =
         addController,
 
         [
-            "create",
             "createStorage",
+            "create",
             "add"
         ],
 
