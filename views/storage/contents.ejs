@@ -14,7 +14,7 @@ PURPOSE:
         2. AgroStore (type === "feeds")
 
 URL CONTRACT:
-    /storage/<%= dairy._id %>/contents/<%= item._id %>
+    /storage/:dairyId/contents/:itemId
 
 ==============================================================
 */
@@ -920,16 +920,20 @@ const currentTab =
         <div class="storage-header-main">
 
             <p class="storage-header-eyebrow">
+
                 <% if (isAgroStore) { %>
                     AgroStore
                 <% } else { %>
                     Storage
                 <% } %>
+
             </p>
+
 
             <h1 class="storage-page-title">
                 <%= storageName %>
             </h1>
+
 
             <p class="storage-page-description">
 
@@ -1036,11 +1040,13 @@ const currentTab =
                 Current Contents
             </h2>
 
+
             <div class="contents-count">
 
                 <strong>
                     <%= itemCount || 0 %>
                 </strong>
+
 
                 <% if (Number(itemCount || 0) === 1) { %>
                     item
@@ -1131,6 +1137,7 @@ const currentTab =
                             Reshuffle Selected Items
                         </h3>
 
+
                         <p class="reshuffle-description">
                             Move the selected items to another
                             active storage room of the same type.
@@ -1144,6 +1151,7 @@ const currentTab =
                                 <label for="destinationStorage">
                                     Destination
                                 </label>
+
 
                                 <select
                                     id="destinationStorage"
@@ -1213,12 +1221,14 @@ const currentTab =
 
                             <%
                                 const itemCodeNumber = Number(item.code);
+
                                 const isAnimal =
                                     item.code !== null &&
                                     item.code !== undefined &&
                                     !Number.isNaN(itemCodeNumber) &&
                                     itemCodeNumber > 0;
                             %>
+
 
                             <article
                                 class="content-card"
@@ -1358,12 +1368,15 @@ const currentTab =
                                                 <%= item.gender || "—" %>
                                             </span>
 
+
                                             <span>
                                                 <strong>Age:</strong>
                                                 <%= item.ageText || "—" %>
                                             </span>
 
+
                                             <span>
+
                                                 <strong>Milking:</strong>
 
                                                 <% if (item.isMilking) { %>
@@ -1429,6 +1442,7 @@ const currentTab =
 
                             <div></div>
 
+
                             <div class="content-icon">
                                 🌾
                             </div>
@@ -1441,6 +1455,7 @@ const currentTab =
                                     <h3>
                                         <%= item.name || "Unnamed Feed" %>
                                     </h3>
+
 
                                     <span class="content-type feed-type">
                                         Feed
@@ -1485,6 +1500,7 @@ const currentTab =
                                             <span class="feed-current-quantity">
                                                 <%= Number(item.quantity || 0).toLocaleString() %>
                                             </span>
+
 
                                             <span class="feed-unit">
                                                 <%= item.unit || "unit" %>
@@ -1855,12 +1871,14 @@ const currentTab =
                                             Code:
                                         </strong>
 
+
                                         <%
                                             const displayCode =
                                                 item.assetCode ||
                                                 item.code ||
                                                 "—";
                                         %>
+
 
                                         <%= displayCode %>
 
