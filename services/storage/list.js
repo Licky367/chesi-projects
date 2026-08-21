@@ -1,1044 +1,817 @@
-<style>
+// ==========================================================
+// services/storage/list.js
+// STORAGE LIST / READ SERVICE
+// ==========================================================
+//
+// SINGLE SOURCE OF TRUTH:
+//
+//     models/dairy.js
+//
+// STORAGE ARCHITECTURE:
+//
+//     Dairy._id
+//         ↓
+//     parent Dairy Farm
+//         ↓
+//     Dairy.code
+//         ↓
+//     child structure.assetCode
+//
+// RECORD IDENTITY:
+//
+//     recordType === "structure"
+//         = structure record
+//
+// STORAGE TYPE:
+//
+//     type === "room"
+//         = normal storage room
+//
+//     type === "agroStore"
+//         = AgroStore
+//
+// DWELLING:
+//
+//     dwellNumber >= 0
+//         = normal room number
+//
+//     dwellNumber < 0
+//         = AgroStore number
+//
+// IMPORTANT:
+//
+//     recordType and type are DIFFERENT fields.
+//
+//     recordType = "structure"
+//         identifies the record category.
+//
+//     type = "room" / "agroStore"
+//         identifies the structure/storage type.
+//
+// ==========================================================
 
-/* ==========================================================
-   STORAGE PAGE
-   ========================================================== */
 
-.storage-page {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    color: #26332a;
+const mongoose =
+    require("mongoose");
+
+
+const Dairy =
+    require("../../models/dairy");
+
+
+// ==========================================================
+// CONSTANTS
+// ==========================================================
+
+const STRUCTURE_RECORD_TYPE =
+    "structure";
+
+const ROOM_TYPE =
+    "room";
+
+const AGROSTORE_TYPE =
+    "agroStore";
+
+
+// ==========================================================
+// NORMALIZE STORAGE TYPE
+// ==========================================================
+//
+// Allowed:
+//
+//     all
+//     room
+//     agroStore
+//
+// Invalid values become:
+//
+//     all
+//
+// IMPORTANT:
+//
+// This normalizes the STORAGE `type`.
+//
+// It does NOT normalize `recordType`.
+//
+// ==========================================================
+
+function normalizeType(
+    type
+) {
+
+    const value =
+        String(
+            type || "all"
+        )
+        .trim();
+
+
+    if (
+        value === ROOM_TYPE
+    ) {
+
+        return ROOM_TYPE;
+
+    }
+
+
+    if (
+        value === AGROSTORE_TYPE
+    ) {
+
+        return AGROSTORE_TYPE;
+
+    }
+
+
+    return "all";
+
 }
 
 
-/* ==========================================================
-   PAGE HEADER
-   ========================================================== */
+// ==========================================================
+// VALIDATE DAIRY ID
+// ==========================================================
+//
+// The route ID is always:
+//
+//     Dairy._id
+//
+// Example:
+//
+//     /storage/64f.../add
+//
+// The ID is NOT:
+//
+//     Dairy.code
+//
+// ==========================================================
 
-.storage-header {
-    margin-bottom: 22px;
-}
+function validateDairyId(
+    dairyId
+) {
 
-.storage-header-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 15px;
-}
+    if (
+        !dairyId
+    ) {
 
-.storage-header h2 {
-    margin: 0;
-    color: #0b5d1e;
-    font-size: 26px;
-    font-weight: 700;
-}
+        const error =
+            new Error(
+                "Dairy ID is required."
+            );
 
-.storage-subtitle {
-    margin: 6px 0 0;
-    color: #66736a;
-    font-size: 14px;
-    line-height: 1.5;
-}
+        error.status =
+            400;
 
+        throw error;
 
-/* ==========================================================
-   FARM INFORMATION
-   ========================================================== */
-
-.farm-reference {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    margin-top: 12px;
-    padding: 7px 11px;
-    background: #eaf5ed;
-    border: 1px solid #cfe3d3;
-    border-radius: 8px;
-    color: #0b5d1e;
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.farm-reference-label {
-    color: #6b796f;
-    font-weight: 500;
-}
+    }
 
 
-/* ==========================================================
-   FILTER CARD
-   ========================================================== */
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            dairyId
+        )
+    ) {
 
-.storage-filter-card {
-    background: #ffffff;
-    border: 1px solid #dce9df;
-    border-left: 5px solid #0b5d1e;
-    border-radius: 12px;
-    padding: 18px;
-    margin-bottom: 18px;
-    box-shadow: 0 4px 14px rgba(11, 93, 30, 0.06);
-}
+        const error =
+            new Error(
+                "Invalid dairy ID."
+            );
 
-.storage-filter-form {
-    display: flex;
-    align-items: flex-end;
-    gap: 12px;
-    flex-wrap: wrap;
-}
+        error.status =
+            400;
 
-.filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 220px;
-}
+        throw error;
 
-.filter-group label {
-    color: #31533a;
-    font-size: 13px;
-    font-weight: 600;
-}
+    }
 
-.filter-group select {
-    height: 42px;
-    padding: 0 12px;
-    border: 1px solid #cbdccf;
-    border-radius: 8px;
-    background: #f9fcfa;
-    color: #26332a;
-    font-size: 14px;
-    outline: none;
-    cursor: pointer;
-    transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
-}
-
-.filter-group select:focus {
-    border-color: #0b5d1e;
-    box-shadow:
-        0 0 0 3px rgba(11, 93, 30, 0.10);
 }
 
 
-/* ==========================================================
-   BUTTONS
-   ========================================================== */
-
-.filter-button {
-    height: 42px;
-    padding: 0 20px;
-    border: none;
-    border-radius: 8px;
-    background: #0b5d1e;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition:
-        background 0.2s ease,
-        transform 0.15s ease;
-}
-
-.filter-button:hover {
-    background: #084817;
-}
-
-.filter-button:active {
-    transform: translateY(1px);
-}
-
-.clear-filter {
-    height: 42px;
-    display: inline-flex;
-    align-items: center;
-    padding: 0 16px;
-    border: 1px solid #b8cfbd;
-    border-radius: 8px;
-    background: #f4faf5;
-    color: #0b5d1e;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    transition:
-        background 0.2s ease;
-}
-
-.clear-filter:hover {
-    background: #e6f3e9;
-}
-
-
-/* ==========================================================
-   SUMMARY
-   ========================================================== */
-
-.storage-summary {
-    display: flex;
-    align-items: center;
-    margin: 16px 0;
-    color: #637068;
-    font-size: 14px;
-}
-
-.storage-summary strong {
-    color: #0b5d1e;
-    font-size: 20px;
-    margin-right: 4px;
-}
-
-
-/* ==========================================================
-   STORAGE LIST
-   ========================================================== */
-
-.storage-list {
-    display: grid;
-    grid-template-columns:
-        repeat(
-            auto-fit,
-            minmax(320px, 1fr)
-        );
-    gap: 16px;
-}
-
-
-/* ==========================================================
-   STORAGE CARD
-   ========================================================== */
-
-.storage-card {
-    display: flex;
-    gap: 15px;
-    background: #ffffff;
-    border: 1px solid #dce9df;
-    border-radius: 14px;
-    padding: 18px;
-    box-shadow:
-        0 5px 16px rgba(11, 93, 30, 0.06);
-
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
-        border-color 0.2s ease;
-}
-
-.storage-card:hover {
-    transform: translateY(-2px);
-    border-color: #a9c9b0;
-    box-shadow:
-        0 8px 22px rgba(11, 93, 30, 0.10);
-}
-
-
-/* ==========================================================
-   STORAGE ICON
-   ========================================================== */
-
-.storage-icon {
-    width: 52px;
-    height: 52px;
-    min-width: 52px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 12px;
-
-    background: #eaf5ed;
-    border: 1px solid #cfe3d3;
-
-    font-size: 25px;
-}
-
-
-/* ==========================================================
-   INFORMATION
-   ========================================================== */
-
-.storage-information {
-    flex: 1;
-    min-width: 0;
-}
-
-
-/* ==========================================================
-   TITLE ROW
-   ========================================================== */
-
-.storage-title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 10px;
-
-    margin-bottom: 14px;
-}
-
-.storage-title-row h3 {
-    margin: 0;
-
-    color: #0b5d1e;
-
-    font-size: 18px;
-    font-weight: 700;
-
-    word-break: break-word;
-}
-
-
-/* ==========================================================
-   TITLE ACTIONS
-   ========================================================== */
-
-.storage-title-actions {
-    display: flex;
-
-    align-items: center;
-
-    justify-content: flex-end;
-
-    gap: 8px;
-
-    flex-shrink: 0;
-}
-
-
-/* ==========================================================
-   VIEW CONTENTS BUTTON
-   ========================================================== */
-
-.view-storage-button {
-    display: inline-flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    min-height: 30px;
-
-    padding: 5px 11px;
-
-    border: 1px solid #b8cfbd;
-
-    border-radius: 7px;
-
-    background: #f4faf5;
-
-    color: #0b5d1e;
-
-    text-decoration: none;
-
-    font-size: 12px;
-
-    font-weight: 700;
-
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease,
-        transform 0.15s ease;
-}
-
-.view-storage-button:hover {
-    background: #e6f3e9;
-
-    border-color: #8fb99a;
-
-    color: #084817;
-}
-
-.view-storage-button:active {
-    transform: translateY(1px);
-}
-
-
-/* ==========================================================
-   STORAGE TYPE BADGE
-   ========================================================== */
-
-.storage-type {
-    display: inline-flex;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 5px 9px;
-
-    border-radius: 20px;
-
-    font-size: 11px;
-    font-weight: 700;
-
-    white-space: nowrap;
-}
-
-.room-type {
-    background: #e8f4eb;
-    color: #0b5d1e;
-}
-
-.agrostore-type {
-    background: #edf5df;
-    color: #4b6716;
-}
-
-
-/* ==========================================================
-   STORAGE DETAILS
-   ========================================================== */
-
-.storage-details {
-    display: grid;
-
-    grid-template-columns:
-        repeat(
-            3,
-            1fr
+// ==========================================================
+// GET PARENT DAIRY FARM
+// ==========================================================
+//
+// INPUT:
+//
+//     Dairy._id
+//
+// RETURNS:
+//
+//     {
+//         dairy,
+//         farmCode
+//     }
+//
+// The returned `farmCode` is the parent's:
+//
+//     dairy.code
+//
+// It is then used to locate child structures through:
+//
+//     assetCode: farmCode
+//
+// ==========================================================
+
+async function getParentDairy(
+    dairyId
+) {
+
+    // ======================================================
+    // VALIDATE MONGODB ID
+    // ======================================================
+
+    validateDairyId(
+        dairyId
+    );
+
+
+    // ======================================================
+    // FIND PARENT DAIRY
+    // ======================================================
+
+    const dairy =
+        await Dairy
+            .findById(
+                dairyId
+            )
+            .lean();
+
+
+    // ======================================================
+    // NOT FOUND
+    // ======================================================
+
+    if (
+        !dairy
+    ) {
+
+        const error =
+            new Error(
+                "Dairy farm not found."
+            );
+
+        error.status =
+            404;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // PARENT MUST BE A DAIRY FARM
+    // ======================================================
+    //
+    // Dairy Farm identity:
+    //
+    //     code < 0
+    //
+    // ======================================================
+
+    const farmCode =
+        Number(
+            dairy.code
         );
 
-    gap: 10px;
-}
 
-.storage-detail {
-    display: flex;
+    if (
+        !Number.isInteger(
+            farmCode
+        ) ||
+        farmCode >= 0
+    ) {
 
-    flex-direction: column;
+        const error =
+            new Error(
+                "The selected Dairy is not a valid parent Dairy Farm."
+            );
 
-    gap: 3px;
+        error.status =
+            422;
 
-    padding: 9px;
+        throw error;
 
-    background: #f7faf8;
-
-    border-radius: 8px;
-}
-
-.detail-label {
-    color: #7a877e;
-
-    font-size: 11px;
-    font-weight: 600;
-
-    text-transform: uppercase;
-}
-
-.detail-value {
-    color: #26332a;
-
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.status-active {
-    color: #0b5d1e;
-}
-
-.status-inactive {
-    color: #9a5b00;
-}
-
-
-/* ==========================================================
-   DESCRIPTION
-   ========================================================== */
-
-.storage-description {
-    margin: 13px 0 0;
-
-    padding-top: 11px;
-
-    border-top: 1px solid #e5eee7;
-
-    color: #66736a;
-
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-
-/* ==========================================================
-   EMPTY STATE
-   ========================================================== */
-
-.empty-storage {
-    background: #ffffff;
-
-    border: 1px dashed #b9cfbd;
-
-    border-radius: 14px;
-
-    padding: 45px 20px;
-
-    text-align: center;
-
-    box-shadow:
-        0 4px 14px rgba(11, 93, 30, 0.04);
-}
-
-.empty-storage-icon {
-    width: 64px;
-    height: 64px;
-
-    margin: 0 auto 15px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    border-radius: 50%;
-
-    background: #eaf5ed;
-
-    font-size: 28px;
-}
-
-.empty-storage h3 {
-    margin: 0 0 8px;
-
-    color: #0b5d1e;
-
-    font-size: 20px;
-}
-
-.empty-storage p {
-    margin: 0;
-
-    color: #718078;
-
-    font-size: 14px;
-}
-
-
-/* ==========================================================
-   RESPONSIVE
-   ========================================================== */
-
-@media (max-width: 700px) {
-
-    .storage-page {
-        padding: 15px;
     }
 
-    .storage-header-top {
-        flex-direction: column;
-    }
 
-    .storage-header h2 {
-        font-size: 23px;
-    }
+    // ======================================================
+    // RETURN
+    // ======================================================
 
-    .storage-filter-form {
-        align-items: stretch;
-        flex-direction: column;
-    }
+    return {
 
-    .filter-group {
-        width: 100%;
-        min-width: 0;
-    }
+        dairy,
 
-    .filter-button,
-    .clear-filter {
-        width: 100%;
-        justify-content: center;
-    }
+        farmCode
 
-    .storage-list {
-        grid-template-columns: 1fr;
-    }
-
-    .storage-card {
-        padding: 15px;
-    }
-
-    .storage-title-row {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .storage-title-actions {
-        width: 100%;
-        justify-content: flex-start;
-    }
-
-    .storage-details {
-        grid-template-columns: 1fr;
-    }
+    };
 
 }
 
 
-/* ==========================================================
-   VERY SMALL SCREENS
-   ========================================================== */
+// ==========================================================
+// STORAGE RECORD FILTER
+// ==========================================================
+//
+// Every storage facility must:
+//
+//     recordType === "structure"
+//
+// The storage `type` is handled separately.
+//
+// ==========================================================
 
-@media (max-width: 400px) {
+function getStructureFilter() {
 
-    .storage-card {
-        gap: 11px;
-    }
+    return {
 
-    .storage-icon {
-        width: 44px;
-        height: 44px;
-        min-width: 44px;
-        font-size: 21px;
-    }
+        recordType:
+            STRUCTURE_RECORD_TYPE
 
-    .storage-title-row h3 {
-        font-size: 16px;
-    }
+    };
 
 }
 
-</style>
 
+// ==========================================================
+// SORT STORAGE
+// ==========================================================
+//
+// Storage is represented by:
+//
+//     dwellNumber
+//
+// Example:
+//
+//     AgroStores:
+//         -3
+//         -2
+//         -1
+//
+//     Rooms:
+//          0
+//          1
+//          2
+//          3
+//
+// Numeric ascending order:
+//
+//     -3
+//     -2
+//     -1
+//      0
+//      1
+//      2
+//      3
+//
+// ==========================================================
+
+function sortStorage(
+    storage
+) {
+
+    return storage.sort(
+        (
+            a,
+            b
+        ) => {
+
+            const aNumber =
+                Number(
+                    a.dwellNumber
+                );
+
+            const bNumber =
+                Number(
+                    b.dwellNumber
+                );
+
+
+            return (
+                aNumber -
+                bNumber
+            );
+
+        }
+    );
+
+}
+
+
+// ==========================================================
+// GET STORAGE
+// ==========================================================
+//
+// INPUT:
+//
+//     {
+//         dairyId,
+//         type
+//     }
+//
+// RETURNS:
+//
+//     {
+//         dairy,
+//         farmCode,
+//         type,
+//         storage
+//     }
+//
+// ==========================================================
+
+async function getStorage(
+    options = {}
+) {
+
+    // ======================================================
+    // GET DAIRY ID
+    // ======================================================
+
+    const dairyId =
+        String(
+            options.dairyId ||
+            options.id ||
+            ""
+        )
+        .trim();
 
-<div class="page storage-page">
 
+    // ======================================================
+    // GET PARENT FARM
+    // ======================================================
 
-    <!-- ==================================================
-         PAGE HEADER
-         ================================================== -->
+    const {
 
-    <div class="storage-header">
+        dairy,
 
-        <div class="storage-header-top">
+        farmCode
 
-            <div>
+    } =
+        await getParentDairy(
+            dairyId
+        );
 
-                <h2>
-                    <%= dairy && dairy.name
-                        ? `${dairy.name} Storage`
-                        : "Dairy Storage"
-                    %>
-                </h2>
 
-                <p class="storage-subtitle">
-                    Rooms and AgroStores available for this dairy farm.
-                </p>
+    // ======================================================
+    // NORMALIZE STORAGE TYPE
+    // ======================================================
 
-            </div>
+    const type =
+        normalizeType(
+            options.type
+        );
 
-        </div>
 
+    // ======================================================
+    // BASE QUERY
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // recordType identifies this as a structure.
+    //
+    // type identifies which kind of storage.
+    //
+    // assetCode identifies the parent farm.
+    //
+    // ======================================================
 
-        <!-- ==================================================
-             FARM INFORMATION
-             ================================================== -->
+    const query = {
 
-        <% if (dairy) { %>
+        ...getStructureFilter(),
 
-            <div class="farm-reference">
+        assetCode:
+            farmCode,
 
-                <span class="farm-reference-label">
-                    Farm Code
-                </span>
+        status:
+            "active"
 
-                <span>
-                    <%= dairy.code %>
-                </span>
+    };
 
-            </div>
 
-        <% } %>
+    // ======================================================
+    // ROOM FILTER
+    // ======================================================
 
-    </div>
+    if (
+        type === ROOM_TYPE
+    ) {
 
+        query.type =
+            ROOM_TYPE;
 
-    <!-- ==================================================
-         FILTER
-         ================================================== -->
+    }
 
-    <div class="storage-filter-card">
 
-        <form
-            method="GET"
-            action="/storage/<%= dairy._id %>"
-            class="storage-filter-form"
-        >
+    // ======================================================
+    // AGROSTORE FILTER
+    // ======================================================
 
-            <div class="filter-group">
+    if (
+        type === AGROSTORE_TYPE
+    ) {
 
-                <label for="storageType">
-                    Storage Type
-                </label>
+        query.type =
+            AGROSTORE_TYPE;
 
-                <select
-                    id="storageType"
-                    name="type"
-                >
+    }
 
-                    <option
-                        value="all"
-                        <%= selectedType === "all"
-                            ? "selected"
-                            : ""
-                        %>
-                    >
-                        All Storage
-                    </option>
 
-                    <option
-                        value="room"
-                        <%= selectedType === "room"
-                            ? "selected"
-                            : ""
-                        %>
-                    >
-                        Rooms
-                    </option>
+    // ======================================================
+    // FETCH FROM DAIRY MODEL
+    // ======================================================
 
-                    <option
-                        value="agroStore"
-                        <%= selectedType === "agroStore"
-                            ? "selected"
-                            : ""
-                        %>
-                        AgroStores
-                    </option>
+    const storage =
+        await Dairy
+            .find(
+                query
+            )
+            .lean();
 
-                </select>
 
-            </div>
+    // ======================================================
+    // SORT
+    // ======================================================
 
+    sortStorage(
+        storage
+    );
 
-            <button
-                type="submit"
-                class="filter-button"
-            >
-                Apply Filter
-            </button>
 
+    // ======================================================
+    // RETURN
+    // ======================================================
 
-            <% if (selectedType !== "all") { %>
+    return {
 
-                <a
-                    href="/storage/<%= dairy._id %>"
-                    class="clear-filter"
-                >
-                    Show All
-                </a>
+        dairy,
 
-            <% } %>
+        farmCode,
 
-        </form>
+        type,
 
-    </div>
+        storage
 
+    };
 
-    <!-- ==================================================
-         SUMMARY
-         ================================================== -->
+}
 
-    <div class="storage-summary">
 
-        <span>
+// ==========================================================
+// GET ALL STORAGE
+// ==========================================================
 
-            <strong>
-                <%= storage.length %>
-            </strong>
+async function getAllStorage(
+    dairyId
+) {
 
-            <%= storage.length === 1
-                ? "storage facility"
-                : "storage facilities"
-            %>
+    return getStorage({
 
-        </span>
+        dairyId,
 
-    </div>
+        type:
+            "all"
 
+    });
 
-    <!-- ==================================================
-         STORAGE LIST
-         ================================================== -->
+}
 
-    <% if (storage && storage.length > 0) { %>
 
-        <div class="storage-list">
+// ==========================================================
+// GET ROOMS
+// ==========================================================
+//
+// A room is:
+//
+//     recordType === "structure"
+//     type === "room"
+//     assetCode === farm.code
+//     dwellNumber >= 0
+//
+// ==========================================================
 
-            <% storage.forEach(function (item) { %>
+async function getRooms(
+    dairyId
+) {
 
-                <div class="storage-card">
+    return getStorage({
 
+        dairyId,
 
-                    <!-- ======================================
-                         ICON
-                         ====================================== -->
+        type:
+            ROOM_TYPE
 
-                    <div class="storage-icon">
+    });
 
-                        <% if (item.type === "agroStore") { %>
+}
 
-                            🏪
 
-                        <% } else { %>
+// ==========================================================
+// GET AGROSTORES
+// ==========================================================
+//
+// An AgroStore is:
+//
+//     recordType === "structure"
+//     type === "agroStore"
+//     assetCode === farm.code
+//     dwellNumber < 0
+//
+// ==========================================================
 
-                            🏠
+async function getAgroStores(
+    dairyId
+) {
 
-                        <% } %>
+    return getStorage({
 
-                    </div>
+        dairyId,
 
+        type:
+            AGROSTORE_TYPE
 
-                    <!-- ======================================
-                         INFORMATION
-                         ====================================== -->
+    });
 
-                    <div class="storage-information">
+}
 
 
-                        <!-- ==================================
-                             TITLE ROW
-                             ================================== -->
+// ==========================================================
+// GET ONE STORAGE FACILITY
+// ==========================================================
+//
+// INPUT:
+//
+//     dairyId
+//     roomNumber
+//
+// IMPORTANT:
+//
+// `dairyId` identifies the parent Dairy Farm through
+// MongoDB _id.
+//
+// `roomNumber` is actually the storage's `dwellNumber`.
+//
+// BOTH are required.
+//
+// This prevents a storage facility belonging to another
+// Dairy Farm from being returned.
+//
+// ==========================================================
 
-                        <div class="storage-title-row">
+async function getStorageFacility(
+    dairyId,
+    roomNumber
+) {
 
-                            <h3>
+    // ======================================================
+    // GET PARENT FARM
+    // ======================================================
 
-                                <%= item.name ||
+    const {
 
-                                    (
-                                        item.type === "agroStore"
+        dairy,
 
-                                            ? `AgroStore ${Math.abs(
-                                                Number(item.dwellNumber)
-                                            )}`
+        farmCode
 
-                                            : `Room ${item.dwellNumber}`
-                                    )
+    } =
+        await getParentDairy(
+            dairyId
+        );
 
-                                %>
 
-                            </h3>
+    // ======================================================
+    // CONVERT STORAGE NUMBER
+    // ======================================================
 
+    const number =
+        Number(
+            roomNumber
+        );
 
-                            <div class="storage-title-actions">
 
+    // ======================================================
+    // VALIDATE STORAGE NUMBER
+    // ======================================================
 
-                                <!-- ==================================
-                                     VIEW CONTENTS
-                                     ==================================
+    if (
+        !Number.isInteger(
+            number
+        )
+    ) {
 
-                                     URL:
+        const error =
+            new Error(
+                "Storage number must be a whole number."
+            );
 
-                                     /storage/
-                                     <parentFarmId>/
-                                     contents/
-                                     <dairyIdOfTheDairy>
+        error.status =
+            400;
 
-                                     parentFarmId:
-                                         dairy._id
+        throw error;
 
-                                     dairyIdOfTheDairy:
-                                         item._id
+    }
 
-                                     IMPORTANT:
-                                     Both IDs come from models/dairy.js.
-                                ================================== -->
 
-                                <a
-                                    href="/storage/<%= dairy._id %>/contents/<%= item._id %>"
-                                    class="view-storage-button"
-                                >
-                                    View
-                                </a>
+    // ======================================================
+    // FIND STORAGE FACILITY
+    // ======================================================
+    //
+    // IMPORTANT:
+    //
+    // recordType === "structure"
+    //
+    // type is NOT used here because this function is capable
+    // of returning either:
+    //
+    //     room
+    //
+    // or:
+    //
+    //     agroStore
+    //
+    // The dwellNumber determines the actual storage number.
+    //
+    // ======================================================
 
+    const storage =
+        await Dairy
+            .findOne({
 
-                                <!-- ==================================
-                                     STORAGE TYPE
-                                     ================================== -->
+                recordType:
+                    STRUCTURE_RECORD_TYPE,
 
-                                <span
-                                    class="storage-type <%= item.type === "agroStore"
-                                        ? "agrostore-type"
-                                        : "room-type"
-                                    %>"
-                                >
+                assetCode:
+                    farmCode,
 
-                                    <%= item.type === "agroStore"
-                                        ? "AgroStore"
-                                        : "Room"
-                                    %>
+                dwellNumber:
+                    number,
 
-                                </span>
+                status:
+                    "active"
 
-                            </div>
+            })
+            .lean();
 
-                        </div>
 
+    // ======================================================
+    // NOT FOUND
+    // ======================================================
 
-                        <!-- ==================================
-                             DETAILS
-                             ================================== -->
+    if (
+        !storage
+    ) {
 
-                        <div class="storage-details">
+        const error =
+            new Error(
+                "Storage facility not found."
+            );
 
+        error.status =
+            404;
 
-                            <!-- ==================================
-                                 PARENT FARM CODE
-                                 ================================== -->
+        throw error;
 
-                            <div class="storage-detail">
+    }
 
-                                <span class="detail-label">
-                                    Farm Code
-                                </span>
 
-                                <span class="detail-value">
-                                    <%= item.assetCode %>
-                                </span>
+    // ======================================================
+    // RETURN
+    // ======================================================
 
-                            </div>
+    return {
 
+        dairy,
 
-                            <!-- ==================================
-                                 DWELL NUMBER
-                                 ================================== -->
+        farmCode,
 
-                            <div class="storage-detail">
+        storage
 
-                                <span class="detail-label">
+    };
 
-                                    <%= item.type === "agroStore"
-                                        ? "AgroStore Number"
-                                        : "Room Number"
-                                    %>
+}
 
-                                </span>
 
-                                <span class="detail-value">
+// ==========================================================
+// EXPORT
+// ==========================================================
 
-                                    <% if (item.type === "agroStore") { %>
+module.exports = {
 
-                                        <%= Math.abs(
-                                            Number(item.dwellNumber)
-                                        ) %>
+    normalizeType,
 
-                                    <% } else { %>
+    getParentDairy,
 
-                                        <%= item.dwellNumber %>
+    getStorage,
 
-                                    <% } %>
+    getAllStorage,
 
-                                </span>
+    getRooms,
 
-                            </div>
+    getAgroStores,
 
+    getStorageFacility
 
-                            <!-- ==================================
-                                 STATUS
-                                 ================================== -->
-
-                            <div class="storage-detail">
-
-                                <span class="detail-label">
-                                    Status
-                                </span>
-
-                                <span class="detail-value <%= item.status === "active"
-                                    ? "status-active"
-                                    : "status-inactive"
-                                %>">
-
-                                    <%= item.status === "active"
-                                        ? "Active"
-                                        : "Inactive"
-                                    %>
-
-                                </span>
-
-                            </div>
-
-
-                        </div>
-
-
-                        <!-- ==================================
-                             DESCRIPTION
-                             ================================== -->
-
-                        <% if (item.description) { %>
-
-                            <p class="storage-description">
-
-                                <%= item.description %>
-
-                            </p>
-
-                        <% } %>
-
-
-                    </div>
-
-                </div>
-
-            <% }); %>
-
-        </div>
-
-
-    <% } else { %>
-
-
-        <!-- ==================================================
-             EMPTY STATE
-             ================================================== -->
-
-        <div class="empty-storage">
-
-            <div class="empty-storage-icon">
-
-                <% if (selectedType === "room") { %>
-
-                    🏠
-
-                <% } else if (selectedType === "agroStore") { %>
-
-                    🏪
-
-                <% } else { %>
-
-                    🏠
-
-                <% } %>
-
-            </div>
-
-
-            <h3>
-                No Storage Found
-            </h3>
-
-
-            <p>
-
-                <% if (selectedType === "room") { %>
-
-                    There are currently no active rooms
-                    for this dairy farm.
-
-                <% } else if (selectedType === "agroStore") { %>
-
-                    There are currently no active AgroStores
-                    for this dairy farm.
-
-                <% } else { %>
-
-                    There are currently no active rooms
-                    or AgroStores for this dairy farm.
-
-                <% } %>
-
-            </p>
-
-        </div>
-
-    <% } %>
-
-
-</div>
+};
