@@ -3,17 +3,66 @@
 // DAIRY / ANIMAL / FACILITY / ASSET MODEL
 // ==========================================================
 //
-// ENTITY IDENTITY
+// SINGLE SOURCE OF TRUTH
+//
+// recordType
+// ----------------------------------------------------------
+//
+//     "farm"
+//         = Dairy Farm
+//
+//     "animal"
+//         = Identified Dairy / Animal
+//
+//     "structure"
+//         = Structure / Facility / Asset
+//
+// IMPORTANT:
+//
+//     recordType MUST NOT be confused with type.
+//
+// ----------------------------------------------------------
+//
+// type
+// ----------------------------------------------------------
+//
+//     farm
+//         = ranch / zeroGrazing / etc.
+//
+//     animal
+//         = Friesian / Ayrshire / Jersey / etc.
+//
+//     structure
+//         = room / agroStore / building / machine / feeds / etc.
+//
+// STORAGE EXAMPLE:
+//
+//     recordType: "structure"
+//     type: "room"
+//
+//     OR
+//
+//     recordType: "structure"
+//     type: "agroStore"
+//
+// FEED STOCK EXAMPLE:
+//
+//     recordType: "structure"
+//     type: "feeds"
+//
+// ==========================================================
+//
+// ENTITY CODE
 // ----------------------------------------------------------
 //
 // code < 0
-//     = DAIRY FARM
+//     = Dairy Farm
 //
 // code > 0
-//     = ANIMAL
+//     = Identified Animal
 //
 // code === null
-//     = FACILITY / ASSET
+//     = Structure / Facility / Manual Asset
 //
 // ==========================================================
 //
@@ -21,19 +70,30 @@
 // ----------------------------------------------------------
 //
 // assetCode
-//     = negative code of the parent Dairy Farm
+//     = negative code of parent Dairy Farm
 //
-// Dairy Farms:
+// Dairy Farm:
 //     assetCode = null
 //
-// Animals:
+// Animal:
 //     assetCode = negative Dairy Farm code
 //
-// Assigned Assets:
+// Assigned Structure / Asset:
 //     assetCode = negative Dairy Farm code
 //
-// Standalone Assets:
+// Standalone Structure / Asset:
 //     assetCode = null
+//
+// IMPORTANT:
+//
+// The parent farm is identified by MongoDB _id when passed
+// through routes such as:
+//
+//     /storage/:id/add
+//
+// The relationship stored on the created record is:
+//
+//     assetCode = parentDairy.code
 //
 // ==========================================================
 //
@@ -41,13 +101,13 @@
 // ----------------------------------------------------------
 //
 // dwellNumber >= 0
-//     = NORMAL ROOM
+//     = Normal Room
 //
 // dwellNumber < 0
-//     = AGROSTORE
+//     = AgroStore
 //
 // dwellNumber === null
-//     = NOT ALLOCATED
+//     = Not Allocated
 //
 // ==========================================================
 //
@@ -55,33 +115,24 @@
 // ----------------------------------------------------------
 //
 // type === "feeds"
-//     = FEED STOCK ITEM
+//     = Feed Stock Item
 //
-// Only records with:
+// recordType remains independent:
 //
+//     recordType === "structure"
 //     type === "feeds"
 //
-// may contain:
+// Only feed records may contain:
 //
 //     quantity
 //     unit
 //
-// quantity:
-//
-//     > 0
-//         = feed currently available
-//
-//     === 0
-//         = feed exhausted
-//
-// Non-feed records:
-//
-//     quantity = null
-//     unit     = null
-//
 // ==========================================================
 
-const mongoose = require("mongoose");
+
+const mongoose =
+    require("mongoose");
+
 
 // ==========================================================
 // CONSTANTS
@@ -89,11 +140,32 @@ const mongoose = require("mongoose");
 
 const MAX_PROFILE_IMAGES = 5;
 
+
+// ==========================================================
+// RECORD TYPES
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This is the record classification.
+//
+// It is NOT the same thing as `type`.
+//
+// ==========================================================
+
+const RECORD_TYPES = [
+    "farm",
+    "animal",
+    "structure"
+];
+
+
 // ==========================================================
 // DAIRY BREEDS
 // ==========================================================
 
 const DAIRY_BREEDS = [
+
     "Friesian",
     "Ayrshire",
     "Guernsey",
@@ -107,13 +179,16 @@ const DAIRY_BREEDS = [
     "Holstein",
     "Crossbreed",
     "Other"
+
 ];
+
 
 // ==========================================================
 // DAIRY FARM TYPES
 // ==========================================================
 
 const DAIRY_FARM_TYPES = [
+
     "ranch",
     "zeroGrazing",
     "semiZeroGrazing",
@@ -121,13 +196,37 @@ const DAIRY_FARM_TYPES = [
     "mixedFarming",
     "cooperative",
     "other"
+
 ];
 
+
 // ==========================================================
-// STRUCTURE / ASSET TYPES
+// STRUCTURE / FACILITY / ASSET TYPES
+// ==========================================================
+//
+// IMPORTANT:
+//
+// Storage types are also represented through `type`.
+//
+// Therefore:
+//
+//     recordType = "structure"
+//     type = "room"
+//
+//     recordType = "structure"
+//     type = "agroStore"
+//
+// `recordType` identifies the record as a structure.
+//
+// `type` identifies the specific structure/facility type.
+//
 // ==========================================================
 
 const STRUCTURE_TYPES = [
+
+    "room",
+    "agroStore",
+
     "machine",
     "equipment",
     "tool",
@@ -141,38 +240,57 @@ const STRUCTURE_TYPES = [
     "generator",
     "solarSystem",
     "feedStore",
+
+    // Feed stock item.
+    //
+    // This is deliberately a `type`, not a `recordType`.
     "feeds",
+
     "other"
+
 ];
+
 
 // ==========================================================
 // FEED TYPE
 // ==========================================================
 //
-// This is deliberately kept as:
+// IMPORTANT:
 //
-//     type === "feeds"
+// `feeds` belongs to the `type` field.
 //
-// because the storage service uses:
-//
-//     type: "feeds"
-//
-// as its AgroStore discriminator.
+// It does NOT become a recordType.
 //
 // ==========================================================
 
 const FEED_TYPE = "feeds";
+
+
+// ==========================================================
+// STORAGE TYPES
+// ==========================================================
+
+const STORAGE_TYPES = [
+
+    "room",
+    "agroStore"
+
+];
+
 
 // ==========================================================
 // DAIRY STATUSES
 // ==========================================================
 
 const DAIRY_STATUSES = [
+
     "active",
     "sold",
     "disposed",
     "inactive"
+
 ];
+
 
 // ==========================================================
 // HELPER: INTEGER OR NULL
@@ -181,12 +299,15 @@ const DAIRY_STATUSES = [
 function isIntegerOrNull(value) {
 
     return (
+
         value === null ||
         value === undefined ||
         Number.isInteger(value)
+
     );
 
 }
+
 
 // ==========================================================
 // HELPER: NEGATIVE INTEGER OR NULL
@@ -195,15 +316,18 @@ function isIntegerOrNull(value) {
 function isNegativeIntegerOrNull(value) {
 
     return (
+
         value === null ||
         value === undefined ||
         (
             Number.isInteger(value) &&
             value < 0
         )
+
     );
 
 }
+
 
 // ==========================================================
 // HELPER: NORMALIZE PROFILE IMAGE
@@ -225,8 +349,10 @@ function normalizeProfileImage(
 
     }
 
+
     const value =
         String(image).trim();
+
 
     if (!value) {
 
@@ -239,9 +365,11 @@ function normalizeProfileImage(
 
     }
 
+
     return value;
 
 }
+
 
 // ==========================================================
 // MAIN DAIRY SCHEMA
@@ -249,7 +377,37 @@ function normalizeProfileImage(
 
 const dairySchema =
     new mongoose.Schema(
+
         {
+
+            // ==================================================
+            // RECORD TYPE
+            // ==================================================
+            //
+            // IMPORTANT:
+            //
+            // recordType is NOT `type`.
+            //
+            // recordType:
+            //
+            //     farm
+            //     animal
+            //     structure
+            //
+            // ==================================================
+
+            recordType: {
+
+                type: String,
+
+                enum: RECORD_TYPES,
+
+                default: null,
+
+                trim: true
+
+            },
+
 
             // ==================================================
             // PROFILE IMAGES
@@ -258,10 +416,12 @@ const dairySchema =
             profileImages: {
 
                 type: [
+
                     {
                         type: String,
                         trim: true
                     }
+
                 ],
 
                 default: [],
@@ -272,9 +432,11 @@ const dairySchema =
                         function (images) {
 
                             return (
+
                                 Array.isArray(images) &&
                                 images.length <=
                                     MAX_PROFILE_IMAGES
+
                             );
 
                         },
@@ -285,6 +447,7 @@ const dairySchema =
                 }
 
             },
+
 
             // ==================================================
             // PRIMARY / LEGACY PROFILE IMAGE
@@ -300,13 +463,14 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // CODE
             // ==================================================
             //
-            // NEGATIVE = DAIRY FARM
+            // NEGATIVE = FARM
             // POSITIVE = ANIMAL
-            // NULL     = STRUCTURE / ASSET
+            // NULL     = STRUCTURE
             //
             // ==================================================
 
@@ -334,6 +498,7 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // NAME
             // ==================================================
@@ -350,6 +515,7 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // DATE OF BIRTH
             // ==================================================
@@ -361,6 +527,7 @@ const dairySchema =
                 default: null
 
             },
+
 
             // ==================================================
             // MASS
@@ -376,6 +543,7 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // MILKING STATUS
             // ==================================================
@@ -388,13 +556,14 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // ASSET CODE
             // ==================================================
             //
-            // Identifies the parent Dairy Farm.
+            // Parent Dairy Farm code.
             //
-            // Must be negative when supplied.
+            // MUST be negative when supplied.
             //
             // ==================================================
 
@@ -421,6 +590,7 @@ const dairySchema =
                 }
 
             },
+
 
             // ==================================================
             // DWELL NUMBER
@@ -461,29 +631,14 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // FEED QUANTITY
             // ==================================================
             //
-            // ONLY VALID FOR:
+            // ONLY VALID WHEN:
             //
             //     type === "feeds"
-            //
-            // Examples:
-            //
-            //     quantity: 500
-            //     unit: "kg"
-            //
-            //     quantity: 25
-            //     unit: "bags"
-            //
-            // A quantity of ZERO is VALID.
-            //
-            // Zero means the feed has been exhausted and,
-            // according to the storage service, its
-            // dwellNumber can then be cleared.
-            //
-            // Non-feed records are normalized to null.
             //
             // ==================================================
 
@@ -497,24 +652,14 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // FEED UNIT
             // ==================================================
             //
-            // ONLY VALID FOR:
+            // ONLY VALID WHEN:
             //
             //     type === "feeds"
-            //
-            // Examples:
-            //
-            //     kg
-            //     bags
-            //     tonnes
-            //     litres
-            //     bales
-            //
-            // The model deliberately does not impose a fixed
-            // enum because feed units may vary by farm.
             //
             // ==================================================
 
@@ -530,6 +675,7 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // MAINTENANCE FLAG
             // ==================================================
@@ -541,6 +687,7 @@ const dairySchema =
                 default: false
 
             },
+
 
             // ==================================================
             // MAINTENANCE
@@ -627,6 +774,7 @@ const dairySchema =
                 }
 
             },
+
 
             // ==================================================
             // MEDICAL ATTENTION
@@ -730,8 +878,32 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // TYPE
+            // ==================================================
+            //
+            // IMPORTANT:
+            //
+            // This is NOT recordType.
+            //
+            // Examples:
+            //
+            //     recordType: "structure"
+            //     type: "room"
+            //
+            //     recordType: "structure"
+            //     type: "agroStore"
+            //
+            //     recordType: "structure"
+            //     type: "feeds"
+            //
+            //     recordType: "animal"
+            //     type: "Friesian"
+            //
+            //     recordType: "farm"
+            //     type: "ranch"
+            //
             // ==================================================
 
             type: {
@@ -743,6 +915,7 @@ const dairySchema =
                 default: ""
 
             },
+
 
             // ==================================================
             // BUYING PRICE
@@ -758,6 +931,7 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // SELLING PRICE
             // ==================================================
@@ -771,6 +945,7 @@ const dairySchema =
                 default: 0
 
             },
+
 
             // ==================================================
             // REVENUE
@@ -786,6 +961,7 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // CURRENT WORTH
             // ==================================================
@@ -799,6 +975,7 @@ const dairySchema =
                 default: 0
 
             },
+
 
             // ==================================================
             // DESCRIPTION
@@ -816,6 +993,7 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // CONDITION
             // ==================================================
@@ -831,6 +1009,7 @@ const dairySchema =
                 maxlength: 500
 
             },
+
 
             // ==================================================
             // LOCATION
@@ -848,6 +1027,7 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // ACQUISITION DATE
             // ==================================================
@@ -860,6 +1040,7 @@ const dairySchema =
 
             },
 
+
             // ==================================================
             // VALUATION DATE
             // ==================================================
@@ -871,6 +1052,7 @@ const dairySchema =
                 default: null
 
             },
+
 
             // ==================================================
             // STATUS
@@ -907,7 +1089,9 @@ const dairySchema =
             }
 
         }
+
     );
+
 
 // ==========================================================
 // VIRTUAL: IS DAIRY FARM
@@ -917,13 +1101,10 @@ dairySchema.virtual(
     "isDairyFarm"
 ).get(function () {
 
-    return (
-        this.code !== null &&
-        this.code !== undefined &&
-        Number(this.code) < 0
-    );
+    return this.recordType === "farm";
 
 });
+
 
 // ==========================================================
 // VIRTUAL: IS ANIMAL
@@ -933,13 +1114,10 @@ dairySchema.virtual(
     "isAnimal"
 ).get(function () {
 
-    return (
-        this.code !== null &&
-        this.code !== undefined &&
-        Number(this.code) > 0
-    );
+    return this.recordType === "animal";
 
 });
+
 
 // ==========================================================
 // VIRTUAL: IS STRUCTURE
@@ -949,24 +1127,35 @@ dairySchema.virtual(
     "isStructure"
 ).get(function () {
 
-    return (
-        this.code === null ||
-        this.code === undefined
-    );
+    return this.recordType === "structure";
 
 });
 
+
 // ==========================================================
 // VIRTUAL: IS MANUAL ASSET
+// ==========================================================
+//
+// A structure with no parent farm.
+//
 // ==========================================================
 
 dairySchema.virtual(
     "isManualAsset"
 ).get(function () {
 
-    return this.isStructure;
+    return (
+
+        this.isStructure &&
+        (
+            this.assetCode === null ||
+            this.assetCode === undefined
+        )
+
+    );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: IS ASSIGNED ASSET
@@ -977,12 +1166,15 @@ dairySchema.virtual(
 ).get(function () {
 
     return (
+
         this.isStructure &&
         this.assetCode !== null &&
         this.assetCode !== undefined
+
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: IS STANDALONE ASSET
@@ -992,15 +1184,10 @@ dairySchema.virtual(
     "isStandaloneAsset"
 ).get(function () {
 
-    return (
-        this.isStructure &&
-        (
-            this.assetCode === null ||
-            this.assetCode === undefined
-        )
-    );
+    return this.isManualAsset;
 
 });
+
 
 // ==========================================================
 // VIRTUAL: IS DWELLING
@@ -1011,11 +1198,14 @@ dairySchema.virtual(
 ).get(function () {
 
     return (
+
         this.dwellNumber !== null &&
         this.dwellNumber !== undefined
+
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: IS NORMAL ROOM
@@ -1026,15 +1216,75 @@ dairySchema.virtual(
 ).get(function () {
 
     return (
-        this.dwellNumber !== null &&
-        this.dwellNumber !== undefined &&
+
+        this.isDwelling &&
         Number(this.dwellNumber) >= 0
+
     );
 
 });
 
+
+// ==========================================================
+// VIRTUAL: IS AGROSTORE
+// ==========================================================
+//
+// IMPORTANT:
+//
+// This checks the STRUCTURE TYPE.
+//
+// A storage facility itself is:
+//
+//     recordType = "structure"
+//     type = "agroStore"
+//
+// ==========================================================
+
+dairySchema.virtual(
+    "isAgroStore"
+).get(function () {
+
+    return (
+
+        this.isStructure &&
+        String(this.type || "")
+            .trim()
+            .toLowerCase() ===
+            "agrostore"
+
+    );
+
+});
+
+
+// ==========================================================
+// VIRTUAL: IS ROOM
+// ==========================================================
+
+dairySchema.virtual(
+    "isRoom"
+).get(function () {
+
+    return (
+
+        this.isStructure &&
+        String(this.type || "")
+            .trim()
+            .toLowerCase() ===
+            "room"
+
+    );
+
+});
+
+
 // ==========================================================
 // VIRTUAL: IS AGROSTORE CONTENT
+// ==========================================================
+//
+// A record allocated to an AgroStore is identified by a
+// negative dwellNumber.
+//
 // ==========================================================
 
 dairySchema.virtual(
@@ -1042,12 +1292,15 @@ dairySchema.virtual(
 ).get(function () {
 
     return (
+
         this.dwellNumber !== null &&
         this.dwellNumber !== undefined &&
         Number(this.dwellNumber) < 0
+
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: STORAGE DWELL NUMBER
@@ -1058,10 +1311,13 @@ dairySchema.virtual(
 ).get(function () {
 
     return this.isAgroStoreContent
+
         ? Number(this.dwellNumber)
+
         : null;
 
 });
+
 
 // ==========================================================
 // VIRTUAL: HAS NEGATIVE DWELL
@@ -1075,8 +1331,17 @@ dairySchema.virtual(
 
 });
 
+
 // ==========================================================
 // VIRTUAL: IS FEED
+// ==========================================================
+//
+// IMPORTANT:
+//
+// Feed is determined by `type`.
+//
+// NOT by recordType.
+//
 // ==========================================================
 
 dairySchema.virtual(
@@ -1084,13 +1349,16 @@ dairySchema.virtual(
 ).get(function () {
 
     return (
+
         String(this.type || "")
             .trim()
             .toLowerCase() ===
-        FEED_TYPE
+            FEED_TYPE
+
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: HAS FEED QUANTITY
@@ -1101,13 +1369,16 @@ dairySchema.virtual(
 ).get(function () {
 
     return (
+
         this.isFeed &&
         Number.isFinite(
             Number(this.quantity)
         )
+
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: FEED QUANTITY TEXT
@@ -1118,33 +1389,46 @@ dairySchema.virtual(
 ).get(function () {
 
     if (!this.isFeed) {
+
         return "";
+
     }
+
 
     if (
         this.quantity === null ||
         this.quantity === undefined
     ) {
+
         return "";
+
     }
+
 
     const quantity =
         Number(this.quantity);
 
+
     if (!Number.isFinite(quantity)) {
+
         return "";
+
     }
 
+
     return (
+
         `${quantity}` +
         (
             this.unit
                 ? ` ${this.unit}`
                 : ""
         )
+
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: PARENT FARM CODE
@@ -1160,6 +1444,7 @@ dairySchema.virtual(
 
     }
 
+
     if (
         this.assetCode !== null &&
         this.assetCode !== undefined
@@ -1169,9 +1454,11 @@ dairySchema.virtual(
 
     }
 
+
     return null;
 
 });
+
 
 // ==========================================================
 // VIRTUAL: GENDER
@@ -1187,13 +1474,19 @@ dairySchema.virtual(
 
     }
 
+
     return (
+
         Number(this.code) % 2 === 0
+
             ? "Female"
+
             : "Male"
+
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: IS FEMALE
@@ -1204,11 +1497,14 @@ dairySchema.virtual(
 ).get(function () {
 
     return (
+
         this.isAnimal &&
         Number(this.code) % 2 === 0
+
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: HAS IDENTITY
@@ -1221,6 +1517,7 @@ dairySchema.virtual(
     return this.isAnimal;
 
 });
+
 
 // ==========================================================
 // VIRTUAL: AGE TEXT
@@ -1236,6 +1533,7 @@ dairySchema.virtual(
 
     }
 
+
     const dob =
         new Date(
             this.dateOfBirth
@@ -1243,6 +1541,7 @@ dairySchema.virtual(
 
     const now =
         new Date();
+
 
     if (
         Number.isNaN(
@@ -1255,21 +1554,26 @@ dairySchema.virtual(
 
     }
 
+
     let years =
         now.getFullYear() -
         dob.getFullYear();
+
 
     let months =
         now.getMonth() -
         dob.getMonth();
 
+
     let days =
         now.getDate() -
         dob.getDate();
 
+
     if (days < 0) {
 
         months--;
+
 
         const previousMonth =
             new Date(
@@ -1278,10 +1582,12 @@ dairySchema.virtual(
                 0
             );
 
+
         days +=
             previousMonth.getDate();
 
     }
+
 
     if (months < 0) {
 
@@ -1291,13 +1597,17 @@ dairySchema.virtual(
 
     }
 
+
     return (
+
         `${years} years, ` +
         `${months} months, ` +
         `${days} days`
+
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: AGE YEARS
@@ -1313,6 +1623,7 @@ dairySchema.virtual(
 
     }
 
+
     const dob =
         new Date(
             this.dateOfBirth
@@ -1320,6 +1631,7 @@ dairySchema.virtual(
 
     const now =
         new Date();
+
 
     if (
         Number.isNaN(
@@ -1331,13 +1643,16 @@ dairySchema.virtual(
 
     }
 
+
     let age =
         now.getFullYear() -
         dob.getFullYear();
 
+
     const monthDifference =
         now.getMonth() -
         dob.getMonth();
+
 
     if (
         monthDifference < 0 ||
@@ -1352,12 +1667,14 @@ dairySchema.virtual(
 
     }
 
+
     return Math.max(
         0,
         age
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: MILKING TEXT
@@ -1373,6 +1690,7 @@ dairySchema.virtual(
 
 });
 
+
 // ==========================================================
 // VIRTUAL: DISPLAY IMAGES
 // ==========================================================
@@ -1382,6 +1700,7 @@ dairySchema.virtual(
 ).get(function () {
 
     let images = [];
+
 
     if (
         Array.isArray(
@@ -1402,6 +1721,7 @@ dairySchema.virtual(
 
     }
 
+
     if (
         images.length === 0 &&
         this.profileImage
@@ -1416,6 +1736,7 @@ dairySchema.virtual(
 
     }
 
+
     if (
         images.length === 0
     ) {
@@ -1429,12 +1750,14 @@ dairySchema.virtual(
 
     }
 
+
     return images.slice(
         0,
         MAX_PROFILE_IMAGES
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: DISPLAY IMAGE
@@ -1447,14 +1770,18 @@ dairySchema.virtual(
     const images =
         this.displayImages;
 
+
     return images.length
+
         ? images[0]
+
         : normalizeProfileImage(
             "",
             this.name
         );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: REQUIRES MAINTENANCE
@@ -1468,6 +1795,7 @@ dairySchema.virtual(
 
 });
 
+
 // ==========================================================
 // VIRTUAL: NEEDS MEDICAL ATTENTION
 // ==========================================================
@@ -1477,11 +1805,14 @@ dairySchema.virtual(
 ).get(function () {
 
     return !!(
+
         this.medicalAttention &&
         this.medicalAttention.isMarked
+
     );
 
 });
+
 
 // ==========================================================
 // VIRTUAL: ASSET VALUE
@@ -1497,6 +1828,7 @@ dairySchema.virtual(
 
 });
 
+
 // ==========================================================
 // VIRTUAL: ACTIVE ASSET
 // ==========================================================
@@ -1508,6 +1840,7 @@ dairySchema.virtual(
     return this.status === "active";
 
 });
+
 
 // ==========================================================
 // VIRTUAL: IDENTIFIED DAIRY
@@ -1521,6 +1854,7 @@ dairySchema.virtual(
 
 });
 
+
 // ==========================================================
 // PRE-VALIDATE
 // ==========================================================
@@ -1529,9 +1863,9 @@ dairySchema.pre(
     "validate",
     function (next) {
 
-        // ------------------------------------------------------
+        // ======================================================
         // PROFILE IMAGES
-        // ------------------------------------------------------
+        // ======================================================
 
         if (
             !Array.isArray(
@@ -1542,6 +1876,7 @@ dairySchema.pre(
             this.profileImages = [];
 
         }
+
 
         this.profileImages =
             this.profileImages
@@ -1556,9 +1891,10 @@ dairySchema.pre(
                     MAX_PROFILE_IMAGES
                 );
 
-        // ------------------------------------------------------
+
+        // ======================================================
         // LEGACY PROFILE IMAGE MIGRATION
-        // ------------------------------------------------------
+        // ======================================================
 
         if (
             this.profileImages.length === 0 &&
@@ -1566,16 +1902,19 @@ dairySchema.pre(
         ) {
 
             this.profileImages = [
+
                 String(
                     this.profileImage
                 ).trim()
+
             ];
 
         }
 
-        // ------------------------------------------------------
+
+        // ======================================================
         // PRIMARY PROFILE IMAGE
-        // ------------------------------------------------------
+        // ======================================================
 
         if (
             this.profileImages.length > 0
@@ -1590,9 +1929,10 @@ dairySchema.pre(
 
         }
 
-        // ------------------------------------------------------
+
+        // ======================================================
         // NORMALIZE NULLABLE VALUES
-        // ------------------------------------------------------
+        // ======================================================
 
         if (
             this.code === undefined
@@ -1602,6 +1942,7 @@ dairySchema.pre(
 
         }
 
+
         if (
             this.assetCode === undefined
         ) {
@@ -1609,6 +1950,7 @@ dairySchema.pre(
             this.assetCode = null;
 
         }
+
 
         if (
             this.dwellNumber === undefined
@@ -1618,8 +1960,9 @@ dairySchema.pre(
 
         }
 
+
         // ======================================================
-        // NORMALIZE FEED TYPE
+        // NORMALIZE TYPE
         // ======================================================
 
         if (
@@ -1631,11 +1974,146 @@ dairySchema.pre(
 
         }
 
+
+        // ======================================================
+        // DETERMINE RECORD TYPE
+        // ======================================================
+        //
+        // New records should provide recordType.
+        //
+        // For compatibility with existing records, if
+        // recordType is missing it is derived from code.
+        //
+        // IMPORTANT:
+        //
+        // This is only deriving the record classification.
+        //
+        // It does NOT turn `type` into `recordType`.
+        //
+        // ======================================================
+
+        if (
+            !this.recordType
+        ) {
+
+            if (
+                this.code !== null &&
+                this.code !== undefined
+            ) {
+
+                if (
+                    Number(this.code) < 0
+                ) {
+
+                    this.recordType = "farm";
+
+                } else if (
+                    Number(this.code) > 0
+                ) {
+
+                    this.recordType = "animal";
+
+                }
+
+            } else {
+
+                this.recordType = "structure";
+
+            }
+
+        }
+
+
+        // ======================================================
+        // RECORD TYPE / CODE CONSISTENCY
+        // ======================================================
+
+        if (
+            this.recordType === "farm"
+        ) {
+
+            if (
+                this.code === null ||
+                this.code === undefined ||
+                !Number.isInteger(
+                    this.code
+                ) ||
+                Number(this.code) >= 0
+            ) {
+
+                const error =
+                    new Error(
+                        "A farm record must have a negative integer code."
+                    );
+
+                error.status = 400;
+
+                return next(error);
+
+            }
+
+        }
+
+
+        if (
+            this.recordType === "animal"
+        ) {
+
+            if (
+                this.code === null ||
+                this.code === undefined ||
+                !Number.isInteger(
+                    this.code
+                ) ||
+                Number(this.code) <= 0
+            ) {
+
+                const error =
+                    new Error(
+                        "An animal record must have a positive integer code."
+                    );
+
+                error.status = 400;
+
+                return next(error);
+
+            }
+
+        }
+
+
+        if (
+            this.recordType === "structure"
+        ) {
+
+            if (
+                this.code !== null &&
+                this.code !== undefined
+            ) {
+
+                const error =
+                    new Error(
+                        "A structure record must have code set to null."
+                    );
+
+                error.status = 400;
+
+                return next(error);
+
+            }
+
+        }
+
+
         // ======================================================
         // FEED STOCK NORMALIZATION
         // ======================================================
         //
-        // quantity and unit exist ONLY on feeds.
+        // Feed is identified by:
+        //
+        //     type === "feeds"
+        //
+        // NOT by recordType.
         //
         // ======================================================
 
@@ -1647,7 +2125,28 @@ dairySchema.pre(
                 .toLowerCase() ===
             FEED_TYPE;
 
+
         if (isFeed) {
+
+            // --------------------------------------------------
+            // Feed must be a structure record.
+            // --------------------------------------------------
+
+            if (
+                this.recordType !== "structure"
+            ) {
+
+                const error =
+                    new Error(
+                        "Feed records must have recordType set to \"structure\"."
+                    );
+
+                error.status = 400;
+
+                return next(error);
+
+            }
+
 
             // --------------------------------------------------
             // QUANTITY
@@ -1668,6 +2167,7 @@ dairySchema.pre(
                         this.quantity
                     );
 
+
                 if (
                     !Number.isFinite(
                         numericQuantity
@@ -1685,6 +2185,7 @@ dairySchema.pre(
 
                 }
 
+
                 if (
                     numericQuantity < 0
                 ) {
@@ -1700,10 +2201,12 @@ dairySchema.pre(
 
                 }
 
+
                 this.quantity =
                     numericQuantity;
 
             }
+
 
             // --------------------------------------------------
             // UNIT
@@ -1719,9 +2222,8 @@ dairySchema.pre(
                         this.unit
                     ).trim();
 
-                if (
-                    !this.unit
-                ) {
+
+                if (!this.unit) {
 
                     this.unit = null;
 
@@ -1732,7 +2234,7 @@ dairySchema.pre(
         } else {
 
             // --------------------------------------------------
-            // NON-FEEDS MUST NEVER RETAIN FEED STOCK DATA
+            // NON-FEEDS MUST NEVER RETAIN FEED DATA
             // --------------------------------------------------
 
             this.quantity = null;
@@ -1741,27 +2243,52 @@ dairySchema.pre(
 
         }
 
+
         // ======================================================
         // DAIRY FARM
         // ======================================================
 
         if (
-            this.isDairyFarm
+            this.recordType === "farm"
         ) {
 
-            // A farm is a root entity.
+            // --------------------------------------------------
+            // Farm is a root entity.
+            // --------------------------------------------------
+
             this.assetCode = null;
+
             this.dwellNumber = null;
 
+
+            // --------------------------------------------------
+            // Farm cannot have animal-specific fields.
+            // --------------------------------------------------
+
             this.dateOfBirth = null;
+
             this.mass = 0;
+
             this.isMilking = false;
 
-            // A Dairy Farm is never a feed stock item.
+
+            // --------------------------------------------------
+            // Farm cannot be feed stock.
+            // --------------------------------------------------
+
             this.quantity = null;
+
             this.unit = null;
 
+
+            // --------------------------------------------------
             // Validate farm type.
+            //
+            // IMPORTANT:
+            //
+            // This is `type`, not `recordType`.
+            // --------------------------------------------------
+
             if (
                 this.type &&
                 !DAIRY_FARM_TYPES.includes(
@@ -1782,12 +2309,13 @@ dairySchema.pre(
 
         }
 
+
         // ======================================================
         // ANIMAL
         // ======================================================
 
         if (
-            this.isAnimal
+            this.recordType === "animal"
         ) {
 
             // --------------------------------------------------
@@ -1801,6 +2329,7 @@ dairySchema.pre(
                 this.isMilking = false;
 
             }
+
 
             // --------------------------------------------------
             // Every animal must belong to a farm.
@@ -1821,6 +2350,7 @@ dairySchema.pre(
                 return next(error);
 
             }
+
 
             // --------------------------------------------------
             // Parent farm code must be negative.
@@ -1843,15 +2373,22 @@ dairySchema.pre(
 
             }
 
+
             // --------------------------------------------------
-            // Animals cannot have feed stock data.
+            // Animals cannot have feed data.
             // --------------------------------------------------
 
             this.quantity = null;
+
             this.unit = null;
+
 
             // --------------------------------------------------
             // Validate breed.
+            //
+            // IMPORTANT:
+            //
+            // Breed is `type`.
             // --------------------------------------------------
 
             if (
@@ -1874,20 +2411,28 @@ dairySchema.pre(
 
         }
 
+
         // ======================================================
-        // STRUCTURE / ASSET
+        // STRUCTURE / FACILITY / ASSET
         // ======================================================
 
         if (
-            this.isStructure
+            this.recordType === "structure"
         ) {
 
+            // --------------------------------------------------
+            // Structures cannot have animal-specific fields.
+            // --------------------------------------------------
+
             this.dateOfBirth = null;
+
             this.mass = 0;
+
             this.isMilking = false;
 
+
             // --------------------------------------------------
-            // Assigned asset
+            // Assigned structure / asset
             // --------------------------------------------------
 
             if (
@@ -1914,8 +2459,17 @@ dairySchema.pre(
 
             }
 
+
             // --------------------------------------------------
             // Validate structure type.
+            //
+            // IMPORTANT:
+            //
+            // Storage uses:
+            //
+            //     type = room
+            //     type = agroStore
+            //
             // --------------------------------------------------
 
             if (
@@ -1937,6 +2491,7 @@ dairySchema.pre(
             }
 
         }
+
 
         // ======================================================
         // DWELL NUMBER
@@ -1960,6 +2515,7 @@ dairySchema.pre(
 
         }
 
+
         // ======================================================
         // MEDICAL ATTENTION NORMALIZATION
         // ======================================================
@@ -1972,18 +2528,22 @@ dairySchema.pre(
 
         }
 
+
         this.medicalAttention.isMarked =
             !!this.medicalAttention.isMarked;
+
 
         this.medicalAttention.type =
             String(
                 this.medicalAttention.type || ""
             ).trim();
 
+
         this.medicalAttention.details =
             String(
                 this.medicalAttention.details || ""
             ).trim();
+
 
         this.medicalAttention.charges =
             Math.max(
@@ -1993,30 +2553,37 @@ dairySchema.pre(
                 ) || 0
             );
 
+
         this.medicalAttention.description =
             String(
                 this.medicalAttention.description || ""
             ).trim();
 
+
         this.medicalAttention.markedBy =
             this.medicalAttention.markedBy ||
             null;
+
 
         this.medicalAttention.markedAt =
             this.medicalAttention.markedAt ||
             null;
 
+
         this.medicalAttention.updatedAt =
             this.medicalAttention.updatedAt ||
             null;
+
 
         this.medicalAttention.clearedBy =
             this.medicalAttention.clearedBy ||
             null;
 
+
         this.medicalAttention.clearedAt =
             this.medicalAttention.clearedAt ||
             null;
+
 
         // ======================================================
         // CLEAR MEDICAL DATA WHEN NOT MARKED
@@ -2040,10 +2607,12 @@ dairySchema.pre(
 
         }
 
+
         next();
 
     }
 );
+
 
 // ==========================================================
 // PRE-SAVE
@@ -2069,6 +2638,7 @@ dairySchema.pre(
 
         }
 
+
         // ======================================================
         // ACQUISITION DATE
         // ======================================================
@@ -2083,12 +2653,13 @@ dairySchema.pre(
 
         }
 
+
         // ======================================================
         // DAIRY FARM NORMALIZATION
         // ======================================================
 
         if (
-            this.isDairyFarm
+            this.recordType === "farm"
         ) {
 
             this.assetCode = null;
@@ -2107,12 +2678,13 @@ dairySchema.pre(
 
         }
 
+
         // ======================================================
         // STRUCTURE NORMALIZATION
         // ======================================================
 
         if (
-            this.isStructure
+            this.recordType === "structure"
         ) {
 
             this.dateOfBirth = null;
@@ -2122,6 +2694,7 @@ dairySchema.pre(
             this.isMilking = false;
 
         }
+
 
         // ======================================================
         // NON-FEED QUANTITY SAFETY
@@ -2137,6 +2710,7 @@ dairySchema.pre(
 
         }
 
+
         // ======================================================
         // FINAL FEED QUANTITY VALIDATION
         // ======================================================
@@ -2149,6 +2723,7 @@ dairySchema.pre(
                 Number(
                     this.quantity
                 );
+
 
             if (
                 !Number.isFinite(
@@ -2168,8 +2743,10 @@ dairySchema.pre(
 
             }
 
+
             this.quantity =
                 quantity;
+
 
             if (
                 this.unit !== null &&
@@ -2181,9 +2758,8 @@ dairySchema.pre(
                         this.unit
                     ).trim();
 
-                if (
-                    !this.unit
-                ) {
+
+                if (!this.unit) {
 
                     this.unit = null;
 
@@ -2192,6 +2768,7 @@ dairySchema.pre(
             }
 
         }
+
 
         // ======================================================
         // FINAL DWELL VALIDATION
@@ -2216,109 +2793,138 @@ dairySchema.pre(
 
         }
 
+
         next();
 
     }
 );
 
+
 // ==========================================================
 // INDEXES
 // ==========================================================
+
+
+// ----------------------------------------------------------
+// RECORD TYPE
+// ----------------------------------------------------------
+
+dairySchema.index({
+
+    recordType: 1,
+    status: 1
+
+});
+
 
 // ----------------------------------------------------------
 // MILKING
 // ----------------------------------------------------------
 
 dairySchema.index({
+
     isMilking: 1
+
 });
+
 
 // ----------------------------------------------------------
 // MAINTENANCE
 // ----------------------------------------------------------
 
 dairySchema.index({
+
     needsMaintenance: 1
+
 });
+
 
 // ----------------------------------------------------------
 // MEDICAL
 // ----------------------------------------------------------
 
 dairySchema.index({
+
     "medicalAttention.isMarked": 1
+
 });
+
 
 // ----------------------------------------------------------
 // ASSET ASSIGNMENT
 // ----------------------------------------------------------
 
 dairySchema.index({
+
     assetCode: 1,
     status: 1
+
 });
+
 
 // ----------------------------------------------------------
 // DWELLING / ALLOCATION
 // ----------------------------------------------------------
 
 dairySchema.index({
+
     dwellNumber: 1,
     status: 1
+
 });
+
 
 // ----------------------------------------------------------
 // FARM + DWELLING
 // ----------------------------------------------------------
 
 dairySchema.index({
+
     assetCode: 1,
     dwellNumber: 1,
     status: 1
+
 });
 
+
 // ----------------------------------------------------------
-// FACILITY TYPE
+// RECORD TYPE + TYPE
 // ----------------------------------------------------------
 
 dairySchema.index({
+
+    recordType: 1,
     type: 1,
     status: 1
+
 });
+
 
 // ----------------------------------------------------------
 // FEED STOCK
 // ----------------------------------------------------------
-//
-// Supports queries used by:
-//
-//     services/storage/contents.js
-//
-// Particularly:
-//
-//     assetCode
-//     type: "feeds"
-//     dwellNumber
-//     quantity > 0
-//
-// ----------------------------------------------------------
 
 dairySchema.index({
+
     assetCode: 1,
     type: 1,
     dwellNumber: 1,
     quantity: 1,
     status: 1
+
 });
+
 
 // ----------------------------------------------------------
 // CODE UNIQUENESS
 // ----------------------------------------------------------
 
 dairySchema.index(
+
     {
         code: 1
     },
+
     {
         unique: true,
 
@@ -2331,7 +2937,9 @@ dairySchema.index(
         }
 
     }
+
 );
+
 
 // ==========================================================
 // STATIC: GET FARM ASSETS
@@ -2343,6 +2951,7 @@ dairySchema.statics.getFarmAssets =
         const code =
             Number(farmCode);
 
+
         if (
             !Number.isInteger(code) ||
             code >= 0
@@ -2354,11 +2963,22 @@ dairySchema.statics.getFarmAssets =
 
         }
 
+
         return this.find({
-            assetCode: code
+
+            assetCode: code,
+
+            recordType: {
+                $in: [
+                    "animal",
+                    "structure"
+                ]
+            }
+
         });
 
     };
+
 
 // ==========================================================
 // STATIC: GET FARM DWELLINGS
@@ -2370,6 +2990,7 @@ dairySchema.statics.getFarmDwellings =
         const code =
             Number(farmCode);
 
+
         if (
             !Number.isInteger(code) ||
             code >= 0
@@ -2381,7 +3002,9 @@ dairySchema.statics.getFarmDwellings =
 
         }
 
+
         return this.find({
+
             assetCode: code,
 
             dwellNumber: {
@@ -2391,6 +3014,7 @@ dairySchema.statics.getFarmDwellings =
         });
 
     };
+
 
 // ==========================================================
 // STATIC: GET FARM ROOM CONTENT
@@ -2408,6 +3032,7 @@ dairySchema.statics.getFarmRoomContent =
         const room =
             Number(roomNumber);
 
+
         if (
             !Number.isInteger(farm) ||
             farm >= 0 ||
@@ -2420,12 +3045,17 @@ dairySchema.statics.getFarmRoomContent =
 
         }
 
+
         return this.find({
+
             assetCode: farm,
+
             dwellNumber: room
+
         });
 
     };
+
 
 // ==========================================================
 // STATIC: GET AGROSTORE CONTENT
@@ -2443,6 +3073,7 @@ dairySchema.statics.getAgroStoreContent =
         const store =
             Number(agroStoreNumber);
 
+
         if (
             !Number.isInteger(farm) ||
             farm >= 0 ||
@@ -2456,6 +3087,7 @@ dairySchema.statics.getAgroStoreContent =
 
         }
 
+
         return this.find({
 
             assetCode: farm,
@@ -2465,6 +3097,7 @@ dairySchema.statics.getAgroStoreContent =
         });
 
     };
+
 
 // ==========================================================
 // STATIC: GET FARM NORMAL ROOM CONTENT
@@ -2482,6 +3115,7 @@ dairySchema.statics.getFarmNormalRoomContent =
         const room =
             Number(roomNumber);
 
+
         if (
             !Number.isInteger(farm) ||
             farm >= 0 ||
@@ -2495,6 +3129,7 @@ dairySchema.statics.getFarmNormalRoomContent =
 
         }
 
+
         return this.find({
 
             assetCode: farm,
@@ -2504,6 +3139,7 @@ dairySchema.statics.getFarmNormalRoomContent =
         });
 
     };
+
 
 // ==========================================================
 // STATIC: GET ACTIVE ROOM NUMBERS
@@ -2515,6 +3151,7 @@ dairySchema.statics.getActiveRoomNumbers =
         const farm =
             Number(farmCode);
 
+
         if (
             !Number.isInteger(farm) ||
             farm >= 0
@@ -2523,6 +3160,7 @@ dairySchema.statics.getActiveRoomNumbers =
             return [];
 
         }
+
 
         const result =
             await this.aggregate([
@@ -2560,11 +3198,13 @@ dairySchema.statics.getActiveRoomNumbers =
 
             ]);
 
+
         return result.map(
             item => item._id
         );
 
     };
+
 
 // ==========================================================
 // STATIC: GET ACTIVE AGROSTORE NUMBERS
@@ -2576,6 +3216,7 @@ dairySchema.statics.getActiveAgroStoreNumbers =
         const farm =
             Number(farmCode);
 
+
         if (
             !Number.isInteger(farm) ||
             farm >= 0
@@ -2584,6 +3225,7 @@ dairySchema.statics.getActiveAgroStoreNumbers =
             return [];
 
         }
+
 
         const result =
             await this.aggregate([
@@ -2617,15 +3259,18 @@ dairySchema.statics.getActiveAgroStoreNumbers =
                         _id: 1
 
                     }
+
                 }
 
             ]);
+
 
         return result.map(
             item => item._id
         );
 
     };
+
 
 // ==========================================================
 // STATIC: GET FARM AGROSTORE CONTENTS
@@ -2637,6 +3282,7 @@ dairySchema.statics.getFarmAgroStoreContents =
         const farm =
             Number(farmCode);
 
+
         if (
             !Number.isInteger(farm) ||
             farm >= 0
@@ -2647,6 +3293,7 @@ dairySchema.statics.getFarmAgroStoreContents =
             });
 
         }
+
 
         return this.find({
 
@@ -2662,11 +3309,18 @@ dairySchema.statics.getFarmAgroStoreContents =
 
     };
 
+
 // ==========================================================
 // STATIC: GET FARM FEEDS
 // ==========================================================
 //
-// Returns all feed records belonging to a farm.
+// Feed identification remains:
+//
+//     type: "feeds"
+//
+// NOT:
+//
+//     recordType: "feeds"
 //
 // ==========================================================
 
@@ -2676,6 +3330,7 @@ dairySchema.statics.getFarmFeeds =
         const farm =
             Number(farmCode);
 
+
         if (
             !Number.isInteger(farm) ||
             farm >= 0
@@ -2687,15 +3342,19 @@ dairySchema.statics.getFarmFeeds =
 
         }
 
+
         return this.find({
 
             assetCode: farm,
+
+            recordType: "structure",
 
             type: FEED_TYPE
 
         });
 
     };
+
 
 // ==========================================================
 // STATIC: GET AVAILABLE FARM FEEDS
@@ -2704,12 +3363,10 @@ dairySchema.statics.getFarmFeeds =
 // Available means:
 //
 //     correct farm
+//     recordType = structure
 //     type = feeds
 //     unallocated
 //     quantity > 0
-//
-// This directly mirrors the AgroStore logic in
-// services/storage/contents.js.
 //
 // ==========================================================
 
@@ -2719,6 +3376,7 @@ dairySchema.statics.getAvailableFarmFeeds =
         const farm =
             Number(farmCode);
 
+
         if (
             !Number.isInteger(farm) ||
             farm >= 0
@@ -2730,9 +3388,12 @@ dairySchema.statics.getAvailableFarmFeeds =
 
         }
 
+
         return this.find({
 
             assetCode: farm,
+
+            recordType: "structure",
 
             type: FEED_TYPE,
 
@@ -2758,6 +3419,7 @@ dairySchema.statics.getAvailableFarmFeeds =
 
     };
 
+
 // ==========================================================
 // STATIC: GET AGROSTORE FEEDS
 // ==========================================================
@@ -2778,6 +3440,7 @@ dairySchema.statics.getAgroStoreFeeds =
         const store =
             Number(agroStoreNumber);
 
+
         if (
             !Number.isInteger(farm) ||
             farm >= 0 ||
@@ -2791,9 +3454,12 @@ dairySchema.statics.getAgroStoreFeeds =
 
         }
 
+
         return this.find({
 
             assetCode: farm,
+
+            recordType: "structure",
 
             type: FEED_TYPE,
 
@@ -2803,14 +3469,25 @@ dairySchema.statics.getAgroStoreFeeds =
 
     };
 
+
 // ==========================================================
 // STATIC: GET STANDALONE ASSETS
+// ==========================================================
+//
+// Manual / standalone assets:
+//
+//     recordType = structure
+//     code = null
+//     assetCode = null
+//
 // ==========================================================
 
 dairySchema.statics.getStandaloneAssets =
     function () {
 
         return this.find({
+
+            recordType: "structure",
 
             code: null,
 
@@ -2819,6 +3496,131 @@ dairySchema.statics.getStandaloneAssets =
         });
 
     };
+
+
+// ==========================================================
+// STATIC: GET STORAGE FACILITIES
+// ==========================================================
+//
+// Returns storage structures:
+//
+//     recordType = structure
+//
+//     type = room
+//     OR
+//     type = agroStore
+//
+// ==========================================================
+
+dairySchema.statics.getStorageFacilities =
+    function (farmCode) {
+
+        const farm =
+            Number(farmCode);
+
+
+        if (
+            !Number.isInteger(farm) ||
+            farm >= 0
+        ) {
+
+            return this.find({
+                _id: null
+            });
+
+        }
+
+
+        return this.find({
+
+            recordType: "structure",
+
+            assetCode: farm,
+
+            type: {
+                $in: STORAGE_TYPES
+            }
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET ROOMS
+// ==========================================================
+
+dairySchema.statics.getRooms =
+    function (farmCode) {
+
+        const farm =
+            Number(farmCode);
+
+
+        if (
+            !Number.isInteger(farm) ||
+            farm >= 0
+        ) {
+
+            return this.find({
+                _id: null
+            });
+
+        }
+
+
+        return this.find({
+
+            recordType: "structure",
+
+            assetCode: farm,
+
+            type: "room",
+
+            status: "active"
+
+        });
+
+    };
+
+
+// ==========================================================
+// STATIC: GET AGROSTORES
+// ==========================================================
+
+dairySchema.statics.getAgroStores =
+    function (farmCode) {
+
+        const farm =
+            Number(farmCode);
+
+
+        if (
+            !Number.isInteger(farm) ||
+            farm >= 0
+        ) {
+
+            return this.find({
+                _id: null
+            });
+
+        }
+
+
+        return this.find({
+
+            recordType: "structure",
+
+            assetCode: farm,
+
+            type: "agroStore",
+
+            status: "active"
+
+        });
+
+    };
+
 
 // ==========================================================
 // STATIC: GET DAIRY BREEDS
@@ -2833,6 +3635,7 @@ dairySchema.statics.getDairyBreeds =
 
     };
 
+
 // ==========================================================
 // STATIC: GET DAIRY FARM TYPES
 // ==========================================================
@@ -2845,6 +3648,7 @@ dairySchema.statics.getDairyFarmTypes =
         ];
 
     };
+
 
 // ==========================================================
 // STATIC: GET STRUCTURE TYPES
@@ -2859,6 +3663,35 @@ dairySchema.statics.getStructureTypes =
 
     };
 
+
+// ==========================================================
+// STATIC: GET STORAGE TYPES
+// ==========================================================
+
+dairySchema.statics.getStorageTypes =
+    function () {
+
+        return [
+            ...STORAGE_TYPES
+        ];
+
+    };
+
+
+// ==========================================================
+// STATIC: GET RECORD TYPES
+// ==========================================================
+
+dairySchema.statics.getRecordTypes =
+    function () {
+
+        return [
+            ...RECORD_TYPES
+        ];
+
+    };
+
+
 // ==========================================================
 // STATIC: GET STATUSES
 // ==========================================================
@@ -2872,6 +3705,7 @@ dairySchema.statics.getDairyStatuses =
 
     };
 
+
 // ==========================================================
 // STATIC: GET MAX PROFILE IMAGES
 // ==========================================================
@@ -2883,6 +3717,7 @@ dairySchema.statics.getMaxProfileImages =
 
     };
 
+
 // ==========================================================
 // STATIC: GET FEED TYPE
 // ==========================================================
@@ -2893,6 +3728,7 @@ dairySchema.statics.getFeedType =
         return FEED_TYPE;
 
     };
+
 
 // ==========================================================
 // STATIC: CALCULATE NET WORTH
@@ -2929,9 +3765,11 @@ dairySchema.statics.calculateNetWorth =
                         }
 
                     }
+
                 }
 
             ]);
+
 
         if (
             !result.length
@@ -2941,11 +3779,13 @@ dairySchema.statics.calculateNetWorth =
 
         }
 
+
         return Number(
             result[0].totalNetWorth || 0
         );
 
     };
+
 
 // ==========================================================
 // STATIC: TOTAL CURRENT WORTH
@@ -2958,6 +3798,7 @@ dairySchema.statics.getTotalCurrentWorth =
 
     };
 
+
 // ==========================================================
 // MODEL
 // ==========================================================
@@ -2969,9 +3810,13 @@ const Dairy =
         dairySchema
     );
 
+
 // ==========================================================
 // CONSTANT EXPORTS
 // ==========================================================
+
+Dairy.RECORD_TYPES =
+    RECORD_TYPES;
 
 Dairy.DAIRY_BREEDS =
     DAIRY_BREEDS;
@@ -2982,6 +3827,9 @@ Dairy.DAIRY_FARM_TYPES =
 Dairy.STRUCTURE_TYPES =
     STRUCTURE_TYPES;
 
+Dairy.STORAGE_TYPES =
+    STORAGE_TYPES;
+
 Dairy.DAIRY_STATUSES =
     DAIRY_STATUSES;
 
@@ -2991,8 +3839,10 @@ Dairy.FEED_TYPE =
 Dairy.MAX_PROFILE_IMAGES =
     MAX_PROFILE_IMAGES;
 
+
 // ==========================================================
 // EXPORT
 // ==========================================================
 
-module.exports = Dairy;
+module.exports =
+    Dairy;
