@@ -6,47 +6,6 @@
 
      ROUTE:
          /dairy/assets/<%= dairy._id %>
-
-     MAINTENANCE RULES:
-     -----------------------------------------------------
-     1. Maintenance composers are only available to:
-            - admin
-            - dairyWorker
-
-     2. Maintenance composers are only available for
-        dairies WITHOUT a code.
-
-     3. maintComposer.ejs appears when maintenance is NOT
-        currently required.
-
-     4. maintenanceClearComposer.ejs appears when
-        maintenance IS currently required.
-
-     MILKING STATUS:
-     -----------------------------------------------------
-     5. Milking status card is only available to:
-            - admin
-            - dairyWorker
-
-        AND only when the dairy code is:
-            - positive
-            - even
-
-        Examples:
-            2  -> SHOW
-            4  -> SHOW
-            6  -> SHOW
-            8  -> SHOW
-
-            1  -> HIDE
-            3  -> HIDE
-            5  -> HIDE
-            0  -> HIDE
-           -2  -> HIDE
-           null -> HIDE
-
-     6. The milking status card appears directly below
-        the create-post card.
 ===================================================== -->
 
 
@@ -68,10 +27,10 @@
 
 <div class="dairy-page">
 
-<!--
-=====================================================
-   update cards, for several functions
-=====================≠=========================== -->
+
+    <!-- =================================================
+         UPDATE CARDS
+    ================================================== -->
 
     <% if (user) { %>
 
@@ -83,17 +42,32 @@
 
 
     <!-- =================================================
-         PROFILE
+         PROFILE CARD
+
+         SHOW ONLY WHEN DAIRY HAS A CODE.
+
+         A code of 0 is still considered a valid code,
+         therefore do NOT use:
+             <% if (dairy.code) { %>
+
+         Instead, explicitly exclude null and undefined.
     ================================================== -->
 
-    <%- include("update/profile-card", {
-        dairy: dairy,
-        user: user
-    }) %>
+    <% if (
+        dairy &&
+        dairy.code !== null &&
+        dairy.code !== undefined
+    ) { %>
+
+        <%- include("update/profile-card", {
+            dairy: dairy,
+            user: user
+        }) %>
+
+    <% } %>
 
 
 </div>
-
 
 
 <!-- =====================================================
