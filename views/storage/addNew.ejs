@@ -26,33 +26,8 @@ IMPORTANT:
 
     Therefore the browser submits to the CURRENT PAGE URL.
 
-    Example:
 
-        /storage/123/contents/456/add/agroStore
-
-    The POST request therefore reaches:
-
-        /storage/:dairyId/contents/:storageId/add/:storageType
-
-
-    The controller receives:
-
-        req.params.dairyId
-        req.params.storageId
-        req.params.storageType
-
-
-    After successful save, the controller redirects to:
-
-        /storage/:dairyId/contents/:storageId
-
-
-storageType comes directly from:
-
-    req.params.storageType
-
-
-EXPECTED VALUES:
+EXPECTED STORAGE TYPE VALUES:
 
     room
     agroStore
@@ -91,6 +66,26 @@ const errorMessage =
 ============================================================
 DAIRY BREEDS
 ============================================================
+
+The controller/service must provide:
+
+    dairyBreeds
+
+as an ARRAY.
+
+Example:
+
+    [
+        "Friesian",
+        "Ayrshire",
+        "Jersey"
+    ]
+
+Do not silently manufacture breed values here.
+
+If this is empty, the backend did not provide the breed
+array correctly.
+============================================================
 */
 
 const breeds =
@@ -103,17 +98,12 @@ const breeds =
 ============================================================
 STORAGE TYPE
 ============================================================
-
-The controller passes storageType directly from:
-
-    req.params.storageType
-============================================================
 */
 
 const selectedStorageType =
-    String(
-        storageType || ""
-    ).trim();
+    typeof storageType === "string"
+        ? storageType.trim()
+        : "";
 
 
 const isAgroStore =
@@ -128,20 +118,29 @@ const isRoom =
 
 <style>
 
+/* ==========================================================
+   PAGE
+========================================================== */
+
 .storage-add-page{
     max-width:900px;
     margin:0 auto;
-    padding:24px 16px 60px
+    padding:24px 16px 60px;
 }
 
+
+/* ==========================================================
+   HEADER
+========================================================== */
+
 .storage-add-header{
-    margin-bottom:24px
+    margin-bottom:24px;
 }
 
 .storage-add-header-top{
     display:flex;
     align-items:center;
-    margin-bottom:18px
+    margin-bottom:18px;
 }
 
 .storage-back-link{
@@ -151,27 +150,32 @@ const isRoom =
     color:#15803d;
     text-decoration:none;
     font-weight:700;
-    font-size:14px
+    font-size:14px;
 }
 
 .storage-back-link:hover{
     color:#166534;
-    text-decoration:underline
+    text-decoration:underline;
 }
 
 .storage-add-header h1{
     margin:0;
     color:#172033;
     font-size:30px;
-    line-height:1.2
+    line-height:1.2;
 }
 
 .storage-add-header p{
     margin:8px 0 0;
     color:#6b7280;
     font-size:15px;
-    line-height:1.6
+    line-height:1.6;
 }
+
+
+/* ==========================================================
+   STORAGE CONTEXT
+========================================================== */
 
 .storage-context-card{
     display:flex;
@@ -182,25 +186,25 @@ const isRoom =
     padding:18px;
     border-radius:16px;
     background:#f0fdf4;
-    border:1px solid #bbf7d0
+    border:1px solid #bbf7d0;
 }
 
 .storage-context-main{
-    min-width:0
+    min-width:0;
 }
 
 .storage-context-title{
     margin:0;
     color:#166534;
     font-size:18px;
-    font-weight:800
+    font-weight:800;
 }
 
 .storage-context-description{
     margin:5px 0 0;
     color:#4b5563;
     font-size:13px;
-    line-height:1.5
+    line-height:1.5;
 }
 
 .storage-context-type{
@@ -210,16 +214,26 @@ const isRoom =
     background:#dcfce7;
     color:#166534;
     font-size:12px;
-    font-weight:800
+    font-weight:800;
 }
+
+
+/* ==========================================================
+   FORM CARD
+========================================================== */
 
 .storage-add-card{
     background:#fff;
     border:1px solid #e5e7eb;
     border-radius:22px;
     padding:26px;
-    box-shadow:0 8px 30px rgba(15,23,42,.08)
+    box-shadow:0 8px 30px rgba(15,23,42,.08);
 }
+
+
+/* ==========================================================
+   STATUS
+========================================================== */
 
 .form-save-status{
     display:none;
@@ -228,46 +242,56 @@ const isRoom =
     border-radius:12px;
     font-size:14px;
     font-weight:600;
-    line-height:1.5
+    line-height:1.5;
 }
 
 .form-save-status.success{
     display:block;
     background:#ecfdf5;
     color:#047857;
-    border:1px solid #a7f3d0
+    border:1px solid #a7f3d0;
 }
 
 .form-save-status.error{
     display:block;
     background:#fef2f2;
     color:#b91c1c;
-    border:1px solid #fecaca
+    border:1px solid #fecaca;
 }
+
+
+/* ==========================================================
+   MODE CARD
+========================================================== */
 
 .storage-mode-card{
     margin-bottom:24px;
     padding:18px;
     border-radius:16px;
     background:#f8fafc;
-    border:1px solid #e2e8f0
+    border:1px solid #e2e8f0;
 }
 
 .storage-mode-title{
     color:#172033;
     font-size:15px;
     font-weight:800;
-    margin-bottom:5px
+    margin-bottom:5px;
 }
 
 .storage-mode-description{
     color:#64748b;
     font-size:13px;
-    line-height:1.5
+    line-height:1.5;
 }
 
+
+/* ==========================================================
+   FORM GROUP
+========================================================== */
+
 .form-group{
-    margin-bottom:20px
+    margin-bottom:20px;
 }
 
 .form-group label{
@@ -275,7 +299,7 @@ const isRoom =
     margin-bottom:8px;
     color:#273449;
     font-size:14px;
-    font-weight:700
+    font-weight:700;
 }
 
 .form-group input,
@@ -290,27 +314,35 @@ const isRoom =
     font-size:15px;
     padding:12px 13px;
     outline:none;
-    transition:border-color .2s,box-shadow .2s,background .2s
+    transition:
+        border-color .2s,
+        box-shadow .2s,
+        background .2s;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus{
     border-color:#16a34a;
-    box-shadow:0 0 0 3px rgba(22,163,74,.12)
+    box-shadow:0 0 0 3px rgba(22,163,74,.12);
 }
 
 .form-group textarea{
     min-height:120px;
-    resize:vertical
+    resize:vertical;
 }
 
 .form-group input:disabled,
 .form-group select:disabled{
     background:#f4f6f8;
     color:#9aa2ad;
-    cursor:not-allowed
+    cursor:not-allowed;
 }
+
+
+/* ==========================================================
+   PROFILE IMAGE
+========================================================== */
 
 .profile-image-section{
     display:flex;
@@ -319,7 +351,7 @@ const isRoom =
     text-align:center;
     padding-bottom:28px;
     margin-bottom:24px;
-    border-bottom:1px solid #edf0f4
+    border-bottom:1px solid #edf0f4;
 }
 
 .profile-image-preview{
@@ -333,48 +365,58 @@ const isRoom =
     background:#f0fdf4;
     border:4px solid #fff;
     box-shadow:0 4px 18px rgba(0,0,0,.1);
-    margin-bottom:14px
+    margin-bottom:14px;
 }
 
 .profile-image-preview img{
     width:100%;
     height:100%;
-    object-fit:cover
+    object-fit:cover;
 }
 
 .profile-image-placeholder{
-    font-size:48px
+    font-size:48px;
 }
 
 .profile-image-title{
     color:#172033;
     font-size:17px;
-    font-weight:700
+    font-weight:700;
 }
 
 .profile-image-description{
     margin:5px 0 14px;
     color:#7b8494;
-    font-size:13px
+    font-size:13px;
 }
 
 .profile-image-input{
     width:100%;
     max-width:300px;
-    font-size:13px
+    font-size:13px;
 }
+
+
+/* ==========================================================
+   RECORD TYPE
+========================================================== */
 
 .record-type-card{
     padding:18px;
     margin-bottom:24px;
     border-radius:16px;
     background:#f0fdf4;
-    border:1px solid #bbf7d0
+    border:1px solid #bbf7d0;
 }
 
 .record-type-card .form-group{
-    margin-bottom:0
+    margin-bottom:0;
 }
+
+
+/* ==========================================================
+   CONDITIONAL RECORD SECTION
+========================================================== */
 
 .record-section{
     display:none;
@@ -382,11 +424,11 @@ const isRoom =
     margin-bottom:18px;
     border-radius:16px;
     background:#fbfefc;
-    border:1px solid #dcfce7
+    border:1px solid #dcfce7;
 }
 
 .record-section.visible{
-    display:block
+    display:block;
 }
 
 .record-section::before{
@@ -396,18 +438,29 @@ const isRoom =
     height:3px;
     margin-bottom:15px;
     border-radius:5px;
-    background:#16a34a
+    background:#16a34a;
 }
+
+
+/* ==========================================================
+   GRID
+========================================================== */
 
 .form-grid{
     display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:18px
+    grid-template-columns:
+        repeat(2,minmax(0,1fr));
+    gap:18px;
 }
 
 .form-grid .form-group{
-    margin-bottom:0
+    margin-bottom:0;
 }
+
+
+/* ==========================================================
+   ACTIONS
+========================================================== */
 
 .form-actions{
     display:flex;
@@ -416,7 +469,7 @@ const isRoom =
     gap:12px;
     margin-top:28px;
     padding-top:22px;
-    border-top:1px solid #edf0f4
+    border-top:1px solid #edf0f4;
 }
 
 .button{
@@ -431,66 +484,75 @@ const isRoom =
     cursor:pointer;
     font-size:14px;
     font-weight:700;
-    transition:transform .15s,opacity .15s,box-shadow .15s
+    transition:
+        transform .15s,
+        opacity .15s,
+        box-shadow .15s;
 }
 
 .button:hover{
-    transform:translateY(-1px)
+    transform:translateY(-1px);
 }
 
 .button:disabled{
     opacity:.65;
     cursor:not-allowed;
-    transform:none
+    transform:none;
 }
 
 .button-secondary{
     background:#f1f4f8;
-    color:#374151
+    color:#374151;
 }
 
 .button-primary{
     background:#16a34a;
     color:#fff;
-    box-shadow:0 5px 14px rgba(22,163,74,.22)
+    box-shadow:
+        0 5px 14px rgba(22,163,74,.22);
 }
 
 .button-primary:hover{
-    background:#15803d
+    background:#15803d;
 }
+
+
+/* ==========================================================
+   MOBILE
+========================================================== */
 
 @media(max-width:700px){
 
     .storage-add-page{
-        padding:18px 12px 40px
+        padding:18px 12px 40px;
     }
 
     .storage-add-card{
         padding:18px;
-        border-radius:18px
+        border-radius:18px;
     }
 
     .storage-add-header h1{
-        font-size:25px
+        font-size:25px;
     }
 
     .storage-context-card{
         flex-direction:column;
-        align-items:flex-start
+        align-items:flex-start;
     }
 
     .form-grid{
         grid-template-columns:1fr;
-        gap:0
+        gap:0;
     }
 
     .form-actions{
         flex-direction:column-reverse;
-        align-items:stretch
+        align-items:stretch;
     }
 
     .button{
-        width:100%
+        width:100%;
     }
 
 }
@@ -567,7 +629,10 @@ const isRoom =
 
         <div class="storage-context-type">
 
-            <%= isAgroStore ? "AgroStore" : "Storage Room" %>
+            <%= isAgroStore
+                ? "AgroStore"
+                : "Storage Room"
+            %>
 
         </div>
 
@@ -575,36 +640,10 @@ const isRoom =
 
 
     <!-- =====================================================
-         ADD ITEM FORM
+         FORM
     ====================================================== -->
 
     <div class="storage-add-card">
-
-        <!--
-        ====================================================
-        IMPORTANT FORM ROUTING
-        ====================================================
-
-        NO action attribute is intentionally used.
-
-        The browser submits to the CURRENT URL.
-
-        Example:
-
-            /storage/DAIRY_ID/contents/STORAGE_ID/add/agroStore
-
-        Therefore:
-
-            dairyId
-            storageId
-            storageType
-
-        remain part of the POST URL.
-
-        The controller then redirects after successful save:
-
-            /storage/DAIRY_ID/contents/STORAGE_ID
-        -->
 
         <form
             id="storageAddForm"
@@ -659,7 +698,10 @@ const isRoom =
                         id="profileImagePlaceholder"
                         class="profile-image-placeholder"
                     >
-                        <%= isAgroStore ? "🌾" : "🐄" %>
+                        <%= isAgroStore
+                            ? "🌾"
+                            : "🐄"
+                        %>
                     </span>
 
                 </div>
@@ -680,7 +722,12 @@ const isRoom =
                     id="profileImage"
                     name="profileImage"
                     class="profile-image-input"
-                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    accept="
+                        image/jpeg,
+                        image/jpg,
+                        image/png,
+                        image/webp
+                    "
                 >
 
             </div>
@@ -821,7 +868,10 @@ const isRoom =
 
                             <option
                                 value="animal"
-                                <%= form.recordType === "animal" ? "selected" : "" %>
+                                <%= form.recordType === "animal"
+                                    ? "selected"
+                                    : ""
+                                %>
                             >
                                 Animal
                             </option>
@@ -829,7 +879,10 @@ const isRoom =
 
                             <option
                                 value="structure"
-                                <%= form.recordType === "structure" ? "selected" : "" %>
+                                <%= form.recordType === "structure"
+                                    ? "selected"
+                                    : ""
+                                %>
                             >
                                 Structure / Facility
                             </option>
@@ -877,66 +930,53 @@ const isRoom =
                             Machine
                         </option>
 
-
                         <option value="equipment">
                             Equipment
                         </option>
-
 
                         <option value="tool">
                             Tool
                         </option>
 
-
                         <option value="building">
                             Building
                         </option>
-
 
                         <option value="cowshed">
                             Cowshed
                         </option>
 
-
                         <option value="milkingParlour">
                             Milking Parlour
                         </option>
-
 
                         <option value="feedStore">
                             Feed Store
                         </option>
 
-
                         <option value="hayShed">
                             Hay Shed
                         </option>
-
 
                         <option value="waterSystem">
                             Water System
                         </option>
 
-
                         <option value="fencing">
                             Fencing
                         </option>
-
 
                         <option value="vehicle">
                             Vehicle
                         </option>
 
-
                         <option value="generator">
                             Generator
                         </option>
 
-
                         <option value="solarSystem">
                             Solar System
                         </option>
-
 
                         <option value="other">
                             Other
@@ -975,7 +1015,6 @@ const isRoom =
                         <option value="male">
                             Male
                         </option>
-
 
                         <option value="female">
                             Female
@@ -1037,7 +1076,13 @@ const isRoom =
 
                         <% breeds.forEach(function(breed) { %>
 
-                            <option value="<%= breed %>">
+                            <option
+                                value="<%= breed %>"
+                                <%= form.type === breed
+                                    ? "selected"
+                                    : ""
+                                %>
+                            >
                                 <%= breed %>
                             </option>
 
@@ -1096,7 +1141,10 @@ const isRoom =
                     required
                     autocomplete="off"
                     value="<%= form.name ?? "" %>"
-                    placeholder="<%= isAgroStore ? "Enter feed name" : "Enter item name" %>"
+                    placeholder="<%= isAgroStore
+                        ? "Enter feed name"
+                        : "Enter item name"
+                    %>"
                 >
 
             </div>
@@ -1260,7 +1308,11 @@ const isRoom =
 
                     <option
                         value="active"
-                        <%= !form.status || form.status === "active" ? "selected" : "" %>
+                        <%= !form.status ||
+                            form.status === "active"
+                            ? "selected"
+                            : ""
+                        %>
                     >
                         Active
                     </option>
@@ -1268,7 +1320,10 @@ const isRoom =
 
                     <option
                         value="sold"
-                        <%= form.status === "sold" ? "selected" : "" %>
+                        <%= form.status === "sold"
+                            ? "selected"
+                            : ""
+                        %>
                     >
                         Sold
                     </option>
@@ -1276,7 +1331,10 @@ const isRoom =
 
                     <option
                         value="disposed"
-                        <%= form.status === "disposed" ? "selected" : "" %>
+                        <%= form.status === "disposed"
+                            ? "selected"
+                            : ""
+                        %>
                     >
                         Disposed
                     </option>
@@ -1284,7 +1342,10 @@ const isRoom =
 
                     <option
                         value="inactive"
-                        <%= form.status === "inactive" ? "selected" : "" %>
+                        <%= form.status === "inactive"
+                            ? "selected"
+                            : ""
+                        %>
                     >
                         Inactive
                     </option>
@@ -1333,11 +1394,9 @@ document.addEventListener(
     function () {
 
 
-        /*
-        ========================================================
-        FORM
-        ========================================================
-        */
+        /* =====================================================
+           FORM
+        ===================================================== */
 
         const form =
             document.getElementById(
@@ -1350,11 +1409,9 @@ document.addEventListener(
         }
 
 
-        /*
-        ========================================================
-        STATUS
-        ========================================================
-        */
+        /* =====================================================
+           STATUS
+        ===================================================== */
 
         const statusBox =
             document.getElementById(
@@ -1368,11 +1425,9 @@ document.addEventListener(
             );
 
 
-        /*
-        ========================================================
-        PROFILE IMAGE
-        ========================================================
-        */
+        /* =====================================================
+           PROFILE IMAGE
+        ===================================================== */
 
         const profileImage =
             document.getElementById(
@@ -1392,11 +1447,9 @@ document.addEventListener(
             );
 
 
-        /*
-        ========================================================
-        STATUS HELPERS
-        ========================================================
-        */
+        /* =====================================================
+           STATUS HELPERS
+        ===================================================== */
 
         function clearStatus() {
 
@@ -1432,11 +1485,9 @@ document.addEventListener(
         }
 
 
-        /*
-        ========================================================
-        PROFILE IMAGE PREVIEW
-        ========================================================
-        */
+        /* =====================================================
+           PROFILE IMAGE PREVIEW
+        ===================================================== */
 
         if (profileImage) {
 
@@ -1518,11 +1569,9 @@ document.addEventListener(
         }
 
 
-        /*
-        ========================================================
-        RECORD TYPE
-        ========================================================
-        */
+        /* =====================================================
+           RECORD TYPE
+        ===================================================== */
 
         const recordType =
             document.getElementById(
@@ -1530,29 +1579,9 @@ document.addEventListener(
             );
 
 
-        /*
-        ========================================================
-        NAME FIELD
-        ========================================================
-
-        IMPORTANT:
-
-        Do NOT use:
-
-            document.getElementById("name")
-
-        here.
-
-        The submitted field is identified by its NAME:
-
-            name="name"
-
-        and belongs to THIS FORM.
-
-        This guarantees that the value being validated is the
-        same value that will actually be submitted to Express.
-        ========================================================
-        */
+        /* =====================================================
+           NAME FIELD
+        ===================================================== */
 
         const nameField =
             form.elements.namedItem(
@@ -1560,11 +1589,9 @@ document.addEventListener(
             );
 
 
-        /*
-        ========================================================
-        AGROSTORE FORM
-        ========================================================
-        */
+        /* =====================================================
+           AGROSTORE FORM
+        ===================================================== */
 
         if (!recordType) {
 
@@ -1575,24 +1602,12 @@ document.addEventListener(
                     clearStatus();
 
 
-                    /*
-                    ------------------------------------------------
-                    Name
-                    ------------------------------------------------
-                    */
-
                     const name =
                         nameField &&
                         typeof nameField.value === "string"
                             ? nameField.value.trim()
                             : "";
 
-
-                    /*
-                    ------------------------------------------------
-                    Quantity
-                    ------------------------------------------------
-                    */
 
                     const quantityField =
                         form.elements.namedItem(
@@ -1606,12 +1621,6 @@ document.addEventListener(
                             : "";
 
 
-                    /*
-                    ------------------------------------------------
-                    Unit
-                    ------------------------------------------------
-                    */
-
                     const unitField =
                         form.elements.namedItem(
                             "unit"
@@ -1624,12 +1633,6 @@ document.addEventListener(
                             ? unitField.value.trim()
                             : "";
 
-
-                    /*
-                    ------------------------------------------------
-                    NAME VALIDATION
-                    ------------------------------------------------
-                    */
 
                     if (!name) {
 
@@ -1650,12 +1653,6 @@ document.addEventListener(
 
                     }
 
-
-                    /*
-                    ------------------------------------------------
-                    QUANTITY VALIDATION
-                    ------------------------------------------------
-                    */
 
                     if (
                         quantity === "" ||
@@ -1683,12 +1680,6 @@ document.addEventListener(
                     }
 
 
-                    /*
-                    ------------------------------------------------
-                    UNIT VALIDATION
-                    ------------------------------------------------
-                    */
-
                     if (!unit) {
 
                         event.preventDefault();
@@ -1708,18 +1699,6 @@ document.addEventListener(
 
                     }
 
-
-                    /*
-                    ------------------------------------------------
-                    SUCCESSFUL CLIENT VALIDATION
-
-                    DO NOT redirect here.
-
-                    Let the browser submit normally.
-
-                    The controller owns the redirect.
-                    ------------------------------------------------
-                    */
 
                     if (saveButton) {
 
@@ -1741,11 +1720,9 @@ document.addEventListener(
         }
 
 
-        /*
-        ========================================================
-        ROOM FORM
-        ========================================================
-        */
+        /* =====================================================
+           ROOM CONDITIONAL FIELDS
+        ===================================================== */
 
         const structureTypeGroup =
             document.getElementById(
@@ -1813,11 +1790,9 @@ document.addEventListener(
             );
 
 
-        /*
-        ========================================================
-        HIDE FIELD
-        ========================================================
-        */
+        /* =====================================================
+           HIDE FIELD
+        ===================================================== */
 
         function hideField(
             group,
@@ -1828,9 +1803,7 @@ document.addEventListener(
                 !group ||
                 !field
             ) {
-
                 return;
-
             }
 
 
@@ -1864,11 +1837,9 @@ document.addEventListener(
         }
 
 
-        /*
-        ========================================================
-        SHOW FIELD
-        ========================================================
-        */
+        /* =====================================================
+           SHOW FIELD
+        ===================================================== */
 
         function showField(
             group,
@@ -1880,9 +1851,7 @@ document.addEventListener(
                 !group ||
                 !field
             ) {
-
                 return;
-
             }
 
 
@@ -1903,23 +1872,15 @@ document.addEventListener(
         }
 
 
-        /*
-        ========================================================
-        UPDATE ROOM RECORD TYPE
-        ========================================================
-        */
+        /* =====================================================
+           UPDATE ROOM RECORD TYPE
+        ===================================================== */
 
         function updateRoomRecordType() {
 
             const value =
                 recordType.value;
 
-
-            /*
-            ----------------------------------------------------
-            Reset all conditional fields
-            ----------------------------------------------------
-            */
 
             hideField(
                 structureTypeGroup,
@@ -1951,15 +1912,7 @@ document.addEventListener(
             );
 
 
-            /*
-            ----------------------------------------------------
-            Reset information box
-            ----------------------------------------------------
-            */
-
-            if (
-                recordTypeInfo
-            ) {
+            if (recordTypeInfo) {
 
                 recordTypeInfo.style.display =
                     "none";
@@ -1971,11 +1924,9 @@ document.addEventListener(
             }
 
 
-            /*
-            ----------------------------------------------------
-            ANIMAL
-            ----------------------------------------------------
-            */
+            /* =================================================
+               ANIMAL
+            ================================================= */
 
             if (
                 value === "animal"
@@ -2009,9 +1960,7 @@ document.addEventListener(
                 );
 
 
-                if (
-                    recordTypeInfo
-                ) {
+                if (recordTypeInfo) {
 
                     recordTypeInfo.style.display =
                         "block";
@@ -2025,11 +1974,9 @@ document.addEventListener(
             }
 
 
-            /*
-            ----------------------------------------------------
-            STRUCTURE
-            ----------------------------------------------------
-            */
+            /* =================================================
+               STRUCTURE
+            ================================================= */
 
             if (
                 value === "structure"
@@ -2042,9 +1989,7 @@ document.addEventListener(
                 );
 
 
-                if (
-                    recordTypeInfo
-                ) {
+                if (recordTypeInfo) {
 
                     recordTypeInfo.style.display =
                         "block";
@@ -2060,11 +2005,9 @@ document.addEventListener(
         }
 
 
-        /*
-        ========================================================
-        RECORD TYPE CHANGE
-        ========================================================
-        */
+        /* =====================================================
+           RECORD TYPE CHANGE
+        ===================================================== */
 
         recordType.addEventListener(
             "change",
@@ -2072,18 +2015,15 @@ document.addEventListener(
 
                 clearStatus();
 
-
                 updateRoomRecordType();
 
             }
         );
 
 
-        /*
-        ========================================================
-        ROOM FORM SUBMISSION
-        ========================================================
-        */
+        /* =====================================================
+           ROOM SUBMISSION
+        ===================================================== */
 
         form.addEventListener(
             "submit",
@@ -2095,12 +2035,6 @@ document.addEventListener(
                 const selectedType =
                     recordType.value;
 
-
-                /*
-                ------------------------------------------------
-                Name comes DIRECTLY from this form.
-                ------------------------------------------------
-                */
 
                 const name =
                     nameField &&
@@ -2133,11 +2067,9 @@ document.addEventListener(
                         : "";
 
 
-                /*
-                ------------------------------------------------
-                RECORD TYPE
-                ------------------------------------------------
-                */
+                /* =================================================
+                   RECORD TYPE
+                ================================================= */
 
                 if (!selectedType) {
 
@@ -2157,11 +2089,9 @@ document.addEventListener(
                 }
 
 
-                /*
-                ------------------------------------------------
-                NAME
-                ------------------------------------------------
-                */
+                /* =================================================
+                   NAME
+                ================================================= */
 
                 if (!name) {
 
@@ -2183,11 +2113,9 @@ document.addEventListener(
                 }
 
 
-                /*
-                ------------------------------------------------
-                ANIMAL
-                ------------------------------------------------
-                */
+                /* =================================================
+                   ANIMAL
+                ================================================= */
 
                 if (
                     selectedType === "animal"
@@ -2270,11 +2198,9 @@ document.addEventListener(
                 }
 
 
-                /*
-                ------------------------------------------------
-                STRUCTURE
-                ------------------------------------------------
-                */
+                /* =================================================
+                   STRUCTURE
+                ================================================= */
 
                 if (
                     selectedType === "structure" &&
@@ -2297,11 +2223,9 @@ document.addEventListener(
                 }
 
 
-                /*
-                ------------------------------------------------
-                BUYING PRICE
-                ------------------------------------------------
-                */
+                /* =================================================
+                   BUYING PRICE
+                ================================================= */
 
                 if (
                     buyingPrice !== "" &&
@@ -2324,11 +2248,9 @@ document.addEventListener(
                 }
 
 
-                /*
-                ------------------------------------------------
-                CURRENT WORTH
-                ------------------------------------------------
-                */
+                /* =================================================
+                   CURRENT WORTH
+                ================================================= */
 
                 if (
                     currentWorth !== "" &&
@@ -2351,39 +2273,9 @@ document.addEventListener(
                 }
 
 
-                /*
-                =================================================
-                CLIENT VALIDATION PASSED
-                =================================================
-
-                IMPORTANT:
-
-                    DO NOT:
-
-                        window.location.href = ...
-
-                    DO NOT:
-
-                        form.action = ...
-
-                    DO NOT manually redirect.
-
-                The browser now performs the normal POST to the
-                CURRENT URL.
-
-                Example:
-
-                    /storage/ABC/contents/XYZ/add/agroStore
-
-                The controller receives:
-
-                    req.params.dairyId
-                    req.params.storageId
-                    req.params.storageType
-
-                The controller then redirects after saving.
-                =================================================
-                */
+                /* =================================================
+                   NORMAL FORM SUBMISSION
+                ================================================= */
 
                 if (saveButton) {
 
@@ -2400,11 +2292,9 @@ document.addEventListener(
         );
 
 
-        /*
-        ========================================================
-        INITIAL ROOM STATE
-        ========================================================
-        */
+        /* =====================================================
+           INITIAL ROOM STATE
+        ===================================================== */
 
         updateRoomRecordType();
 
