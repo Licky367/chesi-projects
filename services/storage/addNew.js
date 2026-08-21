@@ -7,66 +7,92 @@
 //
 //     /storage/:dairyId/contents/:storageId/add/:storageType
 //
-// STORAGE TYPE:
+// SUPPORTED STORAGE TYPES:
 //
 //     "room"
 //     "agroStore"
 //
 // IMPORTANT:
 //
-//     storageType comes explicitly from the URL.
-//
-//     The service does NOT determine storageType by guessing
-//     from another database field.
+//     These are the ONLY supported storage types.
 //
 //     "agroStore" is case-sensitive.
 //
 //     Do NOT use:
+//
 //         toLowerCase()
 //
+//     Do NOT introduce:
+//
+//         agrostore
+//         warehouse
+//         store
+//         barn
+//         feedStore
+//         etc.
+//
 // ==========================================================
+
+
+const mongoose =
+    require("mongoose");
 
 
 const Dairy =
     require("../../models/dairy");
 
 
-const storageListService =
-    require("./list");
+
+/* ============================================================
+   STORAGE TYPE CONSTANTS
+============================================================ */
+
+const STORAGE_TYPES = {
+
+    ROOM:
+        "room",
+
+    AGRO_STORE:
+        "agroStore"
+
+};
 
 
 
 /* ============================================================
-   CONSTANTS
+   RECORD TYPE CONSTANTS
 ============================================================ */
 
-const ROOM_TYPE =
-    "room";
-
-
-const AGROSTORE_TYPE =
-    "agroStore";
+const ANIMAL_RECORD_TYPE =
+    "animal";
 
 
 const STRUCTURE_RECORD_TYPE =
     "structure";
 
 
+
+/* ============================================================
+   FEED TYPE
+============================================================ */
+
 const FEED_TYPE =
     "feeds";
 
+
+
+/* ============================================================
+   STORAGE STATUS
+============================================================ */
 
 const ACTIVE_STATUS =
     "active";
 
 
-const ANIMAL_RECORD_TYPE =
-    "animal";
 
-
-const STRUCTURE_ITEM_TYPE =
-    "structure";
-
+/* ============================================================
+   ANIMAL GENDER
+============================================================ */
 
 const FEMALE =
     "female";
@@ -87,13 +113,18 @@ function serviceError(
 ) {
 
     const error =
-        new Error(message);
+        new Error(
+            message
+        );
+
 
     error.statusCode =
         statusCode;
 
+
     error.status =
         statusCode;
+
 
     return error;
 
@@ -105,7 +136,9 @@ function serviceError(
    CLEAN VALUE
 ============================================================ */
 
-function clean(value) {
+function clean(
+    value
+) {
 
     return typeof value === "string"
         ? value.trim()
@@ -116,10 +149,28 @@ function clean(value) {
 
 
 /* ============================================================
+   VALID OBJECT ID
+============================================================ */
+
+function isValidObjectId(
+    value
+) {
+
+    return mongoose.Types.ObjectId.isValid(
+        value
+    );
+
+}
+
+
+
+/* ============================================================
    NUMBER OR UNDEFINED
 ============================================================ */
 
-function numberOrUndefined(value) {
+function numberOrUndefined(
+    value
+) {
 
     if (
         value === undefined ||
@@ -133,11 +184,15 @@ function numberOrUndefined(value) {
 
 
     const number =
-        Number(value);
+        Number(
+            value
+        );
 
 
     if (
-        !Number.isFinite(number)
+        !Number.isFinite(
+            number
+        )
     ) {
 
         throw serviceError(
@@ -158,7 +213,7 @@ function numberOrUndefined(value) {
 ============================================================ */
 
 /*
-Supported values are exactly:
+Supported values are EXACTLY:
 
     room
     agroStore
@@ -179,10 +234,8 @@ function validateStorageType(
 
 
     if (
-        ![
-            ROOM_TYPE,
-            AGROSTORE_TYPE
-        ].includes(type)
+        type !== STORAGE_TYPES.ROOM &&
+        type !== STORAGE_TYPES.AGRO_STORE
     ) {
 
         throw serviceError(
@@ -204,17 +257,7 @@ function validateStorageType(
 ============================================================ */
 
 /*
-The breed list comes directly from the Dairy model.
-
-Do NOT use:
-
-    dairy.dairyBreeds
-    dairy.breeds
-    dairy.breed
-
-The authoritative source is:
-
-    Dairy.getDairyBreeds()
+The Dairy model is the authoritative source for breeds.
 */
 
 function getBreeds() {
@@ -226,293 +269,27 @@ function getBreeds() {
 
 
 /* ============================================================
-   CALL SERVICE
-============================================================ */
-
-/*
-Allows this adapter to work with the existing storage list
-service without assuming one exact function signature.
-
-Only genuine argument/signature mismatches cause another
-candidate signature to be attempted.
-
-Application/database errors propagate normally.
-*/
-
-async function callService(
-    fn,
-    candidates
-) {
-
-    if (
-        typeof fn !== "function"
-    ) {
-
-        throw serviceError(
-            "The required storage service operation is not available.",
-            500
-        );
-
-    }
-
-
-    let lastError;
-
-
-    for (
-        const args of candidates
-    ) {
-
-        try {
-
-            return await fn(
-                ...args
-            );
-
-        } catch (error) {
-
-            lastError =
-                error;
-
-
-            const message =
-                String(
-                    error?.message || ""
-                );
-
-
-            const signatureMismatch =
-                error?.code ===
-                    "ERR_INVALID_ARG_TYPE" ||
-
-                message.includes(
-                    "Cannot read properties of undefined"
-                ) ||
-
-                message.includes(
-                    "is not a function"
-                );
-
-
-            if (
-                !signatureMismatch
-            ) {
-
-                throw error;
-
-            }
-
-        }
-
-    }
-
-
-    throw (
-        lastError ||
-        serviceError(
-            "Storage service invocation failed.",
-            500
-        )
-    );
-
-}
-
-
-
-/* ============================================================
-   RESOLVE PARENT DAIRY
+   RESOLVE PARENT DAIRY FARM
 ============================================================ */
 
 async function resolveParentDairy(
     dairyId
 ) {
 
-    return callService(
-        storageListService.getParentDairy,
-        [
-
-            [
-                dairyId
-            ],
-
-            [
-                {
-                    dairyId
-                }
-            ]
-
-        ]
-    );
-
-}
-
-
-
-/* ============================================================
-   RESOLVE STORAGE
-============================================================ */
-
-async function resolveStorage(
-    dairyId,
-    storageId
-) {
-
-    const fn =
-        storageListService.getStorageFacility ||
-        storageListService.getStorage;
-
-
-    return callService(
-        fn,
-        [
-
-            [
-                dairyId,
-                storageId
-            ],
-
-            [
-                storageId,
-                dairyId
-            ],
-
-            [
-                {
-                    dairyId,
-                    storageId
-                }
-            ],
-
-            [
-                storageId
-            ]
-
-        ]
-    );
-
-}
-
-
-
-/* ============================================================
-   GET STORAGE ROOM NUMBER
-============================================================ */
-
-/*
-The storage's roomNumber is authoritative.
-
-Every item created directly inside storage receives:
-
-    dwellNumber = storage.roomNumber
-
-This is also how existing contents are located.
-*/
-
-function getStorageRoomNumber(
-    storage
-) {
-
-    if (
-        !storage
-    ) {
-
-        return null;
-
-    }
-
-
-    if (
-        storage.roomNumber ===
-            null ||
-
-        storage.roomNumber ===
-            undefined
-    ) {
-
-        return null;
-
-    }
-
-
-    const roomNumber =
-        String(
-            storage.roomNumber
-        ).trim();
-
-
-    return roomNumber !== ""
-        ? roomNumber
-        : null;
-
-}
-
-
-
-/* ============================================================
-   CHECK STORAGE TYPE
-============================================================ */
-
-function getStorageType(
-    storage
-) {
-
-    return typeof storage?.type === "string"
-        ? storage.type.trim()
-        : "";
-
-}
-
-
-
-/* ============================================================
-   CHECK ACTIVE STORAGE
-============================================================ */
-
-function isActiveStorage(
-    storage
-) {
-
-    return (
-        storage &&
-        storage.status ===
-            ACTIVE_STATUS
-    );
-
-}
-
-
-
-/* ============================================================
-   GET ADD NEW CONTEXT
-============================================================ */
-
-/*
-Returns everything required by the add-new page.
-
-The breed list comes directly from the Dairy model.
-
-The storage type comes directly from the URL.
-*/
-
-async function getAddNewContext({
-    dairyId,
-    storageId,
-    storageType
-}) {
-
     /*
     ------------------------------------------------------------
-    Validate identifiers
+    Validate ID
     ------------------------------------------------------------
     */
 
     if (
-        !dairyId ||
-        !storageId
+        !isValidObjectId(
+            dairyId
+        )
     ) {
 
         throw serviceError(
-            "Dairy and storage identifiers are required.",
+            "Invalid Dairy Farm ID.",
             400
         );
 
@@ -521,33 +298,16 @@ async function getAddNewContext({
 
     /*
     ------------------------------------------------------------
-    Validate explicit storage type
-    ------------------------------------------------------------
-    */
-
-    const validatedStorageType =
-        validateStorageType(
-            storageType
-        );
-
-
-    /*
-    ------------------------------------------------------------
-    Resolve parent Dairy
+    Find Dairy
     ------------------------------------------------------------
     */
 
     const dairy =
-        await resolveParentDairy(
+        await Dairy.findById(
             dairyId
-        );
+        )
+        .lean();
 
-
-    /*
-    ------------------------------------------------------------
-    Validate parent Dairy
-    ------------------------------------------------------------
-    */
 
     if (
         !dairy
@@ -563,20 +323,120 @@ async function getAddNewContext({
 
     /*
     ------------------------------------------------------------
-    Resolve storage facility
+    Parent farm MUST have a negative code
     ------------------------------------------------------------
     */
 
-    const storage =
-        await resolveStorage(
-            dairyId,
-            storageId
+    const farmCode =
+        Number(
+            dairy.code
         );
+
+
+    if (
+        !Number.isInteger(
+            farmCode
+        ) ||
+        farmCode >= 0
+    ) {
+
+        throw serviceError(
+            "The selected Dairy record is not a Dairy Farm.",
+            400
+        );
+
+    }
+
+
+    return dairy;
+
+}
+
+
+
+/* ============================================================
+   RESOLVE STORAGE FACILITY
+============================================================ */
+
+/*
+The storage facility MUST:
+
+    1. Exist
+    2. Be a structure
+    3. Belong to the selected Dairy Farm
+    4. Be either:
+           room
+           agroStore
+    5. Be active
+    6. Have a roomNumber
+
+The URL storageType is validated separately.
+
+The database storage type is NOT guessed or converted.
+
+There are only two possible storage types.
+*/
+
+async function resolveStorage(
+    dairy,
+    storageId
+) {
+
+    /*
+    ------------------------------------------------------------
+    Validate ID
+    ------------------------------------------------------------
+    */
+
+    if (
+        !isValidObjectId(
+            storageId
+        )
+    ) {
+
+        throw serviceError(
+            "Invalid storage facility ID.",
+            400
+        );
+
+    }
 
 
     /*
     ------------------------------------------------------------
-    Validate storage
+    Find storage belonging to this farm
+    ------------------------------------------------------------
+    */
+
+    const storage =
+        await Dairy.findOne({
+
+            _id:
+                storageId,
+
+            recordType:
+                STRUCTURE_RECORD_TYPE,
+
+            assetCode:
+                dairy.code,
+
+            type: {
+                $in: [
+
+                    STORAGE_TYPES.ROOM,
+
+                    STORAGE_TYPES.AGRO_STORE
+
+                ]
+            }
+
+        })
+        .lean();
+
+
+    /*
+    ------------------------------------------------------------
+    Not found
     ------------------------------------------------------------
     */
 
@@ -585,7 +445,7 @@ async function getAddNewContext({
     ) {
 
         throw serviceError(
-            "Storage facility not found.",
+            "Storage facility not found for this Dairy Farm.",
             404
         );
 
@@ -594,62 +454,13 @@ async function getAddNewContext({
 
     /*
     ------------------------------------------------------------
-    Validate actual storage type
-    ------------------------------------------------------------
-    */
-
-    const actualStorageType =
-        getStorageType(
-            storage
-        );
-
-
-    if (
-        actualStorageType !==
-            validatedStorageType
-    ) {
-
-        throw serviceError(
-            "The selected storage facility does not match the requested storage type.",
-            400
-        );
-
-    }
-
-
-    /*
-    ------------------------------------------------------------
-    Validate storage type
+    Active storage required
     ------------------------------------------------------------
     */
 
     if (
-        ![
-            ROOM_TYPE,
-            AGROSTORE_TYPE
-        ].includes(
-            actualStorageType
-        )
-    ) {
-
-        throw serviceError(
-            "The selected storage facility has an unsupported storage type.",
-            400
-        );
-
-    }
-
-
-    /*
-    ------------------------------------------------------------
-    Validate storage status
-    ------------------------------------------------------------
-    */
-
-    if (
-        !isActiveStorage(
-            storage
-        )
+        storage.status !==
+            ACTIVE_STATUS
     ) {
 
         throw serviceError(
@@ -662,18 +473,20 @@ async function getAddNewContext({
 
     /*
     ------------------------------------------------------------
-    Validate room number
+    Validate roomNumber
     ------------------------------------------------------------
     */
 
-    const roomNumber =
-        getStorageRoomNumber(
-            storage
-        );
-
-
     if (
-        roomNumber === null
+        storage.roomNumber ===
+            null ||
+
+        storage.roomNumber ===
+            undefined ||
+
+        String(
+            storage.roomNumber
+        ).trim() === ""
     ) {
 
         throw serviceError(
@@ -684,27 +497,114 @@ async function getAddNewContext({
     }
 
 
+    return storage;
+
+}
+
+
+
+/* ============================================================
+   GET STORAGE ROOM NUMBER
+============================================================ */
+
+/*
+roomNumber is authoritative.
+
+The newly created item's:
+
+    dwellNumber
+
+MUST equal:
+
+    storage.roomNumber
+*/
+
+function getStorageRoomNumber(
+    storage
+) {
+
+    const roomNumber =
+        String(
+            storage.roomNumber
+        ).trim();
+
+
+    if (
+        roomNumber === ""
+    ) {
+
+        throw serviceError(
+            "The selected storage facility does not have a valid Room Number.",
+            400
+        );
+
+    }
+
+
+    return roomNumber;
+
+}
+
+
+
+/* ============================================================
+   VALIDATE ANIMAL GENDER
+============================================================ */
+
+function validateAnimalGender(
+    value
+) {
+
+    const gender =
+        clean(
+            value
+        );
+
+
+    if (
+        !gender
+    ) {
+
+        throw serviceError(
+            "Animal gender is required."
+        );
+
+    }
+
+
     /*
     ------------------------------------------------------------
-    Return complete add-new context
+    Canonical gender values
     ------------------------------------------------------------
+
+    The form uses:
+
+        female
+        male
+
+    We accept case variations from the request but store the
+    canonical lowercase values.
     */
 
-    return {
+    const normalized =
+        String(
+            gender
+        ).toLowerCase();
 
-        dairy,
 
-        storage,
+    if (
+        normalized !== FEMALE &&
+        normalized !== MALE
+    ) {
 
-        roomNumber,
+        throw serviceError(
+            "Animal gender must be either female or male."
+        );
 
-        storageType:
-            validatedStorageType,
+    }
 
-        dairyBreeds:
-            getBreeds()
 
-    };
+    return normalized;
 
 }
 
@@ -715,38 +615,43 @@ async function getAddNewContext({
 ============================================================ */
 
 /*
-Animal codes are mandatory.
+ANIMAL CODE RULES
+------------------------------------------------------------
 
-RULES:
+Female:
 
-    Female:
-        positive EVEN integer
+    positive EVEN integer
 
-        2
-        4
-        6
-        8
-        ...
+    2
+    4
+    6
+    8
+    10
+    ...
 
-    Male:
-        positive ODD integer
+Male:
 
-        1
-        3
-        5
-        7
-        ...
+    positive ODD integer
+
+    1
+    3
+    5
+    7
+    9
+    ...
 
 INVALID:
 
     0
-    negative numbers
+    negative values
     decimals
-    NaN
+    strings that are not numbers
     Infinity
-    missing values
+    NaN
 
-The code is also checked for uniqueness.
+The code is REQUIRED.
+
+The service does NOT automatically generate an animal code.
 */
 
 function validateAnimalCode({
@@ -780,7 +685,9 @@ function validateAnimalCode({
     */
 
     const code =
-        Number(value);
+        Number(
+            value
+        );
 
 
     /*
@@ -790,7 +697,9 @@ function validateAnimalCode({
     */
 
     if (
-        !Number.isInteger(code) ||
+        !Number.isInteger(
+            code
+        ) ||
         code <= 0
     ) {
 
@@ -803,10 +712,8 @@ function validateAnimalCode({
 
     /*
     ------------------------------------------------------------
-    Female
+    FEMALE = EVEN
     ------------------------------------------------------------
-
-    Female animal codes MUST be even.
     */
 
     if (
@@ -823,10 +730,8 @@ function validateAnimalCode({
 
     /*
     ------------------------------------------------------------
-    Male
+    MALE = ODD
     ------------------------------------------------------------
-
-    Male animal codes MUST be odd.
     */
 
     if (
@@ -848,81 +753,13 @@ function validateAnimalCode({
 
 
 /* ============================================================
-   VALIDATE ANIMAL GENDER
-============================================================ */
-
-/*
-The accepted values are:
-
-    female
-    male
-
-The comparison is deliberately normalized only for gender.
-
-This does NOT alter storageType handling.
-*/
-
-function validateAnimalGender(
-    value
-) {
-
-    const gender =
-        clean(
-            value
-        );
-
-
-    if (
-        !gender
-    ) {
-
-        throw serviceError(
-            "Animal gender is required."
-        );
-
-    }
-
-
-    /*
-    ------------------------------------------------------------
-    Accept the normal form values while preserving the
-    application's canonical values.
-    ------------------------------------------------------------
-    */
-
-    const normalized =
-        String(
-            gender
-        ).toLowerCase();
-
-
-    if (
-        normalized !== FEMALE &&
-        normalized !== MALE
-    ) {
-
-        throw serviceError(
-            "Animal gender must be either female or male."
-        );
-
-    }
-
-
-    return normalized;
-
-}
-
-
-
-/* ============================================================
    VALIDATE UNIQUE ANIMAL CODE
 ============================================================ */
 
 /*
-Code is the identity of an animal.
+Animal codes identify animals.
 
-Before saving a new animal, make sure another Dairy record
-does not already use that code.
+The code must not already belong to another Dairy record.
 */
 
 async function validateUniqueAnimalCode(
@@ -931,9 +768,13 @@ async function validateUniqueAnimalCode(
 
     const existing =
         await Dairy.findOne({
+
             code
+
         })
-        .select("_id")
+        .select(
+            "_id"
+        )
         .lean();
 
 
@@ -961,6 +802,12 @@ function validateAndNormalize({
     storageType
 }) {
 
+    /*
+    ------------------------------------------------------------
+    Copy request body
+    ------------------------------------------------------------
+    */
+
     const data = {
 
         ...(
@@ -971,9 +818,9 @@ function validateAndNormalize({
 
 
     /*
-    ============================================================
-    VALIDATE STORAGE TYPE
-    ============================================================
+    ------------------------------------------------------------
+    Validate storage type
+    ------------------------------------------------------------
     */
 
     const validatedStorageType =
@@ -986,14 +833,14 @@ function validateAndNormalize({
        NAME
     ======================================================== */
 
-    const name =
+    data.name =
         clean(
             data.name
         );
 
 
     if (
-        !name
+        !data.name
     ) {
 
         throw serviceError(
@@ -1003,12 +850,9 @@ function validateAndNormalize({
     }
 
 
-    data.name =
-        name;
-
 
     /* ========================================================
-       NUMERIC FIELDS
+       GENERAL NUMERIC FIELDS
     ======================================================== */
 
     data.buyingPrice =
@@ -1029,6 +873,7 @@ function validateAndNormalize({
         );
 
 
+
     /* ========================================================
        BUYING PRICE
     ======================================================== */
@@ -1043,6 +888,7 @@ function validateAndNormalize({
         );
 
     }
+
 
 
     /* ========================================================
@@ -1061,6 +907,7 @@ function validateAndNormalize({
     }
 
 
+
     /* ========================================================
        MASS
     ======================================================== */
@@ -1077,24 +924,29 @@ function validateAndNormalize({
     }
 
 
+
     /* ========================================================
        AGROSTORE
     ======================================================== */
 
     if (
         validatedStorageType ===
-            AGROSTORE_TYPE
+            STORAGE_TYPES.AGRO_STORE
     ) {
 
         /*
         --------------------------------------------------------
-        AgroStore additions are feed records.
+        AgroStore stores feeds.
         --------------------------------------------------------
+
+        IMPORTANT:
+
+        "agroStore" is the STORAGE type.
+
+        "feeds" is the ITEM type.
+
+        They are NOT the same thing.
         */
-
-        data.recordType =
-            STRUCTURE_RECORD_TYPE;
-
 
         data.type =
             FEED_TYPE;
@@ -1112,24 +964,6 @@ function validateAndNormalize({
             );
 
 
-        /*
-        --------------------------------------------------------
-        Unit
-        --------------------------------------------------------
-        */
-
-        data.unit =
-            clean(
-                data.unit
-            );
-
-
-        /*
-        --------------------------------------------------------
-        Quantity validation
-        --------------------------------------------------------
-        */
-
         if (
             data.quantity === undefined ||
             data.quantity < 0
@@ -1144,9 +978,15 @@ function validateAndNormalize({
 
         /*
         --------------------------------------------------------
-        Unit validation
+        Unit
         --------------------------------------------------------
         */
+
+        data.unit =
+            clean(
+                data.unit
+            );
+
 
         if (
             !data.unit
@@ -1158,7 +998,31 @@ function validateAndNormalize({
 
         }
 
+
+        /*
+        --------------------------------------------------------
+        Feed is NOT a storage structure.
+        --------------------------------------------------------
+
+        This distinction matters because the contents service
+        explicitly excludes:
+
+            recordType === "structure"
+
+        from ordinary storage items.
+
+        Therefore we do NOT force:
+
+            recordType = "structure"
+
+        onto a feed.
+        */
+
+        data.recordType =
+            undefined;
+
     }
+
 
 
     /* ========================================================
@@ -1167,12 +1031,15 @@ function validateAndNormalize({
 
     if (
         validatedStorageType ===
-            ROOM_TYPE
+            STORAGE_TYPES.ROOM
     ) {
 
         /*
         --------------------------------------------------------
-        Only animals and structures can be added to a room.
+        A normal room accepts:
+
+            animal
+            structure
         --------------------------------------------------------
         */
 
@@ -1183,12 +1050,11 @@ function validateAndNormalize({
 
 
         if (
-            ![
-                ANIMAL_RECORD_TYPE,
-                STRUCTURE_ITEM_TYPE
-            ].includes(
-                recordType
-            )
+            recordType !==
+                ANIMAL_RECORD_TYPE &&
+
+            recordType !==
+                STRUCTURE_RECORD_TYPE
         ) {
 
             throw serviceError(
@@ -1202,12 +1068,13 @@ function validateAndNormalize({
             recordType;
 
 
+
         /* ====================================================
            ANIMAL
         ==================================================== */
 
         if (
-            data.recordType ===
+            recordType ===
                 ANIMAL_RECORD_TYPE
         ) {
 
@@ -1225,11 +1092,14 @@ function validateAndNormalize({
 
             /*
             ----------------------------------------------------
-            ANIMAL CODE
+            CODE
             ----------------------------------------------------
 
-            Code is mandatory and its parity determines the
-            animal's sex.
+            Mandatory.
+
+            Female = positive even.
+
+            Male = positive odd.
             */
 
             data.code =
@@ -1256,41 +1126,6 @@ function validateAndNormalize({
                 );
 
 
-            /*
-            ----------------------------------------------------
-            Date of Birth
-            ----------------------------------------------------
-            */
-
-            data.dateOfBirth =
-                clean(
-                    data.dateOfBirth
-                );
-
-
-            /*
-            ----------------------------------------------------
-            Date of Birth required
-            ----------------------------------------------------
-            */
-
-            if (
-                !data.dateOfBirth
-            ) {
-
-                throw serviceError(
-                    "Animal Date of Birth is required."
-                );
-
-            }
-
-
-            /*
-            ----------------------------------------------------
-            Breed required
-            ----------------------------------------------------
-            */
-
             if (
                 !data.type
             ) {
@@ -1304,12 +1139,12 @@ function validateAndNormalize({
 
             /*
             ----------------------------------------------------
-            Validate breed against model source of truth
+            Validate breed against Dairy model
             ----------------------------------------------------
             */
 
             const breeds =
-                Dairy.getDairyBreeds();
+                getBreeds();
 
 
             if (
@@ -1324,7 +1159,31 @@ function validateAndNormalize({
 
             }
 
+
+            /*
+            ----------------------------------------------------
+            Date of Birth
+            ----------------------------------------------------
+            */
+
+            data.dateOfBirth =
+                clean(
+                    data.dateOfBirth
+                );
+
+
+            if (
+                !data.dateOfBirth
+            ) {
+
+                throw serviceError(
+                    "Animal Date of Birth is required."
+                );
+
+            }
+
         }
+
 
 
         /* ====================================================
@@ -1332,8 +1191,8 @@ function validateAndNormalize({
         ==================================================== */
 
         if (
-            data.recordType ===
-                STRUCTURE_ITEM_TYPE
+            recordType ===
+                STRUCTURE_RECORD_TYPE
         ) {
 
             data.type =
@@ -1368,30 +1227,20 @@ function validateAndNormalize({
 ============================================================ */
 
 /*
-A new item is NOT an existing item selected from contents.ejs.
+The browser does NOT control:
 
-Therefore:
+    assetCode
+    dwellNumber
 
-    itemIds
-    addItemsToStorage()
+The service supplies them from trusted server-side data.
 
-are NOT involved.
+FARM:
 
-Instead, a completely new Dairy record is created.
+    assetCode = parent farm code
 
-FARM RELATIONSHIP:
-
-    assetCode = parent Dairy Farm code
-
-STORAGE LOCATION:
+STORAGE:
 
     dwellNumber = storage.roomNumber
-
-ANIMAL:
-
-    code = supplied positive animal identity code
-
-The browser is never trusted for assetCode or dwellNumber.
 */
 
 function buildNewDairyData({
@@ -1429,9 +1278,7 @@ function buildNewDairyData({
 
     /*
     ------------------------------------------------------------
-    DESTINATION-CONTROLLED FIELDS
-
-    Never trust these from the browser.
+    NEVER TRUST DESTINATION FIELDS FROM REQUEST
     ------------------------------------------------------------
     */
 
@@ -1457,13 +1304,12 @@ function buildNewDairyData({
 async function createNewDairyRecord({
     data,
     dairy,
-    storage,
     roomNumber
 }) {
 
     /*
     ------------------------------------------------------------
-    Build server-controlled data
+    Build trusted data
     ------------------------------------------------------------
     */
 
@@ -1481,7 +1327,7 @@ async function createNewDairyRecord({
 
     /*
     ------------------------------------------------------------
-    CREATE DOCUMENT
+    Create Mongoose document
     ------------------------------------------------------------
     */
 
@@ -1493,18 +1339,12 @@ async function createNewDairyRecord({
 
     /*
     ------------------------------------------------------------
-    SAVE
+    Save
     ------------------------------------------------------------
     */
 
     await item.save();
 
-
-    /*
-    ------------------------------------------------------------
-    RETURN
-    ------------------------------------------------------------
-    */
 
     return item;
 
@@ -1527,7 +1367,7 @@ async function addNewItem({
 
     /*
     ============================================================
-    VALIDATE STORAGE TYPE
+    VALIDATE URL STORAGE TYPE
     ============================================================
     */
 
@@ -1539,26 +1379,90 @@ async function addNewItem({
 
     /*
     ============================================================
-    RESOLVE STORAGE CONTEXT
+    RESOLVE PARENT DAIRY
     ============================================================
     */
 
-    const context =
-        await getAddNewContext({
-
-            dairyId,
-
-            storageId,
-
-            storageType:
-                validatedStorageType
-
-        });
+    const dairy =
+        await resolveParentDairy(
+            dairyId
+        );
 
 
     /*
     ============================================================
-    VALIDATE AND NORMALIZE SUBMITTED DATA
+    RESOLVE TARGET STORAGE
+    ============================================================
+
+    IMPORTANT:
+
+    The storage is resolved directly from the database using:
+
+        dairyId
+        storageId
+
+    We do NOT use a loose getStorage/getStorageFacility
+    signature adapter.
+
+    This prevents the wrong record from being returned.
+    ============================================================
+    */
+
+    const storage =
+        await resolveStorage(
+            dairy,
+
+            storageId
+
+        );
+
+
+    /*
+    ============================================================
+    VERIFY URL TYPE AGAINST THE ACTUAL TARGET
+    ============================================================
+
+    Both values must be one of:
+
+        room
+        agroStore
+
+    We compare the explicit URL type with the actual storage
+    record ONLY after the storage has been resolved directly
+    and unambiguously.
+
+    No conversion is performed.
+    ============================================================
+    */
+
+    if (
+        storage.type !==
+            validatedStorageType
+    ) {
+
+        throw serviceError(
+            "The selected storage facility does not match the requested storage type.",
+            400
+        );
+
+    }
+
+
+    /*
+    ============================================================
+    STORAGE ROOM NUMBER
+    ============================================================
+    */
+
+    const roomNumber =
+        getStorageRoomNumber(
+            storage
+        );
+
+
+    /*
+    ============================================================
+    VALIDATE FORM DATA
     ============================================================
     */
 
@@ -1575,7 +1479,7 @@ async function addNewItem({
 
     /*
     ============================================================
-    REMOVE DESTINATION-CONTROLLED FIELDS
+    REMOVE CLIENT-CONTROLLED DESTINATION FIELDS
     ============================================================
     */
 
@@ -1635,11 +1539,13 @@ async function addNewItem({
 
     DO NOT call:
 
-        storageContentsService.addItemsToStorage()
+        addItemsToStorage()
 
-    That service is for EXISTING records selected by itemIds.
+    That operation is for EXISTING Dairy records selected
+    using itemIds from contents.ejs.
 
-    This operation creates a completely NEW Dairy document.
+    This operation creates a completely NEW Dairy record.
+    ============================================================
     */
 
     const item =
@@ -1647,21 +1553,16 @@ async function addNewItem({
 
             data,
 
-            dairy:
-                context.dairy,
+            dairy,
 
-            storage:
-                context.storage,
-
-            roomNumber:
-                context.roomNumber
+            roomNumber
 
         });
 
 
     /*
     ============================================================
-    RETURN RESULT
+    RETURN
     ============================================================
     */
 
@@ -1675,17 +1576,14 @@ async function addNewItem({
 
         item,
 
-        dairy:
-            context.dairy,
+        dairy,
 
-        storage:
-            context.storage,
+        storage,
 
         storageType:
             validatedStorageType,
 
-        roomNumber:
-            context.roomNumber
+        roomNumber
 
     };
 
@@ -1699,7 +1597,106 @@ async function addNewItem({
 
 module.exports = {
 
-    getAddNewContext,
+    getAddNewContext: async function({
+        dairyId,
+        storageId,
+        storageType
+    }) {
+
+        /*
+        --------------------------------------------------------
+        Validate URL storage type.
+        --------------------------------------------------------
+        */
+
+        const validatedStorageType =
+            validateStorageType(
+                storageType
+            );
+
+
+        /*
+        --------------------------------------------------------
+        Resolve parent farm.
+        --------------------------------------------------------
+        */
+
+        const dairy =
+            await resolveParentDairy(
+                dairyId
+            );
+
+
+        /*
+        --------------------------------------------------------
+        Resolve target storage.
+        --------------------------------------------------------
+        */
+
+        const storage =
+            await resolveStorage(
+                dairy,
+
+                storageId
+
+            );
+
+
+        /*
+        --------------------------------------------------------
+        The URL type and actual storage type must agree.
+        --------------------------------------------------------
+        */
+
+        if (
+            storage.type !==
+                validatedStorageType
+        ) {
+
+            throw serviceError(
+                "The selected storage facility does not match the requested storage type.",
+                400
+            );
+
+        }
+
+
+        /*
+        --------------------------------------------------------
+        Room number.
+        --------------------------------------------------------
+        */
+
+        const roomNumber =
+            getStorageRoomNumber(
+                storage
+            );
+
+
+        /*
+        --------------------------------------------------------
+        Return form context.
+        --------------------------------------------------------
+        */
+
+        return {
+
+            dairy,
+
+            storage,
+
+            roomNumber,
+
+            storageType:
+                validatedStorageType,
+
+            dairyBreeds:
+                getBreeds()
+
+        };
+
+    },
+
 
     addNewItem,
 
