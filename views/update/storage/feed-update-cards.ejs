@@ -1,57 +1,43 @@
 <% /*
 ==========================================================
-AVAILABLE ANIMAL FEED UPDATE CARDS
+ANIMAL FEED UPDATE CARDS
 
 FILE:
     views/update/storage/feed-update-cards.ejs
 
 PURPOSE:
-    Compact WhatsApp-style horizontal cards for giving
-    updates about available animal feeds.
+    Horizontal navigation cards for giving updates about
+    available animal feeds.
 
-    The section:
-        - Introduces the available animal feeds
-        - Shows feed items in horizontally scrollable cards
-        - Shows the feed image
-        - Shows the feed name
-        - Shows a short feed description/type
-        - Links to a page that can be defined later
+    These cards are navigation only.
 
-EXPECTED DATA:
-    availableFeeds
+    They do NOT:
+        - Load feed data from the backend
+        - Require availableFeeds
+        - Create feed records
+        - Open a post modal
+
+    Each card simply links to another page.
 
 IMPORTANT:
-    The destination URL is currently a placeholder.
+    The destination URLs below are placeholders and can
+    be changed later.
 
-    Replace:
-
-        "#"
-
-    with the appropriate route when the destination page
-    has been decided.
+CARD SIZE:
+    Same dimensions as the dairy asset cards.
 
 CARD BEHAVIOUR:
     - Horizontal scrolling
     - Left/right swiping on mobile
-    - Same card dimensions as dairy asset cards
-    - Cards do NOT open a post modal
+    - Clickable cards
 ==========================================================
 */ %>
 
 
-<%
-    /* ======================================================
-       SAFE FEED ARRAY
-    ====================================================== */
 
-    const feeds =
-        Array.isArray(availableFeeds)
-            ? availableFeeds
-            : [];
-%>
-
-
-<% if (feeds.length) { %>
+<!-- =====================================================
+     ANIMAL FEED UPDATE SECTION
+===================================================== -->
 
 <section
     class="animal-feed-update-strip"
@@ -59,9 +45,9 @@ CARD BEHAVIOUR:
 >
 
 
-    <!-- =====================================================
+    <!-- =================================================
          SECTION HEADER
-    ===================================================== -->
+    ================================================== -->
 
     <div class="animal-feed-update-strip-header">
 
@@ -77,170 +63,264 @@ CARD BEHAVIOUR:
 
 
 
-    <!-- =====================================================
-         HORIZONTAL SCROLL AREA
-    ===================================================== -->
+    <!-- =================================================
+         HORIZONTAL CARD SCROLLER
+    ================================================== -->
 
     <div
         class="animal-feed-update-scroll"
         role="list"
-        aria-label="Available animal feeds"
+        aria-label="Animal feed update options"
     >
 
 
-        <% feeds.forEach(function (feed) { %>
 
-            <%
-                /* =================================================
-                   SAFETY CHECK
-                ================================================= */
+        <!-- =================================================
+             FODDER
+        ================================================== -->
 
-                if (!feed) {
-                    return;
-                }
+        <a
+            href="#"
+            class="animal-feed-update-card"
+            role="listitem"
+            aria-label="Give an update about fodder"
+        >
 
+            <div class="animal-feed-update-image-wrap">
 
-                /* =================================================
-                   FEED NAME
-                ================================================= */
+                <img
+                    src="/images/h1.png"
+                    alt="Fodder"
+                    class="animal-feed-update-image"
+                    loading="lazy"
+                >
 
-                const feedName =
-                    feed.name ||
-                    feed.feedName ||
-                    feed.title ||
-                    "Animal Feed";
-
-
-                /* =================================================
-                   FEED IMAGE
-
-                   Prefer:
-                       profileImage
-                       displayImage
-                       image
-
-                   Otherwise use a simple avatar.
-                ================================================= */
-
-                const feedImage =
-                    feed.profileImage ||
-                    feed.displayImage ||
-                    feed.image ||
-                    (
-                        "https://ui-avatars.com/api/?name=" +
-                        encodeURIComponent(feedName) +
-                        "&background=e8f5ee&color=198754"
-                    );
+            </div>
 
 
-                /* =================================================
-                   FEED TYPE / DESCRIPTION
+            <div class="animal-feed-update-name">
 
-                   Backend can provide either:
+                Fodder
 
-                       type
-                       category
-                       description
-
-                   The first available value is displayed.
-                ================================================= */
-
-                const feedType =
-                    feed.type ||
-                    feed.category ||
-                    feed.description ||
-                    "Animal Feed";
+            </div>
 
 
-                /* =================================================
-                   DESTINATION
+            <div class="animal-feed-update-type">
 
-                   PLACEHOLDER ONLY.
+                <span
+                    class="animal-feed-update-type-icon"
+                    aria-hidden="true"
+                >
+                    🌾
+                </span>
 
-                   Replace "#" later with the required route.
+                <span>
+                    Animal Feed
+                </span>
 
-                   Example:
+            </div>
 
-                       /dairy/<%= dairy._id %>/feedstore/update
-
-                   or whatever destination is decided.
-                ================================================= */
-
-                const feedUrl =
-                    "#";
-            %>
+        </a>
 
 
 
-            <!-- =================================================
-                 FEED CARD
-            ================================================== -->
+        <!-- =================================================
+             SILAGE
+        ================================================== -->
 
-            <a
-                href="<%= feedUrl %>"
-                class="animal-feed-update-card"
-                role="listitem"
-                aria-label="Give an update about <%= feedName %>"
-            >
+        <a
+            href="#"
+            class="animal-feed-update-card"
+            role="listitem"
+            aria-label="Give an update about silage"
+        >
 
+            <div class="animal-feed-update-image-wrap">
 
-                <!-- =============================================
-                     IMAGE
-                ============================================== -->
+                <img
+                    src="/images/h1.png"
+                    alt="Silage"
+                    class="animal-feed-update-image"
+                    loading="lazy"
+                >
 
-                <div class="animal-feed-update-image-wrap">
-
-                    <img
-                        src="<%= feedImage %>"
-                        alt="<%= feedName %>"
-                        class="animal-feed-update-image"
-                        loading="lazy"
-                    >
-
-                </div>
+            </div>
 
 
+            <div class="animal-feed-update-name">
 
-                <!-- =============================================
-                     FEED NAME
-                ============================================== -->
+                Silage
 
-                <div class="animal-feed-update-name">
-
-                    <%= feedName %>
-
-                </div>
+            </div>
 
 
+            <div class="animal-feed-update-type">
 
-                <!-- =============================================
-                     FEED TYPE / DESCRIPTION
-                ============================================== -->
+                <span
+                    class="animal-feed-update-type-icon"
+                    aria-hidden="true"
+                >
+                    🌱
+                </span>
 
-                <div class="animal-feed-update-type">
+                <span>
+                    Animal Feed
+                </span>
 
-                    <span
-                        class="animal-feed-update-type-icon"
-                        aria-hidden="true"
-                    >
-                        🌾
-                    </span>
+            </div>
 
-                    <span>
-                        <%= feedType %>
-                    </span>
-
-                </div>
+        </a>
 
 
-            </a>
+
+        <!-- =================================================
+             HAY
+        ================================================== -->
+
+        <a
+            href="#"
+            class="animal-feed-update-card"
+            role="listitem"
+            aria-label="Give an update about hay"
+        >
+
+            <div class="animal-feed-update-image-wrap">
+
+                <img
+                    src="/images/h1.png"
+                    alt="Hay"
+                    class="animal-feed-update-image"
+                    loading="lazy"
+                >
+
+            </div>
 
 
-        <% }); %>
+            <div class="animal-feed-update-name">
+
+                Hay
+
+            </div>
+
+
+            <div class="animal-feed-update-type">
+
+                <span
+                    class="animal-feed-update-type-icon"
+                    aria-hidden="true"
+                >
+                    🌾
+                </span>
+
+                <span>
+                    Animal Feed
+                </span>
+
+            </div>
+
+        </a>
+
+
+
+        <!-- =================================================
+             DAIRY MEAL
+        ================================================== -->
+
+        <a
+            href="#"
+            class="animal-feed-update-card"
+            role="listitem"
+            aria-label="Give an update about dairy meal"
+        >
+
+            <div class="animal-feed-update-image-wrap">
+
+                <img
+                    src="/images/h1.png"
+                    alt="Dairy Meal"
+                    class="animal-feed-update-image"
+                    loading="lazy"
+                >
+
+            </div>
+
+
+            <div class="animal-feed-update-name">
+
+                Dairy Meal
+
+            </div>
+
+
+            <div class="animal-feed-update-type">
+
+                <span
+                    class="animal-feed-update-type-icon"
+                    aria-hidden="true"
+                >
+                    🥣
+                </span>
+
+                <span>
+                    Animal Feed
+                </span>
+
+            </div>
+
+        </a>
+
+
+
+        <!-- =================================================
+             MINERAL SUPPLEMENTS
+        ================================================== -->
+
+        <a
+            href="#"
+            class="animal-feed-update-card"
+            role="listitem"
+            aria-label="Give an update about mineral supplements"
+        >
+
+            <div class="animal-feed-update-image-wrap">
+
+                <img
+                    src="/images/h1.png"
+                    alt="Mineral Supplements"
+                    class="animal-feed-update-image"
+                    loading="lazy"
+                >
+
+            </div>
+
+
+            <div class="animal-feed-update-name">
+
+                Mineral Supplements
+
+            </div>
+
+
+            <div class="animal-feed-update-type">
+
+                <span
+                    class="animal-feed-update-type-icon"
+                    aria-hidden="true"
+                >
+                    🧂
+                </span>
+
+                <span>
+                    Animal Feed
+                </span>
+
+            </div>
+
+        </a>
+
 
 
     </div>
-
 
 </section>
 
@@ -249,9 +329,7 @@ CARD BEHAVIOUR:
 <style>
 
 /* ==========================================================
-   AVAILABLE ANIMAL FEED UPDATE STRIP
-
-   Namespaced specifically for this component.
+   ANIMAL FEED UPDATE STRIP
 ========================================================== */
 
 .animal-feed-update-strip {
@@ -370,9 +448,7 @@ CARD BEHAVIOUR:
 
 
 /* ==========================================================
-   FEED CARD
-
-   SAME SIZE AS THE DAIRY ASSET CARD
+   CARD
 ========================================================== */
 
 .animal-feed-update-card {
@@ -425,7 +501,7 @@ CARD BEHAVIOUR:
 
 
 /* ==========================================================
-   CARD HOVER
+   HOVER
 ========================================================== */
 
 .animal-feed-update-card:hover {
@@ -442,7 +518,7 @@ CARD BEHAVIOUR:
 
 
 /* ==========================================================
-   CARD ACTIVE
+   ACTIVE
 ========================================================== */
 
 .animal-feed-update-card:active {
@@ -548,7 +624,7 @@ CARD BEHAVIOUR:
 
 
 /* ==========================================================
-   FEED TYPE / DESCRIPTION
+   FEED TYPE
 ========================================================== */
 
 .animal-feed-update-type {
@@ -625,7 +701,7 @@ CARD BEHAVIOUR:
 
 
 /* ==========================================================
-   FOCUS ACCESSIBILITY
+   FOCUS
 ========================================================== */
 
 .animal-feed-update-card:focus-visible {
@@ -656,11 +732,6 @@ CARD BEHAVIOUR:
     }
 
 
-
-    /* ==============================================
-       TITLE
-    ============================================== */
-
     .animal-feed-update-strip-title strong {
 
         font-size:
@@ -668,11 +739,6 @@ CARD BEHAVIOUR:
 
     }
 
-
-
-    /* ==============================================
-       CARD
-    ============================================== */
 
     .animal-feed-update-card {
 
@@ -691,11 +757,6 @@ CARD BEHAVIOUR:
     }
 
 
-
-    /* ==============================================
-       IMAGE
-    ============================================== */
-
     .animal-feed-update-image-wrap {
 
         height:
@@ -706,11 +767,6 @@ CARD BEHAVIOUR:
 
     }
 
-
-
-    /* ==============================================
-       NAME
-    ============================================== */
 
     .animal-feed-update-name {
 
@@ -728,11 +784,6 @@ CARD BEHAVIOUR:
     }
 
 
-
-    /* ==============================================
-       TYPE
-    ============================================== */
-
     .animal-feed-update-type {
 
         padding:
@@ -746,7 +797,6 @@ CARD BEHAVIOUR:
     }
 
 
-
     .animal-feed-update-type-icon {
 
         font-size:
@@ -757,6 +807,3 @@ CARD BEHAVIOUR:
 }
 
 </style>
-
-
-<% } %>
