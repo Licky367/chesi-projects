@@ -13,330 +13,273 @@ PURPOSE:
         1. Normal Storage Rooms
         2. AgroStore
 
-DATA SOURCE:
-    models/dairy.js
+URL CONTRACT:
+    /storage/:dairyId/contents/:itemId
 
-IMPORTANT STORAGE RULES
---------------------------------------------------------------
+URL IDENTIFIERS:
+    :dairyId
+        = parent Dairy Farm MongoDB _id
 
-Storage facility:
+    :itemId
+        = storage Dairy MongoDB _id
 
-    recordType === "structure"
+IMPORTANT STORAGE LOGIC
+==============================================================
 
-    type === "room"
-        = Normal Storage Room
+PARENT FARM:
 
-    type === "agroStore"
-        = AgroStore
+    dairy._id
+        = first ID in URL
 
-Farm:
+    dairy.code
+        = authoritative farm relationship code
 
-    code < 0
+STORAGE:
 
-Storage belongs to farm when:
+    storage._id
+        = second ID in URL
 
-    storage.assetCode === dairy.code
+    storage.recordType === "structure"
 
-Item belongs to farm when:
+    storage.type
+        = "room"
+        OR
+        = "agroStore"
+
+CONTENT LOCATION:
+
+    item.dwellNumber === storage.roomNumber
+
+FARM OWNERSHIP:
 
     item.assetCode === dairy.code
 
-Item location:
+ADD ITEMS:
 
-    item.dwellNumber === storage.dwellNumber
+    ALL Dairy records where:
 
-Feed:
+        assetCode === dairy.code
 
-    item.type === "feeds"
+OMIT:
 
-Normal room:
+    selected item.dwellNumber = null
 
-    non-feed items only
+RESHUFFLE:
 
-AgroStore:
+    selected item.dwellNumber =
+        destinationStorage.roomNumber
 
-    feeds only
+RESHUFFLE TARGETS:
 
-URL:
+    destinationStorage.type === storage.type
 
-    /storage/:dairyId/contents/:itemId
+    Therefore:
 
-where:
+        room
+            → room
 
-    dairyId = Dairy Farm MongoDB _id
-    itemId  = Storage Facility MongoDB _id
+        agroStore
+            → agroStore
 
 ==============================================================
 */
 
-
-/* ============================================================
-   SAFE INPUT VALUES
-============================================================ */
-
-const safeStorage =
-    typeof storage !== "undefined" && storage
-        ? storage
-        : null;
-
-const safeDairy =
-    typeof dairy !== "undefined" && dairy
-        ? dairy
-        : null;
-
-const safeItems =
-    Array.isArray(items)
-        ? items
-        : [];
-
-const safeAvailableItems =
-    Array.isArray(availableItems)
-        ? availableItems
-        : [];
-
-const safeTargetStorages =
-    Array.isArray(targetStorages)
-        ? targetStorages
-        : [];
-
-
-/* ============================================================
-   STORAGE TYPE
-============================================================ */
-
-/*
- * IMPORTANT:
- *
- * Storage type is NOT "feeds".
- *
- * "feeds" belongs to item.type.
- */
-
-const storageType =
-    String(
-        safeStorage && safeStorage.type
-            ? safeStorage.type
-            : ""
-    )
-    .trim()
-    .toLowerCase();
-
-
-const isNormalRoom =
-    storageType === "room";
+const storageType = String(
+    storage && storage.type
+        ? storage.type
+        : ""
+).trim().toLowerCase();
 
 
 const isAgroStore =
     storageType === "agrostore";
 
 
-/* ============================================================
-   STORAGE STATUS
-============================================================ */
+const isNormalRoom =
+    storageType === "room";
 
-const storageStatus =
-    String(
-        safeStorage && safeStorage.status
-            ? safeStorage.status
-            : ""
-    )
-    .trim()
-    .toLowerCase();
-
-
-const isStorageActive =
-    storageStatus === "active";
-
-
-/* ============================================================
-   STORAGE NAME
-============================================================ */
 
 const storageName =
     (
-        safeStorage &&
-        safeStorage.displayName
+        storage &&
+        storage.displayName
     )
-        ? safeStorage.displayName
-
-        : isAgroStore
+        ||
+    (
+        storage &&
+        storage.name
+    )
+        ||
+    (
+        isAgroStore
             ? "AgroStore"
-
-            : (
-                safeStorage &&
-                safeStorage.roomNumber
-            )
-                ? "Room " + safeStorage.roomNumber
-
-                : (
-                    safeStorage &&
-                    safeStorage.dwellNumber !== undefined &&
-                    safeStorage.dwellNumber !== null
+            : "Room " +
+                (
+                    storage &&
+                    (
+                        storage.roomNumber !== null &&
+                        storage.roomNumber !== undefined
+                    )
+                        ? storage.roomNumber
+                        : "—"
                 )
-                    ? "Storage " + safeStorage.dwellNumber
-
-                    : "Storage Facility";
+    );
 
 
-/* ============================================================
-   CURRENT TAB
-============================================================ */
+const storageRoomNumber =
+    (
+        storage &&
+        storage.roomNumber !== null &&
+        storage.roomNumber !== undefined
+    )
+        ? storage.roomNumber
+        : "—";
 
-const requestedTab =
-    typeof activeTab !== "undefined"
-        ? String(activeTab).trim().toLowerCase()
-        : "";
 
 const currentTab =
-    requestedTab === "add"
+    activeTab === "add"
         ? "add"
         : "view";
 
 
-/* ============================================================
-   FARM ID
-============================================================ */
+/*
+==============================================================
+SAFE DATA ARRAYS
+==============================================================
+*/
 
-const dairyId =
-    safeDairy && safeDairy._id
-        ? String(safeDairy._id)
-        : "";
-
-
-/* ============================================================
-   STORAGE ID
-============================================================ */
-
-const storageId =
-    safeStorage && safeStorage._id
-        ? String(safeStorage._id)
-        : "";
+const currentItems =
+    Array.isArray(items)
+        ? items
+        : [];
 
 
-/* ============================================================
-   HELPERS
-============================================================ */
+const addItems =
+    Array.isArray(availableItems)
+        ? availableItems
+        : [];
 
-function hasValue(value){
+
+const storageTargets =
+    Array.isArray(targetStorages)
+        ? targetStorages
+        : [];
+
+
+const currentItemCount =
+    currentItems.length;
+
+
+/*
+==============================================================
+HELPERS FOR DISPLAY
+==============================================================
+*/
+
+function displayValue(value) {
 
     return (
         value !== null &&
         value !== undefined &&
         String(value).trim() !== ""
+    )
+        ? value
+        : "—";
+
+}
+
+
+function displayStorageName(item) {
+
+    if (
+        item &&
+        item.displayName
+    ) {
+
+        return item.displayName;
+
+    }
+
+
+    if (
+        item &&
+        item.name
+    ) {
+
+        return item.name;
+
+    }
+
+
+    if (
+        item &&
+        item.roomNumber !== null &&
+        item.roomNumber !== undefined
+    ) {
+
+        return "Room " + item.roomNumber;
+
+    }
+
+
+    return "Storage";
+
+}
+
+
+function itemIsFeed(item) {
+
+    return (
+
+        item &&
+
+        String(
+            item.type || ""
+        )
+        .trim()
+        .toLowerCase() === "feeds"
+
     );
 
 }
 
 
-function displayCode(item){
+function itemIsAnimal(item) {
+
+    /*
+    ----------------------------------------------------------
+    Display classification only.
+
+    Storage allocation is NOT determined from code.
+
+    A positive code is simply rendered as an animal-style
+    record for presentation where applicable.
+    ----------------------------------------------------------
+    */
 
     if (
-        item &&
-        item.code !== null &&
-        item.code !== undefined &&
-        String(item.code).trim() !== ""
-    ){
-
-        return item.code;
-
-    }
-
-    return "—";
-
-}
-
-
-function isAnimalItem(item){
-
-    if (
-        !item ||
-        item.code === null ||
-        item.code === undefined
-    ){
+        !item
+    ) {
 
         return false;
 
     }
 
 
-    const numericCode =
-        Number(item.code);
+    const code =
+        Number(
+            item.code
+        );
 
 
     return (
-        Number.isFinite(numericCode) &&
-        Number.isInteger(numericCode) &&
-        numericCode > 0
+
+        item.code !== null &&
+        item.code !== undefined &&
+        !Number.isNaN(code) &&
+        code > 0
+
     );
-
-}
-
-
-function isFeedItem(item){
-
-    return (
-        item &&
-        String(item.type || "")
-            .trim()
-            .toLowerCase() === "feeds"
-    );
-
-}
-
-
-function isManualAsset(item){
-
-    return (
-        item &&
-        (
-            item.code === null ||
-            item.code === undefined
-        )
-    );
-
-}
-
-
-function itemLabel(item){
-
-    if (
-        item &&
-        item.name
-    ){
-
-        return item.name;
-
-    }
-
-    if (
-        isFeedItem(item)
-    ){
-
-        return "Unnamed Feed";
-
-    }
-
-    return "Unnamed Item";
-
-}
-
-
-function formatNumber(value){
-
-    const number =
-        Number(value);
-
-
-    if (
-        !Number.isFinite(number)
-    ){
-
-        return "0";
-
-    }
-
-
-    return number.toLocaleString();
 
 }
 
@@ -447,34 +390,6 @@ function formatNumber(value){
 .storage-error{
     background:#fff5f4;
     border:1px solid #efd9d6;
-    color:#9a443b;
-}
-
-
-/* ============================================================
-   STORAGE STATUS
-============================================================ */
-
-.storage-status{
-    display:inline-flex;
-    align-items:center;
-    min-height:22px;
-    padding:0 8px;
-    margin-top:9px;
-    border-radius:999px;
-    font-size:9px;
-    font-weight:850;
-    letter-spacing:.07em;
-    text-transform:uppercase;
-}
-
-.storage-status.active{
-    background:#edf7ef;
-    color:#2d7243;
-}
-
-.storage-status.inactive{
-    background:#fff1ef;
     color:#9a443b;
 }
 
@@ -649,26 +564,6 @@ function formatNumber(value){
     background:#2d7b48;
     color:#fff;
     box-shadow:0 3px 8px rgba(45,123,72,.13);
-}
-
-
-/* ============================================================
-   INACTIVE NOTICE
-============================================================ */
-
-.storage-inactive-notice{
-    margin:0 0 13px;
-    padding:11px 13px;
-    border:1px solid #eadbd7;
-    border-radius:10px;
-    background:#fff7f5;
-    color:#8f5048;
-    font-size:11px;
-    line-height:1.5;
-}
-
-.storage-inactive-notice strong{
-    color:#743d37;
 }
 
 
@@ -944,7 +839,7 @@ function formatNumber(value){
 
 .quantity-form{
     display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-columns:minmax(0,1fr) 105px auto;
     align-items:end;
     gap:7px;
 }
@@ -957,7 +852,8 @@ function formatNumber(value){
     font-weight:750;
 }
 
-.quantity-input{
+.quantity-input,
+.quantity-unit{
     width:100%;
     height:36px;
     box-sizing:border-box;
@@ -970,7 +866,8 @@ function formatNumber(value){
     outline:none;
 }
 
-.quantity-input:focus{
+.quantity-input:focus,
+.quantity-unit:focus{
     border-color:#82aa8e;
     box-shadow:0 0 0 3px rgba(45,122,71,.07);
 }
@@ -985,10 +882,6 @@ function formatNumber(value){
     font-size:10px;
     font-weight:800;
     cursor:pointer;
-}
-
-.quantity-save-button:hover{
-    background:#256a3d;
 }
 
 .quantity-help{
@@ -1212,10 +1105,11 @@ function formatNumber(value){
     }
 
     .quantity-form{
-        grid-template-columns:1fr;
+        grid-template-columns:1fr 95px;
     }
 
     .quantity-save-button{
+        grid-column:1 / -1;
         width:100%;
     }
 }
@@ -1239,6 +1133,14 @@ function formatNumber(value){
         display:grid;
         grid-template-columns:1fr 1fr;
         gap:6px;
+    }
+
+    .quantity-form{
+        grid-template-columns:1fr;
+    }
+
+    .quantity-save-button{
+        grid-column:auto;
     }
 
     .feed-quantity-header{
@@ -1265,10 +1167,8 @@ function formatNumber(value){
 
                 <% if (isAgroStore) { %>
                     AgroStore
-                <% } else if (isNormalRoom) { %>
-                    Storage Room
                 <% } else { %>
-                    Storage Facility
+                    Storage Room
                 <% } %>
 
             </p>
@@ -1279,37 +1179,17 @@ function formatNumber(value){
             </h1>
 
 
-            <% if (safeStorage) { %>
-
-                <div
-                    class="storage-status <%= isStorageActive ? 'active' : 'inactive' %>"
-                >
-
-                    <%= isStorageActive ? "Active" : "Inactive" %>
-
-                </div>
-
-            <% } %>
-
-
             <p class="storage-page-description">
 
                 <% if (isAgroStore) { %>
 
-                    Manage feeds currently stored here.
-                    Update the remaining quantity when feed is
-                    consumed. Setting the quantity to zero
-                    automatically removes the feed from this
+                    Manage the records currently located in this
                     AgroStore.
-
-                <% } else if (isNormalRoom) { %>
-
-                    View and manage non-feed animals and assets
-                    currently allocated to this storage room.
 
                 <% } else { %>
 
-                    Manage the contents of this storage facility.
+                    Manage the records currently located in this
+                    storage room.
 
                 <% } %>
 
@@ -1319,7 +1199,7 @@ function formatNumber(value){
 
 
         <a
-            href="/storage/<%= dairyId %>"
+            href="/storage/<%= dairy._id %>"
             class="back-storage"
         >
             ← Back to Storage
@@ -1332,10 +1212,7 @@ function formatNumber(value){
          MESSAGES
     ========================================================= -->
 
-    <% if (
-        typeof successMessage !== "undefined" &&
-        successMessage
-    ) { %>
+    <% if (successMessage) { %>
 
         <div class="storage-message storage-success">
 
@@ -1350,10 +1227,7 @@ function formatNumber(value){
     <% } %>
 
 
-    <% if (
-        typeof pageError !== "undefined" &&
-        pageError
-    ) { %>
+    <% if (pageError) { %>
 
         <div class="storage-message storage-error">
 
@@ -1369,61 +1243,6 @@ function formatNumber(value){
 
 
     <!-- ========================================================
-         INVALID STORAGE TYPE
-    ========================================================= -->
-
-    <% if (
-        safeStorage &&
-        !isNormalRoom &&
-        !isAgroStore
-    ) { %>
-
-        <div class="storage-message storage-error">
-
-            <span>!</span>
-
-            <span>
-                This Dairy record is not a supported storage
-                facility. Storage type must be
-                <strong>room</strong> or
-                <strong>agroStore</strong>.
-            </span>
-
-        </div>
-
-    <% } %>
-
-
-    <!-- ========================================================
-         INACTIVE STORAGE NOTICE
-    ========================================================= -->
-
-    <% if (
-        safeStorage &&
-        !isStorageActive
-    ) { %>
-
-        <div class="storage-inactive-notice">
-
-            <strong>This storage facility is inactive.</strong>
-
-            Adding items and reshuffling items are disabled.
-            The backend will also reject those operations.
-
-            <% if (isNormalRoom) { %>
-
-                Items may still be omitted from a normal room,
-                because the storage service permits omission
-                independently of storage status.
-
-            <% } %>
-
-        </div>
-
-    <% } %>
-
-
-    <!-- ========================================================
          TABS
     ========================================================= -->
 
@@ -1431,7 +1250,7 @@ function formatNumber(value){
 
         <button
             type="button"
-            class="storage-tab <%= currentTab === 'view' ? 'active' : '' %>"
+            class="storage-tab <% if (currentTab === 'view') { %>active<% } %>"
             data-storage-tab="view"
         >
             View Contents
@@ -1440,7 +1259,7 @@ function formatNumber(value){
 
         <button
             type="button"
-            class="storage-tab <%= currentTab === 'add' ? 'active' : '' %>"
+            class="storage-tab <% if (currentTab === 'add') { %>active<% } %>"
             data-storage-tab="add"
         >
             Add Items
@@ -1450,14 +1269,15 @@ function formatNumber(value){
 
 
     <!-- ========================================================
-         VIEW CONTENTS TAB
+         VIEW CONTENTS
     ========================================================= -->
 
     <section
         id="storageViewTab"
-        class="storage-tab-panel <%= currentTab === 'view' ? 'active' : '' %>"
+        class="storage-tab-panel <% if (currentTab === 'view') { %>active<% } %>"
         data-storage-panel="view"
     >
+
 
         <div class="contents-topbar">
 
@@ -1469,11 +1289,11 @@ function formatNumber(value){
             <div class="contents-count">
 
                 <strong>
-                    <%= safeItems.length %>
+                    <%= currentItemCount %>
                 </strong>
 
 
-                <% if (safeItems.length === 1) { %>
+                <% if (currentItemCount === 1) { %>
                     item
                 <% } else { %>
                     items
@@ -1484,445 +1304,196 @@ function formatNumber(value){
         </div>
 
 
-        <!-- ====================================================
-             NORMAL ROOM CONTENTS
-        ==================================================== -->
-
-        <% if (isNormalRoom) { %>
+        <% if (currentItemCount > 0) { %>
 
 
-            <% if (safeItems.length > 0) { %>
+            <!-- ==================================================
+                 MANAGEMENT
+            ================================================== -->
 
+            <form
+                id="contentsManagementForm"
+                method="POST"
+                action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/reshuffle"
+            >
 
-                <form
-                    id="reshuffleForm"
-                    method="POST"
-                    action="/storage/<%= dairyId %>/contents/<%= storageId %>/reshuffle"
-                >
+                <div class="contents-management">
 
-                    <div class="contents-management">
+                    <div class="management-left">
 
-                        <div class="management-left">
+                        <label class="select-all-wrapper">
 
-                            <label class="select-all-wrapper">
-
-                                <input
-                                    type="checkbox"
-                                    id="selectAllContents"
-                                >
-
-                                <span>
-                                    Select All
-                                </span>
-
-                            </label>
-
-
-                            <span
-                                id="contentsSelectionCount"
-                                class="selection-count"
+                            <input
+                                type="checkbox"
+                                id="selectAllContents"
                             >
-                                0 selected
+
+                            <span>
+                                Select All
                             </span>
 
-                        </div>
+                        </label>
 
 
-                        <div class="management-right">
-
-                            <button
-                                type="button"
-                                id="openReshuffleButton"
-                                class="storage-action-button reshuffle-button"
-                                disabled
-                                <%= !isStorageActive ? "data-storage-inactive=\"true\"" : "" %>
-                            >
-                                Reshuffle
-                            </button>
-
-
-                            <button
-                                type="button"
-                                id="omitButton"
-                                class="storage-action-button omit-button"
-                                disabled
-                            >
-                                Omit Selected
-                            </button>
-
-                        </div>
+                        <span
+                            id="contentsSelectionCount"
+                            class="selection-count"
+                        >
+                            0 selected
+                        </span>
 
                     </div>
 
 
-                    <!-- ==========================================
-                         RESHUFFLE PANEL
-                    ========================================== -->
+                    <div class="management-right">
 
-                    <div
-                        id="reshufflePanel"
-                        class="reshuffle-panel"
-                    >
-
-                        <h3 class="reshuffle-heading">
-                            Reshuffle Selected Items
-                        </h3>
+                        <button
+                            type="button"
+                            id="openReshuffleButton"
+                            class="storage-action-button reshuffle-button"
+                            disabled
+                        >
+                            Reshuffle
+                        </button>
 
 
-                        <p class="reshuffle-description">
-
-                            Only another active normal storage room
-                            belonging to this same Dairy Farm can be
-                            selected as the destination.
-
-                        </p>
-
-
-                        <div class="reshuffle-form">
-
-                            <div class="reshuffle-select-group">
-
-                                <label for="destinationStorage">
-                                    Destination
-                                </label>
-
-
-                                <select
-                                    id="destinationStorage"
-                                    name="targetStorageId"
-                                    class="reshuffle-select"
-                                >
-
-                                    <option value="">
-                                        Select destination...
-                                    </option>
-
-
-                                    <% if (safeTargetStorages.length > 0) { %>
-
-                                        <% safeTargetStorages.forEach(function(destination) { %>
-
-                                            <option
-                                                value="<%= destination._id %>"
-                                            >
-
-                                                <%= destination.displayName ||
-                                                    (
-                                                        destination.roomNumber
-                                                            ? "Room " + destination.roomNumber
-                                                            : (
-                                                                destination.dwellNumber !== undefined &&
-                                                                destination.dwellNumber !== null
-                                                                    ? "Storage " + destination.dwellNumber
-                                                                    : "Storage Facility"
-                                                            )
-                                                    )
-                                                %>
-
-                                            </option>
-
-                                        <% }); %>
-
-                                    <% } else { %>
-
-                                        <option
-                                            value=""
-                                            disabled
-                                        >
-                                            No other active Rooms available
-                                        </option>
-
-                                    <% } %>
-
-                                </select>
-
-                            </div>
-
-
-                            <button
-                                type="submit"
-                                id="reshuffleSubmitButton"
-                                class="storage-action-button add-button"
-                                disabled
-                            >
-                                Reshuffle Selected
-                            </button>
-
-
-                            <button
-                                type="button"
-                                id="cancelReshuffleButton"
-                                class="storage-action-button omit-button"
-                            >
-                                Cancel
-                            </button>
-
-                        </div>
+                        <button
+                            type="button"
+                            id="omitButton"
+                            class="storage-action-button omit-button"
+                            disabled
+                        >
+                            Omit Selected
+                        </button>
 
                     </div>
-
-
-                    <!-- ==========================================
-                         CURRENT ROOM CONTENTS
-                    ========================================== -->
-
-                    <div class="contents-list">
-
-                        <% safeItems.forEach(function(item) { %>
-
-                            <%
-                                const itemIsAnimal =
-                                    isAnimalItem(item);
-
-                                const itemIsManualAsset =
-                                    isManualAsset(item);
-                            %>
-
-
-                            <article
-                                class="content-card"
-                                data-content-card
-                                data-item-id="<%= item._id %>"
-                            >
-
-                                <div class="content-checkbox">
-
-                                    <input
-                                        type="checkbox"
-                                        class="content-item-checkbox"
-                                        name="itemIds"
-                                        value="<%= item._id %>"
-                                        aria-label="Select <%= itemLabel(item) %>"
-                                    >
-
-                                </div>
-
-
-                                <div class="content-icon">
-
-                                    <% if (itemIsAnimal) { %>
-                                        🐄
-                                    <% } else if (itemIsManualAsset) { %>
-                                        🔧
-                                    <% } else { %>
-                                        📦
-                                    <% } %>
-
-                                </div>
-
-
-                                <div class="content-information">
-
-                                    <div class="content-title-row">
-
-                                        <h3>
-                                            <%= itemLabel(item) %>
-                                        </h3>
-
-
-                                        <span
-                                            class="content-type <%= itemIsAnimal ? 'animal-type' : 'asset-type' %>"
-                                        >
-
-                                            <% if (itemIsAnimal) { %>
-
-                                                Animal
-
-                                            <% } else if (itemIsManualAsset) { %>
-
-                                                Manual Asset
-
-                                            <% } else { %>
-
-                                                Asset
-
-                                            <% } %>
-
-                                        </span>
-
-                                    </div>
-
-
-                                    <div class="content-meta">
-
-                                        <span class="content-meta-item">
-
-                                            <strong>Code:</strong>
-
-                                            <%= displayCode(item) %>
-
-                                        </span>
-
-
-                                        <span class="content-meta-item">
-
-                                            <strong>Type:</strong>
-
-                                            <%= item.type || "—" %>
-
-                                        </span>
-
-
-                                        <span class="content-meta-item">
-
-                                            <strong>Status:</strong>
-
-                                            <%= item.status || "—" %>
-
-                                        </span>
-
-
-                                        <% if (
-                                            item.quantity !== null &&
-                                            item.quantity !== undefined
-                                        ) { %>
-
-                                            <span class="content-meta-item">
-
-                                                <strong>Quantity:</strong>
-
-                                                <%= formatNumber(item.quantity) %>
-
-                                                <%= item.unit || "unit" %>
-
-                                            </span>
-
-                                        <% } %>
-
-
-                                        <% if (item.condition) { %>
-
-                                            <span class="content-meta-item">
-
-                                                <strong>Condition:</strong>
-
-                                                <%= item.condition %>
-
-                                            </span>
-
-                                        <% } %>
-
-
-                                        <% if (
-                                            item.currentWorth !== null &&
-                                            item.currentWorth !== undefined
-                                        ) { %>
-
-                                            <span class="content-meta-item">
-
-                                                <strong>Worth:</strong>
-
-                                                <%= formatNumber(item.currentWorth) %>
-
-                                            </span>
-
-                                        <% } %>
-
-                                    </div>
-
-
-                                    <% if (itemIsAnimal) { %>
-
-                                        <div class="animal-information">
-
-                                            <span>
-                                                <strong>Gender:</strong>
-                                                <%= item.gender || "—" %>
-                                            </span>
-
-
-                                            <span>
-                                                <strong>Age:</strong>
-                                                <%= item.ageText || "—" %>
-                                            </span>
-
-
-                                            <span>
-
-                                                <strong>Milking:</strong>
-
-                                                <%= item.isMilking ? "Yes" : "No" %>
-
-                                            </span>
-
-                                        </div>
-
-                                    <% } %>
-
-
-                                    <% if (item.description) { %>
-
-                                        <p class="content-description">
-                                            <%= item.description %>
-                                        </p>
-
-                                    <% } %>
-
-                                </div>
-
-                            </article>
-
-                        <% }); %>
-
-                    </div>
-
-                </form>
-
-
-                <!-- ==========================================
-                     OMIT FORM
-                ========================================== -->
-
-                <form
-                    id="omitForm"
-                    method="POST"
-                    action="/storage/<%= dairyId %>/contents/<%= storageId %>/omit"
-                    style="display:none;"
-                >
-
-                    <div id="omitInputs"></div>
-
-                </form>
-
-
-            <% } else { %>
-
-
-                <div class="empty-contents">
-
-                    <div class="empty-icon">
-                        📦
-                    </div>
-
-
-                    <h3>
-                        No Items in This Storage
-                    </h3>
-
-
-                    <p>
-                        There are currently no non-feed items
-                        allocated to this storage room.
-                    </p>
 
                 </div>
 
-            <% } %>
+
+                <!-- ==================================================
+                     RESHUFFLE PANEL
+                ================================================== -->
+
+                <div
+                    id="reshufflePanel"
+                    class="reshuffle-panel"
+                >
+
+                    <h3 class="reshuffle-heading">
+                        Reshuffle Selected Items
+                    </h3>
 
 
-        <!-- ====================================================
-             AGROSTORE CONTENTS
-        ==================================================== -->
+                    <p class="reshuffle-description">
 
-        <% } else if (isAgroStore) { %>
+                        Select another storage facility of the same
+                        type as this storage. Selected items will have
+                        their dwell number changed to the destination
+                        storage's room number.
+
+                    </p>
 
 
-            <% if (safeItems.length > 0) { %>
+                    <div class="reshuffle-form">
 
+                        <div class="reshuffle-select-group">
+
+                            <label for="destinationStorage">
+                                Destination
+                            </label>
+
+
+                            <select
+                                id="destinationStorage"
+                                name="targetStorageId"
+                                class="reshuffle-select"
+                            >
+
+                                <option value="">
+                                    Select destination...
+                                </option>
+
+
+                                <% if (storageTargets.length > 0) { %>
+
+                                    <% storageTargets.forEach(function(destination) { %>
+
+                                        <option
+                                            value="<%= destination._id %>"
+                                        >
+
+                                            <%= displayStorageName(destination) %>
+
+                                            <% if (
+                                                destination.roomNumber !== null &&
+                                                destination.roomNumber !== undefined
+                                            ) { %>
+
+                                                — <%= destination.roomNumber %>
+
+                                            <% } %>
+
+                                        </option>
+
+                                    <% }); %>
+
+                                <% } else { %>
+
+                                    <option
+                                        value=""
+                                        disabled
+                                    >
+                                        No other compatible storage available
+                                    </option>
+
+                                <% } %>
+
+                            </select>
+
+                        </div>
+
+
+                        <button
+                            type="submit"
+                            id="reshuffleSubmitButton"
+                            class="storage-action-button add-button"
+                            disabled
+                        >
+                            Reshuffle Selected
+                        </button>
+
+
+                        <button
+                            type="button"
+                            id="cancelReshuffleButton"
+                            class="storage-action-button omit-button"
+                        >
+                            Cancel
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ==================================================
+                     CURRENT ITEMS
+                ================================================== -->
 
                 <div class="contents-list">
 
-                    <% safeItems.forEach(function(item) { %>
+
+                    <% currentItems.forEach(function(item) { %>
+
+                        <%
+                            const itemIsAnimal =
+                                itemIsAnimal(item);
+
+                            const itemIsFeedRecord =
+                                itemIsFeed(item);
+                        %>
+
 
                         <article
                             class="content-card"
@@ -1930,25 +1501,67 @@ function formatNumber(value){
                             data-item-id="<%= item._id %>"
                         >
 
-                            <div></div>
 
+                            <!-- CHECKBOX -->
 
-                            <div class="content-icon">
-                                🌾
+                            <div class="content-checkbox">
+
+                                <input
+                                    type="checkbox"
+                                    class="content-item-checkbox"
+                                    name="itemIds"
+                                    value="<%= item._id %>"
+                                >
+
                             </div>
 
 
+                            <!-- ICON -->
+
+                            <div class="content-icon">
+
+                                <% if (itemIsFeedRecord) { %>
+                                    🌾
+                                <% } else if (itemIsAnimal) { %>
+                                    🐄
+                                <% } else { %>
+                                    🔧
+                                <% } %>
+
+                            </div>
+
+
+                            <!-- INFORMATION -->
+
                             <div class="content-information">
+
 
                                 <div class="content-title-row">
 
                                     <h3>
-                                        <%= itemLabel(item) %>
+                                        <%= item.name || "Unnamed Item" %>
                                     </h3>
 
 
-                                    <span class="content-type feed-type">
-                                        Feed
+                                    <span
+                                        class="content-type
+                                        <% if (itemIsFeedRecord) { %>
+                                            feed-type
+                                        <% } else if (itemIsAnimal) { %>
+                                            animal-type
+                                        <% } else { %>
+                                            asset-type
+                                        <% } %>"
+                                    >
+
+                                        <% if (itemIsFeedRecord) { %>
+                                            Feed
+                                        <% } else if (itemIsAnimal) { %>
+                                            Animal
+                                        <% } else { %>
+                                            Asset
+                                        <% } %>
+
                                     </span>
 
                                 </div>
@@ -1956,129 +1569,165 @@ function formatNumber(value){
 
                                 <div class="content-meta">
 
+
                                     <span class="content-meta-item">
 
-                                        <strong>Type:</strong>
+                                        <strong>
+                                            Code:
+                                        </strong>
 
-                                        <%= item.type || "feeds" %>
+                                        <%= displayValue(item.code) %>
 
                                     </span>
 
 
                                     <span class="content-meta-item">
 
-                                        <strong>Status:</strong>
+                                        <strong>
+                                            Asset Code:
+                                        </strong>
 
-                                        <%= item.status || "—" %>
+                                        <%= displayValue(item.assetCode) %>
 
                                     </span>
 
 
-                                    <% if (item.code !== null && item.code !== undefined) { %>
+                                    <span class="content-meta-item">
+
+                                        <strong>
+                                            Type:
+                                        </strong>
+
+                                        <%= displayValue(item.type) %>
+
+                                    </span>
+
+
+                                    <span class="content-meta-item">
+
+                                        <strong>
+                                            Status:
+                                        </strong>
+
+                                        <%= displayValue(item.status) %>
+
+                                    </span>
+
+
+                                    <span class="content-meta-item">
+
+                                        <strong>
+                                            Dwell:
+                                        </strong>
+
+                                        <%= displayValue(item.dwellNumber) %>
+
+                                    </span>
+
+
+                                    <% if (
+                                        item.quantity !== null &&
+                                        item.quantity !== undefined
+                                    ) { %>
 
                                         <span class="content-meta-item">
 
-                                            <strong>Code:</strong>
+                                            <strong>
+                                                Quantity:
+                                            </strong>
 
-                                            <%= item.code %>
+                                            <%= Number(
+                                                item.quantity || 0
+                                            ).toLocaleString() %>
+
+                                            <%= item.unit || "unit" %>
 
                                         </span>
 
                                     <% } %>
 
+
+                                    <% if (item.condition) { %>
+
+                                        <span class="content-meta-item">
+
+                                            <strong>
+                                                Condition:
+                                            </strong>
+
+                                            <%= item.condition %>
+
+                                        </span>
+
+                                    <% } %>
+
+
+                                    <% if (
+                                        item.currentWorth !== null &&
+                                        item.currentWorth !== undefined
+                                    ) { %>
+
+                                        <span class="content-meta-item">
+
+                                            <strong>
+                                                Worth:
+                                            </strong>
+
+                                            <%= Number(
+                                                item.currentWorth || 0
+                                            ).toLocaleString() %>
+
+                                        </span>
+
+                                    <% } %>
+
+
                                 </div>
 
 
-                                <!-- ==================================
-                                     FEED QUANTITY
-                                ================================== -->
+                                <% if (itemIsAnimal) { %>
 
-                                <div class="feed-quantity-section">
+                                    <div class="animal-information">
 
-                                    <div class="feed-quantity-header">
+                                        <span>
 
-                                        <span class="feed-quantity-title">
-                                            Quantity Remaining
+                                            <strong>
+                                                Gender:
+                                            </strong>
+
+                                            <%= item.gender || "—" %>
+
                                         </span>
 
 
                                         <span>
 
-                                            <span class="feed-current-quantity">
-                                                <%= formatNumber(item.quantity) %>
-                                            </span>
+                                            <strong>
+                                                Age:
+                                            </strong>
+
+                                            <%= item.ageText || "—" %>
+
+                                        </span>
 
 
-                                            <span class="feed-unit">
-                                                <%= item.unit || "unit" %>
-                                            </span>
+                                        <span>
+
+                                            <strong>
+                                                Milking:
+                                            </strong>
+
+                                            <% if (item.isMilking) { %>
+                                                Yes
+                                            <% } else { %>
+                                                No
+                                            <% } %>
 
                                         </span>
 
                                     </div>
 
-
-                                    <form
-                                        class="quantity-form"
-                                        method="POST"
-                                        action="/storage/<%= dairyId %>/contents/<%= storageId %>/quantity"
-                                        data-feed-quantity-form
-                                    >
-
-                                        <input
-                                            type="hidden"
-                                            name="itemId"
-                                            value="<%= item._id %>"
-                                        >
-
-
-                                        <div class="quantity-field">
-
-                                            <label
-                                                for="quantity-<%= item._id %>"
-                                            >
-                                                New Remaining Quantity
-                                            </label>
-
-
-                                            <input
-                                                id="quantity-<%= item._id %>"
-                                                class="quantity-input"
-                                                type="number"
-                                                name="quantity"
-                                                min="0"
-                                                step="any"
-                                                value="<%= item.quantity !== undefined && item.quantity !== null ? item.quantity : 0 %>"
-                                                required
-                                            >
-
-                                        </div>
-
-
-                                        <button
-                                            type="submit"
-                                            class="quantity-save-button"
-                                        >
-                                            Save Quantity
-                                        </button>
-
-                                    </form>
-
-
-                                    <p class="quantity-help">
-
-                                        Enter the amount currently remaining.
-                                        A quantity greater than zero keeps
-                                        the feed in this AgroStore.
-
-                                        Setting the quantity to
-                                        <strong>0</strong>
-                                        automatically sets its storage
-                                        location to unallocated.
-
-                                    </p>
-
-                                </div>
+                                <% } %>
 
 
                                 <% if (item.description) { %>
@@ -2089,83 +1738,94 @@ function formatNumber(value){
 
                                 <% } %>
 
+
                             </div>
 
                         </article>
 
+
                     <% }); %>
 
-                </div>
-
-
-            <% } else { %>
-
-
-                <div class="empty-contents">
-
-                    <div class="empty-icon">
-                        🌾
-                    </div>
-
-
-                    <h3>
-                        AgroStore is Empty
-                    </h3>
-
-
-                    <p>
-                        There are currently no feeds with
-                        remaining quantity allocated to this
-                        AgroStore.
-                    </p>
 
                 </div>
 
-            <% } %>
+            </form>
 
 
-        <!-- ====================================================
-             INVALID STORAGE TYPE
-        ==================================================== -->
+            <!-- ==================================================
+                 OMIT FORM
+            ================================================== -->
+
+            <form
+                id="omitForm"
+                method="POST"
+                action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/omit"
+                style="display:none;"
+            >
+
+                <div id="omitInputs"></div>
+
+            </form>
+
 
         <% } else { %>
 
 
+            <!-- ==================================================
+                 EMPTY
+            ================================================== -->
+
             <div class="empty-contents">
 
                 <div class="empty-icon">
-                    ⚠️
+
+                    <% if (isAgroStore) { %>
+                        🌾
+                    <% } else { %>
+                        📦
+                    <% } %>
+
                 </div>
 
 
                 <h3>
-                    Unsupported Storage Type
+
+                    <% if (isAgroStore) { %>
+                        AgroStore is Empty
+                    <% } else { %>
+                        Storage Room is Empty
+                    <% } %>
+
                 </h3>
 
 
                 <p>
-                    This storage facility does not have a valid
-                    storage type. Expected
-                    <strong>room</strong> or
-                    <strong>agroStore</strong>.
+
+                    No Dairy records currently have a
+                    <strong>dwellNumber</strong> matching this
+                    storage's room number
+                    (<strong><%= storageRoomNumber %></strong>).
+
                 </p>
 
             </div>
 
         <% } %>
 
+
     </section>
 
 
     <!-- ========================================================
-         ADD ITEMS TAB
+         ADD ITEMS
     ========================================================= -->
 
     <section
         id="storageAddTab"
-        class="storage-tab-panel <%= currentTab === 'add' ? 'active' : '' %>"
+        class="storage-tab-panel <% if (currentTab === 'add') { %>active<% } %>"
         data-storage-panel="add"
     >
+
 
         <div class="add-introduction">
 
@@ -2176,34 +1836,21 @@ function formatNumber(value){
 
             <p>
 
-                <% if (isAgroStore) { %>
-
-                    Select unallocated feeds belonging to this
-                    Dairy Farm. Only feeds with a remaining
-                    quantity greater than zero can be added.
-
-                <% } else if (isNormalRoom) { %>
-
-                    Select unallocated non-feed animals or assets
-                    belonging to this Dairy Farm.
-
-                <% } else { %>
-
-                    Items cannot be added because this is not a
-                    supported storage type.
-
-                <% } %>
+                All Dairy records belonging to this Dairy Farm are
+                listed here. Select the records you want to assign
+                to this storage.
 
             </p>
 
         </div>
 
 
-        <% if (
-            (isNormalRoom || isAgroStore) &&
-            safeAvailableItems.length > 0
-        ) { %>
+        <% if (addItems.length > 0) { %>
 
+
+            <!-- ==================================================
+                 ADD MANAGEMENT
+            ================================================== -->
 
             <div class="add-management">
 
@@ -2214,7 +1861,6 @@ function formatNumber(value){
                         <input
                             type="checkbox"
                             id="selectAllAddItems"
-                            <%= !isStorageActive ? "disabled" : "" %>
                         >
 
                         <span>
@@ -2242,7 +1888,6 @@ function formatNumber(value){
                         id="addSelectedButton"
                         class="storage-action-button add-button"
                         disabled
-                        <%= !isStorageActive ? "data-storage-inactive=\"true\"" : "" %>
                     >
                         Add Selected
                     </button>
@@ -2252,25 +1897,28 @@ function formatNumber(value){
             </div>
 
 
+            <!-- ==================================================
+                 ADD FORM
+            ================================================== -->
+
             <form
                 method="POST"
-                action="/storage/<%= dairyId %>/contents/<%= storageId %>/add"
+                action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add"
                 id="addItemsForm"
             >
 
+
                 <div class="add-list">
 
-                    <% safeAvailableItems.forEach(function(item) { %>
+
+                    <% addItems.forEach(function(item) { %>
 
                         <%
-                            const availableIsAnimal =
-                                isAnimalItem(item);
+                            const addItemIsAnimal =
+                                itemIsAnimal(item);
 
-                            const availableIsFeed =
-                                isFeedItem(item);
-
-                            const availableIsManualAsset =
-                                isManualAsset(item);
+                            const addItemIsFeed =
+                                itemIsFeed(item);
                         %>
 
 
@@ -2280,6 +1928,9 @@ function formatNumber(value){
                             data-add-item-id="<%= item._id %>"
                         >
 
+
+                            <!-- CHECKBOX -->
+
                             <div class="add-checkbox">
 
                                 <input
@@ -2287,71 +1938,55 @@ function formatNumber(value){
                                     class="add-item-checkbox"
                                     name="itemIds"
                                     value="<%= item._id %>"
-                                    aria-label="Select <%= itemLabel(item) %>"
-                                    <%= !isStorageActive ? "disabled" : "" %>
                                 >
 
                             </div>
 
 
+                            <!-- ICON -->
+
                             <div class="add-icon">
 
-                                <% if (availableIsFeed) { %>
-
+                                <% if (addItemIsFeed) { %>
                                     🌾
-
-                                <% } else if (availableIsAnimal) { %>
-
+                                <% } else if (addItemIsAnimal) { %>
                                     🐄
-
-                                <% } else if (availableIsManualAsset) { %>
-
-                                    🔧
-
                                 <% } else { %>
-
-                                    📦
-
+                                    🔧
                                 <% } %>
 
                             </div>
 
 
+                            <!-- INFORMATION -->
+
                             <div class="add-information">
+
 
                                 <div class="add-title">
 
                                     <h3>
-                                        <%= itemLabel(item) %>
+                                        <%= item.name || "Unnamed Item" %>
                                     </h3>
 
 
                                     <span
                                         class="content-type
-                                        <%= availableIsFeed
-                                            ? 'feed-type'
-                                            : availableIsAnimal
-                                                ? 'animal-type'
-                                                : 'asset-type'
-                                        %>"
+                                        <% if (addItemIsFeed) { %>
+                                            feed-type
+                                        <% } else if (addItemIsAnimal) { %>
+                                            animal-type
+                                        <% } else { %>
+                                            asset-type
+                                        <% } %>"
                                     >
 
-                                        <% if (availableIsFeed) { %>
-
+                                        <% if (addItemIsFeed) { %>
                                             Feed
-
-                                        <% } else if (availableIsAnimal) { %>
-
+                                        <% } else if (addItemIsAnimal) { %>
                                             Animal
-
-                                        <% } else if (availableIsManualAsset) { %>
-
-                                            Manual Asset
-
                                         <% } else { %>
-
                                             Asset
-
                                         <% } %>
 
                                     </span>
@@ -2361,33 +1996,38 @@ function formatNumber(value){
 
                                 <div class="add-meta">
 
+
+                                    <span>
+
+                                        <strong>
+                                            ID:
+                                        </strong>
+
+                                        <%= displayValue(item._id) %>
+
+                                    </span>
+
+
                                     <span>
 
                                         <strong>
                                             Code:
                                         </strong>
 
-                                        <%= displayCode(item) %>
+                                        <%= displayValue(item.code) %>
 
                                     </span>
 
 
-                                    <% if (
-                                        item.assetCode !== null &&
-                                        item.assetCode !== undefined
-                                    ) { %>
+                                    <span>
 
-                                        <span>
+                                        <strong>
+                                            Asset Code:
+                                        </strong>
 
-                                            <strong>
-                                                Farm Code:
-                                            </strong>
+                                        <%= displayValue(item.assetCode) %>
 
-                                            <%= item.assetCode %>
-
-                                        </span>
-
-                                    <% } %>
+                                    </span>
 
 
                                     <span>
@@ -2396,7 +2036,7 @@ function formatNumber(value){
                                             Type:
                                         </strong>
 
-                                        <%= item.type || "—" %>
+                                        <%= displayValue(item.type) %>
 
                                     </span>
 
@@ -2407,7 +2047,18 @@ function formatNumber(value){
                                             Status:
                                         </strong>
 
-                                        <%= item.status || "—" %>
+                                        <%= displayValue(item.status) %>
+
+                                    </span>
+
+
+                                    <span>
+
+                                        <strong>
+                                            Dwell:
+                                        </strong>
+
+                                        <%= displayValue(item.dwellNumber) %>
 
                                     </span>
 
@@ -2423,7 +2074,9 @@ function formatNumber(value){
                                                 Quantity:
                                             </strong>
 
-                                            <%= formatNumber(item.quantity) %>
+                                            <%= Number(
+                                                item.quantity || 0
+                                            ).toLocaleString() %>
 
                                             <%= item.unit || "unit" %>
 
@@ -2431,24 +2084,31 @@ function formatNumber(value){
 
                                     <% } %>
 
+
                                 </div>
+
 
                             </div>
 
+
                         </article>
+
 
                     <% }); %>
 
+
                 </div>
+
 
             </form>
 
 
-        <% } else if (
-            isNormalRoom ||
-            isAgroStore
-        ) { %>
+        <% } else { %>
 
+
+            <!-- ==================================================
+                 NO ADD ITEMS
+            ================================================== -->
 
             <div class="empty-contents">
 
@@ -2464,67 +2124,25 @@ function formatNumber(value){
 
 
                 <h3>
-
-                    <% if (isAgroStore) { %>
-
-                        No Feeds Available
-
-                    <% } else { %>
-
-                        No Items Available
-
-                    <% } %>
-
+                    No Dairy Records Available
                 </h3>
 
 
                 <p>
 
-                    <% if (isAgroStore) { %>
+                    No Dairy records were returned whose
+                    <strong>assetCode</strong> belongs to this
+                    Dairy Farm.
 
-                        There are currently no unallocated feeds
-                        belonging to this farm with remaining
-                        quantity greater than zero.
-
-                    <% } else { %>
-
-                        There are currently no unallocated
-                        non-feed items belonging to this farm.
-
-                    <% } %>
-
-                </p>
-
-            </div>
-
-
-        <% } else { %>
-
-
-            <div class="empty-contents">
-
-                <div class="empty-icon">
-                    ⚠️
-                </div>
-
-
-                <h3>
-                    Storage Type Not Supported
-                </h3>
-
-
-                <p>
-                    Items cannot be allocated to this storage
-                    facility because its type is not
-                    <strong>room</strong> or
-                    <strong>agroStore</strong>.
                 </p>
 
             </div>
 
         <% } %>
 
+
     </section>
+
 
 </div>
 
@@ -2534,19 +2152,6 @@ function formatNumber(value){
 document.addEventListener(
     "DOMContentLoaded",
     function(){
-
-        /* ======================================================
-           SERVER STATE
-        ====================================================== */
-
-        const isNormalRoom =
-            <%= isNormalRoom ? "true" : "false" %>;
-
-        const isAgroStore =
-            <%= isAgroStore ? "true" : "false" %>;
-
-        const isStorageActive =
-            <%= isStorageActive ? "true" : "false" %>;
 
 
         /* ======================================================
@@ -2620,7 +2225,7 @@ document.addEventListener(
                                 url
                             );
 
-                        } catch(error){
+                        } catch(error) {
 
                             /*
                              * Cosmetic URL update only.
@@ -2636,7 +2241,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           NORMAL ROOM SELECTION
+           CURRENT CONTENT SELECTION
         ====================================================== */
 
         const selectAllContents =
@@ -2646,10 +2251,8 @@ document.addEventListener(
 
 
         const contentCheckboxes =
-            Array.from(
-                document.querySelectorAll(
-                    ".content-item-checkbox"
-                )
+            document.querySelectorAll(
+                ".content-item-checkbox"
             );
 
 
@@ -2695,9 +2298,9 @@ document.addEventListener(
             );
 
 
-        const reshuffleForm =
+        const contentsManagementForm =
             document.getElementById(
-                "reshuffleForm"
+                "contentsManagementForm"
             );
 
 
@@ -2714,24 +2317,22 @@ document.addEventListener(
 
 
         /* ======================================================
-           SELECTED CONTENTS
+           GET SELECTED CURRENT ITEMS
         ====================================================== */
 
         function getSelectedContents(){
 
-            return contentCheckboxes.filter(
-                function(checkbox){
-
-                    return checkbox.checked;
-
-                }
+            return Array.from(
+                document.querySelectorAll(
+                    ".content-item-checkbox:checked"
+                )
             );
 
         }
 
 
         /* ======================================================
-           UPDATE CONTENT SELECTION
+           UPDATE CURRENT SELECTION
         ====================================================== */
 
         function updateContentSelection(){
@@ -2744,7 +2345,9 @@ document.addEventListener(
                 selected.length;
 
 
-            if (contentsSelectionCount){
+            if (
+                contentsSelectionCount
+            ) {
 
                 contentsSelectionCount.textContent =
                     count + " selected";
@@ -2752,31 +2355,21 @@ document.addEventListener(
             }
 
 
-            /*
-             * Backend rule:
-             *
-             * Reshuffling requires an active current room.
-             */
-
-            if (openReshuffleButton){
+            if (
+                openReshuffleButton
+            ) {
 
                 openReshuffleButton.disabled =
-                    !isNormalRoom ||
-                    !isStorageActive ||
                     count === 0;
 
             }
 
 
-            /*
-             * Backend permits omission from a normal room
-             * regardless of its active status.
-             */
-
-            if (omitButton){
+            if (
+                omitButton
+            ) {
 
                 omitButton.disabled =
-                    !isNormalRoom ||
                     count === 0;
 
             }
@@ -2807,7 +2400,9 @@ document.addEventListener(
                 );
 
 
-            if (selectAllContents){
+            if (
+                selectAllContents
+            ) {
 
                 selectAllContents.checked =
                     contentCheckboxes.length > 0 &&
@@ -2815,14 +2410,19 @@ document.addEventListener(
 
             }
 
+
+            updateReshuffleSubmit();
+
         }
 
 
         /* ======================================================
-           SELECT ALL CONTENTS
+           SELECT ALL CURRENT ITEMS
         ====================================================== */
 
-        if (selectAllContents){
+        if (
+            selectAllContents
+        ) {
 
             selectAllContents.addEventListener(
                 "change",
@@ -2847,7 +2447,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           INDIVIDUAL CONTENT CHECKBOXES
+           INDIVIDUAL CURRENT ITEM SELECTION
         ====================================================== */
 
         contentCheckboxes.forEach(
@@ -2863,12 +2463,54 @@ document.addEventListener(
 
 
         /* ======================================================
-           RESHUFFLE BUTTON STATE
+           RESHUFFLE BUTTON
         ====================================================== */
 
-        function updateReshuffleButton(){
+        if (
+            openReshuffleButton
+        ) {
 
-            if (!reshuffleSubmitButton){
+            openReshuffleButton.addEventListener(
+                "click",
+                function(){
+
+                    if (
+                        openReshuffleButton.disabled
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    if (
+                        reshufflePanel
+                    ) {
+
+                        reshufflePanel.classList.add(
+                            "open"
+                        );
+
+                    }
+
+
+                    updateReshuffleSubmit();
+
+                }
+            );
+
+        }
+
+
+        /* ======================================================
+           RESHUFFLE SUBMIT STATE
+        ====================================================== */
+
+        function updateReshuffleSubmit(){
+
+            if (
+                !reshuffleSubmitButton
+            ) {
 
                 return;
 
@@ -2879,53 +2521,30 @@ document.addEventListener(
                 getSelectedContents();
 
 
-            const hasDestination =
-                Boolean(
-                    destinationStorage &&
-                    destinationStorage.value
-                );
+            const destination =
+                destinationStorage
+                    ? destinationStorage.value
+                    : "";
 
 
             reshuffleSubmitButton.disabled =
-                !isNormalRoom ||
-                !isStorageActive ||
                 selected.length === 0 ||
-                !hasDestination;
+                !destination;
 
         }
 
 
         /* ======================================================
-           OPEN RESHUFFLE
+           DESTINATION CHANGE
         ====================================================== */
 
-        if (openReshuffleButton){
+        if (
+            destinationStorage
+        ) {
 
-            openReshuffleButton.addEventListener(
-                "click",
-                function(){
-
-                    if (
-                        openReshuffleButton.disabled
-                    ){
-
-                        return;
-
-                    }
-
-
-                    if (reshufflePanel){
-
-                        reshufflePanel.classList.add(
-                            "open"
-                        );
-
-                    }
-
-
-                    updateReshuffleButton();
-
-                }
+            destinationStorage.addEventListener(
+                "change",
+                updateReshuffleSubmit
             );
 
         }
@@ -2935,13 +2554,17 @@ document.addEventListener(
            CANCEL RESHUFFLE
         ====================================================== */
 
-        if (cancelReshuffleButton){
+        if (
+            cancelReshuffleButton
+        ) {
 
             cancelReshuffleButton.addEventListener(
                 "click",
                 function(){
 
-                    if (reshufflePanel){
+                    if (
+                        reshufflePanel
+                    ) {
 
                         reshufflePanel.classList.remove(
                             "open"
@@ -2950,14 +2573,17 @@ document.addEventListener(
                     }
 
 
-                    if (destinationStorage){
+                    if (
+                        destinationStorage
+                    ) {
 
-                        destinationStorage.value = "";
+                        destinationStorage.value =
+                            "";
 
                     }
 
 
-                    updateReshuffleButton();
+                    updateReshuffleSubmit();
 
                 }
             );
@@ -2966,26 +2592,14 @@ document.addEventListener(
 
 
         /* ======================================================
-           DESTINATION CHANGE
+           RESHUFFLE SUBMIT VALIDATION
         ====================================================== */
 
-        if (destinationStorage){
+        if (
+            contentsManagementForm
+        ) {
 
-            destinationStorage.addEventListener(
-                "change",
-                updateReshuffleButton
-            );
-
-        }
-
-
-        /* ======================================================
-           RESHUFFLE SUBMIT
-        ====================================================== */
-
-        if (reshuffleForm){
-
-            reshuffleForm.addEventListener(
+            contentsManagementForm.addEventListener(
                 "submit",
                 function(event){
 
@@ -2993,18 +2607,9 @@ document.addEventListener(
                         getSelectedContents();
 
 
-                    const destination =
-                        destinationStorage
-                            ? destinationStorage.value
-                            : "";
-
-
                     if (
-                        !isNormalRoom ||
-                        !isStorageActive ||
-                        selected.length === 0 ||
-                        !destination
-                    ){
+                        selected.length === 0
+                    ) {
 
                         event.preventDefault();
 
@@ -3013,12 +2618,16 @@ document.addEventListener(
                     }
 
 
-                    /*
-                     * The backend validates that the target
-                     * belongs to this farm, is a structure,
-                     * is a normal room, is active and is not
-                     * the current room.
-                     */
+                    if (
+                        !destinationStorage ||
+                        !destinationStorage.value
+                    ) {
+
+                        event.preventDefault();
+
+                        return;
+
+                    }
 
                 }
             );
@@ -3027,10 +2636,12 @@ document.addEventListener(
 
 
         /* ======================================================
-           OMIT SELECTED
+           OMIT
         ====================================================== */
 
-        if (omitButton){
+        if (
+            omitButton
+        ) {
 
             omitButton.addEventListener(
                 "click",
@@ -3041,18 +2652,36 @@ document.addEventListener(
 
 
                     if (
-                        !isNormalRoom ||
-                        selected.length === 0 ||
-                        !omitForm ||
-                        !omitInputs
-                    ){
+                        selected.length === 0
+                    ) {
 
                         return;
 
                     }
 
 
-                    omitInputs.innerHTML = "";
+                    if (
+                        !omitForm ||
+                        !omitInputs
+                    ) {
+
+                        return;
+
+                    }
+
+
+                    /*
+                    ------------------------------------------------
+                    The service receives itemIds.
+
+                    Backend operation:
+
+                        selected item.dwellNumber = null
+                    ------------------------------------------------
+                    */
+
+                    omitInputs.innerHTML =
+                        "";
 
 
                     selected.forEach(
@@ -3103,10 +2732,8 @@ document.addEventListener(
 
 
         const addCheckboxes =
-            Array.from(
-                document.querySelectorAll(
-                    ".add-item-checkbox"
-                )
+            document.querySelectorAll(
+                ".add-item-checkbox"
             );
 
 
@@ -3123,17 +2750,15 @@ document.addEventListener(
 
 
         /* ======================================================
-           SELECTED ADD ITEMS
+           GET SELECTED ADD ITEMS
         ====================================================== */
 
         function getSelectedAddItems(){
 
-            return addCheckboxes.filter(
-                function(checkbox){
-
-                    return checkbox.checked;
-
-                }
+            return Array.from(
+                document.querySelectorAll(
+                    ".add-item-checkbox:checked"
+                )
             );
 
         }
@@ -3153,7 +2778,9 @@ document.addEventListener(
                 selected.length;
 
 
-            if (addSelectionCount){
+            if (
+                addSelectionCount
+            ) {
 
                 addSelectionCount.textContent =
                     count + " selected";
@@ -3161,21 +2788,11 @@ document.addEventListener(
             }
 
 
-            /*
-             * Backend rule:
-             *
-             * addItemsToStorage()
-             * rejects inactive storage.
-             */
-
-            if (addSelectedButton){
+            if (
+                addSelectedButton
+            ) {
 
                 addSelectedButton.disabled =
-                    !isStorageActive ||
-                    (
-                        !isNormalRoom &&
-                        !isAgroStore
-                    ) ||
                     count === 0;
 
             }
@@ -3206,7 +2823,9 @@ document.addEventListener(
                 );
 
 
-            if (selectAllAddItems){
+            if (
+                selectAllAddItems
+            ) {
 
                 selectAllAddItems.checked =
                     addCheckboxes.length > 0 &&
@@ -3221,33 +2840,19 @@ document.addEventListener(
            SELECT ALL ADD ITEMS
         ====================================================== */
 
-        if (selectAllAddItems){
+        if (
+            selectAllAddItems
+        ) {
 
             selectAllAddItems.addEventListener(
                 "change",
                 function(){
 
-                    if (
-                        !isStorageActive
-                    ){
-
-                        selectAllAddItems.checked =
-                            false;
-
-                        return;
-
-                    }
-
-
                     addCheckboxes.forEach(
                         function(checkbox){
 
-                            if (!checkbox.disabled){
-
-                                checkbox.checked =
-                                    selectAllAddItems.checked;
-
-                            }
+                            checkbox.checked =
+                                selectAllAddItems.checked;
 
                         }
                     );
@@ -3262,7 +2867,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           INDIVIDUAL ADD CHECKBOXES
+           INDIVIDUAL ADD ITEM SELECTION
         ====================================================== */
 
         addCheckboxes.forEach(
@@ -3278,156 +2883,12 @@ document.addEventListener(
 
 
         /* ======================================================
-           ADD FORM VALIDATION
-        ====================================================== */
-
-        const addItemsForm =
-            document.getElementById(
-                "addItemsForm"
-            );
-
-
-        if (addItemsForm){
-
-            addItemsForm.addEventListener(
-                "submit",
-                function(event){
-
-                    const selected =
-                        getSelectedAddItems();
-
-
-                    if (
-                        !isStorageActive ||
-                        (
-                            !isNormalRoom &&
-                            !isAgroStore
-                        ) ||
-                        selected.length === 0
-                    ){
-
-                        event.preventDefault();
-
-                        return;
-
-                    }
-
-                    /*
-                     * The backend remains the final authority.
-                     *
-                     * For AgroStore:
-                     *
-                     *     type === "feeds"
-                     *     dwellNumber unallocated
-                     *     quantity > 0
-                     *
-                     * For room:
-                     *
-                     *     type !== "feeds"
-                     *     dwellNumber unallocated
-                     *
-                     * The frontend does not attempt to override
-                     * those rules.
-                     */
-
-                }
-            );
-
-        }
-
-
-        /* ======================================================
-           FEED QUANTITY FORMS
-        ====================================================== */
-
-        const feedQuantityForms =
-            document.querySelectorAll(
-                "[data-feed-quantity-form]"
-            );
-
-
-        feedQuantityForms.forEach(
-            function(form){
-
-                form.addEventListener(
-                    "submit",
-                    function(event){
-
-                        if (!isAgroStore){
-
-                            event.preventDefault();
-
-                            return;
-
-                        }
-
-
-                        const input =
-                            form.querySelector(
-                                ".quantity-input"
-                            );
-
-
-                        if (!input){
-
-                            event.preventDefault();
-
-                            return;
-
-                        }
-
-
-                        const numericQuantity =
-                            Number(
-                                input.value
-                            );
-
-
-                        if (
-                            !Number.isFinite(
-                                numericQuantity
-                            ) ||
-                            numericQuantity < 0
-                        ){
-
-                            event.preventDefault();
-
-                            input.focus();
-
-                            return;
-
-                        }
-
-
-                        /*
-                         * IMPORTANT:
-                         *
-                         * Do NOT impose a maximum equal to the
-                         * current quantity here.
-                         *
-                         * The service accepts any finite
-                         * non-negative quantity.
-                         *
-                         * Quantity = 0 is meaningful:
-                         *
-                         *     quantity = 0
-                         *     dwellNumber = null
-                         */
-
-                    }
-                );
-
-            }
-        );
-
-
-        /* ======================================================
            INITIAL STATE
         ====================================================== */
 
         updateContentSelection();
 
-        updateReshuffleButton();
+        updateReshuffleSubmit();
 
         updateAddSelection();
 
