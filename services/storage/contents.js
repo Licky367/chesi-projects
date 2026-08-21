@@ -26,28 +26,17 @@
 //
 //     recordType === "structure"
 //
-// AGROSTORE ITEM:
-//
-//     type === "feeds"
-//     recordType does NOT exist
-//     dwellNumber === storage.roomNumber
-//     quantity > 0
-//
 // NORMAL ROOM ITEM:
 //
 //     recordType !== "structure"
 //     type !== "feeds"
 //
-// IMPORTANT:
+// AGROSTORE:
 //
-//     AgroStore feed items follow the same rule established
-//     by services/addNew:
+//     AgroStore contents are filtered ONLY by:
 //
-//         recordType is undefined / not stored
-//
-//     Therefore AgroStore queries explicitly require:
-//
-//         recordType: { $exists: false }
+//         dwellNumber === storage.roomNumber
+//         quantity > 0
 //
 // ==========================================================
 
@@ -270,12 +259,6 @@ function isNormalRoom(
 // ==========================================================
 // STORAGE STRUCTURE CHECK
 // ==========================================================
-//
-// Storage facilities themselves are structures.
-//
-//     recordType === "structure"
-//
-// ==========================================================
 
 function isStorageStructure(
     item
@@ -313,20 +296,9 @@ function isFeed(
 // AGROSTORE ITEM CHECK
 // ==========================================================
 //
-// An AgroStore feed item must:
+// AgroStore content eligibility is determined by:
 //
-//     type === "feeds"
-//
-// AND:
-//
-//     recordType does not exist
-//
-// AND:
-//
-//     dwellNumber matches the AgroStore roomNumber
-//
-// AND:
-//
+//     dwellNumber === roomNumber
 //     quantity > 0
 //
 // ==========================================================
@@ -337,25 +309,11 @@ function isAgroStoreItem(
 ) {
 
     if (
-        !isFeed(
-            item
-        )
+        !item
     ) {
 
         return false;
     }
-
-
-    if (
-        Object.prototype.hasOwnProperty.call(
-            item,
-            "recordType"
-        )
-    ) {
-
-        return false;
-    }
-
 
     if (
         roomNumber !== null &&
@@ -374,7 +332,6 @@ function isAgroStoreItem(
             return false;
         }
     }
-
 
     const quantity =
         Number(
@@ -451,16 +408,6 @@ function getStorageRoomNumber(
 // ==========================================================
 // FIND PARENT FARM
 // ==========================================================
-//
-// dairyId:
-//
-//     MongoDB _id of the parent Dairy Farm
-//
-// Farm:
-//
-//     code < 0
-//
-// ==========================================================
 
 async function findParentFarm(
     dairyId
@@ -519,16 +466,6 @@ async function findParentFarm(
 // ==========================================================
 // GET STORAGE ID
 // ==========================================================
-//
-// Current:
-//
-//     storageId
-//
-// Legacy:
-//
-//     itemId
-//
-// ==========================================================
 
 function getStorageId(
     options = {}
@@ -546,14 +483,6 @@ function getStorageId(
 
 // ==========================================================
 // FIND STORAGE FOR FARM
-// ==========================================================
-//
-// Storage facility:
-//
-//     recordType === "structure"
-//     belongs to parent farm
-//     type === room OR agroStore
-//
 // ==========================================================
 
 async function findStorageForFarm({
@@ -700,58 +629,18 @@ function nonStructureItemFilter() {
 // AGROSTORE ITEM FILTER
 // ==========================================================
 //
-// AGROSTORE INVENTORY:
+// AgroStore filtering is intentionally limited to:
 //
-//     type === "feeds"
-//     recordType does NOT exist
-//
-// NOTE:
-//
-//     Room-number and quantity conditions are deliberately
-//     applied by the CURRENT CONTENT filter because those
-//     conditions depend on the selected AgroStore.
-//
-// ==========================================================
-
-function agroStoreItemFilter() {
-
-    return {
-
-        type:
-            FEED_TYPE,
-
-        recordType: {
-            $exists:
-                false
-        }
-
-    };
-}
-
-
-// ==========================================================
-// AGROSTORE CONTENT FILTER
-// ==========================================================
-//
-// THIS IS THE IMPORTANT AGROSTORE RULE.
-//
-// A feed belongs in the displayed AgroStore contents ONLY
-// when:
-//
-//     type === "feeds"
-//     recordType does NOT exist
 //     dwellNumber === storage.roomNumber
 //     quantity > 0
 //
 // ==========================================================
 
-function agroStoreContentFilter(
+function agroStoreItemFilter(
     roomNumber
 ) {
 
     return {
-
-        ...agroStoreItemFilter(),
 
         dwellNumber:
             roomNumber,
@@ -762,6 +651,27 @@ function agroStoreContentFilter(
         }
 
     };
+}
+
+
+// ==========================================================
+// AGROSTORE CONTENT FILTER
+// ==========================================================
+//
+// THIS IS THE AGROSTORE RULE:
+//
+//     dwellNumber === storage.roomNumber
+//     quantity > 0
+//
+// ==========================================================
+
+function agroStoreContentFilter(
+    roomNumber
+) {
+
+    return agroStoreItemFilter(
+        roomNumber
+    );
 }
 
 
@@ -800,8 +710,6 @@ function normalRoomItemFilter() {
 //
 // AGROSTORE:
 //
-//     feeds
-//     recordType does not exist
 //     dwellNumber === roomNumber
 //     quantity > 0
 //
@@ -854,8 +762,6 @@ function storageItemTypeFilter(
 // CURRENT CONTENT FILTER
 // ==========================================================
 //
-// Current content:
-//
 // ROOM:
 //
 //     item.assetCode === farm.code
@@ -866,9 +772,7 @@ function storageItemTypeFilter(
 //
 //     item.assetCode === farm.code
 //     item.dwellNumber === storage.roomNumber
-//     type === "feeds"
-//     recordType does not exist
-//     quantity > 0
+//     item.quantity > 0
 //
 // ==========================================================
 
@@ -898,9 +802,6 @@ function currentContentFilter({
             dairy
         ),
 
-        dwellNumber:
-            roomNumber,
-
         ...storageItemTypeFilter(
             storage
         )
@@ -919,20 +820,11 @@ function currentContentFilter({
 //     has no dwellNumber
 //     correct item type
 //
-// IMPORTANT:
+// Room logic remains unchanged.
 //
-//     Room logic remains unchanged.
+// AgroStore:
 //
-//     AgroStore available feeds must:
-//
-//         type === "feeds"
-//         recordType absent
-//         no current dwellNumber
-//
-// Quantity is NOT required to be positive here because this
-// filter is for feeds available to be allocated. The
-// quantity > 0 condition applies to DISPLAYED AGROSTORE
-// CONTENTS.
+//     available items are those without a dwellNumber.
 //
 // ==========================================================
 
@@ -980,11 +872,6 @@ function availableItemFilter({
             storage
         )
     ) {
-
-        Object.assign(
-            filter,
-            agroStoreItemFilter()
-        );
 
         return filter;
     }
@@ -1117,17 +1004,6 @@ async function getStorageContents({
 
     // ------------------------------------------------------
     // CURRENT CONTENTS
-    // ------------------------------------------------------
-    //
-    // IMPORTANT:
-    //
-    // For AgroStore this automatically enforces:
-    //
-    //     dwellNumber === roomNumber
-    //     quantity > 0
-    //
-    // Room behaviour is unchanged.
-    //
     // ------------------------------------------------------
 
     const items =
@@ -1287,8 +1163,7 @@ async function getAvailableItems({
 //
 // agroStore:
 //
-//     feeds only
-//     recordType must be absent
+//     items are allocated using the storage room number.
 //
 // Allocation:
 //
@@ -1386,7 +1261,7 @@ async function addItemsToStorage({
         ) {
 
             throw createError(
-                "One or more selected items do not belong to this Dairy Farm, are already allocated, are not feeds, or have a recordType.",
+                "One or more selected items do not belong to this Dairy Farm or are already allocated.",
                 400
             );
         }
@@ -1880,9 +1755,6 @@ async function reshuffleItems({
                 dairy
             ),
 
-            dwellNumber:
-                currentRoomNumber,
-
             ...storageItemTypeFilter(
                 storage
             )
@@ -1903,7 +1775,7 @@ async function reshuffleItems({
         ) {
 
             throw createError(
-                "One or more selected items are not valid feeds currently stored in this AgroStore.",
+                "One or more selected items are not valid items currently stored in this AgroStore.",
                 400
             );
         }
@@ -1937,9 +1809,6 @@ async function reshuffleItems({
                 ...farmItemFilter(
                     dairy
                 ),
-
-                dwellNumber:
-                    currentRoomNumber,
 
                 ...storageItemTypeFilter(
                     storage
@@ -1986,24 +1855,11 @@ async function reshuffleItems({
 //
 //     storage.type === "agroStore"
 //
-// AND:
-//
-//     type === "feeds"
-//
-// AND:
-//
-//     recordType does NOT exist
-//
-// AND:
+// The feed is located by:
 //
 //     dwellNumber === storage.roomNumber
 //
-// When quantity becomes zero:
-//
-//     dwellNumber = null
-//
-// Therefore the feed automatically disappears from the
-// AgroStore contents query because quantity must be > 0.
+// Quantity may be changed to zero.
 //
 // ==========================================================
 
@@ -2134,15 +1990,12 @@ async function updateFeedQuantity({
     // FIND CURRENT FEED
     // ======================================================
     //
-    // Required:
+    // The selected Dairy record is located by:
     //
-    //     type === "feeds"
-    //     recordType absent
     //     dwellNumber === roomNumber
     //
-    // Quantity is intentionally NOT included here because
-    // the current feed may be updated from a positive
-    // quantity down to zero.
+    // Quantity is deliberately not required here because
+    // the current quantity may be changed to zero.
     //
     // ======================================================
 
@@ -2155,8 +2008,6 @@ async function updateFeedQuantity({
             ...farmItemFilter(
                 dairy
             ),
-
-            ...agroStoreItemFilter(),
 
             dwellNumber:
                 roomNumber
@@ -2236,8 +2087,6 @@ async function updateFeedQuantity({
                 ...farmItemFilter(
                     dairy
                 ),
-
-                ...agroStoreItemFilter(),
 
                 dwellNumber:
                     roomNumber
