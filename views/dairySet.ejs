@@ -6,6 +6,23 @@
 
      ROUTE:
          /dairy/assets/<%= dairy._id %>
+
+     PROFILE CARD:
+     -----------------------------------------------------
+     profile-card.ejs is displayed ONLY when dairy has
+     a defined code.
+
+     Valid:
+         0
+         1
+         2
+         -1
+         -2
+         etc.
+
+     Hidden:
+         null
+         undefined
 ===================================================== -->
 
 
@@ -42,22 +59,16 @@
 
 
     <!-- =================================================
-         PROFILE CARD
-
-         SHOW ONLY WHEN DAIRY HAS A CODE.
-
-         A code of 0 is still considered a valid code,
-         therefore do NOT use:
-             <% if (dairy.code) { %>
-
-         Instead, explicitly exclude null and undefined.
+         PROFILE
+         
+         Show profile-card ONLY when dairy.code exists.
+         
+         IMPORTANT:
+         != null checks BOTH null and undefined while
+         still allowing valid values such as 0.
     ================================================== -->
 
-    <% if (
-        dairy &&
-        dairy.code !== null &&
-        dairy.code !== undefined
-    ) { %>
+    <% if (dairy && dairy.code != null) { %>
 
         <%- include("update/profile-card", {
             dairy: dairy,
