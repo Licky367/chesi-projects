@@ -12,16 +12,6 @@
 //
 //     /storage/:dairyId/contents/:storageId
 //
-// DIRECT ADD PAGE:
-//
-//     GET
-//
-//         /storage/:dairyId/contents/:storageId/add
-//
-//     POST
-//
-//         /storage/:dairyId/contents/:storageId/add
-//
 // URL ID CONTRACT:
 //
 //     :dairyId
@@ -52,23 +42,20 @@
 //
 // ==========================================================
 
-
 const storageContentsService =
     require("../../services/storage/contents");
 
 
-const storageListService =
-    require("../../services/storage/list");
-
-
 // ==========================================================
+// REQUEST / BODY HELPERS
+// ==========================================================
+
+
+// ----------------------------------------------------------
 // GET BODY VALUE
-// ==========================================================
+// ----------------------------------------------------------
 
-function getBodyValue(
-    req,
-    key
-) {
+function getBodyValue(req, key) {
 
     if (
         req.body &&
@@ -77,24 +64,18 @@ function getBodyValue(
             key
         )
     ) {
-
         return req.body[key];
-
     }
 
-
     return undefined;
-
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // NORMALIZE SELECTED ITEM IDS
-// ==========================================================
+// ----------------------------------------------------------
 
-function getItemIds(
-    req
-) {
+function getItemIds(req) {
 
     const value =
         getBodyValue(
@@ -102,64 +83,53 @@ function getItemIds(
             "itemIds"
         );
 
-
     if (
         Array.isArray(value)
     ) {
-
         return value
             .filter(Boolean)
             .map(String);
-
     }
-
 
     if (
-
         value !== undefined &&
-
         value !== null &&
-
         String(value).trim() !== ""
-
     ) {
-
         return [
-
             String(value).trim()
-
         ];
-
     }
 
-
     return [];
-
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // CREATE SUCCESS MESSAGE
-// ==========================================================
+// ----------------------------------------------------------
 
 function createCountMessage(
     count,
     singular,
     plural
 ) {
-
     return `${count} ${
         count === 1
             ? singular
             : plural
     }`;
-
 }
 
 
 // ==========================================================
-// GET URL PARAMETERS
+// ROUTE HELPERS
 // ==========================================================
+
+
+// ----------------------------------------------------------
+// GET URL PARAMETERS
+// ----------------------------------------------------------
 //
 // URL:
 //
@@ -171,11 +141,9 @@ function createCountMessage(
 // :storageId
 //     = storage facility Dairy._id
 //
-// ==========================================================
+// ----------------------------------------------------------
 
-function getRouteIds(
-    req
-) {
+function getRouteIds(req) {
 
     return {
 
@@ -190,19 +158,20 @@ function getRouteIds(
             ).trim()
 
     };
-
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // BUILD CONTENTS URL
-// ==========================================================
+// ----------------------------------------------------------
 //
 // ALWAYS returns:
 //
-//     /storage/<dairyId>/contents/<storageId>
+//     /storage/:dairyId/contents/:storageId
 //
-// ==========================================================
+// Optional query parameters are appended when supplied.
+//
+// ----------------------------------------------------------
 
 function getContentsUrl(
     dairyId,
@@ -217,10 +186,8 @@ function getContentsUrl(
             storageId
         )}`;
 
-
     const params =
         new URLSearchParams();
-
 
     Object.entries(
         query
@@ -235,649 +202,21 @@ function getContentsUrl(
                 value !== null &&
                 String(value) !== ""
             ) {
-
                 params.set(
                     key,
                     String(value)
                 );
-
             }
 
         }
     );
 
-
     const queryString =
         params.toString();
 
-
     return queryString
-
         ? `${baseUrl}?${queryString}`
-
         : baseUrl;
-
-}
-
-
-// ==========================================================
-// GET DIRECT-ADD PAGE
-// ==========================================================
-//
-// GET:
-//
-//     /storage/:dairyId/contents/:storageId/add
-//
-// IMPORTANT:
-//
-//     The browser does NOT choose the destination storage.
-//
-//     The destination is resolved from:
-//
-//         dairyId
-//         storageId
-//
-//     The service remains responsible for validating that
-//     the storage belongs to the parent Dairy.
-//
-// ==========================================================
-
-async function getAddItemPage(
-    req,
-    res
-) {
-
-    try {
-
-        const {
-
-            dairyId,
-
-            storageId
-
-        } =
-            getRouteIds(
-                req
-            );
-
-
-        // ==================================================
-        // REQUIRE DAIRY ID
-        // ==================================================
-
-        if (
-            !dairyId
-        ) {
-
-            const error =
-                new Error(
-                    "Dairy ID is required."
-                );
-
-            error.status =
-                400;
-
-            throw error;
-
-        }
-
-
-        // ==================================================
-        // REQUIRE STORAGE ID
-        // ==================================================
-
-        if (
-            !storageId
-        ) {
-
-            const error =
-                new Error(
-                    "Storage ID is required."
-                );
-
-            error.status =
-                400;
-
-            throw error;
-
-        }
-
-
-        // ==================================================
-        // RESOLVE PARENT DAIRY
-        // ==================================================
-
-        const dairy =
-            await storageListService
-                .getParentDairy(
-                    dairyId
-                );
-
-
-        if (
-            !dairy
-        ) {
-
-            const error =
-                new Error(
-                    "Parent Dairy Farm was not found."
-                );
-
-            error.status =
-                404;
-
-            throw error;
-
-        }
-
-
-        // ==================================================
-        // RESOLVE STORAGE
-        // ==================================================
-        //
-        // IMPORTANT:
-        //
-        // The storage service should verify that this
-        // storage belongs to the supplied parent Dairy.
-        //
-        // ==================================================
-
-        const storage =
-            await storageListService
-                .getStorageFacility({
-
-                    dairyId,
-
-                    storageId
-
-                });
-
-
-        if (
-            !storage
-        ) {
-
-            const error =
-                new Error(
-                    "Storage facility was not found."
-                );
-
-            error.status =
-                404;
-
-            throw error;
-
-        }
-
-
-        // ==================================================
-        // DETERMINE STORAGE TYPE
-        // ==================================================
-
-        const storageType =
-            String(
-
-                storage.type ||
-                ""
-
-            )
-            .trim();
-
-
-        // ==================================================
-        // LOAD BREEDS
-        // ==================================================
-        //
-        // The direct-add view expects:
-        //
-        //     dairyBreeds
-        //
-        // Different projects expose breeds differently.
-        //
-        // Prefer a breeds collection already supplied by the
-        // Dairy/list service if available.
-        //
-        // ==================================================
-
-        let dairyBreeds = [];
-
-
-        if (
-            Array.isArray(
-                dairy.dairyBreeds
-            )
-        ) {
-
-            dairyBreeds =
-                dairy.dairyBreeds;
-
-        }
-
-        else if (
-            Array.isArray(
-                dairy.breeds
-            )
-        ) {
-
-            dairyBreeds =
-                dairy.breeds;
-
-        }
-
-
-        // ==================================================
-        // RENDER DIRECT-ADD PAGE
-        // ==================================================
-
-        return res.render(
-
-            "storage/addNew",
-
-            {
-
-                title:
-                    `Add Item to ${
-                        storage.displayName ||
-                        storage.name ||
-                        "Storage"
-                    }`,
-
-                dairy,
-
-                storage,
-
-                dairyBreeds,
-
-                storageType,
-
-                dairyId,
-
-                storageId
-
-            }
-
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Storage direct-add page error:",
-            error
-        );
-
-
-        return sendError(
-
-            res,
-
-            error,
-
-            "Unable to load the storage item form."
-
-        );
-
-    }
-
-}
-
-
-// ==========================================================
-// POST DIRECT ADD ITEM
-// ==========================================================
-//
-// POST:
-//
-//     /storage/:dairyId/contents/:storageId/add
-//
-// IMPORTANT:
-//
-//     This controller deliberately does NOT calculate:
-//
-//         assetCode
-//         dwellNumber
-//         roomNumber
-//         recordType
-//         storage ownership
-//
-//     Those values belong to the service layer.
-//
-// ==========================================================
-
-async function postAddItem(
-    req,
-    res
-) {
-
-    try {
-
-        const {
-
-            dairyId,
-
-            storageId
-
-        } =
-            getRouteIds(
-                req
-            );
-
-
-        // ==================================================
-        // REQUIRE ROUTE IDS
-        // ==================================================
-
-        if (
-            !dairyId
-        ) {
-
-            const error =
-                new Error(
-                    "Dairy ID is required."
-                );
-
-            error.status =
-                400;
-
-            throw error;
-
-        }
-
-
-        if (
-            !storageId
-        ) {
-
-            const error =
-                new Error(
-                    "Storage ID is required."
-                );
-
-            error.status =
-                400;
-
-            throw error;
-
-        }
-
-
-        // ==================================================
-        // CREATE ITEM THROUGH SERVICE
-        // ==================================================
-        //
-        // The service is the final authority.
-        //
-        // It must determine:
-        //
-        //     parent Dairy
-        //     storage
-        //     storage type
-        //     recordType
-        //     assetCode
-        //     roomNumber / dwellNumber
-        //
-        // and reject invalid combinations.
-        //
-        // ==================================================
-
-        const result =
-            await storageContentsService
-                .createItemInStorage({
-
-                    dairyId,
-
-                    storageId,
-
-                    data:
-                        req.body,
-
-                    file:
-                        req.file,
-
-                    files:
-                        req.files
-
-                });
-
-
-        // ==================================================
-        // SUCCESS
-        // ==================================================
-
-        const itemName =
-            result &&
-            result.item &&
-            result.item.name
-
-                ? result.item.name
-
-                : "Item";
-
-
-        const message =
-            `${itemName} was added to ${
-                result &&
-                result.storage &&
-                (
-                    result.storage.displayName ||
-                    result.storage.name
-                )
-
-                    ? (
-                        result.storage.displayName ||
-                        result.storage.name
-                    )
-
-                    : "storage"
-            }.`;
-
-
-
-        // ==================================================
-        // REDIRECT TO CONTENTS
-        // ==================================================
-
-        return res.redirect(
-
-            getContentsUrl(
-
-                dairyId,
-
-                storageId,
-
-                {
-
-                    tab:
-                        "view",
-
-                    success:
-                        message
-
-                }
-
-            )
-
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Storage direct-add item error:",
-            error
-        );
-
-
-        // ==================================================
-        // CLIENT / VALIDATION ERROR
-        // ==================================================
-        //
-        // Re-render the form when the service rejects the
-        // submitted data.
-        //
-        // This avoids losing the useful validation message.
-        //
-        // ==================================================
-
-        const statusCode =
-            Number(
-
-                error.status ||
-                error.statusCode ||
-                500
-
-            );
-
-
-        if (
-            statusCode >= 400 &&
-            statusCode < 500
-        ) {
-
-            try {
-
-                const {
-
-                    dairyId,
-
-                    storageId
-
-                } =
-                    getRouteIds(
-                        req
-                    );
-
-
-                const dairy =
-                    await storageListService
-                        .getParentDairy(
-                            dairyId
-                        );
-
-
-                const storage =
-                    await storageListService
-                        .getStorageFacility({
-
-                            dairyId,
-
-                            storageId
-
-                        });
-
-
-                let dairyBreeds = [];
-
-
-                if (
-                    Array.isArray(
-                        dairy?.dairyBreeds
-                    )
-                ) {
-
-                    dairyBreeds =
-                        dairy.dairyBreeds;
-
-                }
-
-                else if (
-                    Array.isArray(
-                        dairy?.breeds
-                    )
-                ) {
-
-                    dairyBreeds =
-                        dairy.breeds;
-
-                }
-
-
-                const storageType =
-                    String(
-
-                        storage?.type ||
-                        ""
-
-                    )
-                    .trim();
-
-
-                return res
-
-                    .status(
-                        statusCode
-                    )
-
-                    .render(
-
-                        "storage/addNew",
-
-                        {
-
-                            title:
-                                `Add Item to ${
-                                    storage?.displayName ||
-                                    storage?.name ||
-                                    "Storage"
-                                }`,
-
-                            dairy,
-
-                            storage,
-
-                            dairyBreeds,
-
-                            storageType,
-
-                            dairyId,
-
-                            storageId,
-
-                            pageError:
-                                error.message ||
-                                "Unable to add item to storage."
-
-                        }
-
-                    );
-
-            } catch (renderError) {
-
-                console.error(
-                    "Storage direct-add form render error:",
-                    renderError
-                );
-
-
-                return sendError(
-
-                    res,
-
-                    renderError,
-
-                    "Unable to add item to storage."
-
-                );
-
-            }
-
-        }
-
-
-        // ==================================================
-        // SERVER ERROR
-        // ==================================================
-
-        return sendError(
-
-            res,
-
-            error,
-
-            "Unable to add item to storage."
-
-        );
-
-    }
-
 }
 
 
@@ -896,35 +235,26 @@ async function renderContents(
     // ======================================================
 
     const {
-
         dairyId,
-
         storageId
-
     } =
-        getRouteIds(
-            req
-        );
+        getRouteIds(req);
 
 
     // ======================================================
     // REQUIRE DAIRY ID
     // ======================================================
 
-    if (
-        !dairyId
-    ) {
+    if (!dairyId) {
 
         const error =
             new Error(
                 "Dairy ID is required."
             );
 
-        error.status =
-            400;
+        error.status = 400;
 
         throw error;
-
     }
 
 
@@ -932,20 +262,16 @@ async function renderContents(
     // REQUIRE STORAGE ID
     // ======================================================
 
-    if (
-        !storageId
-    ) {
+    if (!storageId) {
 
         const error =
             new Error(
                 "Storage ID is required."
             );
 
-        error.status =
-            400;
+        error.status = 400;
 
         throw error;
-
     }
 
 
@@ -964,13 +290,11 @@ async function renderContents(
     // ======================================================
 
     const result =
-        await storageContentsService.getStorageContents({
-
-            dairyId,
-
-            storageId
-
-        });
+        await storageContentsService
+            .getStorageContents({
+                dairyId,
+                storageId
+            });
 
 
     // ======================================================
@@ -1007,9 +331,7 @@ async function renderContents(
     // ======================================================
 
     return res.render(
-
         "storage/contents",
-
         {
 
             title:
@@ -1049,9 +371,7 @@ async function renderContents(
             storageId
 
         }
-
     );
-
 }
 
 
@@ -1065,10 +385,7 @@ async function renderContents(
 //
 // ==========================================================
 
-async function contents(
-    req,
-    res
-) {
+async function contents(req, res) {
 
     try {
 
@@ -1084,19 +401,12 @@ async function contents(
             error
         );
 
-
         return sendError(
-
             res,
-
             error,
-
             "Unable to load storage contents."
-
         );
-
     }
-
 }
 
 
@@ -1108,51 +418,30 @@ async function contents(
 //
 //     /storage/:dairyId/contents/:storageId/add
 //
-// This is the EXISTING bulk/add-existing-item operation.
-//
-// It is intentionally kept separate from:
-//
-//     postAddItem()
-//
-// which creates a NEW item directly in storage.
-//
 // ==========================================================
 
-async function addItems(
-    req,
-    res
-) {
+async function addItems(req, res) {
 
     try {
 
         const {
-
             dairyId,
-
             storageId
-
         } =
-            getRouteIds(
-                req
-            );
+            getRouteIds(req);
 
 
         const itemIds =
-            getItemIds(
-                req
-            );
+            getItemIds(req);
 
 
         const result =
-            await storageContentsService.addItemsToStorage({
-
-                dairyId,
-
-                storageId,
-
-                itemIds
-
-            });
+            await storageContentsService
+                .addItemsToStorage({
+                    dairyId,
+                    storageId,
+                    itemIds
+                });
 
 
         const message =
@@ -1165,32 +454,20 @@ async function addItems(
                 "storage"
             }.`;
 
-
-
+        
         // ==================================================
         // REDIRECT BACK TO SAME STORAGE
         // ==================================================
 
         return res.redirect(
-
             getContentsUrl(
-
                 dairyId,
-
                 storageId,
-
                 {
-
-                    tab:
-                        "add",
-
-                    success:
-                        message
-
+                    tab: "add",
+                    success: message
                 }
-
             )
-
         );
 
     } catch (error) {
@@ -1200,21 +477,13 @@ async function addItems(
             error
         );
 
-
         return handleMutationError(
-
             req,
-
             res,
-
             error,
-
             "add"
-
         );
-
     }
-
 }
 
 
@@ -1227,24 +496,32 @@ async function addItems(
 //     /storage/:dairyId/contents/:storageId/quantity
 //
 // ==========================================================
+//
+// This operation is primarily for AgroStore.
+//
+// The service determines whether:
+//
+//     quantity > 0
+//
+// or:
+//
+//     quantity === 0
+//
+// If quantity reaches zero, the service automatically
+// clears dwellNumber and therefore removes the item from
+// the AgroStore.
+//
+// ==========================================================
 
-async function updateQuantity(
-    req,
-    res
-) {
+async function updateQuantity(req, res) {
 
     try {
 
         const {
-
             dairyId,
-
             storageId
-
         } =
-            getRouteIds(
-                req
-            );
+            getRouteIds(req);
 
 
         const itemId =
@@ -1269,19 +546,14 @@ async function updateQuantity(
 
 
         const result =
-            await storageContentsService.updateFeedQuantity({
-
-                dairyId,
-
-                storageId,
-
-                itemId,
-
-                quantity,
-
-                unit
-
-            });
+            await storageContentsService
+                .updateFeedQuantity({
+                    dairyId,
+                    storageId,
+                    itemId,
+                    quantity,
+                    unit
+                });
 
 
         let message;
@@ -1320,7 +592,6 @@ async function updateQuantity(
                     result.item.unit ||
                     ""
                 }.`.trim();
-
         }
 
 
@@ -1329,25 +600,14 @@ async function updateQuantity(
         // ==================================================
 
         return res.redirect(
-
             getContentsUrl(
-
                 dairyId,
-
                 storageId,
-
                 {
-
-                    tab:
-                        "view",
-
-                    success:
-                        message
-
+                    tab: "view",
+                    success: message
                 }
-
             )
-
         );
 
     } catch (error) {
@@ -1357,21 +617,13 @@ async function updateQuantity(
             error
         );
 
-
         return handleMutationError(
-
             req,
-
             res,
-
             error,
-
             "view"
-
         );
-
     }
-
 }
 
 
@@ -1383,43 +635,35 @@ async function updateQuantity(
 //
 //     /storage/:dairyId/contents/:storageId/omit
 //
+// This operation remains for NORMAL storage.
+//
+// AgroStore omission is automatic and therefore the service
+// must reject manual omission for type === "feeds".
+//
 // ==========================================================
 
-async function omitItems(
-    req,
-    res
-) {
+async function omitItems(req, res) {
 
     try {
 
         const {
-
             dairyId,
-
             storageId
-
         } =
-            getRouteIds(
-                req
-            );
+            getRouteIds(req);
 
 
         const itemIds =
-            getItemIds(
-                req
-            );
+            getItemIds(req);
 
 
         const result =
-            await storageContentsService.omitItemsFromStorage({
-
-                dairyId,
-
-                storageId,
-
-                itemIds
-
-            });
+            await storageContentsService
+                .omitItemsFromStorage({
+                    dairyId,
+                    storageId,
+                    itemIds
+                });
 
 
         const message =
@@ -1433,27 +677,19 @@ async function omitItems(
             }.`;
 
 
+        // ==================================================
+        // REDIRECT BACK TO SAME STORAGE
+        // ==================================================
 
         return res.redirect(
-
             getContentsUrl(
-
                 dairyId,
-
                 storageId,
-
                 {
-
-                    tab:
-                        "view",
-
-                    success:
-                        message
-
+                    tab: "view",
+                    success: message
                 }
-
             )
-
         );
 
     } catch (error) {
@@ -1463,21 +699,13 @@ async function omitItems(
             error
         );
 
-
         return handleMutationError(
-
             req,
-
             res,
-
             error,
-
             "view"
-
         );
-
     }
-
 }
 
 
@@ -1489,55 +717,42 @@ async function omitItems(
 //
 //     /storage/:dairyId/contents/:storageId/reshuffle
 //
+// This operation remains for NORMAL storage.
+//
+// AgroStore does not support reshuffling.
+//
 // ==========================================================
 
-async function reshuffleItems(
-    req,
-    res
-) {
+async function reshuffleItems(req, res) {
 
     try {
 
         const {
-
             dairyId,
-
             storageId
-
         } =
-            getRouteIds(
-                req
-            );
+            getRouteIds(req);
 
 
         const itemIds =
-            getItemIds(
-                req
-            );
+            getItemIds(req);
 
 
         const targetStorageId =
             getBodyValue(
-
                 req,
-
                 "targetStorageId"
-
             );
 
 
         const result =
-            await storageContentsService.reshuffleItems({
-
-                dairyId,
-
-                storageId,
-
-                targetStorageId,
-
-                itemIds
-
-            });
+            await storageContentsService
+                .reshuffleItems({
+                    dairyId,
+                    storageId,
+                    targetStorageId,
+                    itemIds
+                });
 
 
         const message =
@@ -1551,27 +766,19 @@ async function reshuffleItems(
             }.`;
 
 
+        // ==================================================
+        // REDIRECT BACK TO ORIGINAL STORAGE
+        // ==================================================
 
         return res.redirect(
-
             getContentsUrl(
-
                 dairyId,
-
                 storageId,
-
                 {
-
-                    tab:
-                        "view",
-
-                    success:
-                        message
-
+                    tab: "view",
+                    success: message
                 }
-
             )
-
         );
 
     } catch (error) {
@@ -1581,27 +788,25 @@ async function reshuffleItems(
             error
         );
 
-
         return handleMutationError(
-
             req,
-
             res,
-
             error,
-
             "view"
-
         );
-
     }
-
 }
+        
 
 
 // ==========================================================
+// ERROR HANDLING
+// ==========================================================
+
+
+// ----------------------------------------------------------
 // HANDLE MUTATION ERROR
-// ==========================================================
+// ----------------------------------------------------------
 
 async function handleMutationError(
     req,
@@ -1612,49 +817,44 @@ async function handleMutationError(
 
     const statusCode =
         Number(
-
             error.status ||
             error.statusCode ||
             500
-
         );
 
+
+    // ======================================================
+    // SERVER ERROR
+    // ======================================================
 
     if (
         statusCode >= 500
     ) {
 
         return sendError(
-
             res,
-
             error,
-
             "Unable to update storage contents."
-
         );
-
     }
 
+
+    // ======================================================
+    // CLIENT / VALIDATION ERROR
+    // ======================================================
 
     try {
 
         return await renderContents(
-
             req,
-
             res,
-
             {
-
                 activeTab,
 
                 pageError:
                     error.message ||
                     "Unable to update storage contents."
-
             }
-
         );
 
     } catch (renderError) {
@@ -1664,25 +864,18 @@ async function handleMutationError(
             renderError
         );
 
-
         return sendError(
-
             res,
-
             renderError,
-
             "Unable to update storage contents."
-
         );
-
     }
-
 }
 
 
-// ==========================================================
+// ----------------------------------------------------------
 // SEND ERROR
-// ==========================================================
+// ----------------------------------------------------------
 
 function sendError(
     res,
@@ -1692,56 +885,30 @@ function sendError(
 
     const statusCode =
         Number(
-
             error.status ||
             error.statusCode ||
             500
-
         );
 
 
     const safeStatus =
         statusCode >= 400 &&
         statusCode < 600
-
             ? statusCode
-
             : 500;
 
 
-
     return res
-
-        .status(
-            safeStatus
-        )
-
+        .status(safeStatus)
         .send(
-
             error.message ||
             fallbackMessage
-
         );
-
 }
 
 
 // ==========================================================
 // EXPORT
-// ==========================================================
-//
-// IMPORTANT:
-//
-// routes/storage.js expects:
-//
-//     contents
-//     addItems
-//     omitItems
-//     reshuffleItems
-//     updateQuantity
-//     getAddItemPage
-//     postAddItem
-//
 // ==========================================================
 
 module.exports = {
@@ -1754,10 +921,6 @@ module.exports = {
 
     reshuffleItems,
 
-    updateQuantity,
-
-    getAddItemPage,
-
-    postAddItem
+    updateQuantity
 
 };
