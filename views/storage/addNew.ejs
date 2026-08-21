@@ -1,19 +1,65 @@
-<% /*
+<%
+/*
 ============================================================
 ADD ITEM DIRECTLY TO STORAGE
 
 The destination dairy and storage are resolved server-side
 from the URL. The browser never selects the destination.
 ============================================================
-*/ %>
+*/
 
-<%
-const breeds = Array.isArray(dairyBreeds) ? dairyBreeds : [];
-const selectedStorageType = String(storageType || storage?.type || "").trim().toLowerCase();
-const isAgroStore = selectedStorageType === "agrostore";
-const isRoom = selectedStorageType === "room";
-const form = formData || {};
+const breeds =
+    Array.isArray(dairyBreeds)
+        ? dairyBreeds
+        : [];
+
+
+/*
+IMPORTANT:
+
+The database storage type values are exactly:
+
+    "room"
+    "agroStore"
+
+Do NOT convert the value to lowercase.
+
+The previous version used:
+
+    .toLowerCase()
+
+which changed:
+
+    agroStore
+
+into:
+
+    agrostore
+
+That did not match the database value.
+*/
+
+const selectedStorageType =
+    String(
+        storageType ||
+        storage?.type ||
+        ""
+    ).trim();
+
+
+const isAgroStore =
+    selectedStorageType === "agroStore";
+
+
+const isRoom =
+    selectedStorageType === "room";
+
+
+const form =
+    formData || {};
+
 %>
+
 
 <style>
 .storage-add-page{max-width:900px;margin:0 auto;padding:24px 16px 60px}
@@ -43,310 +89,1386 @@ const form = formData || {};
 </style>
 
 <div class="storage-add-page">
+
     <div class="storage-add-header">
+
         <div class="storage-add-header-top">
-            <a href="/storage/<%= dairy._id %>/contents/<%= storage._id %>" class="storage-back-link">← <%= storage.name || "Storage Contents" %></a>
+
+            <a
+                href="/storage/<%= dairy._id %>/contents/<%= storage._id %>"
+                class="storage-back-link"
+            >
+                ← <%= storage.name || "Storage Contents" %>
+            </a>
+
         </div>
+
         <h1>Add Item to Storage</h1>
-        <p>Add a new item directly to this storage facility.</p>
+
+        <p>
+            Add a new item directly to this storage facility.
+        </p>
+
     </div>
+
 
     <div class="storage-context-card">
+
         <div class="storage-context-main">
-            <div class="storage-context-title"><%= storage.name || "Storage Facility" %></div>
+
+            <div class="storage-context-title">
+                <%= storage.name || "Storage Facility" %>
+            </div>
+
             <p class="storage-context-description">
-                Dairy Farm: <strong><%= dairy.name || "Dairy Farm" %></strong>
+
+                Dairy Farm:
+                <strong>
+                    <%= dairy.name || "Dairy Farm" %>
+                </strong>
+
                 &nbsp; • &nbsp;
-                Room Number: <strong><%= storage.roomNumber ?? "—" %></strong>
+
+                Room Number:
+                <strong>
+                    <%= storage.roomNumber ?? "—" %>
+                </strong>
+
             </p>
+
         </div>
-        <div class="storage-context-type"><%= isAgroStore ? "AgroStore" : "Storage Room" %></div>
+
+        <div class="storage-context-type">
+
+            <%= isAgroStore ? "AgroStore" : "Storage Room" %>
+
+        </div>
+
     </div>
+
 
     <div class="storage-add-card">
-        <form id="storageAddForm" action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add" method="POST" enctype="multipart/form-data">
+
+        <form
+            id="storageAddForm"
+            action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add"
+            method="POST"
+            enctype="multipart/form-data"
+        >
+
 
             <% if (formError) { %>
-                <div id="formSaveStatus" class="form-save-status error" role="alert"><%= formError %></div>
+
+                <div
+                    id="formSaveStatus"
+                    class="form-save-status error"
+                    role="alert"
+                >
+                    <%= formError %>
+                </div>
+
             <% } else { %>
-                <div id="formSaveStatus" class="form-save-status" role="status" aria-live="polite"></div>
+
+                <div
+                    id="formSaveStatus"
+                    class="form-save-status"
+                    role="status"
+                    aria-live="polite"
+                ></div>
+
             <% } %>
+
 
             <div class="profile-image-section">
+
                 <div class="profile-image-preview">
-                    <img id="profileImagePreview" src="" alt="Profile image preview" style="display:none">
-                    <span id="profileImagePlaceholder" class="profile-image-placeholder"><%= isAgroStore ? "🌾" : "🐄" %></span>
+
+                    <img
+                        id="profileImagePreview"
+                        src=""
+                        alt="Profile image preview"
+                        style="display:none"
+                    >
+
+                    <span
+                        id="profileImagePlaceholder"
+                        class="profile-image-placeholder"
+                    >
+                        <%= isAgroStore ? "🌾" : "🐄" %>
+                    </span>
+
                 </div>
-                <div class="profile-image-title">Profile Image</div>
-                <p class="profile-image-description">Optional. Choose an image for this item.</p>
-                <input type="file" id="profileImage" name="profileImage" class="profile-image-input" accept="image/jpeg,image/jpg,image/png,image/webp">
+
+
+                <div class="profile-image-title">
+                    Profile Image
+                </div>
+
+
+                <p class="profile-image-description">
+                    Optional. Choose an image for this item.
+                </p>
+
+
+                <input
+                    type="file"
+                    id="profileImage"
+                    name="profileImage"
+                    class="profile-image-input"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                >
+
             </div>
 
+
             <% if (isAgroStore) { %>
+
                 <div class="record-type-card">
+
                     <div class="form-group">
-                        <label>Record Type</label>
-                        <input type="text" value="Structure / Facility" disabled>
+
+                        <label>
+                            Record Type
+                        </label>
+
+                        <input
+                            type="text"
+                            value="Structure / Facility"
+                            disabled
+                        >
+
                     </div>
+
                 </div>
+
 
                 <div class="record-section visible">
+
                     <div class="form-group">
-                        <label>Item Type</label>
-                        <input type="text" value="Feeds" disabled>
+
+                        <label>
+                            Item Type
+                        </label>
+
+                        <input
+                            type="text"
+                            value="Feeds"
+                            disabled
+                        >
+
                     </div>
+
                 </div>
 
-                <input type="hidden" name="recordType" value="structure">
-                <input type="hidden" name="type" value="feeds">
+
+                <input
+                    type="hidden"
+                    name="recordType"
+                    value="structure"
+                >
+
+
+                <input
+                    type="hidden"
+                    name="type"
+                    value="feeds"
+                >
+
 
                 <div class="form-grid">
+
                     <div class="form-group">
-                        <label for="quantity">Quantity</label>
-                        <input type="number" id="quantity" name="quantity" min="0" step="0.01" required value="<%= form.quantity ?? "" %>" placeholder="Enter quantity">
+
+                        <label for="quantity">
+                            Quantity
+                        </label>
+
+                        <input
+                            type="number"
+                            id="quantity"
+                            name="quantity"
+                            min="0"
+                            step="0.01"
+                            required
+                            value="<%= form.quantity ?? "" %>"
+                            placeholder="Enter quantity"
+                        >
+
                     </div>
+
+
                     <div class="form-group">
-                        <label for="unit">Unit</label>
-                        <input type="text" id="unit" name="unit" required autocomplete="off" value="<%= form.unit ?? "" %>" placeholder="e.g. kg, bags, bales">
+
+                        <label for="unit">
+                            Unit
+                        </label>
+
+                        <input
+                            type="text"
+                            id="unit"
+                            name="unit"
+                            required
+                            autocomplete="off"
+                            value="<%= form.unit ?? "" %>"
+                            placeholder="e.g. kg, bags, bales"
+                        >
+
                     </div>
+
                 </div>
+
             <% } else if (isRoom) { %>
+
                 <div class="record-type-card">
+
                     <div class="form-group">
-                        <label for="recordType">What are you adding?</label>
-                        <select id="recordType" name="recordType" required>
-                            <option value="">Select record type</option>
-                            <option value="animal" <%= form.recordType === "animal" ? "selected" : "" %>>Animal</option>
-                            <option value="structure" <%= form.recordType === "structure" ? "selected" : "" %>>Structure / Facility</option>
+
+                        <label for="recordType">
+                            What are you adding?
+                        </label>
+
+                        <select
+                            id="recordType"
+                            name="recordType"
+                            required
+                        >
+
+                            <option value="">
+                                Select record type
+                            </option>
+
+                            <option
+                                value="animal"
+                                <%= form.recordType === "animal" ? "selected" : "" %>
+                            >
+                                Animal
+                            </option>
+
+                            <option
+                                value="structure"
+                                <%= form.recordType === "structure" ? "selected" : "" %>
+                            >
+                                Structure / Facility
+                            </option>
+
                         </select>
+
                     </div>
+
                 </div>
 
-                <div id="recordTypeInfo" class="storage-mode-card" style="display:none"></div>
 
-                <div id="structureTypeGroup" class="form-group record-section">
-                    <label for="structureType">Type</label>
-                    <select id="structureType" name="type" disabled>
-                        <option value="">Select type</option>
-                        <option value="machine">Machine</option><option value="equipment">Equipment</option><option value="tool">Tool</option><option value="building">Building</option><option value="cowshed">Cowshed</option><option value="milkingParlour">Milking Parlour</option><option value="feedStore">Feed Store</option><option value="hayShed">Hay Shed</option><option value="waterSystem">Water System</option><option value="fencing">Fencing</option><option value="vehicle">Vehicle</option><option value="generator">Generator</option><option value="solarSystem">Solar System</option><option value="other">Other</option>
+                <div
+                    id="recordTypeInfo"
+                    class="storage-mode-card"
+                    style="display:none"
+                ></div>
+
+
+                <div
+                    id="structureTypeGroup"
+                    class="form-group record-section"
+                >
+
+                    <label for="structureType">
+                        Type
+                    </label>
+
+                    <select
+                        id="structureType"
+                        name="type"
+                        disabled
+                    >
+
+                        <option value="">
+                            Select type
+                        </option>
+
+                        <option value="machine">
+                            Machine
+                        </option>
+
+                        <option value="equipment">
+                            Equipment
+                        </option>
+
+                        <option value="tool">
+                            Tool
+                        </option>
+
+                        <option value="building">
+                            Building
+                        </option>
+
+                        <option value="cowshed">
+                            Cowshed
+                        </option>
+
+                        <option value="milkingParlour">
+                            Milking Parlour
+                        </option>
+
+                        <option value="feedStore">
+                            Feed Store
+                        </option>
+
+                        <option value="hayShed">
+                            Hay Shed
+                        </option>
+
+                        <option value="waterSystem">
+                            Water System
+                        </option>
+
+                        <option value="fencing">
+                            Fencing
+                        </option>
+
+                        <option value="vehicle">
+                            Vehicle
+                        </option>
+
+                        <option value="generator">
+                            Generator
+                        </option>
+
+                        <option value="solarSystem">
+                            Solar System
+                        </option>
+
+                        <option value="other">
+                            Other
+                        </option>
+
                     </select>
+
                 </div>
 
-                <div id="animalGenderGroup" class="form-group record-section">
-                    <label for="gender">Gender</label>
-                    <select id="gender" name="gender" disabled>
-                        <option value="">Select gender</option><option value="male">Male</option><option value="female">Female</option>
+
+                <div
+                    id="animalGenderGroup"
+                    class="form-group record-section"
+                >
+
+                    <label for="gender">
+                        Gender
+                    </label>
+
+                    <select
+                        id="gender"
+                        name="gender"
+                        disabled
+                    >
+
+                        <option value="">
+                            Select gender
+                        </option>
+
+                        <option value="male">
+                            Male
+                        </option>
+
+                        <option value="female">
+                            Female
+                        </option>
+
                     </select>
+
                 </div>
 
-                <div id="dateOfBirthGroup" class="form-group record-section">
-                    <label for="dateOfBirth">Date of Birth</label>
-                    <input type="date" id="dateOfBirth" name="dateOfBirth" disabled>
+
+                <div
+                    id="dateOfBirthGroup"
+                    class="form-group record-section"
+                >
+
+                    <label for="dateOfBirth">
+                        Date of Birth
+                    </label>
+
+                    <input
+                        type="date"
+                        id="dateOfBirth"
+                        name="dateOfBirth"
+                        disabled
+                    >
+
                 </div>
 
-                <div id="animalBreedGroup" class="form-group record-section">
-                    <label for="breed">Breed</label>
-                    <select id="breed" name="type" disabled>
-                        <option value="">Select breed</option>
+
+                <div
+                    id="animalBreedGroup"
+                    class="form-group record-section"
+                >
+
+                    <label for="breed">
+                        Breed
+                    </label>
+
+                    <select
+                        id="breed"
+                        name="type"
+                        disabled
+                    >
+
+                        <option value="">
+                            Select breed
+                        </option>
+
                         <% breeds.forEach(function(breed) { %>
-                            <option value="<%= breed %>"><%= breed %></option>
+
+                            <option value="<%= breed %>">
+                                <%= breed %>
+                            </option>
+
                         <% }); %>
+
                     </select>
+
                 </div>
 
-                <div id="massGroup" class="form-group record-section">
-                    <label for="mass">Mass (kg)</label>
-                    <input type="number" id="mass" name="mass" min="0" step="0.01" placeholder="Enter animal mass" disabled>
+
+                <div
+                    id="massGroup"
+                    class="form-group record-section"
+                >
+
+                    <label for="mass">
+                        Mass (kg)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="mass"
+                        name="mass"
+                        min="0"
+                        step="0.01"
+                        placeholder="Enter animal mass"
+                        disabled
+                    >
+
                 </div>
+
             <% } %>
 
+
             <div class="form-group">
-                <label for="name">Name</label>
-                <input type="text" id="name" name="name" required autocomplete="off" value="<%= form.name ?? "" %>" placeholder="<%= isAgroStore ? "Enter feed name" : "Enter item name" %>">
+
+                <label for="name">
+                    Name
+                </label>
+
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    autocomplete="off"
+                    value="<%= form.name ?? "" %>"
+                    placeholder="<%= isAgroStore ? "Enter feed name" : "Enter item name" %>"
+                >
+
             </div>
+
 
             <% if (isAgroStore) { %>
+
                 <div class="form-group">
-                    <label for="mass">Mass (kg)</label>
-                    <input type="number" id="mass" name="mass" min="0" step="0.01" value="<%= form.mass ?? "" %>" placeholder="Optional">
+
+                    <label for="mass">
+                        Mass (kg)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="mass"
+                        name="mass"
+                        min="0"
+                        step="0.01"
+                        value="<%= form.mass ?? "" %>"
+                        placeholder="Optional"
+                    >
+
                 </div>
+
             <% } %>
 
+
             <div class="form-grid">
-                <div class="form-group"><label for="buyingPrice">Buying Price</label><input type="number" id="buyingPrice" name="buyingPrice" min="0" step="0.01" value="<%= form.buyingPrice ?? "" %>" placeholder="Enter buying price"></div>
-                <div class="form-group"><label for="currentWorth">Current Worth</label><input type="number" id="currentWorth" name="currentWorth" min="0" step="0.01" value="<%= form.currentWorth ?? "" %>" placeholder="Enter current worth"></div>
+
+                <div class="form-group">
+
+                    <label for="buyingPrice">
+                        Buying Price
+                    </label>
+
+                    <input
+                        type="number"
+                        id="buyingPrice"
+                        name="buyingPrice"
+                        min="0"
+                        step="0.01"
+                        value="<%= form.buyingPrice ?? "" %>"
+                        placeholder="Enter buying price"
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="currentWorth">
+                        Current Worth
+                    </label>
+
+                    <input
+                        type="number"
+                        id="currentWorth"
+                        name="currentWorth"
+                        min="0"
+                        step="0.01"
+                        value="<%= form.currentWorth ?? "" %>"
+                        placeholder="Enter current worth"
+                    >
+
+                </div>
+
             </div>
 
-            <div class="form-group"><label for="description">Description</label><textarea id="description" name="description" placeholder="Describe this item..."><%= form.description ?? "" %></textarea></div>
-            <div class="form-group"><label for="condition">Condition</label><input type="text" id="condition" name="condition" value="<%= form.condition ?? "" %>" placeholder="e.g. New, Good, Needs Repair"></div>
-            <div class="form-group"><label for="location">Physical Location</label><input type="text" id="location" name="location" value="<%= form.location ?? "" %>" placeholder="Optional physical location"></div>
 
             <div class="form-group">
-                <label for="status">Status</label>
-                <select id="status" name="status">
-                    <option value="active" <%= !form.status || form.status === "active" ? "selected" : "" %>>Active</option>
-                    <option value="sold" <%= form.status === "sold" ? "selected" : "" %>>Sold</option>
-                    <option value="disposed" <%= form.status === "disposed" ? "selected" : "" %>>Disposed</option>
-                    <option value="inactive" <%= form.status === "inactive" ? "selected" : "" %>>Inactive</option>
-                </select>
+
+                <label for="description">
+                    Description
+                </label>
+
+                <textarea
+                    id="description"
+                    name="description"
+                    placeholder="Describe this item..."
+                ><%= form.description ?? "" %></textarea>
+
             </div>
+
+
+            <div class="form-group">
+
+                <label for="condition">
+                    Condition
+                </label>
+
+                <input
+                    type="text"
+                    id="condition"
+                    name="condition"
+                    value="<%= form.condition ?? "" %>"
+                    placeholder="e.g. New, Good, Needs Repair"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="location">
+                    Physical Location
+                </label>
+
+                <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value="<%= form.location ?? "" %>"
+                    placeholder="Optional physical location"
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="status">
+                    Status
+                </label>
+
+                <select id="status" name="status">
+
+                    <option
+                        value="active"
+                        <%= !form.status || form.status === "active" ? "selected" : "" %>
+                    >
+                        Active
+                    </option>
+
+                    <option
+                        value="sold"
+                        <%= form.status === "sold" ? "selected" : "" %>
+                    >
+                        Sold
+                    </option>
+
+                    <option
+                        value="disposed"
+                        <%= form.status === "disposed" ? "selected" : "" %>
+                    >
+                        Disposed
+                    </option>
+
+                    <option
+                        value="inactive"
+                        <%= form.status === "inactive" ? "selected" : "" %>
+                    >
+                        Inactive
+                    </option>
+
+                </select>
+
+            </div>
+
 
             <div class="form-actions">
-                <a href="/storage/<%= dairy._id %>/contents/<%= storage._id %>" class="button button-secondary">Cancel</a>
-                <button type="submit" id="saveStorageItemButton" class="button button-primary">Add to Storage</button>
+
+                <a
+                    href="/storage/<%= dairy._id %>/contents/<%= storage._id %>"
+                    class="button button-secondary"
+                >
+                    Cancel
+                </a>
+
+
+                <button
+                    type="submit"
+                    id="saveStorageItemButton"
+                    class="button button-primary"
+                >
+                    Add to Storage
+                </button>
+
             </div>
+
+
         </form>
+
     </div>
+
 </div>
 
+
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const form = document.getElementById("storageAddForm");
-    const statusBox = document.getElementById("formSaveStatus");
-    const saveButton = document.getElementById("saveStorageItemButton");
-    const profileImage = document.getElementById("profileImage");
-    const profileImagePreview = document.getElementById("profileImagePreview");
-    const profileImagePlaceholder = document.getElementById("profileImagePlaceholder");
 
-    function clearStatus() {
-        if (!statusBox) return;
-        statusBox.textContent = "";
-        statusBox.className = "form-save-status";
-    }
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
 
-    function showError(message) {
-        if (!statusBox) return;
-        statusBox.textContent = message;
-        statusBox.className = "form-save-status error";
-    }
+        const form =
+            document.getElementById(
+                "storageAddForm"
+            );
 
-    if (profileImage) {
-        profileImage.addEventListener("change", function () {
-            clearStatus();
-            const file = this.files && this.files[0];
-            if (!file) {
-                profileImagePreview.style.display = "none";
-                profileImagePlaceholder.style.display = "inline";
+
+        const statusBox =
+            document.getElementById(
+                "formSaveStatus"
+            );
+
+
+        const saveButton =
+            document.getElementById(
+                "saveStorageItemButton"
+            );
+
+
+        const profileImage =
+            document.getElementById(
+                "profileImage"
+            );
+
+
+        const profileImagePreview =
+            document.getElementById(
+                "profileImagePreview"
+            );
+
+
+        const profileImagePlaceholder =
+            document.getElementById(
+                "profileImagePlaceholder"
+            );
+
+
+        function clearStatus() {
+
+            if (!statusBox) {
                 return;
             }
-            if (!file.type.startsWith("image/")) {
-                showError("Please select a valid image file.");
-                this.value = "";
+
+
+            statusBox.textContent =
+                "";
+
+
+            statusBox.className =
+                "form-save-status";
+
+        }
+
+
+        function showError(message) {
+
+            if (!statusBox) {
                 return;
             }
-            const reader = new FileReader();
-            reader.onload = function (event) {
-                profileImagePreview.src = event.target.result;
-                profileImagePreview.style.display = "block";
-                profileImagePlaceholder.style.display = "none";
-            };
-            reader.readAsDataURL(file);
-        });
-    }
 
-    const recordType = document.getElementById("recordType");
 
-    if (!recordType) {
-        form.addEventListener("submit", function (event) {
-            clearStatus();
-            const name = document.getElementById("name").value.trim();
-            const quantity = document.getElementById("quantity").value;
-            const unit = document.getElementById("unit").value.trim();
-            if (!name) { event.preventDefault(); showError("Feed name is required."); return; }
-            if (quantity === "" || Number(quantity) < 0 || !Number.isFinite(Number(quantity))) { event.preventDefault(); showError("Please enter a valid feed quantity."); return; }
-            if (!unit) { event.preventDefault(); showError("Feed unit is required."); return; }
-            saveButton.disabled = true;
-            saveButton.textContent = "Adding Feed...";
-        });
-        return;
-    }
+            statusBox.textContent =
+                message;
 
-    const structureTypeGroup = document.getElementById("structureTypeGroup");
-    const animalGenderGroup = document.getElementById("animalGenderGroup");
-    const dateOfBirthGroup = document.getElementById("dateOfBirthGroup");
-    const animalBreedGroup = document.getElementById("animalBreedGroup");
-    const massGroup = document.getElementById("massGroup");
-    const structureType = document.getElementById("structureType");
-    const gender = document.getElementById("gender");
-    const dateOfBirth = document.getElementById("dateOfBirth");
-    const breed = document.getElementById("breed");
-    const mass = document.getElementById("mass");
-    const recordTypeInfo = document.getElementById("recordTypeInfo");
 
-    function hideField(group, field) {
-        if (!group || !field) return;
-        group.classList.remove("visible");
-        field.disabled = true;
-        field.required = false;
-        if (field.tagName === "SELECT") field.selectedIndex = 0;
-        else field.value = "";
-    }
+            statusBox.className =
+                "form-save-status error";
 
-    function showField(group, field, required) {
-        if (!group || !field) return;
-        group.classList.add("visible");
-        field.disabled = false;
-        field.required = Boolean(required);
-    }
+        }
 
-    function updateRoomRecordType() {
-        const value = recordType.value;
-        hideField(structureTypeGroup, structureType);
-        hideField(animalGenderGroup, gender);
-        hideField(dateOfBirthGroup, dateOfBirth);
-        hideField(animalBreedGroup, breed);
-        hideField(massGroup, mass);
-        if (recordTypeInfo) { recordTypeInfo.style.display = "none"; recordTypeInfo.textContent = ""; }
 
-        if (value === "animal") {
-            showField(animalGenderGroup, gender, true);
-            showField(dateOfBirthGroup, dateOfBirth, true);
-            showField(animalBreedGroup, breed, true);
-            showField(massGroup, mass, false);
-            if (recordTypeInfo) {
-                recordTypeInfo.style.display = "block";
-                recordTypeInfo.textContent = "This animal will automatically belong to the selected Dairy Farm and this storage room.";
+        if (profileImage) {
+
+            profileImage.addEventListener(
+                "change",
+                function () {
+
+                    clearStatus();
+
+
+                    const file =
+                        this.files &&
+                        this.files[0];
+
+
+                    if (!file) {
+
+                        profileImagePreview.style.display =
+                            "none";
+
+
+                        profileImagePlaceholder.style.display =
+                            "inline";
+
+
+                        return;
+
+                    }
+
+
+                    if (
+                        !file.type.startsWith(
+                            "image/"
+                        )
+                    ) {
+
+                        showError(
+                            "Please select a valid image file."
+                        );
+
+
+                        this.value =
+                            "";
+
+
+                        return;
+
+                    }
+
+
+                    const reader =
+                        new FileReader();
+
+
+                    reader.onload =
+                        function (event) {
+
+                            profileImagePreview.src =
+                                event.target.result;
+
+
+                            profileImagePreview.style.display =
+                                "block";
+
+
+                            profileImagePlaceholder.style.display =
+                                "none";
+
+                        };
+
+
+                    reader.readAsDataURL(
+                        file
+                    );
+
+                }
+            );
+
+        }
+
+
+        const recordType =
+            document.getElementById(
+                "recordType"
+            );
+
+
+        if (!recordType) {
+
+            form.addEventListener(
+                "submit",
+                function (event) {
+
+                    clearStatus();
+
+
+                    const name =
+                        document
+                            .getElementById("name")
+                            .value
+                            .trim();
+
+
+                    const quantity =
+                        document
+                            .getElementById("quantity")
+                            .value;
+
+
+                    const unit =
+                        document
+                            .getElementById("unit")
+                            .value
+                            .trim();
+
+
+                    if (!name) {
+
+                        event.preventDefault();
+
+                        showError(
+                            "Feed name is required."
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (
+                        quantity === "" ||
+                        Number(quantity) < 0 ||
+                        !Number.isFinite(
+                            Number(quantity)
+                        )
+                    ) {
+
+                        event.preventDefault();
+
+                        showError(
+                            "Please enter a valid feed quantity."
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (!unit) {
+
+                        event.preventDefault();
+
+                        showError(
+                            "Feed unit is required."
+                        );
+
+                        return;
+
+                    }
+
+
+                    saveButton.disabled =
+                        true;
+
+
+                    saveButton.textContent =
+                        "Adding Feed...";
+
+                }
+            );
+
+
+            return;
+
+        }
+
+
+        const structureTypeGroup =
+            document.getElementById(
+                "structureTypeGroup"
+            );
+
+
+        const animalGenderGroup =
+            document.getElementById(
+                "animalGenderGroup"
+            );
+
+
+        const dateOfBirthGroup =
+            document.getElementById(
+                "dateOfBirthGroup"
+            );
+
+
+        const animalBreedGroup =
+            document.getElementById(
+                "animalBreedGroup"
+            );
+
+
+        const massGroup =
+            document.getElementById(
+                "massGroup"
+            );
+
+
+        const structureType =
+            document.getElementById(
+                "structureType"
+            );
+
+
+        const gender =
+            document.getElementById(
+                "gender"
+            );
+
+
+        const dateOfBirth =
+            document.getElementById(
+                "dateOfBirth"
+            );
+
+
+        const breed =
+            document.getElementById(
+                "breed"
+            );
+
+
+        const mass =
+            document.getElementById(
+                "mass"
+            );
+
+
+        const recordTypeInfo =
+            document.getElementById(
+                "recordTypeInfo"
+            );
+
+
+        function hideField(
+            group,
+            field
+        ) {
+
+            if (
+                !group ||
+                !field
+            ) {
+
+                return;
+
             }
+
+
+            group.classList.remove(
+                "visible"
+            );
+
+
+            field.disabled =
+                true;
+
+
+            field.required =
+                false;
+
+
+            if (
+                field.tagName === "SELECT"
+            ) {
+
+                field.selectedIndex =
+                    0;
+
+            } else {
+
+                field.value =
+                    "";
+
+            }
+
         }
 
-        if (value === "structure") {
-            showField(structureTypeGroup, structureType, true);
-            if (recordTypeInfo) {
-                recordTypeInfo.style.display = "block";
-                recordTypeInfo.textContent = "This structure will automatically belong to the selected Dairy Farm and this storage room.";
+
+        function showField(
+            group,
+            field,
+            required
+        ) {
+
+            if (
+                !group ||
+                !field
+            ) {
+
+                return;
+
             }
+
+
+            group.classList.add(
+                "visible"
+            );
+
+
+            field.disabled =
+                false;
+
+
+            field.required =
+                Boolean(
+                    required
+                );
+
         }
+
+
+        function updateRoomRecordType() {
+
+            const value =
+                recordType.value;
+
+
+            hideField(
+                structureTypeGroup,
+                structureType
+            );
+
+
+            hideField(
+                animalGenderGroup,
+                gender
+            );
+
+
+            hideField(
+                dateOfBirthGroup,
+                dateOfBirth
+            );
+
+
+            hideField(
+                animalBreedGroup,
+                breed
+            );
+
+
+            hideField(
+                massGroup,
+                mass
+            );
+
+
+            if (
+                recordTypeInfo
+            ) {
+
+                recordTypeInfo.style.display =
+                    "none";
+
+
+                recordTypeInfo.textContent =
+                    "";
+
+            }
+
+
+            if (
+                value === "animal"
+            ) {
+
+                showField(
+                    animalGenderGroup,
+                    gender,
+                    true
+                );
+
+
+                showField(
+                    dateOfBirthGroup,
+                    dateOfBirth,
+                    true
+                );
+
+
+                showField(
+                    animalBreedGroup,
+                    breed,
+                    true
+                );
+
+
+                showField(
+                    massGroup,
+                    mass,
+                    false
+                );
+
+
+                if (
+                    recordTypeInfo
+                ) {
+
+                    recordTypeInfo.style.display =
+                        "block";
+
+
+                    recordTypeInfo.textContent =
+                        "This animal will automatically belong to the selected Dairy Farm and this storage room.";
+
+                }
+
+            }
+
+
+            if (
+                value === "structure"
+            ) {
+
+                showField(
+                    structureTypeGroup,
+                    structureType,
+                    true
+                );
+
+
+                if (
+                    recordTypeInfo
+                ) {
+
+                    recordTypeInfo.style.display =
+                        "block";
+
+
+                    recordTypeInfo.textContent =
+                        "This structure will automatically belong to the selected Dairy Farm and this storage room.";
+
+                }
+
+            }
+
+        }
+
+
+        recordType.addEventListener(
+            "change",
+            function () {
+
+                clearStatus();
+
+                updateRoomRecordType();
+
+            }
+        );
+
+
+        form.addEventListener(
+            "submit",
+            function (event) {
+
+                clearStatus();
+
+
+                const selectedType =
+                    recordType.value;
+
+
+                const name =
+                    document
+                        .getElementById("name")
+                        .value
+                        .trim();
+
+
+                const buyingPrice =
+                    document
+                        .getElementById("buyingPrice")
+                        .value;
+
+
+                const currentWorth =
+                    document
+                        .getElementById("currentWorth")
+                        .value;
+
+
+                if (!selectedType) {
+
+                    event.preventDefault();
+
+                    showError(
+                        "Please select what you are adding."
+                    );
+
+                    return;
+
+                }
+
+
+                if (!name) {
+
+                    event.preventDefault();
+
+                    showError(
+                        "Name is required."
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    selectedType === "animal"
+                ) {
+
+                    if (!gender.value) {
+
+                        event.preventDefault();
+
+                        showError(
+                            "Please select the animal gender."
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (!dateOfBirth.value) {
+
+                        event.preventDefault();
+
+                        showError(
+                            "Please enter the animal Date of Birth."
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (!breed.value) {
+
+                        event.preventDefault();
+
+                        showError(
+                            "Please select the animal breed."
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (
+                        mass.value !== "" &&
+                        Number(mass.value) < 0
+                    ) {
+
+                        event.preventDefault();
+
+                        showError(
+                            "Animal mass cannot be negative."
+                        );
+
+                        return;
+
+                    }
+
+                }
+
+
+                if (
+                    selectedType === "structure" &&
+                    !structureType.value
+                ) {
+
+                    event.preventDefault();
+
+                    showError(
+                        "Please select the structure type."
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    buyingPrice !== "" &&
+                    Number(buyingPrice) < 0
+                ) {
+
+                    event.preventDefault();
+
+                    showError(
+                        "Buying Price cannot be negative."
+                    );
+
+                    return;
+
+                }
+
+
+                if (
+                    currentWorth !== "" &&
+                    Number(currentWorth) < 0
+                ) {
+
+                    event.preventDefault();
+
+                    showError(
+                        "Current Worth cannot be negative."
+                    );
+
+                    return;
+
+                }
+
+
+                saveButton.disabled =
+                    true;
+
+
+                saveButton.textContent =
+                    "Adding to Storage...";
+
+            }
+        );
+
+
+        updateRoomRecordType();
+
     }
 
-    recordType.addEventListener("change", function () { clearStatus(); updateRoomRecordType(); });
+);
 
-    form.addEventListener("submit", function (event) {
-        clearStatus();
-        const selectedType = recordType.value;
-        const name = document.getElementById("name").value.trim();
-        const buyingPrice = document.getElementById("buyingPrice").value;
-        const currentWorth = document.getElementById("currentWorth").value;
-
-        if (!selectedType) { event.preventDefault(); showError("Please select what you are adding."); return; }
-        if (!name) { event.preventDefault(); showError("Name is required."); return; }
-
-        if (selectedType === "animal") {
-            if (!gender.value) { event.preventDefault(); showError("Please select the animal gender."); return; }
-            if (!dateOfBirth.value) { event.preventDefault(); showError("Please enter the animal Date of Birth."); return; }
-            if (!breed.value) { event.preventDefault(); showError("Please select the animal breed."); return; }
-            if (mass.value !== "" && Number(mass.value) < 0) { event.preventDefault(); showError("Animal mass cannot be negative."); return; }
-        }
-
-        if (selectedType === "structure" && !structureType.value) {
-            event.preventDefault(); showError("Please select the structure type."); return;
-        }
-        if (buyingPrice !== "" && Number(buyingPrice) < 0) { event.preventDefault(); showError("Buying Price cannot be negative."); return; }
-        if (currentWorth !== "" && Number(currentWorth) < 0) { event.preventDefault(); showError("Current Worth cannot be negative."); return; }
-
-        saveButton.disabled = true;
-        saveButton.textContent = "Adding to Storage...";
-    });
-
-    updateRoomRecordType();
-});
 </script>
