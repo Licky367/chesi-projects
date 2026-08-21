@@ -22,34 +22,37 @@ STORAGE TYPES:
 
 IMPORTANT:
 
-    The add form is submitted back to its CURRENT URL.
+    The form intentionally has NO "action" attribute.
 
-    We intentionally DO NOT construct the POST action using:
+    Therefore the browser submits to the CURRENT PAGE URL.
 
-        dairy._id
-        storage._id
+    Example:
 
-    The current browser URL already contains:
+        /storage/123/contents/456/add/agroStore
 
-        dairyId
-        storageId
-        storageType
-
-    Therefore the browser posts to:
+    The POST request therefore reaches:
 
         /storage/:dairyId/contents/:storageId/add/:storageType
 
-    The controller receives those same route parameters and,
-    after successful save, redirects to:
+
+    The controller receives:
+
+        req.params.dairyId
+        req.params.storageId
+        req.params.storageType
+
+
+    After successful save, the controller redirects to:
 
         /storage/:dairyId/contents/:storageId
 
 
-storageType is supplied by the controller from:
+storageType comes directly from:
 
     req.params.storageType
 
-Expected values:
+
+EXPECTED VALUES:
 
     room
     agroStore
@@ -57,7 +60,7 @@ Expected values:
 
 "agroStore" is case-sensitive.
 
-Do NOT use:
+DO NOT use:
 
     toLowerCase()
 ============================================================
@@ -99,6 +102,11 @@ const breeds =
 /*
 ============================================================
 STORAGE TYPE
+============================================================
+
+The controller passes storageType directly from:
+
+    req.params.storageType
 ============================================================
 */
 
@@ -573,19 +581,29 @@ const isRoom =
     <div class="storage-add-card">
 
         <!--
-        IMPORTANT:
+        ====================================================
+        IMPORTANT FORM ROUTING
+        ====================================================
 
-        There is deliberately NO action attribute here.
+        NO action attribute is intentionally used.
 
-        The browser therefore submits to the CURRENT URL:
+        The browser submits to the CURRENT URL.
 
-            /storage/:dairyId/contents/:storageId/add/:storageType
+        Example:
 
-        This preserves dairyId, storageId and storageType.
+            /storage/DAIRY_ID/contents/STORAGE_ID/add/agroStore
 
-        The controller then performs the successful redirect to:
+        Therefore:
 
-            /storage/:dairyId/contents/:storageId
+            dairyId
+            storageId
+            storageType
+
+        remain part of the POST URL.
+
+        The controller then redirects after successful save:
+
+            /storage/DAIRY_ID/contents/STORAGE_ID
         -->
 
         <form
@@ -636,6 +654,7 @@ const isRoom =
                         style="display:none"
                     >
 
+
                     <span
                         id="profileImagePlaceholder"
                         class="profile-image-placeholder"
@@ -673,6 +692,7 @@ const isRoom =
 
             <% if (isAgroStore) { %>
 
+
                 <div class="record-type-card">
 
                     <div class="form-group">
@@ -680,6 +700,7 @@ const isRoom =
                         <label>
                             Record Type
                         </label>
+
 
                         <input
                             type="text"
@@ -699,6 +720,7 @@ const isRoom =
                         <label>
                             Item Type
                         </label>
+
 
                         <input
                             type="text"
@@ -733,6 +755,7 @@ const isRoom =
                             Quantity
                         </label>
 
+
                         <input
                             type="number"
                             id="quantity"
@@ -752,6 +775,7 @@ const isRoom =
                         <label for="unit">
                             Unit
                         </label>
+
 
                         <input
                             type="text"
@@ -774,6 +798,7 @@ const isRoom =
 
             <% } else if (isRoom) { %>
 
+
                 <div class="record-type-card">
 
                     <div class="form-group">
@@ -781,6 +806,7 @@ const isRoom =
                         <label for="recordType">
                             What are you adding?
                         </label>
+
 
                         <select
                             id="recordType"
@@ -792,12 +818,14 @@ const isRoom =
                                 Select record type
                             </option>
 
+
                             <option
                                 value="animal"
                                 <%= form.recordType === "animal" ? "selected" : "" %>
                             >
                                 Animal
                             </option>
+
 
                             <option
                                 value="structure"
@@ -833,6 +861,7 @@ const isRoom =
                         Type
                     </label>
 
+
                     <select
                         id="structureType"
                         name="type"
@@ -843,57 +872,71 @@ const isRoom =
                             Select type
                         </option>
 
+
                         <option value="machine">
                             Machine
                         </option>
+
 
                         <option value="equipment">
                             Equipment
                         </option>
 
+
                         <option value="tool">
                             Tool
                         </option>
+
 
                         <option value="building">
                             Building
                         </option>
 
+
                         <option value="cowshed">
                             Cowshed
                         </option>
+
 
                         <option value="milkingParlour">
                             Milking Parlour
                         </option>
 
+
                         <option value="feedStore">
                             Feed Store
                         </option>
+
 
                         <option value="hayShed">
                             Hay Shed
                         </option>
 
+
                         <option value="waterSystem">
                             Water System
                         </option>
+
 
                         <option value="fencing">
                             Fencing
                         </option>
 
+
                         <option value="vehicle">
                             Vehicle
                         </option>
+
 
                         <option value="generator">
                             Generator
                         </option>
 
+
                         <option value="solarSystem">
                             Solar System
                         </option>
+
 
                         <option value="other">
                             Other
@@ -917,6 +960,7 @@ const isRoom =
                         Gender
                     </label>
 
+
                     <select
                         id="gender"
                         name="gender"
@@ -927,9 +971,11 @@ const isRoom =
                             Select gender
                         </option>
 
+
                         <option value="male">
                             Male
                         </option>
+
 
                         <option value="female">
                             Female
@@ -952,6 +998,7 @@ const isRoom =
                     <label for="dateOfBirth">
                         Date of Birth
                     </label>
+
 
                     <input
                         type="date"
@@ -976,6 +1023,7 @@ const isRoom =
                         Breed
                     </label>
 
+
                     <select
                         id="breed"
                         name="type"
@@ -985,6 +1033,7 @@ const isRoom =
                         <option value="">
                             Select breed
                         </option>
+
 
                         <% breeds.forEach(function(breed) { %>
 
@@ -1012,6 +1061,7 @@ const isRoom =
                         Mass (kg)
                     </label>
 
+
                     <input
                         type="number"
                         id="mass"
@@ -1034,13 +1084,14 @@ const isRoom =
 
             <div class="form-group">
 
-                <label for="name">
+                <label for="storageItemName">
                     Name
                 </label>
 
+
                 <input
                     type="text"
-                    id="name"
+                    id="storageItemName"
                     name="name"
                     required
                     autocomplete="off"
@@ -1062,6 +1113,7 @@ const isRoom =
                     <label for="feedMass">
                         Mass (kg)
                     </label>
+
 
                     <input
                         type="number"
@@ -1090,6 +1142,7 @@ const isRoom =
                         Buying Price
                     </label>
 
+
                     <input
                         type="number"
                         id="buyingPrice"
@@ -1108,6 +1161,7 @@ const isRoom =
                     <label for="currentWorth">
                         Current Worth
                     </label>
+
 
                     <input
                         type="number"
@@ -1134,6 +1188,7 @@ const isRoom =
                     Description
                 </label>
 
+
                 <textarea
                     id="description"
                     name="description"
@@ -1152,6 +1207,7 @@ const isRoom =
                 <label for="condition">
                     Condition
                 </label>
+
 
                 <input
                     type="text"
@@ -1174,6 +1230,7 @@ const isRoom =
                     Physical Location
                 </label>
 
+
                 <input
                     type="text"
                     id="location"
@@ -1195,6 +1252,7 @@ const isRoom =
                     Status
                 </label>
 
+
                 <select
                     id="status"
                     name="status"
@@ -1207,6 +1265,7 @@ const isRoom =
                         Active
                     </option>
 
+
                     <option
                         value="sold"
                         <%= form.status === "sold" ? "selected" : "" %>
@@ -1214,12 +1273,14 @@ const isRoom =
                         Sold
                     </option>
 
+
                     <option
                         value="disposed"
                         <%= form.status === "disposed" ? "selected" : "" %>
                     >
                         Disposed
                     </option>
+
 
                     <option
                         value="inactive"
@@ -1271,11 +1332,29 @@ document.addEventListener(
     "DOMContentLoaded",
     function () {
 
+
+        /*
+        ========================================================
+        FORM
+        ========================================================
+        */
+
         const form =
             document.getElementById(
                 "storageAddForm"
             );
 
+
+        if (!form) {
+            return;
+        }
+
+
+        /*
+        ========================================================
+        STATUS
+        ========================================================
+        */
 
         const statusBox =
             document.getElementById(
@@ -1288,6 +1367,12 @@ document.addEventListener(
                 "saveStorageItemButton"
             );
 
+
+        /*
+        ========================================================
+        PROFILE IMAGE
+        ========================================================
+        */
 
         const profileImage =
             document.getElementById(
@@ -1307,14 +1392,22 @@ document.addEventListener(
             );
 
 
+        /*
+        ========================================================
+        STATUS HELPERS
+        ========================================================
+        */
+
         function clearStatus() {
 
             if (!statusBox) {
                 return;
             }
 
+
             statusBox.textContent =
                 "";
+
 
             statusBox.className =
                 "form-save-status";
@@ -1328,8 +1421,10 @@ document.addEventListener(
                 return;
             }
 
+
             statusBox.textContent =
                 message;
+
 
             statusBox.className =
                 "form-save-status error";
@@ -1362,8 +1457,10 @@ document.addEventListener(
                         profileImagePreview.style.display =
                             "none";
 
+
                         profileImagePlaceholder.style.display =
                             "inline";
+
 
                         return;
 
@@ -1380,8 +1477,10 @@ document.addEventListener(
                             "Please select a valid image file."
                         );
 
+
                         this.value =
                             "";
+
 
                         return;
 
@@ -1398,8 +1497,10 @@ document.addEventListener(
                             profileImagePreview.src =
                                 event.target.result;
 
+
                             profileImagePreview.style.display =
                                 "block";
+
 
                             profileImagePlaceholder.style.display =
                                 "none";
@@ -1431,6 +1532,36 @@ document.addEventListener(
 
         /*
         ========================================================
+        NAME FIELD
+        ========================================================
+
+        IMPORTANT:
+
+        Do NOT use:
+
+            document.getElementById("name")
+
+        here.
+
+        The submitted field is identified by its NAME:
+
+            name="name"
+
+        and belongs to THIS FORM.
+
+        This guarantees that the value being validated is the
+        same value that will actually be submitted to Express.
+        ========================================================
+        */
+
+        const nameField =
+            form.elements.namedItem(
+                "name"
+            );
+
+
+        /*
+        ========================================================
         AGROSTORE FORM
         ========================================================
         */
@@ -1444,38 +1575,87 @@ document.addEventListener(
                     clearStatus();
 
 
+                    /*
+                    ------------------------------------------------
+                    Name
+                    ------------------------------------------------
+                    */
+
                     const name =
-                        document
-                            .getElementById("name")
-                            .value
-                            .trim();
+                        nameField &&
+                        typeof nameField.value === "string"
+                            ? nameField.value.trim()
+                            : "";
+
+
+                    /*
+                    ------------------------------------------------
+                    Quantity
+                    ------------------------------------------------
+                    */
+
+                    const quantityField =
+                        form.elements.namedItem(
+                            "quantity"
+                        );
 
 
                     const quantity =
-                        document
-                            .getElementById("quantity")
-                            .value;
+                        quantityField
+                            ? quantityField.value
+                            : "";
+
+
+                    /*
+                    ------------------------------------------------
+                    Unit
+                    ------------------------------------------------
+                    */
+
+                    const unitField =
+                        form.elements.namedItem(
+                            "unit"
+                        );
 
 
                     const unit =
-                        document
-                            .getElementById("unit")
-                            .value
-                            .trim();
+                        unitField &&
+                        typeof unitField.value === "string"
+                            ? unitField.value.trim()
+                            : "";
 
+
+                    /*
+                    ------------------------------------------------
+                    NAME VALIDATION
+                    ------------------------------------------------
+                    */
 
                     if (!name) {
 
                         event.preventDefault();
 
+
                         showError(
                             "Feed name is required."
                         );
+
+
+                        if (nameField) {
+                            nameField.focus();
+                        }
+
 
                         return;
 
                     }
 
+
+                    /*
+                    ------------------------------------------------
+                    QUANTITY VALIDATION
+                    ------------------------------------------------
+                    */
 
                     if (
                         quantity === "" ||
@@ -1487,33 +1667,70 @@ document.addEventListener(
 
                         event.preventDefault();
 
+
                         showError(
                             "Please enter a valid feed quantity."
                         );
+
+
+                        if (quantityField) {
+                            quantityField.focus();
+                        }
+
 
                         return;
 
                     }
 
+
+                    /*
+                    ------------------------------------------------
+                    UNIT VALIDATION
+                    ------------------------------------------------
+                    */
 
                     if (!unit) {
 
                         event.preventDefault();
 
+
                         showError(
                             "Feed unit is required."
                         );
+
+
+                        if (unitField) {
+                            unitField.focus();
+                        }
+
 
                         return;
 
                     }
 
 
-                    saveButton.disabled =
-                        true;
+                    /*
+                    ------------------------------------------------
+                    SUCCESSFUL CLIENT VALIDATION
 
-                    saveButton.textContent =
-                        "Adding Feed...";
+                    DO NOT redirect here.
+
+                    Let the browser submit normally.
+
+                    The controller owns the redirect.
+                    ------------------------------------------------
+                    */
+
+                    if (saveButton) {
+
+                        saveButton.disabled =
+                            true;
+
+
+                        saveButton.textContent =
+                            "Adding Feed...";
+
+                    }
 
                 }
             );
@@ -1596,6 +1813,12 @@ document.addEventListener(
             );
 
 
+        /*
+        ========================================================
+        HIDE FIELD
+        ========================================================
+        */
+
         function hideField(
             group,
             field
@@ -1641,6 +1864,12 @@ document.addEventListener(
         }
 
 
+        /*
+        ========================================================
+        SHOW FIELD
+        ========================================================
+        */
+
         function showField(
             group,
             field,
@@ -1674,11 +1903,23 @@ document.addEventListener(
         }
 
 
+        /*
+        ========================================================
+        UPDATE ROOM RECORD TYPE
+        ========================================================
+        */
+
         function updateRoomRecordType() {
 
             const value =
                 recordType.value;
 
+
+            /*
+            ----------------------------------------------------
+            Reset all conditional fields
+            ----------------------------------------------------
+            */
 
             hideField(
                 structureTypeGroup,
@@ -1710,6 +1951,12 @@ document.addEventListener(
             );
 
 
+            /*
+            ----------------------------------------------------
+            Reset information box
+            ----------------------------------------------------
+            */
+
             if (
                 recordTypeInfo
             ) {
@@ -1717,11 +1964,18 @@ document.addEventListener(
                 recordTypeInfo.style.display =
                     "none";
 
+
                 recordTypeInfo.textContent =
                     "";
 
             }
 
+
+            /*
+            ----------------------------------------------------
+            ANIMAL
+            ----------------------------------------------------
+            */
 
             if (
                 value === "animal"
@@ -1762,6 +2016,7 @@ document.addEventListener(
                     recordTypeInfo.style.display =
                         "block";
 
+
                     recordTypeInfo.textContent =
                         "This animal will automatically belong to the selected Dairy Farm and this storage room.";
 
@@ -1769,6 +2024,12 @@ document.addEventListener(
 
             }
 
+
+            /*
+            ----------------------------------------------------
+            STRUCTURE
+            ----------------------------------------------------
+            */
 
             if (
                 value === "structure"
@@ -1787,6 +2048,7 @@ document.addEventListener(
 
                     recordTypeInfo.style.display =
                         "block";
+
 
                     recordTypeInfo.textContent =
                         "This structure will automatically belong to the selected Dairy Farm and this storage room.";
@@ -1809,6 +2071,7 @@ document.addEventListener(
             function () {
 
                 clearStatus();
+
 
                 updateRoomRecordType();
 
@@ -1833,50 +2096,98 @@ document.addEventListener(
                     recordType.value;
 
 
+                /*
+                ------------------------------------------------
+                Name comes DIRECTLY from this form.
+                ------------------------------------------------
+                */
+
                 const name =
-                    document
-                        .getElementById("name")
-                        .value
-                        .trim();
+                    nameField &&
+                    typeof nameField.value === "string"
+                        ? nameField.value.trim()
+                        : "";
+
+
+                const buyingPriceField =
+                    form.elements.namedItem(
+                        "buyingPrice"
+                    );
+
+
+                const currentWorthField =
+                    form.elements.namedItem(
+                        "currentWorth"
+                    );
 
 
                 const buyingPrice =
-                    document
-                        .getElementById("buyingPrice")
-                        .value;
+                    buyingPriceField
+                        ? buyingPriceField.value
+                        : "";
 
 
                 const currentWorth =
-                    document
-                        .getElementById("currentWorth")
-                        .value;
+                    currentWorthField
+                        ? currentWorthField.value
+                        : "";
 
+
+                /*
+                ------------------------------------------------
+                RECORD TYPE
+                ------------------------------------------------
+                */
 
                 if (!selectedType) {
 
                     event.preventDefault();
 
+
                     showError(
                         "Please select what you are adding."
                     );
+
+
+                    recordType.focus();
+
 
                     return;
 
                 }
 
+
+                /*
+                ------------------------------------------------
+                NAME
+                ------------------------------------------------
+                */
 
                 if (!name) {
 
                     event.preventDefault();
 
+
                     showError(
                         "Name is required."
                     );
+
+
+                    if (nameField) {
+                        nameField.focus();
+                    }
+
 
                     return;
 
                 }
 
+
+                /*
+                ------------------------------------------------
+                ANIMAL
+                ------------------------------------------------
+                */
 
                 if (
                     selectedType === "animal"
@@ -1886,9 +2197,14 @@ document.addEventListener(
 
                         event.preventDefault();
 
+
                         showError(
                             "Please select the animal gender."
                         );
+
+
+                        gender.focus();
+
 
                         return;
 
@@ -1899,9 +2215,14 @@ document.addEventListener(
 
                         event.preventDefault();
 
+
                         showError(
                             "Please enter the animal Date of Birth."
                         );
+
+
+                        dateOfBirth.focus();
+
 
                         return;
 
@@ -1912,9 +2233,14 @@ document.addEventListener(
 
                         event.preventDefault();
 
+
                         showError(
                             "Please select the animal breed."
                         );
+
+
+                        breed.focus();
+
 
                         return;
 
@@ -1928,9 +2254,14 @@ document.addEventListener(
 
                         event.preventDefault();
 
+
                         showError(
                             "Animal mass cannot be negative."
                         );
+
+
+                        mass.focus();
+
 
                         return;
 
@@ -1939,6 +2270,12 @@ document.addEventListener(
                 }
 
 
+                /*
+                ------------------------------------------------
+                STRUCTURE
+                ------------------------------------------------
+                */
+
                 if (
                     selectedType === "structure" &&
                     !structureType.value
@@ -1946,14 +2283,25 @@ document.addEventListener(
 
                     event.preventDefault();
 
+
                     showError(
                         "Please select the structure type."
                     );
+
+
+                    structureType.focus();
+
 
                     return;
 
                 }
 
+
+                /*
+                ------------------------------------------------
+                BUYING PRICE
+                ------------------------------------------------
+                */
 
                 if (
                     buyingPrice !== "" &&
@@ -1962,14 +2310,25 @@ document.addEventListener(
 
                     event.preventDefault();
 
+
                     showError(
                         "Buying Price cannot be negative."
                     );
+
+
+                    buyingPriceField.focus();
+
 
                     return;
 
                 }
 
+
+                /*
+                ------------------------------------------------
+                CURRENT WORTH
+                ------------------------------------------------
+                */
 
                 if (
                     currentWorth !== "" &&
@@ -1978,20 +2337,64 @@ document.addEventListener(
 
                     event.preventDefault();
 
+
                     showError(
                         "Current Worth cannot be negative."
                     );
+
+
+                    currentWorthField.focus();
+
 
                     return;
 
                 }
 
 
-                saveButton.disabled =
-                    true;
+                /*
+                =================================================
+                CLIENT VALIDATION PASSED
+                =================================================
 
-                saveButton.textContent =
-                    "Adding to Storage...";
+                IMPORTANT:
+
+                    DO NOT:
+
+                        window.location.href = ...
+
+                    DO NOT:
+
+                        form.action = ...
+
+                    DO NOT manually redirect.
+
+                The browser now performs the normal POST to the
+                CURRENT URL.
+
+                Example:
+
+                    /storage/ABC/contents/XYZ/add/agroStore
+
+                The controller receives:
+
+                    req.params.dairyId
+                    req.params.storageId
+                    req.params.storageType
+
+                The controller then redirects after saving.
+                =================================================
+                */
+
+                if (saveButton) {
+
+                    saveButton.disabled =
+                        true;
+
+
+                    saveButton.textContent =
+                        "Adding to Storage...";
+
+                }
 
             }
         );
