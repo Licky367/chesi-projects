@@ -30,6 +30,8 @@
 //
 //     type === "feeds"
 //     recordType does NOT exist
+//     dwellNumber === storage.roomNumber
+//     quantity > 0
 //
 // NORMAL ROOM ITEM:
 //
@@ -311,8 +313,6 @@ function isFeed(
 // AGROSTORE ITEM CHECK
 // ==========================================================
 //
-// THIS IS IMPORTANT.
-//
 // An AgroStore feed item must:
 //
 //     type === "feeds"
@@ -321,20 +321,71 @@ function isFeed(
 //
 //     recordType does not exist
 //
-// This matches the addNew service convention.
+// AND:
+//
+//     dwellNumber matches the AgroStore roomNumber
+//
+// AND:
+//
+//     quantity > 0
 //
 // ==========================================================
 
 function isAgroStoreItem(
-    item
+    item,
+    roomNumber = null
 ) {
 
-    return Boolean(
-        isFeed(item) &&
-        !Object.prototype.hasOwnProperty.call(
+    if (
+        !isFeed(
+            item
+        )
+    ) {
+
+        return false;
+    }
+
+
+    if (
+        Object.prototype.hasOwnProperty.call(
             item,
             "recordType"
         )
+    ) {
+
+        return false;
+    }
+
+
+    if (
+        roomNumber !== null &&
+        roomNumber !== undefined
+    ) {
+
+        if (
+            String(
+                item.dwellNumber ?? ""
+            ).trim() !==
+            String(
+                roomNumber
+            ).trim()
+        ) {
+
+            return false;
+        }
+    }
+
+
+    const quantity =
+        Number(
+            item.quantity
+        );
+
+    return (
+        Number.isFinite(
+            quantity
+        ) &&
+        quantity > 0
     );
 }
 
@@ -649,12 +700,16 @@ function nonStructureItemFilter() {
 // AGROSTORE ITEM FILTER
 // ==========================================================
 //
-// THIS IS THE IMPORTANT ADDNEW ALIGNMENT.
-//
-// AgroStore inventory:
+// AGROSTORE INVENTORY:
 //
 //     type === "feeds"
 //     recordType does NOT exist
+//
+// NOTE:
+//
+//     Room-number and quantity conditions are deliberately
+//     applied by the CURRENT CONTENT filter because those
+//     conditions depend on the selected AgroStore.
 //
 // ==========================================================
 
@@ -668,6 +723,42 @@ function agroStoreItemFilter() {
         recordType: {
             $exists:
                 false
+        }
+
+    };
+}
+
+
+// ==========================================================
+// AGROSTORE CONTENT FILTER
+// ==========================================================
+//
+// THIS IS THE IMPORTANT AGROSTORE RULE.
+//
+// A feed belongs in the displayed AgroStore contents ONLY
+// when:
+//
+//     type === "feeds"
+//     recordType does NOT exist
+//     dwellNumber === storage.roomNumber
+//     quantity > 0
+//
+// ==========================================================
+
+function agroStoreContentFilter(
+    roomNumber
+) {
+
+    return {
+
+        ...agroStoreItemFilter(),
+
+        dwellNumber:
+            roomNumber,
+
+        quantity: {
+            $gt:
+                0
         }
 
     };
@@ -711,6 +802,8 @@ function normalRoomItemFilter() {
 //
 //     feeds
 //     recordType does not exist
+//     dwellNumber === roomNumber
+//     quantity > 0
 //
 // ROOM:
 //
@@ -729,7 +822,14 @@ function storageItemTypeFilter(
         )
     ) {
 
-        return agroStoreItemFilter();
+        const roomNumber =
+            getStorageRoomNumber(
+                storage
+            );
+
+        return agroStoreContentFilter(
+            roomNumber
+        );
     }
 
 
@@ -756,8 +856,19 @@ function storageItemTypeFilter(
 //
 // Current content:
 //
+// ROOM:
+//
 //     item.assetCode === farm.code
 //     item.dwellNumber === storage.roomNumber
+//     normal room rules
+//
+// AGROSTORE:
+//
+//     item.assetCode === farm.code
+//     item.dwellNumber === storage.roomNumber
+//     type === "feeds"
+//     recordType does not exist
+//     quantity > 0
 //
 // ==========================================================
 
@@ -810,15 +921,18 @@ function currentContentFilter({
 //
 // IMPORTANT:
 //
-//     AgroStore:
+//     Room logic remains unchanged.
 //
-//         feeds
+//     AgroStore available feeds must:
+//
+//         type === "feeds"
 //         recordType absent
+//         no current dwellNumber
 //
-//     Room:
-//
-//         non-feeds
-//         non-structure
+// Quantity is NOT required to be positive here because this
+// filter is for feeds available to be allocated. The
+// quantity > 0 condition applies to DISPLAYED AGROSTORE
+// CONTENTS.
 //
 // ==========================================================
 
@@ -1003,6 +1117,17 @@ async function getStorageContents({
 
     // ------------------------------------------------------
     // CURRENT CONTENTS
+    // ------------------------------------------------------
+    //
+    // IMPORTANT:
+    //
+    // For AgroStore this automatically enforces:
+    //
+    //     dwellNumber === roomNumber
+    //     quantity > 0
+    //
+    // Room behaviour is unchanged.
+    //
     // ------------------------------------------------------
 
     const items =
@@ -1869,6 +1994,17 @@ async function reshuffleItems({
 //
 //     recordType does NOT exist
 //
+// AND:
+//
+//     dwellNumber === storage.roomNumber
+//
+// When quantity becomes zero:
+//
+//     dwellNumber = null
+//
+// Therefore the feed automatically disappears from the
+// AgroStore contents query because quantity must be > 0.
+//
 // ==========================================================
 
 async function updateFeedQuantity({
@@ -1998,12 +2134,15 @@ async function updateFeedQuantity({
     // FIND CURRENT FEED
     // ======================================================
     //
-    // IMPORTANT:
+    // Required:
     //
-    // recordType must NOT exist.
+    //     type === "feeds"
+    //     recordType absent
+    //     dwellNumber === roomNumber
     //
-    // This prevents a structure or another record from
-    // accidentally being treated as an AgroStore feed.
+    // Quantity is intentionally NOT included here because
+    // the current feed may be updated from a positive
+    // quantity down to zero.
     //
     // ======================================================
 
