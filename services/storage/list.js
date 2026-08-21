@@ -9,18 +9,19 @@
 //
 // STORAGE ARCHITECTURE:
 //
-//     Dairy._id
-//         ↓
-//     parent Dairy Farm
-//         ↓
-//     Dairy.code
-//         ↓
-//     child structure.assetCode
+//     Parent Dairy Farm
+//         |
+//         |-- Dairy._id
+//         |
+//         |-- Dairy.code
+//                 |
+//                 v
+//          child structure.assetCode
 //
 // RECORD IDENTITY:
 //
 //     recordType === "structure"
-//         = structure record
+//         = structure/storage record
 //
 // STORAGE TYPE:
 //
@@ -30,23 +31,22 @@
 //     type === "agroStore"
 //         = AgroStore
 //
-// DWELLING:
+// STORAGE IDENTITY:
 //
-//     dwellNumber >= 0
-//         = normal room number
-//
-//     dwellNumber < 0
-//         = AgroStore number
+//     item._id
+//         = unique identity of the storage facility
 //
 // IMPORTANT:
 //
-//     recordType and type are DIFFERENT fields.
+//     roomNumber and dwellNumber are DIFFERENT fields.
 //
-//     recordType = "structure"
-//         identifies the record category.
+//     roomNumber
+//         = storage/room number
 //
-//     type = "room" / "agroStore"
-//         identifies the structure/storage type.
+//     dwellNumber
+//         = separate structural/dwelling value
+//
+//     NEVER use dwellNumber as the storage ID.
 //
 // ==========================================================
 
@@ -72,6 +72,9 @@ const ROOM_TYPE =
 const AGROSTORE_TYPE =
     "agroStore";
 
+const ALL_STORAGE_TYPE =
+    "all";
+
 
 // ==========================================================
 // NORMALIZE STORAGE TYPE
@@ -83,15 +86,14 @@ const AGROSTORE_TYPE =
 //     room
 //     agroStore
 //
-// Invalid values become:
-//
-//     all
-//
 // IMPORTANT:
 //
-// This normalizes the STORAGE `type`.
+// This function normalizes the storage FILTER.
 //
-// It does NOT normalize `recordType`.
+// It does not change:
+//
+//     recordType
+//     item.type
 //
 // ==========================================================
 
@@ -101,7 +103,7 @@ function normalizeType(
 
     const value =
         String(
-            type || "all"
+            type || ALL_STORAGE_TYPE
         )
         .trim();
 
@@ -124,7 +126,7 @@ function normalizeType(
     }
 
 
-    return "all";
+    return ALL_STORAGE_TYPE;
 
 }
 
@@ -133,17 +135,9 @@ function normalizeType(
 // VALIDATE DAIRY ID
 // ==========================================================
 //
-// The route ID is always:
+// The parent dairy is identified by:
 //
 //     Dairy._id
-//
-// Example:
-//
-//     /storage/64f.../add
-//
-// The ID is NOT:
-//
-//     Dairy.code
 //
 // ==========================================================
 
@@ -190,12 +184,70 @@ function validateDairyId(
 
 
 // ==========================================================
-// GET PARENT DAIRY FARM
+// VALIDATE STORAGE ID
+// ==========================================================
+//
+// A storage facility is identified by:
+//
+//     Dairy._id
+//
+// NOT:
+//
+//     roomNumber
+//     dwellNumber
+//     assetCode
+//
+// ==========================================================
+
+function validateStorageId(
+    storageId
+) {
+
+    if (
+        !storageId
+    ) {
+
+        const error =
+            new Error(
+                "Storage ID is required."
+            );
+
+        error.status =
+            400;
+
+        throw error;
+
+    }
+
+
+    if (
+        !mongoose.Types.ObjectId.isValid(
+            storageId
+        )
+    ) {
+
+        const error =
+            new Error(
+                "Invalid storage ID."
+            );
+
+        error.status =
+            400;
+
+        throw error;
+
+    }
+
+}
+
+
+// ==========================================================
+// GET PARENT DAIRY
 // ==========================================================
 //
 // INPUT:
 //
-//     Dairy._id
+//     dairyId
 //
 // RETURNS:
 //
@@ -204,13 +256,13 @@ function validateDairyId(
 //         farmCode
 //     }
 //
-// The returned `farmCode` is the parent's:
+// The parent farm's:
 //
 //     dairy.code
 //
-// It is then used to locate child structures through:
+// is used to locate its child structure records through:
 //
-//     assetCode: farmCode
+//     assetCode
 //
 // ==========================================================
 
@@ -219,7 +271,7 @@ async function getParentDairy(
 ) {
 
     // ======================================================
-    // VALIDATE MONGODB ID
+    // VALIDATE ID
     // ======================================================
 
     validateDairyId(
@@ -228,7 +280,7 @@ async function getParentDairy(
 
 
     // ======================================================
-    // FIND PARENT DAIRY
+    // FIND DAIRY
     // ======================================================
 
     const dairy =
@@ -261,13 +313,7 @@ async function getParentDairy(
 
 
     // ======================================================
-    // PARENT MUST BE A DAIRY FARM
-    // ======================================================
-    //
-    // Dairy Farm identity:
-    //
-    //     code < 0
-    //
+    // GET FARM CODE
     // ======================================================
 
     const farmCode =
@@ -275,6 +321,16 @@ async function getParentDairy(
             dairy.code
         );
 
+
+    // ======================================================
+    // VALIDATE PARENT FARM
+    // ======================================================
+    //
+    // Parent Dairy Farm:
+    //
+    //     code < 0
+    //
+    // ======================================================
 
     if (
         !Number.isInteger(
@@ -315,11 +371,9 @@ async function getParentDairy(
 // STORAGE RECORD FILTER
 // ==========================================================
 //
-// Every storage facility must:
+// Every storage facility must be:
 //
 //     recordType === "structure"
-//
-// The storage `type` is handled separately.
 //
 // ==========================================================
 
@@ -339,32 +393,20 @@ function getStructureFilter() {
 // SORT STORAGE
 // ==========================================================
 //
-// Storage is represented by:
+// IMPORTANT:
 //
-//     dwellNumber
+// Storage identity is NOT determined by this sort.
 //
-// Example:
+// Every storage facility is identified by:
 //
-//     AgroStores:
-//         -3
-//         -2
-//         -1
+//     item._id
 //
-//     Rooms:
-//          0
-//          1
-//          2
-//          3
+// The sort is only for presentation.
 //
-// Numeric ascending order:
+// Prefer roomNumber when available.
 //
-//     -3
-//     -2
-//     -1
-//      0
-//      1
-//      2
-//      3
+// Fall back to dwellNumber only for legacy records that
+// do not contain roomNumber.
 //
 // ==========================================================
 
@@ -378,21 +420,104 @@ function sortStorage(
             b
         ) => {
 
-            const aNumber =
+            const aRoomNumber =
+                Number(
+                    a.roomNumber
+                );
+
+            const bRoomNumber =
+                Number(
+                    b.roomNumber
+                );
+
+
+            const aHasRoomNumber =
+                Number.isFinite(
+                    aRoomNumber
+                );
+
+            const bHasRoomNumber =
+                Number.isFinite(
+                    bRoomNumber
+                );
+
+
+            // ==================================================
+            // BOTH HAVE ROOM NUMBERS
+            // ==================================================
+
+            if (
+                aHasRoomNumber &&
+                bHasRoomNumber
+            ) {
+
+                return (
+                    aRoomNumber -
+                    bRoomNumber
+                );
+
+            }
+
+
+            // ==================================================
+            // ONLY A HAS ROOM NUMBER
+            // ==================================================
+
+            if (
+                aHasRoomNumber
+            ) {
+
+                return -1;
+
+            }
+
+
+            // ==================================================
+            // ONLY B HAS ROOM NUMBER
+            // ==================================================
+
+            if (
+                bHasRoomNumber
+            ) {
+
+                return 1;
+
+            }
+
+
+            // ==================================================
+            // LEGACY FALLBACK
+            // ==================================================
+
+            const aDwellNumber =
                 Number(
                     a.dwellNumber
                 );
 
-            const bNumber =
+            const bDwellNumber =
                 Number(
                     b.dwellNumber
                 );
 
 
-            return (
-                aNumber -
-                bNumber
-            );
+            if (
+                Number.isFinite(
+                    aDwellNumber
+                ) &&
+                Number.isFinite(
+                    bDwellNumber
+                )
+            ) {
+
+                return (
+                    aDwellNumber -
+                    bDwellNumber
+                );
+
+            }
+
+
+            return 0;
 
         }
     );
@@ -440,7 +565,7 @@ async function getStorage(
 
 
     // ======================================================
-    // GET PARENT FARM
+    // GET PARENT DAIRY
     // ======================================================
 
     const {
@@ -456,7 +581,7 @@ async function getStorage(
 
 
     // ======================================================
-    // NORMALIZE STORAGE TYPE
+    // NORMALIZE FILTER TYPE
     // ======================================================
 
     const type =
@@ -466,16 +591,18 @@ async function getStorage(
 
 
     // ======================================================
-    // BASE QUERY
+    // BASE STORAGE QUERY
     // ======================================================
     //
-    // IMPORTANT:
+    // Parent relationship:
     //
-    // recordType identifies this as a structure.
+    //     child.assetCode === parent.code
     //
-    // type identifies which kind of storage.
+    // Storage identity:
     //
-    // assetCode identifies the parent farm.
+    //     recordType === "structure"
+    //
+    // Only active storage is listed.
     //
     // ======================================================
 
@@ -493,7 +620,7 @@ async function getStorage(
 
 
     // ======================================================
-    // ROOM FILTER
+    // FILTER BY ROOM
     // ======================================================
 
     if (
@@ -507,7 +634,7 @@ async function getStorage(
 
 
     // ======================================================
-    // AGROSTORE FILTER
+    // FILTER BY AGROSTORE
     // ======================================================
 
     if (
@@ -521,7 +648,7 @@ async function getStorage(
 
 
     // ======================================================
-    // FETCH FROM DAIRY MODEL
+    // FETCH STORAGE
     // ======================================================
 
     const storage =
@@ -533,7 +660,7 @@ async function getStorage(
 
 
     // ======================================================
-    // SORT
+    // SORT FOR DISPLAY
     // ======================================================
 
     sortStorage(
@@ -573,7 +700,7 @@ async function getAllStorage(
         dairyId,
 
         type:
-            "all"
+            ALL_STORAGE_TYPE
 
     });
 
@@ -588,8 +715,8 @@ async function getAllStorage(
 //
 //     recordType === "structure"
 //     type === "room"
-//     assetCode === farm.code
-//     dwellNumber >= 0
+//     assetCode === parent farm code
+//     status === "active"
 //
 // ==========================================================
 
@@ -617,8 +744,8 @@ async function getRooms(
 //
 //     recordType === "structure"
 //     type === "agroStore"
-//     assetCode === farm.code
-//     dwellNumber < 0
+//     assetCode === parent farm code
+//     status === "active"
 //
 // ==========================================================
 
@@ -645,25 +772,46 @@ async function getAgroStores(
 // INPUT:
 //
 //     dairyId
-//     roomNumber
+//     storageId
 //
 // IMPORTANT:
 //
-// `dairyId` identifies the parent Dairy Farm through
-// MongoDB _id.
+// `dairyId` identifies the PARENT Dairy Farm.
 //
-// `roomNumber` is actually the storage's `dwellNumber`.
+// `storageId` identifies the SPECIFIC STORAGE FACILITY:
 //
-// BOTH are required.
+//     item._id
 //
-// This prevents a storage facility belonging to another
-// Dairy Farm from being returned.
+// DO NOT use:
+//
+//     roomNumber
+//     dwellNumber
+//     assetCode
+//
+// to identify the storage.
+//
+//
+//
+// SECURITY / OWNERSHIP:
+//
+// The storage must satisfy ALL of:
+//
+//     _id === storageId
+//
+//     recordType === "structure"
+//
+//     assetCode === parent dairy.code
+//
+//     status === "active"
+//
+// This prevents a storage belonging to another dairy farm
+// from being accessed simply by knowing its MongoDB ID.
 //
 // ==========================================================
 
 async function getStorageFacility(
     dairyId,
-    roomNumber
+    storageId
 ) {
 
     // ======================================================
@@ -683,56 +831,25 @@ async function getStorageFacility(
 
 
     // ======================================================
-    // CONVERT STORAGE NUMBER
+    // VALIDATE STORAGE ID
     // ======================================================
 
-    const number =
-        Number(
-            roomNumber
-        );
-
-
-    // ======================================================
-    // VALIDATE STORAGE NUMBER
-    // ======================================================
-
-    if (
-        !Number.isInteger(
-            number
-        )
-    ) {
-
-        const error =
-            new Error(
-                "Storage number must be a whole number."
-            );
-
-        error.status =
-            400;
-
-        throw error;
-
-    }
+    validateStorageId(
+        storageId
+    );
 
 
     // ======================================================
-    // FIND STORAGE FACILITY
+    // FIND STORAGE BY ITS MONGODB _id
     // ======================================================
     //
-    // IMPORTANT:
+    // THIS IS THE IMPORTANT CORRECTION.
     //
-    // recordType === "structure"
+    // The storage facility is identified by:
     //
-    // type is NOT used here because this function is capable
-    // of returning either:
+    //     _id
     //
-    //     room
-    //
-    // or:
-    //
-    //     agroStore
-    //
-    // The dwellNumber determines the actual storage number.
+    // roomNumber and dwellNumber are NOT identifiers.
     //
     // ======================================================
 
@@ -740,14 +857,14 @@ async function getStorageFacility(
         await Dairy
             .findOne({
 
+                _id:
+                    storageId,
+
                 recordType:
                     STRUCTURE_RECORD_TYPE,
 
                 assetCode:
                     farmCode,
-
-                dwellNumber:
-                    number,
 
                 status:
                     "active"
@@ -771,6 +888,40 @@ async function getStorageFacility(
 
         error.status =
             404;
+
+        throw error;
+
+    }
+
+
+    // ======================================================
+    // VALIDATE STORAGE TYPE
+    // ======================================================
+    //
+    // The facility may be either:
+    //
+    //     room
+    //
+    // or:
+    //
+    //     agroStore
+    //
+    // Do not infer the type from roomNumber or dwellNumber.
+    //
+    // ======================================================
+
+    if (
+        storage.type !== ROOM_TYPE &&
+        storage.type !== AGROSTORE_TYPE
+    ) {
+
+        const error =
+            new Error(
+                "Invalid storage type."
+            );
+
+        error.status =
+            422;
 
         throw error;
 
