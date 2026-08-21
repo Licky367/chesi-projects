@@ -1,4 +1,5 @@
-<% /*
+<%
+/*
 ==============================================================
 STORAGE CONTENTS
 ==============================================================
@@ -12,58 +13,35 @@ PURPOSE:
         1. Normal Storage Rooms
         2. AgroStore (type === "feeds")
 
-PAGE STRUCTURE:
-    VIEW CONTENTS
-        - Current contents
-        - Normal storage: omit + reshuffle
-        - AgroStore: quantity management
-
-    ADD ITEMS
-        - Available/unallocated items
-
-IMPORTANT:
-    Backend routes and field names are preserved.
-
 URL CONTRACT:
-    Storage contents item page:
-
-        /storage/<%= dairy._id %>/contents/<%= item._id %>
+    /storage/<%= dairy._id %>/contents/<%= item._id %>
 
 ==============================================================
 */
 
+const storageType = String(
+    storage && storage.type ? storage.type : ""
+).trim().toLowerCase();
 
-/* ==========================================================
-   STORAGE MODE
-========================================================== */
-
-const isAgroStore =
-    storage &&
-    String(storage.type || "")
-        .trim()
-        .toLowerCase() === "feeds";
-
-
-/* ==========================================================
-   DISPLAY VALUES
-========================================================== */
+const isAgroStore = storageType === "feeds";
 
 const storageName =
-    storage.displayName ||
+    (storage && storage.displayName) ||
     (
         isAgroStore
             ? "AgroStore"
-            : `Room ${storage.roomNumber}`
+            : "Room " + (
+                storage && storage.roomNumber
+                    ? storage.roomNumber
+                    : "—"
+            )
     );
-
 
 const currentTab =
     activeTab === "add"
         ? "add"
         : "view";
-
 %>
-
 
 <style>
 
@@ -208,8 +186,7 @@ const currentTab =
 .storage-tab.active{
     background:#fff;
     color:#245d38;
-    box-shadow:
-        0 2px 7px rgba(27,53,36,.08);
+    box-shadow:0 2px 7px rgba(27,53,36,.08);
 }
 
 
@@ -437,8 +414,7 @@ const currentTab =
     background:#fff;
     border:1px solid #e3e9e5;
     border-radius:14px;
-    box-shadow:
-        0 2px 9px rgba(24,45,31,.025);
+    box-shadow:0 2px 9px rgba(24,45,31,.025);
     transition:
         border-color .16s ease,
         box-shadow .16s ease,
@@ -447,8 +423,7 @@ const currentTab =
 
 .content-card:hover{
     border-color:#d2dfd5;
-    box-shadow:
-        0 5px 16px rgba(24,45,31,.05);
+    box-shadow:0 5px 16px rgba(24,45,31,.05);
 }
 
 .content-card.selected{
@@ -526,7 +501,7 @@ const currentTab =
 
 
 /* ============================================================
-   NORMAL CONTENT META
+   CONTENT META
 ============================================================ */
 
 .content-meta{
@@ -545,10 +520,6 @@ const currentTab =
 .content-meta-item strong{
     color:#46574c;
     font-weight:750;
-}
-
-.content-meta-separator{
-    color:#c4ccc7;
 }
 
 
@@ -940,22 +911,20 @@ const currentTab =
 
 <div class="storage-contents-page">
 
-
-    <!-- ==========================================================
+    <!-- ========================================================
          HEADER
-    =========================================================== -->
+    ========================================================= -->
 
     <header class="storage-page-header">
 
         <div class="storage-header-main">
 
             <p class="storage-header-eyebrow">
-
-                <%= isAgroStore
-                    ? "AgroStore"
-                    : "Storage"
-                %>
-
+                <% if (isAgroStore) { %>
+                    AgroStore
+                <% } else { %>
+                    Storage
+                <% } %>
             </p>
 
             <h1 class="storage-page-title">
@@ -991,16 +960,15 @@ const currentTab =
     </header>
 
 
-
-    <!-- ==========================================================
+    <!-- ========================================================
          MESSAGES
-    =========================================================== -->
+    ========================================================= -->
 
     <% if (successMessage) { %>
 
         <div class="storage-message storage-success">
 
-            ✓
+            <span>✓</span>
 
             <span>
                 <%= successMessage %>
@@ -1015,7 +983,7 @@ const currentTab =
 
         <div class="storage-message storage-error">
 
-            !
+            <span>!</span>
 
             <span>
                 <%= pageError %>
@@ -1026,16 +994,15 @@ const currentTab =
     <% } %>
 
 
-
-    <!-- ==========================================================
+    <!-- ========================================================
          TABS
-    =========================================================== -->
+    ========================================================= -->
 
     <div class="storage-tabs">
 
         <button
             type="button"
-            class="storage-tab <%= currentTab === "view" ? "active" : "" %>"
+            class="storage-tab <% if (currentTab === 'view') { %>active<% } %>"
             data-storage-tab="view"
         >
             View Contents
@@ -1044,7 +1011,7 @@ const currentTab =
 
         <button
             type="button"
-            class="storage-tab <%= currentTab === "add" ? "active" : "" %>"
+            class="storage-tab <% if (currentTab === 'add') { %>active<% } %>"
             data-storage-tab="add"
         >
             Add Items
@@ -1053,17 +1020,15 @@ const currentTab =
     </div>
 
 
-
-    <!-- ==========================================================
+    <!-- ========================================================
          VIEW CONTENTS TAB
-    ========================================================== -->
+    ========================================================= -->
 
     <section
         id="storageViewTab"
-        class="storage-tab-panel <%= currentTab === "view" ? "active" : "" %>"
+        class="storage-tab-panel <% if (currentTab === 'view') { %>active<% } %>"
         data-storage-panel="view"
     >
-
 
         <div class="contents-topbar">
 
@@ -1071,19 +1036,21 @@ const currentTab =
                 Current Contents
             </h2>
 
-
             <div class="contents-count">
 
                 <strong>
-                    <%= itemCount %>
+                    <%= itemCount || 0 %>
                 </strong>
 
-                <%= itemCount === 1 ? "item" : "items" %>
+                <% if (Number(itemCount || 0) === 1) { %>
+                    item
+                <% } else { %>
+                    items
+                <% } %>
 
             </div>
 
         </div>
-
 
 
         <% if (items && items.length > 0) { %>
@@ -1091,17 +1058,15 @@ const currentTab =
 
             <!-- ==================================================
                  NORMAL STORAGE
-            =================================================== -->
+            ================================================== -->
 
             <% if (!isAgroStore) { %>
-
 
                 <form
                     id="reshuffleForm"
                     method="POST"
                     action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/reshuffle"
                 >
-
 
                     <div class="contents-management">
 
@@ -1157,7 +1122,6 @@ const currentTab =
                     </div>
 
 
-
                     <div
                         id="reshufflePanel"
                         class="reshuffle-panel"
@@ -1167,12 +1131,9 @@ const currentTab =
                             Reshuffle Selected Items
                         </h3>
 
-
                         <p class="reshuffle-description">
-
                             Move the selected items to another
                             active storage room of the same type.
-
                         </p>
 
 
@@ -1183,7 +1144,6 @@ const currentTab =
                                 <label for="destinationStorage">
                                     Destination
                                 </label>
-
 
                                 <select
                                     id="destinationStorage"
@@ -1196,23 +1156,14 @@ const currentTab =
                                     </option>
 
 
-                                    <% if (
-                                        targetStorages &&
-                                        targetStorages.length > 0
-                                    ) { %>
+                                    <% if (targetStorages && targetStorages.length > 0) { %>
 
-                                        <% targetStorages.forEach(
-                                            function(destination)
-                                        { %>
+                                        <% targetStorages.forEach(function(destination) { %>
 
                                             <option
                                                 value="<%= destination._id %>"
                                             >
-
-                                                <%= destination.displayName ||
-                                                    `Room ${destination.roomNumber}`
-                                                %>
-
+                                                <%= destination.displayName || ("Room " + (destination.roomNumber || "—")) %>
                                             </option>
 
                                         <% }); %>
@@ -1256,18 +1207,18 @@ const currentTab =
                     </div>
 
 
-
                     <div class="contents-list">
 
                         <% items.forEach(function(item) { %>
 
                             <%
+                                const itemCodeNumber = Number(item.code);
                                 const isAnimal =
                                     item.code !== null &&
                                     item.code !== undefined &&
-                                    Number(item.code) > 0;
+                                    !Number.isNaN(itemCodeNumber) &&
+                                    itemCodeNumber > 0;
                             %>
-
 
                             <article
                                 class="content-card"
@@ -1289,10 +1240,11 @@ const currentTab =
 
                                 <div class="content-icon">
 
-                                    <%= isAnimal
-                                        ? "🐄"
-                                        : "🔧"
-                                    %>
+                                    <% if (isAnimal) { %>
+                                        🐄
+                                    <% } else { %>
+                                        🔧
+                                    <% } %>
 
                                 </div>
 
@@ -1307,21 +1259,18 @@ const currentTab =
 
 
                                         <span
-                                            class="content-type <%= isAnimal
-                                                ? "animal-type"
-                                                : "asset-type"
-                                            %>"
+                                            class="content-type <% if (isAnimal) { %>animal-type<% } else { %>asset-type<% } %>"
                                         >
 
-                                            <%= isAnimal
-                                                ? "Animal"
-                                                : "Asset"
-                                            %>
+                                            <% if (isAnimal) { %>
+                                                Animal
+                                            <% } else { %>
+                                                Asset
+                                            <% } %>
 
                                         </span>
 
                                     </div>
-
 
 
                                     <div class="content-meta">
@@ -1330,7 +1279,11 @@ const currentTab =
 
                                             <strong>Code:</strong>
 
-                                            <%= item.code ?? "—" %>
+                                            <% if (item.code !== null && item.code !== undefined) { %>
+                                                <%= item.code %>
+                                            <% } else { %>
+                                                —
+                                            <% } %>
 
                                         </span>
 
@@ -1353,18 +1306,13 @@ const currentTab =
                                         </span>
 
 
-                                        <% if (
-                                            item.quantity !== null &&
-                                            item.quantity !== undefined
-                                        ) { %>
+                                        <% if (item.quantity !== null && item.quantity !== undefined) { %>
 
                                             <span class="content-meta-item">
 
                                                 <strong>Quantity:</strong>
 
-                                                <%= Number(
-                                                    item.quantity || 0
-                                                ).toLocaleString() %>
+                                                <%= Number(item.quantity || 0).toLocaleString() %>
 
                                                 <%= item.unit || "unit" %>
 
@@ -1386,25 +1334,19 @@ const currentTab =
                                         <% } %>
 
 
-                                        <% if (
-                                            item.currentWorth !== null &&
-                                            item.currentWorth !== undefined
-                                        ) { %>
+                                        <% if (item.currentWorth !== null && item.currentWorth !== undefined) { %>
 
                                             <span class="content-meta-item">
 
                                                 <strong>Worth:</strong>
 
-                                                <%= Number(
-                                                    item.currentWorth || 0
-                                                ).toLocaleString() %>
+                                                <%= Number(item.currentWorth || 0).toLocaleString() %>
 
                                             </span>
 
                                         <% } %>
 
                                     </div>
-
 
 
                                     <% if (isAnimal) { %>
@@ -1423,16 +1365,18 @@ const currentTab =
 
                                             <span>
                                                 <strong>Milking:</strong>
-                                                <%= item.isMilking
-                                                    ? "Yes"
-                                                    : "No"
-                                                %>
+
+                                                <% if (item.isMilking) { %>
+                                                    Yes
+                                                <% } else { %>
+                                                    No
+                                                <% } %>
+
                                             </span>
 
                                         </div>
 
                                     <% } %>
-
 
 
                                     <% if (item.description) { %>
@@ -1454,7 +1398,6 @@ const currentTab =
                 </form>
 
 
-
                 <form
                     id="omitForm"
                     method="POST"
@@ -1467,13 +1410,12 @@ const currentTab =
                 </form>
 
 
-
             <% } else { %>
 
 
                 <!-- ==================================================
                      AGROSTORE
-                =================================================== -->
+                ================================================== -->
 
                 <div class="contents-list">
 
@@ -1484,6 +1426,8 @@ const currentTab =
                             data-content-card
                             data-item-id="<%= item._id %>"
                         >
+
+                            <div></div>
 
                             <div class="content-icon">
                                 🌾
@@ -1498,13 +1442,11 @@ const currentTab =
                                         <%= item.name || "Unnamed Feed" %>
                                     </h3>
 
-
                                     <span class="content-type feed-type">
                                         Feed
                                     </span>
 
                                 </div>
-
 
 
                                 <div class="content-meta">
@@ -1529,7 +1471,6 @@ const currentTab =
                                 </div>
 
 
-
                                 <div class="feed-quantity-section">
 
                                     <div class="feed-quantity-header">
@@ -1542,13 +1483,8 @@ const currentTab =
                                         <span>
 
                                             <span class="feed-current-quantity">
-
-                                                <%= Number(
-                                                    item.quantity || 0
-                                                ).toLocaleString() %>
-
+                                                <%= Number(item.quantity || 0).toLocaleString() %>
                                             </span>
-
 
                                             <span class="feed-unit">
                                                 <%= item.unit || "unit" %>
@@ -1557,7 +1493,6 @@ const currentTab =
                                         </span>
 
                                     </div>
-
 
 
                                     <form
@@ -1576,9 +1511,7 @@ const currentTab =
 
                                         <div class="quantity-field">
 
-                                            <label
-                                                for="quantity-<%= item._id %>"
-                                            >
+                                            <label for="quantity-<%= item._id %>">
                                                 New Remaining Quantity
                                             </label>
 
@@ -1591,21 +1524,17 @@ const currentTab =
                                                 min="0"
                                                 max="<%= Number(item.quantity || 0) %>"
                                                 step="any"
-                                                value="<%= item.quantity ?? 0 %>"
+                                                value="<%= item.quantity !== undefined && item.quantity !== null ? item.quantity : 0 %>"
                                                 required
                                             >
 
                                         </div>
 
 
-
                                         <%
-                                            const currentUnit =
-                                                String(
-                                                    item.unit || ""
-                                                )
-                                                .trim()
-                                                .toLowerCase();
+                                            const currentUnit = String(
+                                                item.unit || ""
+                                            ).trim().toLowerCase();
                                         %>
 
 
@@ -1617,9 +1546,7 @@ const currentTab =
 
                                             <option
                                                 value="kg"
-                                                <%= currentUnit === "kg"
-                                                    ? "selected"
-                                                    : "" %>
+                                                <% if (currentUnit === "kg") { %>selected<% } %>
                                             >
                                                 kg
                                             </option>
@@ -1627,9 +1554,7 @@ const currentTab =
 
                                             <option
                                                 value="bales"
-                                                <%= currentUnit === "bales"
-                                                    ? "selected"
-                                                    : "" %>
+                                                <% if (currentUnit === "bales") { %>selected<% } %>
                                             >
                                                 bales
                                             </option>
@@ -1637,19 +1562,15 @@ const currentTab =
 
                                             <option
                                                 value="bags"
-                                                <%= currentUnit === "bags"
-                                                    ? "selected"
-                                                    : "" %>
-                                                >
+                                                <% if (currentUnit === "bags") { %>selected<% } %>
+                                            >
                                                 bags
                                             </option>
 
 
                                             <option
                                                 value="litres"
-                                                <%= currentUnit === "litres"
-                                                    ? "selected"
-                                                    : "" %>
+                                                <% if (currentUnit === "litres") { %>selected<% } %>
                                             >
                                                 litres
                                             </option>
@@ -1657,15 +1578,12 @@ const currentTab =
 
                                             <option
                                                 value="units"
-                                                <%= currentUnit === "units"
-                                                    ? "selected"
-                                                    : "" %>
+                                                <% if (currentUnit === "units") { %>selected<% } %>
                                             >
                                                 units
                                             </option>
 
                                         </select>
-
 
 
                                         <button
@@ -1676,7 +1594,6 @@ const currentTab =
                                         </button>
 
                                     </form>
-
 
 
                                     <p class="quantity-help">
@@ -1691,7 +1608,6 @@ const currentTab =
                                     </p>
 
                                 </div>
-
 
 
                                 <% if (item.description) { %>
@@ -1713,7 +1629,6 @@ const currentTab =
             <% } %>
 
 
-
         <% } else { %>
 
 
@@ -1721,20 +1636,22 @@ const currentTab =
 
                 <div class="empty-icon">
 
-                    <%= isAgroStore
-                        ? "🌾"
-                        : "📦"
-                    %>
+                    <% if (isAgroStore) { %>
+                        🌾
+                    <% } else { %>
+                        📦
+                    <% } %>
 
                 </div>
 
 
                 <h3>
 
-                    <%= isAgroStore
-                        ? "AgroStore is Empty"
-                        : "No Items in This Storage"
-                    %>
+                    <% if (isAgroStore) { %>
+                        AgroStore is Empty
+                    <% } else { %>
+                        No Items in This Storage
+                    <% } %>
 
                 </h3>
 
@@ -1762,17 +1679,15 @@ const currentTab =
     </section>
 
 
-
-    <!-- ==========================================================
+    <!-- ========================================================
          ADD ITEMS TAB
-    ========================================================== -->
+    ========================================================= -->
 
     <section
         id="storageAddTab"
-        class="storage-tab-panel <%= currentTab === "add" ? "active" : "" %>"
+        class="storage-tab-panel <% if (currentTab === 'add') { %>active<% } %>"
         data-storage-panel="add"
     >
-
 
         <div class="add-introduction">
 
@@ -1799,11 +1714,7 @@ const currentTab =
         </div>
 
 
-
-        <% if (
-            availableItems &&
-            availableItems.length > 0
-        ) { %>
+        <% if (availableItems && availableItems.length > 0) { %>
 
 
             <div class="add-management">
@@ -1851,7 +1762,6 @@ const currentTab =
             </div>
 
 
-
             <form
                 method="POST"
                 action="/storage/<%= dairy._id %>/contents/<%= storage._id %>/add"
@@ -1863,10 +1773,13 @@ const currentTab =
                     <% availableItems.forEach(function(item) { %>
 
                         <%
+                            const availableCodeNumber = Number(item.code);
+
                             const isAvailableAnimal =
                                 item.code !== null &&
                                 item.code !== undefined &&
-                                Number(item.code) > 0;
+                                !Number.isNaN(availableCodeNumber) &&
+                                availableCodeNumber > 0;
                         %>
 
 
@@ -1890,12 +1803,13 @@ const currentTab =
 
                             <div class="add-icon">
 
-                                <%= isAgroStore
-                                    ? "🌾"
-                                    : isAvailableAnimal
-                                        ? "🐄"
-                                        : "🔧"
-                                %>
+                                <% if (isAgroStore) { %>
+                                    🌾
+                                <% } else if (isAvailableAnimal) { %>
+                                    🐄
+                                <% } else { %>
+                                    🔧
+                                <% } %>
 
                             </div>
 
@@ -1910,25 +1824,27 @@ const currentTab =
 
 
                                     <span
-                                        class="content-type <%= isAgroStore
-                                            ? "feed-type"
-                                            : isAvailableAnimal
-                                                ? "animal-type"
-                                                : "asset-type"
-                                        %>"
+                                        class="content-type
+                                        <% if (isAgroStore) { %>
+                                            feed-type
+                                        <% } else if (isAvailableAnimal) { %>
+                                            animal-type
+                                        <% } else { %>
+                                            asset-type
+                                        <% } %>"
                                     >
 
-                                        <%= isAgroStore
-                                            ? "Feed"
-                                            : isAvailableAnimal
-                                                ? "Animal"
-                                                : "Asset"
-                                        %>
+                                        <% if (isAgroStore) { %>
+                                            Feed
+                                        <% } else if (isAvailableAnimal) { %>
+                                            Animal
+                                        <% } else { %>
+                                            Asset
+                                        <% } %>
 
                                     </span>
 
                                 </div>
-
 
 
                                 <div class="add-meta">
@@ -1939,10 +1855,14 @@ const currentTab =
                                             Code:
                                         </strong>
 
-                                        <%= item.assetCode ||
-                                            item.code ||
-                                            "—"
+                                        <%
+                                            const displayCode =
+                                                item.assetCode ||
+                                                item.code ||
+                                                "—";
                                         %>
+
+                                        <%= displayCode %>
 
                                     </span>
 
@@ -1969,10 +1889,7 @@ const currentTab =
                                     </span>
 
 
-                                    <% if (
-                                        item.quantity !== null &&
-                                        item.quantity !== undefined
-                                    ) { %>
+                                    <% if (item.quantity !== null && item.quantity !== undefined) { %>
 
                                         <span>
 
@@ -1980,9 +1897,7 @@ const currentTab =
                                                 Quantity:
                                             </strong>
 
-                                            <%= Number(
-                                                item.quantity || 0
-                                            ).toLocaleString() %>
+                                            <%= Number(item.quantity || 0).toLocaleString() %>
 
                                             <%= item.unit || "unit" %>
 
@@ -2010,20 +1925,22 @@ const currentTab =
 
                 <div class="empty-icon">
 
-                    <%= isAgroStore
-                        ? "🌾"
-                        : "📦"
-                    %>
+                    <% if (isAgroStore) { %>
+                        🌾
+                    <% } else { %>
+                        📦
+                    <% } %>
 
                 </div>
 
 
                 <h3>
 
-                    <%= isAgroStore
-                        ? "No Feeds Available"
-                        : "No Items Available"
-                    %>
+                    <% if (isAgroStore) { %>
+                        No Feeds Available
+                    <% } else { %>
+                        No Items Available
+                    <% } %>
 
                 </h3>
 
@@ -2053,12 +1970,7 @@ const currentTab =
 </div>
 
 
-
 <script>
-
-/* ============================================================
-   STORAGE CONTENTS PAGE JAVASCRIPT
-============================================================ */
 
 document.addEventListener(
     "DOMContentLoaded",
@@ -2068,86 +1980,77 @@ document.addEventListener(
            TABS
         ====================================================== */
 
-        const tabs =
-            document.querySelectorAll(
-                "[data-storage-tab]"
-            );
+        const tabs = document.querySelectorAll(
+            "[data-storage-tab]"
+        );
+
+        const panels = document.querySelectorAll(
+            "[data-storage-panel]"
+        );
 
 
-        const panels =
-            document.querySelectorAll(
-                "[data-storage-panel]"
-            );
+        tabs.forEach(function(tab){
+
+            tab.addEventListener(
+                "click",
+                function(){
+
+                    const target =
+                        tab.dataset.storageTab;
 
 
-        tabs.forEach(
-            function(tab){
+                    tabs.forEach(function(item){
 
-                tab.addEventListener(
-                    "click",
-                    function(){
-
-                        const target =
-                            tab.dataset.storageTab;
-
-
-                        tabs.forEach(
-                            function(item){
-
-                                item.classList.toggle(
-                                    "active",
-                                    item.dataset.storageTab === target
-                                );
-
-                            }
+                        item.classList.toggle(
+                            "active",
+                            item.dataset.storageTab === target
                         );
 
+                    });
 
-                        panels.forEach(
-                            function(panel){
 
-                                panel.classList.toggle(
-                                    "active",
-                                    panel.dataset.storagePanel === target
-                                );
+                    panels.forEach(function(panel){
 
-                            }
+                        panel.classList.toggle(
+                            "active",
+                            panel.dataset.storagePanel === target
                         );
 
-
-                        try {
-
-                            const url =
-                                new URL(
-                                    window.location.href
-                                );
+                    });
 
 
-                            url.searchParams.set(
-                                "tab",
-                                target
+                    try {
+
+                        const url =
+                            new URL(
+                                window.location.href
                             );
 
 
-                            window.history.replaceState(
-                                {},
-                                "",
-                                url
-                            );
+                        url.searchParams.set(
+                            "tab",
+                            target
+                        );
 
-                        } catch(error){
 
-                            /*
-                             * URL updating is cosmetic only.
-                             */
+                        window.history.replaceState(
+                            {},
+                            "",
+                            url
+                        );
 
-                        }
+                    } catch(error) {
+
+                        /*
+                         * URL update is cosmetic only.
+                         */
 
                     }
-                );
 
-            }
-        );
+                }
+            );
+
+        });
 
 
         /* ======================================================
@@ -2159,66 +2062,55 @@ document.addEventListener(
                 "selectAllContents"
             );
 
-
         const contentCheckboxes =
             document.querySelectorAll(
                 ".content-item-checkbox"
             );
-
 
         const contentsSelectionCount =
             document.getElementById(
                 "contentsSelectionCount"
             );
 
-
         const openReshuffleButton =
             document.getElementById(
                 "openReshuffleButton"
             );
-
 
         const omitButton =
             document.getElementById(
                 "omitButton"
             );
 
-
         const reshufflePanel =
             document.getElementById(
                 "reshufflePanel"
             );
-
 
         const destinationStorage =
             document.getElementById(
                 "destinationStorage"
             );
 
-
         const reshuffleSubmitButton =
             document.getElementById(
                 "reshuffleSubmitButton"
             );
-
 
         const cancelReshuffleButton =
             document.getElementById(
                 "cancelReshuffleButton"
             );
 
-
         const reshuffleForm =
             document.getElementById(
                 "reshuffleForm"
             );
 
-
         const omitForm =
             document.getElementById(
                 "omitForm"
             );
-
 
         const omitInputs =
             document.getElementById(
@@ -2227,7 +2119,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           GET SELECTED CONTENTS
+           SELECTED CONTENTS
         ====================================================== */
 
         function getSelectedContents(){
@@ -2250,24 +2142,19 @@ document.addEventListener(
             const selected =
                 getSelectedContents();
 
-
             const count =
                 selected.length;
 
 
-            if (
-                contentsSelectionCount
-            ){
+            if (contentsSelectionCount) {
 
                 contentsSelectionCount.textContent =
-                    `${count} selected`;
+                    count + " selected";
 
             }
 
 
-            if (
-                openReshuffleButton
-            ){
+            if (openReshuffleButton) {
 
                 openReshuffleButton.disabled =
                     count === 0;
@@ -2275,9 +2162,7 @@ document.addEventListener(
             }
 
 
-            if (
-                omitButton
-            ){
+            if (omitButton) {
 
                 omitButton.disabled =
                     count === 0;
@@ -2289,30 +2174,26 @@ document.addEventListener(
                 .querySelectorAll(
                     "[data-content-card]"
                 )
-                .forEach(
-                    function(card){
+                .forEach(function(card){
 
-                        const checkbox =
-                            card.querySelector(
-                                ".content-item-checkbox"
-                            );
-
-
-                        card.classList.toggle(
-                            "selected",
-                            Boolean(
-                                checkbox &&
-                                checkbox.checked
-                            )
+                    const checkbox =
+                        card.querySelector(
+                            ".content-item-checkbox"
                         );
 
-                    }
-                );
+
+                    card.classList.toggle(
+                        "selected",
+                        Boolean(
+                            checkbox &&
+                            checkbox.checked
+                        )
+                    );
+
+                });
 
 
-            if (
-                selectAllContents
-            ){
+            if (selectAllContents) {
 
                 selectAllContents.checked =
                     contentCheckboxes.length > 0 &&
@@ -2327,9 +2208,7 @@ document.addEventListener(
            SELECT ALL CONTENTS
         ====================================================== */
 
-        if (
-            selectAllContents
-        ){
+        if (selectAllContents) {
 
             selectAllContents.addEventListener(
                 "change",
@@ -2370,29 +2249,49 @@ document.addEventListener(
 
 
         /* ======================================================
-           OPEN RESHUFFLE
+           RESHUFFLE BUTTON
         ====================================================== */
 
-        if (
-            openReshuffleButton
-        ){
+        function updateReshuffleButton(){
+
+            if (!reshuffleSubmitButton) {
+                return;
+            }
+
+
+            const selected =
+                getSelectedContents();
+
+            const hasDestination =
+                destinationStorage &&
+                destinationStorage.value;
+
+
+            reshuffleSubmitButton.disabled =
+                selected.length === 0 ||
+                !hasDestination;
+
+        }
+
+
+        if (openReshuffleButton) {
 
             openReshuffleButton.addEventListener(
                 "click",
                 function(){
 
-                    if (
-                        openReshuffleButton.disabled
-                    ){
-
+                    if (openReshuffleButton.disabled) {
                         return;
-
                     }
 
 
-                    reshufflePanel.classList.add(
-                        "open"
-                    );
+                    if (reshufflePanel) {
+
+                        reshufflePanel.classList.add(
+                            "open"
+                        );
+
+                    }
 
 
                     updateReshuffleButton();
@@ -2407,25 +2306,24 @@ document.addEventListener(
            CANCEL RESHUFFLE
         ====================================================== */
 
-        if (
-            cancelReshuffleButton
-        ){
+        if (cancelReshuffleButton) {
 
             cancelReshuffleButton.addEventListener(
                 "click",
                 function(){
 
-                    reshufflePanel.classList.remove(
-                        "open"
-                    );
+                    if (reshufflePanel) {
+
+                        reshufflePanel.classList.remove(
+                            "open"
+                        );
+
+                    }
 
 
-                    if (
-                        destinationStorage
-                    ){
+                    if (destinationStorage) {
 
-                        destinationStorage.value =
-                            "";
+                        destinationStorage.value = "";
 
                     }
 
@@ -2439,39 +2337,10 @@ document.addEventListener(
 
 
         /* ======================================================
-           RESHUFFLE VALIDATION
+           DESTINATION CHANGE
         ====================================================== */
 
-        function updateReshuffleButton(){
-
-            if (
-                !reshuffleSubmitButton
-            ){
-
-                return;
-
-            }
-
-
-            const selected =
-                getSelectedContents();
-
-
-            const hasDestination =
-                destinationStorage &&
-                destinationStorage.value;
-
-
-            reshuffleSubmitButton.disabled =
-                selected.length === 0 ||
-                !hasDestination;
-
-        }
-
-
-        if (
-            destinationStorage
-        ){
+        if (destinationStorage) {
 
             destinationStorage.addEventListener(
                 "change",
@@ -2485,9 +2354,7 @@ document.addEventListener(
            RESHUFFLE SUBMIT
         ====================================================== */
 
-        if (
-            reshuffleForm
-        ){
+        if (reshuffleForm) {
 
             reshuffleForm.addEventListener(
                 "submit",
@@ -2497,12 +2364,9 @@ document.addEventListener(
                         getSelectedContents();
 
 
-                    if (
-                        selected.length === 0
-                    ){
+                    if (selected.length === 0) {
 
                         event.preventDefault();
-
                         return;
 
                     }
@@ -2511,10 +2375,9 @@ document.addEventListener(
                     if (
                         !destinationStorage ||
                         !destinationStorage.value
-                    ){
+                    ) {
 
                         event.preventDefault();
-
                         return;
 
                     }
@@ -2529,9 +2392,7 @@ document.addEventListener(
            OMIT SELECTED
         ====================================================== */
 
-        if (
-            omitButton
-        ){
+        if (omitButton) {
 
             omitButton.addEventListener(
                 "click",
@@ -2545,15 +2406,14 @@ document.addEventListener(
                         selected.length === 0 ||
                         !omitForm ||
                         !omitInputs
-                    ){
+                    ) {
 
                         return;
 
                     }
 
 
-                    omitInputs.innerHTML =
-                        "";
+                    omitInputs.innerHTML = "";
 
 
                     selected.forEach(
@@ -2565,13 +2425,9 @@ document.addEventListener(
                                 );
 
 
-                            input.type =
-                                "hidden";
+                            input.type = "hidden";
 
-
-                            input.name =
-                                "itemIds";
-
+                            input.name = "itemIds";
 
                             input.value =
                                 checkbox.value;
@@ -2602,18 +2458,15 @@ document.addEventListener(
                 "selectAllAddItems"
             );
 
-
         const addCheckboxes =
             document.querySelectorAll(
                 ".add-item-checkbox"
             );
 
-
         const addSelectionCount =
             document.getElementById(
                 "addSelectionCount"
             );
-
 
         const addSelectedButton =
             document.getElementById(
@@ -2622,7 +2475,7 @@ document.addEventListener(
 
 
         /* ======================================================
-           GET SELECTED ADD ITEMS
+           SELECTED ADD ITEMS
         ====================================================== */
 
         function getSelectedAddItems(){
@@ -2645,24 +2498,19 @@ document.addEventListener(
             const selected =
                 getSelectedAddItems();
 
-
             const count =
                 selected.length;
 
 
-            if (
-                addSelectionCount
-            ){
+            if (addSelectionCount) {
 
                 addSelectionCount.textContent =
-                    `${count} selected`;
+                    count + " selected";
 
             }
 
 
-            if (
-                addSelectedButton
-            ){
+            if (addSelectedButton) {
 
                 addSelectedButton.disabled =
                     count === 0;
@@ -2674,30 +2522,26 @@ document.addEventListener(
                 .querySelectorAll(
                     "[data-add-card]"
                 )
-                .forEach(
-                    function(card){
+                .forEach(function(card){
 
-                        const checkbox =
-                            card.querySelector(
-                                ".add-item-checkbox"
-                            );
-
-
-                        card.classList.toggle(
-                            "selected",
-                            Boolean(
-                                checkbox &&
-                                checkbox.checked
-                            )
+                    const checkbox =
+                        card.querySelector(
+                            ".add-item-checkbox"
                         );
 
-                    }
-                );
+
+                    card.classList.toggle(
+                        "selected",
+                        Boolean(
+                            checkbox &&
+                            checkbox.checked
+                        )
+                    );
+
+                });
 
 
-            if (
-                selectAllAddItems
-            ){
+            if (selectAllAddItems) {
 
                 selectAllAddItems.checked =
                     addCheckboxes.length > 0 &&
@@ -2712,9 +2556,7 @@ document.addEventListener(
            SELECT ALL ADD ITEMS
         ====================================================== */
 
-        if (
-            selectAllAddItems
-        ){
+        if (selectAllAddItems) {
 
             selectAllAddItems.addEventListener(
                 "change",
